@@ -1,0 +1,9 @@
+[project]
+name = "marsdog-behavior"
+version = "0.1.0"
+description = "Marsdog behavior arbitration core with ROS2 adapter."
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

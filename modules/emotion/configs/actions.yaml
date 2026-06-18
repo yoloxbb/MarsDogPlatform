@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "randomPolicy": {
+    "mode": "sample_without_replacement"
+  },
+  "actions": {
+    "ACTION_EAT": [
+      {
+        "name": "激动进食",
+        "condition": {"demand": "Hunger", "operator": "gt", "threshold": 90},
+        "steps": ["ACT_RUN_TO_BOWL", "ACT_FAST_LICK_AND_SWALLOW"]
+      },
+      {
+        "name": "正常进食",
+        "condition": {"demand": "Hunger", "operator": "gt", "threshold": 70},
+        "fixedSteps": ["ACT_RUN_TO_BOWL"],
+        "phaseOrder": ["prepare", "eat", "interaction", "finish"],
+        "randomSelection": {
+          "prepare": {"count": 1},
+          "eat": {"count": 1},
+          "interaction": {"count": 1},
+          "finish": {"count": 1}
+        },
+        "randomStepsByPhase": {
+          "prepare": [
+            "ACT_SNIFF_BOWL_EDGE",
+            "ACT_PAW_AT_BOWL",
+            "ACT_SIT_OR_LIE_BY_BOWL"
+          ],
+          "eat": [
+            "ACT_LICK_FOOD",
+            "ACT_CHEW_OR_CARRY_FOOD",
+            "ACT_SCRATCH_FOOD",
+            "ACT_LICK_LIPS_AND_SWALLOW"
+          ],
+          "interaction": [
+            "ACT_TURN_HEAD_AND_WIPE_MOUTH",
+            "ACT_PAUSE_AND_LOOK_AT_OWNER",
+            "ACT_CHASE_ROLLING_FOOD",
+            "ACT_CHANGE_POSTURE",
+            "ACT_GROWL_WHILE_EATING",
+            "ACT_BURP"
+          ],
+          "finish": [
+            "ACT_LICK_LIPS_OR_NOSE",
+            "ACT_SHAKE_HEAD",
+            "ACT_WALK_AWAY_OR_LIE_DOWN",
+            "ACT_SNIFF_GROUND_FOR_CRUMBS"
+          ]
+        }
+      }
+    ],
+    "ACTION_SLEEP": [
+      {
+        "name": "入睡",
+        "condition": {"demand": "Sleepiness", "operator": "gt", "threshold": 65},
+        "phaseOrder": ["prepare", "sleep", "wake"],
+        "randomSelection": {
+          "prepare": {"count": 1},
+          "sleep": {"count": 1},
+          "wake": {"count": 1}
+        },
+        "randomStepsByPhase": {
+          "prepare": [
+            "ACT_CIRCLE_AROUND",
+            "ACT_SCRATCH_BED_OR_GROUND",
+            "ACT_LIE_ON_SIDE_AND_STRETCH",
+            "ACT_LICK_FUR_OR_PAWS"
+          ],
+          "sleep": [
+            "ACT_FLIP_BODY",
+            "ACT_WHINE_SOFTLY",
+            "ACT_TWITCH_OR_KICK_LEGS",
+            "ACT_SHAKE_HEAD_OR_SMACK_LIPS",
+            "ACT_WAG_TAIL",
+            "ACT_YAWN"
+          ],
+          "wake": [
+            "ACT_GETUP_CRAWL",
+            "ACT_GETUP_ROLL",
+            "ACT_GETUP_BOUNCE",
+            "ACT_GETUP_STRETCH",
+            "ACT_GETUP_SIT"
+          ]
+        }
+      }
+    ],
+    "ACTION_DEFECATE": [
+      {
+        "name": "大小便",
+        "condition": {"demand": "Bladder", "operator": "gt", "threshold": 75},
+        "phaseOrder": ["prepare", "defecate", "finish"],
+        "randomSelection": {
+          "prepare": {"count": 1},
+          "defecate": {"count": 1},
+          "finish": {"count": 1}
+        },
+        "randomStepsByPhase": {
+          "prepare": [
+            "ACT_SNIFF_AND_CIRCLE",
+            "ACT_SCRATCH_GROUND",
+            "ACT_SQUAT_TO_PEE",
+            "ACT_SQUAT_TO_POOP"
+          ],
+          "defecate": [
+            "ACT_HESITATE",
+            "ACT_TENSE_BODY",
+            "ACT_TAIL_MOVEMENT",
+            "ACT_SLIGHT_TREMOR",
+            "ACT_LOWER_HEAD_OR_TURN"
+          ],
+          "finish": [
+            "ACT_STAND_UP_WITH_HIND_LEGS",
+            "ACT_SCRATCH_SOIL_OR_GROUND",
+            "ACT_SNIFF_EXCREMENT",
+            "ACT_WALK_AWAY_OR_SHAKE_HEAD"
+          ]
+        }
+      }
+    ],
+    "ACTION_GROOM": [
+      {
+        "name": "处理毛发",
+        "condition": {"demand": "Cleanliness", "operator": "gt", "threshold": 70},
+        "phaseOrder": ["groom"],
+        "randomSelection": {
+          "groom": {"count": 1}
+        },
+        "randomStepsByPhase": {
+          "groom": [
+            "ACT_LICK_PAWS_OR_FUR",
+            "ACT_SCRATCH",
+            "ACT_SHAKE_OFF_WATER",
+            "ACT_STRETCH_LAZILY",
+            "ACT_ROLL_OVER",
+            "ACT_RUB_AGAINST_OBJECT",
+            "ACT_PANT"
+          ]
+        }
+      }
+    ],
+    "ACTION_RECHARGE": [
+      {
+        "name": "严重低电量",
+        "condition": {"demand": "Energy", "operator": "lt", "threshold": 10},
+        "steps": [
+          "ACT_RETURN_TO_CHARGER",
+          "ACT_BARK_AND_LIE_DOWN_IF_NO_CHARGER"
+        ]
+      },
+      {
+        "name": "低电量",
+        "condition": {"demand": "Energy", "operator": "lt", "threshold": 20},
+        "phaseOrder": ["lowEnergy"],
+        "randomSelection": {
+          "lowEnergy": {"count": 1}
+        },
+        "randomStepsByPhase": {
+          "lowEnergy": [
+            "ACT_PANT_IN_PLACE",
+            "ACT_RESIST_WALKING",
+            "ACT_SLOW_MOVEMENT"
+          ]
+        }
+      }
+    ]
+  }
+}

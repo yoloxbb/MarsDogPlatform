@@ -1,0 +1,25 @@
+{
+  "emotions": {
+    "types": {
+      "Joy": {"internalName": "emo_joy", "chineseName": "愉悦", "range": [0, 100]},
+      "Excite": {"internalName": "emo_excite", "chineseName": "兴奋", "range": [0, 100]},
+      "Anxiety": {"internalName": "emo_anxiety", "chineseName": "焦虑", "range": [0, 100]},
+      "Fear": {"internalName": "emo_fear", "chineseName": "恐惧", "range": [0, 100]},
+      "Curious": {"internalName": "emo_curious", "chineseName": "好奇", "range": [0, 100]},
+      "Calm": {"internalName": "emo_calm", "chineseName": "平静", "range": [0, 100]}
+    },
+    "actionResultRules": {
+      "DemandSatisfied": [
+        {"emotion": "Joy", "min": 10, "max": 20},
+        {"emotion": "Calm", "min": 5, "max": 10},
+        {"emotion": "Anxiety", "min": -15, "max": -5}
+      ],
+      "DemandUnsatisfied": [
+        {"emotion": "Anxiety", "min": 5, "max": 15}
+      ],
+      "ActionInterrupted": [
+        {"emotion": "Anxiety", "min": 3, "max": 5}
+      ]
+    }
+  }
+}
