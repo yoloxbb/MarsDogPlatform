@@ -8,8 +8,14 @@
       "ACTION_SLEEP": "Sleepiness",
       "ACTION_GROOM": "Cleanliness",
       "ACTION_RECHARGE": "Energy",
+      "ACTION_PLAY_INVITE": "Social",
+      "ACTION_SOCIAL_GREET": "Social",
+      "ACTION_BOUNDARY_TEST": "Social",
       "ACTION_ATTENTION_SEEK": "Social",
-      "ACTION_EXPLORE": "Exploration"
+      "ACTION_RESOURCE_SHARE": "Social",
+      "ACTION_EXPLORE": "Exploration",
+      "ACTION_SPACE_EXPLORE": "Exploration",
+      "ACTION_OBJECT_EXPLORE": "Exploration"
     }
   },
   "demands": {
@@ -111,16 +117,47 @@
     "Social": {
       "chineseName": "社交值",
       "range": [0, 100],
-      "morningInitialValue": 60,
-      "urgentThreshold": 30,
-      "urgentOperator": "lte"
+      "morningInitialValue": 20,
+      "morningRandomRange": [20, 30],
+      "urgentThreshold": 60,
+      "urgentOperator": "gt",
+      "overflowThreshold": 80,
+      "growthRules": [
+        {"name": "白天", "startHour": 6, "endHour": 18, "delta": 2},
+        {"name": "傍晚", "startHour": 18, "endHour": 21, "delta": 3},
+        {"name": "夜间", "startHour": 21, "endHour": 6, "delta": 0}
+      ],
+      "ownerLeftHomeDelta": 30,
+      "ownerInteractionRecovery": 25,
+      "dogHumanInteractionRecovery": 20,
+      "dogAnimalInteractionRecovery": 15,
+      "responseTimeoutSeconds": 30,
+      "ownerInteractionMergeWindowSeconds": 10
     },
     "Exploration": {
       "chineseName": "探索值",
       "range": [0, 100],
-      "morningInitialValue": 0,
+      "morningInitialValue": 10,
+      "morningRandomRange": [10, 20],
       "urgentThreshold": 60,
-      "urgentOperator": "gte"
+      "urgentOperator": "gt",
+      "overflowThreshold": 80,
+      "growthRules": [
+        {
+          "name": "白天且精力充足",
+          "startHour": 6,
+          "endHour": 21,
+          "energyOperator": "gt",
+          "energyThreshold": 50,
+          "delta": 5
+        },
+        {"name": "其他时间", "startHour": 21, "endHour": 6, "delta": 0}
+      ],
+      "recoveryRules": {
+        "New": 20,
+        "Old": 10,
+        "Completed": 15
+      }
     }
   }
 }

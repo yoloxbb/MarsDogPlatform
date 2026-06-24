@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .state import SystemStatus
-from .types import ClampValue, NormalizePersonalityParam
+from .types import ClampValue, NormalizePersonalityParam, PersonalityProfileType
 
 
 class DebugAPI:
@@ -18,6 +18,7 @@ class DebugAPI:
         try:
             param = NormalizePersonalityParam(paramName)
             self.state.personality[param] = ClampValue(value)
+            self.state.personalityProfile = PersonalityProfileType.CUSTOM.value
             return True
         except (TypeError, ValueError):
             return False
@@ -49,6 +50,9 @@ class DebugAPI:
             sleepActionAllowed=self.state.sleepActionAllowed,
             lightsOff=self.state.lightsOff,
             lastActionFeedbackStatus=self.state.lastActionFeedbackStatus,
+            personalityProfile=self.GetPersonalityProfileValue(),
+            socialInteraction=self.GetSocialInteractionStatus(),
+            explorationContext=self.GetExplorationContext(),
         )
 
     def EnableDebugLog(self, enable: bool) -> None:

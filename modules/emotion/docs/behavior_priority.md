@@ -18,6 +18,8 @@
 - `Bladder > 75`：触发 `ACTION_DEFECATE`。
 - `Sleepiness > 65`：满足睡眠时段规则时触发 `ACTION_SLEEP`。
 - `Cleanliness > 70`：触发 `ACTION_GROOM`。
+- `Social > 60`：没有活跃社交会话时触发 Lv.4 主动社交。
+- `Exploration > 60`：触发 Lv.4 主动空间探索。
 
 ## 并发规则
 
@@ -25,6 +27,9 @@
 - 同层级多个需求触发时，不换算紧迫度，按原始值或配置分数排序。
 - 外部事件先进入事件队列，再由仲裁器转换为对应行为。
 - 同一行为多次请求时合并为单次当前行为。
+- 主人主动交互属于 Lv.2，不受 Social 阈值限制。
+- 狗主动社交会根据可见目标随机选择行为；同时看到人和动物时优先选择人类。
+- 新旧目标或环境变化以 Lv.2 触发物品探索，优先于 Lv.4 主动探索。
 
 ## 全局需求规则
 
@@ -46,4 +51,8 @@
 - `ACTION_DEFECATE` 行为树按排泄动作池执行；每次从准备、排泄中、结束三个阶段中各随机抽取 1 个动作。
 - `ACTION_GROOM` 行为树按清洁动作池执行；`Cleanliness > 70` 触发后从处理毛发阶段中随机抽取 1 个动作。
 - `ACTION_RECHARGE` 行为树按电量分支执行；`Energy < 10` 优先走严重低电量动作，`Energy < 20` 走低电量动作池。
+- 社交行为树根据锁定的 `targetType / targetVisible / initiator` 上下文选择人类或动物动作池。
+- 狗主动社交动作树完成后进入 30 秒等待回应状态；收到人类回应 Social `-20`，动物回应 `-15`。
+- `ACTION_EXPLORE` 每次随机执行一个空间探索动作，完成后 Exploration `-15`。
+- `ACTION_OBJECT_EXPLORE` 根据新旧目标完成后分别 Exploration `-20/-10`。
 - 执行层完成当前 `ACT_*` 后调用 `MarkCurrentConcreteActionDone()`，下一次 `TickCurrentBehaviorTree()` 会推进到下一个节点。

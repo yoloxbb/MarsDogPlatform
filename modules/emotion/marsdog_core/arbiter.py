@@ -54,6 +54,11 @@ class BehaviorArbiter:
             return None
         if demand == DemandType.SLEEPINESS.value and not self.state.sleepActionAllowed:
             return None
+        if demand == DemandType.SOCIAL.value:
+            if self.state.socialInteractionState in {"ExecutingAction", "WaitingResponse"}:
+                return None
+            if rule.get("actionFromState") and not self.state.socialPendingAction:
+                return None
         value = self.state.demands[demand]
         if not IsConditionMatched(value, rule["operator"], float(rule["threshold"])):
             return None
@@ -126,8 +131,12 @@ class BehaviorArbiter:
 
     def _BuildDecision(self, rule: dict[str, Any], score: float) -> ActionDecision:
         """生成行为决策对象。"""
+        action = rule["action"]
+        actionStateField = rule.get("actionFromState")
+        if actionStateField:
+            action = getattr(self.state, str(actionStateField), action)
         return ActionDecision(
-            action=rule["action"],
+            action=action,
             level=int(rule.get("level", 6)),
             ruleName=rule.get("name", rule["action"]),
             score=score,

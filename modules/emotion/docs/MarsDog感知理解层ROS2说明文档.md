@@ -252,10 +252,11 @@ BT: 选择红球, 下达 CMD_APPROACH → motion_planner
 
 ### 8.1 observation 映射
 
-| 输入字段 | 核心事件 |
+| 输入字段 | 核心事件 / 状态 |
 |---|---|
-| `faces[]` 或 `humans[]` 非空 | `HumanApproach` |
-| `tracked_objects[]` 非空 | `NewObject` |
+| `faces[]` 或 `humans[]` 非空 | 更新人类社交目标可见性，不生成主人主动事件 |
+| `tracked_objects[].label` 为 dog/cat/animal | `AnimalApproach` 并更新动物目标可见性 |
+| 其他 `tracked_objects[]` 非空 | 按 targetId 和新旧标记生成 `NewObject / OldObject`，并锁定探索目标类型 |
 
 ### 8.2 interaction_event 映射
 
@@ -270,3 +271,6 @@ BT: 选择红球, 下达 CMD_APPROACH → motion_planner
 | `danger` | 其他危险 | `Danger` |
 | `state` | `state=lights_off/light_off/dark/关灯` | `SetLightsOffValue(True)` 并立即刷新 `Sleepiness` |
 | `state` | `state=lights_on/light_on/bright/开灯` | `SetLightsOffValue(False)` |
+| `state` | `state=owner_left_home/owner_away/主人离家` | `OnOwnerPresenceChanged(False)`，Social 单次 `+30` |
+
+`wakeup`、`speech` 和主人交互类 `intent` 在 10 秒窗口内合并为同一个主人互动回合。

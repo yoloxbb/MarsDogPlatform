@@ -26,6 +26,7 @@ def LoadAllConfigs(configDir: str | Path | None = None) -> dict[str, Any]:
         "demands": demandConfig.get("demands", {}),
         "demandGlobalRules": demandConfig.get("globalRules", {}),
         "emotions": LoadConfig("emotions", configDir).get("emotions", {}),
+        "personalityProfiles": LoadConfig("personality", configDir).get("profiles", {}),
         "priorities": LoadConfig("priorities", configDir).get("priorities", {}),
         "actions": LoadConfig("actions", configDir).get("actions", {}),
     }

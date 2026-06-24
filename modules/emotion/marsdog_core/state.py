@@ -6,7 +6,16 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-from .types import ActionType, DemandType, EmotionType, PersonalityParam, PriorityMode, SleepDepthType
+from .types import (
+    ActionType,
+    DemandType,
+    EmotionType,
+    PersonalityParam,
+    PersonalityProfileType,
+    PriorityMode,
+    SleepDepthType,
+    SocialInteractionState,
+)
 
 
 def GetDefaultDemands() -> dict[str, int]:
@@ -17,8 +26,8 @@ def GetDefaultDemands() -> dict[str, int]:
         DemandType.SLEEPINESS.value: 15,
         DemandType.CLEANLINESS.value: 10,
         DemandType.ENERGY.value: 100,
-        DemandType.SOCIAL.value: 60,
-        DemandType.EXPLORATION.value: 0,
+        DemandType.SOCIAL.value: 20,
+        DemandType.EXPLORATION.value: 10,
     }
 
 
@@ -89,6 +98,9 @@ class SystemStatus:
     sleepActionAllowed: bool
     lightsOff: bool
     lastActionFeedbackStatus: str
+    personalityProfile: str
+    socialInteraction: dict[str, Any]
+    explorationContext: dict[str, Any]
 
 
 @dataclass
@@ -124,6 +136,33 @@ class MarsdogState:
     shallowSleepTicksRemaining: int = 0
     sleepActionAllowed: bool = False
     lightsOff: bool = False
+    personalityProfile: str = PersonalityProfileType.CUSTOM.value
+    socialHumanVisible: bool = False
+    socialAnimalVisible: bool = False
+    socialPendingAction: str = ""
+    socialPendingTargetType: str = ""
+    socialPendingTargetVisible: bool = False
+    socialInteractionCounter: int = 0
+    socialInteractionId: str = ""
+    socialInteractionInitiator: str = ""
+    socialInteractionTargetType: str = ""
+    socialInteractionTargetVisible: bool = False
+    socialInteractionSelectedAction: str = ""
+    socialInteractionState: str = SocialInteractionState.IDLE.value
+    socialInteractionResponseDeadline: float = 0.0
+    socialInteractionSettlementApplied: bool = False
+    socialInteractionLastResult: str = ""
+    ownerInteractionWindowUntil: float = 0.0
+    ownerPresent: bool | None = None
+    explorationPendingTargetType: str = ""
+    explorationPendingTargetId: str = ""
+    explorationPendingDiscoveryType: str = ""
+    explorationCurrentTargetType: str = ""
+    explorationCurrentTargetId: str = ""
+    explorationCurrentDiscoveryType: str = ""
+    explorationCurrentAction: str = ""
+    explorationLastResult: str = ""
+    explorationKnownTargetIds: set[str] = field(default_factory=set)
 
     def ResetToDefault(self) -> None:
         """重置所有运行态到默认值。"""
@@ -156,6 +195,33 @@ class MarsdogState:
         self.shallowSleepTicksRemaining = 0
         self.sleepActionAllowed = False
         self.lightsOff = False
+        self.personalityProfile = PersonalityProfileType.CUSTOM.value
+        self.socialHumanVisible = False
+        self.socialAnimalVisible = False
+        self.socialPendingAction = ""
+        self.socialPendingTargetType = ""
+        self.socialPendingTargetVisible = False
+        self.socialInteractionCounter = 0
+        self.socialInteractionId = ""
+        self.socialInteractionInitiator = ""
+        self.socialInteractionTargetType = ""
+        self.socialInteractionTargetVisible = False
+        self.socialInteractionSelectedAction = ""
+        self.socialInteractionState = SocialInteractionState.IDLE.value
+        self.socialInteractionResponseDeadline = 0.0
+        self.socialInteractionSettlementApplied = False
+        self.socialInteractionLastResult = ""
+        self.ownerInteractionWindowUntil = 0.0
+        self.ownerPresent = None
+        self.explorationPendingTargetType = ""
+        self.explorationPendingTargetId = ""
+        self.explorationPendingDiscoveryType = ""
+        self.explorationCurrentTargetType = ""
+        self.explorationCurrentTargetId = ""
+        self.explorationCurrentDiscoveryType = ""
+        self.explorationCurrentAction = ""
+        self.explorationLastResult = ""
+        self.explorationKnownTargetIds = set()
 
 
 EmotionCallback = Callable[[str, int, int], None]

@@ -27,6 +27,8 @@
 - `TickCurrentBehaviorTree()`：执行当前顶层行为内部行为树，返回 `RUNNING / SUCCESS / FAILURE`。
 - `GetCurrentConcreteAction()`：获取当前行为树正在执行的 `ACT_*` 动作。
 - `MarkCurrentConcreteActionDone()`：由执行层标记当前 `ACT_*` 动作完成。
+- `GetCurrentActionCommand()`：获取带 `commandId` 的当前单步动作命令；社交动作额外包含 interaction context。
+- `OnActionFeedback(commandId, actionName, status, metadata=None)`：处理 `SUCCESS / FAILURE / INTERRUPTED` 动作反馈。
 - `IsCurrentBehaviorTreeFinished()`：判断当前行为树是否结束。
 - `SetPriorityMode(mode)`：设置 `Normal`、`Emergency`、`Idle`，第一版只保存模式，不改变仲裁规则。
 
@@ -83,3 +85,30 @@
 - `ExecuteSleep()`：行为树完成后进入浅睡状态，浅睡固定持续 3 个 Tick。
 - `ApplySleepRecovery(currentTime=None)`：浅睡每 Tick `-2`；浅睡结束仍大于 `65` 则转深睡，否则醒来；深睡每 Tick `-15`，低于 `20` 醒来，凌晨 `00:00-06:00` 不醒来。
 - `WakeUp()`：结束睡眠状态。
+
+## 社交行为接口
+
+- `InitializeMorningSocial()`：使用 `random(20, 30) * k_social` 初始化晨起 Social。
+- `UpdateSocialByTime(currentTime=None)`：白天每 10 分钟 `+2`，傍晚 `+3`，夜间不增长。
+- `IsSocialInteractionActive()`：判断是否正在执行社交动作或等待回应。
+- `GetSocialInteractionStatus()`：读取 interactionId、发起方、目标、状态和结算结果。
+- `OnSocialInteractionFeedback(interactionId, responseType, targetType, metadata=None)`：处理人类或动物回应。
+- `OnOwnerInteractionEvent(metadata=None, currentTimestamp=None)`：提交主人主动互动，并合并 10 秒内的重复回合事件。
+- `OnOwnerPresenceChanged(isPresent)`：处理明确的主人在家/离家状态；离家单次使 Social `+30`。
+- `SetSocialTargetVisibility(humanVisible, animalVisible)`：更新持续感知到的社交目标。
+
+## 性格接口
+
+- `SetPersonalityProfileValue(profileName)`：应用四种预设性格之一。
+- `GetPersonalityProfileValue()`：读取当前预设名；单独修改参数后返回 `Custom`。
+- `GetSocialPersonalityCoefficientValue()`：读取晨起 Social 使用的性格系数。
+- `GetEmotionPersonalityCoefficientValue(emotionType)`：计算 Joy、Excite、Anxiety、Curious、Calm 的性格系数。
+
+## 探索行为接口
+
+- `InitializeMorningExploration()`：使用 `random(10, 20) * k_curious` 初始化晨起 Exploration。
+- `UpdateExplorationByTime(currentTime=None)`：`06:00-21:00` 且 `Energy > 50` 时每 10 分钟 `+5`。
+- `OnExplorationTargetDetected(targetType, targetId="", discoveryType=None, metadata=None)`：登记探索目标并生成 `NewObject / OldObject` 事件。
+- `GetExplorationContext()`：读取本次锁定目标、发现类型、待执行目标和最后结果。
+- `ExecuteExploration(resultType=None)`：按 `New / Old / Completed` 分别降低 `20 / 10 / 15`。
+- `IsExplorationAction(action)`：判断顶层行为是否为探索行为。

@@ -65,6 +65,39 @@ class ActionPlannerTest(unittest.TestCase):
         self.assertEqual(status.value, "RUNNING")
         self.assertEqual(runner.GetCurrentConcreteAction(), "ACT_RUN_TO_BOWL")
 
+    def test_social_context_selects_human_and_animal_action_branches(self):
+        """社交动作树应根据锁定的目标类型选择对应动作池。"""
+        system = MarsdogBehaviorSystem()
+        system.state.socialInteractionTargetType = "Human"
+        system.state.socialInteractionTargetVisible = True
+        humanSteps = system.GetActionSequence("ACTION_PLAY_INVITE")
+
+        system.state.socialInteractionTargetType = "Animal"
+        animalSteps = system.GetActionSequence("ACTION_PLAY_INVITE")
+
+        self.assertEqual(len(humanSteps), 1)
+        self.assertIn(
+            humanSteps[0],
+            {
+                "ACT_PLAY_BOW",
+                "ACT_SHAKE_TOY_WITH_MOUTH",
+                "ACT_RUN_IN_CIRCLES_OR_ZOOMIES",
+                "ACT_NIP_GENTLY_AT_PANTS_OR_HAND",
+                "ACT_PLACE_PAW_ON_KNEE",
+            },
+        )
+        self.assertEqual(len(animalSteps), 1)
+        self.assertIn(
+            animalSteps[0],
+            {
+                "ACT_PLAY_BOW",
+                "ACT_CARRY_AND_SHAKE_OBJECT",
+                "ACT_POUNCE_GENTLY",
+                "ACT_RUN_IN_CIRCLES_OR_CHASE",
+                "ACT_PAW_GENTLY_AT_OTHER",
+            },
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

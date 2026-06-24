@@ -41,11 +41,21 @@ class DemandLifecycleAPI:
             self.UpdateSleepinessByTime(currentTime)
         if hasattr(self, "UpdateCleanlinessByTime"):
             self.UpdateCleanlinessByTime(currentTime)
+        if hasattr(self, "UpdateSocialByTime"):
+            self.UpdateSocialByTime(currentTime)
+        if hasattr(self, "UpdateExplorationByTime"):
+            self.UpdateExplorationByTime(currentTime)
         return self.GetAllDemands()
 
     def ResetDemandsToMorningInitialValues(self, currentTime: object | None = None) -> dict[str, int]:
         """将所有需求恢复为晨起初始值。"""
         for demand in DemandType:
+            if demand == DemandType.SOCIAL and hasattr(self, "InitializeMorningSocial"):
+                self.InitializeMorningSocial()
+                continue
+            if demand == DemandType.EXPLORATION and hasattr(self, "InitializeMorningExploration"):
+                self.InitializeMorningExploration()
+                continue
             value = self._GetMorningDemandValue(demand.value)
             self.SetDemandValue(demand, value)
         self.state.lastMorningResetKey = self.GetMorningResetKey(currentTime)

@@ -1,0 +1,20 @@
+{
+  "profiles": {
+    "GentleCompanion": {
+      "chineseName": "温柔陪伴者",
+      "params": {"A": 85, "O": 75, "E": 30, "C": 40}
+    },
+    "SunnyExplorer": {
+      "chineseName": "阳光探险家",
+      "params": {"A": 90, "O": 80, "E": 95, "C": 70}
+    },
+    "LoyalGuardian": {
+      "chineseName": "忠诚护卫者",
+      "params": {"A": 70, "O": 90, "E": 70, "C": 90}
+    },
+    "ProudIndependent": {
+      "chineseName": "傲娇独立者",
+      "params": {"A": 40, "O": 30, "E": 60, "C": 80}
+    }
+  }
+}

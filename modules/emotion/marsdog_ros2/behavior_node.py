@@ -7,6 +7,7 @@ import json
 from marsdog_core import MarsdogBehaviorSystem
 from marsdog_ros2.action_feedback_adapter import ApplyActionFeedbackMessage
 from marsdog_ros2.perception_adapter import ApplyInteractionEventMessage, ApplyObservationMessage
+from marsdog_ros2.social_feedback_adapter import ApplySocialFeedbackMessage
 
 try:
     import rclpy
@@ -34,6 +35,7 @@ class BehaviorNode(Node):
         self.create_subscription(String, "/perception/observation", self.OnObservationMessage, 10)
         self.create_subscription(String, "/perception/interaction_event", self.OnInteractionEventMessage, 10)
         self.create_subscription(String, "marsdog/action_feedback", self.OnActionFeedbackMessage, 10)
+        self.create_subscription(String, "marsdog/social_feedback", self.OnSocialFeedbackMessage, 10)
         self.create_timer(0.1, self.Tick)
         self.create_timer(600.0, self.UpdateDemandTick)
 
@@ -68,6 +70,10 @@ class BehaviorNode(Node):
     def OnActionFeedbackMessage(self, message) -> None:
         """处理动作执行层反馈消息。"""
         ApplyActionFeedbackMessage(self.system, message)
+
+    def OnSocialFeedbackMessage(self, message) -> None:
+        """处理人类或动物对主动社交的回应。"""
+        ApplySocialFeedbackMessage(self.system, message)
 
 
 def main(args=None) -> None:

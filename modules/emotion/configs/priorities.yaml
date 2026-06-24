@@ -41,17 +41,15 @@
         "level": 2,
         "name": "人类社交事件",
         "source": "event",
-        "eventTags": ["OwnerCall", "HumanApproach"],
-        "demand": "Social",
-        "operator": "gt",
-        "threshold": 70,
-        "action": "ACTION_SOCIAL_GREET"
+        "eventTags": ["OwnerCall"],
+        "action": "ACTION_SOCIAL_GREET",
+        "score": 90
       },
       {
         "level": 2,
         "name": "环境变化事件",
         "source": "event",
-        "eventTags": ["EnvironmentChange", "NewObject", "NewSound", "NewSmell"],
+        "eventTags": ["EnvironmentChange", "NewObject", "OldObject", "NewSound", "NewSmell"],
         "metadataThreshold": {"key": "value", "operator": "gt", "threshold": 40},
         "action": "ACTION_OBJECT_EXPLORE"
       },
@@ -78,16 +76,17 @@
         "name": "社交动机",
         "source": "demand",
         "demand": "Social",
-        "operator": "lte",
-        "threshold": 30,
-        "action": "ACTION_ATTENTION_SEEK"
+        "operator": "gt",
+        "threshold": 60,
+        "action": "ACTION_ATTENTION_SEEK",
+        "actionFromState": "socialPendingAction"
       },
       {
         "level": 4,
         "name": "探索动机",
         "source": "demand",
         "demand": "Exploration",
-        "operator": "gte",
+        "operator": "gt",
         "threshold": 60,
         "action": "ACTION_EXPLORE"
       },

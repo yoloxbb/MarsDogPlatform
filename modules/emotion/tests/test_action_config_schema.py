@@ -1,6 +1,7 @@
 import unittest
 
 from marsdog_core.config_loader import LoadConfig
+from marsdog_core.types import ConcreteActionType
 
 
 class ActionConfigSchemaTest(unittest.TestCase):
@@ -30,7 +31,7 @@ class ActionConfigSchemaTest(unittest.TestCase):
                     self.assertGreaterEqual(len(plan["randomStepsByPhase"][phase]), 1)
 
     def test_priority_thresholds_match_demand_trigger_table(self):
-        """行为优先级中的生理需求阈值应与需求表触发阈值一致。"""
+        """行为优先级中的需求阈值应与需求表触发阈值一致。"""
         config = LoadConfig("priorities")
         rulesByDemand = {
             rule["demand"]: rule
@@ -40,6 +41,8 @@ class ActionConfigSchemaTest(unittest.TestCase):
                 "Bladder",
                 "Sleepiness",
                 "Cleanliness",
+                "Social",
+                "Exploration",
             }
         }
 
@@ -48,10 +51,27 @@ class ActionConfigSchemaTest(unittest.TestCase):
             "Bladder": ("gt", 75),
             "Sleepiness": ("gt", 65),
             "Cleanliness": ("gt", 70),
+            "Social": ("gt", 60),
+            "Exploration": ("gt", 60),
         }
         for demand, (operator, threshold) in expectedRules.items():
             self.assertEqual(rulesByDemand[demand]["operator"], operator)
             self.assertEqual(rulesByDemand[demand]["threshold"], threshold)
+
+    def test_all_configured_concrete_actions_are_declared(self):
+        """动作配置中的所有 ACT 名称都应在 ConcreteActionType 中声明。"""
+        config = LoadConfig("actions")
+        declaredActions = {item.value for item in ConcreteActionType}
+        configuredActions = set()
+
+        for plans in config["actions"].values():
+            for plan in plans:
+                configuredActions.update(plan.get("steps", []))
+                configuredActions.update(plan.get("fixedSteps", []))
+                for phaseSteps in plan.get("randomStepsByPhase", {}).values():
+                    configuredActions.update(phaseSteps)
+
+        self.assertEqual(configuredActions - declaredActions, set())
 
 
 if __name__ == "__main__":

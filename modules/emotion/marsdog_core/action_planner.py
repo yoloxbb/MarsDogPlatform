@@ -53,13 +53,37 @@ class ActionPlanner:
 
     def _IsConditionMatched(self, condition: dict[str, Any]) -> bool:
         """判断动作规划条件是否满足。"""
+        if "all" in condition:
+            return all(self._IsConditionMatched(item) for item in condition["all"])
+        if "any" in condition:
+            return any(self._IsConditionMatched(item) for item in condition["any"])
         if "demand" in condition:
             value = self.state.demands.get(condition["demand"], 0)
         elif "emotion" in condition:
             value = self.state.emotions.get(condition["emotion"], 0)
+        elif "context" in condition:
+            value = getattr(self.state, str(condition["context"]), None)
+            return self._IsContextConditionMatched(value, condition)
         else:
             return True
         return IsConditionMatched(value, condition["operator"], float(condition["threshold"]))
+
+    def _IsContextConditionMatched(self, actualValue: object, condition: dict[str, Any]) -> bool:
+        """判断字符串或布尔类型的行为上下文条件。"""
+        operator = str(condition.get("operator", "eq"))
+        expectedValue = condition.get("value")
+        if operator == "eq":
+            return actualValue == expectedValue
+        if operator == "neq":
+            return actualValue != expectedValue
+        try:
+            return IsConditionMatched(
+                float(actualValue),
+                operator,
+                float(condition.get("threshold", expectedValue)),
+            )
+        except (TypeError, ValueError):
+            return False
 
     def _FlattenSteps(self, plan: dict[str, Any]) -> list[str]:
         """把分阶段动作配置展开为线性动作序列。"""

@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import random
+import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from .action_planner import ActionPlanner
 from .arbiter import BehaviorArbiter
@@ -18,9 +19,12 @@ from .demand_api import DemandAPI
 from .energy_behavior import EnergyBehaviorAPI
 from .emotion_api import EmotionAPI
 from .event_api import EventAPI
+from .exploration_behavior import ExplorationBehaviorAPI
 from .hunger_behavior import HungerBehaviorAPI
+from .personality_api import PersonalityAPI
 from .sensor_api import SensorInputAPI
 from .sleepiness_behavior import SleepinessBehaviorAPI
+from .social_behavior import SocialBehaviorAPI
 from .state import ActionDecision, MarsdogState
 from .types import (
     ActionFeedbackStatus,
@@ -28,6 +32,7 @@ from .types import (
     ActionType,
     NormalizeActionFeedbackStatus,
     NormalizePriorityMode,
+    SocialInteractionState,
 )
 
 
@@ -42,6 +47,9 @@ class MarsdogBehaviorSystem(
     EnergyBehaviorAPI,
     HungerBehaviorAPI,
     SleepinessBehaviorAPI,
+    SocialBehaviorAPI,
+    ExplorationBehaviorAPI,
+    PersonalityAPI,
     DebugAPI,
 ):
     """Marsdog 行为系统核心入口。"""
@@ -50,11 +58,13 @@ class MarsdogBehaviorSystem(
         self,
         configDir: str | Path | None = None,
         randomGenerator: random.Random | None = None,
+        timeProvider: Callable[[], float] | None = None,
     ) -> None:
         """初始化核心行为系统。"""
         self.state = MarsdogState()
         self.configs = LoadAllConfigs(configDir)
         self.random = randomGenerator or random.Random()
+        self._timeProvider = timeProvider or time.time
         self._emotionCallbacks = []
         self._eventHandlers: dict[str, list[Any]] = {}
         self.arbiter = BehaviorArbiter(self.state, self.configs)
@@ -67,9 +77,12 @@ class MarsdogBehaviorSystem(
         """行为树引擎主循环，每帧调用一次。"""
         if applyDemandGrowth:
             self.UpdateNaturalDemandsByTime(currentTime)
+        self.UpdateSocialInteractionState()
+        self.PrepareSocialActionIntent()
         if hasattr(self, "UpdateSleepTriggerState"):
             self.UpdateSleepTriggerState(currentTime)
         decision = self.arbiter.DecideNextAction()
+        self._InterruptWaitingSocialIfNeeded(decision)
         self._ApplyDecision(decision)
         self.state.pendingEvents.clear()
 
@@ -116,6 +129,7 @@ class MarsdogBehaviorSystem(
             "concreteAction": self.state.currentActionCommandConcreteAction,
             "stepIndex": self.state.currentActionCommandStepIndex,
             "behaviorTreeStatus": self.GetCurrentBehaviorTreeStatus(),
+            **self._GetActionCommandContext(),
         }
 
     def OnActionFeedback(
@@ -203,10 +217,18 @@ class MarsdogBehaviorSystem(
             if self._IsInterruptedByHigherPriority(decision.level):
                 self.state.previousAction = self.state.currentAction
                 self.state.previousDemandType = self.state.currentDemandType
+                if self.IsSocialAction(self.state.currentAction):
+                    self.OnSocialActionInterrupted()
+                if self.IsExplorationAction(self.state.currentAction):
+                    self.OnExplorationActionStopped("Interrupted")
                 self.InterruptCurrentBehaviorTree()
                 if self.state.currentDemandType is not None:
-                    self.ExecuteDemandInterrupted(self.state.currentDemandType)
+                    self._ApplyInterruptedDemandResult(self.state.currentDemandType)
             self.state.currentAction = action
+            if self.IsSocialAction(action):
+                self.StartSocialInteractionForDecision(action, decision.source)
+            if self.IsExplorationAction(action):
+                self.StartExplorationForDecision(action)
             self._StartBehaviorTree(action)
 
         self.state.currentPriorityLevel = decision.level
@@ -263,6 +285,10 @@ class MarsdogBehaviorSystem(
             self.ExecuteGroom()
         elif self._behaviorTreeAction == ActionType.ACTION_RECHARGE.value:
             self.ExecuteRecharge()
+        elif self.IsSocialAction(self._behaviorTreeAction):
+            self.ExecuteSocialInteraction()
+        elif self.IsExplorationAction(self._behaviorTreeAction):
+            self.ExecuteExploration()
         self._behaviorTreeResultApplied = True
 
     def _EnsureCurrentConcreteActionReady(self) -> None:
@@ -317,17 +343,26 @@ class MarsdogBehaviorSystem(
     def _ApplyActionFeedbackInterrupted(self) -> bool:
         """处理具体动作被外部中断的反馈。"""
         interruptedDemand = self.state.currentDemandType
+        if self.IsSocialAction(self.state.currentAction):
+            self.OnSocialActionInterrupted()
+        if self.IsExplorationAction(self.state.currentAction):
+            self.OnExplorationActionStopped("Interrupted")
         self.InterruptCurrentBehaviorTree()
         if interruptedDemand is not None:
-            self.ExecuteDemandInterrupted(interruptedDemand)
+            self._ApplyInterruptedDemandResult(interruptedDemand)
         self._ResetCurrentActionAfterFeedbackStop()
         return True
 
     def _ApplyActionFeedbackFailure(self) -> bool:
         """处理具体动作执行失败反馈。"""
         failedDemand = self.state.currentDemandType
+        isSocialAction = self.IsSocialAction(self.state.currentAction)
+        if isSocialAction:
+            self.OnSocialActionFailed()
+        if self.IsExplorationAction(self.state.currentAction):
+            self.OnExplorationActionStopped("Failed")
         self.InterruptCurrentBehaviorTree()
-        if failedDemand is not None:
+        if failedDemand is not None and not isSocialAction:
             self.ApplyActionResultEmotion(ActionResultType.DEMAND_UNSATISFIED)
         self._ResetCurrentActionAfterFeedbackStop()
         return True
@@ -340,3 +375,38 @@ class MarsdogBehaviorSystem(
         self.state.currentPriorityLevel = 6
         self.state.currentDemandType = None
         self.state.actionQueue = [ActionType.ACTION_LOAF.value]
+
+    def _ApplyInterruptedDemandResult(self, demandType: str) -> None:
+        """应用需求被打断结果，社交需求本期不修改情绪。"""
+        if demandType == "Social":
+            self.ApplyInterruptedDemandDelta(demandType)
+            return
+        self.ExecuteDemandInterrupted(demandType)
+
+    def _GetActionCommandContext(self) -> dict[str, Any]:
+        """获取需要随动作命令下发的业务上下文。"""
+        if self.IsSocialAction(self.state.currentAction) and self.state.socialInteractionId:
+            return {"context": {
+                "interactionId": self.state.socialInteractionId,
+                "initiator": self.state.socialInteractionInitiator,
+                "targetType": self.state.socialInteractionTargetType,
+            }}
+        if self.IsExplorationAction(self.state.currentAction):
+            return {"context": {
+                "targetType": self.state.explorationCurrentTargetType,
+                "targetId": self.state.explorationCurrentTargetId,
+                "discoveryType": self.state.explorationCurrentDiscoveryType,
+            }}
+        return {}
+
+    def _InterruptWaitingSocialIfNeeded(self, decision: ActionDecision) -> None:
+        """高优先级非社交行为命中时关闭等待回应的社交会话。"""
+        if (
+            self.state.socialInteractionState == SocialInteractionState.WAITING_RESPONSE.value
+            and decision.level <= 3
+            and not self.IsSocialAction(decision.action)
+        ):
+            self.OnSocialActionInterrupted()
+            self.ApplyInterruptedDemandDelta("Social")
+            if self.state.currentDemandType == "Social":
+                self.state.currentDemandType = None

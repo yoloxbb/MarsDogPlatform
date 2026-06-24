@@ -163,6 +163,292 @@
           ]
         }
       }
+    ],
+    "ACTION_SOCIAL_GREET": [
+      {
+        "name": "回应主人",
+        "condition": {
+          "all": [
+            {"context": "socialInteractionInitiator", "operator": "eq", "value": "Owner"},
+            {"context": "socialInteractionTargetType", "operator": "eq", "value": "Human"}
+          ]
+        },
+        "phaseOrder": ["greet"],
+        "randomSelection": {"greet": {"count": 1}},
+        "randomStepsByPhase": {
+          "greet": [
+            "ACT_RUB_AGAINST_LEG_OR_LEAN",
+            "ACT_NUDGE_HAND_WITH_HEAD",
+            "ACT_SIT_OR_LIE_AT_FEET",
+            "ACT_LICK_HAND_OR_FACE",
+            "ACT_WHINE_OR_BARK_SOFTLY"
+          ]
+        }
+      },
+      {
+        "name": "动物社交问候",
+        "condition": {"context": "socialInteractionTargetType", "operator": "eq", "value": "Animal"},
+        "phaseOrder": ["greet"],
+        "randomSelection": {"greet": {"count": 1}},
+        "randomStepsByPhase": {
+          "greet": [
+            "ACT_SNIFF_FACE_OR_EARS",
+            "ACT_SNIFF_BUTT_OR_TAIL",
+            "ACT_TOUCH_NOSE_OR_HEAD_GENTLY",
+            "ACT_APPROACH_SLOWLY_SIDEWAYS",
+            "ACT_LOWER_HEAD_FLOP_EARS_WAG_TAIL",
+            "ACT_LIE_BESIDE_OTHER_ANIMAL"
+          ]
+        }
+      }
+    ],
+    "ACTION_ATTENTION_SEEK": [
+      {
+        "name": "寻找主人并发起互动",
+        "condition": {
+          "all": [
+            {"context": "socialInteractionTargetType", "operator": "eq", "value": "Human"},
+            {"context": "socialInteractionTargetVisible", "operator": "eq", "value": false}
+          ]
+        },
+        "fixedSteps": ["ACT_SEARCH_FOR_PERSON"],
+        "phaseOrder": ["interaction"],
+        "randomSelection": {"interaction": {"count": 1}},
+        "randomStepsByPhase": {
+          "interaction": [
+            "ACT_RUB_AGAINST_LEG_OR_LEAN",
+            "ACT_NUDGE_HAND_WITH_HEAD",
+            "ACT_SIT_OR_LIE_AT_FEET",
+            "ACT_LICK_HAND_OR_FACE",
+            "ACT_DROP_TOY_IN_FRONT_OF_OWNER",
+            "ACT_WHINE_OR_BARK_SOFTLY",
+            "ACT_PAW_AT_ARM_OR_PANTS",
+            "ACT_JUMP_ON_PERSON",
+            "ACT_FOLLOW_AND_CLING"
+          ]
+        }
+      },
+      {
+        "name": "对人关注互动",
+        "condition": {"context": "socialInteractionTargetType", "operator": "eq", "value": "Human"},
+        "phaseOrder": ["interaction"],
+        "randomSelection": {"interaction": {"count": 1}},
+        "randomStepsByPhase": {
+          "interaction": [
+            "ACT_RUB_AGAINST_LEG_OR_LEAN",
+            "ACT_NUDGE_HAND_WITH_HEAD",
+            "ACT_SIT_OR_LIE_AT_FEET",
+            "ACT_LICK_HAND_OR_FACE",
+            "ACT_DROP_TOY_IN_FRONT_OF_OWNER",
+            "ACT_WHINE_OR_BARK_SOFTLY",
+            "ACT_PAW_AT_ARM_OR_PANTS",
+            "ACT_JUMP_ON_PERSON",
+            "ACT_FOLLOW_AND_CLING"
+          ]
+        }
+      }
+    ],
+    "ACTION_PLAY_INVITE": [
+      {
+        "name": "邀请人类玩耍",
+        "condition": {"context": "socialInteractionTargetType", "operator": "eq", "value": "Human"},
+        "phaseOrder": ["invite"],
+        "randomSelection": {"invite": {"count": 1}},
+        "randomStepsByPhase": {
+          "invite": [
+            "ACT_PLAY_BOW",
+            "ACT_SHAKE_TOY_WITH_MOUTH",
+            "ACT_RUN_IN_CIRCLES_OR_ZOOMIES",
+            "ACT_NIP_GENTLY_AT_PANTS_OR_HAND",
+            "ACT_PLACE_PAW_ON_KNEE"
+          ]
+        }
+      },
+      {
+        "name": "邀请动物玩耍",
+        "condition": {"context": "socialInteractionTargetType", "operator": "eq", "value": "Animal"},
+        "phaseOrder": ["invite"],
+        "randomSelection": {"invite": {"count": 1}},
+        "randomStepsByPhase": {
+          "invite": [
+            "ACT_PLAY_BOW",
+            "ACT_CARRY_AND_SHAKE_OBJECT",
+            "ACT_POUNCE_GENTLY",
+            "ACT_RUN_IN_CIRCLES_OR_CHASE",
+            "ACT_PAW_GENTLY_AT_OTHER"
+          ]
+        }
+      }
+    ],
+    "ACTION_RESOURCE_SHARE": [
+      {
+        "name": "对人资源互动",
+        "condition": {"context": "socialInteractionTargetType", "operator": "eq", "value": "Human"},
+        "phaseOrder": ["resource"],
+        "randomSelection": {"resource": {"count": 1}},
+        "randomStepsByPhase": {
+          "resource": [
+            "ACT_GUARD_FOOD_BOWL_OR_SNACK_CABINET",
+            "ACT_SCRATCH_FOOD_BOWL_OR_SNACK_CABINET",
+            "ACT_CARRY_LEASH_OR_SHOE",
+            "ACT_STARE_AT_FOOD_IN_HAND",
+            "ACT_PRESS_BELL_OR_TRIGGER_MECHANISM"
+          ]
+        }
+      }
+    ],
+    "ACTION_BOUNDARY_TEST": [
+      {
+        "name": "动物边界试探",
+        "condition": {"context": "socialInteractionTargetType", "operator": "eq", "value": "Animal"},
+        "phaseOrder": ["boundary"],
+        "randomSelection": {"boundary": {"count": 1}},
+        "randomStepsByPhase": {
+          "boundary": [
+            "ACT_BARK_OR_HOWL",
+            "ACT_STARE_AND_TILT_HEAD"
+          ]
+        }
+      }
+    ],
+    "ACTION_EXPLORE": [
+      {
+        "name": "空间探索",
+        "phaseOrder": ["explore"],
+        "randomSelection": {"explore": {"count": 1}},
+        "randomStepsByPhase": {
+          "explore": [
+            "ACT_TROT_AND_LOOK_AROUND",
+            "ACT_WALK_SLOWLY_AND_SNIFF_GROUND",
+            "ACT_CRAWL_THROUGH_LOW_GAP",
+            "ACT_STAND_AND_SCRATCH_HIGH",
+            "ACT_SCRATCH_DOOR_OR_FENCE",
+            "ACT_FIND_COOL_SPOT_AND_LIE_DOWN"
+          ]
+        }
+      }
+    ],
+    "ACTION_SPACE_EXPLORE": [
+      {
+        "name": "空间探索",
+        "phaseOrder": ["explore"],
+        "randomSelection": {"explore": {"count": 1}},
+        "randomStepsByPhase": {
+          "explore": [
+            "ACT_TROT_AND_LOOK_AROUND",
+            "ACT_WALK_SLOWLY_AND_SNIFF_GROUND",
+            "ACT_CRAWL_THROUGH_LOW_GAP",
+            "ACT_STAND_AND_SCRATCH_HIGH",
+            "ACT_SCRATCH_DOOR_OR_FENCE",
+            "ACT_FIND_COOL_SPOT_AND_LIE_DOWN"
+          ]
+        }
+      }
+    ],
+    "ACTION_OBJECT_EXPLORE": [
+      {
+        "name": "探索拖鞋或袜子",
+        "condition": {"context": "explorationCurrentTargetType", "operator": "eq", "value": "SlippersOrSocks"},
+        "phaseOrder": ["explore"],
+        "randomSelection": {"explore": {"count": 1}},
+        "randomStepsByPhase": {
+          "explore": [
+            "ACT_IGNORE_SLIPPERS_OR_SOCKS",
+            "ACT_BITE_SLIPPERS_OR_SOCKS",
+            "ACT_POUNCE_ON_SLIPPERS_OR_SOCKS",
+            "ACT_CARRY_SLIPPERS_OR_SOCKS_TO_PERSON",
+            "ACT_SCRATCH_SLIPPERS_OR_SOCKS_WITH_PAW",
+            "ACT_SNIFF_SLIPPERS_OR_SOCKS"
+          ]
+        }
+      },
+      {
+        "name": "探索垃圾桶",
+        "condition": {"context": "explorationCurrentTargetType", "operator": "eq", "value": "TrashCan"},
+        "phaseOrder": ["explore"],
+        "randomSelection": {"explore": {"count": 1}},
+        "randomStepsByPhase": {
+          "explore": [
+            "ACT_IGNORE_TRASH_CAN",
+            "ACT_RUMMAGE_THROUGH_TRASH_CAN",
+            "ACT_SNIFF_TRASH_CAN"
+          ]
+        }
+      },
+      {
+        "name": "探索快递盒子",
+        "condition": {"context": "explorationCurrentTargetType", "operator": "eq", "value": "DeliveryBox"},
+        "phaseOrder": ["explore"],
+        "randomSelection": {"explore": {"count": 1}},
+        "randomStepsByPhase": {
+          "explore": [
+            "ACT_IGNORE_DELIVERY_BOX",
+            "ACT_SNIFF_DELIVERY_BOX",
+            "ACT_BITE_DELIVERY_BOX",
+            "ACT_CARRY_DELIVERY_BOX_TO_PERSON",
+            "ACT_SCRATCH_DELIVERY_BOX_WITH_PAW"
+          ]
+        }
+      },
+      {
+        "name": "探索纸巾",
+        "condition": {"context": "explorationCurrentTargetType", "operator": "eq", "value": "Tissue"},
+        "phaseOrder": ["explore"],
+        "randomSelection": {"explore": {"count": 1}},
+        "randomStepsByPhase": {
+          "explore": [
+            "ACT_IGNORE_TISSUE",
+            "ACT_SNIFF_TISSUE",
+            "ACT_SCRATCH_TISSUE_WITH_PAW",
+            "ACT_CARRY_TISSUE_TO_PERSON"
+          ]
+        }
+      },
+      {
+        "name": "探索门",
+        "condition": {"context": "explorationCurrentTargetType", "operator": "eq", "value": "Door"},
+        "phaseOrder": ["explore"],
+        "randomSelection": {"explore": {"count": 1}},
+        "randomStepsByPhase": {
+          "explore": [
+            "ACT_IGNORE_DOOR",
+            "ACT_LEAN_AGAINST_DOOR",
+            "ACT_LIE_BY_DOOR",
+            "ACT_SCRATCH_DOOR",
+            "ACT_SNIFF_AROUND_DOOR"
+          ]
+        }
+      },
+      {
+        "name": "探索人物或地图",
+        "condition": {
+          "any": [
+            {"context": "explorationCurrentTargetType", "operator": "eq", "value": "Human"},
+            {"context": "explorationCurrentTargetType", "operator": "eq", "value": "Map"}
+          ]
+        },
+        "phaseOrder": ["explore"],
+        "randomSelection": {"explore": {"count": 1}},
+        "randomStepsByPhase": {
+          "explore": [
+            "ACT_TROT_AND_LOOK_AROUND",
+            "ACT_STARE_AND_TILT_HEAD"
+          ]
+        }
+      },
+      {
+        "name": "探索一般物品",
+        "phaseOrder": ["explore"],
+        "randomSelection": {"explore": {"count": 1}},
+        "randomStepsByPhase": {
+          "explore": [
+            "ACT_TOUCH_OR_CARRY_OBJECT_WITH_MOUTH",
+            "ACT_BARK_AT_OBJECT",
+            "ACT_KNOCK_OVER_OBJECT",
+            "ACT_NIBBLE_OBJECT"
+          ]
+        }
+      }
     ]
   }
 }

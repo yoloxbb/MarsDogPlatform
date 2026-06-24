@@ -75,6 +75,9 @@ fixedSteps -> phaseOrder 中声明的各阶段随机动作
 - `randomPolicy.mode` 当前只支持 `sample_without_replacement`。
 - `name` 必须清晰表达分支含义。
 - `condition` 可选；无条件分支作为兜底分支时应放在列表最后。
+- `condition` 支持需求/情绪数值条件，也支持社交上下文条件：
+  - `{"context": "socialInteractionTargetType", "operator": "eq", "value": "Human"}`
+  - 多条件使用 `{"all": [...]}` 或 `{"any": [...]}`。
 - `steps` 和 `randomStepsByPhase` 二选一，不要同时使用。
 - 使用 `randomStepsByPhase` 时必须同时声明：
   - `phaseOrder`
@@ -110,3 +113,13 @@ fixedSteps -> phaseOrder 中声明的各阶段随机动作
 - `ACTION_RECHARGE`
   - `Energy < 10`：严重低电量分支，先返回充电桩，再执行找不到充电桩时的原地求助动作。
   - `Energy < 20`：低电量分支，从原地喘气、反抗往前走、动作变慢中随机抽取 1 个动作。
+- 社交行为
+  - `ACTION_SOCIAL_GREET`：主人回应或动物问候。
+  - `ACTION_ATTENTION_SEEK`：看到人时随机关注动作；没有目标时先执行 `ACT_SEARCH_FOR_PERSON`。
+  - `ACTION_PLAY_INVITE`：按 Human/Animal 选择不同邀请动作池。
+  - `ACTION_RESOURCE_SHARE`：对人资源互动。
+  - `ACTION_BOUNDARY_TEST`：动物边界试探。
+- 探索行为
+  - `ACTION_EXPLORE / ACTION_SPACE_EXPLORE`：从空间探索动作池随机抽取 1 个动作。
+  - `ACTION_OBJECT_EXPLORE`：按 `explorationCurrentTargetType` 匹配特定物品动作池。
+  - 支持 `SlippersOrSocks / TrashCan / DeliveryBox / Tissue / Door / Human / Map / GenericObject`。

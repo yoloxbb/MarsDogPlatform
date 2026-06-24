@@ -16,27 +16,58 @@ def ApplyObservationMessage(system: Any, message: object) -> list[str]:
     faces = _GetList(payload, "faces")
     humans = _GetList(payload, "humans")
     trackedObjects = _GetList(payload, "tracked_objects")
+    animalObjects = [item for item in trackedObjects if _IsAnimalObject(item)]
+    otherObjects = [item for item in trackedObjects if not _IsAnimalObject(item)]
 
-    if faces or humans:
-        confidence = max(_MaxConfidence(faces), _MaxConfidence(humans))
-        metadata = {
-            "faceCount": len(faces),
-            "humanCount": len(humans),
-            "confidence": confidence,
-        }
-        system.OnVisionInput("HumanApproach", metadata)
-        emittedEvents.append("HumanApproach")
+    humanVisible = bool(faces or humans)
+    animalVisible = bool(animalObjects)
+    if hasattr(system, "SetSocialTargetVisibility"):
+        system.SetSocialTargetVisibility(humanVisible, animalVisible)
 
-    if trackedObjects:
-        confidence = _MaxConfidence(trackedObjects)
+    if humanVisible:
+        emittedEvents.append("HumanVisible")
+
+    if animalObjects:
+        confidence = _MaxConfidence(animalObjects)
         metadata = {
-            "objectCount": len(trackedObjects),
-            "objects": trackedObjects,
+            "animalCount": len(animalObjects),
+            "animals": animalObjects,
             "confidence": confidence,
             "value": _ConfidenceToScore(confidence),
         }
-        system.OnVisionInput("NewObject", metadata)
-        emittedEvents.append("NewObject")
+        system.PostEvent("AnimalApproach", metadata)
+        emittedEvents.append("AnimalApproach")
+
+    if otherObjects:
+        targetObject = max(
+            otherObjects,
+            key=lambda item: _GetFloat(item, "confidence", 0.0),
+        )
+        confidence = _GetFloat(targetObject, "confidence", 0.0)
+        metadata = {
+            "objectCount": len(otherObjects),
+            "objects": otherObjects,
+            "targetObject": targetObject,
+            "confidence": confidence,
+            "value": _ConfidenceToScore(confidence),
+        }
+        if hasattr(system, "OnExplorationTargetDetected"):
+            accepted = system.OnExplorationTargetDetected(
+                _GetExplorationTargetType(targetObject),
+                _GetExplorationTargetId(targetObject),
+                _GetExplorationDiscoveryType(targetObject),
+                metadata,
+            )
+            if accepted:
+                eventTag = (
+                    "OldObject"
+                    if system.state.explorationPendingDiscoveryType == "Old"
+                    else "NewObject"
+                )
+                emittedEvents.append(eventTag)
+        else:
+            system.OnVisionInput("NewObject", metadata)
+            emittedEvents.append("NewObject")
 
     return emittedEvents
 
@@ -64,8 +95,12 @@ def ApplyInteractionEventMessage(system: Any, message: object) -> list[str]:
 def _ApplyWakeupEvent(system: Any, payload: dict[str, Any]) -> list[str]:
     """处理唤醒事件。"""
     confidence = _GetFloat(payload, "wake_confidence", 1.0)
-    direction = str(payload.get("wake_angle", "unknown"))
-    system.OnVoiceInput("OwnerCall", direction, confidence)
+    metadata = dict(payload)
+    metadata["direction"] = str(payload.get("wake_angle", "unknown"))
+    metadata["confidence"] = confidence
+    if hasattr(system, "OnOwnerInteractionEvent"):
+        return ["OwnerCall"] if system.OnOwnerInteractionEvent(metadata) else []
+    system.PostEvent("OwnerCall", metadata)
     return ["OwnerCall"]
 
 
@@ -74,7 +109,10 @@ def _ApplySpeechEvent(system: Any, payload: dict[str, Any]) -> list[str]:
     metadata = dict(payload)
     metadata["value"] = _ConfidenceToScore(_GetFloat(payload, "speaker_confidence", 0.0))
     system.PostEvent("VoiceInput", metadata)
-    return ["VoiceInput"]
+    emittedEvents = ["VoiceInput"]
+    if hasattr(system, "OnOwnerInteractionEvent") and system.OnOwnerInteractionEvent(metadata):
+        emittedEvents.append("OwnerCall")
+    return emittedEvents
 
 
 def _ApplyIntentEvent(system: Any, payload: dict[str, Any]) -> list[str]:
@@ -82,6 +120,8 @@ def _ApplyIntentEvent(system: Any, payload: dict[str, Any]) -> list[str]:
     commandId = str(payload.get("command_id", "")).strip()
     metadata = dict(payload)
     if _IsOwnerInteractionCommand(commandId, payload):
+        if hasattr(system, "OnOwnerInteractionEvent"):
+            return ["OwnerCall"] if system.OnOwnerInteractionEvent(metadata) else []
         system.PostEvent("OwnerCall", metadata)
         return ["OwnerCall"]
     system.PostEvent("Intent", metadata)
@@ -114,6 +154,10 @@ def _ApplyStateEvent(system: Any, payload: dict[str, Any]) -> list[str]:
             system.UpdateSleepinessByTime()
     elif state in {"lights_on", "light_on", "bright", "开灯"} and hasattr(system, "SetLightsOffValue"):
         system.SetLightsOffValue(False)
+    elif state in {"owner_left_home", "owner_away", "主人离家"} and hasattr(system, "OnOwnerPresenceChanged"):
+        system.OnOwnerPresenceChanged(False)
+    elif state in {"owner_at_home", "owner_home", "主人在家"} and hasattr(system, "OnOwnerPresenceChanged"):
+        system.OnOwnerPresenceChanged(True)
 
     system.PostEvent("StateChange", dict(payload))
     return ["StateChange"]
@@ -191,6 +235,55 @@ def _MaxConfidence(items: list[dict[str, Any]]) -> float:
 def _ConfidenceToScore(confidence: float) -> float:
     """把 0-1 置信度转换为 0-100 分值。"""
     return confidence * 100.0 if 0.0 <= confidence <= 1.0 else confidence
+
+
+def _IsAnimalObject(item: dict[str, Any]) -> bool:
+    """判断跟踪物体是否属于可社交动物。"""
+    label = str(item.get("label", "")).strip().lower()
+    return label in {"dog", "cat", "animal", "狗", "猫", "动物"}
+
+
+def _GetExplorationTargetType(item: dict[str, Any]) -> str:
+    """把感知标签映射到探索动作池目标类型。"""
+    label = str(item.get("label", "")).strip().lower()
+    if label in {"slipper", "slippers", "sock", "socks", "拖鞋", "袜子"}:
+        return "SlippersOrSocks"
+    if label in {"trash_can", "trashcan", "garbage_can", "垃圾桶"}:
+        return "TrashCan"
+    if label in {"delivery_box", "parcel", "package", "快递盒", "快递箱"}:
+        return "DeliveryBox"
+    if label in {"tissue", "paper_tissue", "纸巾"}:
+        return "Tissue"
+    if label in {"door", "门"}:
+        return "Door"
+    if label in {"person", "human", "人"}:
+        return "Human"
+    if label in {"map", "地图"}:
+        return "Map"
+    return "GenericObject"
+
+
+def _GetExplorationTargetId(item: dict[str, Any]) -> str:
+    """获取用于新旧目标去重的稳定标识。"""
+    for key in ("tracking_id", "track_id", "id", "object_id"):
+        value = item.get(key)
+        if value not in {None, ""}:
+            return str(value)
+    return str(item.get("label", "GenericObject"))
+
+
+def _GetExplorationDiscoveryType(item: dict[str, Any]) -> str | None:
+    """读取感知层显式提供的新旧目标标记。"""
+    value = item.get("discovery_type", item.get("novelty"))
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"new", "新", "新事物"}:
+            return "New"
+        if normalized in {"old", "known", "旧", "旧事物", "已知"}:
+            return "Old"
+    if "is_new" in item:
+        return "New" if bool(item["is_new"]) else "Old"
+    return None
 
 
 def _GetFloat(payload: dict[str, Any], key: str, default: float = 0.0) -> float:

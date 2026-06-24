@@ -21,6 +21,9 @@
 - `SleepinessBehaviorAPI`：困倦/睡眠状态机。
 - `CleanlinessBehaviorAPI`：清洁行为闭环。
 - `EnergyBehaviorAPI`：精力/电量行为闭环。
+- `SocialBehaviorAPI`：社交增长、目标选择和互动会话状态机。
+- `ExplorationBehaviorAPI`：探索增长、目标新旧识别、动作上下文和结果结算。
+- `PersonalityAPI`：性格预设和情绪性格系数计算。
 - 动作反馈接口：当前在 `MarsdogBehaviorSystem` 中提供 `GetCurrentActionCommand()` 和 `OnActionFeedback()`。
 - `DebugAPI`：系统状态、性格参数、调试开关。
 
@@ -49,12 +52,12 @@
 | Lv.0 | 低电量生命保障 | `Energy < 20` | `ACTION_RECHARGE` |
 | Lv.1 | 排泄 | `Bladder > 75` | `ACTION_DEFECATE` |
 | Lv.1 | 困倦 | `Sleepiness > 65` 且睡眠状态允许 | `ACTION_SLEEP` |
-| Lv.2 | 人类社交事件 | `OwnerCall / HumanApproach` 且 `Social > 70` | `ACTION_SOCIAL_GREET` |
-| Lv.2 | 环境变化事件 | `EnvironmentChange / NewObject / NewSound / NewSmell` 且 `metadata.value > 40` | `ACTION_OBJECT_EXPLORE` |
+| Lv.2 | 人类社交事件 | `OwnerCall`，不受 Social 阈值限制 | `ACTION_SOCIAL_GREET` |
+| Lv.2 | 环境变化事件 | `EnvironmentChange / NewObject / OldObject / NewSound / NewSmell` 且 `metadata.value > 40` | `ACTION_OBJECT_EXPLORE` |
 | Lv.3 | 饥渴 | `Hunger > 70` | `ACTION_EAT` |
 | Lv.3 | 清洁 | `Cleanliness > 70` | `ACTION_GROOM` |
-| Lv.4 | 社交动机 | `Social <= 30` | `ACTION_ATTENTION_SEEK` |
-| Lv.4 | 探索动机 | `Exploration >= 60` | `ACTION_EXPLORE` |
+| Lv.4 | 社交动机 | `Social > 60` 且没有活跃社交会话 | 根据目标随机选择社交行为 |
+| Lv.4 | 探索动机 | `Exploration > 60` | `ACTION_EXPLORE` |
 | Lv.5 | 愉悦表达 | `Joy >= 60` | `ACTION_WAG_TAIL` |
 | Lv.5 | 兴奋表达 | `Excite >= 60` | `ACTION_ZOOM` |
 | Lv.5 | 焦虑表达 | `Anxiety >= 50` | `ACTION_PACE` |
@@ -118,7 +121,7 @@
 - `ACTION_GROOM` -> `ExecuteGroom()`
 - `ACTION_RECHARGE` -> `ExecuteRecharge()`
 
-没有配置具体动作的顶层行为会退化为只输出顶层行为本身，例如部分社交、探索和情绪表达行为当前还没有完整动作树。
+没有配置具体动作的顶层行为会退化为只输出顶层行为本身，例如探索和情绪表达行为当前还没有完整动作树。
 
 ## 5. 全局需求生命周期
 
@@ -396,45 +399,96 @@
 
 ### 7.6 Social 社交
 
-当前状态：只实现了基础配置和仲裁入口，尚未实现社交反馈闭环。
+当前状态：已实现需求增长、动态行为选择、动作树、互动会话状态机和外部回应结算。
 
-当前配置：
+语义与配置：
 
-- 默认值：`60`
-- 触发规则 1：Lv.2 外部事件 `OwnerCall / HumanApproach` 且 `Social > 70` 时，输出 `ACTION_SOCIAL_GREET`
-- 触发规则 2：Lv.4 内部社交动机 `Social <= 30` 时，输出 `ACTION_ATTENTION_SEEK`
+- `Social` 数值越高表示社交欲望越强
+- 默认值：`20`
+- 晨起值：`random(20, 30) * k_social`，限制在 `0-100`
+- `k_social = (A/50)*0.8 + (E/50)*0.2`
+- 触发阈值：`Social > 60`
+- 满溢阈值：`Social > 80`
 
-当前限制：
+自然增长和事件：
 
-- 没有 `social_behavior.py`
-- 没有按时间增长/衰减 Social
-- 没有主人回应、忽略、互动成功等反馈事件结算
-- `ACTION_SOCIAL_GREET` 和 `ACTION_ATTENTION_SEEK` 当前没有配置具体动作树，会退化为顶层行为本身
+- `06:00-18:00`：每 10 分钟 `Social += 2`
+- `18:00-21:00`：每 10 分钟 `Social += 3`
+- `21:00-06:00`：不增长
+- 明确收到主人离家状态时：`Social += 30`，重复离家状态不重复增加
 
-需要注意：
+行为触发：
 
-之前讨论过，社交需求不适合像 `Hunger` 那样“动作完成就直接扣值”。它需要“发起动作 -> 等待外部反馈 -> 根据反馈结算”的闭环。当前这部分尚未实现。
+- 主人主动交互为 Lv.2，固定输出 `ACTION_SOCIAL_GREET`，不受 Social 阈值限制
+- 狗主动社交为 Lv.4，只有 `Social > 60` 且没有活跃会话时触发
+- 同时检测到人和动物时优先选择人类
+- 看到人时，从 `ACTION_ATTENTION_SEEK / ACTION_PLAY_INVITE / ACTION_RESOURCE_SHARE` 中等概率随机
+- 只看到动物时，从 `ACTION_SOCIAL_GREET / ACTION_PLAY_INVITE / ACTION_BOUNDARY_TEST` 中等概率随机
+- 没有目标时输出 `ACTION_ATTENTION_SEEK`，固定先执行 `ACT_SEARCH_FOR_PERSON`
+
+互动会话状态：
+
+```text
+Idle -> ExecutingAction -> WaitingResponse -> Completed/TimedOut
+                       \-> Interrupted/Failed
+```
+
+- 主人主动互动：动作树完成后立即 `Social -= 25`
+- 狗主动互动：动作树完成后进入 `WaitingResponse`
+- 人类回应：`Social -= 20`
+- 动物回应：`Social -= 15`
+- 30 秒无回应或明确拒绝：Social 不变
+- 重复、过期、目标不匹配或 interactionId 不匹配的反馈不会结算
+- 等待回应期间不重复发起社交
+- Lv.0-Lv.3 非社交行为可以中断执行中或等待中的社交，执行 `Social -= 20`
+- 本期社交成功、拒绝、超时和中断不修改情绪值
+
+性格预设：
+
+- `GentleCompanion`：`A/O/E/C = 85/75/30/40`
+- `SunnyExplorer`：`90/80/95/70`
+- `LoyalGuardian`：`70/90/70/90`
+- `ProudIndependent`：`40/30/60/80`
+
+当前提供 Joy、Excite、Anxiety、Curious、Calm 的性格系数计算接口，但这些系数尚未应用到现有情绪增量。
 
 ### 7.7 Exploration 探索
 
-当前状态：只实现了基础配置和仲裁入口，尚未实现完整需求闭环。
+当前状态：已实现晨起初始化、自然增长、空间/物品动作树和结果结算。
 
-当前配置：
+语义与配置：
 
-- 默认值：`0`
-- 触发阈值：`Exploration >= 60`
-- Lv.4 输出：`ACTION_EXPLORE`
+- `Exploration` 越高表示探索欲望越强
+- 默认值：`10`
+- 晨起值：`round(random(10, 20) * k_curious)`
+- `k_curious = (E/50) * (1 + 0.3*(1-C/100))`
+- 触发阈值：`Exploration > 60`
+- 满溢阈值：`Exploration > 80`
 
-外部事件：
+自然增长：
 
-- `EnvironmentChange / NewObject / NewSound / NewSmell` 且 `metadata.value > 40` 时，Lv.2 输出 `ACTION_OBJECT_EXPLORE`
+- `06:00-21:00` 且 `Energy > 50`：每 10 分钟 `Exploration += 5`
+- 其他时间或 `Energy <= 50`：不增长
+- 凌晨仍遵循全局需求锁定规则
 
-当前限制：
+行为和动作树：
 
-- 没有 `exploration_behavior.py`
-- 没有按时间或事件积累 Exploration 的专用逻辑
-- 没有探索完成后的恢复/满足规则
-- `ACTION_EXPLORE` 和 `ACTION_OBJECT_EXPLORE` 当前没有配置具体动作树，会退化为顶层行为本身
+- 主动探索为 Lv.4，输出 `ACTION_EXPLORE`
+- 新/旧目标和环境变化为 Lv.2，输出 `ACTION_OBJECT_EXPLORE`
+- 空间探索每次从空间动作池随机抽取 1 个动作，成功后 `Exploration -= 15`
+- 物品探索根据锁定目标选择拖鞋/袜子、垃圾桶、快递盒、纸巾、门或通用物品动作池
+- 人物或地图目标使用观察类动作
+
+新旧目标：
+
+- 感知可通过 `is_new`、`novelty` 或 `discovery_type` 显式指定
+- 未指定时，核心使用进程内 `targetId` 集合判断
+- 首次识别为 `New`，成功后 `Exploration -= 20`
+- 再次识别同一目标为 `Old`，成功后 `Exploration -= 10`
+- 待执行或执行中的同一目标不会被持续视觉重复覆盖
+- 主动探索被高优先级行为打断时，执行全局 `Exploration -= 20`
+
+已知目标集合暂时只保存在内存中，重启后会重新开始判断。
 
 ## 8. 外部事件和感知适配
 
@@ -458,8 +512,9 @@ ROS2 感知适配已按 `docs/MarsDog感知理解层ROS2说明文档.md` 接入�
 
 | 输入 | 条件 | 核心事件/状态 |
 |---|---|---|
-| `/perception/observation` | `faces[]` 或 `humans[]` 非空 | `HumanApproach` |
-| `/perception/observation` | `tracked_objects[]` 非空 | `NewObject` |
+| `/perception/observation` | `faces[]` 或 `humans[]` 非空 | 更新人类目标可见性，不生成主人主动事件 |
+| `/perception/observation` | `tracked_objects[].label` 为 dog/cat/animal | `AnimalApproach` 并更新动物目标可见性 |
+| `/perception/observation` | 其他 `tracked_objects[]` 非空 | 按 targetId 生成 `NewObject / OldObject` 并锁定探索目标类型 |
 | `/perception/interaction_event` | `event_type=wakeup` | `OwnerCall` |
 | `/perception/interaction_event` | `event_type=speech` | `VoiceInput` |
 | `/perception/interaction_event` | `event_type=intent` 且主人交互类命令 | `OwnerCall` |
@@ -467,6 +522,9 @@ ROS2 感知适配已按 `docs/MarsDog感知理解层ROS2说明文档.md` 接入�
 | `/perception/interaction_event` | `event_type=danger` | `Danger / Pain / Weightlessness` |
 | `/perception/interaction_event` | `state=lights_off` | `SetLightsOffValue(True)` 并立即刷新困倦 |
 | `/perception/interaction_event` | `state=lights_on` | `SetLightsOffValue(False)` |
+| `/perception/interaction_event` | `state=owner_left_home` | `OnOwnerPresenceChanged(False)`，Social 单次 `+30` |
+
+`wakeup / speech / 主人交互 intent` 在 10 秒窗口内合并为一个主人互动回合。
 
 ROS2 输出：
 
@@ -477,6 +535,7 @@ ROS2 输出：
 ROS2 输入：
 
 - `marsdog/action_feedback`：动作执行层反馈，JSON 格式
+- `marsdog/social_feedback`：人类或动物对狗主动社交的回应，JSON 格式
 
 注意：感知文档里的 `/dog/perception_task` service 当前还没有实现 client 调用。后续涉及找物、识别人脸、确认人在不在视野内等行为时，需要接入该 service。
 
@@ -491,6 +550,17 @@ ROS2 输入：
 }
 ```
 
+社交反馈 JSON 示例：
+
+```json
+{
+  "interactionId": "social-000001",
+  "targetType": "Human",
+  "responseType": "RESPONDED",
+  "metadata": {}
+}
+```
+
 ## 9. 当前已配置的 ACTION 行为树
 
 | 顶层行为 | 当前配置状态 |
@@ -500,10 +570,14 @@ ROS2 输入：
 | `ACTION_DEFECATE` | 已配置排泄动作树 |
 | `ACTION_GROOM` | 已配置清洁动作树 |
 | `ACTION_RECHARGE` | 已配置低电量和严重低电量动作树 |
-| `ACTION_SOCIAL_GREET` | 未配置具体动作树 |
-| `ACTION_ATTENTION_SEEK` | 未配置具体动作树 |
-| `ACTION_EXPLORE` | 未配置具体动作树 |
-| `ACTION_OBJECT_EXPLORE` | 未配置具体动作树 |
+| `ACTION_SOCIAL_GREET` | 已配置主人回应和动物问候动作树 |
+| `ACTION_ATTENTION_SEEK` | 已配置可见人类互动及寻找主人动作树 |
+| `ACTION_PLAY_INVITE` | 已配置人类和动物邀请玩耍动作树 |
+| `ACTION_RESOURCE_SHARE` | 已配置对人资源互动动作树 |
+| `ACTION_BOUNDARY_TEST` | 已配置动物边界试探动作树 |
+| `ACTION_EXPLORE` | 已配置空间探索动作池 |
+| `ACTION_SPACE_EXPLORE` | 已配置空间探索动作池 |
+| `ACTION_OBJECT_EXPLORE` | 已配置特定物品、人物/地图和通用物品动作树 |
 | 情绪表达类行为 | 未配置具体动作树 |
 
 未配置动作树的行为仍可被仲裁输出，但 `GetConcreteActionQueue()` 会返回顶层行为名本身。
@@ -526,31 +600,32 @@ python3 -m unittest discover -s tests
 - 优先级仲裁
 - 行为树推进和中断
 - 饥渴、排泄、困倦、清洁、精力需求逻辑
+- 社交增长、目标选择、会话状态机和回应结算
+- 探索增长、新旧目标识别、空间/物品动作树和结果结算
+- 性格预设与情绪性格系数
 - 动作命令生成和执行反馈闭环
 - ROS2 动作反馈 JSON 适配
+- ROS2 社交回应和动物目标适配
 - 动作配置结构
 - 感知理解层 ROS2 JSON 适配
 - 调试状态接口
 
 ## 11. 当前主要缺口
 
-1. 社交需求还没有反馈闭环。
-   - 缺少等待反馈状态。
-   - 缺少主人回应、主人忽略、玩耍接受、动物回应等事件结算。
-   - 缺少 `ACTION_SOCIAL_GREET / ACTION_ATTENTION_SEEK / ACTION_PLAY_INVITE` 动作树。
+1. 探索已知目标没有持久化。
+   - 当前已知 targetId 只保存在进程内存中，重启后会重新视为新目标。
 
-2. 探索需求还没有完整闭环。
-   - 缺少探索值积累规则。
-   - 缺少探索完成后的恢复规则。
-   - 缺少 `ACTION_EXPLORE / ACTION_OBJECT_EXPLORE` 动作树。
-
-3. ROS2 自定义消息和 service 尚未生成。
+2. ROS2 自定义消息和 service 尚未生成。
    - 当前 `/perception/observation` 和 `/perception/interaction_event` 用 `std_msgs/String` JSON 临时承载。
    - `/dog/perception_task` service 尚未接入。
 
-4. 行为执行反馈已有最小闭环，但还没有超时/取消策略。
+3. 行为执行反馈已有最小闭环，但还没有超时/取消策略。
    - 当前已支持 `SUCCESS / FAILURE / INTERRUPTED`。
    - 还没有动作超时重试、取消命令、执行节点健康检查等策略。
+
+4. 社交性格系数尚未作用到情绪变化。
+   - 当前只提供公式计算接口。
+   - 社交结果本期不会修改 Joy、Excite、Anxiety、Curious 或 Calm。
 
 5. 外部正在运行的动作尚未统一纳入核心状态。
    - 例如外部运动节点正在执行跟随主人，如果没有写入核心状态，核心系统无法自动感知和取消该外部动作。
@@ -559,9 +634,8 @@ python3 -m unittest discover -s tests
 
 建议优先级：
 
-1. 实现社交需求反馈闭环。
-2. 增加社交动作树配置。
-3. 在现有 `action_command / action_feedback` 基础上补充超时、取消、重试策略。
-4. 接入 `/dog/perception_task` service client。
-5. 实现探索需求闭环。
-6. 用正式 ROS2 msg/srv 替换当前 JSON String 临时协议。
+1. 在现有 `action_command / action_feedback` 基础上补充超时、取消、重试策略。
+2. 接入 `/dog/perception_task` service client。
+3. 为探索已知目标增加可选持久化。
+4. 决定社交结果何时正式作用到情绪性格系数。
+5. 用正式 ROS2 msg/srv 替换当前 JSON String 临时协议。
