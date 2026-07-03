@@ -1,0 +1,412 @@
+behaviors:
+  # ── Lv0: System ───────────────────────────────────────────────────────────
+  emergency_stop:
+    priority_level: 0
+    base_priority: 100
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.0
+    action_sequence:
+      - node: full_body
+        action: emergency_stop
+        duration: 0.5
+        safe_to_interrupt: true
+      - node: posture
+        action: sit_still
+        duration: 1.0
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  avoid_danger:
+    priority_level: 0
+    base_priority: 100
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: perception
+        action: locate_danger
+        duration: 0.3
+        safe_to_interrupt: true
+      - node: navigation
+        action: evade
+        duration: 1.5
+        safe_to_interrupt: false
+      - node: posture
+        action: alert_stand
+        duration: 0.5
+        safe_to_interrupt: true
+    style_modifiers:
+      alert:
+        ear_pose: alert
+        tail_pose: stiff
+
+  # ── Lv1: PhysioUrgent ─────────────────────────────────────────────────────
+  excretion_request:
+    priority_level: 1
+    base_priority: 95
+    interrupt_policy: safe_point
+    timeout_sec: 60.0
+    cooldown_sec: 0.0
+    action_sequence:
+      - node: navigation
+        action: find_spot
+        duration: 3.0
+        safe_to_interrupt: true
+      - node: posture
+        action: excrete
+        duration: 5.0
+        safe_to_interrupt: false
+    style_modifiers: {}
+
+  sleep_request:
+    priority_level: 1
+    base_priority: 90
+    interrupt_policy: safe_point
+    timeout_sec: 120.0
+    cooldown_sec: 0.0
+    action_sequence:
+      - node: navigation
+        action: go_to_bed
+        duration: 3.0
+        safe_to_interrupt: true
+      - node: posture
+        action: lie_down
+        duration: 2.0
+        safe_to_interrupt: true
+      - node: full_body
+        action: sleep
+        duration: 60.0
+        safe_to_interrupt: false
+    style_modifiers: {}
+
+  # ── Lv2: ExternalInteraction ──────────────────────────────────────────────
+  respond_owner_call:
+    priority_level: 2
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 8.0
+    cooldown_sec: 2.0
+    action_sequence:
+      - node: head_tail_ear
+        action: look_at_target
+        duration: 0.5
+        safe_to_interrupt: true
+      - node: vocalization
+        action: happy_bark
+        duration: 0.5
+        safe_to_interrupt: true
+      - node: navigation
+        action: approach_target
+        duration: 2.0
+        safe_to_interrupt: false
+      - node: posture
+        action: sit
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: head_tail_ear
+        action: wag_tail
+        duration: 1.0
+        safe_to_interrupt: true
+    style_modifiers:
+      happy:
+        tail_wag: fast
+        ear_pose: raised
+        voice_tone: excited
+
+  respond_wakeup_word:
+    priority_level: 2
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 6.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: head_tail_ear
+        action: look_at_source
+        duration: 0.5
+        safe_to_interrupt: true
+      - node: vocalization
+        action: acknowledge
+        duration: 0.3
+        safe_to_interrupt: true
+      - node: posture
+        action: attentive_sit
+        duration: 1.0
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  respond_touch_head:
+    priority_level: 2
+    base_priority: 75
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: head_tail_ear
+        action: lean_into_touch
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: head_tail_ear
+        action: wag_tail
+        duration: 1.5
+        safe_to_interrupt: true
+      - node: vocalization
+        action: pleased_sound
+        duration: 0.5
+        safe_to_interrupt: true
+    style_modifiers:
+      happy:
+        tail_wag: fast
+        ear_pose: relaxed
+
+  look_at_sound_source:
+    priority_level: 2
+    base_priority: 65
+    interrupt_policy: immediate
+    timeout_sec: 3.0
+    cooldown_sec: 0.5
+    action_sequence:
+      - node: head_tail_ear
+        action: turn_head
+        duration: 0.5
+        safe_to_interrupt: true
+      - node: perception
+        action: observe
+        duration: 1.0
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  inspect_environment_change:
+    priority_level: 2
+    base_priority: 60
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: perception
+        action: scan
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: navigation
+        action: approach
+        duration: 1.5
+        safe_to_interrupt: false
+      - node: perception
+        action: sniff
+        duration: 1.0
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  # ── Lv3: PhysioNormal ─────────────────────────────────────────────────────
+  seek_food_or_water:
+    priority_level: 3
+    base_priority: 70
+    interrupt_policy: safe_point
+    timeout_sec: 30.0
+    cooldown_sec: 5.0
+    action_sequence:
+      - node: perception
+        action: locate_resource
+        duration: 2.0
+        safe_to_interrupt: true
+      - node: navigation
+        action: approach_resource
+        duration: 3.0
+        safe_to_interrupt: false
+      - node: posture
+        action: consume
+        duration: 4.0
+        safe_to_interrupt: false
+    style_modifiers: {}
+
+  clean_self:
+    priority_level: 3
+    base_priority: 60
+    interrupt_policy: safe_point
+    timeout_sec: 15.0
+    cooldown_sec: 3.0
+    action_sequence:
+      - node: posture
+        action: sit
+        duration: 0.5
+        safe_to_interrupt: true
+      - node: head_tail_ear
+        action: lick_paw
+        duration: 3.0
+        safe_to_interrupt: true
+      - node: head_tail_ear
+        action: groom
+        duration: 3.0
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  # ── Lv4: Psychological ────────────────────────────────────────────────────
+  seek_social_interaction:
+    priority_level: 4
+    base_priority: 60
+    interrupt_policy: immediate
+    timeout_sec: 20.0
+    cooldown_sec: 5.0
+    action_sequence:
+      - node: perception
+        action: locate_human
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: navigation
+        action: approach_human
+        duration: 2.0
+        safe_to_interrupt: false
+      - node: head_tail_ear
+        action: nudge
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: vocalization
+        action: friendly_sound
+        duration: 0.5
+        safe_to_interrupt: true
+    style_modifiers:
+      happy:
+        tail_wag: vigorous
+        ear_pose: raised
+
+  explore_environment:
+    priority_level: 4
+    base_priority: 50
+    interrupt_policy: immediate
+    timeout_sec: 25.0
+    cooldown_sec: 3.0
+    action_sequence:
+      - node: perception
+        action: scan_surroundings
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: navigation
+        action: wander
+        duration: 5.0
+        safe_to_interrupt: false
+      - node: perception
+        action: investigate
+        duration: 1.5
+        safe_to_interrupt: true
+    style_modifiers:
+      curious:
+        ear_pose: forward
+        tail_wag: slow
+
+  # ── Lv5: EmotionExpression ────────────────────────────────────────────────
+  express_happy:
+    priority_level: 5
+    base_priority: 50
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: head_tail_ear
+        action: wag_tail
+        duration: 1.5
+        safe_to_interrupt: true
+      - node: posture
+        action: play_bow
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: vocalization
+        action: happy_bark
+        duration: 0.5
+        safe_to_interrupt: true
+    style_modifiers:
+      happy:
+        tail_wag: fast
+        ear_pose: raised
+        voice_tone: excited
+
+  express_fear:
+    priority_level: 5
+    base_priority: 50
+    interrupt_policy: safe_point
+    timeout_sec: 8.0
+    cooldown_sec: 2.0
+    action_sequence:
+      - node: posture
+        action: cower
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: head_tail_ear
+        action: ears_back
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: vocalization
+        action: whimper
+        duration: 1.5
+        safe_to_interrupt: true
+    style_modifiers:
+      fear:
+        ear_pose: flattened
+        tail_pose: tucked
+        posture: low
+
+  express_curiosity:
+    priority_level: 5
+    base_priority: 45
+    interrupt_policy: immediate
+    timeout_sec: 4.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: head_tail_ear
+        action: head_tilt
+        duration: 0.8
+        safe_to_interrupt: true
+      - node: perception
+        action: stare
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: head_tail_ear
+        action: ears_forward
+        duration: 0.5
+        safe_to_interrupt: true
+    style_modifiers:
+      curious:
+        ear_pose: forward
+        head_tilt: left
+
+  # ── Lv6: Idle ─────────────────────────────────────────────────────────────
+  idle_look_around:
+    priority_level: 6
+    base_priority: 30
+    interrupt_policy: immediate
+    timeout_sec: 10.0
+    cooldown_sec: 0.0
+    action_sequence:
+      - node: head_tail_ear
+        action: turn_head_left
+        duration: 1.5
+        safe_to_interrupt: true
+      - node: perception
+        action: observe
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: head_tail_ear
+        action: turn_head_right
+        duration: 1.5
+        safe_to_interrupt: true
+      - node: perception
+        action: observe
+        duration: 1.0
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  idle_rest:
+    priority_level: 6
+    base_priority: 25
+    interrupt_policy: immediate
+    timeout_sec: 30.0
+    cooldown_sec: 0.0
+    action_sequence:
+      - node: posture
+        action: lie_down
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: full_body
+        action: rest
+        duration: 10.0
+        safe_to_interrupt: true
+    style_modifiers: {}
