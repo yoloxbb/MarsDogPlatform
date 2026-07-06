@@ -8,6 +8,194 @@
       "Curious": {"internalName": "emo_curious", "chineseName": "好奇", "range": [0, 100]},
       "Calm": {"internalName": "emo_calm", "chineseName": "平静", "range": [0, 100]}
     },
+    "thresholds": {
+      "Joy": {"triggerThreshold": 30, "triggerOperator": "gte"},
+      "Excite": {"triggerThreshold": 40, "triggerOperator": "gte"},
+      "Anxiety": {"triggerThreshold": 25, "triggerOperator": "gte"},
+      "Fear": {"triggerThreshold": 30, "triggerOperator": "gte", "freezeThreshold": 60},
+      "Curious": {"triggerThreshold": 20, "triggerOperator": "gte"},
+      "Calm": {"triggerThreshold": 0, "triggerOperator": "gte"}
+    },
+    "levels": {
+      "Calm": [
+        {"level": "NORMAL", "eventType": "EMO_CALM_NORMAL", "min": 0, "max": 60},
+        {"level": "HIGH", "eventType": "EMO_CALM_HIGH", "min": 61, "max": 100}
+      ],
+      "Joy": [
+        {"level": "LOW", "eventType": "EMO_JOY_LOW", "min": 30, "max": 60},
+        {"level": "MID", "eventType": "EMO_JOY_MID", "min": 61, "max": 85},
+        {"level": "HIGH", "eventType": "EMO_JOY_HIGH", "min": 86, "max": 100}
+      ],
+      "Excite": [
+        {"level": "LOW", "eventType": "EMO_EXCITE_LOW", "min": 40, "max": 70},
+        {"level": "HIGH", "eventType": "EMO_EXCITE_HIGH", "min": 71, "max": 100}
+      ],
+      "Anxiety": [
+        {"level": "LOW", "eventType": "EMO_ANXIETY_LOW", "min": 25, "max": 50},
+        {"level": "HIGH", "eventType": "EMO_ANXIETY_HIGH", "min": 51, "max": 100}
+      ],
+      "Fear": [
+        {"level": "LOW", "eventType": "EMO_FEAR_LOW", "min": 30, "max": 60},
+        {"level": "HIGH", "eventType": "EMO_FEAR_HIGH", "min": 61, "max": 100}
+      ],
+      "Curious": [
+        {"level": "LOW", "eventType": "EMO_CURIOUS_LOW", "min": 20, "max": 50},
+        {"level": "HIGH", "eventType": "EMO_CURIOUS_HIGH", "min": 51, "max": 100}
+      ]
+    },
+    "decayRules": {
+      "Joy": 2.0,
+      "Excite": 3.0,
+      "Anxiety": 1.5,
+      "Fear": 4.0,
+      "Curious": 2.0
+    },
+    "eventRules": {
+      "EVT_AUDIO_LOUD": {
+        "deltas": {"Fear": 40, "Anxiety": 20, "Excite": -10},
+        "metadataMultipliers": [
+          {"key": "loudnessDb", "operator": "gt", "value": 80, "multiplier": 1.5},
+          {"key": "loudness_db", "operator": "gt", "value": 80, "multiplier": 1.5}
+        ]
+      },
+      "EVT_AUDIO_WITH_HUMAN": {
+        "deltas": {"Calm": 10, "Joy": 5}
+      },
+      "EVT_VOICE_PRAISE": {
+        "deltas": {"Joy": 30, "Excite": 20, "Calm": 5},
+        "metadataMultipliers": [
+          {"key": "masterId", "operator": "truthy", "multiplier": 1.2},
+          {"key": "master_id", "operator": "truthy", "multiplier": 1.2},
+          {"key": "speakerIsMaster", "operator": "truthy", "multiplier": 1.2}
+        ]
+      },
+      "EVT_VOICE_SCOLD": {
+        "deltas": {"Anxiety": 25, "Fear": 15, "Joy": -10}
+      },
+      "EVT_VOICE_COMMAND_KNOWN": {
+        "deltas": {"Curious": 15, "Calm": 10}
+      },
+      "EVT_VOICE_COMMAND_UNKNOWN": {
+        "deltas": {"Anxiety": 15, "Curious": 10}
+      },
+      "EVT_VOICE_HAPPY": {
+        "deltas": {"Joy": 25, "Excite": 15, "Calm": 5}
+      },
+      "EVT_VOICE_SAD": {
+        "deltas": {"Anxiety": 15, "Calm": -5}
+      },
+      "EVT_VOICE_NEUTRAL": {
+        "deltas": {"Calm": 5, "Curious": 5}
+      },
+      "EVT_VOICE_CALL_NAME": {
+        "deltas": {"Joy": 20, "Excite": 10}
+      },
+      "EVT_VOICE_MASTER_ID": {
+        "deltas": {"Calm": 15}
+      },
+      "EVT_VOICE_STRANGER_ID": {
+        "deltas": {"Fear": 15, "Curious": 10}
+      },
+      "EVT_TACTILE_HEAD_PET": {
+        "deltas": {"Joy": 25, "Calm": 15, "Excite": 5}
+      },
+      "EVT_TACTILE_NOSE_TOUCH": {
+        "deltas": {"Curious": 10, "Calm": 5}
+      },
+      "EVT_TACTILE_EAR_TOUCH": {
+        "deltas": {"Joy": 20, "Calm": 10}
+      },
+      "EVT_TACTILE_CHIN_RUB": {
+        "deltas": {"Joy": 30, "Calm": 10, "Excite": 5}
+      },
+      "EVT_TACTILE_FACE_TOUCH": {
+        "deltas": {"Joy": 15, "Anxiety": 10}
+      },
+      "EVT_TACTILE_MUZZLE_GRAB": {
+        "deltas": {"Fear": 35, "Anxiety": 20}
+      },
+      "EVT_TACTILE_PUT_IN_MOUTH": {
+        "deltas": {"Fear": 40, "Anxiety": 15}
+      },
+      "EVT_TACTILE_BODY_STROKE": {
+        "deltas": {"Joy": 20, "Calm": 15}
+      },
+      "EVT_TACTILE_BELLY_TRUST": {
+        "deltas": {"Joy": 35, "Calm": 15}
+      },
+      "EVT_TACTILE_BELLY_TENSE": {
+        "deltas": {"Fear": 20, "Anxiety": 15}
+      },
+      "EVT_TACTILE_PAW_HOLD": {
+        "deltas": {"Curious": 10, "Calm": 5}
+      },
+      "EVT_TACTILE_PAW_PAD_SLEEP": {
+        "deltas": {"Calm": 10}
+      },
+      "EVT_TACTILE_PAW_PAD_WAKE": {
+        "deltas": {"Fear": 25, "Anxiety": 15}
+      },
+      "EVT_TACTILE_HIP_ACCEPT": {
+        "deltas": {"Joy": 15}
+      },
+      "EVT_TACTILE_HIP_RESIST": {
+        "deltas": {"Fear": 20, "Anxiety": 15}
+      },
+      "EVT_TACTILE_TAIL_GRAB": {
+        "deltas": {"Fear": 30, "Anxiety": 20}
+      },
+      "EVT_VISION_MASTER_HAPPY": {
+        "deltas": {"Joy": 30, "Excite": 15, "Calm": 5}
+      },
+      "EVT_VISION_MASTER_SAD": {
+        "deltas": {"Anxiety": 15, "Calm": -5}
+      },
+      "EVT_VISION_MASTER_NEUTRAL": {
+        "deltas": {"Calm": 5, "Curious": 5}
+      },
+      "EVT_VISION_MASTER": {
+        "deltas": {"Joy": 25, "Excite": 15, "Calm": 10}
+      },
+      "EVT_VISION_STRANGER": {
+        "deltas": {"Fear": 15, "Curious": 20}
+      },
+      "EVT_VISION_STRANGER_ALERT": {
+        "deltas": {"Fear": 15, "Curious": 20}
+      },
+      "EVT_VISION_STRANGER_FRIEND": {
+        "deltas": {"Excite": 10, "Curious": 20}
+      },
+      "EVT_VISION_FOOD": {
+        "deltas": {"Excite": 35, "Joy": 20, "Curious": 10}
+      },
+      "EVT_VISION_TOY": {
+        "deltas": {"Excite": 30, "Curious": 20, "Joy": 15}
+      },
+      "EVT_VISION_FALL": {
+        "deltas": {"Anxiety": 20, "Curious": 10}
+      },
+      "EVT_VISION_STOP_GESTURE": {
+        "deltas": {"Calm": 10, "Curious": 15}
+      },
+      "EVT_VISION_HAND_TO_NOSE": {
+        "deltas": {"Curious": 15, "Calm": 5}
+      },
+      "EVT_VISION_HAND_TO_NOSE_FEAR": {
+        "deltas": {"Fear": 15, "Anxiety": 10}
+      },
+      "EVT_VISION_ANIMAL_CALM": {
+        "deltas": {"Calm": 10, "Curious": 5}
+      },
+      "EVT_VISION_ANIMAL_GREET": {
+        "deltas": {"Excite": 15, "Joy": 10}
+      },
+      "EVT_VISION_ANIMAL_PLAY": {
+        "deltas": {"Excite": 30, "Joy": 20}
+      },
+      "EVT_VISION_ANIMAL_BOUNDARY": {
+        "deltas": {"Fear": 10, "Curious": 15}
+      }
+    },
     "actionResultRules": {
       "DemandSatisfied": [
         {"emotion": "Joy", "min": 10, "max": 20},

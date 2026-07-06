@@ -1,0 +1,399 @@
+# Marsdog 内部需求与情绪更新逻辑
+
+本文档只说明当前仓库实现的内部需求计算、情绪计算、性格参数同步、ROS2 输入适配和状态发布。
+
+## 1. 节点入口
+
+当前提供三个 ROS2 节点：
+
+| 节点 | 文件 | 职责 |
+|---|---|---|
+| `personality_node` | `marsdog_ros2/personality_node.py` | 性格参数维护、性格系数计算、性格状态发布 |
+| `internal_need_node` | `marsdog_ros2/internal_need_node.py` | 内部需求计算、需求状态发布、需求等级事件发布 |
+| `emotion_engine_node` | `marsdog_ros2/emotion_engine_node.py` | 情绪计算、情绪自然衰减、情绪状态发布、情绪区间事件发布 |
+
+启动命令：
+
+```bash
+ros2 run marsdog_behavior personality_node
+ros2 run marsdog_behavior internal_need_node
+ros2 run marsdog_behavior emotion_engine_node
+```
+
+## 2. Topic
+
+### 2.1 输入
+
+| Topic | 类型 | 使用节点 | 说明 |
+|---|---|---|---|
+| `/perception/audio_event` | `std_msgs/String` JSON | 需求节点、情绪节点 | 声音事件输入 |
+| `/perception/visual_event` | `std_msgs/String` JSON | 需求节点、情绪节点 | 视觉事件输入 |
+| `/behavior/result_event` | `std_msgs/String` JSON | 需求节点、情绪节点 | 外部结果输入 |
+| `/personality/state` | `std_msgs/String` JSON | 需求节点、情绪节点 | 性格参数同步输入 |
+
+### 2.2 输出
+
+| Topic | 类型 | 发布节点 | 发布规则 |
+|---|---|---|---|
+| `/internal_need/state` | `std_msgs/String` JSON | `internal_need_node` | 每 1 秒持续发布 |
+| `/internal_need/signal_event` | `std_msgs/String` JSON | `internal_need_node` | 需求等级变化时发布 |
+| `/emotion/state` | `std_msgs/String` JSON | `emotion_engine_node` | 每 1 秒持续发布 |
+| `/emotion/signal_event` | `std_msgs/String` JSON | `emotion_engine_node` | 情绪区间或主导情绪变化时发布 |
+| `/personality/state` | `std_msgs/String` JSON | `personality_node` | 启动时和性格变化后发布 |
+
+## 3. 性格参数同步
+
+性格参数由 `personality_node` 统一维护。用户或调试工具只需要设置 `profile` 或 `A/O/E/C`，不需要设置 `coefficients`。
+
+### 3.1 修改方式
+
+使用 ROS2 参数服务修改：
+
+```bash
+ros2 param set /personality_node profile SunnyExplorer
+```
+
+或手动设置 `A/O/E/C`：
+
+```bash
+ros2 param set /personality_node A 85
+ros2 param set /personality_node O 75
+ros2 param set /personality_node E 30
+ros2 param set /personality_node C 40
+```
+
+设置任意 `A/O/E/C` 后，`profile` 会切换为 `Custom`。非法值会被拒绝：
+
+- 未知 `profile`
+- `A/O/E/C` 不是整数
+- `A/O/E/C` 超出 `0-100`
+- 同一次请求里同时设置预设 `profile` 和自定义 `A/O/E/C`
+
+### 3.2 状态输出
+
+`/personality/state` 示例：
+
+```json
+{
+  "schema_version": "1.0",
+  "timestamp": 1710000000.0,
+  "profile": "SunnyExplorer",
+  "params": {"A": 90, "O": 80, "E": 95, "C": 70},
+  "coefficients": {
+    "Joy": 1.82,
+    "Excite": 1.87,
+    "Anxiety": 1.44,
+    "Fear": 0.6,
+    "Curious": 2.071,
+    "Calm": 1.7,
+    "Social": 1.82
+  }
+}
+```
+
+`coefficients` 是只读派生值，由 `A/O/E/C` 自动计算，外部不允许直接设置。
+
+需求节点和情绪节点订阅 `/personality/state` 后更新本地性格参数。性格变化只影响后续计算，不回溯修改已经存在的需求值和情绪值。
+
+## 4. 内部需求状态
+
+所有需求值限制在 `0-100`。
+
+| 变量 | 含义 | 数值语义 |
+|---|---|---|
+| `Hunger` | 饥渴 | 越高越需要进食/饮水 |
+| `Bladder` | 排泄 | 越高越需要排泄 |
+| `Sleepiness` | 困倦 | 越高越困 |
+| `Cleanliness` | 清洁 | 越高越脏，越需要清洁 |
+| `Energy` | 精力/电量 | 越低越需要充电 |
+| `Social` | 社交 | 越高越想社交 |
+| `Exploration` | 探索 | 越高越想探索 |
+
+`/internal_need/state` 示例：
+
+```json
+{
+  "schema_version": "1.0",
+  "timestamp": 1710000000.0,
+  "demands": {
+    "Hunger": {
+      "value": 71,
+      "triggerThreshold": 70,
+      "triggerOperator": "gt",
+      "overflowThreshold": 90,
+      "triggered": true,
+      "overflow": false,
+      "level": "TRIGGERED",
+      "levelEvent": "NEED_HUNGER_TRIGGERED",
+      "levelActive": true
+    }
+  },
+  "triggered": [
+    {
+      "type": "Hunger",
+      "value": 71,
+      "triggerThreshold": 70,
+      "triggerOperator": "gt",
+      "overflow": false
+    }
+  ],
+  "sleep": {
+    "isSleeping": false,
+    "sleepDepth": "Shallow",
+    "sleepDurationMinutes": 0,
+    "shallowSleepTicksRemaining": 0
+  }
+}
+```
+
+## 5. 内部需求等级事件
+
+每个需求都有 3 个等级：
+
+| 等级 | 含义 |
+|---|---|
+| `NORMAL` | 未触发 |
+| `TRIGGERED` | 超过触发阈值 |
+| `OVERFLOW` | 超过满溢阈值 |
+
+需求等级变化时发布 `/internal_need/signal_event`。同一等级不会重复发布。
+
+事件命名规则：
+
+```text
+NEED_<DEMAND>_TRIGGERED
+NEED_<DEMAND>_OVERFLOW
+NEED_<DEMAND>_RECOVERED
+```
+
+示例：
+
+```json
+{
+  "schema_version": "1.0",
+  "timestamp": 1710000000.0,
+  "event_type": "NEED_HUNGER_TRIGGERED",
+  "demand": "Hunger",
+  "value": 71,
+  "level": "TRIGGERED",
+  "previousLevel": "NORMAL",
+  "triggerThreshold": 70,
+  "triggerOperator": "gt",
+  "overflowThreshold": 90,
+  "overflowOperator": "gt",
+  "trigger": "LEVEL_CHANGED"
+}
+```
+
+当前自动生成的事件：
+
+| 需求 | 触发事件 | 满溢事件 | 恢复事件 |
+|---|---|---|---|
+| `Hunger` | `NEED_HUNGER_TRIGGERED` | `NEED_HUNGER_OVERFLOW` | `NEED_HUNGER_RECOVERED` |
+| `Bladder` | `NEED_BLADDER_TRIGGERED` | `NEED_BLADDER_OVERFLOW` | `NEED_BLADDER_RECOVERED` |
+| `Sleepiness` | `NEED_SLEEPINESS_TRIGGERED` | `NEED_SLEEPINESS_OVERFLOW` | `NEED_SLEEPINESS_RECOVERED` |
+| `Cleanliness` | `NEED_CLEANLINESS_TRIGGERED` | `NEED_CLEANLINESS_OVERFLOW` | `NEED_CLEANLINESS_RECOVERED` |
+| `Energy` | `NEED_ENERGY_TRIGGERED` | `NEED_ENERGY_OVERFLOW` | `NEED_ENERGY_RECOVERED` |
+| `Social` | `NEED_SOCIAL_TRIGGERED` | `NEED_SOCIAL_OVERFLOW` | `NEED_SOCIAL_RECOVERED` |
+| `Exploration` | `NEED_EXPLORATION_TRIGGERED` | `NEED_EXPLORATION_OVERFLOW` | `NEED_EXPLORATION_RECOVERED` |
+
+## 6. 内部需求自然更新
+
+`internal_need_node` 每 600 秒调用一次：
+
+```python
+UpdateNaturalDemandsByTime()
+```
+
+这对应每 10 分钟 Tick。
+
+全局规则：
+
+- `00:00-06:00` 普通需求自然计算锁定。
+- `Sleepiness` 是例外，凌晨仍执行困倦规则。
+- 离开锁定窗口后执行一次晨起初始化。
+- 所有写入统一限制在 `0-100`。
+
+## 7. 各需求规则
+
+### Hunger
+
+- 晨起：`60-70`。
+- 白天 `06:00-21:00`：每 Tick `+1`。
+- 其他时间：`+0`。
+- 触发：`>70`。
+- 满溢：`>90`。
+- `ACTION_EAT + COMPLETED`：
+  - `Hunger -= foodRecovery * portions * eatEfficiency`
+  - 进食前 `Hunger > 90`：`Bladder += 25`
+  - 进食前 `Hunger > 70`：`Bladder += 20`
+  - `Cleanliness += 20`
+
+### Bladder
+
+- 晨起：`20-30`。
+- 白天 `06:00-21:00`：每 Tick `+3`。
+- 其他时间：`+0`。
+- 触发：`>75`。
+- 满溢：`>90`。
+- `ACTION_DEFECATE + COMPLETED`：`Bladder = 0`。
+- `INTERRUPTED / CANCELLED / TIMEOUT`：`Bladder -= 40`。
+
+### Sleepiness
+
+- 晨起：`10-15`。
+- 白天 `06:00-21:00`：每 Tick `+3`。
+- 夜晚 `21:00-00:00`：每 Tick `+5`。
+- 凌晨 `00:00-06:00` 或关灯：清醒状态下 `Sleepiness = 90`。
+- 触发：`>65`。
+- 满溢：`>90`。
+- `ACTION_SLEEP + STARTED`：进入浅睡。
+- 浅睡 3 Tick，每 Tick `Sleepiness -= 2`。
+- 浅睡结束后仍 `>65` 时进入深睡。
+- 深睡每 Tick `Sleepiness -= 15`。
+- 深睡到 `Sleepiness <= 20` 时自然醒来。
+- `00:00-06:00` 强制睡眠期间不会自然醒。
+
+### Cleanliness
+
+- 晨起：`5-15`。
+- 白天 `06:00-21:00`：每 Tick `+2`。
+- 其他时间：`+0`。
+- 触发：`>70`。
+- 满溢：`>90`。
+- 进食完成：`Cleanliness += 20`。
+- `ACTION_GROOM + COMPLETED`：`Cleanliness -= 50`。
+
+### Energy
+
+- 当前值等于电量百分比。
+- 晨起：`100`。
+- 触发：`<20`。
+- 满溢：`<10`。
+- `ACTION_RECHARGE + COMPLETED`：
+  - 有 `metadata.energyValue` 时写入该值。
+  - 没有时写入 `100`。
+
+### Social
+
+- 晨起：`random(20,30) * k_social`。
+- `k_social = (A/50)*0.8 + (E/50)*0.2`。
+- 白天 `06:00-18:00`：每 Tick `+2`。
+- 傍晚 `18:00-21:00`：每 Tick `+3`。
+- 夜间 `21:00-06:00`：`+0`。
+- 触发：`>60`。
+- 满溢：`>80`。
+- 主人离家状态：单次 `Social += 30`。
+- `ACTION_SOCIAL_* + COMPLETED`：
+  - `socialOutcome=OwnerInteraction`：`Social -= 25`
+  - `socialOutcome=DogHumanResponded`：`Social -= 20`
+  - `socialOutcome=DogAnimalResponded`：`Social -= 15`
+  - `socialOutcome=Rejected / TimedOut`：不变
+
+### Exploration
+
+- 晨起：`random(10,20) * k_curious`。
+- `06:00-21:00` 且 `Energy > 50`：每 Tick `+5`。
+- 其他情况：`+0`。
+- 触发：`>60`。
+- 满溢：`>80`。
+- `tracked_objects` 会登记为探索候选目标。
+- 已知目标集合只保存在当前进程内。
+- `ACTION_EXPLORE* + COMPLETED`：
+  - `discoveryType=New`：`Exploration -= 20`
+  - `discoveryType=Old`：`Exploration -= 10`
+  - `discoveryType=Completed`：`Exploration -= 15`
+
+## 8. 情绪状态
+
+所有情绪值限制在 `0-100`。
+
+| 变量 | 含义 |
+|---|---|
+| `Joy` | 愉悦 |
+| `Excite` | 兴奋 |
+| `Anxiety` | 焦虑 |
+| `Fear` | 恐惧 |
+| `Curious` | 好奇 |
+| `Calm` | 平静 |
+
+`/emotion/state` 持续发布全部情绪值、区间、主导情绪和性格参数。
+
+## 9. 情绪事件计算
+
+外部事件进入 `ApplyEmotionEvent()` 后按配置计算：
+
+```text
+finalDelta = round(baseDelta * k_emotion * metadataMultiplier)
+```
+
+性格系数：
+
+```text
+k_joy     = (A/50)*0.8 + (E/50)*0.2
+k_excite  = (A/50)*0.3 + (E/50)*0.7
+k_anxiety = (1.5-C/100) * (A/50)
+k_fear    = 2.0 - C/50
+k_curious = (E/50) * (1 + 0.3*(1-C/100))
+k_calm    = (O+A)/100
+```
+
+## 10. 情绪自然衰减
+
+`emotion_engine_node` 每 1 秒执行一次：
+
+| 情绪 | 衰减 |
+|---|---|
+| `Joy` | `-2/sec` |
+| `Excite` | `-3/sec` |
+| `Anxiety` | `-1.5/sec` |
+| `Fear` | `-4/sec` |
+| `Curious` | `-2/sec` |
+| `Calm` | 不自然衰减 |
+
+## 11. 情绪区间事件
+
+`/emotion/signal_event` 只在情绪区间变化或主导情绪变化时发布。
+
+| 情绪 | 区间 | 事件 |
+|---|---|---|
+| `Calm` | `0-60` | `EMO_CALM_NORMAL` |
+| `Calm` | `61-100` | `EMO_CALM_HIGH` |
+| `Joy` | `30-60` | `EMO_JOY_LOW` |
+| `Joy` | `61-85` | `EMO_JOY_MID` |
+| `Joy` | `86-100` | `EMO_JOY_HIGH` |
+| `Excite` | `40-70` | `EMO_EXCITE_LOW` |
+| `Excite` | `71-100` | `EMO_EXCITE_HIGH` |
+| `Anxiety` | `25-50` | `EMO_ANXIETY_LOW` |
+| `Anxiety` | `51-100` | `EMO_ANXIETY_HIGH` |
+| `Fear` | `30-60` | `EMO_FEAR_LOW` |
+| `Fear` | `61-100` | `EMO_FEAR_HIGH` |
+| `Curious` | `20-50` | `EMO_CURIOUS_LOW` |
+| `Curious` | `51-100` | `EMO_CURIOUS_HIGH` |
+
+## 12. 结果输入对情绪的影响
+
+`/behavior/result_event` 中的 `result_type` 会映射为情绪结果：
+
+| `result_type` | 映射 |
+|---|---|
+| `COMPLETED` | `DemandSatisfied` |
+| `FAILED` | `DemandUnsatisfied` |
+| `TIMEOUT` | `DemandUnsatisfied` |
+| `INTERRUPTED` | `ActionInterrupted` |
+| `CANCELLED` | `ActionInterrupted` |
+
+当前情绪变化：
+
+| 映射 | 情绪变化 |
+|---|---|
+| `DemandSatisfied` | `Joy +10~20`，`Calm +5~10`，`Anxiety -15~-5` |
+| `DemandUnsatisfied` | `Anxiety +5~15` |
+| `ActionInterrupted` | `Anxiety +3~5` |
+
+## 13. 测试命令
+
+```bash
+python3 -m compileall -q marsdog_core marsdog_ros2 tests
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -q
+```

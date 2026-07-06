@@ -1,4 +1,4 @@
-"""动作执行反馈消息到核心行为系统的适配。"""
+"""行为组结果事件到需求/情绪核心系统的适配。"""
 
 from __future__ import annotations
 
@@ -6,20 +6,12 @@ import json
 from typing import Any
 
 
-def ApplyActionFeedbackMessage(system: Any, message: object) -> bool:
-    """把动作执行层反馈消息转换为核心反馈接口调用。"""
+def ApplyBehaviorResultMessage(system: Any, message: object) -> bool:
+    """把 `/behavior/result_event` 消息转换为核心结果接口调用。"""
     payload = _NormalizeMessageToDict(message)
-    if not payload:
+    if not payload or not hasattr(system, "OnBehaviorResultEvent"):
         return False
-
-    commandId = payload.get("commandId", payload.get("command_id", ""))
-    actionName = payload.get("actionName", payload.get("action_name", payload.get("concreteAction", "")))
-    status = payload.get("status", "")
-    metadata = payload.get("metadata", {})
-    if not isinstance(metadata, dict):
-        metadata = {}
-
-    return system.OnActionFeedback(commandId, actionName, status, metadata)
+    return bool(system.OnBehaviorResultEvent(payload))
 
 
 def _NormalizeMessageToDict(message: object) -> dict[str, Any]:

@@ -1,75 +1,58 @@
 import random
 import unittest
 
-from marsdog_core import MarsdogBehaviorSystem
+from marsdog_core import MarsdogNeedSystem
 
 
 class DemandLifecycleTest(unittest.TestCase):
-    def test_midnight_lock_skips_natural_demand_growth(self):
-        """凌晨锁定时段不参与自然需求计算。"""
-        system = MarsdogBehaviorSystem()
-        system.SetDemandValue("Hunger", 70)
+    def test_midnight_lock_skips_normal_demand_growth(self):
+        """凌晨锁定期间普通需求不自然增长。"""
+        system = MarsdogNeedSystem()
+        system.SetDemandValue("Hunger", 65)
 
-        system.Tick(currentTime=2)
+        system.UpdateNaturalDemandsByTime(2)
 
+        self.assertEqual(system.GetDemandValue("Hunger"), 65)
         self.assertTrue(system.state.demandLockActive)
-        self.assertEqual(system.GetDemandValue("Hunger"), 70)
 
-    def test_six_oclock_resets_all_demands_to_morning_values(self):
-        """06:00 后应恢复所有需求到晨起初始值。"""
-        system = MarsdogBehaviorSystem(randomGenerator=random.Random(4))
-        system.SetDemandValue("Hunger", 95)
-        system.SetDemandValue("Bladder", 90)
-        system.SetDemandValue("Cleanliness", 20)
+    def test_sleepiness_is_exception_during_midnight_lock(self):
+        """凌晨锁定期间 Sleepiness 仍按强制睡眠规则更新。"""
+        system = MarsdogNeedSystem()
+        system.SetDemandValue("Sleepiness", 10)
 
-        system.Tick(currentTime=2)
-        system.Tick(currentTime=6)
+        system.UpdateNaturalDemandsByTime(2)
 
-        self.assertGreaterEqual(system.GetDemandValue("Hunger"), 60)
-        self.assertLessEqual(system.GetDemandValue("Hunger"), 70)
-        self.assertGreaterEqual(system.GetDemandValue("Bladder"), 20)
-        self.assertLessEqual(system.GetDemandValue("Bladder"), 30)
-        self.assertGreaterEqual(system.GetDemandValue("Cleanliness"), 5)
-        self.assertLessEqual(system.GetDemandValue("Cleanliness"), 15)
+        self.assertEqual(system.GetDemandValue("Sleepiness"), 90)
 
-    def test_morning_reset_only_runs_once_without_new_lock_period(self):
-        """同一个无日期测试日内晨起重置只执行一次。"""
-        system = MarsdogBehaviorSystem(randomGenerator=random.Random(4))
+    def test_morning_reset_after_lock(self):
+        """06:00 后应执行晨起初始值重置。"""
+        system = MarsdogNeedSystem(randomGenerator=random.Random(4))
+        system.state.lastDemandLockState = True
+        system.SetDemandValue("Hunger", 99)
+        system.SetDemandValue("Bladder", 99)
 
-        system.Tick(currentTime=2)
-        system.Tick(currentTime=6)
-        system.SetDemandValue("Hunger", 80)
-        system.Tick(currentTime=8)
+        demands = system.UpdateNaturalDemandsByTime(6)
 
-        self.assertEqual(system.GetDemandValue("Hunger"), 81)
+        self.assertTrue(60 <= demands["Hunger"] <= 70)
+        self.assertTrue(20 <= demands["Bladder"] <= 30)
+        self.assertEqual(system.state.lastMorningResetKey, "static-day")
 
-    def test_interrupted_internal_demand_reduces_demand_once_and_applies_emotion(self):
-        """内部需求被高优先级事件打断时需求值 -20 并触发情绪映射。"""
-        system = MarsdogBehaviorSystem(randomGenerator=random.Random(1))
+    def test_interrupted_demand_delta_uses_global_default(self):
+        """内部需求被打断时按配置扣减需求值。"""
+        system = MarsdogNeedSystem()
         system.SetDemandValue("Hunger", 80)
 
-        system.Tick(currentTime=22)
-        system.SetDemandValue("Social", 80)
-        system.OnVoiceInput("OwnerCall", "front", 1.0)
-        system.Tick(currentTime=22)
+        self.assertTrue(system.ApplyInterruptedDemandDelta("Hunger"))
 
-        self.assertEqual(system.GetCurrentAction(), "ACTION_SOCIAL_GREET")
-        self.assertEqual(system.state.previousDemandType, "Hunger")
         self.assertEqual(system.GetDemandValue("Hunger"), 60)
-        self.assertGreaterEqual(system.GetEmotionValue("Anxiety"), 3)
 
-    def test_external_action_interruption_does_not_reduce_internal_demand(self):
-        """外部交互行为被打断时不应误扣内部需求值。"""
-        system = MarsdogBehaviorSystem(randomGenerator=random.Random(1))
-        system.SetDemandValue("Social", 80)
-        system.OnVoiceInput("OwnerCall", "front", 1.0)
-        system.Tick(currentTime=22)
+    def test_action_to_demand_mapping_is_available_for_result_events(self):
+        """行为组结果事件可通过 actionDemandMap 找到需求类型。"""
+        system = MarsdogNeedSystem()
 
-        system.OnEnvironmentChange("danger", 70)
-        system.Tick(currentTime=22)
-
-        self.assertEqual(system.GetCurrentAction(), "ACTION_FLEE")
-        self.assertEqual(system.GetDemandValue("Social"), 80)
+        self.assertEqual(system.GetDemandTypeByAction("ACTION_EAT"), "Hunger")
+        self.assertEqual(system.GetDemandTypeByAction("ACTION_SLEEP"), "Sleepiness")
+        self.assertIsNone(system.GetDemandTypeByAction("ACTION_UNKNOWN"))
 
 
 if __name__ == "__main__":

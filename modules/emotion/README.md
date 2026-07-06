@@ -1,82 +1,90 @@
-# Marsdog 行为系统
+# Marsdog 需求与情绪计算节点
 
-第一版项目采用 `Python + ROS2 通信适配`。核心行为引擎位于 `marsdog_core/`，保持纯 Python，不直接依赖 ROS2，便于单元测试和多人协作。
+当前仓库这一层实现内部需求计算、情绪计算、ROS2 输入适配和状态/事件发布。
 
 ## 目录
 
-- `marsdog_core/`：状态、需求、情绪、事件、仲裁、动作规划等核心逻辑。
-- `marsdog_ros2/`：ROS2 节点适配层，把 Topic 输入转换为核心接口调用。
-- `configs/`：需求阈值、情绪规则、优先级、动作序列配置。
+- `marsdog_core/`：纯 Python 需求/情绪计算核心，不依赖 ROS2。
+- `marsdog_ros2/`：ROS2 topic 适配和节点入口。
+- `configs/`：需求阈值、情绪规则、性格预设。
 - `tests/`：标准库 `unittest` 测试。
-- `docs/`：API、优先级、命名规范文档。
-  - `docs/behavior_tree_schema.md`：`ACTION_*` 内部行为树配置规范。
+- `docs/`：接口和当前实现说明。
 
-## 运行测试
+## 核心入口
+
+```python
+from marsdog_core import MarsdogNeedSystem, MarsdogEmotionSystem
+
+need_system = MarsdogNeedSystem()
+emotion_system = MarsdogEmotionSystem()
+```
+
+## 需求计算示例
+
+```python
+from marsdog_core import MarsdogNeedSystem
+
+system = MarsdogNeedSystem()
+system.SetDemandValue("Hunger", 80)
+
+system.OnBehaviorResultEvent({
+    "action_type": "ACTION_EAT",
+    "result_type": "COMPLETED",
+    "metadata": {
+        "foodType": "NormalFood",
+        "portions": 1,
+        "eatEfficiency": "Full",
+    },
+})
+
+print(system.GetDemandValue("Hunger"))          # 60
+print(system.GetInternalNeedStateValue())       # 可发布到 /internal_need/state
+```
+
+## 情绪计算示例
+
+```python
+from marsdog_core import MarsdogEmotionSystem
+
+system = MarsdogEmotionSystem()
+system.ApplyEmotionEvent("EVT_VOICE_PRAISE", {"masterId": True})
+
+print(system.GetEmotionValue("Joy"))            # 36
+print(system.GetEmotionStateValue())            # 可发布到 /emotion/state
+print(system.GetEmotionSignalEventsValue())     # 区间变化事件
+```
+
+## ROS2 Topic
+
+输入：
+
+- `/perception/audio_event`
+- `/perception/visual_event`
+- `/behavior/result_event`
+
+输出：
+
+- `/internal_need/state`
+- `/internal_need/signal_event`
+- `/emotion/state`
+- `/emotion/signal_event`
+
+运行节点：
 
 ```bash
-python3 -m unittest discover -s tests
+ros2 run marsdog_behavior internal_need_node
+ros2 run marsdog_behavior emotion_engine_node
 ```
 
-## 最小使用示例
+## 测试
 
-```python
-from marsdog_core import MarsdogBehaviorSystem
-
-system = MarsdogBehaviorSystem()
-system.SetDemandValue("Hunger", 80)
-system.Tick()
-
-print(system.GetCurrentAction())       # ACTION_EAT
-print(system.GetConcreteActionQueue()) # ACT_* 具体动作序列
+```bash
+python3 -m compileall -q marsdog_core marsdog_ros2 tests
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -q
 ```
 
-## 饥渴行为示例
+## 开发规则
 
-```python
-from marsdog_core import MarsdogBehaviorSystem
-
-system = MarsdogBehaviorSystem()
-system.InitializeMorningHunger()             # Hunger 随机进入 60-70
-system.Tick(currentTime=8)                    # 白天每 10 分钟 Hunger += 1
-system.ExecuteEat("普通粮", 1, "吃满时长")     # Hunger -= 20
-```
-
-ROS2 适配层中行为发布帧和需求增长 Tick 已分离：行为节点每 0.1 秒仲裁一次，但饥渴值每 600 秒才按时间规则增长一次。
-
-## 全局需求规则
-
-- `00:00-06:00` 所有需求锁定，不参与自然计算。
-- 离开凌晨锁定期后，所有需求恢复晨起初始值。
-- 内部需求发起的行为被高优先级事件打断时，关联需求值统一 `-20`，并执行 `ActionInterrupted` 情绪映射。
-- 排泄行为被打断时使用专属规则：`Bladder -= 40`。
-- 进食会增加排泄值：进食前 `Hunger > 90` 时 `Bladder += 25`，`Hunger > 70` 时 `Bladder += 20`。
-- 行为落地输出使用 `GetCurrentActionSequence()` / `GetActionSequence(actionType)` 读取动作序列库。
-
-## 行为树执行示例
-
-`ACTION_EAT` 的正常进食流程会固定先执行 `ACT_RUN_TO_BOWL`，然后从准备、进食、互动、结束四个阶段中各随机抽取 1 个动作。
-`ACTION_SLEEP` 会根据 `Sleepiness` 进入浅睡或深睡，并从准备入睡、睡眠中小动作、起床动作三个阶段中各随机抽取 1 个动作。
-
-```python
-from marsdog_core import MarsdogBehaviorSystem
-
-system = MarsdogBehaviorSystem()
-system.SetDemandValue("Hunger", 80)
-system.Tick(currentTime=22)
-
-while not system.IsCurrentBehaviorTreeFinished():
-    status = system.TickCurrentBehaviorTree()
-    current_action = system.GetCurrentConcreteAction()
-    if current_action:
-        print(current_action)
-        system.MarkCurrentConcreteActionDone()
-    if status == "SUCCESS":
-        break
-```
-
-## 协作规则
-
-- 新增需求、情绪、行为时，先更新 `configs/` 和枚举，再补测试。
-- 核心逻辑不得直接依赖 ROS2；ROS2 只放在 `marsdog_ros2/`。
-- 对外接口保留项目约定的 CamelCase 命名。
-- 函数需要简要说明注释，复杂逻辑处添加必要行内注释。
+- 本层只发布数值状态和阈值/区间信号。
+- 新增需求或情绪规则时，先更新 `configs/`，再补测试。
+- 对外接口继续使用项目约定的 CamelCase 命名。

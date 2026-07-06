@@ -7,12 +7,10 @@ from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from .types import (
-    ActionType,
     DemandType,
     EmotionType,
     PersonalityParam,
     PersonalityProfileType,
-    PriorityMode,
     SleepDepthType,
     SocialInteractionState,
 )
@@ -63,70 +61,15 @@ class EventData:
 
 
 @dataclass
-class ActionDecision:
-    """仲裁器输出的行为决策。"""
-
-    action: str
-    level: int
-    ruleName: str
-    score: float = 0.0
-    source: str = ""
-    demand: str | None = None
-
-
-@dataclass
-class SystemStatus:
-    """系统整体状态快照。"""
-
-    demands: dict[str, int]
-    emotions: dict[str, int]
-    personality: dict[str, int]
-    currentAction: str
-    actionQueue: list[str]
-    currentActionCommand: dict[str, Any] | None
-    currentConcreteAction: str
-    behaviorTreeStatus: str
-    priorityMode: str
-    debugLogEnabled: bool
-    pendingEventCount: int
-    lastRuleName: str
-    demandLockActive: bool
-    isSleeping: bool
-    sleepDepth: str
-    sleepDurationMinutes: int
-    shallowSleepTicksRemaining: int
-    sleepActionAllowed: bool
-    lightsOff: bool
-    lastActionFeedbackStatus: str
-    personalityProfile: str
-    socialInteraction: dict[str, Any]
-    explorationContext: dict[str, Any]
-
-
-@dataclass
 class MarsdogState:
-    """Marsdog 行为系统运行态。"""
+    """Marsdog 需求与情绪计算运行态。"""
 
     demands: dict[str, int] = field(default_factory=GetDefaultDemands)
     emotions: dict[str, int] = field(default_factory=GetDefaultEmotions)
     personality: dict[str, int] = field(default_factory=GetDefaultPersonalityParams)
-    currentAction: str = ActionType.ACTION_LOAF.value
-    currentPriorityLevel: int = 6
-    previousAction: str | None = None
-    actionQueue: list[str] = field(default_factory=lambda: [ActionType.ACTION_LOAF.value])
-    priorityMode: str = PriorityMode.NORMAL.value
+    lastEmotionEventResult: dict[str, Any] = field(default_factory=dict)
     debugLogEnabled: bool = False
     pendingEvents: list[EventData] = field(default_factory=list)
-    lastRuleName: str = "Idle"
-    currentDemandType: str | None = None
-    previousDemandType: str | None = None
-    actionCommandCounter: int = 0
-    currentActionCommandId: str = ""
-    currentActionCommandTopAction: str = ""
-    currentActionCommandConcreteAction: str = ""
-    currentActionCommandStepIndex: int = -1
-    lastActionFeedbackStatus: str = ""
-    lastActionFeedbackMetadata: dict[str, Any] = field(default_factory=dict)
     demandLockActive: bool = False
     lastDemandLockState: bool | None = None
     lastMorningResetKey: str | None = None
@@ -169,23 +112,9 @@ class MarsdogState:
         self.demands = GetDefaultDemands()
         self.emotions = GetDefaultEmotions()
         self.personality = GetDefaultPersonalityParams()
-        self.currentAction = ActionType.ACTION_LOAF.value
-        self.currentPriorityLevel = 6
-        self.previousAction = None
-        self.actionQueue = [ActionType.ACTION_LOAF.value]
-        self.priorityMode = PriorityMode.NORMAL.value
+        self.lastEmotionEventResult = {}
         self.debugLogEnabled = False
         self.pendingEvents = []
-        self.lastRuleName = "Idle"
-        self.currentDemandType = None
-        self.previousDemandType = None
-        self.actionCommandCounter = 0
-        self.currentActionCommandId = ""
-        self.currentActionCommandTopAction = ""
-        self.currentActionCommandConcreteAction = ""
-        self.currentActionCommandStepIndex = -1
-        self.lastActionFeedbackStatus = ""
-        self.lastActionFeedbackMetadata = {}
         self.demandLockActive = False
         self.lastDemandLockState = None
         self.lastMorningResetKey = None

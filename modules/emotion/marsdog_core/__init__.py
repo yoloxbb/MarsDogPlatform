@@ -1,9 +1,9 @@
-"""Marsdog 行为系统核心包。"""
+"""Marsdog 内部需求与情绪计算核心包。"""
 
-from .behavior_engine import MarsdogBehaviorSystem
-from .behavior_tree import BehaviorNodeStatus
+from .emotion_system import MarsdogEmotionSystem
+from .need_system import MarsdogNeedSystem
+from .personality_system import MarsdogPersonalitySystem
 from .types import (
-    ActionFeedbackStatus,
     ActionType,
     DemandType,
     EatEfficiencyType,
@@ -12,7 +12,6 @@ from .types import (
     ExplorationTargetType,
     FoodType,
     PersonalityProfileType,
-    PriorityMode,
     SleepDepthType,
     SocialInteractionState,
     SocialResponseType,
@@ -20,18 +19,17 @@ from .types import (
 )
 
 __all__ = [
-    "ActionFeedbackStatus",
     "ActionType",
-    "BehaviorNodeStatus",
     "DemandType",
     "EatEfficiencyType",
     "EmotionType",
     "ExplorationDiscoveryType",
     "ExplorationTargetType",
     "FoodType",
-    "MarsdogBehaviorSystem",
+    "MarsdogEmotionSystem",
+    "MarsdogNeedSystem",
+    "MarsdogPersonalitySystem",
     "PersonalityProfileType",
-    "PriorityMode",
     "SleepDepthType",
     "SocialInteractionState",
     "SocialResponseType",

@@ -1,76 +1,69 @@
 import random
 import unittest
 
-from marsdog_core import MarsdogBehaviorSystem
+from marsdog_core import MarsdogNeedSystem
 
 
 class HungerBehaviorTest(unittest.TestCase):
-    def test_initialize_morning_hunger_uses_random_range(self):
-        """晨起饥渴值应落在 60-70。"""
-        system = MarsdogBehaviorSystem(randomGenerator=random.Random(3))
+    def test_initialize_morning_hunger_uses_range(self):
+        """饥渴晨起值应在 60-70 随机范围内。"""
+        system = MarsdogNeedSystem(randomGenerator=random.Random(3))
 
         value = system.InitializeMorningHunger()
 
-        self.assertGreaterEqual(value, 60)
-        self.assertLessEqual(value, 70)
+        self.assertTrue(60 <= value <= 70)
         self.assertEqual(system.GetDemandValue("Hunger"), value)
 
-    def test_daytime_tick_increases_hunger(self):
-        """白天每 10 分钟 Tick 应让 Hunger 增加 1。"""
-        system = MarsdogBehaviorSystem()
+    def test_hunger_grows_only_in_daytime(self):
+        """饥渴值白天每 Tick +1，其他时间不增长。"""
+        system = MarsdogNeedSystem()
         system.SetDemandValue("Hunger", 65)
 
-        system.UpdateNaturalDemandsByTime(currentTime=8)
-
+        system.UpdateHungerByTime(8)
+        self.assertEqual(system.GetDemandValue("Hunger"), 66)
+        system.UpdateHungerByTime(22)
         self.assertEqual(system.GetDemandValue("Hunger"), 66)
 
-    def test_night_tick_does_not_increase_hunger(self):
-        """其他时间 Tick 不增加 Hunger。"""
-        system = MarsdogBehaviorSystem()
-        system.SetDemandValue("Hunger", 65)
+    def test_hunger_recovery_formula(self):
+        """进食恢复值应按食物类型、份数和效率计算。"""
+        system = MarsdogNeedSystem()
 
-        system.UpdateNaturalDemandsByTime(currentTime=22)
+        self.assertEqual(system.GetHungerRecoveryValue("PremiumFood", 2, "Full"), 60)
+        self.assertEqual(system.GetHungerRecoveryValue("NormalFood", 1, "HalfInterrupted"), 10)
+        self.assertEqual(system.GetHungerRecoveryValue("Snack", 2, "Full"), 10)
 
-        self.assertEqual(system.GetDemandValue("Hunger"), 65)
-
-    def test_hunger_over_70_triggers_eat_after_tick(self):
-        """Hunger 经 Tick 增长到大于 70 后应触发进食。"""
-        system = MarsdogBehaviorSystem()
-        system.SetDemandValue("Hunger", 70)
-
-        system.Tick(currentTime=8)
-
-        self.assertEqual(system.GetCurrentAction(), "ACTION_EAT")
-
-    def test_execute_eat_reduces_hunger_by_food_recovery(self):
-        """普通粮一份吃满应恢复 20 点饥渴值。"""
-        system = MarsdogBehaviorSystem(randomGenerator=random.Random(1))
-        system.SetDemandValue("Hunger", 80)
-
-        self.assertTrue(system.ExecuteEat("普通粮", portions=1, eatEfficiency="吃满时长"))
-
-        self.assertEqual(system.GetDemandValue("Hunger"), 60)
-        self.assertGreater(system.GetEmotionValue("Joy"), 0)
-
-    def test_execute_eat_unsatisfied_when_food_is_not_enough(self):
-        """食物不足导致仍超过阈值时应累积焦虑。"""
-        system = MarsdogBehaviorSystem(randomGenerator=random.Random(1))
+    def test_execute_eat_updates_linked_demands(self):
+        """进食会降低 Hunger，并联动 Bladder 和 Cleanliness。"""
+        system = MarsdogNeedSystem()
         system.SetDemandValue("Hunger", 95)
+        system.SetDemandValue("Bladder", 0)
+        system.SetDemandValue("Cleanliness", 10)
 
-        self.assertTrue(system.ExecuteEat("零食", portions=1, eatEfficiency="吃满时长"))
+        self.assertTrue(system.ExecuteEat("NormalFood", 1, "Full"))
 
-        self.assertEqual(system.GetDemandValue("Hunger"), 90)
-        self.assertGreater(system.GetEmotionValue("Anxiety"), 0)
+        self.assertEqual(system.GetDemandValue("Hunger"), 75)
+        self.assertEqual(system.GetDemandValue("Bladder"), 25)
+        self.assertEqual(system.GetDemandValue("Cleanliness"), 30)
 
-    def test_execute_eat_half_interrupted_uses_half_efficiency(self):
-        """吃一半被打断时应按 0.5 效率恢复并施加打断情绪。"""
-        system = MarsdogBehaviorSystem(randomGenerator=random.Random(1))
+    def test_behavior_result_event_eat_completed(self):
+        """行为组回传 ACTION_EAT 完成时应执行同样需求结算。"""
+        system = MarsdogNeedSystem()
         system.SetDemandValue("Hunger", 80)
+        system.SetDemandValue("Bladder", 0)
+        system.SetDemandValue("Cleanliness", 10)
 
-        self.assertTrue(system.ExecuteEat("优质粮", portions=1, eatEfficiency="吃一半被打断"))
+        accepted = system.OnBehaviorResultEvent(
+            {
+                "action_type": "ACTION_EAT",
+                "result_type": "COMPLETED",
+                "metadata": {"foodType": "NormalFood", "portions": 1, "eatEfficiency": "Full"},
+            }
+        )
 
-        self.assertEqual(system.GetDemandValue("Hunger"), 65)
-        self.assertGreaterEqual(system.GetEmotionValue("Anxiety"), 3)
+        self.assertTrue(accepted)
+        self.assertEqual(system.GetDemandValue("Hunger"), 60)
+        self.assertEqual(system.GetDemandValue("Bladder"), 20)
+        self.assertEqual(system.GetDemandValue("Cleanliness"), 30)
 
 
 if __name__ == "__main__":

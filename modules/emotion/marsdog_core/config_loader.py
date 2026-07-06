@@ -20,21 +20,19 @@ def LoadConfig(configName: str, configDir: str | Path | None = None) -> dict[str
 
 
 def LoadAllConfigs(configDir: str | Path | None = None) -> dict[str, Any]:
-    """加载核心引擎需要的所有配置。"""
+    """加载需求和情绪计算需要的所有配置。"""
     demandConfig = LoadConfig("demands", configDir)
     return {
         "demands": demandConfig.get("demands", {}),
         "demandGlobalRules": demandConfig.get("globalRules", {}),
         "emotions": LoadConfig("emotions", configDir).get("emotions", {}),
         "personalityProfiles": LoadConfig("personality", configDir).get("profiles", {}),
-        "priorities": LoadConfig("priorities", configDir).get("priorities", {}),
-        "actions": LoadConfig("actions", configDir).get("actions", {}),
     }
 
 
 def _GetConfigPath(configName: str, configDir: str | Path | None) -> Path:
     """定位配置文件路径。"""
-    baseDir = Path(configDir) if configDir is not None else DEFAULT_CONFIG_DIR
+    baseDir = Path(configDir) if configDir is not None else _GetDefaultConfigDir()
     candidate = Path(configName)
     if candidate.suffix:
         if candidate.is_absolute():
@@ -46,6 +44,17 @@ def _GetConfigPath(configName: str, configDir: str | Path | None) -> Path:
         if path.exists():
             return path
     raise FileNotFoundError(f"Config not found: {configName}")
+
+
+def _GetDefaultConfigDir() -> Path:
+    """优先读取源码配置，安装后读取 ROS2 share 目录配置。"""
+    if DEFAULT_CONFIG_DIR.exists():
+        return DEFAULT_CONFIG_DIR
+    try:
+        from ament_index_python.packages import get_package_share_directory
+    except ModuleNotFoundError:
+        return DEFAULT_CONFIG_DIR
+    return Path(get_package_share_directory("marsdog_behavior")) / "configs"
 
 
 def _LoadYamlCompatibleText(text: str) -> dict[str, Any]:

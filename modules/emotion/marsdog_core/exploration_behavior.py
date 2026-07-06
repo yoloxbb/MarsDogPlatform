@@ -92,7 +92,6 @@ class ExplorationBehaviorAPI:
             if discovery == ExplorationDiscoveryType.COMPLETED.value:
                 return False
 
-        self.state.explorationKnownTargetIds.add(normalizedTargetId)
         self.state.explorationPendingTargetType = target
         self.state.explorationPendingTargetId = normalizedTargetId
         self.state.explorationPendingDiscoveryType = discovery
@@ -150,6 +149,15 @@ class ExplorationBehaviorAPI:
             return False
         oldValue = self.GetDemandValue(DemandType.EXPLORATION)
         self.SetDemandValue(DemandType.EXPLORATION, oldValue - recovery)
+        if (
+            self.state.explorationCurrentTargetId
+            and result in {
+                ExplorationDiscoveryType.NEW.value,
+                ExplorationDiscoveryType.OLD.value,
+            }
+        ):
+            # 只有探索成功后才将目标记为已知，失败或中断后仍应按新目标重试。
+            self.state.explorationKnownTargetIds.add(self.state.explorationCurrentTargetId)
         self.state.explorationLastResult = result
         self._ClearCurrentExploration()
         return True
