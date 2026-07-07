@@ -39,6 +39,15 @@ class EmotionModule:
 
     def __init__(self):
         self._emotions: dict[str, EmotionState] = {}
+        self.level_events: dict[str, Optional[str]] = {}  # emotion_name → "EMO_JOY_HIGH" or None
+
+    def set_level_events(self, events: dict[str, Optional[str]]) -> None:
+        """Store the current levelEvents from /emotion/state.
+
+        Used by BehaviorRelevanceCondition: compares with trigger_event from
+        signal_event to determine if emotion is still in the same zone.
+        """
+        self.level_events = dict(events)
 
     def _ensure_emotion(self, name: str) -> EmotionState:
         """Get or create an emotion state with default config."""
@@ -91,6 +100,20 @@ class EmotionModule:
         state = self._emotions.get(name)
         return state.current_value if state else 0.0
 
+    def get_dominant_emotion(self) -> Optional[tuple[str, float]]:
+        """Find the dominant (highest value) emotion. Returns (name, value) or None."""
+        if not self._emotions:
+            return None
+        # Find max by value, break ties with priority: Fear > Anxiety > Excite > Joy > Curious > Calm
+        max_val = max(s.current_value for s in self._emotions.values())
+        candidates = [(n, s) for n, s in self._emotions.items()
+                      if s.current_value == max_val]
+        priority = {"Fear": 0, "Anxiety": 1, "Excite": 2, "Joy": 3, "Curious": 4, "Calm": 5}
+        candidates.sort(key=lambda x: priority.get(x[0], 99))
+        best = candidates[0]
+        return best[0], best[1].current_value
+
     def reset(self) -> None:
         """Reset all emotion states."""
         self._emotions.clear()
+        self.level_events.clear()

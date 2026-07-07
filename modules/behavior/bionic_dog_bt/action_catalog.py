@@ -483,6 +483,243 @@ BEHAVIOR_ACTION_CATALOG: dict[str, list[dict]] = {
             ],
         },
     ],
+
+    # ── Lv5: 情绪驱动 — Calm 平静 ──────────────────────────────────────────
+    "restInPlace": [
+        {"phase": "板鸭趴", "duration": (5.0, 15.0), "safe_to_interrupt": True,
+         "actions": ["ACT_FLIP_BODY", "ACT_LIE_ON_SIDE_AND_STRETCH"]},
+    ],
+    "sleepOnSide": [
+        {"phase": "侧躺休息", "duration": (5.0, 20.0), "safe_to_interrupt": True,
+         "actions": ["ACT_LIE_ON_SIDE_AND_STRETCH"]},
+    ],
+    "stretchLazily": [
+        {"phase": "伸懒腰", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_STRETCH_LAZILY"]},
+    ],
+    "lickPaws": [
+        {"phase": "舔爪子", "duration": (2.0, 5.0), "safe_to_interrupt": True,
+         "actions": ["ACT_LICK_PAWS_OR_FUR"]},
+    ],
+    "yawnSlowly": [
+        {"phase": "打哈欠", "duration": (1.0, 2.0), "safe_to_interrupt": True,
+         "actions": ["ACT_YAWN"]},
+    ],
+    "exposeBelly": [
+        {"phase": "肚皮朝天", "duration": (3.0, 8.0), "safe_to_interrupt": True,
+         "actions": ["ACT_ROLL_OVER"]},
+    ],
+    "waitAtDoor": [
+        {"phase": "守在门口", "duration": (5.0, 20.0), "safe_to_interrupt": True,
+         "actions": ["ACT_SCRATCH_DOOR_OR_FENCE", "ACT_LIE_BY_DOOR", "ACT_LEAN_AGAINST_DOOR"]},
+    ],
+    "cuddlePose": [
+        {"phase": "贴靠", "duration": (3.0, 10.0), "safe_to_interrupt": True,
+         "actions": ["ACT_RUB_AGAINST_LEG_OR_LEAN", "ACT_SIT_OR_LIE_AT_FEET"]},
+    ],
+    "pawAtOwner": [
+        {"phase": "扒拉主人", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_PAW_AT_ARM_OR_PANTS", "ACT_NUDGE_HAND_WITH_HEAD"]},
+    ],
+
+    # ── Lv5: 情绪驱动 — Joy 愉悦 ───────────────────────────────────────────
+    "wagTailGently": [
+        {"phase": "轻轻摇尾", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_WAG_TAIL"]},
+    ],
+    "wagTailFast": [
+        {"phase": "快速摇尾踱步", "duration": (1.5, 4.0), "safe_to_interrupt": True,
+         "actions": ["ACT_WAG_TAIL", "ACT_TROT_AND_LOOK_AROUND"]},
+    ],
+    "hopInPlace": [
+        {"phase": "原地跳跃", "duration": (1.0, 2.5), "safe_to_interrupt": True,
+         "actions": ["ACT_RUN_IN_CIRCLES_OR_ZOOMIES"]},
+    ],
+    "nudgeWithNose": [
+        {"phase": "鼻子轻蹭", "duration": (1.0, 2.0), "safe_to_interrupt": True,
+         "actions": ["ACT_NUDGE_HAND_WITH_HEAD", "ACT_RUB_AGAINST_LEG_OR_LEAN"]},
+    ],
+    "playBow": [
+        {"phase": "玩耍鞠躬", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_PLAY_BOW_INVITE"]},
+    ],
+    "tailUpAndWag": [
+        {"phase": "尾巴高翘快摆", "duration": (1.5, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_WAG_TAIL"]},
+    ],
+    "spinInCircle": [
+        {"phase": "兴奋转圈", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_RUN_IN_CIRCLES_OR_ZOOMIES"]},
+    ],
+    "pounceForward": [
+        {"phase": "扑跳", "duration": (0.5, 1.5), "safe_to_interrupt": False,
+         "actions": ["ACT_JUMP_ON_PERSON", "ACT_PLAY_BOW_INVITE"]},
+    ],
+    "barkShortExcited": [
+        {"phase": "兴奋吠叫", "duration": (0.5, 1.5), "safe_to_interrupt": True,
+         "actions": ["ACT_WHINE_OR_BARK_SOFTLY", "ACT_BARK_OR_HOWL"]},
+    ],
+    "runBackAndForth": [
+        {"phase": "来回奔跑", "duration": (2.0, 5.0), "safe_to_interrupt": False,
+         "actions": ["ACT_RUN_IN_CIRCLES_OR_ZOOMIES", "ACT_CHASE_ROLLING_FOOD"]},
+    ],
+    "rollOverShowBelly": [
+        {"phase": "打滚露肚皮", "duration": (1.5, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_ROLL_OVER"]},
+    ],
+
+    # ── Lv5: 情绪驱动 — Excite 兴奋 ────────────────────────────────────────
+    "begForFood": [
+        {"phase": "索求", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_STARE_AT_FOOD_IN_HAND", "ACT_WHINE_OR_BARK_SOFTLY",
+                      "ACT_PRESS_BELL_OR_TRIGGER_MECHANISM"]},
+    ],
+    "carryAndShake": [
+        {"phase": "物品摇晃", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_CARRY_AND_SHAKE_OBJECT", "ACT_SHAKE_TOY_WITH_MOUTH"]},
+    ],
+    "wiggleBody": [
+        {"phase": "扭身摇尾", "duration": (1.0, 2.5), "safe_to_interrupt": True,
+         "actions": ["ACT_WAG_TAIL"]},
+    ],
+    "trotAndBounce": [
+        {"phase": "小跑弹跳", "duration": (1.5, 4.0), "safe_to_interrupt": True,
+         "actions": ["ACT_TROT_AND_LOOK_AROUND", "ACT_RUN_IN_CIRCLES_OR_ZOOMIES"]},
+    ],
+    "moveRapidly": [
+        {"phase": "高频移动", "duration": (2.0, 5.0), "safe_to_interrupt": False,
+         "actions": ["ACT_RUN_IN_CIRCLES_OR_ZOOMIES", "ACT_TROT_AND_LOOK_AROUND"]},
+    ],
+    "jumpOnPerson": [
+        {"phase": "跳跃扑人", "duration": (0.5, 1.5), "safe_to_interrupt": False,
+         "actions": ["ACT_JUMP_ON_PERSON"]},
+    ],
+    "circleAround": [
+        {"phase": "绕圈转", "duration": (1.5, 4.0), "safe_to_interrupt": True,
+         "actions": ["ACT_RUN_IN_CIRCLES_OR_CHASE", "ACT_CIRCLE_AROUND"]},
+    ],
+    "zoomiesRun": [
+        {"phase": "魔鬼跑", "duration": (2.0, 5.0), "safe_to_interrupt": False,
+         "actions": ["ACT_RUN_IN_CIRCLES_OR_ZOOMIES"]},
+    ],
+    "barkOrWhine": [
+        {"phase": "吠叫回应", "duration": (0.5, 2.0), "safe_to_interrupt": True,
+         "actions": ["ACT_WHINE_OR_BARK_SOFTLY", "ACT_BARK_OR_HOWL"]},
+    ],
+    "mouthingGently": [
+        {"phase": "轻咬裤腿", "duration": (1.0, 2.0), "safe_to_interrupt": True,
+         "actions": ["ACT_NIP_GENTLY_AT_PANTS_OR_HAND"]},
+    ],
+    "pawOnKnee": [
+        {"phase": "前爪搭膝", "duration": (1.0, 2.0), "safe_to_interrupt": True,
+         "actions": ["ACT_PLACE_PAW_ON_KNEE", "ACT_PAW_AT_ARM_OR_PANTS"]},
+    ],
+    "fetchToy": [
+        {"phase": "叼玩具", "duration": (1.5, 4.0), "safe_to_interrupt": True,
+         "actions": ["ACT_DROP_TOY_IN_FRONT_OF_OWNER", "ACT_SHAKE_TOY_WITH_MOUTH"]},
+    ],
+
+    # ── Lv5: 情绪驱动 — Anxiety 焦虑 ───────────────────────────────────────
+    "paceBackAndForth": [
+        {"phase": "来回踱步", "duration": (2.0, 6.0), "safe_to_interrupt": True,
+         "actions": ["ACT_RUN_IN_CIRCLES_OR_ZOOMIES", "ACT_TROT_AND_LOOK_AROUND"]},
+    ],
+    "whineLow": [
+        {"phase": "低哼唧", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_WHINE_SOFTLY"]},
+    ],
+    "stareIntently": [
+        {"phase": "凝视", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_STARE_AND_TILT_HEAD"]},
+    ],
+    "headTilt": [
+        {"phase": "歪头", "duration": (0.5, 1.5), "safe_to_interrupt": True,
+         "actions": ["ACT_STARE_AND_TILT_HEAD"]},
+    ],
+    "scratchFrequently": [
+        {"phase": "频繁抓挠", "duration": (1.5, 4.0), "safe_to_interrupt": True,
+         "actions": ["ACT_SCRATCH", "ACT_SCRATCH_OBJECT_GENTLY"]},
+    ],
+    "whineHigh": [
+        {"phase": "高声哀鸣", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_WHINE_SOFTLY", "ACT_BARK_OR_HOWL"]},
+    ],
+    "bodyStiffen": [
+        {"phase": "身体紧绷", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_TENSE_BODY"]},
+    ],
+    "tuckTail": [
+        {"phase": "夹尾", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_TAIL_MOVEMENT"]},
+    ],
+    "dilatePupils": [
+        {"phase": "瞳孔放大", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_STARE_AND_TILT_HEAD"]},
+    ],
+    "hideAway": [
+        {"phase": "躲藏", "duration": (3.0, 10.0), "safe_to_interrupt": False,
+         "actions": ["ACT_CRAWL_THROUGH_LOW_GAP", "ACT_FIND_COOL_SPOT_AND_LIE_DOWN"]},
+    ],
+
+    # ── Lv5: 情绪驱动 — Fear 恐惧 ──────────────────────────────────────────
+    "freezeAlert": [
+        {"phase": "僵直警觉", "duration": (1.0, 4.0), "safe_to_interrupt": True,
+         "actions": ["ACT_TENSE_BODY", "ACT_STARE_AND_TILT_HEAD"]},
+    ],
+    "walkAway": [
+        {"phase": "走开", "duration": (1.5, 4.0), "safe_to_interrupt": False,
+         "actions": ["ACT_WALK_AWAY_OR_LIE_DOWN", "ACT_FIND_COOL_SPOT_AND_LIE_DOWN"]},
+    ],
+    "retreatWithTailTucked": [
+        {"phase": "夹尾后退", "duration": (1.0, 3.0), "safe_to_interrupt": False,
+         "actions": ["ACT_WALK_AWAY_OR_LIE_DOWN"]},
+    ],
+    "growlLow": [
+        {"phase": "低吼", "duration": (0.5, 2.0), "safe_to_interrupt": True,
+         "actions": ["ACT_GROWL_WHILE_EATING", "ACT_BARK_OR_HOWL"]},
+    ],
+    "fleeQuickly": [
+        {"phase": "快速逃窜", "duration": (1.0, 3.0), "safe_to_interrupt": False,
+         "actions": ["ACT_RUN_IN_CIRCLES_OR_ZOOMIES", "ACT_WALK_AWAY_OR_LIE_DOWN"]},
+    ],
+    "avoidAndHide": [
+        {"phase": "躲避藏匿", "duration": (2.0, 6.0), "safe_to_interrupt": False,
+         "actions": ["ACT_CRAWL_THROUGH_LOW_GAP", "ACT_FIND_COOL_SPOT_AND_LIE_DOWN"]},
+    ],
+    "trembleShake": [
+        {"phase": "发抖", "duration": (1.0, 4.0), "safe_to_interrupt": True,
+         "actions": ["ACT_SLIGHT_TREMOR", "ACT_TENSE_BODY"]},
+    ],
+    "loseControl": [
+        {"phase": "失禁", "duration": (0.5, 1.5), "safe_to_interrupt": False,
+         "actions": ["ACT_SQUAT_TO_PEE"]},
+    ],
+
+    # ── Lv5: 情绪驱动 — Curious 好奇 ───────────────────────────────────────
+    "tailWagLevel": [
+        {"phase": "尾巴平摆", "duration": (1.0, 2.5), "safe_to_interrupt": True,
+         "actions": ["ACT_WAG_TAIL"]},
+    ],
+    "approachSlowly": [
+        {"phase": "缓慢靠近", "duration": (1.5, 4.0), "safe_to_interrupt": True,
+         "actions": ["ACT_APPROACH_SLOWLY_SIDEWAYS", "ACT_WALK_SLOWLY_AND_SNIFF_GROUND"]},
+    ],
+    "sniffGround": [
+        {"phase": "嗅闻", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_SNIFF_GROUND_FOR_CRUMBS", "ACT_SNIFF_OBJECT"]},
+    ],
+    "pawAtObject": [
+        {"phase": "爪子拨弄", "duration": (1.0, 2.5), "safe_to_interrupt": True,
+         "actions": ["ACT_PUSH_OBJECT_WITH_PAW", "ACT_SCRATCH_OBJECT_GENTLY"]},
+    ],
+    "followMovement": [
+        {"phase": "跟随移动", "duration": (1.5, 4.0), "safe_to_interrupt": False,
+         "actions": ["ACT_FOLLOW_AND_CLING", "ACT_TROT_AND_LOOK_AROUND"]},
+    ],
+    "circleInspect": [
+        {"phase": "绕行观察", "duration": (1.5, 4.0), "safe_to_interrupt": True,
+         "actions": ["ACT_CIRCLE_AROUND", "ACT_STARE_AND_TILT_HEAD"]},
+    ],
 }
 
 

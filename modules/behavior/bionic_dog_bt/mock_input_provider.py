@@ -24,6 +24,7 @@ from .constants import PRIORITY_LEVELS, DEFAULT_IDLE_BEHAVIOR, COMMAND_BEHAVIOR_
 from .emotion_module import EmotionModule
 from .need_module import NeedModule
 from .mock_perception_client import MockPerceptionClient
+from .emotion_behavior_table import select_emotion_behavior, get_dominant_emotion
 
 
 class MockInputProvider:
@@ -212,60 +213,67 @@ class MockInputProvider:
 
     # ── Lv5 EmotionExpression ────────────────────────────────────────────────
 
-    def inject_happy_overflow(self, value: float = 85.0, command_id: str = None) -> ActiveBehavior:
-        """Joy overflow → express_happy.
-
-        If triggered by voice command (CMD_PRAISE/CMD_COMFORT/CMD_ENCOUR),
-        there is an interacting person. If triggered by emotion overflow,
-        check_person() at execution time determines interactive vs solo mode.
-        """
+    def inject_happy_overflow(self, value: float = 85.0, command_id: str = None) -> Optional[ActiveBehavior]:
+        """Joy overflow → select from emotion behavior table."""
         self._emotion_module.set_emotion("Joy", value)
+        if command_id:
+            self._perception.set_person_present(True, identity="owner")
+        return self._inject_emotion_behavior("Joy", value, command_id)
+
+    def inject_fear(self, value: float = 80.0) -> Optional[ActiveBehavior]:
+        """Fear overflow → select from emotion behavior table."""
+        self._emotion_module.set_emotion("Fear", value)
+        return self._inject_emotion_behavior("Fear", value)
+
+    def inject_curiosity(self, value: float = 65.0) -> Optional[ActiveBehavior]:
+        """Curious overflow → select from emotion behavior table."""
+        self._emotion_module.set_emotion("Curious", value)
+        return self._inject_emotion_behavior("Curious", value)
+
+    def inject_emotion_expression(self, value: float = 80.0) -> Optional[ActiveBehavior]:
+        """Generic emotion-driven behavior injection.
+
+        Finds the dominant emotion and selects a behavior from the table
+        based on intensity zone and check_person() result.
+        """
+        dominant = self._emotion_module.get_dominant_emotion()
+        if dominant is None:
+            return None
+        emotion_name, current_val = dominant
+        return self._inject_emotion_behavior(emotion_name, current_val)
+
+    def _inject_emotion_behavior(self, emotion_name: str, value: float,
+                                  command_id: str = None) -> Optional[ActiveBehavior]:
+        """Internal: select a behavior from the emotion table and inject it.
+
+        1. Check check_person() for interactive vs solo
+        2. Select behavior name from EMOTION_BEHAVIOR_TABLE
+        3. Create ActiveBehavior with need_type="emotional"
+        """
+        interactive = self._perception.is_person_present()
+        behavior_name = select_emotion_behavior(emotion_name, value, interactive)
+
+        if behavior_name is None:
+            return None
+
         params = {}
         if command_id:
             params["command_id"] = command_id
             params["source"] = "audio_command"
-            # Voice command implies person is present
-            self._perception.set_person_present(True, identity="owner")
+        params["source_emotion"] = emotion_name
+        params["emotion_value"] = value
+        params["interactive"] = interactive
+
         b = ActiveBehavior(
             behavior_id=self._gen_id(),
-            behavior_name="express_happy",
+            behavior_name=behavior_name,
             priority_level=PRIORITY_LEVELS["EMOTION_EXPRESSION"],
             value=value, confidence=0.85,
             need_type="emotional",
             interrupt_policy="immediate",
-            timeout_sec=5.0, cooldown_sec=1.0,
+            timeout_sec=8.0, cooldown_sec=1.0,
             params=params,
-            style={"emotion": "Joy"},
-        )
-        self._add_candidate(b)
-        return b
-
-    def inject_fear(self, value: float = 80.0) -> ActiveBehavior:
-        """Fear overflow → express_fear (ROS2 Fear > 60, Fear HIGH zone)."""
-        self._emotion_module.set_emotion("Fear", value)
-        b = ActiveBehavior(
-            behavior_id=self._gen_id(),
-            behavior_name="express_fear",
-            priority_level=PRIORITY_LEVELS["EMOTION_EXPRESSION"],
-            value=value, confidence=0.8,
-            need_type="emotional",
-            interrupt_policy="safe_point",
-            timeout_sec=8.0, cooldown_sec=2.0,
-        )
-        self._add_candidate(b)
-        return b
-
-    def inject_curiosity(self, value: float = 65.0) -> ActiveBehavior:
-        """Curious overflow → express_curiosity (ROS2 Curious > 50, Curious HIGH zone)."""
-        self._emotion_module.set_emotion("Curious", value)
-        b = ActiveBehavior(
-            behavior_id=self._gen_id(),
-            behavior_name="express_curiosity",
-            priority_level=PRIORITY_LEVELS["EMOTION_EXPRESSION"],
-            value=value, confidence=0.7,
-            need_type="emotional",
-            interrupt_policy="immediate",
-            timeout_sec=4.0, cooldown_sec=1.0,
+            style={"emotion": emotion_name},
         )
         self._add_candidate(b)
         return b

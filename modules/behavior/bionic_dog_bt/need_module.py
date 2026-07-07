@@ -63,6 +63,15 @@ class NeedModule:
 
     def __init__(self):
         self._needs: dict[str, NeedState] = {}
+        self.level_events: dict[str, Optional[str]] = {}  # need_name → "NEED_HUNGER_TRIGGERED" or "NEED_HUNGER_RECOVERED"
+
+    def set_level_events(self, events: dict[str, Optional[str]]) -> None:
+        """Store the current levelEvents from /internal_need/state.
+
+        Used by BehaviorRelevanceCondition: compares with trigger_event from
+        signal_event to determine if need is still at the same level.
+        """
+        self.level_events = dict(events)
 
     def _ensure_need(self, name: str) -> NeedState:
         """Get or create a need state with default config."""
@@ -136,3 +145,4 @@ class NeedModule:
     def reset(self) -> None:
         """Reset all need states."""
         self._needs.clear()
+        self.level_events.clear()

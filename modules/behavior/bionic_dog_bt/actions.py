@@ -15,6 +15,7 @@ import time
 from .behavior_tree_node import Node, Status
 from .blackboard import Blackboard
 from .mock_action_executor import MockActionExecutor
+from .logger import get_logger, LogEvent
 from .constants import (
     STATUS_RUNNING,
     STATUS_SUCCESS,
@@ -26,6 +27,8 @@ from .constants import (
     INTERRUPT_NON_INTERRUPTIBLE,
     PRIORITY_LEVELS,
 )
+
+_log = get_logger("actions")
 
 
 class ExecuteActiveBehavior(Node):
@@ -66,8 +69,9 @@ class ExecuteActiveBehavior(Node):
                 bb.mark_timeout()
                 if bb.current_goal_id:
                     ex.cancel_goal(bb.current_goal_id)
-                self.log(f"TIMEOUT: {bb.current_behavior.behavior_name} "
-                         f"(timeout={bb.current_behavior.timeout_sec}s)")
+                _log.event(LogEvent.BEHAVIOR_TIMEOUT,
+                           behavior_name=bb.current_behavior.behavior_name,
+                           timeout_sec=bb.current_behavior.timeout_sec)
                 return Status.FAILURE
 
         # ── Check result of completed goal ───────────────────────────────────
@@ -81,7 +85,9 @@ class ExecuteActiveBehavior(Node):
                 if bb.current_behavior:
                     bb.set_cooldown(bb.current_behavior.behavior_name, bb.current_behavior.cooldown_sec)
 
-                self.log(f"RESULT: {result.behavior_name} → {result.status}")
+                _log.event(LogEvent.BEHAVIOR_COMPLETE,
+                           behavior_name=result.behavior_name,
+                           status=result.status, reward=result.reward)
                 ex.remove_goal(bb.current_goal_id)
 
                 if result.status == STATUS_SUCCESS:
@@ -109,8 +115,8 @@ class ExecuteActiveBehavior(Node):
 
         # ── Check cooldown ───────────────────────────────────────────────────
         if bb.is_in_cooldown(active.behavior_name):
-            self.log(f"COOLDOWN: {active.behavior_name} on cooldown "
-                     f"until {bb.cooldown_until.get(active.behavior_name, 0):.1f}")
+            _log.event(LogEvent.BEHAVIOR_COOLDOWN,
+                       behavior_name=active.behavior_name)
             bb.active_behavior = None  # Discard
             return Status.FAILURE
 
@@ -132,8 +138,8 @@ class ExecuteActiveBehavior(Node):
         # ── Decide whether to preempt ────────────────────────────────────────
         can_preempt, reason = self._evaluate_preemption(active, current, bb)
         if not can_preempt:
-            self.log(f"NO PREEMPT: {reason} | active={active.behavior_name}(Lv{active.priority_level}) "
-                     f"vs current={current.behavior_name}(Lv{current.priority_level})")
+            _log.event(LogEvent.PREEMPT_BLOCKED, reason=reason,
+                       active=active.behavior_name, current=current.behavior_name)
             bb.active_behavior = None  # Discard candidate
             bb.preemption_occurred = False
             bb.preemption_detail = reason
@@ -144,7 +150,9 @@ class ExecuteActiveBehavior(Node):
             return Status.FAILURE
 
         # ── Execute preemption ───────────────────────────────────────────────
-        self.log(f"PREEMPT: {current.behavior_name} → {active.behavior_name} | {reason}")
+        _log.event(LogEvent.PREEMPT, reason=reason,
+                   from_behavior=current.behavior_name,
+                   to_behavior=active.behavior_name)
         bb.preemption_occurred = True
         bb.preemption_detail = reason
 
@@ -179,8 +187,10 @@ class ExecuteActiveBehavior(Node):
         bb.executor_feedback = self.executor.get_feedback(goal_id)
         bb.active_behavior = None  # Consumed
         mode = "interactive" if active.params.get("interactive") else "solo"
-        self.log(f"SEND: {active.behavior_name} Lv{active.priority_level} "
-                 f"value={active.value} mode={mode} goal={goal_id}")
+        _log.event(LogEvent.BEHAVIOR_START,
+                   behavior_name=active.behavior_name,
+                   priority_level=active.priority_level,
+                   mode=mode, goal_id=goal_id)
 
     def _evaluate_preemption(self, active, current, bb: Blackboard) -> tuple[bool, str]:
         """Evaluate whether active should preempt current.

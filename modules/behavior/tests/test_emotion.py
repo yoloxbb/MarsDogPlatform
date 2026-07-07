@@ -256,8 +256,10 @@ class TestExcretionThenHappyScenario:
         joy_state.decay_rate = 0.1  # nearly no decay
 
         _tick(root, bb, 1)
-        # Should start express_happy
-        assert bb.current_behavior.behavior_name == "express_happy"
+        # Should start an emotion-driven behavior
+        assert bb.current_behavior is not None
+        assert bb.current_behavior.need_type == "emotional"
+        assert bb.current_behavior.params.get("source_emotion") == "Joy"
         assert bb.preemption_occurred is False  # no preemption needed
 
 

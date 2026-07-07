@@ -15,6 +15,9 @@ from __future__ import annotations
 from .behavior_tree_node import Node, Status
 from .blackboard import Blackboard
 from .constants import STATUS_RUNNING, EMOTION_BEHAVIOR_MAP, NEED_BEHAVIOR_MAP
+from .logger import get_logger, LogEvent
+
+_log = get_logger("conditions")
 
 
 class ActiveLevelCondition(Node):
@@ -50,17 +53,21 @@ class ActiveLevelCondition(Node):
 
 
 class BehaviorRelevanceCondition(Node):
-    """Condition: is the active_behavior's triggering condition still valid?
+    """Condition: is the active_behavior's triggering signal still valid?
 
-    Checks whether the source signal (emotion overflow, need threshold, etc.)
-    is still above its threshold before allowing the behavior to execute.
+    Uses STRING COMPARISON of level events (not value-based overflow checks):
 
-    Rules by need_type:
-    - "emotional": look up the source emotion via EMOTION_BEHAVIOR_MAP,
-      check if that emotion is still overflowing (current >= threshold).
-      If the emotion has decayed below threshold, return FAILURE.
-    - All other types ("system", "survival", "external", "physiological",
-      "physiological_urgent", "psychological", "idle"): always SUCCESS.
+    - For emotion-triggered behaviors:
+      Compare current /emotion/state.levelEvents[emotion] with the
+      trigger_event stored at injection time (from /emotion/signal_event).
+      If they match → emotion is still in the same zone → SUCCESS.
+      If they differ → emotion has changed zone → FAILURE.
+
+    - For need-triggered behaviors:
+      Same pattern: compare /internal_need/state.levelEvents[need]
+      with trigger_event from /internal_need/signal_event.
+
+    - For all other types (system, external, idle): always SUCCESS.
 
     When there is no active_behavior (current behavior is still running),
     always return SUCCESS — relevance only gates new candidates.
@@ -78,49 +85,80 @@ class BehaviorRelevanceCondition(Node):
         if active is None:
             return Status.SUCCESS
 
-        # ── Emotion-triggered behaviors: check overflow ──────────────────────
+        # ── Emotion-triggered: compare levelEvents[emotion] vs trigger_event ─
         if active.need_type == "emotional":
-            emotion_name = EMOTION_BEHAVIOR_MAP.get(active.behavior_name)
+            emotion_name = active.params.get("source_emotion")
+            trigger_event = active.params.get("trigger_event", "")
+
+            if emotion_name is None:
+                emotion_name = EMOTION_BEHAVIOR_MAP.get(active.behavior_name)
             if emotion_name is None:
                 return Status.SUCCESS
 
+            # Primary path: string comparison of level events (ROS2 mode)
+            if trigger_event:
+                current_event = bb.emotion_module.level_events.get(emotion_name)
+                if current_event and current_event == trigger_event:
+                    _log.event(LogEvent.RELEVANCE_PASS,
+                               behavior_name=active.behavior_name,
+                               emotion=emotion_name,
+                               current_event=current_event,
+                               trigger_event=trigger_event)
+                    return Status.SUCCESS
+                else:
+                    _log.event(LogEvent.RELEVANCE_FAIL,
+                               behavior_name=active.behavior_name,
+                               emotion=emotion_name,
+                               current_event=str(current_event),
+                               trigger_event=trigger_event)
+                    return Status.FAILURE
+
+            # Fallback: value-based overflow check (mock/test mode)
             if not bb.emotion_module.is_overflowing(emotion_name):
                 em_state = bb.emotion_module.get_emotion(emotion_name)
                 current_val = em_state.current_value if em_state else 0.0
                 threshold = em_state.overflow_threshold if em_state else 0.0
-                self.log(
-                    f"SKIP {active.behavior_name}: emotion '{emotion_name}' "
-                    f"no longer overflowing ({current_val:.0f} < {threshold:.0f})"
-                )
+                _log.event(LogEvent.RELEVANCE_FAIL,
+                           behavior_name=active.behavior_name,
+                           emotion=emotion_name,
+                           current=round(current_val, 1),
+                           threshold=round(threshold, 1))
                 return Status.FAILURE
 
-            em_state = bb.emotion_module.get_emotion(emotion_name)
-            current_val = em_state.current_value if em_state else 0.0
-            threshold = em_state.overflow_threshold if em_state else 0.0
-            self.log(
-                f"RELEVANT {active.behavior_name}: emotion '{emotion_name}' "
-                f"still overflowing ({current_val:.0f} >= {threshold:.0f})"
-            )
+        # ── Need-triggered: compare levelEvents[need] vs trigger_event ───────
+        if active.need_type in ("physiological", "physiological_urgent", "psychological"):
+            need_name = active.params.get("source_need")
+            trigger_event = active.params.get("trigger_event", "")
 
-        # ── Need-triggered behaviors: check trigger level ────────────────────
-        elif active.need_type in ("physiological", "physiological_urgent", "psychological"):
-            need_name = NEED_BEHAVIOR_MAP.get(active.behavior_name)
+            if need_name is None:
+                need_name = NEED_BEHAVIOR_MAP.get(active.behavior_name)
+
             if need_name is not None:
-                if not bb.need_module.is_triggered(need_name):
-                    need_state = bb.need_module.get_need(need_name)
-                    current_val = need_state.current_value if need_state else 0.0
-                    self.log(
-                        f"SKIP {active.behavior_name}: need '{need_name}' "
-                        f"no longer triggered (value={current_val:.0f}, level={bb.need_module.get_level(need_name)})"
-                    )
-                    return Status.FAILURE
+                # Primary path: string comparison of level events (ROS2 mode)
+                if trigger_event:
+                    current_event = bb.need_module.level_events.get(need_name)
+                    if current_event and current_event == trigger_event:
+                        _log.event(LogEvent.RELEVANCE_PASS,
+                                   behavior_name=active.behavior_name,
+                                   need=need_name,
+                                   current_event=current_event,
+                                   trigger_event=trigger_event)
+                        return Status.SUCCESS
+                    else:
+                        _log.event(LogEvent.RELEVANCE_FAIL,
+                                   behavior_name=active.behavior_name,
+                                   need=need_name,
+                                   current_event=str(current_event),
+                                   trigger_event=trigger_event)
+                        return Status.FAILURE
 
-                need_state = bb.need_module.get_need(need_name)
-                current_val = need_state.current_value if need_state else 0.0
-                self.log(
-                    f"RELEVANT {active.behavior_name}: need '{need_name}' "
-                    f"still triggered (value={current_val:.0f}, level={bb.need_module.get_level(need_name)})"
-                )
+                # Fallback: value-based trigger check (mock/test mode)
+                if not bb.need_module.is_triggered(need_name):
+                    _log.event(LogEvent.RELEVANCE_FAIL,
+                               behavior_name=active.behavior_name,
+                               need=need_name,
+                               level=bb.need_module.get_level(need_name))
+                    return Status.FAILURE
 
         # ── All other trigger types pass through ─────────────────────────────
         return Status.SUCCESS

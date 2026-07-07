@@ -15,6 +15,9 @@ from .constants import STATUS_RUNNING, STATUS_SUCCESS, STATUS_FAILURE
 from .emotion_module import EmotionModule
 from .need_module import NeedModule
 from .mock_perception_client import MockPerceptionClient
+from .logger import get_logger
+
+_log = get_logger("blackboard")
 
 
 class Blackboard:
@@ -121,3 +124,7 @@ class Blackboard:
         """Mark that a timeout has occurred."""
         self.timeout_occurred = True
         self.current_status = STATUS_FAILURE
+        _log.warning("Timeout: %s elapsed=%.1fs timeout=%.1fs",
+                     self.current_behavior.behavior_name if self.current_behavior else "?",
+                     __import__('time').time() - self._behavior_start_time,
+                     self._behavior_timeout)

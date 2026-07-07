@@ -78,11 +78,14 @@ class TestVoiceCommands:
         behavior = provider.inject_audio_command("CMD_UNKNOWN")
         assert behavior is None
 
-    def test_cmd_praise_generates_express_happy(self, runtime):
+    def test_cmd_praise_generates_emotion_behavior(self, runtime):
         root, bb, executor, provider, loader = runtime
         behavior = provider.inject_audio_command("CMD_PRAISE")
         assert behavior is not None
-        assert behavior.behavior_name == "express_happy"
+        assert behavior.need_type == "emotional"
+        # source_emotion should be Joy (CMD_PRAISE routes through inject_happy_overflow)
+        assert behavior.params.get("source_emotion") == "Joy"
+        assert behavior.params.get("source") == "audio_command"
 
     def test_cmd_stop_generates_emergency_stop(self, runtime):
         root, bb, executor, provider, loader = runtime
@@ -125,7 +128,8 @@ class TestCheckPersonIntegration:
 
         _tick(root, bb, 1)
         assert bb.current_behavior is not None
-        assert bb.current_behavior.behavior_name == "express_happy"
+        assert bb.current_behavior.need_type == "emotional"
+        # Interactive mode should be set (person present → interactive=True)
         assert bb.current_behavior.params.get("interactive") is True
         assert bb.current_behavior.params.get("target_identity") == "owner"
 
@@ -140,7 +144,8 @@ class TestCheckPersonIntegration:
 
         _tick(root, bb, 1)
         assert bb.current_behavior is not None
-        assert bb.current_behavior.behavior_name == "express_happy"
+        assert bb.current_behavior.need_type == "emotional"
+        # Solo mode (no person)
         assert bb.current_behavior.params.get("interactive") is False
 
     def test_voice_command_emotional_preserves_source(self, runtime):

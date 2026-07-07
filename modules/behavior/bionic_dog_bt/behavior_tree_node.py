@@ -72,10 +72,9 @@ class Node(ABC):
         self._initialised = False
 
     def log(self, message: str) -> None:
-        """Log a message via rich console if available, else print."""
-        if self.console:
-            self.console.log(f"[{self.name}] {message}")
-        # Silent by default in tests
+        """Log a message via the unified logger."""
+        from .logger import get_logger
+        get_logger("bt").info(f"[{self.name}] {message}")
 
 
 class Sequence(Node):
