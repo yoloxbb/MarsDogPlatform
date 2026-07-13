@@ -14,8 +14,8 @@ class DummyMessage:
 
 
 class PerceptionAdapterTest(unittest.TestCase):
-    def test_visual_event_updates_need_context(self):
-        """visual_event.events 应更新需求系统的人/动物可见上下文。"""
+    def test_visual_event_updates_need_owner_presence(self):
+        """visual_event.events 中主人事件应更新需求系统主人在场状态。"""
         system = MarsdogNeedSystem()
 
         events = ApplyVisualEventMessage(
@@ -27,25 +27,7 @@ class PerceptionAdapterTest(unittest.TestCase):
         )
 
         self.assertEqual(events, ["EVT_VISION_MASTER", "EVT_VISION_ANIMAL_GREET"])
-        self.assertTrue(system.state.socialHumanVisible)
-        self.assertTrue(system.state.socialAnimalVisible)
-
-    def test_visual_event_registers_exploration_target(self):
-        """tracked_objects 应登记为探索候选目标。"""
-        system = MarsdogNeedSystem()
-
-        ApplyVisualEventMessage(
-            system,
-            {
-                "tracked_objects": [
-                    {"label": "delivery_box", "tracking_id": "box-1", "confidence": 0.8}
-                ]
-            },
-        )
-
-        context = system.GetExplorationContext()
-        self.assertEqual(context["pendingTargetId"], "box-1")
-        self.assertEqual(system.state.pendingEvents[-1].eventTag, "NewObject")
+        self.assertTrue(system.state.ownerPresent)
 
     def test_audio_event_updates_need_owner_presence(self):
         """主人声纹或叫名字事件应更新需求系统主人在场状态。"""

@@ -8,14 +8,9 @@ from .types import (
     DemandType,
     EatEfficiencyType,
     EmotionType,
-    ExplorationDiscoveryType,
-    ExplorationTargetType,
     FoodType,
     PersonalityProfileType,
     SleepDepthType,
-    SocialInteractionState,
-    SocialResponseType,
-    SocialTargetType,
 )
 
 __all__ = [
@@ -23,15 +18,10 @@ __all__ = [
     "DemandType",
     "EatEfficiencyType",
     "EmotionType",
-    "ExplorationDiscoveryType",
-    "ExplorationTargetType",
     "FoodType",
     "MarsdogEmotionSystem",
     "MarsdogNeedSystem",
     "MarsdogPersonalitySystem",
     "PersonalityProfileType",
     "SleepDepthType",
-    "SocialInteractionState",
-    "SocialResponseType",
-    "SocialTargetType",
 ]

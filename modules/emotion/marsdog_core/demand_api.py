@@ -91,6 +91,13 @@ class DemandAPI:
             for demand in self.state.demands
         }
 
+    def GetDemandLevelEventsValue(self) -> dict[str, str]:
+        """获取全部需求当前等级对应的事件名。"""
+        return {
+            demand: levelInfo["eventType"]
+            for demand, levelInfo in self.GetAllDemandLevels().items()
+        }
+
     def GetDemandSignalSnapshotValue(self) -> dict[str, Any]:
         """获取当前需求等级快照，用于判断等级变化。"""
         levels = self.GetAllDemandLevels()

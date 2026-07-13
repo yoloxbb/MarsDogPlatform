@@ -1,6 +1,6 @@
 # Marsdog 内部需求与情绪更新逻辑
 
-本文档只说明当前仓库实现的内部需求计算、情绪计算、性格参数同步、ROS2 输入适配和状态发布。
+完整 ROS2 Topic 输入输出格式见 [ros2_topic_contract.md](ros2_topic_contract.md)。
 
 ## 1. 节点入口
 
@@ -12,7 +12,8 @@
 | `internal_need_node` | `marsdog_ros2/internal_need_node.py` | 内部需求计算、需求状态发布、需求等级事件发布 |
 | `emotion_engine_node` | `marsdog_ros2/emotion_engine_node.py` | 情绪计算、情绪自然衰减、情绪状态发布、情绪区间事件发布 |
 
-启动命令：
+
+单节点调试命令：
 
 ```bash
 ros2 run marsdog_behavior personality_node
@@ -128,6 +129,15 @@ ros2 param set /personality_node C 40
       "levelActive": true
     }
   },
+  "levelEvents": {
+    "Hunger": "NEED_HUNGER_TRIGGERED",
+    "Bladder": "NEED_BLADDER_RECOVERED",
+    "Sleepiness": "NEED_SLEEPINESS_RECOVERED",
+    "Cleanliness": "NEED_CLEANLINESS_RECOVERED",
+    "Energy": "NEED_ENERGY_RECOVERED",
+    "Social": "NEED_SOCIAL_RECOVERED",
+    "Exploration": "NEED_EXPLORATION_RECOVERED"
+  },
   "triggered": [
     {
       "type": "Hunger",
@@ -157,6 +167,8 @@ ros2 param set /personality_node C 40
 | `OVERFLOW` | 超过满溢阈值 |
 
 需求等级变化时发布 `/internal_need/signal_event`。同一等级不会重复发布。
+`/internal_need/state.levelEvents[demand]` 与 `/internal_need/signal_event.event_type`
+使用同一套事件名，可直接按 `demand` 对比两者是否一致。
 
 事件命名规则：
 
@@ -297,12 +309,10 @@ UpdateNaturalDemandsByTime()
 - 其他情况：`+0`。
 - 触发：`>60`。
 - 满溢：`>80`。
-- `tracked_objects` 会登记为探索候选目标。
-- 已知目标集合只保存在当前进程内。
+- 视觉 `tracked_objects` 不直接改变 `Exploration`，也不保存探索目标上下文。
 - `ACTION_EXPLORE* + COMPLETED`：
-  - `discoveryType=New`：`Exploration -= 20`
-  - `discoveryType=Old`：`Exploration -= 10`
-  - `discoveryType=Completed`：`Exploration -= 15`
+  - 统一 `Exploration -= 15`
+  - `metadata.discoveryType` 会被忽略
 
 ## 8. 情绪状态
 
@@ -318,6 +328,23 @@ UpdateNaturalDemandsByTime()
 | `Calm` | 平静 |
 
 `/emotion/state` 持续发布全部情绪值、区间、主导情绪和性格参数。
+其中 `levelEvents` 会按情绪名输出当前区间事件名：
+
+```json
+{
+  "levelEvents": {
+    "Joy": "EMO_JOY_LOW",
+    "Excite": null,
+    "Anxiety": null,
+    "Fear": null,
+    "Curious": null,
+    "Calm": "EMO_CALM_NORMAL"
+  }
+}
+```
+
+`/emotion/state.levelEvents[emotion]` 与 `/emotion/signal_event.event_type`
+使用同一套事件名，可直接按 `emotion` 对比两者是否一致。
 
 ## 9. 情绪事件计算
 
@@ -371,9 +398,86 @@ k_calm    = (O+A)/100
 | `Curious` | `20-50` | `EMO_CURIOUS_LOW` |
 | `Curious` | `51-100` | `EMO_CURIOUS_HIGH` |
 
-## 12. 结果输入对情绪的影响
+## 12. 行为结果输入
 
-`/behavior/result_event` 中的 `result_type` 会映射为情绪结果：
+`/behavior/result_event` 是需求值和行为结果情绪变化的输入。消息类型为
+`std_msgs/String`，`data` 字段必须是 JSON 对象。
+
+示例：
+
+```json
+{
+  "event_id": "result-000001",
+  "timestamp": 1710000000.0,
+  "action_type": "ACTION_EAT",
+  "demand_type": "Hunger",
+  "result_type": "COMPLETED",
+  "metadata": {
+    "foodType": "NormalFood",
+    "portions": 1,
+    "eatEfficiency": "Full"
+  }
+}
+```
+
+字段约束：
+
+| 字段 | 要求 | 说明 |
+|---|---|---|
+| `event_id` | 建议填写 | 同一节点内重复 `event_id` 只处理一次；不填则无法去重 |
+| `timestamp` | 可选 | 当前只透传，不参与计算 |
+| `action_type` | 必填 | 必须是已登记的内部需求相关 `ACTION_*` |
+| `demand_type` | 建议填写 | 填写时必须与 `action_type` 映射一致，否则拒绝处理 |
+| `result_type` | 必填 | 只接受 `STARTED / COMPLETED / FAILED / INTERRUPTED / CANCELLED / TIMEOUT` |
+| `metadata` | 必填 JSON 对象 | 没有额外字段时传 `{}`；非对象会被拒绝 |
+
+当前接受的 `action_type -> demand_type`：
+
+| `action_type` | `demand_type` |
+|---|---|
+| `ACTION_EAT` | `Hunger` |
+| `ACTION_DEFECATE` | `Bladder` |
+| `ACTION_SLEEP` | `Sleepiness` |
+| `ACTION_GROOM` | `Cleanliness` |
+| `ACTION_RECHARGE` | `Energy` |
+| `ACTION_PLAY_INVITE` | `Social` |
+| `ACTION_SOCIAL_GREET` | `Social` |
+| `ACTION_BOUNDARY_TEST` | `Social` |
+| `ACTION_ATTENTION_SEEK` | `Social` |
+| `ACTION_RESOURCE_SHARE` | `Social` |
+| `ACTION_EXPLORE` | `Exploration` |
+| `ACTION_SPACE_EXPLORE` | `Exploration` |
+| `ACTION_OBJECT_EXPLORE` | `Exploration` |
+
+不在上表里的 action 不会更新需求，也不会触发行结果情绪变化。
+
+### 12.1 对需求的影响
+
+| 输入 | 需求处理 |
+|---|---|
+| `ACTION_EAT + COMPLETED` | 结算 `Hunger / Bladder / Cleanliness` |
+| `ACTION_DEFECATE + COMPLETED` | `Bladder = 0` |
+| `ACTION_GROOM + COMPLETED` | `Cleanliness -= 50` |
+| `ACTION_RECHARGE + COMPLETED` | 写入 `metadata.energyValue`；未提供时写入配置目标值 |
+| `ACTION_SLEEP + STARTED` | 进入睡眠状态 |
+| `ACTION_SOCIAL_* + COMPLETED` | 按 `metadata.socialOutcome` 结算 `Social` |
+| `ACTION_EXPLORE* + COMPLETED` | `Exploration -= 15` |
+| `INTERRUPTED / CANCELLED / TIMEOUT` | 对应需求按中断规则扣减 |
+| `FAILED` | 需求值不变 |
+
+`metadata` 约束：
+
+| action | metadata |
+|---|---|
+| `ACTION_EAT` | `foodType=PremiumFood/NormalFood/Snack`，`portions` 为数字，`eatEfficiency=Full/HalfInterrupted` |
+| `ACTION_RECHARGE` | `energyValue` 为 `0-100` 数字；也兼容 `energy_value / batteryValue` |
+| `ACTION_SOCIAL_*` | `socialOutcome=OwnerInteraction/DogHumanResponded/DogAnimalResponded/Rejected/TimedOut` |
+| `ACTION_EXPLORE*` | 当前忽略 metadata |
+
+### 12.2 对情绪的影响
+
+只有通过 action 映射校验的行为结果才会触发行结果情绪变化。`result_type`
+映射如下：
 
 | `result_type` | 映射 |
 |---|---|

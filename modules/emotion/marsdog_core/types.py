@@ -68,39 +68,6 @@ class SleepDepthType(str, Enum):
     DEEP = "Deep"
 
 
-class SocialInitiatorType(str, Enum):
-    """社交互动发起方。"""
-
-    OWNER = "Owner"
-    DOG = "Dog"
-
-
-class SocialTargetType(str, Enum):
-    """社交互动目标类型。"""
-
-    HUMAN = "Human"
-    ANIMAL = "Animal"
-
-
-class SocialInteractionState(str, Enum):
-    """社交互动会话状态。"""
-
-    IDLE = "Idle"
-    EXECUTING_ACTION = "ExecutingAction"
-    WAITING_RESPONSE = "WaitingResponse"
-    COMPLETED = "Completed"
-    TIMED_OUT = "TimedOut"
-    INTERRUPTED = "Interrupted"
-    FAILED = "Failed"
-
-
-class SocialResponseType(str, Enum):
-    """社交互动回应类型。"""
-
-    RESPONDED = "RESPONDED"
-    REJECTED = "REJECTED"
-
-
 class PersonalityProfileType(str, Enum):
     """预设性格类型。"""
 
@@ -109,28 +76,6 @@ class PersonalityProfileType(str, Enum):
     SUNNY_EXPLORER = "SunnyExplorer"
     LOYAL_GUARDIAN = "LoyalGuardian"
     PROUD_INDEPENDENT = "ProudIndependent"
-
-
-class ExplorationDiscoveryType(str, Enum):
-    """探索发现结果类型。"""
-
-    NEW = "New"
-    OLD = "Old"
-    COMPLETED = "Completed"
-
-
-class ExplorationTargetType(str, Enum):
-    """探索目标类型。"""
-
-    SPACE = "Space"
-    HUMAN = "Human"
-    MAP = "Map"
-    GENERIC_OBJECT = "GenericObject"
-    SLIPPERS_OR_SOCKS = "SlippersOrSocks"
-    TRASH_CAN = "TrashCan"
-    DELIVERY_BOX = "DeliveryBox"
-    TISSUE = "Tissue"
-    DOOR = "Door"
 
 
 class ActionType(str, Enum):
@@ -274,16 +219,6 @@ def NormalizeSleepDepthType(sleepDepth: object) -> str:
     return NormalizeEnumValue(SleepDepthType, sleepDepth)
 
 
-def NormalizeSocialTargetType(targetType: object) -> str:
-    """规范化社交目标类型。"""
-    return NormalizeEnumValue(SocialTargetType, targetType)
-
-
-def NormalizeSocialResponseType(responseType: object) -> str:
-    """规范化社交回应类型。"""
-    return NormalizeEnumValue(SocialResponseType, responseType)
-
-
 def NormalizePersonalityProfileType(profileName: object) -> str:
     """规范化预设性格名称。"""
     profileAliases = {
@@ -296,39 +231,6 @@ def NormalizePersonalityProfileType(profileName: object) -> str:
     if isinstance(profileName, str) and profileName in profileAliases:
         return profileAliases[profileName]
     return NormalizeEnumValue(PersonalityProfileType, profileName)
-
-
-def NormalizeExplorationDiscoveryType(discoveryType: object) -> str:
-    """规范化探索发现结果类型。"""
-    aliases = {
-        "新": ExplorationDiscoveryType.NEW.value,
-        "新事物": ExplorationDiscoveryType.NEW.value,
-        "旧": ExplorationDiscoveryType.OLD.value,
-        "旧事物": ExplorationDiscoveryType.OLD.value,
-        "完成": ExplorationDiscoveryType.COMPLETED.value,
-    }
-    if isinstance(discoveryType, str) and discoveryType in aliases:
-        return aliases[discoveryType]
-    return NormalizeEnumValue(ExplorationDiscoveryType, discoveryType)
-
-
-def NormalizeExplorationTargetType(targetType: object) -> str:
-    """规范化探索目标类型。"""
-    aliases = {
-        "空间": ExplorationTargetType.SPACE.value,
-        "人": ExplorationTargetType.HUMAN.value,
-        "地图": ExplorationTargetType.MAP.value,
-        "物品": ExplorationTargetType.GENERIC_OBJECT.value,
-        "拖鞋": ExplorationTargetType.SLIPPERS_OR_SOCKS.value,
-        "袜子": ExplorationTargetType.SLIPPERS_OR_SOCKS.value,
-        "垃圾桶": ExplorationTargetType.TRASH_CAN.value,
-        "快递盒子": ExplorationTargetType.DELIVERY_BOX.value,
-        "纸巾": ExplorationTargetType.TISSUE.value,
-        "门": ExplorationTargetType.DOOR.value,
-    }
-    if isinstance(targetType, str) and targetType in aliases:
-        return aliases[targetType]
-    return NormalizeEnumValue(ExplorationTargetType, targetType)
 
 
 def GetEmotionInternalName(emotionType: object) -> str:

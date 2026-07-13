@@ -7,13 +7,16 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
+from .behavior_result import (
+    MarkBehaviorResultEventHandledValue,
+    NormalizeBehaviorResultEventValue,
+)
 from .bladder_behavior import BladderBehaviorAPI
 from .cleanliness_behavior import CleanlinessBehaviorAPI
 from .config_loader import LoadAllConfigs
 from .demand_api import DemandAPI
 from .demand_lifecycle import DemandLifecycleAPI
 from .energy_behavior import EnergyBehaviorAPI
-from .event_api import EventAPI
 from .exploration_behavior import ExplorationBehaviorAPI
 from .hunger_behavior import HungerBehaviorAPI
 from .personality_api import PersonalityAPI
@@ -41,7 +44,6 @@ EXPLORATION_ACTIONS = {
 
 class MarsdogNeedSystem(
     DemandAPI,
-    EventAPI,
     DemandLifecycleAPI,
     BladderBehaviorAPI,
     CleanlinessBehaviorAPI,
@@ -65,22 +67,14 @@ class MarsdogNeedSystem(
         self.configs = LoadAllConfigs(configDir)
         self.random = randomGenerator or random.Random()
         self._timeProvider = timeProvider or time.time
-        self._eventHandlers: dict[str, list[Any]] = {}
         self._lastDemandSignalSnapshot = self.GetDemandSignalSnapshotValue()
 
     def OnVisualEvent(self, metadata: dict[str, Any] | None = None) -> list[str]:
-        """处理新版 `/perception/visual_event` 并更新需求上下文。"""
+        """处理新版 `/perception/visual_event` 中会影响需求值的事件。"""
         payload = dict(metadata or {})
         emittedEvents = self._GetStringList(payload.get("events", []))
-        humanVisible = self._IsHumanVisible(payload, emittedEvents)
-        animalVisible = self._IsAnimalVisible(payload, emittedEvents)
-        self.SetSocialTargetVisibility(humanVisible, animalVisible)
-
-        for target in payload.get("tracked_objects", []) or []:
-            if isinstance(target, dict):
-                self._RegisterExplorationTargetFromObject(target)
-        for eventName in emittedEvents:
-            self._ApplyVisualDemandEvent(eventName)
+        if "EVT_VISION_MASTER" in emittedEvents:
+            self.OnOwnerPresenceChanged(True)
         return emittedEvents
 
     def OnAudioEvent(self, metadata: dict[str, Any] | None = None) -> list[str]:
@@ -95,15 +89,15 @@ class MarsdogNeedSystem(
 
     def OnBehaviorResultEvent(self, resultData: dict[str, Any] | None = None) -> bool:
         """根据行为组回传的结果事件结算需求值。"""
-        payload = dict(resultData or {})
-        action = str(payload.get("action_type", payload.get("actionType", "")))
-        result = str(payload.get("result_type", payload.get("resultType", ""))).upper()
-        metadata = payload.get("metadata", {})
-        if not isinstance(metadata, dict):
-            metadata = {}
-
-        if not action or not result:
+        payload = NormalizeBehaviorResultEventValue(resultData, self._GetActionDemandMap())
+        if payload is None:
             return False
+        if MarkBehaviorResultEventHandledValue(self.state, payload.get("event_id")):
+            return False
+
+        action = str(payload["action_type"])
+        result = str(payload["result_type"])
+        metadata = payload["metadata"]
         if result == "STARTED" and action == ActionType.ACTION_SLEEP.value:
             return self.ExecuteSleep()
         if result in INTERRUPTED_RESULTS:
@@ -134,6 +128,7 @@ class MarsdogNeedSystem(
                 demand: self._BuildDemandState(demand, value)
                 for demand, value in self.state.demands.items()
             },
+            "levelEvents": self.GetDemandLevelEventsValue(),
             "triggered": self.GetAllDemandSignals(),
             "sleep": {
                 "isSleeping": self.IsSleeping(),
@@ -162,11 +157,14 @@ class MarsdogNeedSystem(
     def _ApplyEatCompleted(self, metadata: dict[str, Any]) -> bool:
         """结算进食完成后的饥渴、排泄和清洁变化。"""
         oldHunger = self.GetDemandValue(DemandType.HUNGER)
-        recovery = self.GetHungerRecoveryValue(
-            metadata.get("foodType", metadata.get("food_type", "NormalFood")),
-            metadata.get("portions", 1),
-            metadata.get("eatEfficiency", metadata.get("eat_efficiency", "Full")),
-        )
+        try:
+            recovery = self.GetHungerRecoveryValue(
+                metadata.get("foodType", metadata.get("food_type", "NormalFood")),
+                metadata.get("portions", 1),
+                metadata.get("eatEfficiency", metadata.get("eat_efficiency", "Full")),
+            )
+        except (TypeError, ValueError):
+            return False
         self.SetDemandValue(DemandType.HUNGER, oldHunger - recovery)
         self.ApplyBladderAfterEat(oldHunger)
         self.ApplyCleanlinessAfterEat()
@@ -184,32 +182,25 @@ class MarsdogNeedSystem(
         value = metadata.get("energyValue", metadata.get("energy_value", metadata.get("batteryValue")))
         if value is None:
             value = self.configs.get("demands", {}).get(DemandType.ENERGY.value, {}).get("rechargeTarget", 100)
-        return self.SetDemandValue(DemandType.ENERGY, int(value))
+        try:
+            energyValue = int(value)
+        except (TypeError, ValueError):
+            return False
+        return self.SetDemandValue(DemandType.ENERGY, energyValue)
 
     def _ApplySocialCompleted(self, metadata: dict[str, Any]) -> bool:
         """根据社交结果结算 Social。"""
         outcome = str(metadata.get("socialOutcome", metadata.get("social_outcome", "")))
-        config = self.configs.get("demands", {}).get(DemandType.SOCIAL.value, {})
-        recoveryMap = {
-            "OwnerInteraction": int(config.get("ownerInteractionRecovery", 25)),
-            "DogHumanResponded": int(config.get("dogHumanInteractionRecovery", 20)),
-            "DogAnimalResponded": int(config.get("dogAnimalInteractionRecovery", 15)),
-        }
-        recovery = recoveryMap.get(outcome)
+        recovery = self.GetSocialOutcomeRecoveryValue(outcome)
         if recovery is None:
             return outcome in {"Rejected", "TimedOut", ""}
         oldValue = self.GetDemandValue(DemandType.SOCIAL)
         return self.SetDemandValue(DemandType.SOCIAL, oldValue - recovery)
 
     def _ApplyExplorationCompleted(self, metadata: dict[str, Any]) -> bool:
-        """根据探索结果结算 Exploration。"""
-        discovery = str(metadata.get("discoveryType", metadata.get("discovery_type", "Completed")))
-        config = self.configs.get("demands", {}).get(DemandType.EXPLORATION.value, {})
-        recovery = int(config.get("recoveryRules", {}).get(discovery, 0))
-        if recovery <= 0:
-            return False
-        oldValue = self.GetDemandValue(DemandType.EXPLORATION)
-        return self.SetDemandValue(DemandType.EXPLORATION, oldValue - recovery)
+        """按统一完成结果结算 Exploration。"""
+        del metadata
+        return self.ExecuteExploration("Completed")
 
     def _ApplyInterruptedBehaviorResult(self, action: str, payload: dict[str, Any]) -> bool:
         """结算中断、取消或超时导致的需求值变化。"""
@@ -260,39 +251,6 @@ class MarsdogNeedSystem(
         operator = config.get("overflowOperator", config.get("urgentOperator", "gt"))
         return threshold is not None and IsConditionMatched(float(value), str(operator), float(threshold))
 
-    def _RegisterExplorationTargetFromObject(self, target: dict[str, Any]) -> None:
-        """把视觉物体结果登记为探索候选目标。"""
-        label = str(target.get("label", "GenericObject"))
-        targetId = str(target.get("tracking_id", target.get("track_id", label)))
-        confidence = float(target.get("confidence", 0.0) or 0.0)
-        metadata = {"value": confidence * 100.0, "targetObject": dict(target)}
-        self.OnExplorationTargetDetected(label, targetId, metadata=metadata)
-
-    def _ApplyVisualDemandEvent(self, eventName: str) -> None:
-        """根据视觉 EVT_* 事件更新需求上下文。"""
-        if eventName in {"EVT_VISION_MASTER", "EVT_VISION_STRANGER"}:
-            self.SetSocialTargetVisibility(True, self.state.socialAnimalVisible)
-        elif eventName.startswith("EVT_VISION_ANIMAL_"):
-            self.SetSocialTargetVisibility(self.state.socialHumanVisible, True)
-
-    def _IsHumanVisible(self, payload: dict[str, Any], events: list[str]) -> bool:
-        """判断视觉输入中是否存在人类目标。"""
-        target = payload.get("active_target", {})
-        return bool(
-            payload.get("faces")
-            or payload.get("humans")
-            or (isinstance(target, dict) and target)
-            or any(event in {"EVT_VISION_MASTER", "EVT_VISION_STRANGER"} for event in events)
-        )
-
-    def _IsAnimalVisible(self, payload: dict[str, Any], events: list[str]) -> bool:
-        """判断视觉输入中是否存在动物目标。"""
-        trackedObjects = payload.get("tracked_objects", []) or []
-        labels = [str(item.get("label", "")).lower() for item in trackedObjects if isinstance(item, dict)]
-        return any(label in {"dog", "cat", "animal"} for label in labels) or any(
-            event.startswith("EVT_VISION_ANIMAL_") for event in events
-        )
-
     def _GetStringList(self, value: object) -> list[str]:
         """将输入规整为字符串列表。"""
         if isinstance(value, list):
@@ -309,3 +267,7 @@ class MarsdogNeedSystem(
         """需求系统不直接拥有情绪状态，行为结果情绪由情绪节点处理。"""
         del resultType
         return False
+
+    def _GetActionDemandMap(self) -> dict[str, str]:
+        """获取 action 到内部需求的映射表。"""
+        return dict(self.configs.get("demandGlobalRules", {}).get("actionDemandMap", {}))

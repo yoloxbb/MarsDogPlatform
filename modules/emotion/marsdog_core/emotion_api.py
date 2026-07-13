@@ -130,6 +130,13 @@ class EmotionAPI:
             for emotion in self.state.emotions
         }
 
+    def GetEmotionLevelEventsValue(self) -> dict[str, str | None]:
+        """获取全部情绪当前强度区间对应的事件名。"""
+        return {
+            emotion: levelInfo["eventType"]
+            for emotion, levelInfo in self.GetAllEmotionLevels().items()
+        }
+
     def GetDominantEmotionSignalValue(self) -> dict[str, Any]:
         """获取主导情绪及其当前强度区间。"""
         emotion = self.GetDominantEmotion()

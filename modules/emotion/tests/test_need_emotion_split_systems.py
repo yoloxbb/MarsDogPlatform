@@ -27,7 +27,12 @@ class NeedEmotionSplitSystemTest(unittest.TestCase):
         self.assertTrue(state["demands"]["Hunger"]["overflow"])
         self.assertEqual(state["demands"]["Hunger"]["level"], "OVERFLOW")
         self.assertEqual(state["demands"]["Hunger"]["levelEvent"], "NEED_HUNGER_OVERFLOW")
+        self.assertEqual(state["levelEvents"]["Hunger"], "NEED_HUNGER_OVERFLOW")
         self.assertEqual(state["triggered"][0]["type"], "Hunger")
+
+        events = system.GetDemandSignalEventsValue(timestamp=2.0)
+
+        self.assertEqual(state["levelEvents"][events[0]["demand"]], events[0]["event_type"])
 
     def test_eat_result_updates_internal_demands(self):
         """进食完成结果应降低 Hunger 并联动 Bladder 与 Cleanliness。"""
@@ -80,7 +85,7 @@ class NeedEmotionSplitSystemTest(unittest.TestCase):
         )
 
         self.assertEqual(visualEvents, ["EVT_VISION_MASTER"])
-        self.assertTrue(needSystem.state.socialHumanVisible)
+        self.assertTrue(needSystem.state.ownerPresent)
         self.assertEqual(audioEvents, ["EVT_VOICE_CALL_NAME"])
         self.assertGreater(emotionSystem.GetEmotionValue("Joy"), 0)
 
@@ -109,9 +114,15 @@ class NeedEmotionSplitSystemTest(unittest.TestCase):
 
         self.assertEqual(state["emotions"]["Joy"]["level"], "MID")
         self.assertEqual(state["emotions"]["Joy"]["levelEvent"], "EMO_JOY_MID")
+        self.assertEqual(state["levelEvents"]["Joy"], "EMO_JOY_MID")
+        self.assertIsNone(state["levelEvents"]["Excite"])
         self.assertEqual(state["emotions"]["Joy"]["levelRange"], [61, 85])
         self.assertFalse(state["emotions"]["Excite"]["levelActive"])
         self.assertEqual(state["dominantEmotionSignal"]["eventType"], "EMO_JOY_MID")
+
+        events = system.GetEmotionSignalEventsValue(timestamp=2.0)
+
+        self.assertEqual(state["levelEvents"][events[0]["emotion"]], events[0]["event_type"])
 
     def test_emotion_signal_events_emit_only_on_level_change(self):
         """情绪区间事件只应在等级或主导情绪变化时输出一次。"""
@@ -165,6 +176,72 @@ class NeedEmotionSplitSystemTest(unittest.TestCase):
         self.assertTrue(ApplyBehaviorResultMessage(emotionSystem, message))
         self.assertEqual(needSystem.GetDemandValue("Cleanliness"), 30)
         self.assertGreaterEqual(emotionSystem.GetEmotionValue("Joy"), 10)
+
+    def test_behavior_result_event_id_is_deduplicated(self):
+        """同一个 event_id 的行为结果只能结算一次。"""
+        system = MarsdogNeedSystem()
+        system.SetDemandValue("Hunger", 80)
+        message = {
+            "event_id": "result-duplicate-1",
+            "action_type": "ACTION_EAT",
+            "result_type": "COMPLETED",
+            "metadata": {"foodType": "NormalFood", "portions": 1, "eatEfficiency": "Full"},
+        }
+
+        self.assertTrue(system.OnBehaviorResultEvent(message))
+        self.assertFalse(system.OnBehaviorResultEvent(message))
+        self.assertEqual(system.GetDemandValue("Hunger"), 60)
+
+    def test_behavior_result_rejects_demand_action_mismatch(self):
+        """demand_type 与 action_type 映射不一致时应拒绝处理。"""
+        system = MarsdogNeedSystem()
+        system.SetDemandValue("Hunger", 80)
+
+        accepted = system.OnBehaviorResultEvent(
+            {
+                "event_id": "result-mismatch-1",
+                "action_type": "ACTION_EAT",
+                "demand_type": "Bladder",
+                "result_type": "COMPLETED",
+                "metadata": {"foodType": "NormalFood", "portions": 1, "eatEfficiency": "Full"},
+            }
+        )
+
+        self.assertFalse(accepted)
+        self.assertEqual(system.GetDemandValue("Hunger"), 80)
+
+    def test_emotion_result_ignores_unknown_action(self):
+        """情绪系统不应因无关或未知 action 结果改变情绪。"""
+        system = MarsdogEmotionSystem(randomGenerator=random.Random(1))
+
+        accepted = system.OnBehaviorResultEvent(
+            {
+                "event_id": "result-unknown-action-1",
+                "action_type": "ACTION_PET",
+                "result_type": "COMPLETED",
+                "metadata": {},
+            }
+        )
+
+        self.assertFalse(accepted)
+        self.assertEqual(system.GetEmotionValue("Joy"), 0)
+
+    def test_recharge_result_rejects_invalid_energy_value(self):
+        """充电结果里的 energyValue 非数字时不应写入需求。"""
+        system = MarsdogNeedSystem()
+        system.SetDemandValue("Energy", 5)
+
+        accepted = system.OnBehaviorResultEvent(
+            {
+                "event_id": "result-invalid-energy-1",
+                "action_type": "ACTION_RECHARGE",
+                "result_type": "COMPLETED",
+                "metadata": {"energyValue": "bad"},
+            }
+        )
+
+        self.assertFalse(accepted)
+        self.assertEqual(system.GetDemandValue("Energy"), 5)
 
 
 if __name__ == "__main__":

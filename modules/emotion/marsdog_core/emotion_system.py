@@ -7,6 +7,10 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
+from .behavior_result import (
+    MarkBehaviorResultEventHandledValue,
+    NormalizeBehaviorResultEventValue,
+)
 from .config_loader import LoadAllConfigs
 from .emotion_api import EmotionAPI
 from .personality_api import PersonalityAPI
@@ -55,8 +59,13 @@ class MarsdogEmotionSystem(EmotionAPI, PersonalityAPI):
 
     def OnBehaviorResultEvent(self, resultData: dict[str, Any] | None = None) -> bool:
         """根据行为组回传结果更新情绪。"""
-        payload = dict(resultData or {})
-        result = str(payload.get("result_type", payload.get("resultType", ""))).upper()
+        payload = NormalizeBehaviorResultEventValue(resultData, self._GetActionDemandMap())
+        if payload is None:
+            return False
+        if MarkBehaviorResultEventHandledValue(self.state, payload.get("event_id")):
+            return False
+
+        result = str(payload["result_type"])
         if result in COMPLETED_RESULTS:
             return self.ApplyActionResultEmotion(ActionResultType.DEMAND_SATISFIED)
         if result in UNSATISFIED_RESULTS:
@@ -75,6 +84,7 @@ class MarsdogEmotionSystem(EmotionAPI, PersonalityAPI):
                 emotion: self._BuildEmotionState(emotion, value, emotionSignals)
                 for emotion, value in self.state.emotions.items()
             },
+            "levelEvents": self.GetEmotionLevelEventsValue(),
             "triggered": emotionSignals,
             "dominantEmotion": self.GetDominantEmotion(),
             "dominantEmotionSignal": self.GetDominantEmotionSignalValue(),
@@ -113,3 +123,7 @@ class MarsdogEmotionSystem(EmotionAPI, PersonalityAPI):
     def _GetTimestamp(self, timestamp: float | None) -> float:
         """获取状态输出时间戳。"""
         return float(self._timeProvider() if timestamp is None else timestamp)
+
+    def _GetActionDemandMap(self) -> dict[str, str]:
+        """获取 action 到内部需求的映射表，用于过滤无关行为结果。"""
+        return dict(self.configs.get("demandGlobalRules", {}).get("actionDemandMap", {}))

@@ -83,35 +83,6 @@ class SocialBehaviorTest(unittest.TestCase):
 
         self.assertEqual(system.GetDemandValue("Social"), 80)
 
-    def test_social_interaction_waits_for_feedback_before_recovery(self):
-        """狗主动社交会话应等待匹配反馈后才降低 Social。"""
-        now = [100.0]
-        system = MarsdogNeedSystem(timeProvider=lambda: now[0])
-        system.SetDemandValue("Social", 80)
-
-        self.assertTrue(system.StartSocialInteractionForDecision("ACTION_PLAY_INVITE", "demand"))
-        interactionId = system.GetSocialInteractionStatus()["interactionId"]
-        self.assertTrue(system.ExecuteSocialInteraction())
-        self.assertEqual(system.GetDemandValue("Social"), 80)
-
-        self.assertTrue(system.OnSocialInteractionFeedback(interactionId, "RESPONDED", "Human"))
-
-        self.assertEqual(system.GetDemandValue("Social"), 60)
-        self.assertEqual(system.GetSocialInteractionStatus()["state"], "Completed")
-
-    def test_social_feedback_timeout_does_not_recover(self):
-        """等待回应超时后不降低 Social。"""
-        now = [100.0]
-        system = MarsdogNeedSystem(timeProvider=lambda: now[0])
-        system.SetDemandValue("Social", 80)
-
-        system.StartSocialInteractionForDecision("ACTION_PLAY_INVITE", "demand")
-        system.ExecuteSocialInteraction()
-        now[0] = 131.0
-
-        self.assertEqual(system.UpdateSocialInteractionState(), "TimedOut")
-        self.assertEqual(system.GetDemandValue("Social"), 80)
-
     def test_personality_profiles_and_coefficients(self):
         """四维性格预设应影响社交和情绪系数计算。"""
         system = MarsdogNeedSystem()

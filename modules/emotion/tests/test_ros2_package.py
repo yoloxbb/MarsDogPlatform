@@ -29,6 +29,18 @@ class Ros2PackageTest(unittest.TestCase):
         self.assertIn("personality_node = marsdog_ros2.personality_node:main", setupText)
         self.assertNotIn("behavior_node = marsdog_ros2.behavior_node:main", setupText)
 
+    def test_internal_need_emotion_launch_file_is_declared(self):
+        """联调 launch 文件应安装并启动三个计算节点。"""
+        launchFile = PROJECT_ROOT / "marsdog_ros2" / "launch" / "internal_need_emotion.launch.py"
+        setupText = (PROJECT_ROOT / "setup.py").read_text(encoding="utf-8")
+        launchText = launchFile.read_text(encoding="utf-8")
+
+        self.assertTrue(launchFile.exists())
+        self.assertIn('glob("marsdog_ros2/launch/*.launch.py")', setupText)
+        self.assertIn('executable="personality_node"', launchText)
+        self.assertIn('executable="internal_need_node"', launchText)
+        self.assertIn('executable="emotion_engine_node"', launchText)
+
 
 if __name__ == "__main__":
     unittest.main()

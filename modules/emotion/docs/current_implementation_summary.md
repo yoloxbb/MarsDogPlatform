@@ -1,5 +1,7 @@
 # Marsdog 当前实现总结
 
+完整 ROS2 Topic 输入输出格式见 [ros2_topic_contract.md](ros2_topic_contract.md)。
+
 本文档记录当前仓库的实现状态。当前版本包含：
 
 - 内部需求计算
@@ -71,6 +73,15 @@
       "levelActive": false
     }
   },
+  "levelEvents": {
+    "Hunger": "NEED_HUNGER_RECOVERED",
+    "Bladder": "NEED_BLADDER_RECOVERED",
+    "Sleepiness": "NEED_SLEEPINESS_RECOVERED",
+    "Cleanliness": "NEED_CLEANLINESS_RECOVERED",
+    "Energy": "NEED_ENERGY_RECOVERED",
+    "Social": "NEED_SOCIAL_RECOVERED",
+    "Exploration": "NEED_EXPLORATION_RECOVERED"
+  },
   "triggered": [],
   "sleep": {
     "isSleeping": false,
@@ -82,6 +93,8 @@
 ```
 
 `/internal_need/signal_event` 只在需求等级变化时发布一次。
+`/internal_need/state.levelEvents[demand]` 与 signal 事件里的 `event_type`
+使用同一套事件名，可直接对比。
 
 ## 4. 情绪输出
 
@@ -103,6 +116,14 @@
       "levelActive": true
     }
   },
+  "levelEvents": {
+    "Joy": "EMO_JOY_LOW",
+    "Excite": null,
+    "Anxiety": null,
+    "Fear": null,
+    "Curious": null,
+    "Calm": "EMO_CALM_NORMAL"
+  },
   "triggered": [],
   "dominantEmotion": "Joy",
   "dominantEmotionSignal": {
@@ -119,6 +140,8 @@
 ```
 
 `/emotion/signal_event` 只在区间变化或主导情绪变化时发布，例如：
+`/emotion/state.levelEvents[emotion]` 与 signal 事件里的 `event_type`
+使用同一套事件名，可直接对比。
 
 ```json
 {
@@ -268,10 +291,8 @@ ros2 param set /personality_node C 40
 - 其他时间或精力不足：`+0`。
 - 触发：`>60`。
 - 满溢：`>80`。
-- `ACTION_EXPLORE* + COMPLETED` 根据 `metadata.discoveryType` 结算：
-  - `New`：`-20`
-  - `Old`：`-10`
-  - `Completed`：`-15`
+- 视觉 `tracked_objects` 不直接改变 `Exploration`，也不保存探索目标上下文。
+- `ACTION_EXPLORE* + COMPLETED` 统一 `Exploration -= 15`，忽略 `metadata.discoveryType`。
 
 ## 7. 情绪逻辑
 
@@ -336,7 +357,10 @@ finalDelta = round(baseDelta * k_emotion * metadataMultiplier)
 
 ## 8. 行为结果输入
 
-`/behavior/result_event` 示例：
+`/behavior/result_event` 是需求值和行为结果情绪变化的输入。消息类型为
+`std_msgs/String`，`data` 字段必须是 JSON 对象。
+
+示例：
 
 ```json
 {
@@ -353,14 +377,36 @@ finalDelta = round(baseDelta * k_emotion * metadataMultiplier)
 }
 ```
 
-`result_type` 支持：
+字段约束：
 
-- `STARTED`
-- `COMPLETED`
-- `FAILED`
-- `INTERRUPTED`
-- `CANCELLED`
-- `TIMEOUT`
+| 字段 | 要求 | 说明 |
+|---|---|---|
+| `event_id` | 建议填写 | 重复 `event_id` 只处理一次；不填则无法去重 |
+| `timestamp` | 可选 | 当前只透传，不参与计算 |
+| `action_type` | 必填 | 必须是内部需求相关 `ACTION_*` |
+| `demand_type` | 建议填写 | 填写时必须与 `action_type` 映射一致 |
+| `result_type` | 必填 | `STARTED / COMPLETED / FAILED / INTERRUPTED / CANCELLED / TIMEOUT` |
+| `metadata` | 必填 JSON 对象 | 没有额外字段时传 `{}` |
+
+当前接受的 action：
+
+| `action_type` | `demand_type` |
+|---|---|
+| `ACTION_EAT` | `Hunger` |
+| `ACTION_DEFECATE` | `Bladder` |
+| `ACTION_SLEEP` | `Sleepiness` |
+| `ACTION_GROOM` | `Cleanliness` |
+| `ACTION_RECHARGE` | `Energy` |
+| `ACTION_PLAY_INVITE` | `Social` |
+| `ACTION_SOCIAL_GREET` | `Social` |
+| `ACTION_BOUNDARY_TEST` | `Social` |
+| `ACTION_ATTENTION_SEEK` | `Social` |
+| `ACTION_RESOURCE_SHARE` | `Social` |
+| `ACTION_EXPLORE` | `Exploration` |
+| `ACTION_SPACE_EXPLORE` | `Exploration` |
+| `ACTION_OBJECT_EXPLORE` | `Exploration` |
+
+不在上表里的 action 会被忽略，不更新需求，也不触发行结果情绪变化。
 
 需求节点处理：
 
@@ -375,6 +421,15 @@ finalDelta = round(baseDelta * k_emotion * metadataMultiplier)
 - `FAILED / TIMEOUT` -> `DemandUnsatisfied`
 - `INTERRUPTED / CANCELLED` -> `ActionInterrupted`
 
+关键 metadata：
+
+| action | metadata |
+|---|---|
+| `ACTION_EAT` | `foodType=PremiumFood/NormalFood/Snack`，`portions` 为数字，`eatEfficiency=Full/HalfInterrupted` |
+| `ACTION_RECHARGE` | `energyValue` 为 `0-100` 数字；兼容 `energy_value / batteryValue` |
+| `ACTION_SOCIAL_*` | `socialOutcome=OwnerInteraction/DogHumanResponded/DogAnimalResponded/Rejected/TimedOut` |
+| `ACTION_EXPLORE*` | 当前忽略 metadata |
+
 ## 9. 运行方式
 
 Python 单元测试：
@@ -385,6 +440,12 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -q
 ```
 
 ROS2 节点：
+
+```bash
+ros2 launch marsdog_behavior internal_need_emotion.launch.py
+```
+
+也可以分别启动：
 
 ```bash
 ros2 run marsdog_behavior personality_node
@@ -398,4 +459,3 @@ ros2 run marsdog_behavior emotion_engine_node
 - 当前仍使用 `std_msgs/String + JSON`，尚未定义正式 msg。
 - 触摸事件 `EVT_TACTILE_*` 在配置中保留，但没有 topic 接入。
 - `EVT_AUDIO_LOUD / EVT_AUDIO_WITH_HUMAN` 在配置中保留，但新版感知文档当前未提供对应输入。
-- 探索已知目标当前只保存在内存，不做持久化。

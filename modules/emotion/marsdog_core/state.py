@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
@@ -12,7 +11,6 @@ from .types import (
     PersonalityParam,
     PersonalityProfileType,
     SleepDepthType,
-    SocialInteractionState,
 )
 
 
@@ -52,15 +50,6 @@ def GetDefaultPersonalityParams() -> dict[str, int]:
 
 
 @dataclass
-class EventData:
-    """外部事件数据。"""
-
-    eventTag: str
-    metadata: dict[str, Any] = field(default_factory=dict)
-    timestamp: float = field(default_factory=time.time)
-
-
-@dataclass
 class MarsdogState:
     """Marsdog 需求与情绪计算运行态。"""
 
@@ -69,7 +58,6 @@ class MarsdogState:
     personality: dict[str, int] = field(default_factory=GetDefaultPersonalityParams)
     lastEmotionEventResult: dict[str, Any] = field(default_factory=dict)
     debugLogEnabled: bool = False
-    pendingEvents: list[EventData] = field(default_factory=list)
     demandLockActive: bool = False
     lastDemandLockState: bool | None = None
     lastMorningResetKey: str | None = None
@@ -80,32 +68,9 @@ class MarsdogState:
     sleepActionAllowed: bool = False
     lightsOff: bool = False
     personalityProfile: str = PersonalityProfileType.CUSTOM.value
-    socialHumanVisible: bool = False
-    socialAnimalVisible: bool = False
-    socialPendingAction: str = ""
-    socialPendingTargetType: str = ""
-    socialPendingTargetVisible: bool = False
-    socialInteractionCounter: int = 0
-    socialInteractionId: str = ""
-    socialInteractionInitiator: str = ""
-    socialInteractionTargetType: str = ""
-    socialInteractionTargetVisible: bool = False
-    socialInteractionSelectedAction: str = ""
-    socialInteractionState: str = SocialInteractionState.IDLE.value
-    socialInteractionResponseDeadline: float = 0.0
-    socialInteractionSettlementApplied: bool = False
-    socialInteractionLastResult: str = ""
-    ownerInteractionWindowUntil: float = 0.0
     ownerPresent: bool | None = None
-    explorationPendingTargetType: str = ""
-    explorationPendingTargetId: str = ""
-    explorationPendingDiscoveryType: str = ""
-    explorationCurrentTargetType: str = ""
-    explorationCurrentTargetId: str = ""
-    explorationCurrentDiscoveryType: str = ""
-    explorationCurrentAction: str = ""
-    explorationLastResult: str = ""
-    explorationKnownTargetIds: set[str] = field(default_factory=set)
+    processedBehaviorResultEventIds: set[str] = field(default_factory=set)
+    processedBehaviorResultEventIdOrder: list[str] = field(default_factory=list)
 
     def ResetToDefault(self) -> None:
         """重置所有运行态到默认值。"""
@@ -114,7 +79,6 @@ class MarsdogState:
         self.personality = GetDefaultPersonalityParams()
         self.lastEmotionEventResult = {}
         self.debugLogEnabled = False
-        self.pendingEvents = []
         self.demandLockActive = False
         self.lastDemandLockState = None
         self.lastMorningResetKey = None
@@ -125,33 +89,9 @@ class MarsdogState:
         self.sleepActionAllowed = False
         self.lightsOff = False
         self.personalityProfile = PersonalityProfileType.CUSTOM.value
-        self.socialHumanVisible = False
-        self.socialAnimalVisible = False
-        self.socialPendingAction = ""
-        self.socialPendingTargetType = ""
-        self.socialPendingTargetVisible = False
-        self.socialInteractionCounter = 0
-        self.socialInteractionId = ""
-        self.socialInteractionInitiator = ""
-        self.socialInteractionTargetType = ""
-        self.socialInteractionTargetVisible = False
-        self.socialInteractionSelectedAction = ""
-        self.socialInteractionState = SocialInteractionState.IDLE.value
-        self.socialInteractionResponseDeadline = 0.0
-        self.socialInteractionSettlementApplied = False
-        self.socialInteractionLastResult = ""
-        self.ownerInteractionWindowUntil = 0.0
         self.ownerPresent = None
-        self.explorationPendingTargetType = ""
-        self.explorationPendingTargetId = ""
-        self.explorationPendingDiscoveryType = ""
-        self.explorationCurrentTargetType = ""
-        self.explorationCurrentTargetId = ""
-        self.explorationCurrentDiscoveryType = ""
-        self.explorationCurrentAction = ""
-        self.explorationLastResult = ""
-        self.explorationKnownTargetIds = set()
+        self.processedBehaviorResultEventIds = set()
+        self.processedBehaviorResultEventIdOrder = []
 
 
 EmotionCallback = Callable[[str, int, int], None]
-EventCallback = Callable[[EventData], None]

@@ -154,8 +154,6 @@
         {"name": "其他时间", "startHour": 21, "endHour": 6, "delta": 0}
       ],
       "recoveryRules": {
-        "New": 20,
-        "Old": 10,
         "Completed": 15
       }
     }

@@ -27,39 +27,17 @@ class ExplorationBehaviorTest(unittest.TestCase):
         system.UpdateExplorationByTime(10)
         self.assertEqual(system.GetDemandValue("Exploration"), 15)
 
-    def test_exploration_target_detected_posts_new_object_event(self):
-        """发现新目标时应记录探索上下文并入队 NewObject。"""
-        system = MarsdogNeedSystem()
-
-        accepted = system.OnExplorationTargetDetected("DeliveryBox", "box-1")
-
-        self.assertTrue(accepted)
-        self.assertEqual(system.state.pendingEvents[-1].eventTag, "NewObject")
-        context = system.GetExplorationContext()
-        self.assertEqual(context["pendingTargetType"], "DeliveryBox")
-        self.assertEqual(context["pendingDiscoveryType"], "New")
-
-    def test_duplicate_exploration_target_is_ignored_while_pending(self):
-        """同一待探索目标重复出现时不应重复入队。"""
-        system = MarsdogNeedSystem()
-
-        self.assertTrue(system.OnExplorationTargetDetected("DeliveryBox", "box-1"))
-        self.assertFalse(system.OnExplorationTargetDetected("DeliveryBox", "box-1"))
-
-    def test_execute_exploration_reduces_value_and_marks_known_target(self):
-        """探索成功应按发现类型降低 Exploration，并把目标记为已知。"""
+    def test_execute_exploration_reduces_value_by_completed_rule(self):
+        """探索成功应统一按 Completed 规则降低 Exploration。"""
         system = MarsdogNeedSystem()
         system.SetDemandValue("Exploration", 80)
-        system.OnExplorationTargetDetected("DeliveryBox", "box-1")
-        system.StartExplorationForDecision("ACTION_OBJECT_EXPLORE")
 
         self.assertTrue(system.ExecuteExploration("New"))
 
-        self.assertEqual(system.GetDemandValue("Exploration"), 60)
-        self.assertIn("box-1", system.state.explorationKnownTargetIds)
+        self.assertEqual(system.GetDemandValue("Exploration"), 65)
 
     def test_behavior_result_event_explore_completed(self):
-        """行为组探索完成结果应按 discoveryType 结算。"""
+        """探索完成结果应忽略 discoveryType 并统一按 Completed 结算。"""
         system = MarsdogNeedSystem()
         system.SetDemandValue("Exploration", 80)
 
@@ -68,7 +46,7 @@ class ExplorationBehaviorTest(unittest.TestCase):
                 {
                     "action_type": "ACTION_EXPLORE",
                     "result_type": "COMPLETED",
-                    "metadata": {"discoveryType": "Completed"},
+                    "metadata": {"discoveryType": "New"},
                 }
             )
         )

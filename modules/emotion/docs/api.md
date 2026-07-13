@@ -2,6 +2,8 @@
 
 当前仓库提供内部需求计算、情绪计算、ROS2 输入适配和状态/事件发布接口。
 
+完整 ROS2 Topic 输入输出格式见 [ros2_topic_contract.md](ros2_topic_contract.md)。
+
 ## 核心入口
 
 ```python
@@ -22,6 +24,7 @@ personalitySystem = MarsdogPersonalitySystem()
 - `GetAllDemandSignals()`：返回所有已触发的需求信号。
 - `GetDemandLevelValue(demandType, value=None)`：读取指定需求当前等级，返回 `NORMAL / TRIGGERED / OVERFLOW`。
 - `GetAllDemandLevels()`：读取全部需求等级。
+- `GetDemandLevelEventsValue()`：读取全部需求当前等级对应的事件名映射。
 - `GetDemandSignalSnapshotValue()`：读取当前需求等级快照。
 - `GetDemandSignalEventsValue(timestamp=None)`：获取需求等级变化事件；调用后会刷新快照。
 - `GetInternalNeedStateValue(timestamp=None)`：返回可发布到 `/internal_need/state` 的完整状态。
@@ -85,24 +88,14 @@ personalitySystem = MarsdogPersonalitySystem()
 
 - `InitializeMorningSocial()`：晨起 `Social = random(20,30) * k_social`。
 - `UpdateSocialByTime(currentTime=None)`：白天/傍晚按 Tick 增长。
-- `SetSocialTargetVisibility(humanVisible, animalVisible)`：更新感知到的人或动物目标上下文。
-- `IsSocialInteractionActive()`：判断是否正在执行或等待社交反馈。
-- `GetSocialInteractionStatus()`：读取当前社交会话状态。
-- `StartSocialInteractionForDecision(action, source)`：锁定一个社交会话上下文。
-- `ExecuteSocialInteraction()`：社交动作完成后进入等待反馈或直接结算。
-- `OnSocialInteractionFeedback(interactionId, responseType, targetType, metadata=None)`：处理社交回应。
-- `OnOwnerInteractionEvent(metadata=None, currentTimestamp=None)`：处理主人主动互动事件。
 - `OnOwnerPresenceChanged(isPresent)`：处理主人在家/离家状态。
+- `GetSocialOutcomeRecoveryValue(socialOutcome)`：读取社交结果对应的 Social 恢复值。
 
 ## 探索接口
 
 - `InitializeMorningExploration()`：晨起 `Exploration = random(10,20) * k_curious`。
 - `UpdateExplorationByTime(currentTime=None)`：白天且 `Energy > 50` 时每 Tick `+5`。
-- `OnExplorationTargetDetected(targetType, targetId="", discoveryType=None, metadata=None)`：登记探索目标。
-- `GetExplorationContext()`：读取当前探索上下文。
-- `StartExplorationForDecision(action)`：锁定探索目标上下文。
-- `ExecuteExploration(resultType=None)`：探索完成后按 `New / Old / Completed` 结算。
-- `OnExplorationActionStopped(result)`：失败或中断时清理探索上下文。
+- `ExecuteExploration(resultType=None)`：探索完成后统一按 `Completed` 结算，`resultType` 仅保留兼容。
 
 ## 情绪接口
 
@@ -117,6 +110,7 @@ personalitySystem = MarsdogPersonalitySystem()
 - `ApplyEmotionDecay(elapsedSeconds=1.0)`：按自然平复公式衰减情绪。
 - `GetEmotionLevelValue(emotionType, value=None)`：读取指定情绪所在区间。
 - `GetAllEmotionLevels()`：读取全部情绪区间。
+- `GetEmotionLevelEventsValue()`：读取全部情绪当前区间对应的事件名映射。
 - `GetDominantEmotionSignalValue()`：读取主导情绪及其区间事件。
 - `GetEmotionSignalEventsValue(timestamp=None)`：获取区间变化事件；调用后会刷新快照。
 - `GetEmotionStateValue(timestamp=None)`：返回可发布到 `/emotion/state` 的完整状态。
@@ -138,14 +132,6 @@ personalitySystem = MarsdogPersonalitySystem()
 
 `coefficients` 是只读派生值，由 `A/O/E/C` 自动计算，外部不应直接设置。
 
-## 内部事件调试接口
-
-- `PostEvent(eventTag, metadata=None)`：提交内部事件到内存队列，例如探索目标产生的 `NewObject / OldObject`。
-- `RegisterEventHandler(eventTag, callback)`：注册本进程内事件处理器，用于测试或调试。
-- `UnregisterEventHandler(eventTag, callback)`：取消注册本进程内事件处理器。
-
-
-
 ## ROS2 Topic
 
 ### 输入
@@ -155,6 +141,37 @@ personalitySystem = MarsdogPersonalitySystem()
 - `/behavior/result_event`：`std_msgs/String` JSON，需求节点和情绪节点都订阅。
 - `/personality/state`：`std_msgs/String` JSON，需求节点和情绪节点都订阅，用于同步性格参数。
 
+`/behavior/result_event` 的 `data` 必须是 JSON 对象：
+
+```json
+{
+  "event_id": "result-000001",
+  "timestamp": 1710000000.0,
+  "action_type": "ACTION_EAT",
+  "demand_type": "Hunger",
+  "result_type": "COMPLETED",
+  "metadata": {
+    "foodType": "NormalFood",
+    "portions": 1,
+    "eatEfficiency": "Full"
+  }
+}
+```
+
+字段要求：
+
+- `event_id`：建议填写；重复 `event_id` 只处理一次。
+- `action_type`：必填，必须能映射到内部需求。
+- `demand_type`：建议填写；填写时必须与 `action_type` 映射一致。
+- `result_type`：必填，只接受 `STARTED / COMPLETED / FAILED / INTERRUPTED / CANCELLED / TIMEOUT`。
+- `metadata`：必填 JSON 对象；无额外字段时传 `{}`。
+
+当前接受 `ACTION_EAT / ACTION_DEFECATE / ACTION_SLEEP / ACTION_GROOM /
+ACTION_RECHARGE / ACTION_PLAY_INVITE / ACTION_SOCIAL_GREET /
+ACTION_BOUNDARY_TEST / ACTION_ATTENTION_SEEK / ACTION_RESOURCE_SHARE /
+ACTION_EXPLORE / ACTION_SPACE_EXPLORE / ACTION_OBJECT_EXPLORE`。其他 action
+会被忽略。
+
 ### 输出
 
 - `/internal_need/state`：内部需求状态，1 秒持续发布。
@@ -163,11 +180,20 @@ personalitySystem = MarsdogPersonalitySystem()
 - `/emotion/signal_event`：情绪区间或主导情绪变化时发布。
 - `/personality/state`：性格状态，`personality_node` 启动时和性格变化后发布。
 
+`/internal_need/state.levelEvents[demand]` 和 `/emotion/state.levelEvents[emotion]`
+与对应 signal 事件的 `event_type` 使用同一套事件名，可用于跨话题对比。
+
 ## ROS2 参数接口
 
 性格参数由 `personality_node` 统一维护。修改入口使用 ROS2 参数服务，状态通过 `/personality/state` 发布。
 
-启动：
+启动三个节点：
+
+```bash
+ros2 launch marsdog_behavior internal_need_emotion.launch.py
+```
+
+只调试性格节点：
 
 ```bash
 ros2 run marsdog_behavior personality_node
