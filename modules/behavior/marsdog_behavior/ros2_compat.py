@@ -31,6 +31,32 @@ except ImportError:
     HAS_ROS2 = False
 
 
+def is_ros2_ready() -> bool:
+    """Check if rclpy is importable AND initialized.
+
+    Use this at runtime (not import time) when you need to decide between
+    real ROS2 Node and mock Node behavior.
+    """
+    if not HAS_ROS2:
+        return False
+    try:
+        import rclpy as _rc
+        return _rc.ok()
+    except Exception:
+        return False
+
+
+def get_node_base():
+    """Get the appropriate Node base class for the current environment.
+
+    Returns _MockNode when ROS2 is not importable or not initialized.
+    Returns _RosNode when rclpy is ready.
+    """
+    if is_ros2_ready():
+        return _RosNode
+    return _MockNode
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Mock ROS2 primitives
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -153,6 +179,8 @@ class _MockNode:
 # Exports
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# At module load time, we don't know if rclpy.init() has been called yet.
+# Use is_ros2_ready() for runtime checks, HAS_ROS2 for import-time checks.
 if HAS_ROS2:
     NodeBase = _RosNode
     MockSubscription = None

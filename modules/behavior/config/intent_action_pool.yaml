@@ -1,0 +1,171 @@
+# intent_behavior_pool.yaml — intent → 候选 behavior_name 池
+#
+# 注意：此文件中所有行为名均为语义 Behavior，不得出现 ACT_*。
+# ACT_* 动作选择由 marsdog_action_executor 根据 behavior_name + params 决定。
+
+# ═══════════════════════════════════════════════════════════════════════════
+# audio_direct intents
+# ═══════════════════════════════════════════════════════════════════════════
+
+orient_to_sound:
+  candidates: [respond_owner_call, look_at_sound_source]
+  aliases:
+    respond_owner_call: respond_owner_call
+
+command_sit:
+  candidates: [respond_owner_call]
+  aliases:
+    respond_owner_call: respond_owner_call
+
+command_come_here:
+  candidates: [respond_owner_call]
+  aliases:
+    respond_owner_call: respond_owner_call
+
+command_follow:
+  candidates: [respond_owner_call]
+  aliases:
+    respond_owner_call: respond_owner_call
+
+command_handshake:
+  candidates: [respond_touch_head]
+  aliases:
+    respond_touch_head: respond_touch_head
+
+command_high_five:
+  candidates: [respond_touch_head]
+  aliases:
+    respond_touch_head: respond_touch_head
+
+command_roll:
+  candidates: [expressJoy]
+  aliases:
+    rollOverShowBelly: expressJoy
+
+command_spin:
+  candidates: [expressJoy]
+  aliases:
+    spinInCircle: expressJoy
+
+command_retrieve:
+  candidates: [respond_owner_call]
+  aliases:
+    respond_owner_call: respond_owner_call
+
+command_spit_out:
+  candidates: [emergency_stop]
+  aliases:
+    emergency_stop: emergency_stop
+
+command_play_dead:
+  candidates: [expressCalm]
+  aliases:
+    restInPlace: expressCalm
+
+emergency_stop:
+  candidates: [emergency_stop]
+  aliases:
+    emergency_stop: emergency_stop
+
+express_joy:
+  candidates: [expressJoy]
+  aliases:
+    express_happy: expressJoy
+
+comfort_owner:
+  candidates: [expressJoy, expressCalm]
+  aliases:
+    express_happy: expressJoy
+
+confused_response:
+  candidates: [expressCuriosity, expressAnxiety]
+  aliases:
+    headTilt: expressCuriosity
+    stareIntently: expressAnxiety
+
+# ═══════════════════════════════════════════════════════════════════════════
+# need intents
+# ═══════════════════════════════════════════════════════════════════════════
+
+eat_normal:
+  candidates: [eatNormally]
+  aliases:
+    seek_food_or_water: eatNormally
+
+eat_excited:
+  candidates: [eatExcitedly]
+  aliases:
+    seek_food_or_water: eatExcitedly
+
+eliminate:
+  candidates: [defecate]
+  aliases:
+    excretion_request: defecate
+
+sleep_shallow:
+  candidates: [sleepNow]
+  aliases:
+    sleep_request: sleepNow
+
+sleep_deep:
+  candidates: [sleepNow]
+  aliases:
+    sleep_request: sleepNow
+
+self_groom:
+  candidates: [cleanSelf]
+  aliases:
+    clean_self: cleanSelf
+
+recover_energy:
+  candidates: [restInPlace]
+  aliases:
+    sleep_request: restInPlace
+
+recharge_critical:
+  candidates: [recharge]
+  aliases:
+    sleep_request: recharge
+
+social_seek:
+  candidates: [seekHumanInteraction]
+  aliases:
+    seek_social_interaction: seekHumanInteraction
+
+animal_boundary_test:
+  candidates: [testAnimalBoundary]
+  aliases: {}
+
+animal_social_greet:
+  candidates: [greetAnimal]
+  aliases: {}
+
+animal_play_invite:
+  candidates: [inviteAnimalToPlay]
+  aliases: {}
+
+human_resource_interaction:
+  candidates: [requestResourceFromHuman]
+  aliases: {}
+
+human_attention_interaction:
+  candidates: [seekHumanInteraction]
+  aliases:
+    seek_social_interaction: seekHumanInteraction
+
+human_play_invite:
+  candidates: [inviteHumanToPlay]
+  aliases: {}
+
+explore_space:
+  candidates: [exploreRoom]
+  aliases:
+    explore_environment: exploreRoom
+
+inspect_generic_object:
+  candidates: [inspectObject]
+  aliases: {}
+
+inspect_known_object:
+  candidates: [inspectKnownObject]
+  aliases: {}

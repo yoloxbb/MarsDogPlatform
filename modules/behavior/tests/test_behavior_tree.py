@@ -149,7 +149,7 @@ class TestPriorityLevels:
     """Test that higher priority levels preempt lower ones."""
 
     def test_lv2_preempts_lv3(self, runtime):
-        """Test 2: Lv3 hunger running, inject Lv2 owner_call → preempt."""
+        """Test 2: Lv3 hunger running, inject Lv1 owner_call → preempt."""
         root, bb, executor, provider, loader = runtime
 
         # Start hunger (Lv3)
@@ -158,7 +158,7 @@ class TestPriorityLevels:
         assert status == Status.RUNNING
         assert bb.current_behavior.behavior_name == "seek_food_or_water"
 
-        # Inject owner call (Lv2) which is higher priority
+        # Inject owner call (Lv1) which is higher priority
         provider.inject_owner_call(85)
         candidate = provider.select()
         bb.set_active_behavior(candidate)
@@ -169,10 +169,10 @@ class TestPriorityLevels:
         assert bb.current_behavior.behavior_name == "respond_owner_call"
 
     def test_lv0_preempts_lv2(self, runtime):
-        """Test 3: Lv2 running, inject Lv0 danger → preempt."""
+        """Test 3: Lv1 running, inject Lv0 danger → preempt."""
         root, bb, executor, provider, loader = runtime
 
-        # Start owner call (Lv2)
+        # Start owner call (Lv1)
         bb.set_active_behavior(provider.inject_owner_call(85))
         status = _tick(root, bb, 1)
         assert status == Status.RUNNING
@@ -192,7 +192,7 @@ class TestPriorityLevels:
         """Test: emergency_stop preempts anything."""
         root, bb, executor, provider, loader = runtime
 
-        # Start owner call (Lv2)
+        # Start owner call (Lv1)
         bb.set_active_behavior(provider.inject_owner_call(85))
         _tick(root, bb, 1)
 
@@ -207,10 +207,10 @@ class TestPriorityLevels:
         assert bb.current_behavior.behavior_name == "emergency_stop"
 
     def test_lower_priority_does_not_preempt(self, runtime):
-        """Lv4 should not preempt Lv2."""
+        """Lv4 should not preempt Lv1."""
         root, bb, executor, provider, loader = runtime
 
-        # Start owner call (Lv2)
+        # Start owner call (Lv1)
         bb.set_active_behavior(provider.inject_owner_call(85))
         _tick(root, bb, 1)
         assert bb.current_behavior.behavior_name == "respond_owner_call"

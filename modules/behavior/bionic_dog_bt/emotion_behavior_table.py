@@ -176,10 +176,18 @@ def select_emotion_behavior(emotion_name: str, value: float,
 
 
 def get_dominant_emotion(emotions: dict[str, float]) -> Optional[tuple[str, float]]:
-    """Find the dominant (highest value) emotion and its value."""
+    """Find the dominant (highest value) emotion and its value.
+
+    When multiple emotions have the same value, tiebreaker priority:
+    Fear > Anxiety > Excite > Joy > Curious > Calm
+    """
     if not emotions:
         return None
-    dominant = max(emotions, key=emotions.get)
+    max_val = max(emotions.values())
+    candidates = [n for n, v in emotions.items() if v == max_val]
+    priority = {"Fear": 0, "Anxiety": 1, "Excite": 2, "Joy": 3, "Curious": 4, "Calm": 5}
+    candidates.sort(key=lambda n: priority.get(n, 99))
+    dominant = candidates[0]
     return dominant, emotions[dominant]
 
 

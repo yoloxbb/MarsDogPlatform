@@ -1,8 +1,7 @@
-"""Tests for marsdog_ros2 nodes (standalone mode, no ROS2 required)."""
+"""Tests for marsdog_behavior nodes (standalone mode, no ROS2 required)."""
 
 from __future__ import annotations
 
-import json
 import time
 import pytest
 from pathlib import Path
@@ -12,13 +11,13 @@ _PROJECT_ROOT = Path(__file__).parent.parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from marsdog_ros2.interfaces import (
+from marsdog_behavior.interfaces import (
     BehaviorSignal, BehaviorFeedback,
     ExecuteBehaviorGoal, ExecuteBehaviorFeedback, ExecuteBehaviorResult,
 )
-from marsdog_ros2.behavior_tree_node import BehaviorTreeNode
-from marsdog_ros2.mock_action_executor_node import MockActionExecutorNode
-from marsdog_ros2.ros2_compat import HAS_ROS2
+from marsdog_behavior.ros_node import BehaviorTreeRosNode
+from marsdog_behavior.mock_action_executor_node import MockActionExecutorNode
+from marsdog_behavior.ros2_compat import HAS_ROS2
 
 
 # Skip if ROS2 is available (tests are for standalone mode)
@@ -29,7 +28,7 @@ pytestmark = pytest.mark.skipif(HAS_ROS2, reason="Tests are for standalone (no-R
 
 @pytest.fixture
 def bt_node():
-    node = BehaviorTreeNode()
+    node = BehaviorTreeRosNode()
     yield node
     node.destroy_node()
 
@@ -100,62 +99,59 @@ class TestBehaviorTreeNode:
 
     def test_node_creates(self, bt_node):
         assert bt_node is not None
-        assert bt_node._blackboard is not None
+        assert bt_node.blackboard is not None
         assert bt_node._tree is not None
 
     def test_add_signal(self, bt_node):
-        sig = BehaviorSignal(
+        bt_node.add_signal(
             behavior_name="respond_owner_call",
             priority_level=2,
             value=85.0,
             need_type="external",
         )
-        bt_node.add_signal(sig)
-        with bt_node._lock:
-            assert len(bt_node._candidates) == 1
+        assert bt_node.candidate_pool.size() == 1
 
     def test_select_candidate_priority(self, bt_node):
-        # Add Lv3 and Lv2 signals; Lv2 should be selected (lower level = higher priority)
-        bt_node.add_signal(BehaviorSignal(
+        # Add Lv3 and Lv2; Lv2 should be selected (lower level = higher priority)
+        bt_node.add_signal(
             behavior_name="seek_food_or_water", priority_level=3, value=80.0,
             need_type="physiological",
-        ))
-        bt_node.add_signal(BehaviorSignal(
+        )
+        bt_node.add_signal(
             behavior_name="respond_owner_call", priority_level=2, value=70.0,
             need_type="external",
-        ))
-        best = bt_node._select_candidate()
+        )
+        best = bt_node.candidate_pool.select_best(bt_node.blackboard)
         assert best is not None
-        assert best.behavior_name == "respond_owner_call"  # Lv2 > Lv3
+        assert best["behavior_name"] == "respond_owner_call"  # Lv2 > Lv3
 
     def test_select_highest_value_same_level(self, bt_node):
-        bt_node.add_signal(BehaviorSignal(
+        bt_node.add_signal(
             behavior_name="clean_self", priority_level=3, value=60.0,
             need_type="physiological",
-        ))
-        bt_node.add_signal(BehaviorSignal(
+        )
+        bt_node.add_signal(
             behavior_name="seek_food_or_water", priority_level=3, value=85.0,
             need_type="physiological",
-        ))
-        best = bt_node._select_candidate()
+        )
+        best = bt_node.candidate_pool.select_best(bt_node.blackboard)
         assert best is not None
-        assert best.behavior_name == "seek_food_or_water"  # higher value wins
+        assert best["behavior_name"] == "seek_food_or_water"  # higher value wins
 
     def test_update_emotion_state(self, bt_node):
         bt_node.update_emotion_state({"Joy": 85, "Fear": 20})
-        assert bt_node._blackboard.emotion_module.get_value("Joy") == 85.0
+        assert bt_node.blackboard.emotion_module.get_value("Joy") == 85.0
 
         # Joy > 70 should generate an emotion candidate
         bt_node.update_emotion_state({"Joy": 85})
-        with bt_node._lock:
-            # Should have at least one candidate in pool
-            assert len(bt_node._candidates) >= 0  # might be empty if no dominant overflow
+        # Pool may or may not have candidates depending on emotion table
+        assert bt_node.candidate_pool.size() >= 0
 
 
 # ── Mock Action Executor Tests ───────────────────────────────────────────────
 
 class TestMockActionExecutor:
-    """Test mock_action_executor_node."""
+    """Test mock_action_executor_node (imported from marsdog_ros2 for compatibility)."""
 
     def test_node_creates(self, action_node):
         assert action_node is not None
@@ -182,7 +178,6 @@ class TestMockActionExecutor:
         )
         gid = action_node.send_goal(goal)
 
-        # Wait for some progress
         time.sleep(0.5)
         action_node._tick()
         fb = action_node.get_feedback(gid)
@@ -197,7 +192,6 @@ class TestMockActionExecutor:
         )
         gid = action_node.send_goal(goal)
 
-        # Wait for all steps (wagTailGently has 1 step, ~1-3s)
         for _ in range(40):
             time.sleep(0.1)
             action_node._tick()
@@ -218,7 +212,6 @@ class TestMockActionExecutor:
         )
         gid = action_node.send_goal(goal)
 
-        # Cancel immediately
         assert action_node.cancel_goal(gid) is True
 
         fb = action_node.get_feedback(gid)
@@ -245,58 +238,39 @@ class TestIntegration:
     """End-to-end test: signal → BT tick → action execution → feedback."""
 
     def test_full_cycle(self, bt_node, action_node):
-        # Inject a signal
-        sig = BehaviorSignal(
+        bt_node.add_signal(
             behavior_name="respond_owner_call",
-            priority_level=2,
-            value=85.0,
-            need_type="external",
-            timeout_sec=8.0,
+            priority_level=2, value=85.0,
+            need_type="external", timeout_sec=8.0,
         )
-        bt_node.add_signal(sig)
-
-        # Tick the BT
         bt_node._on_tick()
-
-        # Verify the BT started processing
-        # (In standalone mode, the BT uses internal executor)
-        assert bt_node._blackboard.tick_count >= 1
+        assert bt_node.blackboard.tick_count >= 1
 
     def test_emotion_signal_full_cycle(self, bt_node, action_node):
-        # Set emotion to overflow
-        bt_node._blackboard.emotion_module.set_emotion("Joy", 85)
+        bt_node.blackboard.emotion_module.set_emotion("Joy", 85)
 
-        # Inject emotion-triggered signal
-        sig = BehaviorSignal(
+        bt_node.add_signal(
             behavior_name="playBow",
-            priority_level=5,
-            value=85.0,
-            need_type="emotional",
-            source_emotion="Joy",
-            params_json='{"source_emotion":"Joy","emotion_value":85,"interactive":false}',
+            priority_level=5, value=85.0,
+            need_type="emotional", source_emotion="Joy",
+            params={"source_emotion": "Joy", "emotion_value": 85, "interactive": False},
             timeout_sec=8.0,
         )
-        bt_node.add_signal(sig)
         bt_node._on_tick()
-        assert bt_node._blackboard.tick_count >= 1
+        assert bt_node.blackboard.tick_count >= 1
 
     def test_preemption_scenario(self, bt_node, action_node):
         """Lv0 danger should preempt Lv2 owner_call."""
-        # Start Lv2 owner_call
-        sig_lv2 = BehaviorSignal(
+        bt_node.add_signal(
             behavior_name="respond_owner_call",
             priority_level=2, value=85.0, need_type="external",
         )
-        bt_node.add_signal(sig_lv2)
         bt_node._on_tick()
 
-        # Then inject Lv0 danger
-        sig_lv0 = BehaviorSignal(
+        bt_node.add_signal(
             behavior_name="avoid_danger",
             priority_level=0, value=100.0, need_type="survival",
         )
-        bt_node.add_signal(sig_lv0)
         bt_node._on_tick()
 
-        # Check preemption occurred
-        assert bt_node._blackboard.tick_count >= 2
+        assert bt_node.blackboard.tick_count >= 2

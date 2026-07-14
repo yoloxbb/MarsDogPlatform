@@ -1,5 +1,9 @@
 """Action catalog: maps behavior_name → randomized action sequences.
 
+.. deprecated::
+    This module is DEPRECATED. Specific action sequences belong in marsdog_action_executor.
+    Kept ONLY for MockActionExecutor fallback during development/testing.
+
 Each behavior has multiple phases. Each phase has a pool of possible
 action IDs. The executor randomly picks one action per phase at goal
 creation time, so the same behavior looks slightly different each run.

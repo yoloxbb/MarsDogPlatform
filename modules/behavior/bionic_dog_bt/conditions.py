@@ -111,6 +111,7 @@ class BehaviorRelevanceCondition(Node):
                                emotion=emotion_name,
                                current_event=str(current_event),
                                trigger_event=trigger_event)
+                    bb.active_behavior = None  # Clear stale candidate
                     return Status.FAILURE
 
             # Fallback: value-based overflow check (mock/test mode)
@@ -123,6 +124,7 @@ class BehaviorRelevanceCondition(Node):
                            emotion=emotion_name,
                            current=round(current_val, 1),
                            threshold=round(threshold, 1))
+                bb.active_behavior = None  # Clear stale candidate
                 return Status.FAILURE
 
         # ── Need-triggered: compare levelEvents[need] vs trigger_event ───────
@@ -150,6 +152,7 @@ class BehaviorRelevanceCondition(Node):
                                    need=need_name,
                                    current_event=str(current_event),
                                    trigger_event=trigger_event)
+                        bb.active_behavior = None  # Clear stale candidate
                         return Status.FAILURE
 
                 # Fallback: value-based trigger check (mock/test mode)
@@ -158,6 +161,7 @@ class BehaviorRelevanceCondition(Node):
                                behavior_name=active.behavior_name,
                                need=need_name,
                                level=bb.need_module.get_level(need_name))
+                    bb.active_behavior = None  # Clear stale candidate
                     return Status.FAILURE
 
         # ── All other trigger types pass through ─────────────────────────────

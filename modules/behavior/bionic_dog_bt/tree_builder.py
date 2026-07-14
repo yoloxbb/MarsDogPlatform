@@ -5,13 +5,16 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
-from rich.console import Console
+try:
+    from rich.console import Console
+except ImportError:  # pragma: no cover
+    Console = None
 
 from .behavior_tree_node import Node, Selector, Sequence
 from .blackboard import Blackboard
 from .conditions import ActiveLevelCondition, BehaviorRelevanceCondition
-from .actions import ExecuteActiveBehavior
-from .mock_action_executor import MockActionExecutor
+from .actions import ExecuteActiveBehavior, ExecutorInterface
+from .mock_action_executor import MockActionExecutor  # ⚠️ TEMP: swap to ActionClientAdapter
 from .mock_input_provider import MockInputProvider
 from .yaml_loader import YAMLLoader
 from .emotion_module import EmotionModule
@@ -20,7 +23,7 @@ from .constants import LEVEL_NAMES
 
 def build_tree(
     blackboard: Blackboard,
-    executor: MockActionExecutor,
+    executor: ExecutorInterface,  # ⚠️ any ExecutorInterface impl works (mock or ActionClient)
 ) -> Selector:
     """Build the full behavior tree.
 
@@ -66,7 +69,7 @@ def create_runtime(
     """
     # Resolve config path
     if config_path is None:
-        config_path = str(Path(__file__).parent.parent / "config" / "behaviors.yaml")
+        config_path = str(Path(__file__).resolve().parent.parent / "config" / "behaviors.yaml")
 
     # Load YAML config
     loader = YAMLLoader(config_path)

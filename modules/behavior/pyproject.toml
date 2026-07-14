@@ -1,7 +1,7 @@
 [project]
-name = "20260702-marsdogtree"
-version = "0.1.0"
-description = "Add your description here"
+name = "marsdog-behavior"
+version = "0.2.0"
+description = "MarsDog Behavior Tree — priority-based behavior selection engine"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -10,3 +10,7 @@ dependencies = [
     "pyyaml>=6.0.3",
     "rich>=15.0.0",
 ]
+
+[project.scripts]
+behavior-tree-demo = "bionic_dog_bt.demo:main"
+marsdog-standalone = "marsdog_behavior.standalone_demo:main"

@@ -1,0 +1,85 @@
+# legacy_behavior_aliases.yaml
+# 旧动作型行为名 → 新语义行为名的兼容映射
+# 仅用于兼容旧输入/旧日志，不用于选择具体动作
+
+legacy_emotion_behavior_aliases:
+  # Calm → expressCalm
+  restInPlace: expressCalm
+  sleepOnSide: expressCalm
+  stretchLazily: expressCalm
+  lickPaws: expressCalm
+  yawnSlowly: expressCalm
+  exposeBelly: expressCalm
+  waitAtDoor: expressCalm
+  cuddlePose: expressCalm
+  pawAtOwner: expressCalm
+
+  # Joy → expressJoy
+  wagTailGently: expressJoy
+  wagTailFast: expressJoy
+  hopInPlace: expressJoy
+  nudgeWithNose: expressJoy
+  playBow: expressJoy
+  tailUpAndWag: expressJoy
+  spinInCircle: expressJoy
+  pounceForward: expressJoy
+  barkShortExcited: expressJoy
+  runBackAndForth: expressJoy
+  rollOverShowBelly: expressJoy
+
+  # Excite → expressExcitement
+  carryAndShake: expressExcitement
+  wiggleBody: expressExcitement
+  trotAndBounce: expressExcitement
+  begForFood: expressExcitement
+  moveRapidly: expressExcitement
+  circleAround: expressExcitement
+  zoomiesRun: expressExcitement
+  jumpOnPerson: expressExcitement
+  barkOrWhine: expressExcitement
+  mouthingGently: expressExcitement
+  pawOnKnee: expressExcitement
+  fetchToy: expressExcitement
+
+  # Anxiety → expressAnxiety
+  paceBackAndForth: expressAnxiety
+  whineLow: expressAnxiety
+  stareIntently: expressAnxiety
+  headTilt: expressAnxiety
+  scratchFrequently: expressAnxiety
+  whineHigh: expressAnxiety
+  bodyStiffen: expressAnxiety
+  tuckTail: expressAnxiety
+  dilatePupils: expressAnxiety
+  hideAway: expressAnxiety
+
+  # Fear → expressFear
+  freezeAlert: expressFear
+  walkAway: expressFear
+  retreatWithTailTucked: expressFear
+  growlLow: expressFear
+  fleeQuickly: expressFear
+  avoidAndHide: expressFear
+  trembleShake: expressFear
+  loseControl: expressFear
+
+  # Curious → expressCuriosity
+  tailWagLevel: expressCuriosity
+  approachSlowly: expressCuriosity
+  sniffGround: expressCuriosity
+  pawAtObject: expressCuriosity
+  followMovement: expressCuriosity
+  circleInspect: expressCuriosity
+
+  # Old config behavior names (deprecated)
+  express_happy: expressJoy
+  express_fear: expressFear
+  express_curiosity: expressCuriosity
+
+legacy_need_behavior_aliases:
+  seek_food_or_water: eatNormally
+  excretion_request: defecate
+  sleep_request: sleepNow
+  clean_self: cleanSelf
+  seek_social_interaction: seekHumanInteraction
+  explore_environment: exploreRoom

@@ -12,9 +12,12 @@ from __future__ import annotations
 import time
 from enum import Enum
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Any
 
-from rich.console import Console
+try:
+    from rich.console import Console
+except ImportError:  # pragma: no cover
+    Console = None  # type: ignore
 
 
 class Status(Enum):

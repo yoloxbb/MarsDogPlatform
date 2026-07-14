@@ -4,8 +4,8 @@
 # Lower number = higher priority
 PRIORITY_LEVELS = {
     "SYSTEM": 0,
-    "PHYSIO_URGENT": 1,
-    "EXTERNAL_INTERACTION": 2,
+    "EXTERNAL_INTERACTION": 1,
+    "PHYSIO_URGENT": 2,
     "PHYSIO_NORMAL": 3,
     "PSYCHOLOGICAL": 4,
     "EMOTION_EXPRESSION": 5,
@@ -14,8 +14,8 @@ PRIORITY_LEVELS = {
 
 LEVEL_NAMES = {
     0: "Lv0_System",
-    1: "Lv1_PhysioUrgent",
-    2: "Lv2_ExternalInteraction",
+    1: "Lv1_ExternalInteraction",
+    2: "Lv2_PhysioUrgent",
     3: "Lv3_PhysioNormal",
     4: "Lv4_Psychological",
     5: "Lv5_EmotionExpression",
@@ -97,9 +97,12 @@ NEED_LEVEL_NORMAL = "NORMAL"
 NEED_LEVEL_TRIGGERED = "TRIGGERED"
 NEED_LEVEL_OVERFLOW = "OVERFLOW"
 
-# ── Voice Command → Behavior Mapping ─────────────────────────────────────────
-# Maps ROS2 /perception/audio_event command_id → behavior_name.
-# Used when event_type == "EVT_VOICE_COMMAND_KNOWN".
+# ── Voice Command → Behavior Mapping (DEPRECATED) ───────────────────────────
+# .. deprecated::
+#    This direct command→behavior mapping is DEPRECATED.
+#    New pipeline: command_id → intent → action_pool → behavior_name
+#    via config/event_intent_map.yaml and config/intent_action_pool.yaml.
+#    Kept for backward compatibility only.
 COMMAND_BEHAVIOR_MAP = {
     "CMD_SIT": "respond_owner_call",       # 坐下 → 响应主人（靠近+坐下）
     "CMD_COME_HERE": "respond_owner_call", # 过来 → 响应主人
@@ -110,6 +113,42 @@ COMMAND_BEHAVIOR_MAP = {
     "CMD_PRAISE": "express_happy",         # 表扬 → 开心表达
     "CMD_COMFORT": "express_happy",        # 安慰 → 开心表达（互动模式）
     "CMD_ENCOUR": "express_happy",         # 鼓励 → 开心表达
+}
+
+# ── Behavior → Action Result Mapping ─────────────────────────────────────────
+# Maps behavior_name → (action_type, demand_type, metadata_keys)
+# Only behaviors in this map get published to /behavior/result_event.
+# Pure emotion expressions (expressJoy etc.) NOT included — result_mapping=null.
+BEHAVIOR_ACTION_MAP = {
+    # Physiological
+    "eatNormally": ("ACTION_EAT", "Hunger",
+                    {"foodType": "NormalFood", "portions": 1, "eatEfficiency": "Full"}),
+    "eatExcitedly": ("ACTION_EAT", "Hunger",
+                     {"foodType": "NormalFood", "portions": 1, "eatEfficiency": "Excited"}),
+    "defecate": ("ACTION_DEFECATE", "Bladder", {}),
+    "cleanSelf": ("ACTION_GROOM", "Cleanliness", {}),
+    "sleepNow": ("ACTION_SLEEP", "Sleepiness", {}),
+    "recharge": ("ACTION_RECHARGE", "Energy", {}),
+    # Psychological
+    "seekHumanInteraction": ("ACTION_ATTENTION_SEEK", "Social",
+                              {"socialOutcome": "OwnerInteraction"}),
+    "requestResourceFromHuman": ("ACTION_RESOURCE_SHARE", "Social", {}),
+    "testAnimalBoundary": ("ACTION_BOUNDARY_TEST", "Social", {}),
+    "greetAnimal": ("ACTION_SOCIAL_GREET", "Social", {}),
+    "inviteAnimalToPlay": ("ACTION_PLAY_INVITE", "Social", {}),
+    "inviteHumanToPlay": ("ACTION_PLAY_INVITE", "Social", {}),
+    "exploreRoom": ("ACTION_SPACE_EXPLORE", "Exploration", {}),
+    "inspectObject": ("ACTION_OBJECT_EXPLORE", "Exploration", {}),
+    "inspectKnownObject": ("ACTION_OBJECT_EXPLORE", "Exploration", {}),
+    # Legacy aliases (kept for backward compat)
+    "seek_food_or_water": ("ACTION_EAT", "Hunger",
+                           {"foodType": "NormalFood", "portions": 1, "eatEfficiency": "Full"}),
+    "excretion_request": ("ACTION_DEFECATE", "Bladder", {}),
+    "sleep_request": ("ACTION_SLEEP", "Sleepiness", {}),
+    "clean_self": ("ACTION_GROOM", "Cleanliness", {}),
+    "seek_social_interaction": ("ACTION_ATTENTION_SEEK", "Social",
+                                {"socialOutcome": "OwnerInteraction"}),
+    "explore_environment": ("ACTION_SPACE_EXPLORE", "Exploration", {}),
 }
 
 # ── Default Behaviors ────────────────────────────────────────────────────────

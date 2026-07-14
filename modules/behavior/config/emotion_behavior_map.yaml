@@ -1,0 +1,121 @@
+# emotion_behavior_map.yaml
+# 情绪事件 → 6 个正式语义行为名
+# 所有 ACT_* 动作选择由 marsdog_action_executor 负责
+
+emotion_behavior_map:
+  EMO_CALM_NORMAL:
+    intent: express_calm
+    behavior_name: expressCalm
+    priority_level: 5
+    sub_priority: 0
+    level: LOW
+    variant: calm_low
+    result_mapping: null
+
+  EMO_CALM_HIGH:
+    intent: express_calm
+    behavior_name: expressCalm
+    priority_level: 5
+    sub_priority: 0
+    level: HIGH
+    variant: calm_high
+    result_mapping: null
+
+  EMO_JOY_LOW:
+    intent: express_joy
+    behavior_name: expressJoy
+    priority_level: 5
+    sub_priority: 0
+    level: LOW
+    variant: joy_low
+    result_mapping: null
+
+  EMO_JOY_MID:
+    intent: express_joy
+    behavior_name: expressJoy
+    priority_level: 5
+    sub_priority: 0
+    level: MID
+    variant: joy_mid
+    result_mapping: null
+
+  EMO_JOY_HIGH:
+    intent: express_joy
+    behavior_name: expressJoy
+    priority_level: 5
+    sub_priority: 0
+    level: HIGH
+    variant: joy_high
+    result_mapping: null
+
+  EMO_EXCITE_LOW:
+    intent: express_excitement
+    behavior_name: expressExcitement
+    priority_level: 5
+    sub_priority: 0
+    level: LOW
+    variant: excitement_low
+    result_mapping: null
+
+  EMO_EXCITE_HIGH:
+    intent: express_excitement
+    behavior_name: expressExcitement
+    priority_level: 5
+    sub_priority: 0
+    level: HIGH
+    variant: excitement_high
+    result_mapping: null
+
+  EMO_ANXIETY_LOW:
+    intent: express_anxiety
+    behavior_name: expressAnxiety
+    priority_level: 5
+    sub_priority: 0
+    level: LOW
+    variant: anxiety_low
+    result_mapping: null
+
+  EMO_ANXIETY_HIGH:
+    intent: express_anxiety
+    behavior_name: expressAnxiety
+    priority_level: 5
+    sub_priority: 0
+    level: HIGH
+    variant: anxiety_high
+    result_mapping: null
+
+  EMO_FEAR_LOW:
+    intent: express_fear
+    behavior_name: expressFear
+    priority_level: 5
+    sub_priority: 0
+    level: LOW
+    variant: fear_low
+    result_mapping: null
+
+  EMO_FEAR_HIGH:
+    intent: express_fear
+    behavior_name: expressFear
+    priority_level: 5
+    sub_priority: 0
+    level: HIGH
+    variant: fear_high
+    result_mapping: null
+
+  EMO_CURIOUS_LOW:
+    intent: express_curiosity
+    behavior_name: expressCuriosity
+    priority_level: 5
+    sub_priority: 0
+    level: LOW
+    variant: curiosity_low
+    result_mapping: null
+
+  EMO_CURIOUS_HIGH:
+    intent: express_curiosity
+    behavior_name: expressCuriosity
+    priority_level: 5
+    sub_priority: 0
+    level: HIGH
+    variant: curiosity_high
+    result_mapping: null

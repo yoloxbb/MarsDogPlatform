@@ -1,5 +1,9 @@
 """Mock action executor: simulates behavior execution.
 
+⚠️ TEMPORARY — will be deleted when marsdog_action_executor is ready.
+   Interface is formalized as ExecutorInterface in actions.py.
+   Replacement: ActionClientAdapter wrapping ROS2 Action Client → /execute_behavior.
+
 Builds randomized action sequences from the action catalog.
 Falls back to YAML action_sequence if no catalog entry exists.
 Each step has a duration; the executor simulates progress over time.
@@ -98,17 +102,17 @@ class MockActionExecutor:
     def send_goal(self, active_behavior: ActiveBehavior) -> str:
         """Send a new goal to the executor. Returns goal_id.
 
-        Builds a randomized action sequence from the action catalog.
-        Falls back to the YAML spec's action_sequence if no catalog entry.
+        Resolves legacy aliases before looking up action sequences.
         """
+        behavior_name = active_behavior.behavior_name
+        # Resolve legacy alias if new semantic name
+        behavior_name = self._resolve_legacy(behavior_name)
+
         interactive = active_behavior.params.get("interactive", False)
-        action_seq = build_action_sequence(
-            active_behavior.behavior_name, interactive=interactive
-        )
+        action_seq = build_action_sequence(behavior_name, interactive=interactive)
 
         if not action_seq:
-            # Fall back to YAML spec
-            spec = self._loader.get_spec(active_behavior.behavior_name)
+            spec = self._loader.get_spec(behavior_name)
             if spec is None:
                 raise ValueError(f"Unknown behavior: {active_behavior.behavior_name}")
             action_seq = list(spec.action_sequence)
@@ -209,3 +213,35 @@ class MockActionExecutor:
     def has_goal(self, goal_id: str) -> bool:
         """Check if a goal is still active."""
         return goal_id in self._goals
+
+    @staticmethod
+    def _resolve_legacy(behavior_name: str) -> str:
+        """Resolve new semantic behavior names to legacy catalog entries."""
+        _alias_map = {
+            # Emotion behaviors → old config/catalog names
+            "expressCalm": "express_happy",
+            "expressJoy": "express_happy",
+            "expressExcitement": "express_happy",
+            "expressAnxiety": "express_fear",
+            "expressFear": "express_fear",
+            "expressCuriosity": "express_curiosity",
+            # Need behaviors → old names
+            "eatNormally": "seek_food_or_water",
+            "eatExcitedly": "seek_food_or_water",
+            "defecate": "excretion_request",
+            "sleepNow": "sleep_request",
+            "cleanSelf": "clean_self",
+            "restInPlace": "idle_rest",
+            "recharge": "sleep_request",
+            # Social/explore → old names
+            "seekHumanInteraction": "seek_social_interaction",
+            "requestResourceFromHuman": "seek_social_interaction",
+            "testAnimalBoundary": "seek_social_interaction",
+            "greetAnimal": "seek_social_interaction",
+            "inviteAnimalToPlay": "seek_social_interaction",
+            "inviteHumanToPlay": "seek_social_interaction",
+            "exploreRoom": "explore_environment",
+            "inspectObject": "explore_environment",
+            "inspectKnownObject": "explore_environment",
+        }
+        return _alias_map.get(behavior_name, behavior_name)

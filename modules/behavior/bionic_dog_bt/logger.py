@@ -90,6 +90,9 @@ class BTLogger:
     def warning(self, msg, *args, **kwargs):
         self.logger.warning(msg, *args, **kwargs)
 
+    def warn(self, msg, *args, **kwargs):
+        self.logger.warning(msg, *args, **kwargs)
+
     def error(self, msg, *args, **kwargs):
         self.logger.error(msg, *args, **kwargs)
 

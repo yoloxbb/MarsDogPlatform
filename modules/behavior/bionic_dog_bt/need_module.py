@@ -66,12 +66,14 @@ class NeedModule:
         self.level_events: dict[str, Optional[str]] = {}  # need_name → "NEED_HUNGER_TRIGGERED" or "NEED_HUNGER_RECOVERED"
 
     def set_level_events(self, events: dict[str, Optional[str]]) -> None:
-        """Store the current levelEvents from /internal_need/state.
+        """Update levelEvents from /internal_need/state (merge, don't replace).
 
-        Used by BehaviorRelevanceCondition: compares with trigger_event from
-        signal_event to determine if need is still at the same level.
+        Only updates keys where the value is not None — prevents a state
+        message from wiping out previously-set level events from signal_event.
         """
-        self.level_events = dict(events)
+        for key, value in events.items():
+            if value is not None:
+                self.level_events[key] = value
 
     def _ensure_need(self, name: str) -> NeedState:
         """Get or create a need state with default config."""

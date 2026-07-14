@@ -1,5 +1,9 @@
 """Mock Action Executor Node — /action_executor_node.
 
+⚠️ TEMPORARY — will be deleted when marsdog_action_executor is ready.
+   The standalone action executor project replaces this entirely.
+   This file is only kept for colcon entry point registration.
+
 Provides the /execute_behavior ROS2 Action server.
 Simulates long-running behavior execution with step-by-step progress.
 
@@ -7,15 +11,6 @@ In production, this node would be replaced by a real action executor
 that drives motors, servos, speakers, etc. Here it uses the action
 catalog to build randomized action sequences and simulates their
 execution over time.
-
-ROS2 API:
-  Action Server: /execute_behavior
-    Goal:    ExecuteBehavior_Goal    (behavior_name, params, timeout)
-    Feedback: ExecuteBehavior_Feedback (progress, safe_to_interrupt, current_action)
-    Result:  ExecuteBehavior_Result   (status, reason, reward, emotion/need deltas)
-
-Run:
-  ros2 run marsdog_ros2 action_executor_node
 """
 
 from __future__ import annotations

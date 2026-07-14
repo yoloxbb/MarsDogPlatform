@@ -76,11 +76,19 @@ class TestEmotionModule:
         em.set_emotion("happy", 70.0)  # exactly at threshold
         assert em.is_overflowing("happy")
 
-    def test_set_emotion_only_increases(self, emotion_module):
+    def test_set_emotion_always_updates(self, emotion_module):
+        """Emotion engine is the single source of truth — always accept its value."""
         em = emotion_module
         em.set_emotion("happy", 80.0)
-        em.set_emotion("happy", 60.0)  # lower value should not decrease
         assert em.get_value("happy") == 80.0
+        # Engine publishes a lower value (decayed from HIGH to MID)
+        em.set_emotion("happy", 60.0)
+        assert em.get_value("happy") == 60.0
+        # Clamped to 0..100
+        em.set_emotion("happy", -10.0)
+        assert em.get_value("happy") == 0.0
+        em.set_emotion("happy", 150.0)
+        assert em.get_value("happy") == 100.0
 
     def test_unknown_emotion_returns_zero(self, emotion_module):
         assert emotion_module.get_value("nonexistent") == 0.0

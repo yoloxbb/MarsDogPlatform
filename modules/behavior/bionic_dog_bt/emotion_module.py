@@ -42,12 +42,18 @@ class EmotionModule:
         self.level_events: dict[str, Optional[str]] = {}  # emotion_name → "EMO_JOY_HIGH" or None
 
     def set_level_events(self, events: dict[str, Optional[str]]) -> None:
-        """Store the current levelEvents from /emotion/state.
+        """Update levelEvents from /emotion/state (merge, don't replace).
+
+        Only updates keys where the value is not None — this prevents a
+        state message with `"Joy": null` from wiping out a previously-set
+        `"Joy": "EMO_JOY_HIGH"` that was set by the signal_event callback.
 
         Used by BehaviorRelevanceCondition: compares with trigger_event from
         signal_event to determine if emotion is still in the same zone.
         """
-        self.level_events = dict(events)
+        for key, value in events.items():
+            if value is not None:
+                self.level_events[key] = value
 
     def _ensure_emotion(self, name: str) -> EmotionState:
         """Get or create an emotion state with default config."""
@@ -62,13 +68,13 @@ class EmotionModule:
         return self._emotions[name]
 
     def set_emotion(self, name: str, value: float) -> None:
-        """Set an emotion's current value. Only increases (emotions accumulate).
+        """Set an emotion's current value from the authoritative state message.
 
-        After setting, the last_update timestamp is reset so decay starts fresh.
+        The emotion_engine is the single source of truth — always accept its value.
+        Decay is handled by the engine; we just mirror its published state.
         """
         state = self._ensure_emotion(name)
-        if value > state.current_value:
-            state.current_value = min(value, 100.0)
+        state.current_value = max(0.0, min(value, 100.0))
         state.last_update = time.time()
 
     def tick(self) -> None:

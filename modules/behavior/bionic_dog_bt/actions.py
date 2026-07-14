@@ -11,10 +11,11 @@ This is the core action node that handles:
 from __future__ import annotations
 
 import time
+from typing import Protocol
 
 from .behavior_tree_node import Node, Status
 from .blackboard import Blackboard
-from .mock_action_executor import MockActionExecutor
+from .datatypes import ExecutorFeedback, BehaviorFeedbackEvent
 from .logger import get_logger, LogEvent
 from .constants import (
     STATUS_RUNNING,
@@ -31,6 +32,28 @@ from .constants import (
 _log = get_logger("actions")
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# Executor Interface (abstraction — swap implementation without touching BT)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class ExecutorInterface(Protocol):
+    """Protocol that any executor must satisfy.
+
+    Current implementation: MockActionExecutor (internal mock)
+    Future: ActionClientAdapter wrapping ROS2 Action Client → /execute_behavior
+    """
+
+    def send_goal(self, active) -> str: ...
+    def cancel_goal(self, goal_id: str) -> bool: ...
+    def tick(self) -> None: ...
+    def get_feedback(self, goal_id: str) -> ExecutorFeedback | None: ...
+    def get_result(self, goal_id: str) -> BehaviorFeedbackEvent | None: ...
+    def remove_goal(self, goal_id: str) -> None: ...
+    def has_goal(self, goal_id: str) -> bool: ...
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+
 class ExecuteActiveBehavior(Node):
     """Action node that sends a behavior goal to the executor and monitors progress.
 
@@ -46,11 +69,11 @@ class ExecuteActiveBehavior(Node):
     8. Cooldown: don't start if behavior is in cooldown.
     """
 
-    def __init__(self, name: str, blackboard: Blackboard, executor: MockActionExecutor):
+    def __init__(self, name: str, blackboard: Blackboard, executor: ExecutorInterface):
         super().__init__(name)
         self.blackboard = blackboard
         self.executor = executor
-        self._sent_behavior_id: str | None = None  # Track which active_behavior we already processed
+        self._sent_behavior_id: str | None = None
 
     def initialise(self) -> None:
         super().initialise()
