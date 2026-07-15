@@ -109,8 +109,8 @@ class WitImuNode(Node):
         if t == 0x51:                    # 加速度: /32768*16 (g) -> *G
             k = 16.0 / 32768 * G
             self.acc = [x * k, y * k, z * k]
-        elif t == 0x52:                  # 角速度: /32768*2000 (°/s) -> *DEG2RAD
-            k = 2000.0 / 32768 * DEG2RAD
+        elif t == 0x52:                  # 角速度: /32768*4000 (°/s) -> *DEG2RAD
+            k = 4000.0 / 32768 * DEG2RAD
             self.gyro = [x * k, y * k, z * k]
         elif t == 0x53:                  # 角度: /32768*180 (°) -> 转四元数
             k = 180.0 / 32768 * DEG2RAD  # 直接得到弧度
