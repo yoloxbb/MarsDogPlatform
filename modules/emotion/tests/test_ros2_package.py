@@ -40,6 +40,21 @@ class Ros2PackageTest(unittest.TestCase):
         self.assertIn('executable="personality_node"', launchText)
         self.assertIn('executable="internal_need_node"', launchText)
         self.assertIn('executable="emotion_engine_node"', launchText)
+        self.assertIn('"time_mode"', launchText)
+        self.assertIn('"virtual_start_time"', launchText)
+        self.assertIn('"random_seed"', launchText)
+
+    def test_calculation_nodes_publish_time_context(self):
+        """四类状态与事件输出都应通过统一时间上下文包装。"""
+        needNodeText = (PROJECT_ROOT / "marsdog_ros2" / "internal_need_node.py").read_text(
+            encoding="utf-8"
+        )
+        emotionNodeText = (PROJECT_ROOT / "marsdog_ros2" / "emotion_engine_node.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertEqual(needNodeText.count("GetMessageWithTimeContextValue("), 2)
+        self.assertEqual(emotionNodeText.count("GetMessageWithTimeContextValue("), 2)
 
 
 if __name__ == "__main__":

@@ -63,3 +63,4 @@ docs/*.jpeg
 !docs/current_implementation_summary.md
 !docs/internal_need_emotion_update_logic.md
 !docs/ros2_topic_contract.md
+!docs/time_compression_test_guide.md

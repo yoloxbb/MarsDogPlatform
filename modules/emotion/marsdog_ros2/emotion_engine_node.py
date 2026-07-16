@@ -3,19 +3,24 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 
+from marsdog_core import MarsdogTimeController, VirtualTickScheduler
 from marsdog_core.emotion_system import MarsdogEmotionSystem
 from marsdog_ros2.behavior_result_adapter import ApplyBehaviorResultMessage
 from marsdog_ros2.perception_adapter import ApplyAudioEventMessage, ApplyVisualEventMessage
 from marsdog_ros2.personality_adapter import ApplyPersonalityStateMessage
+from marsdog_ros2.time_context import GetMessageWithTimeContextValue, GetRandomGeneratorValue
 
 try:
     import rclpy
+    from rcl_interfaces.msg import ParameterDescriptor
     from rclpy.node import Node
     from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
     from std_msgs.msg import String
 except ModuleNotFoundError:
     rclpy = None
+    ParameterDescriptor = None
     Node = object
     QoSProfile = None
     ReliabilityPolicy = None
@@ -33,14 +38,54 @@ class EmotionEngineNode(Node):
             raise RuntimeError("ROS2 runtime is not available. Please run this node inside a ROS2 environment.")
 
         super().__init__("emotion_engine_node")
-        self.system = MarsdogEmotionSystem()
+        self._DeclareTimeParameters()
+        timeMode = self.get_parameter("time_mode").value
+        virtualStartTime = self.get_parameter("virtual_start_time").value
+        randomSeed = self.get_parameter("random_seed").value
+
+        self.timeController = MarsdogTimeController(timeMode, virtualStartTime)
+        self.system = MarsdogEmotionSystem(
+            randomGenerator=GetRandomGeneratorValue(randomSeed),
+        )
+        virtualStartDateTime = self.timeController.GetVirtualStartDateTimeValue()
+        self.emotionTickScheduler = VirtualTickScheduler(virtualStartDateTime, 1.0)
+
         self.statePublisher = self.create_publisher(String, "/emotion/state", 10)
         self.signalPublisher = self.create_publisher(String, "/emotion/signal_event", 10)
         self.create_subscription(String, "/perception/visual_event", self.OnVisualEventMessage, _BestEffortQoS(5))
         self.create_subscription(String, "/perception/audio_event", self.OnAudioEventMessage, _ReliableQoS(10))
         self.create_subscription(String, "/behavior/result_event", self.OnBehaviorResultMessage, _ReliableQoS(10))
         self.create_subscription(String, "/personality/state", self.OnPersonalityStateMessage, _ReliableTransientLocalQoS(1))
-        self.create_timer(1.0, self.Tick)
+        self.create_timer(
+            self.timeController.GetRealIntervalValue(1.0),
+            self.Tick,
+        )
+        self.get_logger().info(
+            "Emotion time mode: %s, scale: %sx, virtual start: %s"
+            % (
+                self.timeController.GetTimeModeValue(),
+                self.timeController.GetTimeScaleValue(),
+                virtualStartDateTime.isoformat(),
+            )
+        )
+
+    def _DeclareTimeParameters(self) -> None:
+        """声明仅允许启动时设置的时间测试参数。"""
+        self.declare_parameter(
+            "time_mode",
+            "standard_24h",
+            descriptor=_ReadOnlyParameterDescriptor("Time compression mode"),
+        )
+        self.declare_parameter(
+            "virtual_start_time",
+            "auto",
+            descriptor=_ReadOnlyParameterDescriptor("Virtual start time: auto or HH:MM"),
+        )
+        self.declare_parameter(
+            "random_seed",
+            -1,
+            descriptor=_ReadOnlyParameterDescriptor("Random seed: -1 or a non-negative integer"),
+        )
 
     def OnVisualEventMessage(self, message) -> None:
         """处理感知视觉情绪事件。"""
@@ -62,22 +107,37 @@ class EmotionEngineNode(Node):
         ApplyPersonalityStateMessage(self.system, message)
 
     def Tick(self) -> None:
-        """执行 1 秒情绪自然平复并发布状态。"""
-        self.system.ApplyEmotionDecay(1.0)
-        self.PublishSignalEvents()
-        self.PublishState()
+        """按顺序补算每个到期的虚拟 1 秒情绪 Tick。"""
+        virtualNow = self.timeController.GetVirtualDateTimeValue()
+        for tickDateTime in self.emotionTickScheduler.GetDueTickDateTimesValue(virtualNow):
+            # 每个虚拟秒独立衰减，保证不会跳过中间区间事件。
+            self.system.ApplyEmotionDecay(1.0)
+            self.PublishSignalEvents(tickDateTime)
+            self.PublishState(tickDateTime)
 
-    def PublishState(self) -> None:
+    def PublishState(self, virtualDateTime: datetime | None = None) -> None:
         """发布情绪状态。"""
+        currentVirtualTime = virtualDateTime or self.timeController.GetVirtualDateTimeValue()
+        payload = GetMessageWithTimeContextValue(
+            self.system.GetEmotionStateValue(),
+            self.timeController,
+            currentVirtualTime,
+        )
         message = String()
-        message.data = json.dumps(self.system.GetEmotionStateValue(), ensure_ascii=False)
+        message.data = json.dumps(payload, ensure_ascii=False)
         self.statePublisher.publish(message)
 
-    def PublishSignalEvents(self) -> None:
+    def PublishSignalEvents(self, virtualDateTime: datetime | None = None) -> None:
         """发布情绪区间变化事件，未变化时不发布。"""
+        currentVirtualTime = virtualDateTime or self.timeController.GetVirtualDateTimeValue()
         for signalEvent in self.system.GetEmotionSignalEventsValue():
+            payload = GetMessageWithTimeContextValue(
+                signalEvent,
+                self.timeController,
+                currentVirtualTime,
+            )
             message = String()
-            message.data = json.dumps(signalEvent, ensure_ascii=False)
+            message.data = json.dumps(payload, ensure_ascii=False)
             self.signalPublisher.publish(message)
 
 
@@ -113,6 +173,13 @@ def _ReliableTransientLocalQoS(depth: int):
         reliability=ReliabilityPolicy.RELIABLE,
         durability=DurabilityPolicy.TRANSIENT_LOCAL,
     )
+
+
+def _ReadOnlyParameterDescriptor(description: str):
+    """创建启动后不可动态修改的 ROS2 参数描述。"""
+    if ParameterDescriptor is None:
+        return None
+    return ParameterDescriptor(description=description, read_only=True)
 
 
 def main(args=None) -> None:

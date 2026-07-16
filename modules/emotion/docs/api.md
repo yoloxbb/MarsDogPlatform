@@ -7,12 +7,29 @@
 ## 核心入口
 
 ```python
-from marsdog_core import MarsdogNeedSystem, MarsdogEmotionSystem, MarsdogPersonalitySystem
+from marsdog_core import (
+    MarsdogEmotionSystem,
+    MarsdogNeedSystem,
+    MarsdogPersonalitySystem,
+    MarsdogTimeController,
+    VirtualTickScheduler,
+)
 
 needSystem = MarsdogNeedSystem()
 emotionSystem = MarsdogEmotionSystem()
 personalitySystem = MarsdogPersonalitySystem()
 ```
+
+## 时间测试接口
+
+- `GetTimeModeValue()`：读取 `standard_24h / demo_12h / demo_2h`。
+- `GetTimeScaleValue()`：读取当前倍率 `1 / 2 / 12`。
+- `GetVirtualStartDateTimeValue()`：读取本次进程虚拟起点。
+- `GetVirtualDateTimeValue()`：按单调时钟读取当前虚拟日期时间。
+- `GetVirtualTimestampValue()`：读取当前虚拟 Unix 时间戳。
+- `GetRealIntervalValue(virtualSeconds)`：把虚拟间隔换算成真实定时器周期。
+- `GetTimeContextValue()`：生成输出消息使用的虚拟时间上下文。
+- `VirtualTickScheduler.GetDueTickDateTimesValue(currentDateTime)`：按顺序读取并消费所有遗漏 Tick。
 
 ## 需求接口
 
@@ -176,7 +193,7 @@ ACTION_EXPLORE / ACTION_SPACE_EXPLORE / ACTION_OBJECT_EXPLORE`。其他 action
 
 - `/internal_need/state`：内部需求状态，1 秒持续发布。
 - `/internal_need/signal_event`：内部需求等级变化事件，等级变化时发布。
-- `/emotion/state`：情绪状态，1 秒持续发布。
+- `/emotion/state`：情绪状态，每个虚拟秒发布。
 - `/emotion/signal_event`：情绪区间或主导情绪变化时发布。
 - `/personality/state`：性格状态，`personality_node` 启动时和性格变化后发布。
 
@@ -192,6 +209,17 @@ ACTION_EXPLORE / ACTION_SPACE_EXPLORE / ACTION_OBJECT_EXPLORE`。其他 action
 ```bash
 ros2 launch marsdog_behavior internal_need_emotion.launch.py
 ```
+
+时间参数只能在启动时设置：
+
+```bash
+ros2 launch marsdog_behavior internal_need_emotion.launch.py \
+  time_mode:=demo_2h virtual_start_time:=06:00 random_seed:=12345
+```
+
+- `time_mode`：`standard_24h / demo_12h / demo_2h`。
+- `virtual_start_time`：`auto` 或严格 `HH:MM`。
+- `random_seed`：`-1` 或非负整数。
 
 只调试性格节点：
 

@@ -18,6 +18,7 @@
 | `marsdog_core/need_system.py` | 内部需求计算统一入口 `MarsdogNeedSystem` |
 | `marsdog_core/emotion_system.py` | 情绪计算统一入口 `MarsdogEmotionSystem` |
 | `marsdog_core/personality_system.py` | 性格参数统一入口 `MarsdogPersonalitySystem` |
+| `marsdog_core/time_controller.py` | 三档虚拟时钟和遗漏 Tick 补算调度器 |
 | `marsdog_core/*_behavior.py` | 各需求的数值增长、恢复和结果结算逻辑 |
 | `marsdog_ros2/internal_need_node.py` | 发布 `/internal_need/state` 和 `/internal_need/signal_event` |
 | `marsdog_ros2/emotion_engine_node.py` | 发布 `/emotion/state` 和 `/emotion/signal_event` |
@@ -25,6 +26,7 @@
 | `marsdog_ros2/perception_adapter.py` | 适配 `/perception/audio_event`、`/perception/visual_event` |
 | `marsdog_ros2/behavior_result_adapter.py` | 适配 `/behavior/result_event` |
 | `marsdog_ros2/personality_adapter.py` | 适配 `/personality/state` |
+| `marsdog_ros2/time_context.py` | 为需求/情绪输出附加统一虚拟时间上下文 |
 | `configs/demands.yaml` | 内部需求阈值、增长、恢复配置 |
 | `configs/emotions.yaml` | 情绪阈值、区间事件、衰减、事件映射配置 |
 | `configs/personality.yaml` | 性格预设 |
@@ -48,7 +50,7 @@
 |---|---|---|---|
 | `/internal_need/state` | `std_msgs/String` JSON | `internal_need_node` | 全量内部需求状态，1 秒持续发布 |
 | `/internal_need/signal_event` | `std_msgs/String` JSON | `internal_need_node` | 需求等级变化时发布 |
-| `/emotion/state` | `std_msgs/String` JSON | `emotion_engine_node` | 全量情绪状态，1 秒持续发布 |
+| `/emotion/state` | `std_msgs/String` JSON | `emotion_engine_node` | 全量情绪状态，每个虚拟秒发布 |
 | `/emotion/signal_event` | `std_msgs/String` JSON | `emotion_engine_node` | 情绪区间或主导情绪变化时发布 |
 | `/personality/state` | `std_msgs/String` JSON | `personality_node` | 性格状态，启动时和性格变化后发布 |
 
@@ -235,16 +237,19 @@ ros2 param set /personality_node C 40
 ### Sleepiness
 
 - 晨起：`10-15`。
-- 白天 `06:00-21:00`：每 Tick `+3`。
+- 白天 `06:00-21:00`：每 Tick `+4`。
 - 夜晚 `21:00-00:00`：每 Tick `+5`。
 - 凌晨 `00:00-06:00` 或关灯：清醒状态下 `Sleepiness = 90`。
+- 可触发入睡时段：`06:00-00:00`，其中 `06:00-08:00` 强制清醒。
 - 触发：`>65`。
 - 满溢：`>90`。
 - `ACTION_SLEEP + STARTED`：进入浅睡。
-- 浅睡固定 3 Tick，每 Tick `-2`。
+- 浅睡固定 14 Tick（140 分钟），每 Tick `-2`。
 - 浅睡结束后仍 `>65` 则进入深睡，否则醒来。
 - 深睡每 Tick `-15`，直到 `<=20` 自然醒来。
 - `00:00-06:00` 强制睡眠期间不会自然醒。
+- 睡眠信号被立即响应且无中断时，每天约清醒 `6小时40分-6小时50分`，
+  睡眠 `17小时10分-17小时20分`，约启动 5 次睡眠会话。
 
 ### Cleanliness
 
@@ -442,8 +447,27 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -q
 ROS2 节点：
 
 ```bash
-ros2 launch marsdog_behavior internal_need_emotion.launch.py
+ros2 launch marsdog_behavior internal_need_emotion.launch.py \
+  time_mode:=standard_24h
 ```
+
+时间压缩模式：
+
+```bash
+ros2 launch marsdog_behavior internal_need_emotion.launch.py time_mode:=demo_12h
+ros2 launch marsdog_behavior internal_need_emotion.launch.py \
+  time_mode:=demo_2h virtual_start_time:=06:00 random_seed:=12345
+```
+
+| 模式 | 倍率 | 需求 Tick 真实周期 | 情绪真实更新频率 | 虚拟一天真实耗时 |
+|---|---:|---:|---:|---:|
+| `standard_24h` | 1 | 600 秒 | 1 Hz | 24 小时 |
+| `demo_12h` | 2 | 300 秒 | 2 Hz | 12 小时 |
+| `demo_2h` | 12 | 50 秒 | 12 Hz | 2 小时 |
+
+四类需求/情绪状态与事件消息均包含 `timeContext`。原顶层 `timestamp` 仍是真实
+Unix 时间，`timeContext.virtualDateTime` 表示公式计算使用的虚拟时间。测试
+移交步骤见 [time_compression_test_guide.md](time_compression_test_guide.md)。
 
 也可以分别启动：
 

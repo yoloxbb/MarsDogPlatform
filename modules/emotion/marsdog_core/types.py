@@ -68,6 +68,14 @@ class SleepDepthType(str, Enum):
     DEEP = "Deep"
 
 
+class TimeModeType(str, Enum):
+    """时间压缩测试模式。"""
+
+    STANDARD_24H = "standard_24h"
+    DEMO_12H = "demo_12h"
+    DEMO_2H = "demo_2h"
+
+
 class PersonalityProfileType(str, Enum):
     """预设性格类型。"""
 
@@ -217,6 +225,11 @@ def NormalizeSleepDepthType(sleepDepth: object) -> str:
     if isinstance(sleepDepth, str) and sleepDepth in sleepAliases:
         return sleepAliases[sleepDepth]
     return NormalizeEnumValue(SleepDepthType, sleepDepth)
+
+
+def NormalizeTimeModeType(timeMode: object) -> str:
+    """规范化时间压缩模式。"""
+    return NormalizeEnumValue(TimeModeType, timeMode)
 
 
 def NormalizePersonalityProfileType(profileName: object) -> str:

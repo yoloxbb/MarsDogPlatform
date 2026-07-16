@@ -80,7 +80,7 @@ class SleepinessBehaviorAPI:
         self.state.isSleeping = True
         self.state.sleepDurationMinutes = 0
         self.state.shallowSleepTicksRemaining = int(
-            self._GetSleepinessConfig().get("shallowSleepTicks", 3)
+            self._GetSleepinessConfig().get("shallowSleepTicks", 14)
         )
         self.UpdateSleepTriggerState()
         return True
@@ -123,7 +123,7 @@ class SleepinessBehaviorAPI:
         return self._IsHourInRange(hour, int(entryWindow["startHour"]), int(entryWindow["endHour"]))
 
     def _ApplyShallowSleepRecovery(self, currentTime: object | None) -> int:
-        """执行一次浅睡恢复，并在 3 个 Tick 后决定醒来或转深睡。"""
+        """执行一次浅睡恢复，并在配置时长结束后决定醒来或转深睡。"""
         self._ApplySleepinessDelta(SleepDepthType.SHALLOW.value)
         self.state.shallowSleepTicksRemaining = max(0, self.state.shallowSleepTicksRemaining - 1)
 

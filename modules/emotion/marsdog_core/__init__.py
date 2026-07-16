@@ -3,6 +3,7 @@
 from .emotion_system import MarsdogEmotionSystem
 from .need_system import MarsdogNeedSystem
 from .personality_system import MarsdogPersonalitySystem
+from .time_controller import MarsdogTimeController, VirtualTickScheduler
 from .types import (
     ActionType,
     DemandType,
@@ -11,6 +12,7 @@ from .types import (
     FoodType,
     PersonalityProfileType,
     SleepDepthType,
+    TimeModeType,
 )
 
 __all__ = [
@@ -24,4 +26,7 @@ __all__ = [
     "MarsdogPersonalitySystem",
     "PersonalityProfileType",
     "SleepDepthType",
+    "MarsdogTimeController",
+    "TimeModeType",
+    "VirtualTickScheduler",
 ]

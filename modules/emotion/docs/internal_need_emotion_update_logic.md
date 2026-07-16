@@ -21,6 +21,13 @@ ros2 run marsdog_behavior internal_need_node
 ros2 run marsdog_behavior emotion_engine_node
 ```
 
+三个节点联调建议使用 launch，并在启动时选择时间模式：
+
+```bash
+ros2 launch marsdog_behavior internal_need_emotion.launch.py \
+  time_mode:=demo_2h virtual_start_time:=06:00 random_seed:=12345
+```
+
 ## 2. Topic
 
 ### 2.1 输入
@@ -38,7 +45,7 @@ ros2 run marsdog_behavior emotion_engine_node
 |---|---|---|---|
 | `/internal_need/state` | `std_msgs/String` JSON | `internal_need_node` | 每 1 秒持续发布 |
 | `/internal_need/signal_event` | `std_msgs/String` JSON | `internal_need_node` | 需求等级变化时发布 |
-| `/emotion/state` | `std_msgs/String` JSON | `emotion_engine_node` | 每 1 秒持续发布 |
+| `/emotion/state` | `std_msgs/String` JSON | `emotion_engine_node` | 每个虚拟秒发布；真实频率为 1/2/12 Hz |
 | `/emotion/signal_event` | `std_msgs/String` JSON | `emotion_engine_node` | 情绪区间或主导情绪变化时发布 |
 | `/personality/state` | `std_msgs/String` JSON | `personality_node` | 启动时和性格变化后发布 |
 
@@ -211,13 +218,28 @@ NEED_<DEMAND>_RECOVERED
 
 ## 6. 内部需求自然更新
 
-`internal_need_node` 每 600 秒调用一次：
+需求公式固定按每 10 个虚拟分钟调用一次：
 
 ```python
 UpdateNaturalDemandsByTime()
 ```
 
-这对应每 10 分钟 Tick。
+三种时间模式对应的真实定时器周期：
+
+| 模式 | 倍率 | 需求 Tick 真实周期 | 完整虚拟 24 小时 |
+|---|---:|---:|---:|
+| `standard_24h` | 1 | 600 秒 | 24 小时 |
+| `demo_12h` | 2 | 300 秒 | 12 小时 |
+| `demo_2h` | 12 | 50 秒 | 2 小时 |
+
+虚拟时间按以下公式计算：
+
+```text
+virtualDateTime = virtualStartDateTime + monotonicElapsedSeconds * scale
+```
+
+节点若因调度延迟错过 Tick，会按虚拟时间顺序逐个补算，不会合并需求增量。
+压缩模式 `virtual_start_time=auto` 从当天虚拟 `06:00` 开始并立即执行晨起初始化。
 
 全局规则：
 
@@ -254,17 +276,21 @@ UpdateNaturalDemandsByTime()
 ### Sleepiness
 
 - 晨起：`10-15`。
-- 白天 `06:00-21:00`：每 Tick `+3`。
+- 白天 `06:00-21:00`：每 Tick `+4`。
 - 夜晚 `21:00-00:00`：每 Tick `+5`。
 - 凌晨 `00:00-06:00` 或关灯：清醒状态下 `Sleepiness = 90`。
+- 可触发入睡时段：`06:00-00:00`，其中 `06:00-08:00` 强制清醒。
 - 触发：`>65`。
 - 满溢：`>90`。
 - `ACTION_SLEEP + STARTED`：进入浅睡。
-- 浅睡 3 Tick，每 Tick `Sleepiness -= 2`。
+- 浅睡持续 14 Tick（140 分钟），每 Tick `Sleepiness -= 2`。
 - 浅睡结束后仍 `>65` 时进入深睡。
 - 深睡每 Tick `Sleepiness -= 15`。
 - 深睡到 `Sleepiness <= 20` 时自然醒来。
 - `00:00-06:00` 强制睡眠期间不会自然醒。
+- 在睡眠信号被立即响应、无中断且未额外触发关灯的情况下，晨起值 `10-15`
+  对应每天约清醒 `6小时40分-6小时50分`、睡眠 `17小时10分-17小时20分`，
+  每天约启动 5 次睡眠会话。
 
 ### Cleanliness
 
@@ -367,7 +393,7 @@ k_calm    = (O+A)/100
 
 ## 10. 情绪自然衰减
 
-`emotion_engine_node` 每 1 秒执行一次：
+`emotion_engine_node` 每个虚拟秒执行一次：
 
 | 情绪 | 衰减 |
 |---|---|
@@ -378,7 +404,23 @@ k_calm    = (O+A)/100
 | `Curious` | `-2/sec` |
 | `Calm` | 不自然衰减 |
 
-## 11. 情绪区间事件
+标准、12 小时和 2 小时模式的真实执行频率分别为 `1 Hz`、`2 Hz` 和 `12 Hz`。
+延迟时仍逐虚拟秒补算并检查区间事件，不能把衰减值一次乘倍率后跳过中间区间。
+
+## 11. 时间上下文
+
+四类需求/情绪输出均增加 `timeContext`，原有字段不变。顶层 `timestamp` 表示
+真实 Unix 时间，`timeContext.virtualDateTime` 才是需求昼夜计算和压缩测试使用
+的时间。完整结构和启动参数见 [ros2_topic_contract.md](ros2_topic_contract.md)。
+
+固定随机种子只影响晨起随机值和情绪随机增量：
+
+```text
+random_seed=-1       保持随机
+random_seed>=0       可重复
+```
+
+## 12. 情绪区间事件
 
 `/emotion/signal_event` 只在情绪区间变化或主导情绪变化时发布。
 
@@ -398,7 +440,7 @@ k_calm    = (O+A)/100
 | `Curious` | `20-50` | `EMO_CURIOUS_LOW` |
 | `Curious` | `51-100` | `EMO_CURIOUS_HIGH` |
 
-## 12. 行为结果输入
+## 13. 行为结果输入
 
 `/behavior/result_event` 是需求值和行为结果情绪变化的输入。消息类型为
 `std_msgs/String`，`data` 字段必须是 JSON 对象。
@@ -451,7 +493,7 @@ k_calm    = (O+A)/100
 
 不在上表里的 action 不会更新需求，也不会触发行结果情绪变化。
 
-### 12.1 对需求的影响
+### 13.1 对需求的影响
 
 | 输入 | 需求处理 |
 |---|---|
@@ -474,7 +516,7 @@ k_calm    = (O+A)/100
 | `ACTION_SOCIAL_*` | `socialOutcome=OwnerInteraction/DogHumanResponded/DogAnimalResponded/Rejected/TimedOut` |
 | `ACTION_EXPLORE*` | 当前忽略 metadata |
 
-### 12.2 对情绪的影响
+### 13.2 对情绪的影响
 
 只有通过 action 映射校验的行为结果才会触发行结果情绪变化。`result_type`
 映射如下：
@@ -495,9 +537,12 @@ k_calm    = (O+A)/100
 | `DemandUnsatisfied` | `Anxiety +5~15` |
 | `ActionInterrupted` | `Anxiety +3~5` |
 
-## 13. 测试命令
+## 14. 测试命令
 
 ```bash
 python3 -m compileall -q marsdog_core marsdog_ros2 tests
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -q
 ```
+
+三档时间压缩的测试移交流程见
+[time_compression_test_guide.md](time_compression_test_guide.md)。

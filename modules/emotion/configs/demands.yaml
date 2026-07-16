@@ -72,18 +72,18 @@
       "urgentOperator": "gt",
       "overflowThreshold": 90,
       "growthRules": [
-        {"name": "白天", "startHour": 6, "endHour": 21, "delta": 3},
+        {"name": "白天", "startHour": 6, "endHour": 21, "delta": 4},
         {"name": "夜晚", "startHour": 21, "endHour": 0, "delta": 5}
       ],
       "forceSleepRules": [
         {"name": "凌晨", "startHour": 0, "endHour": 6, "value": 90},
         {"name": "关灯", "event": "LightsOff", "value": 90}
       ],
-      "sleepEntryWindow": {"startHour": 6, "endHour": 21},
+      "sleepEntryWindow": {"startHour": 6, "endHour": 0},
       "forcedAwakeRules": [
         {"name": "晨间强制清醒", "startHour": 6, "endHour": 8}
       ],
-      "shallowSleepTicks": 3,
+      "shallowSleepTicks": 14,
       "recoveryRules": {
         "Shallow": -2,
         "Deep": -15
