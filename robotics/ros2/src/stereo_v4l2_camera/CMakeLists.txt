@@ -7,6 +7,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
+find_package(OpenCV REQUIRED COMPONENTS core imgcodecs)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
@@ -20,6 +21,8 @@ ament_target_dependencies(
   sensor_msgs
 )
 target_link_libraries(stereo_v4l2_direct_node ${YAML_CPP_LIBRARIES})
+target_include_directories(stereo_v4l2_direct_node PRIVATE ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(stereo_v4l2_direct_node ${OpenCV_LIBRARIES})
 
 install(
   TARGETS stereo_v4l2_direct_node

@@ -6,7 +6,7 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
-    """启动V4L2直采双目节点及对应静态TF。"""
+    """启动V4L2直采双目节点及对应静态TF."""
     arguments = [
         DeclareLaunchArgument(
             'video_device',
@@ -17,25 +17,26 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument('image_width', default_value='1280'),
         DeclareLaunchArgument('image_height', default_value='480'),
-        DeclareLaunchArgument('framerate', default_value='15'),
+        DeclareLaunchArgument('pixel_format', default_value='MJPEG'),
+        DeclareLaunchArgument('framerate', default_value='60'),
         DeclareLaunchArgument('buffer_count', default_value='4'),
         DeclareLaunchArgument('poll_timeout_ms', default_value='1000'),
         DeclareLaunchArgument('reconnect_delay_ms', default_value='1000'),
         DeclareLaunchArgument('swap_left_right', default_value='true'),
         DeclareLaunchArgument('apply_camera_controls', default_value='true'),
-        DeclareLaunchArgument('brightness', default_value='50'),
+        DeclareLaunchArgument('brightness', default_value='0'),
         DeclareLaunchArgument('contrast', default_value='0'),
         DeclareLaunchArgument('saturation', default_value='56'),
         DeclareLaunchArgument('hue', default_value='0'),
         DeclareLaunchArgument('white_balance_automatic', default_value='false'),
         DeclareLaunchArgument('white_balance_temperature', default_value='4600'),
-        DeclareLaunchArgument('gamma', default_value='100'),
-        DeclareLaunchArgument('gain', default_value='10'),
-        DeclareLaunchArgument('power_line_frequency', default_value='0'),
+        DeclareLaunchArgument('gamma', default_value='150'),
+        DeclareLaunchArgument('gain', default_value='200'),
+        DeclareLaunchArgument('power_line_frequency', default_value='1'),
         DeclareLaunchArgument('sharpness', default_value='0'),
         DeclareLaunchArgument('backlight_compensation', default_value='0'),
         DeclareLaunchArgument('auto_exposure', default_value='1'),
-        DeclareLaunchArgument('exposure_time_absolute', default_value='10000'),
+        DeclareLaunchArgument('exposure_time_absolute', default_value='150'),
         DeclareLaunchArgument('left_frame_id', default_value='camera_left_frame'),
         DeclareLaunchArgument('right_frame_id', default_value='camera_right_frame'),
     ]
@@ -51,6 +52,7 @@ def generate_launch_description():
                 LaunchConfiguration('image_width'), value_type=int),
             'image_height': ParameterValue(
                 LaunchConfiguration('image_height'), value_type=int),
+            'pixel_format': LaunchConfiguration('pixel_format'),
             'framerate': ParameterValue(
                 LaunchConfiguration('framerate'), value_type=int),
             'buffer_count': ParameterValue(

@@ -3,13 +3,14 @@
 <package format="3">
   <name>stereo_v4l2_camera</name>
   <version>0.1.0</version>
-  <description>Stable direct V4L2 YUYV stereo camera capture node for ROS 2.</description>
+  <description>Stable direct V4L2 YUYV/MJPEG stereo camera capture node for ROS 2.</description>
   <maintainer email="yahboom@todo.todo">yahboom</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>ament_index_cpp</depend>
+  <depend>libopencv-dev</depend>
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
   <depend>yaml-cpp</depend>
