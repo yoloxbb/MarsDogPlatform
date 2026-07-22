@@ -11,6 +11,10 @@ from marsdog_ros2.behavior_result_adapter import ApplyBehaviorResultMessage
 from marsdog_ros2.perception_adapter import ApplyAudioEventMessage, ApplyVisualEventMessage
 from marsdog_ros2.personality_adapter import ApplyPersonalityStateMessage
 from marsdog_ros2.time_context import GetMessageWithTimeContextValue, GetRandomGeneratorValue
+from marsdog_ros2.time_state_adapter import (
+    GetTimeContextDateTimeValue,
+    GetTimeStateMessageValue,
+)
 
 try:
     import rclpy
@@ -49,6 +53,7 @@ class EmotionEngineNode(Node):
         )
         virtualStartDateTime = self.timeController.GetVirtualStartDateTimeValue()
         self.emotionTickScheduler = VirtualTickScheduler(virtualStartDateTime, 1.0)
+        self._timeSynchronized = False
 
         self.statePublisher = self.create_publisher(String, "/emotion/state", 10)
         self.signalPublisher = self.create_publisher(String, "/emotion/signal_event", 10)
@@ -56,9 +61,11 @@ class EmotionEngineNode(Node):
         self.create_subscription(String, "/perception/audio_event", self.OnAudioEventMessage, _ReliableQoS(10))
         self.create_subscription(String, "/behavior/result_event", self.OnBehaviorResultMessage, _ReliableQoS(10))
         self.create_subscription(String, "/personality/state", self.OnPersonalityStateMessage, _ReliableTransientLocalQoS(1))
-        self.create_timer(
-            self.timeController.GetRealIntervalValue(1.0),
-            self.Tick,
+        self.create_subscription(
+            String,
+            "/simulation/time_state",
+            self.OnTimeStateMessage,
+            _ReliableTransientLocalQoS(1000),
         )
         self.get_logger().info(
             "Emotion time mode: %s, scale: %sx, virtual start: %s"
@@ -106,14 +113,62 @@ class EmotionEngineNode(Node):
         """同步性格参数状态。"""
         ApplyPersonalityStateMessage(self.system, message)
 
-    def Tick(self) -> None:
+    def OnTimeStateMessage(self, message) -> None:
+        """同步权威虚拟时间并消费逐虚拟秒 Tick。"""
+        payload = GetTimeStateMessageValue(message)
+        if not payload:
+            return
+        timeContext = payload["timeContext"]
+        virtualDateTime = GetTimeContextDateTimeValue(payload, "virtualDateTime")
+        virtualStartDateTime = GetTimeContextDateTimeValue(
+            payload,
+            "virtualStartDateTime",
+        )
+        if virtualDateTime is None or virtualStartDateTime is None:
+            return
+
+        try:
+            self.timeController.SetTimeContextValue(timeContext)
+        except (TypeError, ValueError) as error:
+            self.get_logger().warning(f"Ignored invalid time state: {error}")
+            return
+
+        eventType = str(payload.get("event_type", ""))
+        if not self._timeSynchronized:
+            self._InitializeTimeSynchronization(
+                eventType,
+                virtualStartDateTime,
+                virtualDateTime,
+            )
+        if eventType == "TIME_TICK":
+            self.Tick(virtualDateTime)
+
+    def Tick(self, virtualNow: datetime | None = None) -> None:
         """按顺序补算每个到期的虚拟 1 秒情绪 Tick。"""
-        virtualNow = self.timeController.GetVirtualDateTimeValue()
-        for tickDateTime in self.emotionTickScheduler.GetDueTickDateTimesValue(virtualNow):
+        currentVirtualTime = virtualNow or self.timeController.GetVirtualDateTimeValue()
+        for tickDateTime in self.emotionTickScheduler.GetDueTickDateTimesValue(currentVirtualTime):
             # 每个虚拟秒独立衰减，保证不会跳过中间区间事件。
             self.system.ApplyEmotionDecay(1.0)
             self.PublishSignalEvents(tickDateTime)
             self.PublishState(tickDateTime)
+
+    def _InitializeTimeSynchronization(
+        self,
+        eventType: str,
+        virtualStartDateTime: datetime,
+        virtualDateTime: datetime,
+    ) -> None:
+        """首次接收权威时间时对齐情绪 Tick，不回放过量历史。"""
+        self.emotionTickScheduler = VirtualTickScheduler(
+            virtualStartDateTime,
+            1.0,
+        )
+        if eventType != "TIME_INITIALIZED":
+            self.emotionTickScheduler.AlignToDateTimeValue(
+                virtualDateTime,
+                includeCurrent=eventType == "TIME_TICK",
+            )
+        self._timeSynchronized = True
 
     def PublishState(self, virtualDateTime: datetime | None = None) -> None:
         """发布情绪状态。"""

@@ -33,12 +33,14 @@ class MarsdogTimeController:
         self._wallTimeProvider = wallTimeProvider or time.time
         self._monotonicProvider = monotonicProvider or time.monotonic
         self._wallStartTimestamp = float(self._wallTimeProvider())
-        self._monotonicStart = float(self._monotonicProvider())
+        self._monotonicAnchor = float(self._monotonicProvider())
         wallStartDateTime = datetime.fromtimestamp(self._wallStartTimestamp).astimezone()
         self._virtualStartDateTime = self._ResolveVirtualStartDateTimeValue(
             wallStartDateTime,
             virtualStartTime,
         )
+        self._virtualAnchorDateTime = self._virtualStartDateTime
+        self._timeRevision = 0
 
     def GetTimeModeValue(self) -> str:
         """获取当前时间模式。"""
@@ -48,14 +50,19 @@ class MarsdogTimeController:
         """获取当前虚拟时间倍率。"""
         return self._timeScale
 
+    def GetTimeRevisionValue(self) -> int:
+        """获取运行时倍率配置修订号。"""
+        return self._timeRevision
+
     def GetVirtualStartDateTimeValue(self) -> datetime:
         """获取虚拟时间起始点。"""
         return self._virtualStartDateTime
 
     def GetVirtualDateTimeValue(self) -> datetime:
         """获取当前虚拟日期时间。"""
-        elapsedSeconds = self._GetVirtualElapsedSecondsValue()
-        return self._virtualStartDateTime + timedelta(seconds=elapsedSeconds)
+        return self._GetVirtualDateTimeAtMonotonicValue(
+            float(self._monotonicProvider())
+        )
 
     def GetVirtualTimestampValue(self) -> float:
         """获取当前虚拟 Unix 时间戳。"""
@@ -67,6 +74,54 @@ class MarsdogTimeController:
         if interval <= 0:
             raise ValueError("Virtual interval must be greater than zero")
         return interval / float(self._timeScale)
+
+    def SetTimeModeValue(self, timeMode: object) -> bool:
+        """连续切换到指定时间模式，不改变当前虚拟时间。"""
+        normalizedMode = NormalizeTimeModeType(timeMode)
+        if normalizedMode == self._timeMode:
+            return True
+
+        monotonicNow = float(self._monotonicProvider())
+        currentVirtualTime = self._GetVirtualDateTimeAtMonotonicValue(monotonicNow)
+        self._virtualAnchorDateTime = currentVirtualTime
+        self._monotonicAnchor = monotonicNow
+        self._timeMode = normalizedMode
+        self._timeScale = TIME_MODE_SCALES[normalizedMode]
+        self._timeRevision += 1
+        return True
+
+    def SetTimeContextValue(self, timeContext: dict[str, object]) -> bool:
+        """使用权威时间节点的上下文同步本地虚拟时钟。"""
+        if not isinstance(timeContext, dict):
+            raise ValueError("timeContext must be an object")
+
+        normalizedMode = NormalizeTimeModeType(timeContext.get("mode"))
+        expectedScale = TIME_MODE_SCALES[normalizedMode]
+        if int(timeContext.get("scale", expectedScale)) != expectedScale:
+            raise ValueError("timeContext scale does not match mode")
+
+        startDateTime = self._NormalizeDateTimeValue(
+            timeContext.get("virtualStartDateTime"),
+            "virtualStartDateTime",
+        )
+        currentDateTime = self._NormalizeDateTimeValue(
+            timeContext.get("virtualDateTime"),
+            "virtualDateTime",
+        )
+        if currentDateTime < startDateTime:
+            raise ValueError("virtualDateTime must not precede virtualStartDateTime")
+
+        revision = int(timeContext.get("revision", 0))
+        if revision < 0:
+            raise ValueError("timeContext revision must be non-negative")
+
+        self._timeMode = normalizedMode
+        self._timeScale = expectedScale
+        self._virtualStartDateTime = startDateTime
+        self._virtualAnchorDateTime = currentDateTime
+        self._monotonicAnchor = float(self._monotonicProvider())
+        self._timeRevision = revision
+        return True
 
     def GetTimeContextValue(
         self,
@@ -82,6 +137,7 @@ class MarsdogTimeController:
         return {
             "mode": self._timeMode,
             "scale": self._timeScale,
+            "revision": self._timeRevision,
             "virtualStartDateTime": self._virtualStartDateTime.isoformat(),
             "virtualDateTime": currentVirtualTime.isoformat(),
             "virtualTimestamp": currentVirtualTime.timestamp(),
@@ -93,11 +149,34 @@ class MarsdogTimeController:
 
     def _GetVirtualElapsedSecondsValue(self) -> float:
         """按单调时钟计算已经经过的虚拟秒数。"""
-        realElapsedSeconds = max(
+        return max(
             0.0,
-            float(self._monotonicProvider()) - self._monotonicStart,
+            (
+                self.GetVirtualDateTimeValue() - self._virtualStartDateTime
+            ).total_seconds(),
         )
-        return realElapsedSeconds * float(self._timeScale)
+
+    def _GetVirtualDateTimeAtMonotonicValue(self, monotonicValue: float) -> datetime:
+        """根据指定单调时钟值计算虚拟时间。"""
+        realElapsedSeconds = max(0.0, monotonicValue - self._monotonicAnchor)
+        return self._virtualAnchorDateTime + timedelta(
+            seconds=realElapsedSeconds * float(self._timeScale)
+        )
+
+    def _NormalizeDateTimeValue(self, value: object, fieldName: str) -> datetime:
+        """校验并解析带时区的 ISO 8601 时间。"""
+        if isinstance(value, datetime):
+            result = value
+        elif isinstance(value, str):
+            try:
+                result = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            except ValueError as error:
+                raise ValueError(f"{fieldName} must be ISO 8601 datetime") from error
+        else:
+            raise ValueError(f"{fieldName} must be ISO 8601 datetime")
+        if result.tzinfo is None:
+            raise ValueError(f"{fieldName} must include timezone information")
+        return result
 
     def _ResolveVirtualStartDateTimeValue(
         self,
@@ -134,6 +213,8 @@ class VirtualTickScheduler:
         interval = float(intervalSeconds)
         if interval <= 0:
             raise ValueError("Tick interval must be greater than zero")
+        self._startDateTime = startDateTime
+        self._intervalSeconds = interval
         self._interval = timedelta(seconds=interval)
         self._nextTickDateTime = startDateTime + self._interval
 
@@ -147,4 +228,25 @@ class VirtualTickScheduler:
 
     def GetNextTickDateTimeValue(self) -> datetime:
         """获取下一次尚未消费的虚拟 Tick 时间。"""
+        return self._nextTickDateTime
+
+    def AlignToDateTimeValue(
+        self,
+        currentDateTime: datetime,
+        includeCurrent: bool = False,
+    ) -> datetime:
+        """快速对齐到当前时间附近，避免首次同步回放过多历史 Tick。"""
+        elapsedSeconds = max(
+            0.0,
+            (currentDateTime - self._startDateTime).total_seconds(),
+        )
+        completedIntervals = int(elapsedSeconds // self._intervalSeconds)
+        candidate = self._startDateTime + timedelta(
+            seconds=completedIntervals * self._intervalSeconds
+        )
+        isBoundary = abs((currentDateTime - candidate).total_seconds()) < 1e-6
+        if includeCurrent and isBoundary and completedIntervals > 0:
+            self._nextTickDateTime = candidate
+        else:
+            self._nextTickDateTime = candidate + self._interval
         return self._nextTickDateTime

@@ -11,6 +11,10 @@ from marsdog_ros2.behavior_result_adapter import ApplyBehaviorResultMessage
 from marsdog_ros2.perception_adapter import ApplyAudioEventMessage, ApplyVisualEventMessage
 from marsdog_ros2.personality_adapter import ApplyPersonalityStateMessage
 from marsdog_ros2.time_context import GetMessageWithTimeContextValue, GetRandomGeneratorValue
+from marsdog_ros2.time_state_adapter import (
+    GetTimeContextDateTimeValue,
+    GetTimeStateMessageValue,
+)
 
 try:
     import rclpy
@@ -49,6 +53,7 @@ class InternalNeedNode(Node):
         )
         virtualStartDateTime = self.timeController.GetVirtualStartDateTimeValue()
         self.demandTickScheduler = VirtualTickScheduler(virtualStartDateTime, 600.0)
+        self._timeSynchronized = False
         if self._IsMorningStart(virtualStartDateTime):
             self.system.ResetDemandsToMorningInitialValues(virtualStartDateTime)
 
@@ -58,11 +63,13 @@ class InternalNeedNode(Node):
         self.create_subscription(String, "/perception/audio_event", self.OnAudioEventMessage, _ReliableQoS(10))
         self.create_subscription(String, "/behavior/result_event", self.OnBehaviorResultMessage, _ReliableQoS(10))
         self.create_subscription(String, "/personality/state", self.OnPersonalityStateMessage, _ReliableTransientLocalQoS(1))
-        self.create_timer(1.0, self.PublishState)
-        self.create_timer(
-            self.timeController.GetRealIntervalValue(600.0),
-            self.UpdateDemandTick,
+        self.create_subscription(
+            String,
+            "/simulation/time_state",
+            self.OnTimeStateMessage,
+            _ReliableTransientLocalQoS(1000),
         )
+        self.create_timer(1.0, self.PublishState)
         self.get_logger().info(
             "Internal need time mode: %s, scale: %sx, virtual start: %s"
             % (
@@ -109,12 +116,64 @@ class InternalNeedNode(Node):
         """同步性格参数状态。"""
         ApplyPersonalityStateMessage(self.system, message)
 
-    def UpdateDemandTick(self) -> None:
+    def OnTimeStateMessage(self, message) -> None:
+        """同步权威虚拟时间并消费逐虚拟秒 Tick。"""
+        payload = GetTimeStateMessageValue(message)
+        if not payload:
+            return
+        timeContext = payload["timeContext"]
+        virtualDateTime = GetTimeContextDateTimeValue(payload, "virtualDateTime")
+        virtualStartDateTime = GetTimeContextDateTimeValue(
+            payload,
+            "virtualStartDateTime",
+        )
+        if virtualDateTime is None or virtualStartDateTime is None:
+            return
+
+        try:
+            self.timeController.SetTimeContextValue(timeContext)
+        except (TypeError, ValueError) as error:
+            self.get_logger().warning(f"Ignored invalid time state: {error}")
+            return
+
+        eventType = str(payload.get("event_type", ""))
+        if not self._timeSynchronized:
+            self._InitializeTimeSynchronization(
+                eventType,
+                virtualStartDateTime,
+                virtualDateTime,
+            )
+        if eventType == "TIME_TICK":
+            self.UpdateDemandTick(virtualDateTime)
+
+    def UpdateDemandTick(self, virtualNow: datetime | None = None) -> None:
         """按顺序补算所有到期的虚拟 10 分钟需求 Tick。"""
-        virtualNow = self.timeController.GetVirtualDateTimeValue()
-        for tickDateTime in self.demandTickScheduler.GetDueTickDateTimesValue(virtualNow):
+        currentVirtualTime = virtualNow or self.timeController.GetVirtualDateTimeValue()
+        for tickDateTime in self.demandTickScheduler.GetDueTickDateTimesValue(currentVirtualTime):
             self.system.UpdateNaturalDemandsByTime(tickDateTime)
             self.PublishSignalEvents(tickDateTime)
+
+    def _InitializeTimeSynchronization(
+        self,
+        eventType: str,
+        virtualStartDateTime: datetime,
+        virtualDateTime: datetime,
+    ) -> None:
+        """首次接收权威时间时对齐需求 Tick，不回放过量历史。"""
+        self.demandTickScheduler = VirtualTickScheduler(
+            virtualStartDateTime,
+            600.0,
+        )
+        if eventType != "TIME_INITIALIZED":
+            self.demandTickScheduler.AlignToDateTimeValue(
+                virtualDateTime,
+                includeCurrent=eventType == "TIME_TICK",
+            )
+        if self._IsMorningStart(virtualStartDateTime):
+            resetKey = self.system.GetMorningResetKey(virtualStartDateTime)
+            if self.system.state.lastMorningResetKey != resetKey:
+                self.system.ResetDemandsToMorningInitialValues(virtualStartDateTime)
+        self._timeSynchronized = True
 
     def PublishState(self, virtualDateTime: datetime | None = None) -> None:
         """发布内部需求状态。"""

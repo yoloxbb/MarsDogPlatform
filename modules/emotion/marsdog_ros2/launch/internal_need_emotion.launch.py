@@ -1,4 +1,4 @@
-"""启动 Marsdog 内部需求、情绪和性格计算节点。"""
+"""启动 Marsdog 时间、内部需求、情绪和性格节点。"""
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
@@ -8,11 +8,15 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description() -> LaunchDescription:
-    """生成联调用的三节点启动描述。"""
+    """生成联调用的四节点启动描述。"""
     timeMode = LaunchConfiguration("time_mode")
     virtualStartTime = LaunchConfiguration("virtual_start_time")
     randomSeed = ParameterValue(LaunchConfiguration("random_seed"), value_type=int)
-    timeParameters = {
+    timeControllerParameters = {
+        "time_mode": timeMode,
+        "virtual_start_time": virtualStartTime,
+    }
+    calculationTimeParameters = {
         "time_mode": timeMode,
         "virtual_start_time": virtualStartTime,
         "random_seed": randomSeed,
@@ -36,6 +40,13 @@ def generate_launch_description() -> LaunchDescription:
             ),
             Node(
                 package="marsdog_behavior",
+                executable="time_controller_node",
+                name="time_controller_node",
+                output="screen",
+                parameters=[timeControllerParameters],
+            ),
+            Node(
+                package="marsdog_behavior",
                 executable="personality_node",
                 name="personality_node",
                 output="screen",
@@ -45,14 +56,14 @@ def generate_launch_description() -> LaunchDescription:
                 executable="internal_need_node",
                 name="internal_need_node",
                 output="screen",
-                parameters=[timeParameters],
+                parameters=[calculationTimeParameters],
             ),
             Node(
                 package="marsdog_behavior",
                 executable="emotion_engine_node",
                 name="emotion_engine_node",
                 output="screen",
-                parameters=[timeParameters],
+                parameters=[calculationTimeParameters],
             ),
         ]
     )

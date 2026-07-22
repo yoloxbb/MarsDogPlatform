@@ -50,12 +50,25 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
 
 | 参数 | 允许值 | 说明 |
 |---|---|---|
-| `time_mode` | 三种固定模式 | 启动后只读 |
+| `time_mode` | 三种固定模式 | 初始值由 launch 设置；运行中通过时间控制节点修改 |
 | `virtual_start_time` | `auto` 或 `HH:MM` | 压缩模式 `auto` 从当天 06:00 开始 |
 | `random_seed` | `-1` 或非负整数 | `-1` 随机；固定值可重复 |
 
 非法模式、非法时间和小于 `-1` 的种子会拒绝启动。完整一天验收必须从
 `06:00` 开始；任意其他起点不会回放此前时段。
+
+### 2.1 运行中切换倍率
+
+节点运行期间可执行：
+
+```bash
+ros2 param set /time_controller_node time_mode demo_12h
+ros2 param set /time_controller_node time_mode demo_2h
+ros2 param set /time_controller_node time_mode standard_24h
+```
+
+切换只改变后续虚拟时间速度，不修改 `virtualDateTime`、需求值、情绪值、睡眠
+状态或下一次需求 Tick。重复设置当前模式不会增加 `revision`。
 
 ## 3. 观察 Topic
 
@@ -67,6 +80,7 @@ ros2 topic echo /internal_need/state --field data --full-length
 ros2 topic echo /internal_need/signal_event --field data --full-length
 ros2 topic echo /emotion/state --field data --full-length
 ros2 topic echo /emotion/signal_event --field data --full-length
+ros2 topic echo /simulation/time_state --field data --full-length
 ```
 
 四类消息均包含：
@@ -75,6 +89,7 @@ ros2 topic echo /emotion/signal_event --field data --full-length
 "timeContext": {
   "mode": "demo_2h",
   "scale": 12,
+  "revision": 1,
   "virtualStartDateTime": "2026-07-16T06:00:00+08:00",
   "virtualDateTime": "2026-07-16T14:30:00+08:00",
   "virtualTimestamp": 1784183400.0,
@@ -119,6 +134,7 @@ ros2 topic pub --once /behavior/result_event std_msgs/msg/String \
 | 检查项 | 通过标准 |
 |---|---|
 | 模式 | 四类消息的 `mode/scale` 与启动参数一致 |
+| 动态切换 | `revision` 递增，虚拟时间连续，需求/情绪/睡眠状态不重置 |
 | 起点 | 固定为虚拟 06:00，晨起需求已初始化 |
 | 需求 Tick | 1/2/12 倍模式分别每 600/300/50 真实秒更新 |
 | Tick 补算 | 节点短暂延迟后数值不丢增长 Tick |

@@ -24,11 +24,14 @@ personalitySystem = MarsdogPersonalitySystem()
 
 - `GetTimeModeValue()`：读取 `standard_24h / demo_12h / demo_2h`。
 - `GetTimeScaleValue()`：读取当前倍率 `1 / 2 / 12`。
+- `GetTimeRevisionValue()`：读取运行时倍率配置修订号。
 - `GetVirtualStartDateTimeValue()`：读取本次进程虚拟起点。
 - `GetVirtualDateTimeValue()`：按单调时钟读取当前虚拟日期时间。
 - `GetVirtualTimestampValue()`：读取当前虚拟 Unix 时间戳。
 - `GetRealIntervalValue(virtualSeconds)`：把虚拟间隔换算成真实定时器周期。
 - `GetTimeContextValue()`：生成输出消息使用的虚拟时间上下文。
+- `SetTimeModeValue(timeMode)`：连续切换倍率，不重置当前虚拟时间。
+- `SetTimeContextValue(timeContext)`：使用权威时间 Topic 同步本地时钟。
 - `VirtualTickScheduler.GetDueTickDateTimesValue(currentDateTime)`：按顺序读取并消费所有遗漏 Tick。
 
 ## 需求接口
@@ -157,6 +160,7 @@ personalitySystem = MarsdogPersonalitySystem()
 - `/perception/visual_event`：`std_msgs/String` JSON，需求节点和情绪节点都订阅。
 - `/behavior/result_event`：`std_msgs/String` JSON，需求节点和情绪节点都订阅。
 - `/personality/state`：`std_msgs/String` JSON，需求节点和情绪节点都订阅，用于同步性格参数。
+- `/simulation/time_state`：`std_msgs/String` JSON，需求和情绪节点订阅的权威虚拟时间 Tick。
 
 `/behavior/result_event` 的 `data` 必须是 JSON 对象：
 
@@ -196,6 +200,7 @@ ACTION_EXPLORE / ACTION_SPACE_EXPLORE / ACTION_OBJECT_EXPLORE`。其他 action
 - `/emotion/state`：情绪状态，每个虚拟秒发布。
 - `/emotion/signal_event`：情绪区间或主导情绪变化时发布。
 - `/personality/state`：性格状态，`personality_node` 启动时和性格变化后发布。
+- `/simulation/time_state`：统一时间节点发布初始化、逐秒 Tick 和倍率变化。
 
 `/internal_need/state.levelEvents[demand]` 和 `/emotion/state.levelEvents[emotion]`
 与对应 signal 事件的 `event_type` 使用同一套事件名，可用于跨话题对比。
@@ -204,22 +209,32 @@ ACTION_EXPLORE / ACTION_SPACE_EXPLORE / ACTION_OBJECT_EXPLORE`。其他 action
 
 性格参数由 `personality_node` 统一维护。修改入口使用 ROS2 参数服务，状态通过 `/personality/state` 发布。
 
-启动三个节点：
+启动四个节点：
 
 ```bash
 ros2 launch marsdog_behavior internal_need_emotion.launch.py
 ```
 
-时间参数只能在启动时设置：
+设置初始时间参数：
 
 ```bash
 ros2 launch marsdog_behavior internal_need_emotion.launch.py \
   time_mode:=demo_2h virtual_start_time:=06:00 random_seed:=12345
 ```
 
-- `time_mode`：`standard_24h / demo_12h / demo_2h`。
+- `time_mode`：`standard_24h / demo_12h / demo_2h`，可在统一时间节点运行时修改。
 - `virtual_start_time`：`auto` 或严格 `HH:MM`。
 - `random_seed`：`-1` 或非负整数。
+
+运行中修改倍率：
+
+```bash
+ros2 param set /time_controller_node time_mode demo_2h
+```
+
+不要修改 `internal_need_node` 或 `emotion_engine_node` 的同名参数；它们运行时
+以 `/simulation/time_state` 为准。`virtual_start_time` 和 `random_seed` 仍需重启
+后修改。
 
 只调试性格节点：
 

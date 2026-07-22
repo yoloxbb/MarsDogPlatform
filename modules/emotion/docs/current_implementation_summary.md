@@ -20,6 +20,8 @@
 | `marsdog_core/personality_system.py` | 性格参数统一入口 `MarsdogPersonalitySystem` |
 | `marsdog_core/time_controller.py` | 三档虚拟时钟和遗漏 Tick 补算调度器 |
 | `marsdog_core/*_behavior.py` | 各需求的数值增长、恢复和结果结算逻辑 |
+| `marsdog_ros2/time_controller_node.py` | 权威虚拟时间与运行时倍率控制节点 |
+| `marsdog_ros2/time_state_adapter.py` | 适配 `/simulation/time_state` |
 | `marsdog_ros2/internal_need_node.py` | 发布 `/internal_need/state` 和 `/internal_need/signal_event` |
 | `marsdog_ros2/emotion_engine_node.py` | 发布 `/emotion/state` 和 `/emotion/signal_event` |
 | `marsdog_ros2/personality_node.py` | 维护性格参数并发布 `/personality/state` |
@@ -41,6 +43,7 @@
 | `/perception/visual_event` | `std_msgs/String` JSON | 需求节点、情绪节点 | 视觉事件，读取 `events[]` 和目标字段 |
 | `/behavior/result_event` | `std_msgs/String` JSON | 需求节点、情绪节点 | 外部结果输入 |
 | `/personality/state` | `std_msgs/String` JSON | 需求节点、情绪节点 | 性格参数同步输入 |
+| `/simulation/time_state` | `std_msgs/String` JSON | 需求节点、情绪节点 | 权威时间状态和逐虚拟秒 Tick |
 
 本层不调用感知服务，不主动请求找人、找物或动物识别。
 
@@ -53,6 +56,7 @@
 | `/emotion/state` | `std_msgs/String` JSON | `emotion_engine_node` | 全量情绪状态，每个虚拟秒发布 |
 | `/emotion/signal_event` | `std_msgs/String` JSON | `emotion_engine_node` | 情绪区间或主导情绪变化时发布 |
 | `/personality/state` | `std_msgs/String` JSON | `personality_node` | 性格状态，启动时和性格变化后发布 |
+| `/simulation/time_state` | `std_msgs/String` JSON | `time_controller_node` | 时间初始化、逐秒 Tick、倍率变化 |
 
 ## 3. 内部需求输出
 
@@ -469,10 +473,22 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
 Unix 时间，`timeContext.virtualDateTime` 表示公式计算使用的虚拟时间。测试
 移交步骤见 [time_compression_test_guide.md](time_compression_test_guide.md)。
 
+运行中切换倍率：
+
+```bash
+ros2 param set /time_controller_node time_mode demo_12h
+ros2 param set /time_controller_node time_mode demo_2h
+ros2 param set /time_controller_node time_mode standard_24h
+```
+
+模式切换由统一时间节点一次完成。虚拟时间连续，需求/情绪 Tick 进度、当前
+需求值、情绪值和睡眠状态均保留。
+
 也可以分别启动：
 
 ```bash
 ros2 run marsdog_behavior personality_node
+ros2 run marsdog_behavior time_controller_node
 ros2 run marsdog_behavior internal_need_node
 ros2 run marsdog_behavior emotion_engine_node
 ```

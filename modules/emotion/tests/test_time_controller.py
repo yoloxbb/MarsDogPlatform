@@ -65,6 +65,59 @@ class TimeControllerTest(unittest.TestCase):
             self.assertEqual(elapsed, 600.0 * scale)
             self.assertEqual(controller.GetRealIntervalValue(600.0), 600.0 / scale)
 
+    def test_runtime_mode_switch_keeps_virtual_time_continuous(self):
+        """中途切换倍率不得重置或跳变当前虚拟时间。"""
+        controller, clock = self._CreateController("standard_24h")
+        clock.Advance(100.0)
+        beforeSwitch = controller.GetVirtualDateTimeValue()
+
+        self.assertTrue(controller.SetTimeModeValue("demo_2h"))
+        afterSwitch = controller.GetVirtualDateTimeValue()
+
+        self.assertEqual(afterSwitch, beforeSwitch)
+        self.assertEqual(controller.GetTimeModeValue(), "demo_2h")
+        self.assertEqual(controller.GetTimeScaleValue(), 12)
+        self.assertEqual(controller.GetTimeRevisionValue(), 1)
+
+        clock.Advance(10.0)
+        self.assertEqual(
+            (controller.GetVirtualDateTimeValue() - beforeSwitch).total_seconds(),
+            120.0,
+        )
+
+    def test_repeated_mode_switch_preserves_original_elapsed_time(self):
+        """多次切换后 virtualElapsedSeconds 仍从原虚拟起点累计。"""
+        controller, clock = self._CreateController("standard_24h")
+        clock.Advance(60.0)
+        controller.SetTimeModeValue("demo_12h")
+        clock.Advance(30.0)
+        controller.SetTimeModeValue("demo_2h")
+        clock.Advance(5.0)
+
+        context = controller.GetTimeContextValue()
+
+        self.assertEqual(context["revision"], 2)
+        self.assertEqual(context["virtualElapsedSeconds"], 180.0)
+
+    def test_remote_time_context_synchronizes_mode_and_anchor(self):
+        """计算节点应能使用权威 timeContext 对齐本地时钟。"""
+        source, sourceClock = self._CreateController("standard_24h")
+        sourceClock.Advance(20.0)
+        source.SetTimeModeValue("demo_2h")
+        sourceClock.Advance(5.0)
+        sourceContext = source.GetTimeContextValue()
+
+        target, _ = self._CreateController("demo_12h", "18:00")
+        self.assertTrue(target.SetTimeContextValue(sourceContext))
+
+        self.assertEqual(target.GetTimeModeValue(), "demo_2h")
+        self.assertEqual(target.GetTimeScaleValue(), 12)
+        self.assertEqual(target.GetTimeRevisionValue(), 1)
+        self.assertEqual(
+            target.GetVirtualDateTimeValue().isoformat(),
+            sourceContext["virtualDateTime"],
+        )
+
     def test_auto_start_rules(self):
         """标准模式跟随真实时间，压缩模式默认从本地 06:00 开始。"""
         standard, _ = self._CreateController("standard_24h", "auto")
@@ -112,6 +165,20 @@ class TimeControllerTest(unittest.TestCase):
         self.assertEqual(
             scheduler.GetNextTickDateTimeValue(),
             start + timedelta(seconds=40),
+        )
+
+    def test_scheduler_can_align_without_replaying_full_history(self):
+        """首次晚到同步可对齐当前边界，并只消费当前 Tick。"""
+        start = datetime(2026, 7, 16, 6, 0, tzinfo=timezone.utc)
+        scheduler = VirtualTickScheduler(start, 10.0)
+        current = start + timedelta(seconds=120)
+
+        scheduler.AlignToDateTimeValue(current, includeCurrent=True)
+
+        self.assertEqual(scheduler.GetDueTickDateTimesValue(current), [current])
+        self.assertEqual(
+            scheduler.GetNextTickDateTimeValue(),
+            current + timedelta(seconds=10),
         )
 
     def test_time_context_keeps_wall_timestamp_and_reports_virtual_time(self):

@@ -4,10 +4,11 @@
 
 ## 1. 节点入口
 
-当前提供三个 ROS2 节点：
+当前提供四个 ROS2 节点：
 
 | 节点 | 文件 | 职责 |
 |---|---|---|
+| `time_controller_node` | `marsdog_ros2/time_controller_node.py` | 权威虚拟时间、动态倍率切换、逐虚拟秒 Tick 发布 |
 | `personality_node` | `marsdog_ros2/personality_node.py` | 性格参数维护、性格系数计算、性格状态发布 |
 | `internal_need_node` | `marsdog_ros2/internal_need_node.py` | 内部需求计算、需求状态发布、需求等级事件发布 |
 | `emotion_engine_node` | `marsdog_ros2/emotion_engine_node.py` | 情绪计算、情绪自然衰减、情绪状态发布、情绪区间事件发布 |
@@ -17,11 +18,12 @@
 
 ```bash
 ros2 run marsdog_behavior personality_node
+ros2 run marsdog_behavior time_controller_node
 ros2 run marsdog_behavior internal_need_node
 ros2 run marsdog_behavior emotion_engine_node
 ```
 
-三个节点联调建议使用 launch，并在启动时选择时间模式：
+四个节点联调建议使用 launch，并选择初始时间模式：
 
 ```bash
 ros2 launch marsdog_behavior internal_need_emotion.launch.py \
@@ -38,6 +40,7 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
 | `/perception/visual_event` | `std_msgs/String` JSON | 需求节点、情绪节点 | 视觉事件输入 |
 | `/behavior/result_event` | `std_msgs/String` JSON | 需求节点、情绪节点 | 外部结果输入 |
 | `/personality/state` | `std_msgs/String` JSON | 需求节点、情绪节点 | 性格参数同步输入 |
+| `/simulation/time_state` | `std_msgs/String` JSON | 需求节点、情绪节点 | 权威时间状态和逐虚拟秒 Tick |
 
 ### 2.2 输出
 
@@ -48,6 +51,7 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
 | `/emotion/state` | `std_msgs/String` JSON | `emotion_engine_node` | 每个虚拟秒发布；真实频率为 1/2/12 Hz |
 | `/emotion/signal_event` | `std_msgs/String` JSON | `emotion_engine_node` | 情绪区间或主导情绪变化时发布 |
 | `/personality/state` | `std_msgs/String` JSON | `personality_node` | 启动时和性格变化后发布 |
+| `/simulation/time_state` | `std_msgs/String` JSON | `time_controller_node` | 初始化、虚拟秒 Tick 和倍率变化时发布 |
 
 ## 3. 性格参数同步
 
@@ -218,7 +222,8 @@ NEED_<DEMAND>_RECOVERED
 
 ## 6. 内部需求自然更新
 
-需求公式固定按每 10 个虚拟分钟调用一次：
+`internal_need_node` 从 `/simulation/time_state` 累积虚拟时间，需求公式固定按每
+10 个虚拟分钟调用一次：
 
 ```python
 UpdateNaturalDemandsByTime()
@@ -238,7 +243,8 @@ UpdateNaturalDemandsByTime()
 virtualDateTime = virtualStartDateTime + monotonicElapsedSeconds * scale
 ```
 
-节点若因调度延迟错过 Tick，会按虚拟时间顺序逐个补算，不会合并需求增量。
+时间控制节点和计算节点若因调度延迟错过 Tick，会按虚拟时间顺序逐个补算，
+不会合并需求增量。
 压缩模式 `virtual_start_time=auto` 从当天虚拟 `06:00` 开始并立即执行晨起初始化。
 
 全局规则：
@@ -412,6 +418,16 @@ k_calm    = (O+A)/100
 四类需求/情绪输出均增加 `timeContext`，原有字段不变。顶层 `timestamp` 表示
 真实 Unix 时间，`timeContext.virtualDateTime` 才是需求昼夜计算和压缩测试使用
 的时间。完整结构和启动参数见 [ros2_topic_contract.md](ros2_topic_contract.md)。
+
+运行中切换倍率使用：
+
+```bash
+ros2 param set /time_controller_node time_mode demo_2h
+```
+
+切换时先按旧倍率结算当前虚拟时间，再建立新倍率锚点。`revision` 增加 1，
+`virtualDateTime`、需求值、情绪值和睡眠状态均不重置。需求与情绪节点只接受
+`/simulation/time_state` 的模式变化，不允许分别修改本地参数。
 
 固定随机种子只影响晨起随机值和情绪随机增量：
 

@@ -19,12 +19,14 @@
 | `/perception/visual_event` | `BEST_EFFORT, depth=5` | `internal_need_node`，`emotion_engine_node` | 视觉事件输入 |
 | `/behavior/result_event` | `RELIABLE, depth=10` | `internal_need_node`，`emotion_engine_node` | 行为结果输入 |
 | `/personality/state` | `RELIABLE + TRANSIENT_LOCAL, depth=1` | `internal_need_node`，`emotion_engine_node` | 性格状态同步 |
+| `/simulation/time_state` | `RELIABLE + TRANSIENT_LOCAL, depth=1000` | `internal_need_node`，`emotion_engine_node` | 权威虚拟时间和逐秒 Tick |
 
 ### 1.2 输出 Topic
 
 | Topic | QoS | 发布节点 | 发布规则 |
 |---|---|---|---|
 | `/personality/state` | `RELIABLE + TRANSIENT_LOCAL, depth=1` | `personality_node` | 启动时和性格变化后发布 |
+| `/simulation/time_state` | `RELIABLE + TRANSIENT_LOCAL, depth=1000` | `time_controller_node` | 初始化、逐虚拟秒 Tick、倍率变化 |
 | `/internal_need/state` | `RELIABLE, depth=10` | `internal_need_node` | 每 1 秒持续发布 |
 | `/internal_need/signal_event` | `RELIABLE, depth=10` | `internal_need_node` | 需求等级变化时发布 |
 | `/emotion/state` | `RELIABLE, depth=10` | `emotion_engine_node` | 每个虚拟秒发布；标准/12小时/2小时模式为真实 1/2/12 Hz |
@@ -271,6 +273,38 @@ ros2 param set /personality_node E 30
 ros2 param set /personality_node C 40
 ```
 
+### 2.5 `/simulation/time_state`
+
+`time_controller_node` 是唯一权威虚拟时间源。需求和情绪节点只消费本 Topic，
+不再各自使用自然更新定时器。
+
+```json
+{
+  "schema_version": "1.0",
+  "timestamp": 1784157900.0,
+  "event_type": "TIME_TICK",
+  "tickSequence": 30600,
+  "timeContext": {
+    "mode": "demo_2h",
+    "scale": 12,
+    "revision": 1,
+    "virtualStartDateTime": "2026-07-16T06:00:00+08:00",
+    "virtualDateTime": "2026-07-16T14:30:00+08:00",
+    "virtualTimestamp": 1784183400.0,
+    "virtualElapsedSeconds": 30600.0,
+    "wallTimestamp": 1784157900.0
+  }
+}
+```
+
+| `event_type` | 说明 | 是否执行自然更新 |
+|---|---|---|
+| `TIME_INITIALIZED` | 权威时钟启动 | 否 |
+| `TIME_TICK` | 一个虚拟秒到期 | 是 |
+| `TIME_MODE_CHANGED` | 运行中倍率切换完成 | 否 |
+
+`tickSequence` 只对 `TIME_TICK` 递增。`revision` 每次实际切换模式增加 1。
+
 ## 3. 输出 Topic
 
 ### 3.1 公共时间字段
@@ -285,6 +319,7 @@ ros2 param set /personality_node C 40
   "timeContext": {
     "mode": "demo_2h",
     "scale": 12,
+    "revision": 1,
     "virtualStartDateTime": "2026-07-16T06:00:00+08:00",
     "virtualDateTime": "2026-07-16T14:30:00+08:00",
     "virtualTimestamp": 1784183400.0,
@@ -298,6 +333,7 @@ ros2 param set /personality_node C 40
 |---|---|
 | `mode` | `standard_24h / demo_12h / demo_2h` |
 | `scale` | 虚拟时间倍率 `1 / 2 / 12` |
+| `revision` | 倍率配置修订号，启动为 0，每次实际切换增加 1 |
 | `virtualStartDateTime` | 本次进程的虚拟时间起点，ISO 8601 |
 | `virtualDateTime` | 本条状态或事件对应的虚拟日期时间 |
 | `virtualTimestamp` | 对应虚拟 Unix 时间戳 |
@@ -594,7 +630,7 @@ NEED_<DEMAND>_OVERFLOW
 
 ## 4. 调试命令
 
-标准模式启动三个节点：
+标准模式启动四个节点：
 
 ```bash
 ros2 launch marsdog_behavior internal_need_emotion.launch.py time_mode:=standard_24h
@@ -614,15 +650,25 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
   time_mode:=demo_2h virtual_start_time:=06:00 random_seed:=12345
 ```
 
-`time_mode`、`virtual_start_time` 和 `random_seed` 都是启动后只读参数。压缩模式
-的 `virtual_start_time:=auto` 等价于当天 `06:00`；标准模式的 `auto` 从当前真实
-时间开始。详细全天测试步骤见
+运行中切换倍率：
+
+```bash
+ros2 param set /time_controller_node time_mode demo_12h
+ros2 param set /time_controller_node time_mode demo_2h
+ros2 param set /time_controller_node time_mode standard_24h
+```
+
+只有 `/time_controller_node.time_mode` 支持运行时修改。`virtual_start_time` 和
+`random_seed` 仍只能在启动时设置。压缩模式的 `virtual_start_time:=auto` 等价于
+当天 `06:00`；标准模式的 `auto` 从当前真实时间开始。倍率切换不会修改虚拟
+起点、需求值、情绪值或睡眠状态。详细测试步骤见
 [time_compression_test_guide.md](time_compression_test_guide.md)。
 
 查看输出：
 
 ```bash
 ros2 topic echo /personality/state --field data
+ros2 topic echo /simulation/time_state --field data
 ros2 topic echo /internal_need/state --field data
 ros2 topic echo /internal_need/signal_event --field data
 ros2 topic echo /emotion/state --field data
