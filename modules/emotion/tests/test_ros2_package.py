@@ -42,9 +42,20 @@ class Ros2PackageTest(unittest.TestCase):
         self.assertIn('executable="personality_node"', launchText)
         self.assertIn('executable="internal_need_node"', launchText)
         self.assertIn('executable="emotion_engine_node"', launchText)
-        self.assertIn('"time_mode"', launchText)
+        self.assertIn('"time_scale"', launchText)
+        self.assertNotIn('"time_mode"', launchText)
         self.assertIn('"virtual_start_time"', launchText)
         self.assertIn('"random_seed"', launchText)
+
+    def test_time_scale_parameter_replaces_fixed_time_modes(self):
+        """时间节点应只暴露 1-24 整数倍率参数。"""
+        timeNodeText = (
+            PROJECT_ROOT / "marsdog_ros2" / "time_controller_node.py"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('"time_scale"', timeNodeText)
+        self.assertIn("IntegerRange(from_value=1, to_value=24, step=1)", timeNodeText)
+        self.assertNotIn('"time_mode"', timeNodeText)
 
     def test_calculation_nodes_consume_authoritative_time_topic(self):
         """需求和情绪节点应消费统一时间 Topic，不再自建自然更新定时器。"""
@@ -71,6 +82,16 @@ class Ros2PackageTest(unittest.TestCase):
 
         self.assertEqual(needNodeText.count("GetMessageWithTimeContextValue("), 2)
         self.assertEqual(emotionNodeText.count("GetMessageWithTimeContextValue("), 2)
+
+    def test_calculation_nodes_shutdown_cleanly(self):
+        """计算节点应容忍 launch 触发的外部关闭，避免重复 shutdown。"""
+        for nodeFile in ("internal_need_node.py", "emotion_engine_node.py"):
+            nodeText = (
+                PROJECT_ROOT / "marsdog_ros2" / nodeFile
+            ).read_text(encoding="utf-8")
+
+            self.assertIn("ExternalShutdownException", nodeText)
+            self.assertIn("if rclpy.ok():", nodeText)
 
 
 if __name__ == "__main__":

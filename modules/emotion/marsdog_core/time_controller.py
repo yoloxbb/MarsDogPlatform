@@ -7,13 +7,13 @@ import time
 from datetime import datetime, timedelta
 from typing import Callable
 
-from .types import NormalizeTimeModeType, TimeModeType
+from .types import NormalizeTimeScaleValue
 
 
-TIME_MODE_SCALES = {
-    TimeModeType.STANDARD_24H.value: 1,
-    TimeModeType.DEMO_12H.value: 2,
-    TimeModeType.DEMO_2H.value: 12,
+TIME_SCALE_MODE_LABELS = {
+    1: "standard_24h",
+    2: "demo_12h",
+    12: "demo_2h",
 }
 
 
@@ -22,14 +22,13 @@ class MarsdogTimeController:
 
     def __init__(
         self,
-        timeMode: object = TimeModeType.STANDARD_24H.value,
+        timeScale: object = 1,
         virtualStartTime: str = "auto",
         wallTimeProvider: Callable[[], float] | None = None,
         monotonicProvider: Callable[[], float] | None = None,
     ) -> None:
-        """初始化时间模式、倍率和虚拟时间锚点。"""
-        self._timeMode = NormalizeTimeModeType(timeMode)
-        self._timeScale = TIME_MODE_SCALES[self._timeMode]
+        """初始化整数倍率和虚拟时间锚点。"""
+        self._timeScale = NormalizeTimeScaleValue(timeScale)
         self._wallTimeProvider = wallTimeProvider or time.time
         self._monotonicProvider = monotonicProvider or time.monotonic
         self._wallStartTimestamp = float(self._wallTimeProvider())
@@ -41,10 +40,6 @@ class MarsdogTimeController:
         )
         self._virtualAnchorDateTime = self._virtualStartDateTime
         self._timeRevision = 0
-
-    def GetTimeModeValue(self) -> str:
-        """获取当前时间模式。"""
-        return self._timeMode
 
     def GetTimeScaleValue(self) -> int:
         """获取当前虚拟时间倍率。"""
@@ -75,18 +70,18 @@ class MarsdogTimeController:
             raise ValueError("Virtual interval must be greater than zero")
         return interval / float(self._timeScale)
 
-    def SetTimeModeValue(self, timeMode: object) -> bool:
-        """连续切换到指定时间模式，不改变当前虚拟时间。"""
-        normalizedMode = NormalizeTimeModeType(timeMode)
-        if normalizedMode == self._timeMode:
+    def SetTimeScaleValue(self, timeScale: object) -> bool:
+        """连续切换到指定整数倍率，不改变当前虚拟时间。"""
+        normalizedScale = NormalizeTimeScaleValue(timeScale)
+        if normalizedScale == self._timeScale:
             return True
 
+        # 切换前按旧倍率计算当前虚拟时间，再将其设为新倍率的连续锚点。
         monotonicNow = float(self._monotonicProvider())
         currentVirtualTime = self._GetVirtualDateTimeAtMonotonicValue(monotonicNow)
         self._virtualAnchorDateTime = currentVirtualTime
         self._monotonicAnchor = monotonicNow
-        self._timeMode = normalizedMode
-        self._timeScale = TIME_MODE_SCALES[normalizedMode]
+        self._timeScale = normalizedScale
         self._timeRevision += 1
         return True
 
@@ -95,10 +90,7 @@ class MarsdogTimeController:
         if not isinstance(timeContext, dict):
             raise ValueError("timeContext must be an object")
 
-        normalizedMode = NormalizeTimeModeType(timeContext.get("mode"))
-        expectedScale = TIME_MODE_SCALES[normalizedMode]
-        if int(timeContext.get("scale", expectedScale)) != expectedScale:
-            raise ValueError("timeContext scale does not match mode")
+        normalizedScale = NormalizeTimeScaleValue(timeContext.get("scale"))
 
         startDateTime = self._NormalizeDateTimeValue(
             timeContext.get("virtualStartDateTime"),
@@ -115,8 +107,7 @@ class MarsdogTimeController:
         if revision < 0:
             raise ValueError("timeContext revision must be non-negative")
 
-        self._timeMode = normalizedMode
-        self._timeScale = expectedScale
+        self._timeScale = normalizedScale
         self._virtualStartDateTime = startDateTime
         self._virtualAnchorDateTime = currentDateTime
         self._monotonicAnchor = float(self._monotonicProvider())
@@ -135,7 +126,7 @@ class MarsdogTimeController:
             (currentVirtualTime - self._virtualStartDateTime).total_seconds(),
         )
         return {
-            "mode": self._timeMode,
+            "mode": TIME_SCALE_MODE_LABELS.get(self._timeScale, "custom"),
             "scale": self._timeScale,
             "revision": self._timeRevision,
             "virtualStartDateTime": self._virtualStartDateTime.isoformat(),
@@ -183,10 +174,10 @@ class MarsdogTimeController:
         wallStartDateTime: datetime,
         virtualStartTime: str,
     ) -> datetime:
-        """根据模式和 HH:MM 参数确定虚拟时间起点。"""
+        """根据倍率和 HH:MM 参数确定虚拟时间起点。"""
         startTime = str(virtualStartTime).strip()
         if startTime == "auto":
-            if self._timeMode == TimeModeType.STANDARD_24H.value:
+            if self._timeScale == 1:
                 return wallStartDateTime
             return wallStartDateTime.replace(hour=6, minute=0, second=0, microsecond=0)
 

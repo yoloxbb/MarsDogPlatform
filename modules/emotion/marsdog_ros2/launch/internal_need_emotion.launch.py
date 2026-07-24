@@ -9,24 +9,24 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description() -> LaunchDescription:
     """生成联调用的四节点启动描述。"""
-    timeMode = LaunchConfiguration("time_mode")
+    timeScale = ParameterValue(LaunchConfiguration("time_scale"), value_type=int)
     virtualStartTime = LaunchConfiguration("virtual_start_time")
     randomSeed = ParameterValue(LaunchConfiguration("random_seed"), value_type=int)
     timeControllerParameters = {
-        "time_mode": timeMode,
+        "time_scale": timeScale,
         "virtual_start_time": virtualStartTime,
     }
     calculationTimeParameters = {
-        "time_mode": timeMode,
+        "time_scale": timeScale,
         "virtual_start_time": virtualStartTime,
         "random_seed": randomSeed,
     }
     return LaunchDescription(
         [
             DeclareLaunchArgument(
-                "time_mode",
-                default_value="standard_24h",
-                description="standard_24h, demo_12h or demo_2h",
+                "time_scale",
+                default_value="1",
+                description="Virtual time scale: integer from 1 to 24",
             ),
             DeclareLaunchArgument(
                 "virtual_start_time",

@@ -27,7 +27,7 @@ ros2 run marsdog_behavior emotion_engine_node
 
 ```bash
 ros2 launch marsdog_behavior internal_need_emotion.launch.py \
-  time_mode:=demo_2h virtual_start_time:=06:00 random_seed:=12345
+  time_scale:=24 virtual_start_time:=06:00 random_seed:=12345
 ```
 
 ## 2. Topic
@@ -48,7 +48,7 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
 |---|---|---|---|
 | `/internal_need/state` | `std_msgs/String` JSON | `internal_need_node` | 每 1 秒持续发布 |
 | `/internal_need/signal_event` | `std_msgs/String` JSON | `internal_need_node` | 需求等级变化时发布 |
-| `/emotion/state` | `std_msgs/String` JSON | `emotion_engine_node` | 每个虚拟秒发布；真实频率为 1/2/12 Hz |
+| `/emotion/state` | `std_msgs/String` JSON | `emotion_engine_node` | 每个虚拟秒发布；真实频率为 `time_scale` Hz |
 | `/emotion/signal_event` | `std_msgs/String` JSON | `emotion_engine_node` | 情绪区间或主导情绪变化时发布 |
 | `/personality/state` | `std_msgs/String` JSON | `personality_node` | 启动时和性格变化后发布 |
 | `/simulation/time_state` | `std_msgs/String` JSON | `time_controller_node` | 初始化、虚拟秒 Tick 和倍率变化时发布 |
@@ -229,13 +229,9 @@ NEED_<DEMAND>_RECOVERED
 UpdateNaturalDemandsByTime()
 ```
 
-三种时间模式对应的真实定时器周期：
-
-| 模式 | 倍率 | 需求 Tick 真实周期 | 完整虚拟 24 小时 |
-|---|---:|---:|---:|
-| `standard_24h` | 1 | 600 秒 | 24 小时 |
-| `demo_12h` | 2 | 300 秒 | 12 小时 |
-| `demo_2h` | 12 | 50 秒 | 2 小时 |
+`time_scale` 允许 `1-24` 的整数。需求 Tick 真实周期为
+`600 / time_scale` 秒，完整虚拟 24 小时的真实耗时为
+`24 / time_scale` 小时。
 
 虚拟时间按以下公式计算：
 
@@ -245,7 +241,8 @@ virtualDateTime = virtualStartDateTime + monotonicElapsedSeconds * scale
 
 时间控制节点和计算节点若因调度延迟错过 Tick，会按虚拟时间顺序逐个补算，
 不会合并需求增量。
-压缩模式 `virtual_start_time=auto` 从当天虚拟 `06:00` 开始并立即执行晨起初始化。
+`virtual_start_time=auto` 时，1 倍从当前真实时间开始，2-24 倍从当天虚拟
+`06:00` 开始并立即执行晨起初始化。
 
 全局规则：
 
@@ -410,7 +407,7 @@ k_calm    = (O+A)/100
 | `Curious` | `-2/sec` |
 | `Calm` | 不自然衰减 |
 
-标准、12 小时和 2 小时模式的真实执行频率分别为 `1 Hz`、`2 Hz` 和 `12 Hz`。
+真实执行频率为 `time_scale` Hz。
 延迟时仍逐虚拟秒补算并检查区间事件，不能把衰减值一次乘倍率后跳过中间区间。
 
 ## 11. 时间上下文
@@ -422,12 +419,15 @@ k_calm    = (O+A)/100
 运行中切换倍率使用：
 
 ```bash
-ros2 param set /time_controller_node time_mode demo_2h
+ros2 param set /time_controller_node time_scale 24
 ```
 
 切换时先按旧倍率结算当前虚拟时间，再建立新倍率锚点。`revision` 增加 1，
 `virtualDateTime`、需求值、情绪值和睡眠状态均不重置。需求与情绪节点只接受
-`/simulation/time_state` 的模式变化，不允许分别修改本地参数。
+`/simulation/time_state` 的倍率变化，不允许分别修改本地参数。
+
+`timeContext.scale` 是计算使用的权威倍率。兼容字段 `mode` 在倍率 `1/2/12`
+时分别为 `standard_24h / demo_12h / demo_2h`，其他倍率为 `custom`，不参与计算。
 
 固定随机种子只影响晨起随机值和情绪随机增量：
 
@@ -560,5 +560,5 @@ python3 -m compileall -q marsdog_core marsdog_ros2 tests
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -q
 ```
 
-三档时间压缩的测试移交流程见
+整数倍率时间压缩的测试移交流程见
 [time_compression_test_guide.md](time_compression_test_guide.md)。

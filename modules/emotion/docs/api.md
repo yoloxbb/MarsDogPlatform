@@ -22,16 +22,16 @@ personalitySystem = MarsdogPersonalitySystem()
 
 ## 时间测试接口
 
-- `GetTimeModeValue()`：读取 `standard_24h / demo_12h / demo_2h`。
-- `GetTimeScaleValue()`：读取当前倍率 `1 / 2 / 12`。
+- `GetTimeScaleValue()`：读取当前 `1-24` 整数倍率。
 - `GetTimeRevisionValue()`：读取运行时倍率配置修订号。
 - `GetVirtualStartDateTimeValue()`：读取本次进程虚拟起点。
 - `GetVirtualDateTimeValue()`：按单调时钟读取当前虚拟日期时间。
 - `GetVirtualTimestampValue()`：读取当前虚拟 Unix 时间戳。
 - `GetRealIntervalValue(virtualSeconds)`：把虚拟间隔换算成真实定时器周期。
 - `GetTimeContextValue()`：生成输出消息使用的虚拟时间上下文。
-- `SetTimeModeValue(timeMode)`：连续切换倍率，不重置当前虚拟时间。
-- `SetTimeContextValue(timeContext)`：使用权威时间 Topic 同步本地时钟。
+- `SetTimeScaleValue(timeScale)`：连续切换到 `1-24` 整数倍率，不重置当前虚拟时间。
+- `SetTimeContextValue(timeContext)`：使用权威时间 Topic 的 `scale` 同步本地时钟；
+  `mode` 仅为兼容显示字段，不参与校验或计算。
 - `VirtualTickScheduler.GetDueTickDateTimesValue(currentDateTime)`：按顺序读取并消费所有遗漏 Tick。
 
 ## 需求接口
@@ -219,20 +219,20 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py
 
 ```bash
 ros2 launch marsdog_behavior internal_need_emotion.launch.py \
-  time_mode:=demo_2h virtual_start_time:=06:00 random_seed:=12345
+  time_scale:=12 virtual_start_time:=06:00 random_seed:=12345
 ```
 
-- `time_mode`：`standard_24h / demo_12h / demo_2h`，可在统一时间节点运行时修改。
+- `time_scale`：`1-24` 整数，可在统一时间节点运行时修改。
 - `virtual_start_time`：`auto` 或严格 `HH:MM`。
 - `random_seed`：`-1` 或非负整数。
 
 运行中修改倍率：
 
 ```bash
-ros2 param set /time_controller_node time_mode demo_2h
+ros2 param set /time_controller_node time_scale 24
 ```
 
-不要修改 `internal_need_node` 或 `emotion_engine_node` 的同名参数；它们运行时
+不要修改 `internal_need_node` 或 `emotion_engine_node` 的 `time_scale` 参数；它们运行时
 以 `/simulation/time_state` 为准。`virtual_start_time` 和 `random_seed` 仍需重启
 后修改。
 

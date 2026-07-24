@@ -24,8 +24,8 @@ class TimeStateAdapterTest(unittest.TestCase):
             "event_type": "TIME_TICK",
             "tickSequence": 12,
             "timeContext": {
-                "mode": "demo_2h",
-                "scale": 12,
+                "mode": "custom",
+                "scale": 7,
                 "revision": 1,
                 "virtualStartDateTime": "2026-07-16T06:00:00+08:00",
                 "virtualDateTime": "2026-07-16T06:00:12+08:00",

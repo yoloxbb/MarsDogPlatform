@@ -18,7 +18,7 @@
 | `marsdog_core/need_system.py` | 内部需求计算统一入口 `MarsdogNeedSystem` |
 | `marsdog_core/emotion_system.py` | 情绪计算统一入口 `MarsdogEmotionSystem` |
 | `marsdog_core/personality_system.py` | 性格参数统一入口 `MarsdogPersonalitySystem` |
-| `marsdog_core/time_controller.py` | 三档虚拟时钟和遗漏 Tick 补算调度器 |
+| `marsdog_core/time_controller.py` | `1-24` 整数倍率虚拟时钟和遗漏 Tick 补算调度器 |
 | `marsdog_core/*_behavior.py` | 各需求的数值增长、恢复和结果结算逻辑 |
 | `marsdog_ros2/time_controller_node.py` | 权威虚拟时间与运行时倍率控制节点 |
 | `marsdog_ros2/time_state_adapter.py` | 适配 `/simulation/time_state` |
@@ -452,22 +452,22 @@ ROS2 节点：
 
 ```bash
 ros2 launch marsdog_behavior internal_need_emotion.launch.py \
-  time_mode:=standard_24h
+  time_scale:=1
 ```
 
-时间压缩模式：
+时间压缩倍率：
 
 ```bash
-ros2 launch marsdog_behavior internal_need_emotion.launch.py time_mode:=demo_12h
+ros2 launch marsdog_behavior internal_need_emotion.launch.py time_scale:=7
 ros2 launch marsdog_behavior internal_need_emotion.launch.py \
-  time_mode:=demo_2h virtual_start_time:=06:00 random_seed:=12345
+  time_scale:=24 virtual_start_time:=06:00 random_seed:=12345
 ```
 
-| 模式 | 倍率 | 需求 Tick 真实周期 | 情绪真实更新频率 | 虚拟一天真实耗时 |
-|---|---:|---:|---:|---:|
-| `standard_24h` | 1 | 600 秒 | 1 Hz | 24 小时 |
-| `demo_12h` | 2 | 300 秒 | 2 Hz | 12 小时 |
-| `demo_2h` | 12 | 50 秒 | 12 Hz | 2 小时 |
+`time_scale` 允许 `1-24` 的整数。需求 Tick 真实周期为
+`600 / time_scale` 秒，情绪真实更新频率为 `time_scale` Hz，完整虚拟一天
+真实耗时为 `24 / time_scale` 小时。
+`timeContext.scale` 是权威倍率；`mode` 只保留旧倍率名称或输出 `custom`，
+不参与计算。
 
 四类需求/情绪状态与事件消息均包含 `timeContext`。原顶层 `timestamp` 仍是真实
 Unix 时间，`timeContext.virtualDateTime` 表示公式计算使用的虚拟时间。测试
@@ -476,9 +476,9 @@ Unix 时间，`timeContext.virtualDateTime` 表示公式计算使用的虚拟时
 运行中切换倍率：
 
 ```bash
-ros2 param set /time_controller_node time_mode demo_12h
-ros2 param set /time_controller_node time_mode demo_2h
-ros2 param set /time_controller_node time_mode standard_24h
+ros2 param set /time_controller_node time_scale 7
+ros2 param set /time_controller_node time_scale 24
+ros2 param set /time_controller_node time_scale 1
 ```
 
 模式切换由统一时间节点一次完成。虚拟时间连续，需求/情绪 Tick 进度、当前

@@ -19,12 +19,14 @@ from marsdog_ros2.time_state_adapter import (
 try:
     import rclpy
     from rcl_interfaces.msg import ParameterDescriptor
+    from rclpy.executors import ExternalShutdownException
     from rclpy.node import Node
     from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
     from std_msgs.msg import String
 except ModuleNotFoundError:
     rclpy = None
     ParameterDescriptor = None
+    ExternalShutdownException = None
     Node = object
     QoSProfile = None
     ReliabilityPolicy = None
@@ -43,11 +45,11 @@ class InternalNeedNode(Node):
 
         super().__init__("internal_need_node")
         self._DeclareTimeParameters()
-        timeMode = self.get_parameter("time_mode").value
+        timeScale = self.get_parameter("time_scale").value
         virtualStartTime = self.get_parameter("virtual_start_time").value
         randomSeed = self.get_parameter("random_seed").value
 
-        self.timeController = MarsdogTimeController(timeMode, virtualStartTime)
+        self.timeController = MarsdogTimeController(timeScale, virtualStartTime)
         self.system = MarsdogNeedSystem(
             randomGenerator=GetRandomGeneratorValue(randomSeed),
         )
@@ -71,9 +73,8 @@ class InternalNeedNode(Node):
         )
         self.create_timer(1.0, self.PublishState)
         self.get_logger().info(
-            "Internal need time mode: %s, scale: %sx, virtual start: %s"
+            "Internal need time scale: %sx, virtual start: %s"
             % (
-                self.timeController.GetTimeModeValue(),
                 self.timeController.GetTimeScaleValue(),
                 virtualStartDateTime.isoformat(),
             )
@@ -82,9 +83,9 @@ class InternalNeedNode(Node):
     def _DeclareTimeParameters(self) -> None:
         """声明仅允许启动时设置的时间测试参数。"""
         self.declare_parameter(
-            "time_mode",
-            "standard_24h",
-            descriptor=_ReadOnlyParameterDescriptor("Time compression mode"),
+            "time_scale",
+            1,
+            descriptor=_ReadOnlyParameterDescriptor("Virtual time scale: integer from 1 to 24"),
         )
         self.declare_parameter(
             "virtual_start_time",
@@ -260,9 +261,12 @@ def main(args=None) -> None:
     node = InternalNeedNode()
     try:
         rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":

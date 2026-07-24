@@ -7,17 +7,18 @@ import time
 from datetime import datetime
 
 from marsdog_core import MarsdogTimeController, VirtualTickScheduler
-from marsdog_core.types import NormalizeTimeModeType
+from marsdog_core.types import NormalizeTimeScaleValue
 
 try:
     import rclpy
-    from rcl_interfaces.msg import ParameterDescriptor, SetParametersResult
+    from rcl_interfaces.msg import IntegerRange, ParameterDescriptor, SetParametersResult
     from rclpy.executors import ExternalShutdownException
     from rclpy.node import Node
     from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
     from std_msgs.msg import String
 except ModuleNotFoundError:
     rclpy = None
+    IntegerRange = None
     ParameterDescriptor = None
     SetParametersResult = None
     ExternalShutdownException = None
@@ -42,7 +43,7 @@ class TimeControllerNode(Node):
         super().__init__("time_controller_node")
         self._DeclareTimeParameters()
         self.timeController = MarsdogTimeController(
-            self.get_parameter("time_mode").value,
+            self.get_parameter("time_scale").value,
             self.get_parameter("virtual_start_time").value,
         )
         self.tickScheduler = VirtualTickScheduler(
@@ -62,38 +63,38 @@ class TimeControllerNode(Node):
             "TIME_INITIALIZED",
             self.timeController.GetVirtualStartDateTimeValue(),
         )
-        self._LogCurrentMode("initialized")
+        self._LogCurrentScale("initialized")
 
     def OnSetParameters(self, parameters: list[object]):
-        """校验并应用运行时倍率模式切换。"""
-        requestedMode = None
+        """校验并应用运行时整数倍率切换。"""
+        requestedScale = None
         for parameter in parameters:
-            if getattr(parameter, "name", "") == "time_mode":
-                requestedMode = getattr(parameter, "value", None)
+            if getattr(parameter, "name", "") == "time_scale":
+                requestedScale = getattr(parameter, "value", None)
 
-        if requestedMode is None:
+        if requestedScale is None:
             return SetParametersResult(successful=True)
 
         try:
-            normalizedMode = NormalizeTimeModeType(requestedMode)
+            normalizedScale = NormalizeTimeScaleValue(requestedScale)
         except (TypeError, ValueError):
             return SetParametersResult(
                 successful=False,
-                reason="time_mode must be standard_24h, demo_12h or demo_2h",
+                reason="time_scale must be an integer between 1 and 24",
             )
 
-        if normalizedMode == self.timeController.GetTimeModeValue():
+        if normalizedScale == self.timeController.GetTimeScaleValue():
             return SetParametersResult(successful=True)
 
         # 先消费旧倍率下已经到期的 Tick，再连续切换时间锚点。
         self.PublishDueTicks()
-        self.timeController.SetTimeModeValue(normalizedMode)
+        self.timeController.SetTimeScaleValue(normalizedScale)
         self._ResetTimeTimer()
         self.PublishTimeState(
             "TIME_MODE_CHANGED",
             self.timeController.GetVirtualDateTimeValue(),
         )
-        self._LogCurrentMode("changed")
+        self._LogCurrentScale("changed")
         return SetParametersResult(successful=True)
 
     def PublishDueTicks(self) -> None:
@@ -123,12 +124,9 @@ class TimeControllerNode(Node):
     def _DeclareTimeParameters(self) -> None:
         """声明动态倍率参数和只读虚拟起点参数。"""
         self.declare_parameter(
-            "time_mode",
-            "standard_24h",
-            descriptor=_ParameterDescriptor(
-                "Runtime time mode: standard_24h, demo_12h or demo_2h",
-                readOnly=False,
-            ),
+            "time_scale",
+            1,
+            descriptor=_TimeScaleParameterDescriptor(readOnly=False),
         )
         self.declare_parameter(
             "virtual_start_time",
@@ -148,13 +146,12 @@ class TimeControllerNode(Node):
             self.PublishDueTicks,
         )
 
-    def _LogCurrentMode(self, operation: str) -> None:
-        """记录当前时间模式和连续虚拟时间。"""
+    def _LogCurrentScale(self, operation: str) -> None:
+        """记录当前时间倍率和连续虚拟时间。"""
         self.get_logger().info(
-            "Time mode %s: %s, scale: %sx, virtual time: %s, revision: %s"
+            "Time scale %s: %sx, virtual time: %s, revision: %s"
             % (
                 operation,
-                self.timeController.GetTimeModeValue(),
                 self.timeController.GetTimeScaleValue(),
                 self.timeController.GetVirtualDateTimeValue().isoformat(),
                 self.timeController.GetTimeRevisionValue(),
@@ -167,6 +164,17 @@ def _ParameterDescriptor(description: str, readOnly: bool):
     if ParameterDescriptor is None:
         return None
     return ParameterDescriptor(description=description, read_only=readOnly)
+
+
+def _TimeScaleParameterDescriptor(readOnly: bool):
+    """创建限制为 1-24 整数的 ROS2 倍率参数描述。"""
+    if ParameterDescriptor is None or IntegerRange is None:
+        return None
+    return ParameterDescriptor(
+        description="Virtual time scale: integer from 1 to 24",
+        read_only=readOnly,
+        integer_range=[IntegerRange(from_value=1, to_value=24, step=1)],
+    )
 
 
 def _ReliableTransientLocalQoS(depth: int):

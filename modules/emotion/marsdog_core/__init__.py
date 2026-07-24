@@ -12,7 +12,6 @@ from .types import (
     FoodType,
     PersonalityProfileType,
     SleepDepthType,
-    TimeModeType,
 )
 
 __all__ = [
@@ -27,6 +26,5 @@ __all__ = [
     "PersonalityProfileType",
     "SleepDepthType",
     "MarsdogTimeController",
-    "TimeModeType",
     "VirtualTickScheduler",
 ]

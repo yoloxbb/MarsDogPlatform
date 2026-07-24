@@ -1,14 +1,19 @@
-# Marsdog 三档时间压缩测试移交说明
+# Marsdog 1-24 整数倍率时间压缩测试移交说明
 
 本文档用于在较短真实时间内验收一个完整虚拟 24 小时的内部需求和情绪变化。
 
-## 1. 时间模式
+## 1. 时间倍率
 
-| `time_mode` | 倍率 | 虚拟 24 小时所需真实时间 | 需求 Tick | 情绪更新 |
-|---|---:|---:|---:|---:|
-| `standard_24h` | 1 | 24 小时 | 每 600 秒 | 1 Hz |
-| `demo_12h` | 2 | 12 小时 | 每 300 秒 | 2 Hz |
-| `demo_2h` | 12 | 2 小时 | 每 50 秒 | 12 Hz |
+`time_scale` 接受 `1-24` 的整数。完整虚拟 24 小时所需真实时间为
+`24 / time_scale` 小时，需求 Tick 真实周期为 `600 / time_scale` 秒，
+情绪更新真实频率为 `time_scale` Hz。
+
+| 倍率 | 虚拟 24 小时所需真实时间 | 需求 Tick | 情绪更新 |
+|---:|---:|---:|---:|
+| 1 | 24 小时 | 每 600 秒 | 1 Hz |
+| 7 | 约 3 小时 25 分 43 秒 | 约每 85.71 秒 | 7 Hz |
+| 12 | 2 小时 | 每 50 秒 | 12 Hz |
+| 24 | 1 小时 | 每 25 秒 | 24 Hz |
 
 时间倍率只影响需求自然更新、睡眠恢复和情绪自然衰减。感知事件与
 `/behavior/result_event` 仍在真实收到消息时立即处理，不会自动生成或压缩。
@@ -23,25 +28,25 @@ colcon build --packages-select marsdog_behavior
 source install/setup.bash
 ```
 
-标准模式：
+1 倍模式：
 
 ```bash
 ros2 launch marsdog_behavior internal_need_emotion.launch.py \
-  time_mode:=standard_24h
+  time_scale:=1
 ```
 
-12 小时模式：
+7 倍模式：
 
 ```bash
 ros2 launch marsdog_behavior internal_need_emotion.launch.py \
-  time_mode:=demo_12h
+  time_scale:=7
 ```
 
-2 小时模式，推荐用于交付验收：
+24 倍模式，推荐用于交付验收：
 
 ```bash
 ros2 launch marsdog_behavior internal_need_emotion.launch.py \
-  time_mode:=demo_2h \
+  time_scale:=24 \
   virtual_start_time:=06:00 \
   random_seed:=12345
 ```
@@ -50,11 +55,11 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
 
 | 参数 | 允许值 | 说明 |
 |---|---|---|
-| `time_mode` | 三种固定模式 | 初始值由 launch 设置；运行中通过时间控制节点修改 |
-| `virtual_start_time` | `auto` 或 `HH:MM` | 压缩模式 `auto` 从当天 06:00 开始 |
+| `time_scale` | `1-24` 整数 | 初始值由 launch 设置；运行中通过时间控制节点修改 |
+| `virtual_start_time` | `auto` 或 `HH:MM` | 1 倍 `auto` 从当前时间开始；2-24 倍从当天 06:00 开始 |
 | `random_seed` | `-1` 或非负整数 | `-1` 随机；固定值可重复 |
 
-非法模式、非法时间和小于 `-1` 的种子会拒绝启动。完整一天验收必须从
+非法倍率、非法时间和小于 `-1` 的种子会拒绝启动。完整一天验收必须从
 `06:00` 开始；任意其他起点不会回放此前时段。
 
 ### 2.1 运行中切换倍率
@@ -62,9 +67,9 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
 节点运行期间可执行：
 
 ```bash
-ros2 param set /time_controller_node time_mode demo_12h
-ros2 param set /time_controller_node time_mode demo_2h
-ros2 param set /time_controller_node time_mode standard_24h
+ros2 param set /time_controller_node time_scale 7
+ros2 param set /time_controller_node time_scale 24
+ros2 param set /time_controller_node time_scale 1
 ```
 
 切换只改变后续虚拟时间速度，不修改 `virtualDateTime`、需求值、情绪值、睡眠
@@ -87,8 +92,8 @@ ros2 topic echo /simulation/time_state --field data --full-length
 
 ```json
 "timeContext": {
-  "mode": "demo_2h",
-  "scale": 12,
+  "mode": "custom",
+  "scale": 7,
   "revision": 1,
   "virtualStartDateTime": "2026-07-16T06:00:00+08:00",
   "virtualDateTime": "2026-07-16T14:30:00+08:00",
@@ -133,10 +138,10 @@ ros2 topic pub --once /behavior/result_event std_msgs/msg/String \
 
 | 检查项 | 通过标准 |
 |---|---|
-| 模式 | 四类消息的 `mode/scale` 与启动参数一致 |
+| 倍率 | 四类消息的 `scale` 与启动参数一致；`mode` 仅为兼容显示字段 |
 | 动态切换 | `revision` 递增，虚拟时间连续，需求/情绪/睡眠状态不重置 |
 | 起点 | 固定为虚拟 06:00，晨起需求已初始化 |
-| 需求 Tick | 1/2/12 倍模式分别每 600/300/50 真实秒更新 |
+| 需求 Tick | 真实周期符合 `600 / time_scale` 秒 |
 | Tick 补算 | 节点短暂延迟后数值不丢增长 Tick |
 | 情绪衰减 | 每虚拟秒衰减，区间事件顺序完整 |
 | 需求事件 | `state.levelEvents[demand]` 与 signal 的 `event_type` 一致 |
@@ -153,5 +158,5 @@ python3 -m compileall -q marsdog_core marsdog_ros2 tests
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -q
 ```
 
-单元测试覆盖三档时间换算、参数校验、遗漏 Tick 补算、三模式需求/情绪轨迹
+单元测试覆盖 `1-24` 倍率换算、参数校验、遗漏 Tick 补算、不同倍率需求/情绪轨迹
 一致性，以及当前全天睡眠目标。

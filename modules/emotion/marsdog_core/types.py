@@ -68,14 +68,6 @@ class SleepDepthType(str, Enum):
     DEEP = "Deep"
 
 
-class TimeModeType(str, Enum):
-    """时间压缩测试模式。"""
-
-    STANDARD_24H = "standard_24h"
-    DEMO_12H = "demo_12h"
-    DEMO_2H = "demo_2h"
-
-
 class PersonalityProfileType(str, Enum):
     """预设性格类型。"""
 
@@ -227,11 +219,6 @@ def NormalizeSleepDepthType(sleepDepth: object) -> str:
     return NormalizeEnumValue(SleepDepthType, sleepDepth)
 
 
-def NormalizeTimeModeType(timeMode: object) -> str:
-    """规范化时间压缩模式。"""
-    return NormalizeEnumValue(TimeModeType, timeMode)
-
-
 def NormalizePersonalityProfileType(profileName: object) -> str:
     """规范化预设性格名称。"""
     profileAliases = {
@@ -244,6 +231,16 @@ def NormalizePersonalityProfileType(profileName: object) -> str:
     if isinstance(profileName, str) and profileName in profileAliases:
         return profileAliases[profileName]
     return NormalizeEnumValue(PersonalityProfileType, profileName)
+
+
+def NormalizeTimeScaleValue(timeScale: object) -> int:
+    """校验并返回 1-24 范围内的整数时间倍率。"""
+    # bool 是 int 的子类，必须显式拒绝，避免 True 被误当成 1 倍率。
+    if isinstance(timeScale, bool) or not isinstance(timeScale, int):
+        raise ValueError("timeScale must be an integer between 1 and 24")
+    if timeScale < 1 or timeScale > 24:
+        raise ValueError("timeScale must be an integer between 1 and 24")
+    return timeScale
 
 
 def GetEmotionInternalName(emotionType: object) -> str:
