@@ -65,6 +65,19 @@ public:
     backlight_compensation_ = declare_parameter<int>("backlight_compensation", 0);
     auto_exposure_ = declare_parameter<int>("auto_exposure", V4L2_EXPOSURE_MANUAL);
     exposure_time_absolute_ = declare_parameter<int>("exposure_time_absolute", 10000);
+    software_auto_exposure_ = declare_parameter<bool>("software_auto_exposure", false);
+    software_auto_exposure_target_ = declare_parameter<int>(
+      "software_auto_exposure_target", 105);
+    software_auto_exposure_min_ = declare_parameter<int>(
+      "software_auto_exposure_min", 10);
+    software_auto_exposure_max_ = declare_parameter<int>(
+      "software_auto_exposure_max", 0);
+    software_auto_exposure_deadband_ = declare_parameter<int>(
+      "software_auto_exposure_deadband", 5);
+    software_auto_exposure_update_interval_ = declare_parameter<int>(
+      "software_auto_exposure_update_interval", 10);
+    software_auto_exposure_response_ = declare_parameter<double>(
+      "software_auto_exposure_response", 0.25);
     // A negative value leaves an optional control unchanged. Some cameras do not expose these.
     exposure_dynamic_framerate_ = declare_parameter<int>(
       "exposure_dynamic_framerate", -1);
@@ -79,9 +92,9 @@ public:
       "right_frame_id", "camera_right_frame");
     camera_time_offset_ms_ = declare_parameter<double>("camera_time_offset_ms", 0.0);
     const std::string left_info_path = declare_parameter<std::string>(
-      "left_camera_info_file", package_share + "/config/left.yaml");
+      "left_camera_info_file", package_share + "/config/left_hb_2560.yaml");
     const std::string right_info_path = declare_parameter<std::string>(
-      "right_camera_info_file", package_share + "/config/right.yaml");
+      "right_camera_info_file", package_share + "/config/right_hb_2560.yaml");
 
     ExecuteValidateParameters();
 
@@ -91,13 +104,13 @@ public:
     }
     //auto qos = rclcpp::QoS(rclcpp::KeepLast()).reliable().durability_volatile();
     left_image_pub_ = create_publisher<sensor_msgs::msg::Image>(
-      "/stereo/left/camera/image_mono", qos);
+      "/cam0/image_raw", qos);
     right_image_pub_ = create_publisher<sensor_msgs::msg::Image>(
-      "/stereo/right/camera/image_mono", qos);
+      "/cam1/image_raw", qos);
     left_info_pub_ = create_publisher<sensor_msgs::msg::CameraInfo>(
-      "/stereo/left/camera/camera_info", qos);
+      "/cam0/camera_info", qos);
     right_info_pub_ = create_publisher<sensor_msgs::msg::CameraInfo>(
-      "/stereo/right/camera/camera_info", qos);
+      "/cam1/camera_info", qos);
 
     left_info_ = GetCameraInfoValue(left_info_path, left_frame_id_);
     right_info_ = GetCameraInfoValue(right_info_path, right_frame_id_);
@@ -159,6 +172,31 @@ private:
     }
     if (!std::isfinite(camera_time_offset_ms_)) {
       throw std::invalid_argument("camera_time_offset_ms must be finite");
+    }
+    if (software_auto_exposure_) {
+      // 软件闭环需要相机保持手动模式，节点才能逐帧更新绝对曝光时间。
+      if (!apply_camera_controls_ || auto_exposure_ != V4L2_EXPOSURE_MANUAL ||
+        !IsCameraControlEnabled("exposure_time_absolute"))
+      {
+        throw std::invalid_argument(
+                "software_auto_exposure requires camera controls, manual exposure mode, "
+                "and an enabled exposure_time_absolute control");
+      }
+      if (software_auto_exposure_target_ <= 0 || software_auto_exposure_target_ >= 255 ||
+        software_auto_exposure_min_ <= 0 ||
+        (software_auto_exposure_max_ > 0 &&
+        software_auto_exposure_max_ < software_auto_exposure_min_) ||
+        exposure_time_absolute_ < software_auto_exposure_min_ ||
+        (software_auto_exposure_max_ > 0 &&
+        exposure_time_absolute_ > software_auto_exposure_max_) ||
+        software_auto_exposure_deadband_ < 0 ||
+        software_auto_exposure_update_interval_ <= 0 ||
+        !std::isfinite(software_auto_exposure_response_) ||
+        software_auto_exposure_response_ <= 0.0 || software_auto_exposure_response_ > 1.0)
+      {
+        throw std::invalid_argument(
+                "invalid software auto exposure target, range, deadband, interval, or response");
+      }
     }
 
     std::transform(
@@ -330,7 +368,9 @@ private:
     return ConfigureCameraControlValue(control_id, value, name);
   }
 
-  bool SetCameraControlValue(uint32_t control_id, int32_t requested_value, const char * name)
+  bool SetCameraControlValue(
+    uint32_t control_id, int32_t requested_value, const char * name,
+    bool report_success = true)
   {
     // 写入前检查设备范围，写入后回读，确保驱动实际采用了目标值。
     v4l2_queryctrl query{};
@@ -373,7 +413,48 @@ private:
         name, requested_value, control.value);
       return false;
     }
-    RCLCPP_INFO(get_logger(), "Camera control %s=%d", name, control.value);
+    if (report_success) {
+      RCLCPP_INFO(get_logger(), "Camera control %s=%d", name, control.value);
+    }
+    return true;
+  }
+
+  bool ExecuteInitializeSoftwareAutoExposure()
+  {
+    // 将可选的软件上限与设备真实范围相交；上限为 0 时直接采用硬件最大值。
+    v4l2_queryctrl query{};
+    query.id = V4L2_CID_EXPOSURE_ABSOLUTE;
+    if (ExecuteIoctl(fd_, VIDIOC_QUERYCTRL, &query) < 0 ||
+      (query.flags & V4L2_CTRL_FLAG_DISABLED) != 0)
+    {
+      RCLCPP_ERROR(get_logger(), "Cannot query exposure_time_absolute range");
+      return false;
+    }
+
+    software_auto_exposure_effective_min_ = std::max(
+      software_auto_exposure_min_, query.minimum);
+    software_auto_exposure_effective_max_ = software_auto_exposure_max_ <= 0 ?
+      query.maximum : std::min(software_auto_exposure_max_, query.maximum);
+    if (software_auto_exposure_effective_min_ > software_auto_exposure_effective_max_ ||
+      exposure_time_absolute_ < software_auto_exposure_effective_min_ ||
+      exposure_time_absolute_ > software_auto_exposure_effective_max_)
+    {
+      RCLCPP_ERROR(
+        get_logger(),
+        "Software auto exposure range [%d, %d] does not contain initial value %d",
+        software_auto_exposure_effective_min_, software_auto_exposure_effective_max_,
+        exposure_time_absolute_);
+      return false;
+    }
+
+    // USB 重连后从 launch 给定的初始值重新收敛，避免沿用固件中的陈旧状态。
+    software_auto_exposure_current_ = exposure_time_absolute_;
+    software_auto_exposure_frame_counter_ = 0;
+    RCLCPP_INFO(
+      get_logger(),
+      "Software auto exposure enabled: target=%d, range=[%d, %d], initial=%d",
+      software_auto_exposure_target_, software_auto_exposure_effective_min_,
+      software_auto_exposure_effective_max_, software_auto_exposure_current_);
     return true;
   }
 
@@ -385,37 +466,59 @@ private:
       return true;
     }
 
-    // 必须先关闭自动模式，再设置对应的手动值。
-    return ConfigureCameraControlValue(
-      V4L2_CID_EXPOSURE_AUTO, auto_exposure_, "auto_exposure") &&
-           ConfigureOptionalCameraControlValue(
-      V4L2_CID_EXPOSURE_AUTO_PRIORITY,
-      exposure_dynamic_framerate_, "exposure_dynamic_framerate") &&
-           ConfigureCameraControlValue(
-      V4L2_CID_EXPOSURE_ABSOLUTE, exposure_time_absolute_, "exposure_time_absolute") &&
-           ConfigureCameraControlValue(
+    // 先设置普通图像控件，避免增益和背光补偿的写入扰动最终曝光状态。
+    const bool configured = ConfigureCameraControlValue(
       V4L2_CID_AUTO_WHITE_BALANCE,
       white_balance_automatic_ ? 1 : 0, "white_balance_automatic") &&
-           ConfigureCameraControlValue(
+      ConfigureCameraControlValue(
       V4L2_CID_WHITE_BALANCE_TEMPERATURE,
       white_balance_temperature_, "white_balance_temperature") &&
-           ConfigureCameraControlValue(V4L2_CID_BRIGHTNESS, brightness_, "brightness") &&
-           ConfigureCameraControlValue(V4L2_CID_CONTRAST, contrast_, "contrast") &&
-           ConfigureCameraControlValue(V4L2_CID_SATURATION, saturation_, "saturation") &&
-           ConfigureCameraControlValue(V4L2_CID_HUE, hue_, "hue") &&
-           ConfigureCameraControlValue(V4L2_CID_GAMMA, gamma_, "gamma") &&
-           ConfigureCameraControlValue(V4L2_CID_GAIN, gain_, "gain") &&
-           ConfigureCameraControlValue(
+      ConfigureCameraControlValue(V4L2_CID_BRIGHTNESS, brightness_, "brightness") &&
+      ConfigureCameraControlValue(V4L2_CID_CONTRAST, contrast_, "contrast") &&
+      ConfigureCameraControlValue(V4L2_CID_SATURATION, saturation_, "saturation") &&
+      ConfigureCameraControlValue(V4L2_CID_HUE, hue_, "hue") &&
+      ConfigureCameraControlValue(V4L2_CID_GAMMA, gamma_, "gamma") &&
+      ConfigureCameraControlValue(V4L2_CID_GAIN, gain_, "gain") &&
+      ConfigureCameraControlValue(
       V4L2_CID_POWER_LINE_FREQUENCY, power_line_frequency_, "power_line_frequency") &&
-           ConfigureCameraControlValue(V4L2_CID_SHARPNESS, sharpness_, "sharpness") &&
-           ConfigureCameraControlValue(
+      ConfigureCameraControlValue(V4L2_CID_SHARPNESS, sharpness_, "sharpness") &&
+      ConfigureCameraControlValue(
       V4L2_CID_BACKLIGHT_COMPENSATION,
       backlight_compensation_, "backlight_compensation") &&
-           ConfigureOptionalCameraControlValue(
+      ConfigureOptionalCameraControlValue(
       V4L2_CID_FOCUS_AUTO,
       focus_automatic_continuous_, "focus_automatic_continuous") &&
-           ConfigureOptionalCameraControlValue(
-      V4L2_CID_FOCUS_ABSOLUTE, focus_absolute_, "focus_absolute");
+      ConfigureOptionalCameraControlValue(
+      V4L2_CID_FOCUS_ABSOLUTE, focus_absolute_, "focus_absolute") &&
+      ConfigureOptionalCameraControlValue(
+      V4L2_CID_EXPOSURE_AUTO_PRIORITY,
+      exposure_dynamic_framerate_, "exposure_dynamic_framerate") &&
+      ExecuteConfigureExposureControls();
+    if (configured && software_auto_exposure_) {
+      return ExecuteInitializeSoftwareAutoExposure();
+    }
+    return configured;
+  }
+
+  bool ExecuteConfigureExposureControls()
+  {
+    // 手动模式必须先切换模式再写曝光值，否则部分 UVC 固件会拒绝写入。
+    if (auto_exposure_ == V4L2_EXPOSURE_MANUAL) {
+      return ConfigureCameraControlValue(
+        V4L2_CID_EXPOSURE_AUTO, auto_exposure_, "auto_exposure") &&
+        ConfigureCameraControlValue(
+        V4L2_CID_EXPOSURE_ABSOLUTE,
+        exposure_time_absolute_, "exposure_time_absolute");
+    }
+
+    // 自动模式最后启用，确保初始曝光值不会在固件自动曝光之后覆盖其状态。
+    return ConfigureCameraControlValue(
+      V4L2_CID_EXPOSURE_AUTO, V4L2_EXPOSURE_MANUAL, "auto_exposure") &&
+      ConfigureCameraControlValue(
+      V4L2_CID_EXPOSURE_ABSOLUTE,
+      exposure_time_absolute_, "exposure_time_absolute") &&
+      ConfigureCameraControlValue(
+      V4L2_CID_EXPOSURE_AUTO, auto_exposure_, "auto_exposure");
   }
 
   bool ExecuteInitializeBuffers()
@@ -607,6 +710,96 @@ private:
     return frame;
   }
 
+  double GetImageBrightnessValue(const sensor_msgs::msg::Image & image) const
+  {
+    // 仅采样中央区域，减少鱼眼黑边和图像边缘对曝光判断的干扰。
+    if (image.data.empty() || image.width == 0 || image.height == 0 || image.step < image.width) {
+      return 0.0;
+    }
+    const std::size_t row_margin = image.height / 8U;
+    const std::size_t column_margin = image.width / 8U;
+    const std::size_t row_end = image.height - row_margin;
+    const std::size_t column_end = image.width - column_margin;
+    uint64_t brightness_sum = 0;
+    uint64_t sample_count = 0;
+
+    // 每隔 4 个像素采样一次，显著降低闭环计算量且保持稳定的亮度估计。
+    for (std::size_t row = row_margin; row < row_end; row += 4U) {
+      const std::size_t row_offset = row * image.step;
+      for (std::size_t column = column_margin; column < column_end; column += 4U) {
+        brightness_sum += image.data[row_offset + column];
+        ++sample_count;
+      }
+    }
+    return sample_count == 0 ? 0.0 :
+           static_cast<double>(brightness_sum) / static_cast<double>(sample_count);
+  }
+
+  double GetFrameBrightnessValue(const StereoFrame & frame) const
+  {
+    // 左右目共同参与测光，避免单侧局部明暗导致两目同时过曝或欠曝。
+    const double left_brightness = GetImageBrightnessValue(frame.left_image);
+    const double right_brightness = GetImageBrightnessValue(frame.right_image);
+    return (left_brightness + right_brightness) * 0.5;
+  }
+
+  void ExecuteUpdateSoftwareAutoExposure(const StereoFrame & frame)
+  {
+    // 按配置的帧间隔更新，避免频繁 ioctl 影响采集吞吐并抑制曝光振荡。
+    if (!software_auto_exposure_) {
+      return;
+    }
+    ++software_auto_exposure_frame_counter_;
+    if (software_auto_exposure_frame_counter_ %
+      static_cast<uint64_t>(software_auto_exposure_update_interval_) != 0U)
+    {
+      return;
+    }
+
+    const double brightness = GetFrameBrightnessValue(frame);
+    const double error = static_cast<double>(software_auto_exposure_target_) - brightness;
+    if (std::abs(error) <= static_cast<double>(software_auto_exposure_deadband_)) {
+      return;
+    }
+
+    // 使用阻尼比例控制，并限制单次最多增减一倍，兼顾收敛速度和画面稳定性。
+    const double brightness_ratio =
+      static_cast<double>(software_auto_exposure_target_) / std::max(brightness, 1.0);
+    const double desired_exposure = static_cast<double>(software_auto_exposure_current_) *
+      std::pow(brightness_ratio, software_auto_exposure_response_);
+    const double limited_exposure = std::clamp(
+      desired_exposure,
+      static_cast<double>(software_auto_exposure_current_) * 0.5,
+      static_cast<double>(software_auto_exposure_current_) * 2.0);
+    int next_exposure = std::clamp(
+      static_cast<int>(std::lround(limited_exposure)),
+      software_auto_exposure_effective_min_, software_auto_exposure_effective_max_);
+    if (next_exposure == software_auto_exposure_current_) {
+      // 四舍五入停滞时至少移动一个控制步长，确保小曝光值也能继续收敛。
+      next_exposure = std::clamp(
+        software_auto_exposure_current_ + (error > 0.0 ? 1 : -1),
+        software_auto_exposure_effective_min_, software_auto_exposure_effective_max_);
+    }
+    if (next_exposure == software_auto_exposure_current_) {
+      RCLCPP_INFO_THROTTLE(
+        get_logger(), *get_clock(), 2000,
+        "Software auto exposure at limit: brightness=%.1f, exposure=%d",
+        brightness, software_auto_exposure_current_);
+      return;
+    }
+
+    if (SetCameraControlValue(
+        V4L2_CID_EXPOSURE_ABSOLUTE, next_exposure,
+        "exposure_time_absolute", false))
+    {
+      software_auto_exposure_current_ = next_exposure;
+      RCLCPP_INFO_THROTTLE(
+        get_logger(), *get_clock(), 2000,
+        "Software auto exposure: brightness=%.1f, exposure=%d",
+        brightness, software_auto_exposure_current_);
+    }
+  }
+
   void ExecutePublishFrame(std::unique_ptr<StereoFrame> frame)
   {
     auto left_info = std::make_unique<sensor_msgs::msg::CameraInfo>(left_info_);
@@ -753,6 +946,7 @@ private:
         }
         // 内核缓冲已立即归还；DDS输出在独立线程中处理。
         if (frame) {
+          ExecuteUpdateSoftwareAutoExposure(*frame);
           ExecuteQueueLatestFrame(std::move(frame));
         }
 
@@ -809,6 +1003,17 @@ private:
   int backlight_compensation_{0};
   int auto_exposure_{V4L2_EXPOSURE_MANUAL};
   int exposure_time_absolute_{10000};
+  bool software_auto_exposure_{false};
+  int software_auto_exposure_target_{105};
+  int software_auto_exposure_min_{10};
+  int software_auto_exposure_max_{0};
+  int software_auto_exposure_deadband_{5};
+  int software_auto_exposure_update_interval_{10};
+  double software_auto_exposure_response_{0.25};
+  int software_auto_exposure_effective_min_{1};
+  int software_auto_exposure_effective_max_{1};
+  int software_auto_exposure_current_{100};
+  uint64_t software_auto_exposure_frame_counter_{0};
   int exposure_dynamic_framerate_{-1};
   int focus_automatic_continuous_{-1};
   int focus_absolute_{-1};

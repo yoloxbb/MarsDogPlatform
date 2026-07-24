@@ -38,8 +38,8 @@ def generate_launch_description():
         ),
         # Prefer YUYV on a real USB 3 link; MJPEG is the 20 FPS fallback on USB 2.
         DeclareLaunchArgument('pixel_format', default_value='YUYV'),
-        DeclareLaunchArgument('image_width', default_value='1280'),
-        DeclareLaunchArgument('image_height', default_value='480'),
+        DeclareLaunchArgument('image_width', default_value='2560'),
+        DeclareLaunchArgument('image_height', default_value='960'),
         DeclareLaunchArgument('framerate', default_value='20'),
         # 0表示发布每一帧原始相机图像，不再进行二次限频。
         DeclareLaunchArgument('publish_framerate', default_value='0'),
@@ -52,19 +52,19 @@ def generate_launch_description():
         # Kalibr录包使用的是第一半幅=左目、第二半幅=右目，运行时必须保持相同顺序。
         DeclareLaunchArgument('swap_left_right', default_value='false'),
         DeclareLaunchArgument('apply_camera_controls', default_value='true'),
-        DeclareLaunchArgument('brightness', default_value='50'),
-        DeclareLaunchArgument('contrast', default_value='50'),
+        DeclareLaunchArgument('brightness', default_value='20'),
+        DeclareLaunchArgument('contrast', default_value='30'),
         DeclareLaunchArgument('saturation', default_value='128'),
         DeclareLaunchArgument('hue', default_value='0'),
         DeclareLaunchArgument(
             'white_balance_automatic', default_value='false'),
         # V4L2 exposure units are 100 us: 100 means 10 ms.
-        DeclareLaunchArgument('exposure_time_absolute', default_value='580'),
+        DeclareLaunchArgument('exposure_time_absolute', default_value='1000'),
         DeclareLaunchArgument('gamma', default_value='120'),
-        DeclareLaunchArgument('gain', default_value='128'),
+        DeclareLaunchArgument('gain', default_value='10'),
         DeclareLaunchArgument('white_balance_temperature', default_value='4650'),
         DeclareLaunchArgument('power_line_frequency', default_value='1'),
-        DeclareLaunchArgument('sharpness', default_value='64'),
+        DeclareLaunchArgument('sharpness', default_value='20'),
         DeclareLaunchArgument('backlight_compensation', default_value='64'),
         # UVC常用值：1=手动曝光，3=自动曝光；具体范围以v4l2-ctl输出为准。
         DeclareLaunchArgument('auto_exposure', default_value='1'),
@@ -72,7 +72,6 @@ def generate_launch_description():
         # Retain the focus position reported by this camera before autofocus is locked.
         DeclareLaunchArgument(
             'focus_automatic_continuous', default_value='0'),
-        DeclareLaunchArgument('focus_absolute', default_value='359'),
         DeclareLaunchArgument('left_image_topic', default_value='/cam0/image_raw'),
         DeclareLaunchArgument('right_image_topic', default_value='/cam1/image_raw'),
         DeclareLaunchArgument('left_info_topic', default_value='/cam0/camera_info'),
@@ -136,7 +135,6 @@ def generate_launch_description():
             # VIO requires fixed intrinsics, so continuous autofocus must stay off.
             'focus_automatic_continuous': int_parameter(
                 'focus_automatic_continuous'),
-            'focus_absolute': int_parameter('focus_absolute'),
             'left_frame_id': LaunchConfiguration('left_frame_id'),
             'right_frame_id': LaunchConfiguration('right_frame_id'),
             'left_camera_info_file': LaunchConfiguration(
