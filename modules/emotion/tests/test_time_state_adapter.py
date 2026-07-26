@@ -60,6 +60,16 @@ class TimeStateAdapterTest(unittest.TestCase):
 
         self.assertEqual(GetTimeStateMessageValue(payload), payload)
 
+    def test_accepts_continuous_midnight_acceleration_events(self):
+        """适配器应接受连续24倍模式的加速步骤和切换事件。"""
+        for eventType in (
+            "TIME_ACCELERATED_STEP",
+            "TIME_ACCELERATION_CHANGED",
+        ):
+            payload = self._GetPayload()
+            payload["event_type"] = eventType
+            self.assertEqual(GetTimeStateMessageValue(payload), payload)
+
     def test_parses_timezone_aware_context_datetime(self):
         """时间字段必须是带时区的 ISO 8601。"""
         payload = self._GetPayload()

@@ -309,11 +309,34 @@ ros2 param set /personality_node C 40
 | `TIME_TICK` | 一个虚拟秒到期 | 是 |
 | `TIME_MODE_CHANGED` | 运行中倍率切换完成；事件名为兼容保留 | 否 |
 | `TIME_TEST_STEP` | 仅凌晨测试使用；一次推进虚拟10分钟 | 是 |
+| `TIME_ACCELERATION_CHANGED` | 每日凌晨加速开始或结束 | 否 |
+| `TIME_ACCELERATED_STEP` | 连续24倍模式的凌晨加速步骤；一次推进虚拟10分钟 | 是 |
 
 生产时间节点的 `tickSequence` 只对 `TIME_TICK` 递增。凌晨测试的
 `tickSequence` 为 `0-36`，消息额外包含 `testScenario`，其中
 `effectiveTimeScale=720` 表示30秒测试的等效压缩率。`timeContext.scale`
 仍保持协议允许的24；时间跳变由 `TIME_TEST_STEP` 明确表达。
+
+统一时间节点启用每日凌晨加速时，`timeContext` 增加：
+
+```json
+{
+  "scale": 24,
+  "effectiveScale": 720.0,
+  "midnightAcceleration": {
+    "enabled": true,
+    "active": true,
+    "durationSeconds": 30.0,
+    "virtualStepSeconds": 600,
+    "stepSequence": 1,
+    "stepCount": 36
+  }
+}
+```
+
+`effectiveScale` 只在加速活动期间为 `21600 / durationSeconds`，06:00后恢复
+24。需求和情绪输出会保留这些字段。`scale` 仍表示基础连续倍率，并保持
+`1-24` 协议范围。
 
 ## 3. 输出 Topic
 
@@ -342,7 +365,9 @@ ros2 param set /personality_node C 40
 | 字段 | 说明 |
 |---|---|
 | `mode` | 兼容显示字段：倍率 `1/2/12` 使用旧名称，其他倍率为 `custom`；不参与计算 |
-| `scale` | 权威虚拟时间倍率，`1-24` 整数 |
+| `scale` | 基础连续虚拟时间倍率，`1-24` 整数 |
+| `effectiveScale` | 可选；启用凌晨加速时表示当前实际推进倍率，非活动阶段等于 `scale` |
+| `midnightAcceleration` | 可选的每日凌晨加速配置、活动状态和步骤进度 |
 | `revision` | 倍率配置修订号，启动为 0，每次实际切换增加 1 |
 | `virtualStartDateTime` | 本次进程的虚拟时间起点，ISO 8601 |
 | `virtualDateTime` | 本条状态或事件对应的虚拟日期时间 |
@@ -674,6 +699,20 @@ ros2 launch marsdog_behavior midnight_test.launch.py \
 测试节点自动发送睡眠开始结果，到达虚拟 `06:00` 后输出
 `Midnight test PASSED/FAILED` 并结束整个 launch。测试结果也会发布到
 `/simulation/midnight_test_result`。
+
+连续联调并在06:00后保持24倍运行：
+
+```bash
+ros2 launch marsdog_behavior internal_need_emotion.launch.py \
+  time_scale:=24 \
+  virtual_start_time:=00:00 \
+  midnight_acceleration_enabled:=true \
+  midnight_duration_seconds:=30 \
+  random_seed:=12345
+```
+
+`midnight_acceleration_enabled=true` 时基础倍率必须为24，运行时也不允许切换到
+其他倍率。该模式不模拟行为结果，外部行为模块需要处理睡眠信号。
 
 运行中切换倍率：
 

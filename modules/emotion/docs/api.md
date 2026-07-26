@@ -226,6 +226,8 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
 - `time_scale`：`1-24` 整数，可在统一时间节点运行时修改。
 - `virtual_start_time`：`auto` 或严格 `HH:MM`。
 - `random_seed`：`-1` 或非负整数。
+- `midnight_acceleration_enabled`：只读 bool；为 `true` 时要求 `time_scale=24`，每天虚拟 `00:00-06:00` 使用离散加速。
+- `midnight_duration_seconds`：只读正数；凌晨六小时使用的真实秒数，默认30。
 
 运行中修改倍率：
 
@@ -237,7 +239,20 @@ ros2 param set /time_controller_node time_scale 24
 以 `/simulation/time_state` 为准。`virtual_start_time` 和 `random_seed` 仍需重启
 后修改。
 
-30 秒运行虚拟 `00:00-06:00` 凌晨流程：
+从00:00连续运行，凌晨30秒加速，06:00后恢复24倍且不退出：
+
+```bash
+ros2 launch marsdog_behavior internal_need_emotion.launch.py \
+  time_scale:=24 virtual_start_time:=00:00 \
+  midnight_acceleration_enabled:=true \
+  midnight_duration_seconds:=30 \
+  random_seed:=12345
+```
+
+该模式每天重复：`00:00-06:00` 使用30秒，其他时段保持连续24倍。同事的
+行为模块仍需在收到睡眠需求后回传 `ACTION_SLEEP + STARTED`。
+
+只独立验收凌晨流程并在06:00自动退出：
 
 ```bash
 ros2 launch marsdog_behavior midnight_test.launch.py \

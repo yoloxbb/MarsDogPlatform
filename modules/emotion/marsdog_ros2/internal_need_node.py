@@ -144,7 +144,11 @@ class InternalNeedNode(Node):
                 virtualStartDateTime,
                 virtualDateTime,
             )
-        if eventType in {"TIME_TICK", "TIME_TEST_STEP"}:
+        if eventType in {
+            "TIME_TICK",
+            "TIME_TEST_STEP",
+            "TIME_ACCELERATED_STEP",
+        }:
             self.UpdateDemandTick(virtualDateTime)
 
     def UpdateDemandTick(self, virtualNow: datetime | None = None) -> None:
@@ -168,7 +172,12 @@ class InternalNeedNode(Node):
         if eventType != "TIME_INITIALIZED":
             self.demandTickScheduler.AlignToDateTimeValue(
                 virtualDateTime,
-                includeCurrent=eventType in {"TIME_TICK", "TIME_TEST_STEP"},
+                includeCurrent=eventType
+                in {
+                    "TIME_TICK",
+                    "TIME_TEST_STEP",
+                    "TIME_ACCELERATED_STEP",
+                },
             )
         if self._IsMorningStart(virtualStartDateTime):
             resetKey = self.system.GetMorningResetKey(virtualStartDateTime)

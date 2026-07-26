@@ -40,6 +40,20 @@ ros2 launch marsdog_behavior midnight_test.launch.py \
 该测试使用36个虚拟10分钟离散步骤，并自动回传一次
 `ACTION_SLEEP + STARTED`。生产 `time_scale` 的 `1-24` 限制不变。
 
+与外部行为模块连续联调时，使用统一时间节点的每日凌晨加速：
+
+```bash
+ros2 launch marsdog_behavior internal_need_emotion.launch.py \
+  time_scale:=24 virtual_start_time:=00:00 \
+  midnight_acceleration_enabled:=true \
+  midnight_duration_seconds:=30 \
+  random_seed:=12345
+```
+
+该模式不会自动回传睡眠行为，也不会在06:00退出。行为模块收到
+`NEED_SLEEPINESS_TRIGGERED` 后需要及时发布 `ACTION_SLEEP + STARTED`；
+06:00需求系统自动醒来，时间节点继续按24倍推进，并在下一天00:00再次加速。
+
 ## 2. Topic
 
 ### 2.1 输入
@@ -239,7 +253,7 @@ NEED_<DEMAND>_RECOVERED
 UpdateNaturalDemandsByTime()
 ```
 
-`time_scale` 允许 `1-24` 的整数。需求 Tick 真实周期为
+未启用凌晨特殊加速时，`time_scale` 允许 `1-24` 的整数。需求 Tick 真实周期为
 `600 / time_scale` 秒，完整虚拟 24 小时的真实耗时为
 `24 / time_scale` 小时。情绪状态仍跟随虚拟秒发布，但情绪自然衰减独立按
 真实时间 1 Hz 执行。
@@ -438,8 +452,9 @@ ros2 param set /time_controller_node time_scale 24
 `virtualDateTime`、需求值、情绪值和睡眠状态均不重置。需求与情绪节点只接受
 `/simulation/time_state` 的倍率变化，不允许分别修改本地参数。
 
-`timeContext.scale` 是计算使用的权威倍率。兼容字段 `mode` 在倍率 `1/2/12`
+`timeContext.scale` 是基础连续倍率。兼容字段 `mode` 在倍率 `1/2/12`
 时分别为 `standard_24h / demo_12h / demo_2h`，其他倍率为 `custom`，不参与计算。
+凌晨加速期间以权威 `virtualDateTime` 跳步，并通过 `effectiveScale` 表示实际速度。
 
 固定随机种子只影响晨起随机值和情绪随机增量：
 

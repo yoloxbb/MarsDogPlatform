@@ -12,9 +12,19 @@ def generate_launch_description() -> LaunchDescription:
     timeScale = ParameterValue(LaunchConfiguration("time_scale"), value_type=int)
     virtualStartTime = LaunchConfiguration("virtual_start_time")
     randomSeed = ParameterValue(LaunchConfiguration("random_seed"), value_type=int)
+    midnightAccelerationEnabled = ParameterValue(
+        LaunchConfiguration("midnight_acceleration_enabled"),
+        value_type=bool,
+    )
+    midnightDurationSeconds = ParameterValue(
+        LaunchConfiguration("midnight_duration_seconds"),
+        value_type=float,
+    )
     timeControllerParameters = {
         "time_scale": timeScale,
         "virtual_start_time": virtualStartTime,
+        "midnight_acceleration_enabled": midnightAccelerationEnabled,
+        "midnight_duration_seconds": midnightDurationSeconds,
     }
     calculationTimeParameters = {
         "time_scale": timeScale,
@@ -37,6 +47,16 @@ def generate_launch_description() -> LaunchDescription:
                 "random_seed",
                 default_value="-1",
                 description="Random seed: -1 or a non-negative integer",
+            ),
+            DeclareLaunchArgument(
+                "midnight_acceleration_enabled",
+                default_value="false",
+                description="Accelerate every virtual 00:00-06:00 window",
+            ),
+            DeclareLaunchArgument(
+                "midnight_duration_seconds",
+                default_value="30.0",
+                description="Real seconds used for virtual 00:00-06:00",
             ),
             Node(
                 package="marsdog_behavior",

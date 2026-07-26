@@ -153,7 +153,10 @@ class EmotionEngineNode(Node):
             )
         if eventType == "TIME_TICK":
             self.Tick(virtualDateTime)
-        elif eventType == "TIME_TEST_STEP":
+        elif eventType in {
+            "TIME_TEST_STEP",
+            "TIME_ACCELERATED_STEP",
+        }:
             self.TickTestScenarioStep(virtualDateTime)
 
     def Tick(self, virtualNow: datetime | None = None) -> None:

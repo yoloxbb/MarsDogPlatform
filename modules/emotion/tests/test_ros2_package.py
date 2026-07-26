@@ -47,6 +47,8 @@ class Ros2PackageTest(unittest.TestCase):
         self.assertNotIn('"time_mode"', launchText)
         self.assertIn('"virtual_start_time"', launchText)
         self.assertIn('"random_seed"', launchText)
+        self.assertIn('"midnight_acceleration_enabled"', launchText)
+        self.assertIn('"midnight_duration_seconds"', launchText)
 
     def test_midnight_test_launch_uses_discrete_test_time_source(self):
         """凌晨测试 launch 应在30秒内离散推进并自动完成睡眠握手。"""
@@ -76,6 +78,9 @@ class Ros2PackageTest(unittest.TestCase):
         self.assertIn('"time_scale"', timeNodeText)
         self.assertIn("IntegerRange(from_value=1, to_value=24, step=1)", timeNodeText)
         self.assertNotIn('"time_mode"', timeNodeText)
+        self.assertIn('"midnight_acceleration_enabled"', timeNodeText)
+        self.assertIn('"midnight_duration_seconds"', timeNodeText)
+        self.assertIn('"TIME_ACCELERATED_STEP"', timeNodeText)
 
     def test_calculation_nodes_consume_authoritative_time_topic(self):
         """计算节点应消费统一时间 Topic，情绪衰减另用真实时间定时器。"""

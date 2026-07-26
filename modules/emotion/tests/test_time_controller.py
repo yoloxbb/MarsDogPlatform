@@ -129,6 +129,38 @@ class TimeControllerTest(unittest.TestCase):
         self.assertTrue(controller.SetTimeScaleValue(7))
         self.assertEqual(controller.GetTimeRevisionValue(), 0)
 
+    def test_virtual_time_can_anchor_at_accelerated_midnight_steps(self):
+        """凌晨离散步骤结束后应从06:00继续按24倍推进。"""
+        controller, clock = self._CreateController(24, "00:00")
+        start = controller.GetVirtualStartDateTimeValue()
+
+        for stepSequence in range(1, 37):
+            controller.SetVirtualDateTimeValue(
+                start + timedelta(minutes=10 * stepSequence)
+            )
+
+        self.assertEqual(
+            controller.GetVirtualDateTimeValue(),
+            start + timedelta(hours=6),
+        )
+        self.assertEqual(controller.GetTimeRevisionValue(), 0)
+
+        clock.Advance(1.0)
+        self.assertEqual(
+            controller.GetVirtualDateTimeValue(),
+            start + timedelta(hours=6, seconds=24),
+        )
+
+    def test_virtual_time_anchor_rejects_time_before_start(self):
+        """离散时间锚点不得早于本次虚拟起点。"""
+        controller, _ = self._CreateController(24, "00:00")
+
+        with self.assertRaises(ValueError):
+            controller.SetVirtualDateTimeValue(
+                controller.GetVirtualStartDateTimeValue()
+                - timedelta(seconds=1)
+            )
+
     def test_remote_time_context_synchronizes_scale_and_anchor(self):
         """计算节点应只按权威 scale 和时间字段对齐本地时钟。"""
         source, sourceClock = self._CreateController(1)
@@ -147,6 +179,43 @@ class TimeControllerTest(unittest.TestCase):
             target.GetVirtualDateTimeValue().isoformat(),
             sourceContext["virtualDateTime"],
         )
+
+    def test_remote_time_context_preserves_acceleration_metadata(self):
+        """计算节点应在状态输出中保留凌晨有效倍率上下文。"""
+        source, _ = self._CreateController(24, "00:00")
+        target, _ = self._CreateController(24, "00:00")
+        context = source.GetTimeContextValue()
+        context["effectiveScale"] = 720.0
+        context["midnightAcceleration"] = {
+            "enabled": True,
+            "active": True,
+            "durationSeconds": 30.0,
+        }
+
+        self.assertTrue(target.SetTimeContextValue(context))
+
+        synchronizedContext = target.GetTimeContextValue()
+        self.assertEqual(synchronizedContext["scale"], 24)
+        self.assertEqual(synchronizedContext["effectiveScale"], 720.0)
+        self.assertTrue(
+            synchronizedContext["midnightAcceleration"]["active"]
+        )
+
+    def test_invalid_acceleration_context_is_rejected(self):
+        """有效倍率和凌晨加速上下文字段必须使用合法类型。"""
+        source, _ = self._CreateController(24, "00:00")
+        target, _ = self._CreateController(24, "00:00")
+
+        for invalidScale in (0, -1, True, "720"):
+            context = source.GetTimeContextValue()
+            context["effectiveScale"] = invalidScale
+            with self.assertRaises(ValueError):
+                target.SetTimeContextValue(context)
+
+        context = source.GetTimeContextValue()
+        context["midnightAcceleration"] = True
+        with self.assertRaises(ValueError):
+            target.SetTimeContextValue(context)
 
     def test_auto_start_rules(self):
         """1 倍跟随真实时间，2-24 倍默认从本地 06:00 开始。"""

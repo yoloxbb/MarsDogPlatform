@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import time
+from copy import deepcopy
 from datetime import datetime, timedelta
 from math import floor, isfinite
 from typing import Callable
@@ -41,6 +42,7 @@ class MarsdogTimeController:
         )
         self._virtualAnchorDateTime = self._virtualStartDateTime
         self._timeRevision = 0
+        self._timeContextMetadata: dict[str, object] = {}
 
     def GetTimeScaleValue(self) -> int:
         """获取当前虚拟时间倍率。"""
@@ -86,6 +88,20 @@ class MarsdogTimeController:
         self._timeRevision += 1
         return True
 
+    def SetVirtualDateTimeValue(self, virtualDateTime: object) -> bool:
+        """把当前虚拟时间连续锚定到指定带时区时间。"""
+        normalizedDateTime = self._NormalizeDateTimeValue(
+            virtualDateTime,
+            "virtualDateTime",
+        )
+        if normalizedDateTime < self._virtualStartDateTime:
+            raise ValueError("virtualDateTime must not precede virtualStartDateTime")
+
+        # 测试加速步骤只重建当前时间锚点，不修改倍率、起点和 revision。
+        self._virtualAnchorDateTime = normalizedDateTime
+        self._monotonicAnchor = float(self._monotonicProvider())
+        return True
+
     def SetTimeContextValue(self, timeContext: dict[str, object]) -> bool:
         """使用权威时间节点的上下文同步本地虚拟时钟。"""
         if not isinstance(timeContext, dict):
@@ -107,12 +123,16 @@ class MarsdogTimeController:
         revision = int(timeContext.get("revision", 0))
         if revision < 0:
             raise ValueError("timeContext revision must be non-negative")
+        normalizedMetadata = self._NormalizeTimeContextMetadataValue(
+            timeContext
+        )
 
         self._timeScale = normalizedScale
         self._virtualStartDateTime = startDateTime
         self._virtualAnchorDateTime = currentDateTime
         self._monotonicAnchor = float(self._monotonicProvider())
         self._timeRevision = revision
+        self._timeContextMetadata = normalizedMetadata
         return True
 
     def GetTimeContextValue(
@@ -126,7 +146,7 @@ class MarsdogTimeController:
             0.0,
             (currentVirtualTime - self._virtualStartDateTime).total_seconds(),
         )
-        return {
+        result = {
             "mode": TIME_SCALE_MODE_LABELS.get(self._timeScale, "custom"),
             "scale": self._timeScale,
             "revision": self._timeRevision,
@@ -138,6 +158,8 @@ class MarsdogTimeController:
                 self._wallTimeProvider() if wallTimestamp is None else wallTimestamp
             ),
         }
+        result.update(deepcopy(self._timeContextMetadata))
+        return result
 
     def _GetVirtualElapsedSecondsValue(self) -> float:
         """按单调时钟计算已经经过的虚拟秒数。"""
@@ -195,6 +217,29 @@ class MarsdogTimeController:
             second=0,
             microsecond=0,
         )
+
+    def _NormalizeTimeContextMetadataValue(
+        self,
+        timeContext: dict[str, object],
+    ) -> dict[str, object]:
+        """校验并复制可选的动态加速时间上下文字段。"""
+        metadata: dict[str, object] = {}
+        if "effectiveScale" in timeContext:
+            effectiveScale = timeContext["effectiveScale"]
+            if (
+                isinstance(effectiveScale, bool)
+                or not isinstance(effectiveScale, (int, float))
+                or float(effectiveScale) <= 0
+            ):
+                raise ValueError("effectiveScale must be a positive number")
+            metadata["effectiveScale"] = float(effectiveScale)
+
+        if "midnightAcceleration" in timeContext:
+            acceleration = timeContext["midnightAcceleration"]
+            if not isinstance(acceleration, dict):
+                raise ValueError("midnightAcceleration must be an object")
+            metadata["midnightAcceleration"] = deepcopy(acceleration)
+        return metadata
 
 
 class VirtualTickScheduler:

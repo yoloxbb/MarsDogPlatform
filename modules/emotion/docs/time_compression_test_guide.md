@@ -4,7 +4,7 @@
 
 ## 1. 时间倍率
 
-`time_scale` 接受 `1-24` 的整数。完整虚拟 24 小时所需真实时间为
+未启用凌晨特殊加速时，`time_scale` 接受 `1-24` 的整数。完整虚拟24小时所需真实时间为
 `24 / time_scale` 小时，需求 Tick 真实周期为 `600 / time_scale` 秒，
 情绪状态发布真实频率为 `time_scale` Hz；情绪自然衰减固定为真实时间 1 Hz。
 
@@ -59,11 +59,54 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
 | `time_scale` | `1-24` 整数 | 初始值由 launch 设置；运行中通过时间控制节点修改 |
 | `virtual_start_time` | `auto` 或 `HH:MM` | 1 倍 `auto` 从当前时间开始；2-24 倍从当天 06:00 开始 |
 | `random_seed` | `-1` 或非负整数 | `-1` 随机；固定值可重复 |
+| `midnight_acceleration_enabled` | `true/false` | 仅24倍模式；每天00:00-06:00是否使用离散加速 |
+| `midnight_duration_seconds` | 正数 | 每次虚拟凌晨六小时使用的真实秒数，默认30 |
 
 非法倍率、非法时间和小于 `-1` 的种子会拒绝启动。完整一天验收必须从
 `06:00` 开始；任意其他起点不会回放此前时段。
 
-### 2.1 30秒凌晨场景
+### 2.1 连续24倍联调中的每日凌晨30秒加速
+
+```bash
+ros2 launch marsdog_behavior internal_need_emotion.launch.py \
+  time_scale:=24 \
+  virtual_start_time:=00:00 \
+  midnight_acceleration_enabled:=true \
+  midnight_duration_seconds:=30 \
+  random_seed:=12345
+```
+
+时间流程：
+
+```text
+当天 00:00 → 用30秒到06:00
+当天 06:00 → 恢复连续24倍
+次日 00:00 → 再次用30秒到06:00
+```
+
+外部行为模块收到 `NEED_SLEEPINESS_TRIGGERED` 后应发布：
+
+```json
+{
+  "event_id": "sleep-start-001",
+  "action_type": "ACTION_SLEEP",
+  "demand_type": "Sleepiness",
+  "result_type": "STARTED",
+  "metadata": {}
+}
+```
+
+该模式不会在06:00退出。一个完整虚拟日的真实耗时约为：
+
+```text
+凌晨30秒 + 其余18小时/24倍 = 45分30秒
+```
+
+加速期间 `timeContext.scale=24`、`effectiveScale=720`、
+`midnightAcceleration.active=true`；06:00后 `effectiveScale=24`、
+`active=false`。
+
+### 2.2 独立30秒凌晨场景
 
 只测试虚拟 `00:00-06:00` 的需求锁定、睡眠恢复和晨起重置：
 
@@ -88,7 +131,7 @@ ros2 launch marsdog_behavior midnight_test.launch.py \
 该场景使用测试专用 `TIME_TEST_STEP`，不修改生产 `time_scale=1-24` 限制，
 也不会让情绪节点回放21600条中间状态。情绪自然衰减只按实际经过的30秒计算。
 
-### 2.2 运行中切换倍率
+### 2.3 运行中切换倍率
 
 节点运行期间可执行：
 

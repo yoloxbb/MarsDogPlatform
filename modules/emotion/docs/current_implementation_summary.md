@@ -465,14 +465,30 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
   time_scale:=24 virtual_start_time:=06:00 random_seed:=12345
 ```
 
-`time_scale` 允许 `1-24` 的整数。需求 Tick 真实周期为
+未启用凌晨特殊加速时，`time_scale` 允许 `1-24` 的整数。需求 Tick 真实周期为
 `600 / time_scale` 秒，情绪状态真实发布频率为 `time_scale` Hz，完整虚拟一天
 真实耗时为 `24 / time_scale` 小时。情绪自然衰减固定按真实时间 1 Hz 执行，
 不随倍率变化。
-`timeContext.scale` 是权威倍率；`mode` 只保留旧倍率名称或输出 `custom`，
-不参与计算。
+`timeContext.scale` 是基础连续倍率；`mode` 只保留旧倍率名称或输出 `custom`，
+不参与计算。凌晨加速期间实际推进速度读取 `effectiveScale`。
 
-凌晨睡眠流程可单独压缩为30秒：
+连续24倍运行可选每日凌晨加速：
+
+```bash
+ros2 launch marsdog_behavior internal_need_emotion.launch.py \
+  time_scale:=24 virtual_start_time:=00:00 \
+  midnight_acceleration_enabled:=true \
+  midnight_duration_seconds:=30 \
+  random_seed:=12345
+```
+
+- 每天虚拟 `00:00-06:00` 用36个虚拟10分钟步骤在30秒内走完。
+- `06:00` 后同一时间节点恢复连续24倍，不退出、不重置情绪或行为结果状态。
+- 下一天到达 `00:00` 后自动再次进入30秒凌晨加速。
+- `timeContext.scale` 保持24；加速期间 `effectiveScale=720`，结束后恢复24。
+- 需求节点仍逐虚拟10分钟结算；情绪自然衰减仍按真实时间1 Hz。
+
+凌晨睡眠流程也可单独压缩为30秒并在06:00结束：
 
 ```bash
 ros2 launch marsdog_behavior midnight_test.launch.py \
