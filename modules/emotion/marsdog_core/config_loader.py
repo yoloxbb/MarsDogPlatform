@@ -54,7 +54,7 @@ def _GetDefaultConfigDir() -> Path:
         from ament_index_python.packages import get_package_share_directory
     except ModuleNotFoundError:
         return DEFAULT_CONFIG_DIR
-    return Path(get_package_share_directory("marsdog_behavior")) / "configs"
+    return Path(get_package_share_directory("marsdog_need_emotion")) / "configs"
 
 
 def _LoadYamlCompatibleText(text: str) -> dict[str, Any]:

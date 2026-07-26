@@ -5,7 +5,7 @@ from glob import glob
 from setuptools import find_packages, setup
 
 
-PACKAGE_NAME = "marsdog_behavior"
+PACKAGE_NAME = "marsdog_need_emotion"
 
 
 setup(

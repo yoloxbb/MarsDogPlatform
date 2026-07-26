@@ -29,7 +29,7 @@ def generate_launch_description() -> LaunchDescription:
         "random_seed": randomSeed,
     }
     scenarioNode = Node(
-        package="marsdog_behavior",
+        package="marsdog_need_emotion",
         executable="midnight_test_node",
         name="midnight_test_node",
         output="screen",
@@ -64,20 +64,20 @@ def generate_launch_description() -> LaunchDescription:
                 description="Random seed used by calculation nodes",
             ),
             Node(
-                package="marsdog_behavior",
+                package="marsdog_need_emotion",
                 executable="personality_node",
                 name="personality_node",
                 output="screen",
             ),
             Node(
-                package="marsdog_behavior",
+                package="marsdog_need_emotion",
                 executable="internal_need_node",
                 name="internal_need_node",
                 output="screen",
                 parameters=[calculationParameters],
             ),
             Node(
-                package="marsdog_behavior",
+                package="marsdog_need_emotion",
                 executable="emotion_engine_node",
                 name="emotion_engine_node",
                 output="screen",

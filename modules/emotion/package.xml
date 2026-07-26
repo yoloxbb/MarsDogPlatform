@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>marsdog_behavior</name>
+  <name>marsdog_need_emotion</name>
   <version>0.1.0</version>
   <description>Marsdog internal need and emotion calculation nodes.</description>
 
