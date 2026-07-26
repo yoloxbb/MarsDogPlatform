@@ -178,7 +178,7 @@ class MarsdogNeedSystem(
         return self.SetDemandValue(DemandType.CLEANLINESS, oldValue - recovery)
 
     def _ApplyRechargeCompleted(self, metadata: dict[str, Any]) -> bool:
-        """结算充电完成后的精力值变化。"""
+        """把充电完成后的电量百分比转换为 Energy 需求值。"""
         value = metadata.get("energyValue", metadata.get("energy_value", metadata.get("batteryValue")))
         if value is None:
             value = self.configs.get("demands", {}).get(DemandType.ENERGY.value, {}).get("rechargeTarget", 100)
@@ -186,7 +186,7 @@ class MarsdogNeedSystem(
             energyValue = int(value)
         except (TypeError, ValueError):
             return False
-        return self.SetDemandValue(DemandType.ENERGY, energyValue)
+        return self.SetEnergyBatteryValue(energyValue)
 
     def _ApplySocialCompleted(self, metadata: dict[str, Any]) -> bool:
         """根据社交结果结算 Social。"""

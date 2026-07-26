@@ -27,7 +27,7 @@ class DemandAPITest(unittest.TestCase):
         system = MarsdogNeedSystem()
 
         system.SetDemandValue("Hunger", 71)
-        system.SetDemandValue("Energy", 19)
+        system.SetDemandValue("Energy", 81)
 
         self.assertTrue(system.IsDemandUrgent("Hunger"))
         self.assertTrue(system.IsDemandUrgent("Energy"))
@@ -40,6 +40,17 @@ class DemandAPITest(unittest.TestCase):
 
         self.assertEqual(system.GetMostUrgentDemand(), "Exploration")
 
+    def test_get_most_urgent_demand_excludes_non_triggered_values(self):
+        """原始值较大但未触发的需求不应参与紧迫度比较。"""
+        system = MarsdogNeedSystem()
+        system.SetDemandValue("Hunger", 71)
+        system.SetDemandValue("Energy", 80)
+
+        self.assertEqual(system.GetMostUrgentDemand(), "Hunger")
+
+        system.SetDemandValue("Energy", 95)
+        self.assertEqual(system.GetMostUrgentDemand(), "Energy")
+
     def test_get_demand_level_value(self):
         """需求等级应按普通、触发、满溢三档计算。"""
         system = MarsdogNeedSystem()
@@ -51,15 +62,17 @@ class DemandAPITest(unittest.TestCase):
         system.SetDemandValue("Hunger", 91)
         self.assertEqual(system.GetDemandLevelValue("Hunger")["level"], "OVERFLOW")
 
-    def test_get_demand_level_value_supports_low_value_demands(self):
-        """Energy 这类低值触发需求也应正确计算等级。"""
+    def test_get_demand_level_value_supports_energy_deficit(self):
+        """Energy 应按高充电需求值计算等级。"""
         system = MarsdogNeedSystem()
 
-        system.SetDemandValue("Energy", 20)
+        system.SetDemandValue("Energy", 80)
         self.assertEqual(system.GetDemandLevelValue("Energy")["level"], "NORMAL")
-        system.SetDemandValue("Energy", 19)
+        system.SetDemandValue("Energy", 81)
         self.assertEqual(system.GetDemandLevelValue("Energy")["level"], "TRIGGERED")
-        system.SetDemandValue("Energy", 9)
+        system.SetDemandValue("Energy", 90)
+        self.assertEqual(system.GetDemandLevelValue("Energy")["level"], "TRIGGERED")
+        system.SetDemandValue("Energy", 91)
         self.assertEqual(system.GetDemandLevelValue("Energy")["level"], "OVERFLOW")
 
     def test_demand_signal_events_emit_only_on_level_change(self):

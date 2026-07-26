@@ -28,6 +28,7 @@ setup(
     entry_points={
         "console_scripts": [
             "time_controller_node = marsdog_ros2.time_controller_node:main",
+            "midnight_test_node = marsdog_ros2.midnight_test_node:main",
             "internal_need_node = marsdog_ros2.internal_need_node:main",
             "emotion_engine_node = marsdog_ros2.emotion_engine_node:main",
             "personality_node = marsdog_ros2.personality_node:main",

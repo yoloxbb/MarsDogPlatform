@@ -1,10 +1,11 @@
-"""时间压缩测试使用的虚拟时钟与 Tick 调度器。"""
+"""时间压缩使用的虚拟时钟及虚拟、真实 Tick 调度器。"""
 
 from __future__ import annotations
 
 import re
 import time
 from datetime import datetime, timedelta
+from math import floor, isfinite
 from typing import Callable
 
 from .types import NormalizeTimeScaleValue
@@ -241,3 +242,40 @@ class VirtualTickScheduler:
         else:
             self._nextTickDateTime = candidate + self._interval
         return self._nextTickDateTime
+
+
+class RealTimeTickScheduler:
+    """按单调真实时间计算应补算的固定间隔 Tick 数量。"""
+
+    def __init__(self, startSeconds: float, intervalSeconds: float = 1.0) -> None:
+        """从指定单调时间后的第一个间隔开始调度。"""
+        start = float(startSeconds)
+        interval = float(intervalSeconds)
+        if not isfinite(start):
+            raise ValueError("Real-time scheduler start must be finite")
+        if not isfinite(interval) or interval <= 0:
+            raise ValueError(
+                "Real-time Tick interval must be finite and greater than zero"
+            )
+        self._intervalSeconds = interval
+        self._nextTickSeconds = start + interval
+
+    def GetDueTickCountValue(self, currentSeconds: float) -> int:
+        """获取并消费截至当前单调时间全部到期 Tick。"""
+        current = float(currentSeconds)
+        if not isfinite(current):
+            raise ValueError("Current monotonic time must be finite")
+
+        # 浮点累加可能略小于整数边界，加入极小容差避免漏掉到期 Tick。
+        tolerance = min(1e-9, self._intervalSeconds * 1e-9)
+        if current + tolerance < self._nextTickSeconds:
+            return 0
+        dueTickCount = floor(
+            (current - self._nextTickSeconds + tolerance) / self._intervalSeconds
+        ) + 1
+        self._nextTickSeconds += dueTickCount * self._intervalSeconds
+        return dueTickCount
+
+    def GetNextTickSecondsValue(self) -> float:
+        """获取下一次尚未消费的单调时间 Tick。"""
+        return self._nextTickSeconds

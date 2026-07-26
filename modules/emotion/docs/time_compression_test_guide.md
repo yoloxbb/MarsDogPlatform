@@ -6,16 +6,17 @@
 
 `time_scale` 接受 `1-24` 的整数。完整虚拟 24 小时所需真实时间为
 `24 / time_scale` 小时，需求 Tick 真实周期为 `600 / time_scale` 秒，
-情绪更新真实频率为 `time_scale` Hz。
+情绪状态发布真实频率为 `time_scale` Hz；情绪自然衰减固定为真实时间 1 Hz。
 
-| 倍率 | 虚拟 24 小时所需真实时间 | 需求 Tick | 情绪更新 |
-|---:|---:|---:|---:|
-| 1 | 24 小时 | 每 600 秒 | 1 Hz |
-| 7 | 约 3 小时 25 分 43 秒 | 约每 85.71 秒 | 7 Hz |
-| 12 | 2 小时 | 每 50 秒 | 12 Hz |
-| 24 | 1 小时 | 每 25 秒 | 24 Hz |
+| 倍率 | 虚拟 24 小时所需真实时间 | 需求 Tick | 情绪状态发布 | 情绪衰减 |
+|---:|---:|---:|---:|---:|
+| 1 | 24 小时 | 每 600 秒 | 1 Hz | 真实时间 1 Hz |
+| 7 | 约 3 小时 25 分 43 秒 | 约每 85.71 秒 | 7 Hz | 真实时间 1 Hz |
+| 12 | 2 小时 | 每 50 秒 | 12 Hz | 真实时间 1 Hz |
+| 24 | 1 小时 | 每 25 秒 | 24 Hz | 真实时间 1 Hz |
 
-时间倍率只影响需求自然更新、睡眠恢复和情绪自然衰减。感知事件与
+时间倍率只影响需求自然更新、睡眠恢复和情绪状态发布时间线，不影响情绪自然
+衰减。感知事件与
 `/behavior/result_event` 仍在真实收到消息时立即处理，不会自动生成或压缩。
 
 ## 2. 启动
@@ -62,7 +63,32 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
 非法倍率、非法时间和小于 `-1` 的种子会拒绝启动。完整一天验收必须从
 `06:00` 开始；任意其他起点不会回放此前时段。
 
-### 2.1 运行中切换倍率
+### 2.1 30秒凌晨场景
+
+只测试虚拟 `00:00-06:00` 的需求锁定、睡眠恢复和晨起重置：
+
+```bash
+ros2 launch marsdog_behavior midnight_test.launch.py \
+  scenario_duration_seconds:=30 \
+  completion_hold_seconds:=2 \
+  auto_start_sleep:=true \
+  random_seed:=12345
+```
+
+测试时间源会执行36个虚拟10分钟步骤，每步约使用 `0.833` 秒真实时间。首次
+出现 `NEED_SLEEPINESS_TRIGGERED` 时自动发布 `ACTION_SLEEP + STARTED`。
+虚拟时间到达 `06:00` 后：
+
+- 检查是否成功发送睡眠开始结果；
+- 检查过程中是否实际进入过睡眠；
+- 检查晨起重置后是否已经醒来；
+- 输出 `Midnight test PASSED/FAILED`；
+- 等待 `completion_hold_seconds` 后自动退出整个 launch。
+
+该场景使用测试专用 `TIME_TEST_STEP`，不修改生产 `time_scale=1-24` 限制，
+也不会让情绪节点回放21600条中间状态。情绪自然衰减只按实际经过的30秒计算。
+
+### 2.2 运行中切换倍率
 
 节点运行期间可执行：
 
@@ -86,6 +112,7 @@ ros2 topic echo /internal_need/signal_event --field data --full-length
 ros2 topic echo /emotion/state --field data --full-length
 ros2 topic echo /emotion/signal_event --field data --full-length
 ros2 topic echo /simulation/time_state --field data --full-length
+ros2 topic echo /simulation/midnight_test_result --field data --full-length
 ```
 
 四类消息均包含：
@@ -141,9 +168,10 @@ ros2 topic pub --once /behavior/result_event std_msgs/msg/String \
 | 倍率 | 四类消息的 `scale` 与启动参数一致；`mode` 仅为兼容显示字段 |
 | 动态切换 | `revision` 递增，虚拟时间连续，需求/情绪/睡眠状态不重置 |
 | 起点 | 固定为虚拟 06:00，晨起需求已初始化 |
+| Energy | 晨起满电时 `Energy=0`；电量低于 20%/10% 时进入触发/满溢 |
 | 需求 Tick | 真实周期符合 `600 / time_scale` 秒 |
 | Tick 补算 | 节点短暂延迟后数值不丢增长 Tick |
-| 情绪衰减 | 每虚拟秒衰减，区间事件顺序完整 |
+| 情绪衰减 | 倍率 `1/7/24` 下相同真实时间的衰减一致，区间事件顺序完整 |
 | 需求事件 | `state.levelEvents[demand]` 与 signal 的 `event_type` 一致 |
 | 情绪事件 | `state.levelEvents[emotion]` 与 signal 的 `event_type` 一致 |
 | 睡眠 | 即时响应睡眠信号时，约清醒 6 小时 40-50 分，约 5 次睡眠会话 |

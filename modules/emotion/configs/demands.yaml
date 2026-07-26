@@ -106,12 +106,12 @@
       "groomRecovery": 50
     },
     "Energy": {
-      "chineseName": "精力值",
+      "chineseName": "充电需求值",
       "range": [0, 100],
-      "morningInitialValue": 100,
-      "urgentThreshold": 20,
-      "urgentOperator": "lt",
-      "overflowThreshold": 10,
+      "morningInitialValue": 0,
+      "urgentThreshold": 80,
+      "urgentOperator": "gt",
+      "overflowThreshold": 90,
       "rechargeTarget": 100
     },
     "Social": {
@@ -144,10 +144,10 @@
       "overflowThreshold": 80,
       "growthRules": [
         {
-          "name": "白天且精力充足",
+          "name": "白天且电量充足",
           "startHour": 6,
           "endHour": 21,
-          "energyOperator": "gt",
+          "energyOperator": "lt",
           "energyThreshold": 50,
           "delta": 5
         },

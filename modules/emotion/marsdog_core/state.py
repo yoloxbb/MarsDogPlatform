@@ -21,7 +21,7 @@ def GetDefaultDemands() -> dict[str, int]:
         DemandType.BLADDER.value: 0,
         DemandType.SLEEPINESS.value: 15,
         DemandType.CLEANLINESS.value: 10,
-        DemandType.ENERGY.value: 100,
+        DemandType.ENERGY.value: 0,
         DemandType.SOCIAL.value: 20,
         DemandType.EXPLORATION.value: 10,
     }

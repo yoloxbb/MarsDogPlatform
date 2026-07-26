@@ -30,6 +30,16 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
   time_scale:=24 virtual_start_time:=06:00 random_seed:=12345
 ```
 
+只测试凌晨睡眠和晨起重置时，可在30秒内运行虚拟 `00:00-06:00`：
+
+```bash
+ros2 launch marsdog_behavior midnight_test.launch.py \
+  scenario_duration_seconds:=30 random_seed:=12345
+```
+
+该测试使用36个虚拟10分钟离散步骤，并自动回传一次
+`ACTION_SLEEP + STARTED`。生产 `time_scale` 的 `1-24` 限制不变。
+
 ## 2. Topic
 
 ### 2.1 输入
@@ -117,7 +127,7 @@ ros2 param set /personality_node C 40
 | `Bladder` | 排泄 | 越高越需要排泄 |
 | `Sleepiness` | 困倦 | 越高越困 |
 | `Cleanliness` | 清洁 | 越高越脏，越需要清洁 |
-| `Energy` | 精力/电量 | 越低越需要充电 |
+| `Energy` | 充电需求/电量缺口 | `100 - 当前电量百分比`，越高越需要充电 |
 | `Social` | 社交 | 越高越想社交 |
 | `Exploration` | 探索 | 越高越想探索 |
 
@@ -231,7 +241,8 @@ UpdateNaturalDemandsByTime()
 
 `time_scale` 允许 `1-24` 的整数。需求 Tick 真实周期为
 `600 / time_scale` 秒，完整虚拟 24 小时的真实耗时为
-`24 / time_scale` 小时。
+`24 / time_scale` 小时。情绪状态仍跟随虚拟秒发布，但情绪自然衰减独立按
+真实时间 1 Hz 执行。
 
 虚拟时间按以下公式计算：
 
@@ -307,13 +318,13 @@ virtualDateTime = virtualStartDateTime + monotonicElapsedSeconds * scale
 
 ### Energy
 
-- 当前值等于电量百分比。
-- 晨起：`100`。
-- 触发：`<20`。
-- 满溢：`<10`。
+- `Energy = 100 - 当前电量百分比`。
+- 晨起满电：`Energy = 0`。
+- 触发：`>80`，等价于电量 `<20%`。
+- 满溢：`>90`，等价于电量 `<10%`。
 - `ACTION_RECHARGE + COMPLETED`：
-  - 有 `metadata.energyValue` 时写入该值。
-  - 没有时写入 `100`。
+  - `metadata.energyValue` 表示电量百分比，保存时写入 `100 - energyValue`。
+  - 没有 metadata 时使用目标电量 `100%`，写入 `Energy = 0`。
 
 ### Social
 
@@ -334,7 +345,7 @@ virtualDateTime = virtualStartDateTime + monotonicElapsedSeconds * scale
 ### Exploration
 
 - 晨起：`random(10,20) * k_curious`。
-- `06:00-21:00` 且 `Energy > 50`：每 Tick `+5`。
+- `06:00-21:00` 且 `Energy < 50`（电量 `>50%`）：每 Tick `+5`。
 - 其他情况：`+0`。
 - 触发：`>60`。
 - 满溢：`>80`。
@@ -396,7 +407,7 @@ k_calm    = (O+A)/100
 
 ## 10. 情绪自然衰减
 
-`emotion_engine_node` 每个虚拟秒执行一次：
+`emotion_engine_node` 使用单调真实时钟每个真实秒执行一次：
 
 | 情绪 | 衰减 |
 |---|---|
@@ -407,8 +418,9 @@ k_calm    = (O+A)/100
 | `Curious` | `-2/sec` |
 | `Calm` | 不自然衰减 |
 
-真实执行频率为 `time_scale` Hz。
-延迟时仍逐虚拟秒补算并检查区间事件，不能把衰减值一次乘倍率后跳过中间区间。
+真实执行频率固定为 1 Hz，不受 `time_scale` 和运行时倍率切换影响。
+节点延迟时仍逐真实秒补算并检查区间事件，不能把多秒衰减值一次合并后跳过
+中间区间。虚拟 Tick 只负责情绪状态的时间上下文和发布节奏。
 
 ## 11. 时间上下文
 
@@ -516,7 +528,7 @@ random_seed>=0       可重复
 | `ACTION_EAT + COMPLETED` | 结算 `Hunger / Bladder / Cleanliness` |
 | `ACTION_DEFECATE + COMPLETED` | `Bladder = 0` |
 | `ACTION_GROOM + COMPLETED` | `Cleanliness -= 50` |
-| `ACTION_RECHARGE + COMPLETED` | 写入 `metadata.energyValue`；未提供时写入配置目标值 |
+| `ACTION_RECHARGE + COMPLETED` | 将 metadata 中的电量百分比转换为 Energy；未提供时使用配置目标电量 |
 | `ACTION_SLEEP + STARTED` | 进入睡眠状态 |
 | `ACTION_SOCIAL_* + COMPLETED` | 按 `metadata.socialOutcome` 结算 `Social` |
 | `ACTION_EXPLORE* + COMPLETED` | `Exploration -= 15` |
@@ -528,7 +540,7 @@ random_seed>=0       可重复
 | action | metadata |
 |---|---|
 | `ACTION_EAT` | `foodType=PremiumFood/NormalFood/Snack`，`portions` 为数字，`eatEfficiency=Full/HalfInterrupted` |
-| `ACTION_RECHARGE` | `energyValue` 为 `0-100` 数字；也兼容 `energy_value / batteryValue` |
+| `ACTION_RECHARGE` | `energyValue` 为充电后的 `0-100` 电量百分比；也兼容 `energy_value / batteryValue` |
 | `ACTION_SOCIAL_*` | `socialOutcome=OwnerInteraction/DogHumanResponded/DogAnimalResponded/Rejected/TimedOut` |
 | `ACTION_EXPLORE*` | 当前忽略 metadata |
 

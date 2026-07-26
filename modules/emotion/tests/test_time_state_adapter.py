@@ -53,6 +53,13 @@ class TimeStateAdapterTest(unittest.TestCase):
             {},
         )
 
+    def test_accepts_discrete_test_time_step(self):
+        """适配器应接受凌晨场景使用的离散测试时间步骤。"""
+        payload = self._GetPayload()
+        payload["event_type"] = "TIME_TEST_STEP"
+
+        self.assertEqual(GetTimeStateMessageValue(payload), payload)
+
     def test_parses_timezone_aware_context_datetime(self):
         """时间字段必须是带时区的 ISO 8601。"""
         payload = self._GetPayload()

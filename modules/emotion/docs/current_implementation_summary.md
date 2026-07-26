@@ -21,6 +21,7 @@
 | `marsdog_core/time_controller.py` | `1-24` 整数倍率虚拟时钟和遗漏 Tick 补算调度器 |
 | `marsdog_core/*_behavior.py` | 各需求的数值增长、恢复和结果结算逻辑 |
 | `marsdog_ros2/time_controller_node.py` | 权威虚拟时间与运行时倍率控制节点 |
+| `marsdog_ros2/midnight_test_node.py` | 30秒离散推进虚拟凌晨并自动完成睡眠握手的测试时间源 |
 | `marsdog_ros2/time_state_adapter.py` | 适配 `/simulation/time_state` |
 | `marsdog_ros2/internal_need_node.py` | 发布 `/internal_need/state` 和 `/internal_need/signal_event` |
 | `marsdog_ros2/emotion_engine_node.py` | 发布 `/emotion/state` 和 `/emotion/signal_event` |
@@ -57,6 +58,7 @@
 | `/emotion/signal_event` | `std_msgs/String` JSON | `emotion_engine_node` | 情绪区间或主导情绪变化时发布 |
 | `/personality/state` | `std_msgs/String` JSON | `personality_node` | 性格状态，启动时和性格变化后发布 |
 | `/simulation/time_state` | `std_msgs/String` JSON | `time_controller_node` | 时间初始化、逐秒 Tick、倍率变化 |
+| `/simulation/midnight_test_result` | `std_msgs/String` JSON | `midnight_test_node` | 凌晨场景完成状态和最终需求/睡眠快照 |
 
 ## 3. 内部需求输出
 
@@ -267,13 +269,13 @@ ros2 param set /personality_node C 40
 
 ### Energy
 
-- 当前实现直接等于电池百分比。
-- 晨起：`100`。
-- 触发：`<20`。
-- 满溢：`<10`。
+- 表示充电需求/电量缺口：`Energy = 100 - 当前电量百分比`。
+- 晨起满电：`Energy = 0`。
+- 触发：`>80`，等价于电量 `<20%`。
+- 满溢：`>90`，等价于电量 `<10%`。
 - `ACTION_RECHARGE + COMPLETED`：
-  - 有 `metadata.energyValue` 时写入该值。
-  - 没有时恢复到 `100`。
+  - `metadata.energyValue` 表示充电后的电量百分比，保存时转换成 Energy。
+  - 没有 metadata 时充电到配置目标 `100%`，即 `Energy = 0`。
 
 ### Social
 
@@ -296,7 +298,7 @@ ros2 param set /personality_node C 40
 
 - 数值越高表示探索欲望越强。
 - 晨起：`random(10,20) * k_curious`。
-- 白天 `06:00-21:00` 且 `Energy > 50`：每 Tick `+5`。
+- 白天 `06:00-21:00` 且 `Energy < 50`（电量 `>50%`）：每 Tick `+5`。
 - 其他时间或精力不足：`+0`。
 - 触发：`>60`。
 - 满溢：`>80`。
@@ -335,7 +337,7 @@ finalDelta = round(baseDelta * k_emotion * metadataMultiplier)
 
 ### 自然衰减
 
-情绪节点每 1 秒执行一次：
+情绪节点按单调真实时间每 1 秒执行一次，不随 `time_scale` 加速：
 
 - `Joy -= 2/sec`
 - `Excite -= 3/sec`
@@ -435,7 +437,7 @@ finalDelta = round(baseDelta * k_emotion * metadataMultiplier)
 | action | metadata |
 |---|---|
 | `ACTION_EAT` | `foodType=PremiumFood/NormalFood/Snack`，`portions` 为数字，`eatEfficiency=Full/HalfInterrupted` |
-| `ACTION_RECHARGE` | `energyValue` 为 `0-100` 数字；兼容 `energy_value / batteryValue` |
+| `ACTION_RECHARGE` | `energyValue` 为充电后的 `0-100` 电量百分比；兼容 `energy_value / batteryValue` |
 | `ACTION_SOCIAL_*` | `socialOutcome=OwnerInteraction/DogHumanResponded/DogAnimalResponded/Rejected/TimedOut` |
 | `ACTION_EXPLORE*` | 当前忽略 metadata |
 
@@ -464,10 +466,23 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
 ```
 
 `time_scale` 允许 `1-24` 的整数。需求 Tick 真实周期为
-`600 / time_scale` 秒，情绪真实更新频率为 `time_scale` Hz，完整虚拟一天
-真实耗时为 `24 / time_scale` 小时。
+`600 / time_scale` 秒，情绪状态真实发布频率为 `time_scale` Hz，完整虚拟一天
+真实耗时为 `24 / time_scale` 小时。情绪自然衰减固定按真实时间 1 Hz 执行，
+不随倍率变化。
 `timeContext.scale` 是权威倍率；`mode` 只保留旧倍率名称或输出 `custom`，
 不参与计算。
+
+凌晨睡眠流程可单独压缩为30秒：
+
+```bash
+ros2 launch marsdog_behavior midnight_test.launch.py \
+  scenario_duration_seconds:=30 random_seed:=12345
+```
+
+专用测试时间源从 `00:00` 到 `06:00` 发布36个 `TIME_TEST_STEP`，每步推进虚拟
+10分钟。它会自动响应第一次 `NEED_SLEEPINESS_TRIGGERED`，发布
+`ACTION_SLEEP + STARTED`；到达 `06:00` 后检查是否经历睡眠并最终醒来，然后
+输出 `PASSED/FAILED` 并自动结束 launch。生产时间倍率范围仍为 `1-24`。
 
 四类需求/情绪状态与事件消息均包含 `timeContext`。原顶层 `timestamp` 仍是真实
 Unix 时间，`timeContext.virtualDateTime` 表示公式计算使用的虚拟时间。测试

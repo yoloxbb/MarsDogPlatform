@@ -111,7 +111,7 @@ DEMAND_CHINESE_NAMES = {
     DemandType.BLADDER.value: "排泄值",
     DemandType.SLEEPINESS.value: "困倦值",
     DemandType.CLEANLINESS.value: "清洁值",
-    DemandType.ENERGY.value: "精力值",
+    DemandType.ENERGY.value: "充电需求值",
     DemandType.SOCIAL.value: "社交值",
     DemandType.EXPLORATION.value: "探索值",
 }

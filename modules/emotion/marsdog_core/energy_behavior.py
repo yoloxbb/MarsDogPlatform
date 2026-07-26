@@ -1,36 +1,40 @@
-"""精力/电量需求驱动与执行接口。"""
+"""充电需求与硬件电量转换接口。"""
 
 from __future__ import annotations
 
 from typing import Any
 
 from .rules import IsConditionMatched
-from .types import ActionResultType, DemandType
+from .types import ActionResultType, ClampValue, DemandType
 
 
 class EnergyBehaviorAPI:
-    """精力需求 API 混入类。"""
+    """充电需求 API 混入类。"""
 
     def InitializeMorningEnergy(self) -> int:
-        """按晨起规则初始化精力值。"""
-        value = int(self._GetEnergyConfig().get("morningInitialValue", 100))
+        """按晨起规则初始化充电需求值。"""
+        value = int(self._GetEnergyConfig().get("morningInitialValue", 0))
         self.SetDemandValue(DemandType.ENERGY, value)
         return value
 
     def GetBatteryValue(self) -> int:
-        """获取当前硬件电量百分比。"""
-        return self.GetDemandValue(DemandType.ENERGY)
+        """根据 Energy 需求值获取当前硬件电量百分比。"""
+        return 100 - self.GetDemandValue(DemandType.ENERGY)
 
-    def SetEnergyBatteryValue(self, value: int) -> bool:
-        """设置当前硬件电量百分比。"""
-        return self.SetDemandValue(DemandType.ENERGY, value)
+    def SetEnergyBatteryValue(self, batteryValue: int) -> bool:
+        """根据硬件电量百分比写入 Energy 充电需求值。"""
+        normalizedBatteryValue = ClampValue(batteryValue)
+        return self.SetDemandValue(
+            DemandType.ENERGY,
+            100 - normalizedBatteryValue,
+        )
 
     def ExecuteRecharge(self) -> bool:
-        """执行恢复精力行为并回写电量。"""
+        """执行充电行为并把目标电量转换为 Energy 需求值。"""
         energyConfig = self._GetEnergyConfig()
-        targetValue = int(energyConfig.get("rechargeTarget", 100))
+        targetBatteryValue = int(energyConfig.get("rechargeTarget", 100))
         oldValue = self.GetDemandValue(DemandType.ENERGY)
-        self.SetDemandValue(DemandType.ENERGY, targetValue)
+        self.SetEnergyBatteryValue(targetBatteryValue)
         self._ApplyRechargeResultEmotion(oldValue, self.GetDemandValue(DemandType.ENERGY))
         return True
 
@@ -39,13 +43,13 @@ class EnergyBehaviorAPI:
         return self.ExecuteRecharge()
 
     def _GetEnergyConfig(self) -> dict[str, Any]:
-        """获取精力配置。"""
+        """获取 Energy 充电需求配置。"""
         return self.configs.get("demands", {}).get(DemandType.ENERGY.value, {})
 
     def _ApplyRechargeResultEmotion(self, oldValue: int, newValue: int) -> None:
         """根据充电执行结果施加情绪变化。"""
-        threshold = float(self._GetEnergyConfig().get("urgentThreshold", 20))
-        operator = self._GetEnergyConfig().get("urgentOperator", "lt")
+        threshold = float(self._GetEnergyConfig().get("urgentThreshold", 80))
+        operator = self._GetEnergyConfig().get("urgentOperator", "gt")
         oldTriggered = IsConditionMatched(float(oldValue), operator, threshold)
         newTriggered = IsConditionMatched(float(newValue), operator, threshold)
         if oldTriggered and not newTriggered:

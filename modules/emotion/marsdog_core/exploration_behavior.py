@@ -23,7 +23,7 @@ class ExplorationBehaviorAPI:
         return value
 
     def UpdateExplorationByTime(self, currentTime: object | None = None) -> int:
-        """白天且 Energy 大于阈值时按每 10 分钟增长 Exploration。"""
+        """白天且 Energy 需求低于阈值时按每 10 分钟增长 Exploration。"""
         if hasattr(self, "IsDemandLocked") and self.IsDemandLocked(currentTime):
             return self.GetDemandValue(DemandType.EXPLORATION)
 

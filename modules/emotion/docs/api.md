@@ -98,10 +98,10 @@ personalitySystem = MarsdogPersonalitySystem()
 
 ## 精力接口
 
-- `InitializeMorningEnergy()`：晨起 `Energy = 100`。
-- `GetBatteryValue()`：读取当前电量，也就是 `Energy`。
-- `SetEnergyBatteryValue(value)`：写入当前电量。
-- `ExecuteRecharge()`：充电完成后恢复到配置目标。
+- `InitializeMorningEnergy()`：晨起满电，`Energy = 0`。
+- `GetBatteryValue()`：读取当前电量，返回 `100 - Energy`。
+- `SetEnergyBatteryValue(value)`：写入当前电量，并保存 `Energy = 100 - value`。
+- `ExecuteRecharge()`：充电到配置的目标电量，并降低对应 Energy 需求。
 - `Recharge()`：APP 充电接口。
 
 ## 社交接口
@@ -114,7 +114,7 @@ personalitySystem = MarsdogPersonalitySystem()
 ## 探索接口
 
 - `InitializeMorningExploration()`：晨起 `Exploration = random(10,20) * k_curious`。
-- `UpdateExplorationByTime(currentTime=None)`：白天且 `Energy > 50` 时每 Tick `+5`。
+- `UpdateExplorationByTime(currentTime=None)`：白天且 `Energy < 50`（电量 `>50%`）时每 Tick `+5`。
 - `ExecuteExploration(resultType=None)`：探索完成后统一按 `Completed` 结算，`resultType` 仅保留兼容。
 
 ## 情绪接口
@@ -127,7 +127,7 @@ personalitySystem = MarsdogPersonalitySystem()
 - `ApplyEmotionEvent(eventName, metadata=None)`：按 `configs/emotions.yaml:eventRules` 应用外部事件。
 - `GetEmotionEventMappingValue(eventName)`：读取指定事件映射。
 - `GetLastEmotionEventResultValue()`：读取最近一次情绪事件计算结果。
-- `ApplyEmotionDecay(elapsedSeconds=1.0)`：按自然平复公式衰减情绪。
+- `ApplyEmotionDecay(elapsedSeconds=1.0)`：按真实经过秒数应用自然平复公式；ROS2 节点固定按真实时间驱动，不受 `time_scale` 影响。
 - `GetEmotionLevelValue(emotionType, value=None)`：读取指定情绪所在区间。
 - `GetAllEmotionLevels()`：读取全部情绪区间。
 - `GetEmotionLevelEventsValue()`：读取全部情绪当前区间对应的事件名映射。
@@ -201,6 +201,7 @@ ACTION_EXPLORE / ACTION_SPACE_EXPLORE / ACTION_OBJECT_EXPLORE`。其他 action
 - `/emotion/signal_event`：情绪区间或主导情绪变化时发布。
 - `/personality/state`：性格状态，`personality_node` 启动时和性格变化后发布。
 - `/simulation/time_state`：统一时间节点发布初始化、逐秒 Tick 和倍率变化。
+- `/simulation/midnight_test_result`：凌晨场景测试完成结果，仅测试 launch 发布。
 
 `/internal_need/state.levelEvents[demand]` 和 `/emotion/state.levelEvents[emotion]`
 与对应 signal 事件的 `event_type` 使用同一套事件名，可用于跨话题对比。
@@ -235,6 +236,17 @@ ros2 param set /time_controller_node time_scale 24
 不要修改 `internal_need_node` 或 `emotion_engine_node` 的 `time_scale` 参数；它们运行时
 以 `/simulation/time_state` 为准。`virtual_start_time` 和 `random_seed` 仍需重启
 后修改。
+
+30 秒运行虚拟 `00:00-06:00` 凌晨流程：
+
+```bash
+ros2 launch marsdog_behavior midnight_test.launch.py \
+  scenario_duration_seconds:=30 random_seed:=12345
+```
+
+该 launch 不启动生产时间控制节点，而由 `midnight_test_node` 发布36个虚拟
+10分钟测试步骤，并在首次困倦触发后自动发布 `ACTION_SLEEP + STARTED`。
+到达虚拟 `06:00` 后等待最终需求状态，输出 `PASSED/FAILED` 并自动退出。
 
 只调试性格节点：
 

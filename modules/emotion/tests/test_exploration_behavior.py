@@ -15,15 +15,19 @@ class ExplorationBehaviorTest(unittest.TestCase):
         self.assertEqual(system.GetDemandValue("Exploration"), value)
 
     def test_exploration_grows_when_daytime_and_energy_enough(self):
-        """白天且 Energy > 50 时 Exploration 每 Tick +5。"""
+        """白天且电量大于 50% 时 Exploration 每 Tick +5。"""
         system = MarsdogNeedSystem()
         system.SetDemandValue("Exploration", 10)
-        system.SetDemandValue("Energy", 60)
+        system.SetEnergyBatteryValue(60)
 
         system.UpdateExplorationByTime(10)
         self.assertEqual(system.GetDemandValue("Exploration"), 15)
 
-        system.SetDemandValue("Energy", 40)
+        system.SetEnergyBatteryValue(50)
+        system.UpdateExplorationByTime(10)
+        self.assertEqual(system.GetDemandValue("Exploration"), 15)
+
+        system.SetEnergyBatteryValue(40)
         system.UpdateExplorationByTime(10)
         self.assertEqual(system.GetDemandValue("Exploration"), 15)
 

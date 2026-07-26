@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import json
+import time
 from datetime import datetime
 
-from marsdog_core import MarsdogTimeController, VirtualTickScheduler
+from marsdog_core import (
+    MarsdogTimeController,
+    RealTimeTickScheduler,
+    VirtualTickScheduler,
+)
 from marsdog_core.emotion_system import MarsdogEmotionSystem
 from marsdog_ros2.behavior_result_adapter import ApplyBehaviorResultMessage
 from marsdog_ros2.perception_adapter import ApplyAudioEventMessage, ApplyVisualEventMessage
@@ -55,6 +60,7 @@ class EmotionEngineNode(Node):
         )
         virtualStartDateTime = self.timeController.GetVirtualStartDateTimeValue()
         self.emotionTickScheduler = VirtualTickScheduler(virtualStartDateTime, 1.0)
+        self.emotionDecayScheduler = RealTimeTickScheduler(time.monotonic(), 1.0)
         self._timeSynchronized = False
 
         self.statePublisher = self.create_publisher(String, "/emotion/state", 10)
@@ -68,6 +74,10 @@ class EmotionEngineNode(Node):
             "/simulation/time_state",
             self.OnTimeStateMessage,
             _ReliableTransientLocalQoS(1000),
+        )
+        self.emotionDecayTimer = self.create_timer(
+            1.0,
+            self.OnEmotionDecayTimer,
         )
         self.get_logger().info(
             "Emotion time scale: %sx, virtual start: %s"
@@ -143,15 +153,30 @@ class EmotionEngineNode(Node):
             )
         if eventType == "TIME_TICK":
             self.Tick(virtualDateTime)
+        elif eventType == "TIME_TEST_STEP":
+            self.TickTestScenarioStep(virtualDateTime)
 
     def Tick(self, virtualNow: datetime | None = None) -> None:
-        """按顺序补算每个到期的虚拟 1 秒情绪 Tick。"""
+        """按顺序发布每个到期虚拟秒对应的情绪状态。"""
         currentVirtualTime = virtualNow or self.timeController.GetVirtualDateTimeValue()
         for tickDateTime in self.emotionTickScheduler.GetDueTickDateTimesValue(currentVirtualTime):
-            # 每个虚拟秒独立衰减，保证不会跳过中间区间事件。
-            self.system.ApplyEmotionDecay(1.0)
-            self.PublishSignalEvents(tickDateTime)
             self.PublishState(tickDateTime)
+
+    def OnEmotionDecayTimer(self) -> None:
+        """按真实经过时间逐秒执行情绪自然衰减。"""
+        dueTickCount = self.emotionDecayScheduler.GetDueTickCountValue(
+            time.monotonic()
+        )
+        for _ in range(dueTickCount):
+            # 延迟时逐真实秒补算，确保不会跳过中间情绪区间事件。
+            self.system.ApplyEmotionDecay(1.0)
+            self.PublishSignalEvents()
+
+    def TickTestScenarioStep(self, virtualNow: datetime) -> None:
+        """测试时间跳步时只发布当前状态，不回放中间虚拟秒。"""
+        # 情绪衰减已经按真实时间计算，测试跳步无需生成大量中间状态。
+        self.emotionTickScheduler.AlignToDateTimeValue(virtualNow)
+        self.PublishState(virtualNow)
 
     def _InitializeTimeSynchronization(
         self,

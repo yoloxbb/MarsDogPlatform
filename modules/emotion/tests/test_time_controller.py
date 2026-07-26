@@ -6,6 +6,7 @@ from marsdog_core import (
     MarsdogEmotionSystem,
     MarsdogNeedSystem,
     MarsdogTimeController,
+    RealTimeTickScheduler,
     VirtualTickScheduler,
 )
 from marsdog_ros2.time_context import GetMessageWithTimeContextValue, GetRandomGeneratorValue
@@ -223,6 +224,29 @@ class TimeControllerTest(unittest.TestCase):
             current + timedelta(seconds=10),
         )
 
+    def test_real_time_scheduler_catches_up_delayed_ticks(self):
+        """真实时间调度器延迟后应补算全部完整秒 Tick。"""
+        scheduler = RealTimeTickScheduler(100.0, 1.0)
+
+        self.assertEqual(scheduler.GetDueTickCountValue(100.9), 0)
+        self.assertEqual(scheduler.GetDueTickCountValue(105.2), 5)
+        self.assertEqual(scheduler.GetNextTickSecondsValue(), 106.0)
+        self.assertEqual(scheduler.GetDueTickCountValue(108.9), 3)
+        self.assertEqual(scheduler.GetNextTickSecondsValue(), 109.0)
+
+    def test_real_time_scheduler_rejects_invalid_values(self):
+        """真实时间调度器应拒绝非法起点、间隔和当前时间。"""
+        for invalidStart in (float("nan"), float("inf"), float("-inf")):
+            with self.assertRaises(ValueError):
+                RealTimeTickScheduler(invalidStart)
+        for invalidInterval in (0, -1, float("nan"), float("inf")):
+            with self.assertRaises(ValueError):
+                RealTimeTickScheduler(100.0, invalidInterval)
+
+        scheduler = RealTimeTickScheduler(100.0)
+        with self.assertRaises(ValueError):
+            scheduler.GetDueTickCountValue(float("nan"))
+
     def test_time_context_keeps_wall_timestamp_and_reports_virtual_time(self):
         """timeContext 应保留顶层真实时间并报告虚拟时间信息。"""
         controller, clock = self._CreateController(7)
@@ -299,13 +323,13 @@ class TimeControllerTest(unittest.TestCase):
         self.assertEqual(allTrajectories[0], allTrajectories[1])
         self.assertEqual(allTrajectories[1], allTrajectories[2])
 
-    def test_emotion_decay_and_level_events_are_equal_for_selected_time_scales(self):
-        """相同虚拟秒数应得到相同情绪值和完整区间事件轨迹。"""
+    def test_emotion_decay_is_equal_for_same_real_time_across_scales(self):
+        """相同真实时间下各倍率应得到一致的衰减值和区间事件轨迹。"""
         allResults = []
         for scale in (1, 7, 24):
             controller, clock = self._CreateController(scale)
-            scheduler = VirtualTickScheduler(
-                controller.GetVirtualStartDateTimeValue(),
+            scheduler = RealTimeTickScheduler(
+                clock.GetMonotonicValue(),
                 1.0,
             )
             system = MarsdogEmotionSystem(randomGenerator=random.Random(2026))
@@ -313,23 +337,68 @@ class TimeControllerTest(unittest.TestCase):
             system.GetEmotionSignalEventsValue()
             eventTypes = []
 
-            for _ in range(30):
+            for _ in range(30 * scale):
                 clock.Advance(controller.GetRealIntervalValue(1.0))
-                dueTicks = scheduler.GetDueTickDateTimesValue(
-                    controller.GetVirtualDateTimeValue()
+                dueTickCount = scheduler.GetDueTickCountValue(
+                    clock.GetMonotonicValue()
                 )
-                self.assertEqual(len(dueTicks), 1)
-                system.ApplyEmotionDecay(1.0)
-                eventTypes.extend(
-                    event["event_type"]
-                    for event in system.GetEmotionSignalEventsValue()
-                )
+                for _ in range(dueTickCount):
+                    system.ApplyEmotionDecay(1.0)
+                    eventTypes.extend(
+                        event["event_type"]
+                        for event in system.GetEmotionSignalEventsValue()
+                    )
             allResults.append((system.GetAllEmotions(), eventTypes))
 
         self.assertEqual(allResults[0], allResults[1])
         self.assertEqual(allResults[1], allResults[2])
         self.assertIn("EMO_JOY_MID", allResults[0][1])
         self.assertIn("EMO_JOY_LOW", allResults[0][1])
+
+    def test_same_virtual_duration_decays_by_real_duration(self):
+        """相同虚拟时长在高倍率下应因真实耗时更短而衰减更少。"""
+        joyValues = []
+        for scale in (1, 7, 24):
+            controller, clock = self._CreateController(scale)
+            scheduler = RealTimeTickScheduler(clock.GetMonotonicValue(), 1.0)
+            system = MarsdogEmotionSystem(randomGenerator=random.Random(2026))
+            system.SetEmotionValue("Joy", 90)
+
+            clock.Advance(controller.GetRealIntervalValue(24.0))
+            for _ in range(
+                scheduler.GetDueTickCountValue(clock.GetMonotonicValue())
+            ):
+                system.ApplyEmotionDecay(1.0)
+            joyValues.append(system.GetEmotionValue("Joy"))
+
+        self.assertEqual(joyValues, [42, 84, 88])
+
+    def test_scale_switch_does_not_trigger_extra_emotion_decay(self):
+        """倍率切换本身不应产生额外真实时间衰减 Tick。"""
+        controller, clock = self._CreateController(1)
+        scheduler = RealTimeTickScheduler(clock.GetMonotonicValue(), 1.0)
+
+        clock.Advance(1.0)
+        self.assertEqual(
+            scheduler.GetDueTickCountValue(clock.GetMonotonicValue()),
+            1,
+        )
+        controller.SetTimeScaleValue(24)
+        self.assertEqual(
+            scheduler.GetDueTickCountValue(clock.GetMonotonicValue()),
+            0,
+        )
+        clock.Advance(0.5)
+        controller.SetTimeScaleValue(7)
+        self.assertEqual(
+            scheduler.GetDueTickCountValue(clock.GetMonotonicValue()),
+            0,
+        )
+        clock.Advance(0.5)
+        self.assertEqual(
+            scheduler.GetDueTickCountValue(clock.GetMonotonicValue()),
+            1,
+        )
 
 
 if __name__ == "__main__":

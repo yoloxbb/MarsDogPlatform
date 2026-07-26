@@ -7,7 +7,12 @@ from datetime import datetime
 from typing import Any
 
 
-TIME_EVENT_TYPES = {"TIME_INITIALIZED", "TIME_TICK", "TIME_MODE_CHANGED"}
+TIME_EVENT_TYPES = {
+    "TIME_INITIALIZED",
+    "TIME_TICK",
+    "TIME_MODE_CHANGED",
+    "TIME_TEST_STEP",
+}
 
 
 def GetTimeStateMessageValue(message: object) -> dict[str, Any]:

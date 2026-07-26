@@ -26,11 +26,15 @@
 | Topic | QoS | 发布节点 | 发布规则 |
 |---|---|---|---|
 | `/personality/state` | `RELIABLE + TRANSIENT_LOCAL, depth=1` | `personality_node` | 启动时和性格变化后发布 |
-| `/simulation/time_state` | `RELIABLE + TRANSIENT_LOCAL, depth=1000` | `time_controller_node` | 初始化、逐虚拟秒 Tick、倍率变化 |
+| `/simulation/time_state` | `RELIABLE + TRANSIENT_LOCAL, depth=1000` | `time_controller_node`；测试时为 `midnight_test_node` | 初始化、逐虚拟秒 Tick、倍率变化或测试跳步 |
 | `/internal_need/state` | `RELIABLE, depth=10` | `internal_need_node` | 每 1 秒持续发布 |
 | `/internal_need/signal_event` | `RELIABLE, depth=10` | `internal_need_node` | 需求等级变化时发布 |
 | `/emotion/state` | `RELIABLE, depth=10` | `emotion_engine_node` | 每个虚拟秒发布；真实频率为 `time_scale` Hz |
 | `/emotion/signal_event` | `RELIABLE, depth=10` | `emotion_engine_node` | 情绪区间或主导情绪变化时发布 |
+| `/simulation/midnight_test_result` | `RELIABLE + TRANSIENT_LOCAL, depth=1` | `midnight_test_node` | 凌晨测试完成时发布 `PASSED/FAILED` 和最终状态 |
+
+情绪自然衰减由 `emotion_engine_node` 的单调真实时钟以 1 Hz 驱动，不依赖
+`/simulation/time_state` 的虚拟 Tick 频率，也不随 `time_scale` 加速。
 
 ## 2. 输入 Topic
 
@@ -200,7 +204,7 @@
 | action_type | metadata |
 |---|---|
 | `ACTION_EAT` | `foodType=PremiumFood/NormalFood/Snack`，`portions` 为数字，`eatEfficiency=Full/HalfInterrupted` |
-| `ACTION_RECHARGE` | `energyValue` 为 `0-100` 数字；兼容 `energy_value / batteryValue` |
+| `ACTION_RECHARGE` | `energyValue` 为充电后的 `0-100` 电量百分比；兼容 `energy_value / batteryValue`，内部保存 `Energy=100-energyValue` |
 | `ACTION_SOCIAL_*` | `socialOutcome=OwnerInteraction/DogHumanResponded/DogAnimalResponded/Rejected/TimedOut` |
 | `ACTION_EXPLORE*` | 当前忽略 metadata |
 
@@ -275,9 +279,10 @@ ros2 param set /personality_node C 40
 
 ### 2.5 `/simulation/time_state`
 
-`time_controller_node` 是唯一权威虚拟时间源。`time_scale` 允许 `1-24` 整数，
-需求和情绪节点只消费本 Topic，
-不再各自使用自然更新定时器。
+生产运行时 `time_controller_node` 是唯一权威虚拟时间源。`time_scale` 允许
+`1-24` 整数，需求和情绪节点只消费本 Topic，不再各自使用需求自然更新定时器。
+专用 `midnight_test.launch.py` 不启动生产时间节点，改由测试节点发布离散
+`TIME_TEST_STEP`。
 
 ```json
 {
@@ -303,8 +308,12 @@ ros2 param set /personality_node C 40
 | `TIME_INITIALIZED` | 权威时钟启动 | 否 |
 | `TIME_TICK` | 一个虚拟秒到期 | 是 |
 | `TIME_MODE_CHANGED` | 运行中倍率切换完成；事件名为兼容保留 | 否 |
+| `TIME_TEST_STEP` | 仅凌晨测试使用；一次推进虚拟10分钟 | 是 |
 
-`tickSequence` 只对 `TIME_TICK` 递增。`revision` 每次实际切换倍率增加 1。
+生产时间节点的 `tickSequence` 只对 `TIME_TICK` 递增。凌晨测试的
+`tickSequence` 为 `0-36`，消息额外包含 `testScenario`，其中
+`effectiveTimeScale=720` 表示30秒测试的等效压缩率。`timeContext.scale`
+仍保持协议允许的24；时间跳变由 `TIME_TEST_STEP` 明确表达。
 
 ## 3. 输出 Topic
 
@@ -408,6 +417,9 @@ ros2 param set /personality_node C 40
 - `Social`
 - `Exploration`
 
+其中 `Energy` 表示充电需求/电量缺口，计算公式为
+`Energy = 100 - 当前电量百分比`。因此所有需求都保持“数值越高越紧急”。
+
 单个需求字段说明：
 
 | 字段 | 说明 |
@@ -480,7 +492,8 @@ NEED_<DEMAND>_OVERFLOW
 
 ### 3.5 `/emotion/state`
 
-每个虚拟秒发布完整情绪状态，真实发布频率为 `time_scale` Hz。
+每个虚拟秒发布完整情绪状态，真实发布频率为 `time_scale` Hz。该频率只影响
+状态发布时间线；自然衰减固定按真实时间 1 Hz 计算。
 
 格式：
 
@@ -650,6 +663,17 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py time_scale:=24
 ros2 launch marsdog_behavior internal_need_emotion.launch.py \
   time_scale:=24 virtual_start_time:=06:00 random_seed:=12345
 ```
+
+30秒凌晨场景测试：
+
+```bash
+ros2 launch marsdog_behavior midnight_test.launch.py \
+  scenario_duration_seconds:=30 random_seed:=12345
+```
+
+测试节点自动发送睡眠开始结果，到达虚拟 `06:00` 后输出
+`Midnight test PASSED/FAILED` 并结束整个 launch。测试结果也会发布到
+`/simulation/midnight_test_result`。
 
 运行中切换倍率：
 
