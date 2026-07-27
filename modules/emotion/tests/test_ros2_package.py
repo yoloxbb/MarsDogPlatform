@@ -12,13 +12,16 @@ class Ros2PackageTest(unittest.TestCase):
         packageXml = PROJECT_ROOT / "package.xml"
         setupPy = PROJECT_ROOT / "setup.py"
         setupCfg = PROJECT_ROOT / "setup.cfg"
-        resourceMarker = PROJECT_ROOT / "resource" / "marsdog_behavior"
+        resourceMarker = PROJECT_ROOT / "resource" / "marsdog_need_emotion"
 
         self.assertTrue(packageXml.exists())
         self.assertTrue(setupPy.exists())
         self.assertTrue(setupCfg.exists())
         self.assertTrue(resourceMarker.exists())
-        self.assertEqual(ElementTree.parse(packageXml).findtext("name"), "marsdog_behavior")
+        self.assertEqual(
+            ElementTree.parse(packageXml).findtext("name"),
+            "marsdog_need_emotion",
+        )
 
     def test_calculation_node_console_entries_are_declared(self):
         """安装后应提供时间、测试、需求、情绪和性格节点入口。"""
@@ -70,17 +73,20 @@ class Ros2PackageTest(unittest.TestCase):
         self.assertIn("OnProcessExit", launchText)
 
     def test_time_scale_parameter_replaces_fixed_time_modes(self):
-        """时间节点应只暴露 1-24 整数倍率参数。"""
+        """时间节点应只暴露 1-100 整数倍率参数。"""
         timeNodeText = (
             PROJECT_ROOT / "marsdog_ros2" / "time_controller_node.py"
         ).read_text(encoding="utf-8")
 
         self.assertIn('"time_scale"', timeNodeText)
-        self.assertIn("IntegerRange(from_value=1, to_value=24, step=1)", timeNodeText)
+        self.assertIn("MAX_TIME_SCALE_VALUE", timeNodeText)
+        self.assertIn("to_value=MAX_TIME_SCALE_VALUE", timeNodeText)
         self.assertNotIn('"time_mode"', timeNodeText)
         self.assertIn('"midnight_acceleration_enabled"', timeNodeText)
         self.assertIn('"midnight_duration_seconds"', timeNodeText)
         self.assertIn('"TIME_ACCELERATED_STEP"', timeNodeText)
+        self.assertNotIn("MIDNIGHT_ACCELERATION_SCALE", timeNodeText)
+        self.assertNotIn("requires time_scale=24", timeNodeText)
 
     def test_calculation_nodes_consume_authoritative_time_topic(self):
         """计算节点应消费统一时间 Topic，情绪衰减另用真实时间定时器。"""

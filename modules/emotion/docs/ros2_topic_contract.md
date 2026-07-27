@@ -280,7 +280,7 @@ ros2 param set /personality_node C 40
 ### 2.5 `/simulation/time_state`
 
 生产运行时 `time_controller_node` 是唯一权威虚拟时间源。`time_scale` 允许
-`1-24` 整数，需求和情绪节点只消费本 Topic，不再各自使用需求自然更新定时器。
+`1-100` 整数，需求和情绪节点只消费本 Topic，不再各自使用需求自然更新定时器。
 专用 `midnight_test.launch.py` 不启动生产时间节点，改由测试节点发布离散
 `TIME_TEST_STEP`。
 
@@ -310,18 +310,19 @@ ros2 param set /personality_node C 40
 | `TIME_MODE_CHANGED` | 运行中倍率切换完成；事件名为兼容保留 | 否 |
 | `TIME_TEST_STEP` | 仅凌晨测试使用；一次推进虚拟10分钟 | 是 |
 | `TIME_ACCELERATION_CHANGED` | 每日凌晨加速开始或结束 | 否 |
-| `TIME_ACCELERATED_STEP` | 连续24倍模式的凌晨加速步骤；一次推进虚拟10分钟 | 是 |
+| `TIME_ACCELERATED_STEP` | 连续运行模式的凌晨加速步骤；一次推进虚拟10分钟 | 是 |
 
-生产时间节点的 `tickSequence` 只对 `TIME_TICK` 递增。凌晨测试的
+生产时间节点的 `tickSequence` 对普通 `TIME_TICK` 增加1，对
+`TIME_ACCELERATED_STEP` 增加600。凌晨测试的
 `tickSequence` 为 `0-36`，消息额外包含 `testScenario`，其中
 `effectiveTimeScale=720` 表示30秒测试的等效压缩率。`timeContext.scale`
-仍保持协议允许的24；时间跳变由 `TIME_TEST_STEP` 明确表达。
+在独立测试时间源中固定为24；时间跳变由 `TIME_TEST_STEP` 明确表达。
 
 统一时间节点启用每日凌晨加速时，`timeContext` 增加：
 
 ```json
 {
-  "scale": 24,
+  "scale": 100,
   "effectiveScale": 720.0,
   "midnightAcceleration": {
     "enabled": true,
@@ -334,9 +335,9 @@ ros2 param set /personality_node C 40
 }
 ```
 
-`effectiveScale` 只在加速活动期间为 `21600 / durationSeconds`，06:00后恢复
-24。需求和情绪输出会保留这些字段。`scale` 仍表示基础连续倍率，并保持
-`1-24` 协议范围。
+`effectiveScale` 在加速活动期间为 `21600 / durationSeconds`，06:00后恢复
+为当前基础倍率。需求和情绪输出会保留这些字段。`scale` 始终表示
+`1-100` 范围内的基础连续倍率，加速期间也允许动态切换。
 
 ## 3. 输出 Topic
 
@@ -365,7 +366,7 @@ ros2 param set /personality_node C 40
 | 字段 | 说明 |
 |---|---|
 | `mode` | 兼容显示字段：倍率 `1/2/12` 使用旧名称，其他倍率为 `custom`；不参与计算 |
-| `scale` | 基础连续虚拟时间倍率，`1-24` 整数 |
+| `scale` | 基础连续虚拟时间倍率，`1-100` 整数 |
 | `effectiveScale` | 可选；启用凌晨加速时表示当前实际推进倍率，非活动阶段等于 `scale` |
 | `midnightAcceleration` | 可选的每日凌晨加速配置、活动状态和步骤进度 |
 | `revision` | 倍率配置修订号，启动为 0，每次实际切换增加 1 |
@@ -672,27 +673,27 @@ NEED_<DEMAND>_OVERFLOW
 1 倍启动四个节点：
 
 ```bash
-ros2 launch marsdog_behavior internal_need_emotion.launch.py time_scale:=1
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py time_scale:=1
 ```
 
 任意整数倍率启动：
 
 ```bash
-ros2 launch marsdog_behavior internal_need_emotion.launch.py time_scale:=7
-ros2 launch marsdog_behavior internal_need_emotion.launch.py time_scale:=24
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py time_scale:=7
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py time_scale:=100
 ```
 
 固定起点与随机种子：
 
 ```bash
-ros2 launch marsdog_behavior internal_need_emotion.launch.py \
-  time_scale:=24 virtual_start_time:=06:00 random_seed:=12345
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
+  time_scale:=100 virtual_start_time:=06:00 random_seed:=12345
 ```
 
 30秒凌晨场景测试：
 
 ```bash
-ros2 launch marsdog_behavior midnight_test.launch.py \
+ros2 launch marsdog_need_emotion midnight_test.launch.py \
   scenario_duration_seconds:=30 random_seed:=12345
 ```
 
@@ -700,30 +701,32 @@ ros2 launch marsdog_behavior midnight_test.launch.py \
 `Midnight test PASSED/FAILED` 并结束整个 launch。测试结果也会发布到
 `/simulation/midnight_test_result`。
 
-连续联调并在06:00后保持24倍运行：
+任意基础倍率连续联调并在06:00后恢复该倍率：
 
 ```bash
-ros2 launch marsdog_behavior internal_need_emotion.launch.py \
-  time_scale:=24 \
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
+  time_scale:=100 \
   virtual_start_time:=00:00 \
   midnight_acceleration_enabled:=true \
   midnight_duration_seconds:=30 \
   random_seed:=12345
 ```
 
-`midnight_acceleration_enabled=true` 时基础倍率必须为24，运行时也不允许切换到
-其他倍率。该模式不模拟行为结果，外部行为模块需要处理睡眠信号。
+`midnight_acceleration_enabled=true` 支持全部 `1-100` 基础倍率，运行时也可
+切换倍率；如果在凌晨加速期间切换，06:00 后按新倍率继续运行。该模式不模拟
+行为结果，外部行为模块需要处理睡眠信号。
 
 运行中切换倍率：
 
 ```bash
 ros2 param set /time_controller_node time_scale 7
 ros2 param set /time_controller_node time_scale 24
+ros2 param set /time_controller_node time_scale 100
 ros2 param set /time_controller_node time_scale 1
 ```
 
 只有 `/time_controller_node.time_scale` 支持运行时修改。`virtual_start_time` 和
-`random_seed` 仍只能在启动时设置。倍率 2-24 的 `virtual_start_time:=auto`
+`random_seed` 仍只能在启动时设置。倍率 2-100 的 `virtual_start_time:=auto`
 等价于当天 `06:00`；倍率 1 的 `auto` 从当前真实时间开始。倍率切换不会修改虚拟
 起点、需求值、情绪值或睡眠状态。详细测试步骤见
 [time_compression_test_guide.md](time_compression_test_guide.md)。

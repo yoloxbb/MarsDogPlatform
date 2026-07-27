@@ -17,34 +17,34 @@
 单节点调试命令：
 
 ```bash
-ros2 run marsdog_behavior personality_node
-ros2 run marsdog_behavior time_controller_node
-ros2 run marsdog_behavior internal_need_node
-ros2 run marsdog_behavior emotion_engine_node
+ros2 run marsdog_need_emotion personality_node
+ros2 run marsdog_need_emotion time_controller_node
+ros2 run marsdog_need_emotion internal_need_node
+ros2 run marsdog_need_emotion emotion_engine_node
 ```
 
 四个节点联调建议使用 launch，并选择初始时间模式：
 
 ```bash
-ros2 launch marsdog_behavior internal_need_emotion.launch.py \
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
   time_scale:=24 virtual_start_time:=06:00 random_seed:=12345
 ```
 
 只测试凌晨睡眠和晨起重置时，可在30秒内运行虚拟 `00:00-06:00`：
 
 ```bash
-ros2 launch marsdog_behavior midnight_test.launch.py \
+ros2 launch marsdog_need_emotion midnight_test.launch.py \
   scenario_duration_seconds:=30 random_seed:=12345
 ```
 
 该测试使用36个虚拟10分钟离散步骤，并自动回传一次
-`ACTION_SLEEP + STARTED`。生产 `time_scale` 的 `1-24` 限制不变。
+`ACTION_SLEEP + STARTED`。生产 `time_scale` 的 `1-100` 限制不变。
 
 与外部行为模块连续联调时，使用统一时间节点的每日凌晨加速：
 
 ```bash
-ros2 launch marsdog_behavior internal_need_emotion.launch.py \
-  time_scale:=24 virtual_start_time:=00:00 \
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
+  time_scale:=100 virtual_start_time:=00:00 \
   midnight_acceleration_enabled:=true \
   midnight_duration_seconds:=30 \
   random_seed:=12345
@@ -52,7 +52,8 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
 
 该模式不会自动回传睡眠行为，也不会在06:00退出。行为模块收到
 `NEED_SLEEPINESS_TRIGGERED` 后需要及时发布 `ACTION_SLEEP + STARTED`；
-06:00需求系统自动醒来，时间节点继续按24倍推进，并在下一天00:00再次加速。
+06:00需求系统自动醒来，时间节点继续按所选基础倍率推进，并在下一天00:00
+再次加速。`time_scale=1-100` 均可启用该模式，加速期间也可以动态切换基础倍率。
 
 ## 2. Topic
 
@@ -253,7 +254,7 @@ NEED_<DEMAND>_RECOVERED
 UpdateNaturalDemandsByTime()
 ```
 
-未启用凌晨特殊加速时，`time_scale` 允许 `1-24` 的整数。需求 Tick 真实周期为
+未启用凌晨特殊加速时，`time_scale` 允许 `1-100` 的整数。需求 Tick 真实周期为
 `600 / time_scale` 秒，完整虚拟 24 小时的真实耗时为
 `24 / time_scale` 小时。情绪状态仍跟随虚拟秒发布，但情绪自然衰减独立按
 真实时间 1 Hz 执行。
@@ -266,7 +267,7 @@ virtualDateTime = virtualStartDateTime + monotonicElapsedSeconds * scale
 
 时间控制节点和计算节点若因调度延迟错过 Tick，会按虚拟时间顺序逐个补算，
 不会合并需求增量。
-`virtual_start_time=auto` 时，1 倍从当前真实时间开始，2-24 倍从当天虚拟
+`virtual_start_time=auto` 时，1 倍从当前真实时间开始，2-100 倍从当天虚拟
 `06:00` 开始并立即执行晨起初始化。
 
 全局规则：
@@ -445,7 +446,7 @@ k_calm    = (O+A)/100
 运行中切换倍率使用：
 
 ```bash
-ros2 param set /time_controller_node time_scale 24
+ros2 param set /time_controller_node time_scale 100
 ```
 
 切换时先按旧倍率结算当前虚拟时间，再建立新倍率锚点。`revision` 增加 1，

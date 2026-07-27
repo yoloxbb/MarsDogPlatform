@@ -18,7 +18,7 @@
 | `marsdog_core/need_system.py` | 内部需求计算统一入口 `MarsdogNeedSystem` |
 | `marsdog_core/emotion_system.py` | 情绪计算统一入口 `MarsdogEmotionSystem` |
 | `marsdog_core/personality_system.py` | 性格参数统一入口 `MarsdogPersonalitySystem` |
-| `marsdog_core/time_controller.py` | `1-24` 整数倍率虚拟时钟和遗漏 Tick 补算调度器 |
+| `marsdog_core/time_controller.py` | `1-100` 整数倍率虚拟时钟和遗漏 Tick 补算调度器 |
 | `marsdog_core/*_behavior.py` | 各需求的数值增长、恢复和结果结算逻辑 |
 | `marsdog_ros2/time_controller_node.py` | 权威虚拟时间与运行时倍率控制节点 |
 | `marsdog_ros2/midnight_test_node.py` | 30秒离散推进虚拟凌晨并自动完成睡眠握手的测试时间源 |
@@ -453,52 +453,54 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -q
 ROS2 节点：
 
 ```bash
-ros2 launch marsdog_behavior internal_need_emotion.launch.py \
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
   time_scale:=1
 ```
 
 时间压缩倍率：
 
 ```bash
-ros2 launch marsdog_behavior internal_need_emotion.launch.py time_scale:=7
-ros2 launch marsdog_behavior internal_need_emotion.launch.py \
-  time_scale:=24 virtual_start_time:=06:00 random_seed:=12345
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py time_scale:=7
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
+  time_scale:=100 virtual_start_time:=06:00 random_seed:=12345
 ```
 
-未启用凌晨特殊加速时，`time_scale` 允许 `1-24` 的整数。需求 Tick 真实周期为
+未启用凌晨特殊加速时，`time_scale` 允许 `1-100` 的整数。需求 Tick 真实周期为
 `600 / time_scale` 秒，情绪状态真实发布频率为 `time_scale` Hz，完整虚拟一天
 真实耗时为 `24 / time_scale` 小时。情绪自然衰减固定按真实时间 1 Hz 执行，
 不随倍率变化。
 `timeContext.scale` 是基础连续倍率；`mode` 只保留旧倍率名称或输出 `custom`，
 不参与计算。凌晨加速期间实际推进速度读取 `effectiveScale`。
 
-连续24倍运行可选每日凌晨加速：
+任意 `1-100` 基础倍率均可选每日凌晨加速：
 
 ```bash
-ros2 launch marsdog_behavior internal_need_emotion.launch.py \
-  time_scale:=24 virtual_start_time:=00:00 \
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
+  time_scale:=100 virtual_start_time:=00:00 \
   midnight_acceleration_enabled:=true \
   midnight_duration_seconds:=30 \
   random_seed:=12345
 ```
 
 - 每天虚拟 `00:00-06:00` 用36个虚拟10分钟步骤在30秒内走完。
-- `06:00` 后同一时间节点恢复连续24倍，不退出、不重置情绪或行为结果状态。
+- `06:00` 后同一时间节点恢复所选基础倍率，不退出、不重置情绪或行为结果状态。
 - 下一天到达 `00:00` 后自动再次进入30秒凌晨加速。
-- `timeContext.scale` 保持24；加速期间 `effectiveScale=720`，结束后恢复24。
+- `timeContext.scale` 始终保持基础倍率；30秒加速期间
+  `effectiveScale=720`，结束后恢复为基础倍率。
+- 加速期间可以动态修改 `time_scale`，06:00 后按新倍率继续运行。
 - 需求节点仍逐虚拟10分钟结算；情绪自然衰减仍按真实时间1 Hz。
 
 凌晨睡眠流程也可单独压缩为30秒并在06:00结束：
 
 ```bash
-ros2 launch marsdog_behavior midnight_test.launch.py \
+ros2 launch marsdog_need_emotion midnight_test.launch.py \
   scenario_duration_seconds:=30 random_seed:=12345
 ```
 
 专用测试时间源从 `00:00` 到 `06:00` 发布36个 `TIME_TEST_STEP`，每步推进虚拟
 10分钟。它会自动响应第一次 `NEED_SLEEPINESS_TRIGGERED`，发布
 `ACTION_SLEEP + STARTED`；到达 `06:00` 后检查是否经历睡眠并最终醒来，然后
-输出 `PASSED/FAILED` 并自动结束 launch。生产时间倍率范围仍为 `1-24`。
+输出 `PASSED/FAILED` 并自动结束 launch。生产时间倍率范围仍为 `1-100`。
 
 四类需求/情绪状态与事件消息均包含 `timeContext`。原顶层 `timestamp` 仍是真实
 Unix 时间，`timeContext.virtualDateTime` 表示公式计算使用的虚拟时间。测试
@@ -509,6 +511,7 @@ Unix 时间，`timeContext.virtualDateTime` 表示公式计算使用的虚拟时
 ```bash
 ros2 param set /time_controller_node time_scale 7
 ros2 param set /time_controller_node time_scale 24
+ros2 param set /time_controller_node time_scale 100
 ros2 param set /time_controller_node time_scale 1
 ```
 
@@ -518,10 +521,10 @@ ros2 param set /time_controller_node time_scale 1
 也可以分别启动：
 
 ```bash
-ros2 run marsdog_behavior personality_node
-ros2 run marsdog_behavior time_controller_node
-ros2 run marsdog_behavior internal_need_node
-ros2 run marsdog_behavior emotion_engine_node
+ros2 run marsdog_need_emotion personality_node
+ros2 run marsdog_need_emotion time_controller_node
+ros2 run marsdog_need_emotion internal_need_node
+ros2 run marsdog_need_emotion emotion_engine_node
 ```
 
 ## 10. 当前缺口

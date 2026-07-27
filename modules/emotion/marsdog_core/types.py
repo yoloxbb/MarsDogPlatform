@@ -6,6 +6,10 @@ from enum import Enum
 from typing import Type, TypeVar
 
 
+MIN_TIME_SCALE_VALUE = 1
+MAX_TIME_SCALE_VALUE = 100
+
+
 class DemandType(str, Enum):
     """需求状态量类型。"""
 
@@ -234,12 +238,15 @@ def NormalizePersonalityProfileType(profileName: object) -> str:
 
 
 def NormalizeTimeScaleValue(timeScale: object) -> int:
-    """校验并返回 1-24 范围内的整数时间倍率。"""
+    """校验并返回 1-100 范围内的整数时间倍率。"""
     # bool 是 int 的子类，必须显式拒绝，避免 True 被误当成 1 倍率。
     if isinstance(timeScale, bool) or not isinstance(timeScale, int):
-        raise ValueError("timeScale must be an integer between 1 and 24")
-    if timeScale < 1 or timeScale > 24:
-        raise ValueError("timeScale must be an integer between 1 and 24")
+        raise ValueError("timeScale must be an integer between 1 and 100")
+    if (
+        timeScale < MIN_TIME_SCALE_VALUE
+        or timeScale > MAX_TIME_SCALE_VALUE
+    ):
+        raise ValueError("timeScale must be an integer between 1 and 100")
     return timeScale
 
 

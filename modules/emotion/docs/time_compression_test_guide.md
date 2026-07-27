@@ -1,10 +1,10 @@
-# Marsdog 1-24 整数倍率时间压缩测试移交说明
+# Marsdog 1-100 整数倍率时间压缩测试移交说明
 
 本文档用于在较短真实时间内验收一个完整虚拟 24 小时的内部需求和情绪变化。
 
 ## 1. 时间倍率
 
-未启用凌晨特殊加速时，`time_scale` 接受 `1-24` 的整数。完整虚拟24小时所需真实时间为
+未启用凌晨特殊加速时，`time_scale` 接受 `1-100` 的整数。完整虚拟24小时所需真实时间为
 `24 / time_scale` 小时，需求 Tick 真实周期为 `600 / time_scale` 秒，
 情绪状态发布真实频率为 `time_scale` Hz；情绪自然衰减固定为真实时间 1 Hz。
 
@@ -14,6 +14,7 @@
 | 7 | 约 3 小时 25 分 43 秒 | 约每 85.71 秒 | 7 Hz | 真实时间 1 Hz |
 | 12 | 2 小时 | 每 50 秒 | 12 Hz | 真实时间 1 Hz |
 | 24 | 1 小时 | 每 25 秒 | 24 Hz | 真实时间 1 Hz |
+| 100 | 14 分 24 秒 | 每 6 秒 | 100 Hz | 真实时间 1 Hz |
 
 时间倍率只影响需求自然更新、睡眠恢复和情绪状态发布时间线，不影响情绪自然
 衰减。感知事件与
@@ -24,30 +25,30 @@
 构建并加载环境：
 
 ```bash
-cd /home/yahboom/Marsdog
-colcon build --packages-select marsdog_behavior
+cd /home/bird/Marsdog
+colcon build --packages-select marsdog_need_emotion
 source install/setup.bash
 ```
 
 1 倍模式：
 
 ```bash
-ros2 launch marsdog_behavior internal_need_emotion.launch.py \
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
   time_scale:=1
 ```
 
 7 倍模式：
 
 ```bash
-ros2 launch marsdog_behavior internal_need_emotion.launch.py \
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
   time_scale:=7
 ```
 
-24 倍模式，推荐用于交付验收：
+100 倍模式，推荐用于快速交付验收：
 
 ```bash
-ros2 launch marsdog_behavior internal_need_emotion.launch.py \
-  time_scale:=24 \
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
+  time_scale:=100 \
   virtual_start_time:=06:00 \
   random_seed:=12345
 ```
@@ -56,20 +57,20 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
 
 | 参数 | 允许值 | 说明 |
 |---|---|---|
-| `time_scale` | `1-24` 整数 | 初始值由 launch 设置；运行中通过时间控制节点修改 |
-| `virtual_start_time` | `auto` 或 `HH:MM` | 1 倍 `auto` 从当前时间开始；2-24 倍从当天 06:00 开始 |
+| `time_scale` | `1-100` 整数 | 初始值由 launch 设置；运行中通过时间控制节点修改 |
+| `virtual_start_time` | `auto` 或 `HH:MM` | 1 倍 `auto` 从当前时间开始；2-100 倍从当天 06:00 开始 |
 | `random_seed` | `-1` 或非负整数 | `-1` 随机；固定值可重复 |
-| `midnight_acceleration_enabled` | `true/false` | 仅24倍模式；每天00:00-06:00是否使用离散加速 |
+| `midnight_acceleration_enabled` | `true/false` | 任意1-100倍率；每天00:00-06:00是否使用离散加速 |
 | `midnight_duration_seconds` | 正数 | 每次虚拟凌晨六小时使用的真实秒数，默认30 |
 
 非法倍率、非法时间和小于 `-1` 的种子会拒绝启动。完整一天验收必须从
 `06:00` 开始；任意其他起点不会回放此前时段。
 
-### 2.1 连续24倍联调中的每日凌晨30秒加速
+### 2.1 任意基础倍率联调中的每日凌晨30秒加速
 
 ```bash
-ros2 launch marsdog_behavior internal_need_emotion.launch.py \
-  time_scale:=24 \
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
+  time_scale:=100 \
   virtual_start_time:=00:00 \
   midnight_acceleration_enabled:=true \
   midnight_duration_seconds:=30 \
@@ -80,7 +81,7 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
 
 ```text
 当天 00:00 → 用30秒到06:00
-当天 06:00 → 恢复连续24倍
+当天 06:00 → 恢复所选基础倍率
 次日 00:00 → 再次用30秒到06:00
 ```
 
@@ -96,22 +97,24 @@ ros2 launch marsdog_behavior internal_need_emotion.launch.py \
 }
 ```
 
-该模式不会在06:00退出。一个完整虚拟日的真实耗时约为：
+该模式不会在06:00退出。基础倍率为 `S` 时，一个完整虚拟日的真实耗时为：
 
 ```text
-凌晨30秒 + 其余18小时/24倍 = 45分30秒
+30秒 + 64800/S 秒
 ```
 
-加速期间 `timeContext.scale=24`、`effectiveScale=720`、
-`midnightAcceleration.active=true`；06:00后 `effectiveScale=24`、
-`active=false`。
+例如基础倍率100时约为 `11分18秒`。加速期间
+`timeContext.scale=100`、`effectiveScale=720`、
+`midnightAcceleration.active=true`；06:00后 `effectiveScale=100`、
+`active=false`。把 `time_scale` 换成任意 `1-100` 整数均可使用；加速期间
+动态切换倍率时，06:00后恢复新倍率。
 
 ### 2.2 独立30秒凌晨场景
 
 只测试虚拟 `00:00-06:00` 的需求锁定、睡眠恢复和晨起重置：
 
 ```bash
-ros2 launch marsdog_behavior midnight_test.launch.py \
+ros2 launch marsdog_need_emotion midnight_test.launch.py \
   scenario_duration_seconds:=30 \
   completion_hold_seconds:=2 \
   auto_start_sleep:=true \
@@ -128,7 +131,7 @@ ros2 launch marsdog_behavior midnight_test.launch.py \
 - 输出 `Midnight test PASSED/FAILED`；
 - 等待 `completion_hold_seconds` 后自动退出整个 launch。
 
-该场景使用测试专用 `TIME_TEST_STEP`，不修改生产 `time_scale=1-24` 限制，
+该场景使用测试专用 `TIME_TEST_STEP`，不修改生产 `time_scale=1-100` 限制，
 也不会让情绪节点回放21600条中间状态。情绪自然衰减只按实际经过的30秒计算。
 
 ### 2.3 运行中切换倍率
@@ -138,6 +141,7 @@ ros2 launch marsdog_behavior midnight_test.launch.py \
 ```bash
 ros2 param set /time_controller_node time_scale 7
 ros2 param set /time_controller_node time_scale 24
+ros2 param set /time_controller_node time_scale 100
 ros2 param set /time_controller_node time_scale 1
 ```
 
@@ -149,7 +153,7 @@ ros2 param set /time_controller_node time_scale 1
 另开终端并加载同一环境：
 
 ```bash
-source /home/yahboom/Marsdog/install/setup.bash
+source /home/bird/Marsdog/install/setup.bash
 ros2 topic echo /internal_need/state --field data --full-length
 ros2 topic echo /internal_need/signal_event --field data --full-length
 ros2 topic echo /emotion/state --field data --full-length
@@ -214,7 +218,7 @@ ros2 topic pub --once /behavior/result_event std_msgs/msg/String \
 | Energy | 晨起满电时 `Energy=0`；电量低于 20%/10% 时进入触发/满溢 |
 | 需求 Tick | 真实周期符合 `600 / time_scale` 秒 |
 | Tick 补算 | 节点短暂延迟后数值不丢增长 Tick |
-| 情绪衰减 | 倍率 `1/7/24` 下相同真实时间的衰减一致，区间事件顺序完整 |
+| 情绪衰减 | 倍率 `1/7/24/100` 下相同真实时间的衰减一致，区间事件顺序完整 |
 | 需求事件 | `state.levelEvents[demand]` 与 signal 的 `event_type` 一致 |
 | 情绪事件 | `state.levelEvents[emotion]` 与 signal 的 `event_type` 一致 |
 | 睡眠 | 即时响应睡眠信号时，约清醒 6 小时 40-50 分，约 5 次睡眠会话 |
@@ -224,10 +228,10 @@ ros2 topic pub --once /behavior/result_event std_msgs/msg/String \
 ## 7. 自动化回归
 
 ```bash
-cd /home/yahboom/Marsdog
+cd /home/bird/Marsdog
 python3 -m compileall -q marsdog_core marsdog_ros2 tests
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -q
 ```
 
-单元测试覆盖 `1-24` 倍率换算、参数校验、遗漏 Tick 补算、不同倍率需求/情绪轨迹
+单元测试覆盖 `1-100` 倍率换算、参数校验、遗漏 Tick 补算、不同倍率需求/情绪轨迹
 一致性，以及当前全天睡眠目标。

@@ -72,8 +72,8 @@ print(system.GetEmotionSignalEventsValue())     # 区间变化事件
 运行节点：
 
 ```bash
-ros2 run marsdog_behavior internal_need_node
-ros2 run marsdog_behavior emotion_engine_node
+ros2 run marsdog_need_emotion internal_need_node
+ros2 run marsdog_need_emotion emotion_engine_node
 ```
 
 ## 测试

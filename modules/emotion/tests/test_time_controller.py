@@ -53,7 +53,7 @@ class TimeControllerTest(unittest.TestCase):
 
     def test_integer_scales_advance_virtual_time(self):
         """常用整数倍率应正确推进虚拟时间并换算真实间隔。"""
-        for scale in (1, 2, 3, 7, 12, 24):
+        for scale in (1, 2, 3, 7, 12, 24, 50, 100):
             controller, clock = self._CreateController(scale)
 
             clock.Advance(600.0)
@@ -67,23 +67,23 @@ class TimeControllerTest(unittest.TestCase):
             self.assertEqual(controller.GetRealIntervalValue(600.0), 600.0 / scale)
 
     def test_all_supported_integer_scales_are_accepted(self):
-        """1-24 的每个整数倍率都应可以创建时间控制器。"""
-        for scale in range(1, 25):
+        """1-100 的每个整数倍率都应可以创建时间控制器。"""
+        for scale in range(1, 101):
             controller, _ = self._CreateController(scale)
 
             self.assertEqual(controller.GetTimeScaleValue(), scale)
 
     def test_runtime_scale_switch_keeps_virtual_time_continuous(self):
-        """运行时执行 1→24→7 不得重置或跳变虚拟时间。"""
+        """运行时执行 1→100→7 不得重置或跳变虚拟时间。"""
         controller, clock = self._CreateController(1)
         clock.Advance(100.0)
         beforeFirstSwitch = controller.GetVirtualDateTimeValue()
 
-        self.assertTrue(controller.SetTimeScaleValue(24))
+        self.assertTrue(controller.SetTimeScaleValue(100))
         afterFirstSwitch = controller.GetVirtualDateTimeValue()
 
         self.assertEqual(afterFirstSwitch, beforeFirstSwitch)
-        self.assertEqual(controller.GetTimeScaleValue(), 24)
+        self.assertEqual(controller.GetTimeScaleValue(), 100)
         self.assertEqual(controller.GetTimeRevisionValue(), 1)
 
         clock.Advance(10.0)
@@ -91,7 +91,7 @@ class TimeControllerTest(unittest.TestCase):
             (
                 controller.GetVirtualDateTimeValue() - beforeFirstSwitch
             ).total_seconds(),
-            240.0,
+            1000.0,
         )
 
         beforeSecondSwitch = controller.GetVirtualDateTimeValue()
@@ -130,26 +130,27 @@ class TimeControllerTest(unittest.TestCase):
         self.assertEqual(controller.GetTimeRevisionValue(), 0)
 
     def test_virtual_time_can_anchor_at_accelerated_midnight_steps(self):
-        """凌晨离散步骤结束后应从06:00继续按24倍推进。"""
-        controller, clock = self._CreateController(24, "00:00")
-        start = controller.GetVirtualStartDateTimeValue()
+        """凌晨离散步骤结束后应恢复各自的基础倍率。"""
+        for scale in (1, 7, 24, 100):
+            controller, clock = self._CreateController(scale, "00:00")
+            start = controller.GetVirtualStartDateTimeValue()
 
-        for stepSequence in range(1, 37):
-            controller.SetVirtualDateTimeValue(
-                start + timedelta(minutes=10 * stepSequence)
+            for stepSequence in range(1, 37):
+                controller.SetVirtualDateTimeValue(
+                    start + timedelta(minutes=10 * stepSequence)
+                )
+
+            self.assertEqual(
+                controller.GetVirtualDateTimeValue(),
+                start + timedelta(hours=6),
             )
+            self.assertEqual(controller.GetTimeRevisionValue(), 0)
 
-        self.assertEqual(
-            controller.GetVirtualDateTimeValue(),
-            start + timedelta(hours=6),
-        )
-        self.assertEqual(controller.GetTimeRevisionValue(), 0)
-
-        clock.Advance(1.0)
-        self.assertEqual(
-            controller.GetVirtualDateTimeValue(),
-            start + timedelta(hours=6, seconds=24),
-        )
+            clock.Advance(1.0)
+            self.assertEqual(
+                controller.GetVirtualDateTimeValue(),
+                start + timedelta(hours=6, seconds=scale),
+            )
 
     def test_virtual_time_anchor_rejects_time_before_start(self):
         """离散时间锚点不得早于本次虚拟起点。"""
@@ -218,14 +219,14 @@ class TimeControllerTest(unittest.TestCase):
             target.SetTimeContextValue(context)
 
     def test_auto_start_rules(self):
-        """1 倍跟随真实时间，2-24 倍默认从本地 06:00 开始。"""
+        """1 倍跟随真实时间，2-100 倍默认从本地 06:00 开始。"""
         standard, _ = self._CreateController(1, "auto")
 
         expectedWallTime = datetime.fromtimestamp(
             datetime(2026, 7, 16, 10, 30, tzinfo=timezone.utc).timestamp()
         ).astimezone()
         self.assertEqual(standard.GetVirtualStartDateTimeValue(), expectedWallTime)
-        for scale in range(2, 25):
+        for scale in range(2, 101):
             accelerated, _ = self._CreateController(scale, "auto")
             self.assertEqual(accelerated.GetVirtualStartDateTimeValue().hour, 6)
             self.assertEqual(accelerated.GetVirtualStartDateTimeValue().minute, 0)
@@ -240,7 +241,18 @@ class TimeControllerTest(unittest.TestCase):
 
     def test_invalid_time_configuration_is_rejected(self):
         """非法倍率类型、越界倍率和非法 HH:MM 应直接拒绝。"""
-        for invalidScale in (0, 25, -1, True, False, 1.0, 7.5, "1", "demo_2h", None):
+        for invalidScale in (
+            0,
+            101,
+            -1,
+            True,
+            False,
+            1.0,
+            7.5,
+            "1",
+            "demo_2h",
+            None,
+        ):
             with self.assertRaises(ValueError):
                 self._CreateController(invalidScale)
         with self.assertRaises(ValueError):
@@ -249,11 +261,11 @@ class TimeControllerTest(unittest.TestCase):
             self._CreateController(7, "6:00")
 
     def test_invalid_time_context_scale_is_rejected(self):
-        """权威时间上下文中的倍率也必须是 1-24 整数。"""
+        """权威时间上下文中的倍率也必须是 1-100 整数。"""
         source, _ = self._CreateController(7)
         target, _ = self._CreateController(1)
 
-        for invalidScale in (0, 25, True, 7.0, "7"):
+        for invalidScale in (0, 101, True, 7.0, "7"):
             context = source.GetTimeContextValue()
             context["scale"] = invalidScale
             with self.assertRaises(ValueError):
@@ -338,6 +350,7 @@ class TimeControllerTest(unittest.TestCase):
             7: "custom",
             12: "demo_2h",
             24: "custom",
+            100: "custom",
         }
         for scale, label in expectedLabels.items():
             controller, _ = self._CreateController(scale)
@@ -357,9 +370,9 @@ class TimeControllerTest(unittest.TestCase):
                 GetRandomGeneratorValue(invalidSeed)
 
     def test_need_trajectory_is_equal_for_selected_time_scales(self):
-        """相同虚拟 Tick 序列在 1、7、24 倍下应得到相同需求轨迹。"""
+        """相同虚拟 Tick 序列在 1、7、24、100 倍下应得到相同需求轨迹。"""
         allTrajectories = []
-        for scale in (1, 7, 24):
+        for scale in (1, 7, 24, 100):
             controller, clock = self._CreateController(scale)
             scheduler = VirtualTickScheduler(
                 controller.GetVirtualStartDateTimeValue(),
@@ -391,11 +404,12 @@ class TimeControllerTest(unittest.TestCase):
 
         self.assertEqual(allTrajectories[0], allTrajectories[1])
         self.assertEqual(allTrajectories[1], allTrajectories[2])
+        self.assertEqual(allTrajectories[2], allTrajectories[3])
 
     def test_emotion_decay_is_equal_for_same_real_time_across_scales(self):
         """相同真实时间下各倍率应得到一致的衰减值和区间事件轨迹。"""
         allResults = []
-        for scale in (1, 7, 24):
+        for scale in (1, 7, 24, 100):
             controller, clock = self._CreateController(scale)
             scheduler = RealTimeTickScheduler(
                 clock.GetMonotonicValue(),
@@ -421,13 +435,14 @@ class TimeControllerTest(unittest.TestCase):
 
         self.assertEqual(allResults[0], allResults[1])
         self.assertEqual(allResults[1], allResults[2])
+        self.assertEqual(allResults[2], allResults[3])
         self.assertIn("EMO_JOY_MID", allResults[0][1])
         self.assertIn("EMO_JOY_LOW", allResults[0][1])
 
     def test_same_virtual_duration_decays_by_real_duration(self):
         """相同虚拟时长在高倍率下应因真实耗时更短而衰减更少。"""
         joyValues = []
-        for scale in (1, 7, 24):
+        for scale in (1, 7, 24, 100):
             controller, clock = self._CreateController(scale)
             scheduler = RealTimeTickScheduler(clock.GetMonotonicValue(), 1.0)
             system = MarsdogEmotionSystem(randomGenerator=random.Random(2026))
@@ -440,7 +455,7 @@ class TimeControllerTest(unittest.TestCase):
                 system.ApplyEmotionDecay(1.0)
             joyValues.append(system.GetEmotionValue("Joy"))
 
-        self.assertEqual(joyValues, [42, 84, 88])
+        self.assertEqual(joyValues, [42, 84, 88, 90])
 
     def test_scale_switch_does_not_trigger_extra_emotion_decay(self):
         """倍率切换本身不应产生额外真实时间衰减 Tick。"""
@@ -452,7 +467,7 @@ class TimeControllerTest(unittest.TestCase):
             scheduler.GetDueTickCountValue(clock.GetMonotonicValue()),
             1,
         )
-        controller.SetTimeScaleValue(24)
+        controller.SetTimeScaleValue(100)
         self.assertEqual(
             scheduler.GetDueTickCountValue(clock.GetMonotonicValue()),
             0,

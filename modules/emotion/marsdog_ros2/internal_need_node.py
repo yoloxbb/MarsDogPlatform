@@ -85,7 +85,9 @@ class InternalNeedNode(Node):
         self.declare_parameter(
             "time_scale",
             1,
-            descriptor=_ReadOnlyParameterDescriptor("Virtual time scale: integer from 1 to 24"),
+            descriptor=_ReadOnlyParameterDescriptor(
+                "Virtual time scale: integer from 1 to 100"
+            ),
         )
         self.declare_parameter(
             "virtual_start_time",

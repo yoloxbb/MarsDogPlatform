@@ -61,7 +61,7 @@ class TimeStateAdapterTest(unittest.TestCase):
         self.assertEqual(GetTimeStateMessageValue(payload), payload)
 
     def test_accepts_continuous_midnight_acceleration_events(self):
-        """适配器应接受连续24倍模式的加速步骤和切换事件。"""
+        """适配器应接受任意基础倍率的凌晨加速步骤和切换事件。"""
         for eventType in (
             "TIME_ACCELERATED_STEP",
             "TIME_ACCELERATION_CHANGED",

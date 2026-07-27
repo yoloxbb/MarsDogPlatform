@@ -12,7 +12,11 @@ from marsdog_core import (
     RealTimeTickScheduler,
     VirtualTickScheduler,
 )
-from marsdog_core.types import NormalizeTimeScaleValue
+from marsdog_core.types import (
+    MAX_TIME_SCALE_VALUE,
+    MIN_TIME_SCALE_VALUE,
+    NormalizeTimeScaleValue,
+)
 
 try:
     import rclpy
@@ -35,7 +39,6 @@ except ModuleNotFoundError:
     String = None
 
 
-MIDNIGHT_ACCELERATION_SCALE = 24
 MIDNIGHT_ACCELERATION_VIRTUAL_SECONDS = 6 * 60 * 60
 MIDNIGHT_ACCELERATION_STEP_SECONDS = 10 * 60
 MIDNIGHT_ACCELERATION_STEP_COUNT = (
@@ -111,27 +114,23 @@ class TimeControllerNode(Node):
         except (TypeError, ValueError):
             return SetParametersResult(
                 successful=False,
-                reason="time_scale must be an integer between 1 and 24",
-            )
-
-        if (
-            self.midnightAccelerationEnabled
-            and normalizedScale != MIDNIGHT_ACCELERATION_SCALE
-        ):
-            return SetParametersResult(
-                successful=False,
-                reason=(
-                    "time_scale must remain 24 while "
-                    "midnight_acceleration_enabled is true"
-                ),
+                reason="time_scale must be an integer between 1 and 100",
             )
 
         if normalizedScale == self.timeController.GetTimeScaleValue():
             return SetParametersResult(successful=True)
 
-        # 先消费旧倍率下已经到期的 Tick，再连续切换时间锚点。
-        self.PublishDueTicks()
+        # 先按当前模式消费已经到期的普通 Tick 或凌晨加速步骤。
+        if self.midnightAccelerationActive:
+            self.PublishDueMidnightAccelerationSteps()
+        else:
+            self.PublishDueTicks()
         self.timeController.SetTimeScaleValue(normalizedScale)
+        if self.midnightAccelerationActive:
+            # 加速期间以最近一个离散步骤为权威锚点，避免换倍率产生中间漂移。
+            self.timeController.SetVirtualDateTimeValue(
+                self._GetCurrentMidnightAccelerationDateTimeValue()
+            )
         self._ResetTimeTimer()
         self.PublishTimeState(
             "TIME_MODE_CHANGED",
@@ -256,21 +255,13 @@ class TimeControllerNode(Node):
         )
 
     def _ValidateMidnightAccelerationParameters(self) -> None:
-        """校验凌晨加速仅在24倍模式下启用且时长有效。"""
+        """校验任意基础倍率共用的凌晨加速时长。"""
         if (
             not isfinite(self.midnightDurationSeconds)
             or self.midnightDurationSeconds <= 0
         ):
             raise ValueError(
                 "midnight_duration_seconds must be a finite positive number"
-            )
-        if (
-            self.midnightAccelerationEnabled
-            and self.timeController.GetTimeScaleValue()
-            != MIDNIGHT_ACCELERATION_SCALE
-        ):
-            raise ValueError(
-                "midnight acceleration requires time_scale=24"
             )
 
     def _StartMidnightAcceleration(
@@ -307,7 +298,7 @@ class TimeControllerNode(Node):
         self,
         virtualDateTime: datetime,
     ) -> None:
-        """在06:00结束凌晨加速并恢复连续24倍虚拟秒。"""
+        """在06:00结束凌晨加速并恢复当前基础倍率。"""
         self.midnightAccelerationActive = False
         self.midnightStepScheduler = None
         self.tickScheduler = VirtualTickScheduler(
@@ -320,8 +311,22 @@ class TimeControllerNode(Node):
             virtualDateTime,
         )
         self.get_logger().info(
-            "Midnight acceleration finished at %s; resumed continuous 24x"
-            % virtualDateTime.isoformat()
+            "Midnight acceleration finished at %s; resumed continuous %sx"
+            % (
+                virtualDateTime.isoformat(),
+                self.timeController.GetTimeScaleValue(),
+            )
+        )
+
+    def _GetCurrentMidnightAccelerationDateTimeValue(self) -> datetime:
+        """获取当前凌晨离散步骤对应的权威虚拟时间。"""
+        if self.midnightAccelerationStart is None:
+            raise RuntimeError("midnight acceleration has not started")
+        return self.midnightAccelerationStart + timedelta(
+            seconds=(
+                self.midnightAccelerationStepSequence
+                * MIDNIGHT_ACCELERATION_STEP_SECONDS
+            )
         )
 
     def _GetMidnightAccelerationContextValue(self) -> dict[str, object]:
@@ -374,13 +379,19 @@ def _ParameterDescriptor(description: str, readOnly: bool):
 
 
 def _TimeScaleParameterDescriptor(readOnly: bool):
-    """创建限制为 1-24 整数的 ROS2 倍率参数描述。"""
+    """创建限制为 1-100 整数的 ROS2 倍率参数描述。"""
     if ParameterDescriptor is None or IntegerRange is None:
         return None
     return ParameterDescriptor(
-        description="Virtual time scale: integer from 1 to 24",
+        description="Virtual time scale: integer from 1 to 100",
         read_only=readOnly,
-        integer_range=[IntegerRange(from_value=1, to_value=24, step=1)],
+        integer_range=[
+            IntegerRange(
+                from_value=MIN_TIME_SCALE_VALUE,
+                to_value=MAX_TIME_SCALE_VALUE,
+                step=1,
+            )
+        ],
     )
 
 

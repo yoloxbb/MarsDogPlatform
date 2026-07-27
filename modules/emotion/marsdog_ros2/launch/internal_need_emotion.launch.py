@@ -36,7 +36,7 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument(
                 "time_scale",
                 default_value="1",
-                description="Virtual time scale: integer from 1 to 24",
+                description="Virtual time scale: integer from 1 to 100",
             ),
             DeclareLaunchArgument(
                 "virtual_start_time",
