@@ -270,7 +270,17 @@ ros2 param set /personality_node C 40
 ### Energy
 
 - 表示充电需求/电量缺口：`Energy = 100 - 当前电量百分比`。
-- 晨起满电：`Energy = 0`。
+- 每次节点启动为满电：`Energy = 0`；每天 06:00 晨起重置不会自动充电。
+- 满电续航为 2 个虚拟小时，每个虚拟 10 分钟 Tick 线性增加 Energy，并用
+  小数余量保证第 12 个 Tick 恰好到 `Energy = 100`。
+- Energy 不受凌晨普通需求锁定和睡眠影响；普通时段和遗漏 Tick 按权威虚拟
+  时间补算。
+- 启用凌晨特殊加速时，`00:00-06:00` 不按 6 个虚拟小时耗电，而是按该窗口
+  的真实持续时间以 1 倍耗电；默认30秒窗口只累计30秒耗电。
+- 30秒仅消耗满电的约 `0.4167%`，对外整数电量仍为100%，小数余量会保留到
+  后续 Tick 继续累计。
+- `time_scale=S` 时，两虚拟小时对应 `7200/S` 秒真实时间；24 倍为 5 分钟，
+  100 倍为 72 秒；这个换算只用于非凌晨特殊加速时段。
 - 触发：`>80`，等价于电量 `<20%`。
 - 满溢：`>90`，等价于电量 `<10%`。
 - `ACTION_RECHARGE + COMPLETED`：
@@ -341,9 +351,9 @@ finalDelta = round(baseDelta * k_emotion * metadataMultiplier)
 
 - `Joy -= 2/sec`
 - `Excite -= 3/sec`
-- `Anxiety -= 1.5/sec`
 - `Fear -= 4/sec`
 - `Curious -= 2/sec`
+- `Anxiety` 不自然衰减
 - `Calm` 不自然衰减
 
 ### 情绪区间事件

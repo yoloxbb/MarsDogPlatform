@@ -65,4 +65,4 @@ docs/*.jpeg
 !docs/ros2_topic_contract.md
 !docs/time_compression_test_guide.md
 !docs/2026-07-26_work_summary.md
-!docs/2026-07-27_time_scale_1_100_summary.md
+!docs/2026-07-27_work_summary.md

@@ -67,6 +67,7 @@ class MarsdogNeedSystem(
         self.configs = LoadAllConfigs(configDir)
         self.random = randomGenerator or random.Random()
         self._timeProvider = timeProvider or time.time
+        self.InitializeStartupEnergy()
         self._lastDemandSignalSnapshot = self.GetDemandSignalSnapshotValue()
 
     def OnVisualEvent(self, metadata: dict[str, Any] | None = None) -> list[str]:

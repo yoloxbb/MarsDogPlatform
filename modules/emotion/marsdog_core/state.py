@@ -69,6 +69,7 @@ class MarsdogState:
     lightsOff: bool = False
     personalityProfile: str = PersonalityProfileType.CUSTOM.value
     ownerPresent: bool | None = None
+    energyDrainRemainder: float = 0.0
     processedBehaviorResultEventIds: set[str] = field(default_factory=set)
     processedBehaviorResultEventIdOrder: list[str] = field(default_factory=list)
 
@@ -90,6 +91,7 @@ class MarsdogState:
         self.lightsOff = False
         self.personalityProfile = PersonalityProfileType.CUSTOM.value
         self.ownerPresent = None
+        self.energyDrainRemainder = 0.0
         self.processedBehaviorResultEventIds = set()
         self.processedBehaviorResultEventIdOrder = []
 

@@ -22,6 +22,9 @@ class DemandAPI:
         try:
             demand = NormalizeDemandType(demandType)
             self.state.demands[demand] = ClampValue(value)
+            if demand == DemandType.ENERGY.value:
+                # 外部写入、充电或中断结算后重新开始耗电，避免继承旧的小数余量。
+                self.state.energyDrainRemainder = 0.0
             return True
         except (TypeError, ValueError):
             return False

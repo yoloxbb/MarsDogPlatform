@@ -406,6 +406,27 @@ class TimeControllerTest(unittest.TestCase):
         self.assertEqual(allTrajectories[1], allTrajectories[2])
         self.assertEqual(allTrajectories[2], allTrajectories[3])
 
+    def test_battery_endurance_uses_scaled_virtual_time(self):
+        """两虚拟小时续航应按倍率换算为对应真实耗时。"""
+        for scale in (1, 7, 24, 100):
+            controller, clock = self._CreateController(scale)
+            scheduler = VirtualTickScheduler(
+                controller.GetVirtualStartDateTimeValue(),
+                600.0,
+            )
+            system = MarsdogNeedSystem()
+
+            # 两虚拟小时在真实世界中应只消耗 7200 / scale 秒。
+            clock.Advance(7200.0 / scale)
+            dueTicks = scheduler.GetDueTickDateTimesValue(
+                controller.GetVirtualDateTimeValue()
+            )
+            for tickDateTime in dueTicks:
+                system.UpdateNaturalDemandsByTime(tickDateTime)
+
+            self.assertEqual(len(dueTicks), 12)
+            self.assertEqual(system.GetBatteryValue(), 0)
+
     def test_emotion_decay_is_equal_for_same_real_time_across_scales(self):
         """相同真实时间下各倍率应得到一致的衰减值和区间事件轨迹。"""
         allResults = []

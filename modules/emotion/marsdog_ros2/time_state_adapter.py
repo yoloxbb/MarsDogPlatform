@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from math import isfinite
 from typing import Any
 
 
@@ -15,6 +16,7 @@ TIME_EVENT_TYPES = {
     "TIME_ACCELERATION_CHANGED",
     "TIME_ACCELERATED_STEP",
 }
+DEFAULT_DEMAND_TICK_SECONDS = 10 * 60
 
 
 def GetTimeStateMessageValue(message: object) -> dict[str, Any]:
@@ -41,6 +43,53 @@ def GetTimeContextDateTimeValue(
     except ValueError:
         return None
     return result if result.tzinfo is not None else None
+
+
+def GetEnergyElapsedSecondsPerDemandTickValue(
+    payload: dict[str, Any],
+) -> float:
+    """读取每个需求 Tick 应计入电池衰减的秒数。"""
+    eventType = str(payload.get("event_type", ""))
+    if eventType == "TIME_ACCELERATED_STEP":
+        timeContext = payload.get("timeContext", {})
+        acceleration = (
+            timeContext.get("midnightAcceleration", {})
+            if isinstance(timeContext, dict)
+            else {}
+        )
+        return _GetRealSecondsPerStepValue(acceleration)
+    if eventType == "TIME_TEST_STEP":
+        return _GetRealSecondsPerStepValue(payload.get("testScenario", {}))
+    return float(DEFAULT_DEMAND_TICK_SECONDS)
+
+
+def _GetRealSecondsPerStepValue(metadata: object) -> float:
+    """把凌晨加速的总真实时长平均分配到每个离散步骤。"""
+    if not isinstance(metadata, dict):
+        return 0.0
+    durationValue = metadata.get(
+        "durationSeconds",
+        metadata.get("scenarioDurationSeconds"),
+    )
+    stepCountValue = metadata.get("stepCount")
+    if isinstance(durationValue, bool) or isinstance(stepCountValue, bool):
+        return 0.0
+    try:
+        durationSeconds = float(durationValue)
+        stepCountNumber = float(stepCountValue)
+    except (TypeError, ValueError):
+        return 0.0
+    if (
+        not isfinite(durationSeconds)
+        or not isfinite(stepCountNumber)
+        or durationSeconds <= 0
+        or stepCountNumber <= 0
+        or not stepCountNumber.is_integer()
+    ):
+        return 0.0
+    stepCount = int(stepCountNumber)
+    # 凌晨特殊加速只按真实经过时间以1倍耗电，不按六小时虚拟跳时耗电。
+    return durationSeconds / stepCount
 
 
 def _NormalizeMessageToDict(message: object) -> dict[str, Any]:

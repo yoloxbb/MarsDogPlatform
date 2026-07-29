@@ -46,7 +46,6 @@
     "decayRules": {
       "Joy": 2.0,
       "Excite": 3.0,
-      "Anxiety": 1.5,
       "Fear": 4.0,
       "Curious": 2.0
     },

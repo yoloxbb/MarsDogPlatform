@@ -51,17 +51,32 @@ class EmotionAPITest(unittest.TestCase):
         self.assertEqual(system.GetEmotionValue("Calm"), 36)
 
     def test_apply_emotion_decay(self):
-        """自然平复应按秒扣减非 Calm 情绪。"""
+        """自然平复应按秒扣减配置情绪，并保持 Anxiety 和 Calm。"""
         system = MarsdogEmotionSystem()
         system.SetEmotionValue("Joy", 10)
         system.SetEmotionValue("Excite", 10)
+        system.SetEmotionValue("Anxiety", 10)
         system.SetEmotionValue("Calm", 40)
 
         system.ApplyEmotionDecay(2)
 
         self.assertEqual(system.GetEmotionValue("Joy"), 6)
         self.assertEqual(system.GetEmotionValue("Excite"), 4)
+        self.assertEqual(system.GetEmotionValue("Anxiety"), 10)
         self.assertEqual(system.GetEmotionValue("Calm"), 40)
+
+    def test_anxiety_changes_by_event_but_not_by_time(self):
+        """焦虑仍响应外部事件，但不会被自然衰减定时规则降低。"""
+        system = MarsdogEmotionSystem()
+        system.SetEmotionValue("Anxiety", 10)
+
+        self.assertTrue(system.ApplyEmotionEvent("EVT_AUDIO_LOUD"))
+        anxietyAfterEvent = system.GetEmotionValue("Anxiety")
+        self.assertGreater(anxietyAfterEvent, 10)
+
+        # 时间自然平复不得覆盖事件累积出的焦虑值。
+        system.ApplyEmotionDecay(60)
+        self.assertEqual(system.GetEmotionValue("Anxiety"), anxietyAfterEvent)
 
     def test_emotion_signal_event_emits_on_level_change(self):
         """情绪区间变化应生成一次 signal event。"""

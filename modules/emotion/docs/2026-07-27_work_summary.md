@@ -1,15 +1,27 @@
-# 2026-07-27 时间倍率扩展到 1-100 工作总结
+# 2026-07-27 工作总结
+
+## 今日工作概览
+
+| 工作项 | 状态 | 结果 |
+|---|---|---|
+| 时间倍率扩展 | 已完成 | `time_scale` 支持 `1-100` 全部整数 |
+| 任意倍率凌晨加速 | 已完成 | 任意基础倍率均可把虚拟00:00-06:00压缩到默认30秒 |
+| 加速中动态切换倍率 | 已完成 | 加速流程不中断，06:00后恢复新倍率 |
+| Anxiety停止自然衰减 | 已完成 | 焦虑仍响应事件，但不再随真实时间自动下降 |
+| 包名和文档收尾 | 已完成 | 当前ROS2包名统一为 `marsdog_need_emotion` |
 
 ## 1. 工作目标
 
-将 Marsdog 生产虚拟时间倍率从 `1-24` 整数扩展为 `1-100` 整数，同时保持：
+今天完成时间倍率、凌晨测试能力和焦虑衰减语义调整，目标包括：
 
+- 将生产虚拟时间倍率从 `1-24` 整数扩展为 `1-100` 整数。
 - 虚拟时间连续。
 - 运行时倍率可动态切换。
 - 需求 Tick 不遗漏。
 - 需求值、情绪值和睡眠状态不重置。
 - 情绪自然衰减继续按真实时间 1 Hz 计算。
 - 每日凌晨 30 秒特殊加速支持全部 `1-100` 基础倍率。
+- Anxiety 不再自然衰减，但保留感知事件、行为结果和 API 对其数值的修改。
 
 ## 2. 实现结果
 
@@ -133,7 +145,26 @@ ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
 
 如果使用 `virtual_start_time:=auto`，100 倍同样会从当天虚拟 06:00 开始。
 
-### 4.3 查看参数范围
+### 4.3 使用任意基础倍率启动凌晨30秒加速
+
+下面以100倍为例；`time_scale` 可以换成 `1-100` 中的任意整数：
+
+```bash
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
+  time_scale:=100 \
+  virtual_start_time:=00:00 \
+  midnight_acceleration_enabled:=true \
+  midnight_duration_seconds:=30 \
+  random_seed:=12345
+```
+
+预期流程：
+
+```text
+00:00 ──30真实秒──> 06:00 ──恢复100倍──> 次日00:00再次加速
+```
+
+### 4.4 查看参数范围
 
 ```bash
 ros2 param describe /time_controller_node time_scale
@@ -147,7 +178,7 @@ Max value: 100
 Step: 1
 ```
 
-### 4.4 查看权威虚拟时间
+### 4.5 查看权威虚拟时间
 
 ```bash
 ros2 topic echo /simulation/time_state --field data
@@ -164,7 +195,7 @@ ros2 topic echo /simulation/time_state --field data
 }
 ```
 
-### 4.5 运行时切换倍率
+### 4.6 运行时切换倍率
 
 ```bash
 ros2 param set /time_controller_node time_scale 7
@@ -185,7 +216,21 @@ ros2 param set /time_controller_node time_scale 101
 Parameter time_scale out of range. Min: 1, Max: 100
 ```
 
-### 4.6 运行完整验证
+凌晨加速期间也可以执行上述切换。系统会先结算已到期的凌晨步骤，再以最近一个
+虚拟10分钟边界重新锚定；06:00后按新倍率继续。
+
+### 4.7 验证焦虑不随时间衰减
+
+```bash
+cd /home/bird/Marsdog
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
+  tests.test_emotion_api.EmotionAPITest.test_anxiety_changes_by_event_but_not_by_time \
+  -v
+```
+
+该测试先通过大声音事件提高 Anxiety，再执行60秒自然衰减，最终值应保持不变。
+
+### 4.8 运行完整验证
 
 ```bash
 cd /home/bird/Marsdog
@@ -200,7 +245,7 @@ git diff --check
 自动化验证：
 
 - Python `compileall`：通过。
-- 单元测试：128 项全部通过。
+- 单元测试：129 项全部通过。
 - `colcon build --symlink-install --packages-select marsdog_need_emotion`：通过。
 - `git diff --check`：通过。
 
@@ -214,6 +259,8 @@ git diff --check
 - 验证相同虚拟 Tick 在 `1/7/24/100` 下产生一致的需求轨迹。
 - 验证相同真实时间在 `1/7/24/100` 下产生一致的情绪衰减。
 - 验证 100 倍仍输出兼容显示值 `mode=custom`。
+- 验证 Anxiety 在事件后可以上升，执行60秒自然衰减后保持不变。
+- 验证 Joy、Excite、Fear、Curious 仍按原速率衰减。
 
 实际 ROS2 验证：
 
@@ -241,7 +288,7 @@ git diff --check
 
 - 核心范围使用 `MIN_TIME_SCALE_VALUE` 和 `MAX_TIME_SCALE_VALUE` 统一表达。
 - ROS2 参数描述复用核心范围常量。
-- 使用全文检索检查剩余的旧范围，只保留凌晨特殊模式中有业务含义的 24。
+- 使用全文检索逐项判断旧的24是范围上限、测试样例还是业务配置，避免机械替换。
 
 经验：
 
@@ -282,6 +329,24 @@ git diff --check
 - ROS2 包重命名后应同时运行包结构测试和 `colcon build`，仅看到源码导入成功
   不能证明 ament 包发现配置正确。
 
+### 6.4 Anxiety原来由真实时间持续衰减
+
+问题：
+
+- `configs/emotions.yaml:decayRules` 中原来配置 `Anxiety: 1.5`。
+- 即使没有新的外部刺激，焦虑也会每个真实秒自动下降1.5。
+
+解决：
+
+- 从 `decayRules` 中移除 Anxiety，使其与 Calm 一样不参与自然衰减。
+- 不在核心代码中硬编码 Anxiety，继续由配置决定哪些情绪参加衰减。
+- 增加事件回归测试，确保大声音等事件仍能改变 Anxiety。
+
+经验：
+
+- “是否自然恢复”属于情绪模型配置，优先通过规则表表达。
+- 停止自然衰减不等于冻结情绪，事件输入和显式 API 仍应保留修改能力。
+
 ## 7. 可积累经验
 
 1. 倍率合法范围应由核心常量统一管理，ROS2 只负责暴露同一约束。
@@ -292,3 +357,19 @@ git diff --check
 6. 100 Hz Topic 会提高 CPU、DDS 和日志压力，联调程序不应打印每一条完整状态。
 7. 特殊测试倍率应使用 `effectiveScale` 表达，不应突破基础参数协议。
 8. 修改公共范围后必须同时验证最小值、最大值、最大值加一和非法类型。
+
+## 8. 焦虑停止自然衰减
+
+根据联调需求，已从 `configs/emotions.yaml:decayRules` 中移除 Anxiety：
+
+- `Anxiety` 不再随真实时间自动下降。
+- `Calm` 继续保持不自然衰减。
+- `Joy / Excite / Fear / Curious` 继续按原速率和真实时间 1 Hz 衰减。
+- 感知事件、行为结果和显式 API 仍然可以增加或降低 Anxiety。
+
+回归测试覆盖两条路径：
+
+1. 把 Anxiety 设置为10，执行2秒自然衰减，确认仍为10；同时验证 Joy 和
+   Excite 继续正常下降。
+2. 使用 `EVT_AUDIO_LOUD` 提高 Anxiety，执行60秒自然衰减，确认事件产生的
+   焦虑值保持不变。

@@ -19,8 +19,16 @@ class DemandLifecycleAPI:
         self.state.demandLockActive = locked
         return locked
 
-    def UpdateNaturalDemandsByTime(self, currentTime: object | None = None) -> dict[str, int]:
+    def UpdateNaturalDemandsByTime(
+        self,
+        currentTime: object | None = None,
+        energyElapsedSeconds: float | None = None,
+    ) -> dict[str, int]:
         """按全局规则更新所有自然增长需求。"""
+        if hasattr(self, "UpdateEnergyByTime"):
+            # 电池持续耗电，睡眠和凌晨需求锁定都不能暂停电池衰减。
+            self.UpdateEnergyByTime(currentTime, energyElapsedSeconds)
+
         locked = self.IsDemandLocked(currentTime)
         if locked:
             if hasattr(self, "UpdateSleepinessByTime"):
@@ -50,6 +58,9 @@ class DemandLifecycleAPI:
     def ResetDemandsToMorningInitialValues(self, currentTime: object | None = None) -> dict[str, int]:
         """将所有需求恢复为晨起初始值。"""
         for demand in DemandType:
+            if demand == DemandType.ENERGY:
+                # 每日晨起不能凭空充电；Energy 只在进程启动或充电结果中恢复。
+                continue
             if demand == DemandType.SOCIAL and hasattr(self, "InitializeMorningSocial"):
                 self.InitializeMorningSocial()
                 continue

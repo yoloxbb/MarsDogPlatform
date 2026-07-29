@@ -2,6 +2,7 @@ import json
 import unittest
 
 from marsdog_ros2.time_state_adapter import (
+    GetEnergyElapsedSecondsPerDemandTickValue,
     GetTimeContextDateTimeValue,
     GetTimeStateMessageValue,
 )
@@ -80,6 +81,53 @@ class TimeStateAdapterTest(unittest.TestCase):
         self.assertEqual(value.hour, 6)
         payload["timeContext"]["virtualDateTime"] = "2026-07-16T06:00:12"
         self.assertIsNone(GetTimeContextDateTimeValue(payload, "virtualDateTime"))
+
+    def test_normal_time_tick_uses_ten_virtual_minutes_for_energy(self):
+        """普通需求 Tick 应按600秒虚拟经过时间结算电池。"""
+        payload = self._GetPayload()
+
+        self.assertEqual(
+            GetEnergyElapsedSecondsPerDemandTickValue(payload),
+            600.0,
+        )
+
+    def test_midnight_steps_use_real_duration_at_one_times_speed(self):
+        """两类凌晨离散步骤都应把30秒平均到36步进行耗电。"""
+        productionPayload = self._GetPayload()
+        productionPayload["event_type"] = "TIME_ACCELERATED_STEP"
+        productionPayload["timeContext"]["midnightAcceleration"] = {
+            "durationSeconds": 30.0,
+            "stepCount": 36,
+        }
+        testPayload = self._GetPayload()
+        testPayload["event_type"] = "TIME_TEST_STEP"
+        testPayload["testScenario"] = {
+            "scenarioDurationSeconds": 30.0,
+            "stepCount": 36,
+        }
+
+        self.assertAlmostEqual(
+            GetEnergyElapsedSecondsPerDemandTickValue(productionPayload),
+            30.0 / 36.0,
+        )
+        self.assertAlmostEqual(
+            GetEnergyElapsedSecondsPerDemandTickValue(testPayload),
+            30.0 / 36.0,
+        )
+
+    def test_invalid_midnight_duration_does_not_fabricate_energy_drain(self):
+        """凌晨加速元数据非法时不得按600秒错误扣减电池。"""
+        payload = self._GetPayload()
+        payload["event_type"] = "TIME_ACCELERATED_STEP"
+        payload["timeContext"]["midnightAcceleration"] = {
+            "durationSeconds": "bad",
+            "stepCount": 36,
+        }
+
+        self.assertEqual(
+            GetEnergyElapsedSecondsPerDemandTickValue(payload),
+            0.0,
+        )
 
 
 if __name__ == "__main__":

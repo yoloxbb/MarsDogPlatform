@@ -53,7 +53,7 @@ personalitySystem = MarsdogPersonalitySystem()
 
 - `IsDemandLocked(currentTime=None)`：判断当前是否处于 `00:00-06:00` 普通需求锁定时段。
 - `UpdateNaturalDemandsByTime(currentTime=None)`：每 10 分钟调用一次，统一更新自然需求。
-- `ResetDemandsToMorningInitialValues(currentTime=None)`：恢复所有需求晨起值。
+- `ResetDemandsToMorningInitialValues(currentTime=None)`：恢复晨起需求值，但不重置持续耗电的 Energy。
 - `ApplyInterruptedDemandDelta(demandType)`：内部需求行为被打断时扣减对应需求。
 - `GetDemandTypeByAction(actionType)`：根据 `ACTION_*` 查对应需求类型，用于行为结果结算。
 - `OnBehaviorResultEvent(resultData)`：消费 `/behavior/result_event` 并更新需求。
@@ -98,11 +98,19 @@ personalitySystem = MarsdogPersonalitySystem()
 
 ## 精力接口
 
-- `InitializeMorningEnergy()`：晨起满电，`Energy = 0`。
+- `InitializeStartupEnergy()`：每次进程启动时初始化满电，`Energy = 0`。
+- `InitializeMorningEnergy()`：兼容旧调用；显式调用时同样重新初始化为满电。
 - `GetBatteryValue()`：读取当前电量，返回 `100 - Energy`。
 - `SetEnergyBatteryValue(value)`：写入当前电量，并保存 `Energy = 100 - value`。
+- `UpdateEnergyByTime(currentTime=None, elapsedSeconds=None)`：按指定的电池计时秒数结算自然耗电；普通 Tick 默认计入 600 秒。
 - `ExecuteRecharge()`：充电到配置的目标电量，并降低对应 Energy 需求。
 - `Recharge()`：APP 充电接口。
+
+Energy 在凌晨需求锁定和睡眠期间仍持续衰减，并由需求 Tick 补算。普通时段
+跟随虚拟倍率，两小时续航在 `time_scale=S` 时对应 `7200/S` 秒真实时间，
+例如 24 倍为 300 秒、100 倍为 72 秒。启用凌晨特殊加速时例外：
+`00:00-06:00` 只按加速窗口实际经过时间以 1 倍耗电，默认整个窗口只计
+30 秒，而不是计入 6 个虚拟小时。
 
 ## 社交接口
 
@@ -127,7 +135,9 @@ personalitySystem = MarsdogPersonalitySystem()
 - `ApplyEmotionEvent(eventName, metadata=None)`：按 `configs/emotions.yaml:eventRules` 应用外部事件。
 - `GetEmotionEventMappingValue(eventName)`：读取指定事件映射。
 - `GetLastEmotionEventResultValue()`：读取最近一次情绪事件计算结果。
-- `ApplyEmotionDecay(elapsedSeconds=1.0)`：按真实经过秒数应用自然平复公式；ROS2 节点固定按真实时间驱动，不受 `time_scale` 影响。
+- `ApplyEmotionDecay(elapsedSeconds=1.0)`：按真实经过秒数衰减
+  `Joy / Excite / Fear / Curious`；`Anxiety / Calm` 不自然衰减。ROS2 节点
+  固定按真实时间驱动，不受 `time_scale` 影响。
 - `GetEmotionLevelValue(emotionType, value=None)`：读取指定情绪所在区间。
 - `GetAllEmotionLevels()`：读取全部情绪区间。
 - `GetEmotionLevelEventsValue()`：读取全部情绪当前区间对应的事件名映射。

@@ -35,6 +35,8 @@
 
 情绪自然衰减由 `emotion_engine_node` 的单调真实时钟以 1 Hz 驱动，不依赖
 `/simulation/time_state` 的虚拟 Tick 频率，也不随 `time_scale` 加速。
+当前只有 `Joy / Excite / Fear / Curious` 自然衰减，`Anxiety / Calm` 不随
+时间变化，但仍可由输入事件和行为结果修改。
 
 ## 2. 输入 Topic
 
@@ -445,6 +447,15 @@ ros2 param set /personality_node C 40
 
 其中 `Energy` 表示充电需求/电量缺口，计算公式为
 `Energy = 100 - 当前电量百分比`。因此所有需求都保持“数值越高越紧急”。
+节点每次启动时模拟电量为 `100%`。满电续航为 2 个虚拟小时，Energy 每
+10 个虚拟分钟结算一次自然耗电；睡眠和普通需求锁定不会暂停耗电。普通时段
+`time_scale=S` 时，满电耗尽对应 `7200/S` 秒真实时间。
+
+凌晨特殊加速期间采用单独口径：每个 `TIME_ACCELERATED_STEP` 或
+`TIME_TEST_STEP` 仍驱动其他需求走完对应的虚拟10分钟，但 Energy 只累计
+`durationSeconds / stepCount` 秒。默认30秒、36步时，每步只累计约
+`0.8333` 秒，整个虚拟 `00:00-06:00` 仅按1倍衰减30秒。每天06:00的晨起
+需求重置不恢复电量。
 
 单个需求字段说明：
 
@@ -519,7 +530,8 @@ NEED_<DEMAND>_OVERFLOW
 ### 3.5 `/emotion/state`
 
 每个虚拟秒发布完整情绪状态，真实发布频率为 `time_scale` Hz。该频率只影响
-状态发布时间线；自然衰减固定按真实时间 1 Hz 计算。
+状态发布时间线；配置了衰减速率的情绪固定按真实时间 1 Hz 计算，
+`Anxiety / Calm` 不自然衰减。
 
 格式：
 

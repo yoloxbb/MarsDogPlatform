@@ -12,6 +12,7 @@ from marsdog_ros2.perception_adapter import ApplyAudioEventMessage, ApplyVisualE
 from marsdog_ros2.personality_adapter import ApplyPersonalityStateMessage
 from marsdog_ros2.time_context import GetMessageWithTimeContextValue, GetRandomGeneratorValue
 from marsdog_ros2.time_state_adapter import (
+    GetEnergyElapsedSecondsPerDemandTickValue,
     GetTimeContextDateTimeValue,
     GetTimeStateMessageValue,
 )
@@ -151,13 +152,24 @@ class InternalNeedNode(Node):
             "TIME_TEST_STEP",
             "TIME_ACCELERATED_STEP",
         }:
-            self.UpdateDemandTick(virtualDateTime)
+            self.UpdateDemandTick(
+                virtualDateTime,
+                GetEnergyElapsedSecondsPerDemandTickValue(payload),
+            )
 
-    def UpdateDemandTick(self, virtualNow: datetime | None = None) -> None:
+    def UpdateDemandTick(
+        self,
+        virtualNow: datetime | None = None,
+        energyElapsedSeconds: float | None = None,
+    ) -> None:
         """按顺序补算所有到期的虚拟 10 分钟需求 Tick。"""
         currentVirtualTime = virtualNow or self.timeController.GetVirtualDateTimeValue()
         for tickDateTime in self.demandTickScheduler.GetDueTickDateTimesValue(currentVirtualTime):
-            self.system.UpdateNaturalDemandsByTime(tickDateTime)
+            # 凌晨离散加速仍补算其他需求，但电池只累计每步对应的真实秒数。
+            self.system.UpdateNaturalDemandsByTime(
+                tickDateTime,
+                energyElapsedSeconds,
+            )
             self.PublishSignalEvents(tickDateTime)
 
     def _InitializeTimeSynchronization(
