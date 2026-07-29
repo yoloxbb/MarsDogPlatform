@@ -138,11 +138,10 @@ Energy 在凌晨需求锁定和睡眠期间仍持续衰减，并由需求 Tick �
 - `ApplyEmotionDecay(elapsedSeconds=1.0)`：按真实经过秒数衰减
   `Joy / Excite / Fear / Curious`；`Anxiety / Calm` 不自然衰减。ROS2 节点
   固定按真实时间驱动，不受 `time_scale` 影响。
-- `GetEmotionLevelValue(emotionType, value=None)`：读取指定情绪所在区间。
-- `GetAllEmotionLevels()`：读取全部情绪区间。
-- `GetEmotionLevelEventsValue()`：读取全部情绪当前区间对应的事件名映射。
-- `GetDominantEmotionSignalValue()`：读取主导情绪及其区间事件。
-- `GetEmotionSignalEventsValue(timestamp=None)`：获取区间变化事件；调用后会刷新快照。
+- `IsEmotionTriggered(emotionType, value=None)`：判断情绪是否达到单一触发阈值。
+- `GetAllEmotionSignals()`：返回当前全部已触发情绪。
+- `GetEmotionSignalSnapshotValue()`：返回全部情绪的触发布尔快照。
+- `GetEmotionSignalEventsValue(timestamp=None)`：获取未触发到已触发的事件；调用后会刷新快照。
 - `GetEmotionStateValue(timestamp=None)`：返回可发布到 `/emotion/state` 的完整状态。
 - `OnEmotionChanged(callback)`：注册情绪变化回调。
 - `ApplyActionResultEmotion(resultType)`：按行为结果映射更新情绪。
@@ -208,13 +207,13 @@ ACTION_EXPLORE / ACTION_SPACE_EXPLORE / ACTION_OBJECT_EXPLORE`。其他 action
 - `/internal_need/state`：内部需求状态，1 秒持续发布。
 - `/internal_need/signal_event`：内部需求等级变化事件，等级变化时发布。
 - `/emotion/state`：情绪状态，每个虚拟秒发布。
-- `/emotion/signal_event`：情绪区间或主导情绪变化时发布。
+- `/emotion/signal_event`：情绪从未触发变为已触发时发布。
 - `/personality/state`：性格状态，`personality_node` 启动时和性格变化后发布。
 - `/simulation/time_state`：统一时间节点发布初始化、逐秒 Tick 和倍率变化。
 - `/simulation/midnight_test_result`：凌晨场景测试完成结果，仅测试 launch 发布。
 
-`/internal_need/state.levelEvents[demand]` 和 `/emotion/state.levelEvents[emotion]`
-与对应 signal 事件的 `event_type` 使用同一套事件名，可用于跨话题对比。
+需求 Topic 保持 `schema_version=1.0` 和等级事件；情绪 Topic 使用
+`schema_version=2.0`，不再包含等级、区间或主导情绪事件字段。
 
 ## ROS2 参数接口
 

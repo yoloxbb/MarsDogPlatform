@@ -30,7 +30,7 @@
 | `/internal_need/state` | `RELIABLE, depth=10` | `internal_need_node` | 每 1 秒持续发布 |
 | `/internal_need/signal_event` | `RELIABLE, depth=10` | `internal_need_node` | 需求等级变化时发布 |
 | `/emotion/state` | `RELIABLE, depth=10` | `emotion_engine_node` | 每个虚拟秒发布；真实频率为 `time_scale` Hz |
-| `/emotion/signal_event` | `RELIABLE, depth=10` | `emotion_engine_node` | 情绪区间或主导情绪变化时发布 |
+| `/emotion/signal_event` | `RELIABLE, depth=10` | `emotion_engine_node` | 情绪首次达到触发阈值时发布 |
 | `/simulation/midnight_test_result` | `RELIABLE + TRANSIENT_LOCAL, depth=1` | `midnight_test_node` | 凌晨测试完成时发布 `PASSED/FAILED` 和最终状态 |
 
 情绪自然衰减由 `emotion_engine_node` 的单调真实时钟以 1 Hz 驱动，不依赖
@@ -531,54 +531,32 @@ NEED_<DEMAND>_OVERFLOW
 
 每个虚拟秒发布完整情绪状态，真实发布频率为 `time_scale` Hz。该频率只影响
 状态发布时间线；配置了衰减速率的情绪固定按真实时间 1 Hz 计算，
-`Anxiety / Calm` 不自然衰减。
+`Anxiety / Calm` 不自然衰减。该 Topic 使用 `schema_version=2.0`。
 
 格式：
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "timestamp": 1710000000.0,
   "emotions": {
     "Joy": {
       "value": 72,
       "triggerThreshold": 30,
       "triggerOperator": "gte",
-      "triggered": true,
-      "level": "MID",
-      "levelEvent": "EMO_JOY_MID",
-      "levelRange": [61, 85],
-      "levelActive": true
+      "triggered": true
     }
-  },
-  "levelEvents": {
-    "Joy": "EMO_JOY_MID",
-    "Excite": null,
-    "Anxiety": null,
-    "Fear": null,
-    "Curious": null,
-    "Calm": "EMO_CALM_NORMAL"
   },
   "triggered": [
     {
-      "type": "Joy",
+      "emotion": "Joy",
       "value": 72,
-      "level": "MID",
-      "eventType": "EMO_JOY_MID",
-      "range": [61, 85],
+      "eventType": "EMO_JOY_TRIGGERED",
       "triggerThreshold": 30,
       "triggerOperator": "gte"
     }
   ],
   "dominantEmotion": "Joy",
-  "dominantEmotionSignal": {
-    "emotion": "Joy",
-    "value": 72,
-    "level": "MID",
-    "eventType": "EMO_JOY_MID",
-    "range": [61, 85],
-    "active": true
-  },
   "personality": {
     "A": 50,
     "O": 50,
@@ -606,46 +584,35 @@ NEED_<DEMAND>_OVERFLOW
 | `triggerThreshold` | 触发表达阈值 |
 | `triggerOperator` | 触发比较符 |
 | `triggered` | 是否达到触发阈值 |
-| `level` | 当前强度区间名称；无区间时为 `NONE` |
-| `levelEvent` | 当前区间事件名；无区间时为 `null` |
-| `levelRange` | 当前区间范围；无区间时为 `null` |
-| `levelActive` | 是否处于已定义区间 |
 
 顶层字段说明：
 
 | 字段 | 说明 |
 |---|---|
-| `levelEvents` | 按情绪名输出当前区间事件名 |
-| `triggered` | 当前处于已定义强度区间的情绪列表 |
+| `triggered` | 当前达到单一阈值的情绪列表 |
 | `dominantEmotion` | 当前值最高的情绪 |
-| `dominantEmotionSignal` | 主导情绪当前区间事件 |
 | `personality` | 当前情绪系统同步到的 A/O/E/C |
 | `lastEmotionEventResult` | 最近一次外部情绪事件计算结果 |
 
-对比规则：
-
-```text
-/emotion/state.levelEvents[signal_event.emotion] == /emotion/signal_event.event_type
-```
+情绪层级、区间和主导情绪信号字段已从 V2 删除。`dominantEmotion` 只表示当前
+数值最大项，不参与触发事件生成。
 
 ### 3.6 `/emotion/signal_event`
 
-情绪区间变化或主导情绪变化时发布；同一状态不会重复发布。
+只在情绪从未触发变为已触发时发布。触发后继续升高或主导情绪发生变化不会
+重复发布；降到阈值以下不发布恢复事件，但允许以后再次达到阈值时重新触发。
 
 格式：
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "timestamp": 1710000000.0,
-  "event_type": "EMO_JOY_MID",
+  "event_type": "EMO_JOY_TRIGGERED",
   "emotion": "Joy",
   "value": 72,
-  "level": "MID",
-  "range": [61, 85],
-  "trigger": "LEVEL_CHANGED_AND_DOMINANT_CHANGED",
-  "isDominant": true,
-  "dominantChanged": true
+  "triggerThreshold": 30,
+  "triggerOperator": "gte"
 }
 ```
 
@@ -653,32 +620,22 @@ NEED_<DEMAND>_OVERFLOW
 
 | 字段 | 说明 |
 |---|---|
-| `event_type` | 情绪区间事件名 |
+| `event_type` | `EMO_<EMOTION>_TRIGGERED` |
 | `emotion` | 情绪名 |
 | `value` | 当前情绪值 |
-| `level` | 当前强度区间 |
-| `range` | 当前区间范围 |
-| `trigger` | `LEVEL_CHANGED / DOMINANT_CHANGED / LEVEL_CHANGED_AND_DOMINANT_CHANGED` |
-| `isDominant` | 当前事件对应情绪是否为主导情绪 |
-| `dominantChanged` | 主导情绪是否发生变化 |
+| `triggerThreshold` | 本情绪的触发阈值 |
+| `triggerOperator` | 本情绪的触发比较符 |
 
-当前情绪区间事件：
+当前情绪触发事件：
 
-| 情绪 | 区间 | event_type |
+| 情绪 | 触发条件 | event_type |
 |---|---|---|
-| `Calm` | `0-60` | `EMO_CALM_NORMAL` |
-| `Calm` | `61-100` | `EMO_CALM_HIGH` |
-| `Joy` | `30-60` | `EMO_JOY_LOW` |
-| `Joy` | `61-85` | `EMO_JOY_MID` |
-| `Joy` | `86-100` | `EMO_JOY_HIGH` |
-| `Excite` | `40-70` | `EMO_EXCITE_LOW` |
-| `Excite` | `71-100` | `EMO_EXCITE_HIGH` |
-| `Anxiety` | `25-50` | `EMO_ANXIETY_LOW` |
-| `Anxiety` | `51-100` | `EMO_ANXIETY_HIGH` |
-| `Fear` | `30-60` | `EMO_FEAR_LOW` |
-| `Fear` | `61-100` | `EMO_FEAR_HIGH` |
-| `Curious` | `20-50` | `EMO_CURIOUS_LOW` |
-| `Curious` | `51-100` | `EMO_CURIOUS_HIGH` |
+| `Calm` | `>=0` | `EMO_CALM_TRIGGERED`；启动快照已触发，不主动发送 |
+| `Joy` | `>=30` | `EMO_JOY_TRIGGERED` |
+| `Excite` | `>=40` | `EMO_EXCITE_TRIGGERED` |
+| `Anxiety` | `>=25` | `EMO_ANXIETY_TRIGGERED` |
+| `Fear` | `>=30` | `EMO_FEAR_TRIGGERED` |
+| `Curious` | `>=20` | `EMO_CURIOUS_TRIGGERED` |
 
 ## 4. 调试命令
 

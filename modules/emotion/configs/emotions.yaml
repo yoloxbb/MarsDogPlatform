@@ -16,33 +16,6 @@
       "Curious": {"triggerThreshold": 20, "triggerOperator": "gte"},
       "Calm": {"triggerThreshold": 0, "triggerOperator": "gte"}
     },
-    "levels": {
-      "Calm": [
-        {"level": "NORMAL", "eventType": "EMO_CALM_NORMAL", "min": 0, "max": 60},
-        {"level": "HIGH", "eventType": "EMO_CALM_HIGH", "min": 61, "max": 100}
-      ],
-      "Joy": [
-        {"level": "LOW", "eventType": "EMO_JOY_LOW", "min": 30, "max": 60},
-        {"level": "MID", "eventType": "EMO_JOY_MID", "min": 61, "max": 85},
-        {"level": "HIGH", "eventType": "EMO_JOY_HIGH", "min": 86, "max": 100}
-      ],
-      "Excite": [
-        {"level": "LOW", "eventType": "EMO_EXCITE_LOW", "min": 40, "max": 70},
-        {"level": "HIGH", "eventType": "EMO_EXCITE_HIGH", "min": 71, "max": 100}
-      ],
-      "Anxiety": [
-        {"level": "LOW", "eventType": "EMO_ANXIETY_LOW", "min": 25, "max": 50},
-        {"level": "HIGH", "eventType": "EMO_ANXIETY_HIGH", "min": 51, "max": 100}
-      ],
-      "Fear": [
-        {"level": "LOW", "eventType": "EMO_FEAR_LOW", "min": 30, "max": 60},
-        {"level": "HIGH", "eventType": "EMO_FEAR_HIGH", "min": 61, "max": 100}
-      ],
-      "Curious": [
-        {"level": "LOW", "eventType": "EMO_CURIOUS_LOW", "min": 20, "max": 50},
-        {"level": "HIGH", "eventType": "EMO_CURIOUS_HIGH", "min": 51, "max": 100}
-      ]
-    },
     "decayRules": {
       "Joy": 2.0,
       "Excite": 3.0,

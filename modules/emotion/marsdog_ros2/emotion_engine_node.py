@@ -173,7 +173,7 @@ class EmotionEngineNode(Node):
             time.monotonic()
         )
         for _ in range(dueTickCount):
-            # 延迟时逐真实秒补算，确保不会跳过中间情绪区间事件。
+            # 延迟时逐真实秒补算，确保阈值下降和后续重新触发状态准确。
             self.system.ApplyEmotionDecay(1.0)
             self.PublishSignalEvents()
 
@@ -214,7 +214,7 @@ class EmotionEngineNode(Node):
         self.statePublisher.publish(message)
 
     def PublishSignalEvents(self, virtualDateTime: datetime | None = None) -> None:
-        """发布情绪区间变化事件，未变化时不发布。"""
+        """发布情绪阈值上升沿事件，未产生新触发时不发布。"""
         currentVirtualTime = virtualDateTime or self.timeController.GetVirtualDateTimeValue()
         for signalEvent in self.system.GetEmotionSignalEventsValue():
             payload = GetMessageWithTimeContextValue(

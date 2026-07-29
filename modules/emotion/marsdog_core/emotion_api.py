@@ -102,145 +102,75 @@ class EmotionAPI:
             self._SetEmotionValueInternal(emotion, int(round(max(0.0, oldValue - decayValue))))
         return self.GetAllEmotions()
 
-    def GetEmotionLevelValue(self, emotionType: object, value: int | None = None) -> dict[str, Any]:
-        """获取指定情绪当前所在的强度区间。"""
+    def IsEmotionTriggered(
+        self,
+        emotionType: object,
+        value: int | None = None,
+    ) -> bool:
+        """判断指定情绪是否达到单一触发阈值。"""
         emotion = NormalizeEmotionType(emotionType)
-        emotionValue = ClampValue(self.state.emotions[emotion] if value is None else int(value))
-        for levelConfig in self.configs.get("emotions", {}).get("levels", {}).get(emotion, []):
-            minValue = int(levelConfig.get("min", 0))
-            maxValue = int(levelConfig.get("max", 100))
-            if minValue <= emotionValue <= maxValue:
-                return {
-                    "level": str(levelConfig.get("level", "")),
-                    "eventType": str(levelConfig.get("eventType", "")),
-                    "range": [minValue, maxValue],
-                    "active": True,
-                }
-        return {
-            "level": "NONE",
-            "eventType": None,
-            "range": None,
-            "active": False,
-        }
+        emotionValue = ClampValue(
+            self.state.emotions[emotion]
+            if value is None
+            else int(value)
+        )
+        thresholdConfig = self._GetEmotionThresholdConfigValue(emotion)
+        threshold = thresholdConfig.get("triggerThreshold")
+        if threshold is None:
+            return False
+        operator = str(thresholdConfig.get("triggerOperator", "gte"))
+        return IsConditionMatched(
+            float(emotionValue),
+            operator,
+            float(threshold),
+        )
 
-    def GetAllEmotionLevels(self) -> dict[str, dict[str, Any]]:
-        """获取全部情绪当前所在的强度区间。"""
+    def GetEmotionSignalSnapshotValue(self) -> dict[str, bool]:
+        """获取全部情绪的触发布尔快照。"""
         return {
-            emotion: self.GetEmotionLevelValue(emotion)
+            emotion: self.IsEmotionTriggered(emotion)
             for emotion in self.state.emotions
         }
 
-    def GetEmotionLevelEventsValue(self) -> dict[str, str | None]:
-        """获取全部情绪当前强度区间对应的事件名。"""
-        return {
-            emotion: levelInfo["eventType"]
-            for emotion, levelInfo in self.GetAllEmotionLevels().items()
-        }
-
-    def GetDominantEmotionSignalValue(self) -> dict[str, Any]:
-        """获取主导情绪及其当前强度区间。"""
-        emotion = self.GetDominantEmotion()
-        value = self.state.emotions[emotion]
-        levelInfo = self.GetEmotionLevelValue(emotion)
-        return {
-            "emotion": emotion,
-            "value": value,
-            "level": levelInfo["level"],
-            "eventType": levelInfo["eventType"],
-            "range": levelInfo["range"],
-            "active": levelInfo["active"],
-        }
-
-    def GetEmotionSignalSnapshotValue(self) -> dict[str, Any]:
-        """获取当前情绪等级快照，用于判断区间变化。"""
-        levels = self.GetAllEmotionLevels()
-        dominant = self.GetDominantEmotionSignalValue()
-        return {
-            "levels": {
-                emotion: levelInfo.get("eventType")
-                for emotion, levelInfo in levels.items()
-            },
-            "dominant": {
-                "emotion": dominant.get("emotion"),
-                "eventType": dominant.get("eventType"),
-            },
-        }
-
     def GetEmotionSignalEventsValue(self, timestamp: float | None = None) -> list[dict[str, Any]]:
-        """获取并刷新情绪区间变化事件。"""
+        """获取并刷新未触发到已触发的情绪事件。"""
         previousSnapshot = getattr(self, "_lastEmotionSignalSnapshot", None)
         currentSnapshot = self.GetEmotionSignalSnapshotValue()
-        currentLevels = self.GetAllEmotionLevels()
-        dominant = self.GetDominantEmotionSignalValue()
         if previousSnapshot is None:
             self._lastEmotionSignalSnapshot = currentSnapshot
             return []
 
         events: list[dict[str, Any]] = []
-        eventsByEmotion: dict[str, dict[str, Any]] = {}
         eventTimestamp = self._GetEmotionSignalTimestamp(timestamp)
-        previousLevels = previousSnapshot.get("levels", {})
-        for emotion, levelInfo in currentLevels.items():
-            currentEventType = levelInfo.get("eventType")
-            if previousLevels.get(emotion) == currentEventType:
+        for emotion, isTriggered in currentSnapshot.items():
+            # 只发布 false→true 上升沿；下降沿仅写回快照，供下次重新触发。
+            if not isTriggered or bool(previousSnapshot.get(emotion, False)):
                 continue
-            if not currentEventType:
-                continue
-            event = self._BuildEmotionSignalEvent(
-                emotion,
-                self.state.emotions[emotion],
-                levelInfo,
-                eventTimestamp,
-                "LEVEL_CHANGED",
-                dominant.get("emotion") == emotion,
-            )
-            events.append(event)
-            eventsByEmotion[emotion] = event
-
-        previousDominant = previousSnapshot.get("dominant", {})
-        dominantChanged = (
-            previousDominant.get("emotion") != dominant.get("emotion")
-            or previousDominant.get("eventType") != dominant.get("eventType")
-        )
-        if dominantChanged and dominant.get("eventType"):
-            dominantEmotion = str(dominant["emotion"])
-            existingEvent = eventsByEmotion.get(dominantEmotion)
-            if existingEvent:
-                existingEvent["trigger"] = "LEVEL_CHANGED_AND_DOMINANT_CHANGED"
-                existingEvent["dominantChanged"] = True
-            else:
-                event = self._BuildEmotionSignalEvent(
-                    dominantEmotion,
-                    int(dominant["value"]),
-                    dominant,
+            events.append(
+                self._BuildEmotionSignalEvent(
+                    emotion,
+                    self.state.emotions[emotion],
                     eventTimestamp,
-                    "DOMINANT_CHANGED",
-                    True,
                 )
-                event["dominantChanged"] = True
-                events.append(event)
+            )
 
         self._lastEmotionSignalSnapshot = currentSnapshot
         return events
 
     def GetAllEmotionSignals(self) -> list[dict[str, Any]]:
-        """获取全部处于已定义强度区间的情绪信号。"""
+        """获取全部已经达到单一阈值的情绪信号。"""
         signals: list[dict[str, Any]] = []
-        thresholds = self.configs.get("emotions", {}).get("thresholds", {})
         for emotion, value in self.state.emotions.items():
-            levelInfo = self.GetEmotionLevelValue(emotion)
-            if not levelInfo["active"]:
+            if not self.IsEmotionTriggered(emotion):
                 continue
-            thresholdConfig = thresholds.get(emotion, {})
+            thresholdConfig = self._GetEmotionThresholdConfigValue(emotion)
             threshold = thresholdConfig.get("triggerThreshold")
             operator = thresholdConfig.get("triggerOperator", "gte")
             signals.append(
                 {
-                    "type": emotion,
+                    "emotion": emotion,
                     "value": value,
-                    "level": levelInfo["level"],
-                    "eventType": levelInfo["eventType"],
-                    "range": levelInfo["range"],
+                    "eventType": self._GetEmotionTriggerEventTypeValue(emotion),
                     "triggerThreshold": threshold,
                     "triggerOperator": operator,
                 }
@@ -318,24 +248,32 @@ class EmotionAPI:
         self,
         emotion: str,
         value: int,
-        levelInfo: dict[str, Any],
         timestamp: float,
-        trigger: str,
-        isDominant: bool,
     ) -> dict[str, Any]:
-        """构造发布给行为组的情绪区间变化事件。"""
+        """构造发布给行为组的单一阈值触发事件。"""
+        thresholdConfig = self._GetEmotionThresholdConfigValue(emotion)
         return {
-            "schema_version": "1.0",
+            "schema_version": "2.0",
             "timestamp": timestamp,
-            "event_type": levelInfo.get("eventType"),
+            "event_type": self._GetEmotionTriggerEventTypeValue(emotion),
             "emotion": emotion,
             "value": value,
-            "level": levelInfo.get("level"),
-            "range": levelInfo.get("range"),
-            "trigger": trigger,
-            "isDominant": isDominant,
-            "dominantChanged": False,
+            "triggerThreshold": thresholdConfig.get("triggerThreshold"),
+            "triggerOperator": thresholdConfig.get("triggerOperator", "gte"),
         }
+
+    def _GetEmotionThresholdConfigValue(self, emotion: str) -> dict[str, Any]:
+        """获取指定情绪的单一阈值配置。"""
+        config = (
+            self.configs.get("emotions", {})
+            .get("thresholds", {})
+            .get(emotion, {})
+        )
+        return dict(config) if isinstance(config, dict) else {}
+
+    def _GetEmotionTriggerEventTypeValue(self, emotion: str) -> str:
+        """生成指定情绪的统一触发事件名。"""
+        return f"EMO_{emotion.upper()}_TRIGGERED"
 
     def _GetEmotionSignalTimestamp(self, timestamp: float | None) -> float:
         """获取情绪信号事件时间戳。"""

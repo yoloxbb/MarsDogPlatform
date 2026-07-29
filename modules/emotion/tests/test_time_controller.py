@@ -428,7 +428,7 @@ class TimeControllerTest(unittest.TestCase):
             self.assertEqual(system.GetBatteryValue(), 0)
 
     def test_emotion_decay_is_equal_for_same_real_time_across_scales(self):
-        """相同真实时间下各倍率应得到一致的衰减值和区间事件轨迹。"""
+        """相同真实时间下各倍率应得到一致衰减且不发布恢复事件。"""
         allResults = []
         for scale in (1, 7, 24, 100):
             controller, clock = self._CreateController(scale)
@@ -457,8 +457,7 @@ class TimeControllerTest(unittest.TestCase):
         self.assertEqual(allResults[0], allResults[1])
         self.assertEqual(allResults[1], allResults[2])
         self.assertEqual(allResults[2], allResults[3])
-        self.assertIn("EMO_JOY_MID", allResults[0][1])
-        self.assertIn("EMO_JOY_LOW", allResults[0][1])
+        self.assertEqual(allResults[0][1], [])
 
     def test_same_virtual_duration_decays_by_real_duration(self):
         """相同虚拟时长在高倍率下应因真实耗时更短而衰减更少。"""

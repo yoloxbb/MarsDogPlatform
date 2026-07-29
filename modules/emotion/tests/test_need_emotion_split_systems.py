@@ -104,28 +104,53 @@ class NeedEmotionSplitSystemTest(unittest.TestCase):
         self.assertEqual(system.GetEmotionValue("Excite"), 18)
         self.assertEqual(system.GetEmotionValue("Calm"), 36)
 
-    def test_emotion_state_includes_level_ranges(self):
-        """情绪状态应按新区间表输出等级和事件名。"""
+    def test_emotion_state_uses_v2_threshold_protocol(self):
+        """情绪状态应使用 V2 单一阈值协议并删除全部层级字段。"""
         system = MarsdogEmotionSystem()
         system.SetEmotionValue("Joy", 72)
         system.SetEmotionValue("Excite", 39)
 
         state = system.GetEmotionStateValue(timestamp=1.0)
 
-        self.assertEqual(state["emotions"]["Joy"]["level"], "MID")
-        self.assertEqual(state["emotions"]["Joy"]["levelEvent"], "EMO_JOY_MID")
-        self.assertEqual(state["levelEvents"]["Joy"], "EMO_JOY_MID")
-        self.assertIsNone(state["levelEvents"]["Excite"])
-        self.assertEqual(state["emotions"]["Joy"]["levelRange"], [61, 85])
-        self.assertFalse(state["emotions"]["Excite"]["levelActive"])
-        self.assertEqual(state["dominantEmotionSignal"]["eventType"], "EMO_JOY_MID")
+        self.assertEqual(state["schema_version"], "2.0")
+        self.assertEqual(
+            state["emotions"]["Joy"],
+            {
+                "value": 72,
+                "triggerThreshold": 30,
+                "triggerOperator": "gte",
+                "triggered": True,
+            },
+        )
+        self.assertFalse(state["emotions"]["Excite"]["triggered"])
+        self.assertEqual(state["dominantEmotion"], "Joy")
+        self.assertNotIn("levelEvents", state)
+        self.assertNotIn("dominantEmotionSignal", state)
+        for emotionState in state["emotions"].values():
+            self.assertEqual(
+                set(emotionState),
+                {"value", "triggerThreshold", "triggerOperator", "triggered"},
+            )
 
-        events = system.GetEmotionSignalEventsValue(timestamp=2.0)
+        triggeredByEmotion = {
+            item["emotion"]: item
+            for item in state["triggered"]
+        }
+        self.assertEqual(
+            triggeredByEmotion["Joy"],
+            {
+                "emotion": "Joy",
+                "value": 72,
+                "eventType": "EMO_JOY_TRIGGERED",
+                "triggerThreshold": 30,
+                "triggerOperator": "gte",
+            },
+        )
+        self.assertIn("Calm", triggeredByEmotion)
+        self.assertNotIn("Excite", triggeredByEmotion)
 
-        self.assertEqual(state["levelEvents"][events[0]["emotion"]], events[0]["event_type"])
-
-    def test_emotion_signal_events_emit_only_on_level_change(self):
-        """情绪区间事件只应在等级或主导情绪变化时输出一次。"""
+    def test_emotion_signal_events_emit_only_on_threshold_entry(self):
+        """情绪事件只应在未触发到触发时输出一次。"""
         system = MarsdogEmotionSystem()
 
         self.assertEqual(system.GetEmotionSignalEventsValue(timestamp=1.0), [])
@@ -134,20 +159,19 @@ class NeedEmotionSplitSystemTest(unittest.TestCase):
         events = system.GetEmotionSignalEventsValue(timestamp=2.0)
 
         self.assertEqual(len(events), 1)
-        self.assertEqual(events[0]["event_type"], "EMO_JOY_LOW")
-        self.assertEqual(events[0]["trigger"], "LEVEL_CHANGED_AND_DOMINANT_CHANGED")
-        self.assertTrue(events[0]["isDominant"])
+        self.assertEqual(events[0]["event_type"], "EMO_JOY_TRIGGERED")
+        self.assertNotIn("level", events[0])
+        self.assertNotIn("range", events[0])
+        self.assertNotIn("trigger", events[0])
+        self.assertNotIn("isDominant", events[0])
+        self.assertNotIn("dominantChanged", events[0])
         self.assertEqual(system.GetEmotionSignalEventsValue(timestamp=3.0), [])
 
         system.SetEmotionValue("Joy", 50)
         self.assertEqual(system.GetEmotionSignalEventsValue(timestamp=4.0), [])
 
         system.SetEmotionValue("Joy", 70)
-        events = system.GetEmotionSignalEventsValue(timestamp=5.0)
-
-        self.assertEqual(len(events), 1)
-        self.assertEqual(events[0]["event_type"], "EMO_JOY_MID")
-        self.assertEqual(events[0]["range"], [61, 85])
+        self.assertEqual(system.GetEmotionSignalEventsValue(timestamp=5.0), [])
 
     def test_visual_event_updates_emotions_from_events_array(self):
         """visual_event.events[] 中的 EVT_VISION_* 应进入情绪映射表。"""

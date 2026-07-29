@@ -31,7 +31,7 @@
 | `marsdog_ros2/personality_adapter.py` | 适配 `/personality/state` |
 | `marsdog_ros2/time_context.py` | 为需求/情绪输出附加统一虚拟时间上下文 |
 | `configs/demands.yaml` | 内部需求阈值、增长、恢复配置 |
-| `configs/emotions.yaml` | 情绪阈值、区间事件、衰减、事件映射配置 |
+| `configs/emotions.yaml` | 情绪触发阈值、衰减和事件映射配置 |
 | `configs/personality.yaml` | 性格预设 |
 
 ## 2. ROS2 接口
@@ -55,7 +55,7 @@
 | `/internal_need/state` | `std_msgs/String` JSON | `internal_need_node` | 全量内部需求状态，1 秒持续发布 |
 | `/internal_need/signal_event` | `std_msgs/String` JSON | `internal_need_node` | 需求等级变化时发布 |
 | `/emotion/state` | `std_msgs/String` JSON | `emotion_engine_node` | 全量情绪状态，每个虚拟秒发布 |
-| `/emotion/signal_event` | `std_msgs/String` JSON | `emotion_engine_node` | 情绪区间或主导情绪变化时发布 |
+| `/emotion/signal_event` | `std_msgs/String` JSON | `emotion_engine_node` | 情绪首次达到触发阈值时发布 |
 | `/personality/state` | `std_msgs/String` JSON | `personality_node` | 性格状态，启动时和性格变化后发布 |
 | `/simulation/time_state` | `std_msgs/String` JSON | `time_controller_node` | 时间初始化、逐秒 Tick、倍率变化 |
 | `/simulation/midnight_test_result` | `std_msgs/String` JSON | `midnight_test_node` | 凌晨场景完成状态和最终需求/睡眠快照 |
@@ -110,59 +110,44 @@
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "timestamp": 1710000000.0,
   "emotions": {
     "Joy": {
       "value": 35,
       "triggerThreshold": 30,
       "triggerOperator": "gte",
-      "triggered": true,
-      "level": "LOW",
-      "levelEvent": "EMO_JOY_LOW",
-      "levelRange": [30, 60],
-      "levelActive": true
+      "triggered": true
     }
   },
-  "levelEvents": {
-    "Joy": "EMO_JOY_LOW",
-    "Excite": null,
-    "Anxiety": null,
-    "Fear": null,
-    "Curious": null,
-    "Calm": "EMO_CALM_NORMAL"
-  },
-  "triggered": [],
+  "triggered": [
+    {
+      "emotion": "Joy",
+      "value": 35,
+      "eventType": "EMO_JOY_TRIGGERED",
+      "triggerThreshold": 30,
+      "triggerOperator": "gte"
+    }
+  ],
   "dominantEmotion": "Joy",
-  "dominantEmotionSignal": {
-    "emotion": "Joy",
-    "value": 35,
-    "level": "LOW",
-    "eventType": "EMO_JOY_LOW",
-    "range": [30, 60],
-    "active": true
-  },
   "personality": {"A": 50, "O": 50, "E": 50, "C": 50},
   "lastEmotionEventResult": {}
 }
 ```
 
-`/emotion/signal_event` 只在区间变化或主导情绪变化时发布，例如：
-`/emotion/state.levelEvents[emotion]` 与 signal 事件里的 `event_type`
-使用同一套事件名，可直接对比。
+`/emotion/signal_event` 只在情绪从未触发变为已触发时发布。触发后的数值升高、
+旧等级边界和主导情绪变化均不会产生事件；降到阈值以下不发恢复事件，但允许
+以后再次达到阈值时重新触发。
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "timestamp": 1710000000.0,
-  "event_type": "EMO_JOY_LOW",
+  "event_type": "EMO_JOY_TRIGGERED",
   "emotion": "Joy",
   "value": 35,
-  "level": "LOW",
-  "range": [30, 60],
-  "trigger": "LEVEL_CHANGED_AND_DOMINANT_CHANGED",
-  "isDominant": true,
-  "dominantChanged": true
+  "triggerThreshold": 30,
+  "triggerOperator": "gte"
 }
 ```
 
@@ -356,25 +341,18 @@ finalDelta = round(baseDelta * k_emotion * metadataMultiplier)
 - `Anxiety` 不自然衰减
 - `Calm` 不自然衰减
 
-### 情绪区间事件
+### 情绪阈值事件
 
 当前配置：
 
-| 情绪 | 区间 | 事件 |
+| 情绪 | 触发条件 | 事件 |
 |---|---|---|
-| Calm | `0-60` | `EMO_CALM_NORMAL` |
-| Calm | `61-100` | `EMO_CALM_HIGH` |
-| Joy | `30-60` | `EMO_JOY_LOW` |
-| Joy | `61-85` | `EMO_JOY_MID` |
-| Joy | `86-100` | `EMO_JOY_HIGH` |
-| Excite | `40-70` | `EMO_EXCITE_LOW` |
-| Excite | `71-100` | `EMO_EXCITE_HIGH` |
-| Anxiety | `25-50` | `EMO_ANXIETY_LOW` |
-| Anxiety | `51-100` | `EMO_ANXIETY_HIGH` |
-| Fear | `30-60` | `EMO_FEAR_LOW` |
-| Fear | `61-100` | `EMO_FEAR_HIGH` |
-| Curious | `20-50` | `EMO_CURIOUS_LOW` |
-| Curious | `51-100` | `EMO_CURIOUS_HIGH` |
+| Calm | `>=0` | `EMO_CALM_TRIGGERED`；启动即触发，不主动发启动事件 |
+| Joy | `>=30` | `EMO_JOY_TRIGGERED` |
+| Excite | `>=40` | `EMO_EXCITE_TRIGGERED` |
+| Anxiety | `>=25` | `EMO_ANXIETY_TRIGGERED` |
+| Fear | `>=30` | `EMO_FEAR_TRIGGERED` |
+| Curious | `>=20` | `EMO_CURIOUS_TRIGGERED` |
 
 ## 8. 行为结果输入
 

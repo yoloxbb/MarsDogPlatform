@@ -78,16 +78,14 @@ class MarsdogEmotionSystem(EmotionAPI, PersonalityAPI):
         """获取可发布到 `/emotion/state` 的完整状态。"""
         emotionSignals = self.GetAllEmotionSignals()
         return {
-            "schema_version": "1.0",
+            "schema_version": "2.0",
             "timestamp": self._GetTimestamp(timestamp),
             "emotions": {
-                emotion: self._BuildEmotionState(emotion, value, emotionSignals)
+                emotion: self._BuildEmotionState(emotion, value)
                 for emotion, value in self.state.emotions.items()
             },
-            "levelEvents": self.GetEmotionLevelEventsValue(),
             "triggered": emotionSignals,
             "dominantEmotion": self.GetDominantEmotion(),
-            "dominantEmotionSignal": self.GetDominantEmotionSignalValue(),
             "personality": dict(self.state.personality),
             "lastEmotionEventResult": self.GetLastEmotionEventResultValue(),
         }
@@ -96,20 +94,14 @@ class MarsdogEmotionSystem(EmotionAPI, PersonalityAPI):
         self,
         emotion: str,
         value: int,
-        emotionSignals: list[dict[str, Any]],
     ) -> dict[str, Any]:
         """构造单个情绪状态输出。"""
         config = self.configs.get("emotions", {}).get("thresholds", {}).get(emotion, {})
-        levelInfo = self.GetEmotionLevelValue(emotion)
         return {
             "value": value,
             "triggerThreshold": config.get("triggerThreshold"),
             "triggerOperator": config.get("triggerOperator"),
-            "triggered": any(signal["type"] == emotion for signal in emotionSignals),
-            "level": levelInfo["level"],
-            "levelEvent": levelInfo["eventType"],
-            "levelRange": levelInfo["range"],
-            "levelActive": levelInfo["active"],
+            "triggered": self.IsEmotionTriggered(emotion),
         }
 
     def _GetStringList(self, value: object) -> list[str]:

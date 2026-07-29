@@ -11,7 +11,7 @@
 | `time_controller_node` | `marsdog_ros2/time_controller_node.py` | 权威虚拟时间、动态倍率切换、逐虚拟秒 Tick 发布 |
 | `personality_node` | `marsdog_ros2/personality_node.py` | 性格参数维护、性格系数计算、性格状态发布 |
 | `internal_need_node` | `marsdog_ros2/internal_need_node.py` | 内部需求计算、需求状态发布、需求等级事件发布 |
-| `emotion_engine_node` | `marsdog_ros2/emotion_engine_node.py` | 情绪计算、情绪自然衰减、情绪状态发布、情绪区间事件发布 |
+| `emotion_engine_node` | `marsdog_ros2/emotion_engine_node.py` | 情绪计算、情绪自然衰减、情绪状态发布、情绪阈值事件发布 |
 
 
 单节点调试命令：
@@ -74,7 +74,7 @@ ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
 | `/internal_need/state` | `std_msgs/String` JSON | `internal_need_node` | 每 1 秒持续发布 |
 | `/internal_need/signal_event` | `std_msgs/String` JSON | `internal_need_node` | 需求等级变化时发布 |
 | `/emotion/state` | `std_msgs/String` JSON | `emotion_engine_node` | 每个虚拟秒发布；真实频率为 `time_scale` Hz |
-| `/emotion/signal_event` | `std_msgs/String` JSON | `emotion_engine_node` | 情绪区间或主导情绪变化时发布 |
+| `/emotion/signal_event` | `std_msgs/String` JSON | `emotion_engine_node` | 情绪首次达到触发阈值时发布 |
 | `/personality/state` | `std_msgs/String` JSON | `personality_node` | 启动时和性格变化后发布 |
 | `/simulation/time_state` | `std_msgs/String` JSON | `time_controller_node` | 初始化、虚拟秒 Tick 和倍率变化时发布 |
 
@@ -394,24 +394,25 @@ virtualDateTime = virtualStartDateTime + monotonicElapsedSeconds * scale
 | `Curious` | 好奇 |
 | `Calm` | 平静 |
 
-`/emotion/state` 持续发布全部情绪值、区间、主导情绪和性格参数。
-其中 `levelEvents` 会按情绪名输出当前区间事件名：
+`/emotion/state` 使用 `schema_version=2.0`，持续发布全部情绪值、单一阈值、
+触发状态、主导情绪和性格参数：
 
 ```json
 {
-  "levelEvents": {
-    "Joy": "EMO_JOY_LOW",
-    "Excite": null,
-    "Anxiety": null,
-    "Fear": null,
-    "Curious": null,
-    "Calm": "EMO_CALM_NORMAL"
-  }
+  "emotions": {
+    "Joy": {
+      "value": 35,
+      "triggerThreshold": 30,
+      "triggerOperator": "gte",
+      "triggered": true
+    }
+  },
+  "dominantEmotion": "Joy"
 }
 ```
 
-`/emotion/state.levelEvents[emotion]` 与 `/emotion/signal_event.event_type`
-使用同一套事件名，可直接按 `emotion` 对比两者是否一致。
+情绪状态不再包含 `levelEvents / dominantEmotionSignal / level / range` 等层级
+字段。`dominantEmotion` 仍按最大情绪值计算，但不参与信号事件生成。
 
 ## 9. 情绪事件计算
 
@@ -446,8 +447,8 @@ k_calm    = (O+A)/100
 | `Calm` | 不自然衰减 |
 
 真实执行频率固定为 1 Hz，不受 `time_scale` 和运行时倍率切换影响。
-节点延迟时仍逐真实秒补算并检查区间事件，不能把多秒衰减值一次合并后跳过
-中间区间。该定时器只衰减配置了正数速率的情绪，`Anxiety` 仍可由感知事件和
+节点延迟时仍逐真实秒补算并检查阈值状态，不能把多秒衰减值一次合并。该定时器
+只衰减配置了正数速率的情绪，`Anxiety` 仍可由感知事件和
 行为结果增减。虚拟 Tick 只负责情绪状态的时间上下文和发布节奏。
 
 ## 11. 时间上下文
@@ -477,25 +478,20 @@ random_seed=-1       保持随机
 random_seed>=0       可重复
 ```
 
-## 12. 情绪区间事件
+## 12. 情绪阈值事件
 
-`/emotion/signal_event` 只在情绪区间变化或主导情绪变化时发布。
+`/emotion/signal_event` 使用 `schema_version=2.0`，只在情绪从未触发变为已
+触发时发布。触发后继续升高、主导情绪变化和降到阈值以下都不发布事件；降到
+阈值以下会更新内部快照，因此以后再次达到阈值时能够重新触发。
 
-| 情绪 | 区间 | 事件 |
+| 情绪 | 触发条件 | 事件 |
 |---|---|---|
-| `Calm` | `0-60` | `EMO_CALM_NORMAL` |
-| `Calm` | `61-100` | `EMO_CALM_HIGH` |
-| `Joy` | `30-60` | `EMO_JOY_LOW` |
-| `Joy` | `61-85` | `EMO_JOY_MID` |
-| `Joy` | `86-100` | `EMO_JOY_HIGH` |
-| `Excite` | `40-70` | `EMO_EXCITE_LOW` |
-| `Excite` | `71-100` | `EMO_EXCITE_HIGH` |
-| `Anxiety` | `25-50` | `EMO_ANXIETY_LOW` |
-| `Anxiety` | `51-100` | `EMO_ANXIETY_HIGH` |
-| `Fear` | `30-60` | `EMO_FEAR_LOW` |
-| `Fear` | `61-100` | `EMO_FEAR_HIGH` |
-| `Curious` | `20-50` | `EMO_CURIOUS_LOW` |
-| `Curious` | `51-100` | `EMO_CURIOUS_HIGH` |
+| `Calm` | `>=0` | `EMO_CALM_TRIGGERED`；启动快照为已触发，不主动发送 |
+| `Joy` | `>=30` | `EMO_JOY_TRIGGERED` |
+| `Excite` | `>=40` | `EMO_EXCITE_TRIGGERED` |
+| `Anxiety` | `>=25` | `EMO_ANXIETY_TRIGGERED` |
+| `Fear` | `>=30` | `EMO_FEAR_TRIGGERED` |
+| `Curious` | `>=20` | `EMO_CURIOUS_TRIGGERED` |
 
 ## 13. 行为结果输入
 
