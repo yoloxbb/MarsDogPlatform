@@ -34,11 +34,11 @@ class DemandAPI:
         return dict(self.state.demands)
 
     def IsDemandUrgent(self, demandType: object) -> bool:
-        """判断指定需求是否达到紧急阈值。"""
+        """判断指定需求是否越过首次触发线，供紧迫度筛选使用。"""
         demand = NormalizeDemandType(demandType)
         demandConfig = self.configs.get("demands", {}).get(demand, {})
-        threshold = demandConfig.get("urgentThreshold")
-        operator = demandConfig.get("urgentOperator")
+        threshold = demandConfig.get("triggerThreshold")
+        operator = demandConfig.get("triggerOperator")
         if threshold is None or operator is None:
             return False
         return IsConditionMatched(self.state.demands[demand], operator, threshold)
@@ -60,19 +60,37 @@ class DemandAPI:
         demand = NormalizeDemandType(demandType)
         demandValue = ClampValue(self.state.demands[demand] if value is None else int(value))
         config = self.configs.get("demands", {}).get(demand, {})
-        triggerThreshold = config.get("urgentThreshold")
-        triggerOperator = str(config.get("urgentOperator", "gt"))
+        triggerThreshold = config.get("triggerThreshold")
+        triggerOperator = str(config.get("triggerOperator", "gt"))
+        urgentThreshold = config.get("urgentThreshold")
+        urgentOperator = (
+            str(config.get("urgentOperator", triggerOperator))
+            if urgentThreshold is not None
+            else None
+        )
         overflowThreshold = config.get("overflowThreshold")
-        overflowOperator = str(config.get("overflowOperator", triggerOperator))
+        overflowOperator = (
+            str(config.get("overflowOperator", urgentOperator or triggerOperator))
+            if overflowThreshold is not None
+            else None
+        )
 
         level = "NORMAL"
+        # 依次覆盖等级；未配置的中间等级会自然跳过。
         if (
             triggerThreshold is not None
             and IsConditionMatched(float(demandValue), triggerOperator, float(triggerThreshold))
         ):
             level = "TRIGGERED"
         if (
+            urgentThreshold is not None
+            and urgentOperator is not None
+            and IsConditionMatched(float(demandValue), urgentOperator, float(urgentThreshold))
+        ):
+            level = "URGENT"
+        if (
             overflowThreshold is not None
+            and overflowOperator is not None
             and IsConditionMatched(float(demandValue), overflowOperator, float(overflowThreshold))
         ):
             level = "OVERFLOW"
@@ -82,6 +100,8 @@ class DemandAPI:
             "eventType": self._GetDemandLevelEventType(demand, level),
             "triggerThreshold": triggerThreshold,
             "triggerOperator": triggerOperator,
+            "urgentThreshold": urgentThreshold,
+            "urgentOperator": urgentOperator,
             "overflowThreshold": overflowThreshold,
             "overflowOperator": overflowOperator,
             "active": level != "NORMAL",
@@ -150,7 +170,7 @@ class DemandAPI:
     ) -> dict[str, Any]:
         """构造发布到 `/internal_need/signal_event` 的需求事件。"""
         return {
-            "schema_version": "1.0",
+            "schema_version": "2.0",
             "timestamp": timestamp,
             "event_type": levelInfo.get("eventType"),
             "demand": demand,
@@ -159,6 +179,8 @@ class DemandAPI:
             "previousLevel": previousLevel,
             "triggerThreshold": levelInfo.get("triggerThreshold"),
             "triggerOperator": levelInfo.get("triggerOperator"),
+            "urgentThreshold": levelInfo.get("urgentThreshold"),
+            "urgentOperator": levelInfo.get("urgentOperator"),
             "overflowThreshold": levelInfo.get("overflowThreshold"),
             "overflowOperator": levelInfo.get("overflowOperator"),
             "trigger": "LEVEL_CHANGED",
@@ -169,6 +191,8 @@ class DemandAPI:
         demandName = demand.upper()
         if level == "OVERFLOW":
             return f"NEED_{demandName}_OVERFLOW"
+        if level == "URGENT":
+            return f"NEED_{demandName}_URGENT"
         if level == "TRIGGERED":
             return f"NEED_{demandName}_TRIGGERED"
         return f"NEED_{demandName}_RECOVERED"

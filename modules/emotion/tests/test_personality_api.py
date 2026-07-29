@@ -21,6 +21,7 @@ class PersonalityApiTest(unittest.TestCase):
         self.assertTrue(system.SetPersonalityProfileValue("SunnyExplorer"))
         state = system.GetPersonalityStateValue()
 
+        self.assertEqual(state["schema_version"], "1.0")
         self.assertEqual(state["timestamp"], 1.0)
         self.assertEqual(state["profile"], "SunnyExplorer")
         self.assertEqual(state["params"], {"A": 90, "O": 80, "E": 95, "C": 70})

@@ -52,8 +52,8 @@ class SleepinessBehaviorAPI:
             return True
 
         sleepiness = self.GetDemandValue(DemandType.SLEEPINESS)
-        threshold = float(self._GetSleepinessConfig().get("urgentThreshold", 65))
-        operator = self._GetSleepinessConfig().get("urgentOperator", "gt")
+        threshold = float(self._GetSleepinessConfig().get("triggerThreshold", 65))
+        operator = self._GetSleepinessConfig().get("triggerOperator", "gt")
         if not IsConditionMatched(float(sleepiness), operator, threshold):
             return False
 
@@ -128,7 +128,7 @@ class SleepinessBehaviorAPI:
         self.state.shallowSleepTicksRemaining = max(0, self.state.shallowSleepTicksRemaining - 1)
 
         if self.state.shallowSleepTicksRemaining == 0:
-            threshold = int(self._GetSleepinessConfig().get("urgentThreshold", 65))
+            threshold = int(self._GetSleepinessConfig().get("triggerThreshold", 65))
             if self.GetDemandValue(DemandType.SLEEPINESS) > threshold or self.IsForcedSleepTime(currentTime):
                 self._EnterDeepSleep()
             else:

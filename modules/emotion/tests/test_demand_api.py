@@ -51,16 +51,37 @@ class DemandAPITest(unittest.TestCase):
         system.SetDemandValue("Energy", 95)
         self.assertEqual(system.GetMostUrgentDemand(), "Energy")
 
-    def test_get_demand_level_value(self):
-        """需求等级应按普通、触发、满溢三档计算。"""
+    def test_get_demand_level_value_uses_v2_boundaries(self):
+        """全部需求应按 V2 配置计算边界等级，缺少的等级必须跳过。"""
         system = MarsdogNeedSystem()
+        cases = {
+            "Hunger": {
+                69: "NORMAL", 70: "NORMAL", 71: "TRIGGERED",
+                89: "TRIGGERED", 90: "TRIGGERED", 91: "OVERFLOW", 100: "OVERFLOW",
+            },
+            "Bladder": {74: "NORMAL", 75: "NORMAL", 76: "TRIGGERED", 100: "TRIGGERED"},
+            "Sleepiness": {
+                64: "NORMAL", 65: "NORMAL", 66: "TRIGGERED",
+                89: "TRIGGERED", 90: "TRIGGERED", 91: "OVERFLOW", 100: "OVERFLOW",
+            },
+            "Cleanliness": {69: "NORMAL", 70: "NORMAL", 71: "TRIGGERED", 100: "TRIGGERED"},
+            "Energy": {
+                79: "NORMAL", 80: "NORMAL", 81: "TRIGGERED",
+                89: "TRIGGERED", 90: "TRIGGERED", 91: "OVERFLOW", 100: "OVERFLOW",
+            },
+            "Social": {
+                59: "NORMAL", 60: "NORMAL", 61: "TRIGGERED",
+                69: "TRIGGERED", 70: "TRIGGERED", 71: "URGENT",
+                84: "URGENT", 85: "URGENT", 86: "OVERFLOW", 100: "OVERFLOW",
+            },
+            "Exploration": {59: "NORMAL", 60: "NORMAL", 61: "TRIGGERED", 100: "TRIGGERED"},
+        }
 
-        system.SetDemandValue("Hunger", 70)
-        self.assertEqual(system.GetDemandLevelValue("Hunger")["level"], "NORMAL")
-        system.SetDemandValue("Hunger", 71)
-        self.assertEqual(system.GetDemandLevelValue("Hunger")["level"], "TRIGGERED")
-        system.SetDemandValue("Hunger", 91)
-        self.assertEqual(system.GetDemandLevelValue("Hunger")["level"], "OVERFLOW")
+        for demand, values in cases.items():
+            for value, expectedLevel in values.items():
+                with self.subTest(demand=demand, value=value):
+                    system.SetDemandValue(demand, value)
+                    self.assertEqual(system.GetDemandLevelValue(demand)["level"], expectedLevel)
 
     def test_get_demand_level_value_supports_energy_deficit(self):
         """Energy 应按高充电需求值计算等级。"""
@@ -85,6 +106,7 @@ class DemandAPITest(unittest.TestCase):
         events = system.GetDemandSignalEventsValue(timestamp=2.0)
 
         self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["schema_version"], "2.0")
         self.assertEqual(events[0]["event_type"], "NEED_HUNGER_TRIGGERED")
         self.assertEqual(events[0]["level"], "TRIGGERED")
         self.assertEqual(events[0]["previousLevel"], "NORMAL")
@@ -103,6 +125,64 @@ class DemandAPITest(unittest.TestCase):
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0]["event_type"], "NEED_HUNGER_RECOVERED")
         self.assertEqual(events[0]["previousLevel"], "OVERFLOW")
+
+    def test_social_signal_events_cover_all_v2_level_transitions(self):
+        """Social 进入和退出三段触发区间时都应发布当前等级事件。"""
+        system = MarsdogNeedSystem()
+        steps = [
+            (60, None, None, None),
+            (61, "NEED_SOCIAL_TRIGGERED", "NORMAL", "TRIGGERED"),
+            (70, None, None, None),
+            (71, "NEED_SOCIAL_URGENT", "TRIGGERED", "URGENT"),
+            (85, None, None, None),
+            (86, "NEED_SOCIAL_OVERFLOW", "URGENT", "OVERFLOW"),
+            (85, "NEED_SOCIAL_URGENT", "OVERFLOW", "URGENT"),
+            (70, "NEED_SOCIAL_TRIGGERED", "URGENT", "TRIGGERED"),
+            (60, "NEED_SOCIAL_RECOVERED", "TRIGGERED", "NORMAL"),
+        ]
+
+        for index, (value, eventType, previousLevel, level) in enumerate(steps, start=1):
+            system.SetDemandValue("Social", value)
+            events = system.GetDemandSignalEventsValue(timestamp=float(index))
+            with self.subTest(value=value):
+                if eventType is None:
+                    self.assertEqual(events, [])
+                    continue
+                self.assertEqual(len(events), 1)
+                self.assertEqual(events[0]["event_type"], eventType)
+                self.assertEqual(events[0]["previousLevel"], previousLevel)
+                self.assertEqual(events[0]["level"], level)
+                self.assertEqual(events[0]["urgentThreshold"], 70)
+                self.assertEqual(events[0]["urgentOperator"], "gt")
+
+    def test_v2_config_uses_distinct_trigger_and_urgent_threshold_names(self):
+        """V2 配置应统一首次触发字段，并只给 Social 配置中间紧急线。"""
+        system = MarsdogNeedSystem()
+        configs = system.configs["demands"]
+
+        for demand, config in configs.items():
+            with self.subTest(demand=demand):
+                self.assertIn("triggerThreshold", config)
+                self.assertIn("triggerOperator", config)
+        self.assertEqual(configs["Social"]["urgentThreshold"], 70)
+        demandsWithoutUrgent = (
+            "Hunger", "Bladder", "Sleepiness", "Cleanliness", "Energy", "Exploration",
+        )
+        for demand in demandsWithoutUrgent:
+            with self.subTest(noUrgentDemand=demand):
+                self.assertNotIn("urgentThreshold", configs[demand])
+
+    def test_demands_without_overflow_stay_triggered_at_100(self):
+        """未配置满溢线的需求达到 100 时仍应保持 TRIGGERED。"""
+        system = MarsdogNeedSystem()
+
+        for demand in ("Bladder", "Cleanliness", "Exploration"):
+            with self.subTest(demand=demand):
+                system.SetDemandValue(demand, 100)
+                levelInfo = system.GetDemandLevelValue(demand)
+                self.assertEqual(levelInfo["level"], "TRIGGERED")
+                self.assertIsNone(levelInfo["overflowThreshold"])
+                self.assertIsNone(levelInfo["overflowOperator"])
 
 
 if __name__ == "__main__":

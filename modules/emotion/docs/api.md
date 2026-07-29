@@ -3,6 +3,8 @@
 当前仓库提供内部需求计算、情绪计算、ROS2 输入适配和状态/事件发布接口。
 
 完整 ROS2 Topic 输入输出格式见 [ros2_topic_contract.md](ros2_topic_contract.md)。
+行为模块升级步骤见
+[内部需求 V2 联调迁移说明](2026-07-29_internal_need_v2_integration_guide.md)。
 
 ## 核心入口
 
@@ -42,12 +44,25 @@ personalitySystem = MarsdogPersonalitySystem()
 - `IsDemandUrgent(demandType)`：按 `configs/demands.yaml` 判断是否超过触发阈值。
 - `GetMostUrgentDemand()`：返回已触发需求中原始值最高的需求名。
 - `GetAllDemandSignals()`：返回所有已触发的需求信号。
-- `GetDemandLevelValue(demandType, value=None)`：读取指定需求当前等级，返回 `NORMAL / TRIGGERED / OVERFLOW`。
+- `GetDemandLevelValue(demandType, value=None)`：读取指定需求当前等级，返回
+  `NORMAL / TRIGGERED / URGENT / OVERFLOW`；未配置的等级会跳过。
 - `GetAllDemandLevels()`：读取全部需求等级。
 - `GetDemandLevelEventsValue()`：读取全部需求当前等级对应的事件名映射。
 - `GetDemandSignalSnapshotValue()`：读取当前需求等级快照。
 - `GetDemandSignalEventsValue(timestamp=None)`：获取需求等级变化事件；调用后会刷新快照。
 - `GetInternalNeedStateValue(timestamp=None)`：返回可发布到 `/internal_need/state` 的完整状态。
+
+需求 V2 阈值如下，比较符均为严格大于：
+
+| 需求 | 首次触发 | 中间紧急 | 满溢 |
+|---|---:|---:|---:|
+| `Hunger` | `>70` | 无 | `>90` |
+| `Bladder` | `>75` | 无 | 无 |
+| `Sleepiness` | `>65` | 无 | `>90` |
+| `Cleanliness` | `>70` | 无 | 无 |
+| `Energy` | `>80` | 无 | `>90` |
+| `Social` | `>60` | `>70` | `>85` |
+| `Exploration` | `>60` | 无 | 无 |
 
 ## 全局需求生命周期接口
 
@@ -212,8 +227,8 @@ ACTION_EXPLORE / ACTION_SPACE_EXPLORE / ACTION_OBJECT_EXPLORE`。其他 action
 - `/simulation/time_state`：统一时间节点发布初始化、逐秒 Tick 和倍率变化。
 - `/simulation/midnight_test_result`：凌晨场景测试完成结果，仅测试 launch 发布。
 
-需求 Topic 保持 `schema_version=1.0` 和等级事件；情绪 Topic 使用
-`schema_version=2.0`，不再包含等级、区间或主导情绪事件字段。
+需求和情绪 Topic 均使用 `schema_version=2.0`。需求 V2 支持可选的
+`URGENT` 中间等级；情绪 V2 不包含等级、区间或主导情绪事件字段。
 
 ## ROS2 参数接口
 

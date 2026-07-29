@@ -1,6 +1,8 @@
 # Marsdog 需求/情绪计算 ROS2 Topic 格式约定
 
 本文档只说明当前需求、情绪、性格计算模块直接订阅或发布的 ROS2 Topic。
+内部需求 V1 订阅方升级到 V2 时，请同时阅读
+[内部需求 V2 联调迁移说明](2026-07-29_internal_need_v2_integration_guide.md)。
 
 统一约定：
 
@@ -393,15 +395,18 @@ ros2 param set /personality_node C 40
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "timestamp": 1710000000.0,
   "demands": {
     "Hunger": {
       "value": 71,
       "triggerThreshold": 70,
       "triggerOperator": "gt",
+      "urgentThreshold": null,
+      "urgentOperator": null,
       "overflowThreshold": 90,
       "triggered": true,
+      "urgent": false,
       "overflow": false,
       "level": "TRIGGERED",
       "levelEvent": "NEED_HUNGER_TRIGGERED",
@@ -423,6 +428,9 @@ ros2 param set /personality_node C 40
       "value": 71,
       "triggerThreshold": 70,
       "triggerOperator": "gt",
+      "urgentThreshold": null,
+      "urgentOperator": null,
+      "urgent": false,
       "overflow": false
     }
   ],
@@ -464,10 +472,13 @@ ros2 param set /personality_node C 40
 | `value` | 当前需求值 |
 | `triggerThreshold` | 触发阈值 |
 | `triggerOperator` | 触发比较符，如 `gt / lt` |
-| `overflowThreshold` | 满溢阈值 |
+| `urgentThreshold` | 可选的中间紧急阈值；未配置时为 `null` |
+| `urgentOperator` | 可选的中间紧急比较符；未配置时为 `null` |
+| `overflowThreshold` | 可选的满溢阈值；未配置时为 `null` |
 | `triggered` | 是否超过触发阈值 |
+| `urgent` | 是否超过中间紧急阈值；未配置时为 `false` |
 | `overflow` | 是否超过满溢阈值 |
-| `level` | `NORMAL / TRIGGERED / OVERFLOW` |
+| `level` | `NORMAL / TRIGGERED / URGENT / OVERFLOW` |
 | `levelEvent` | 当前等级对应事件名 |
 | `levelActive` | `level != NORMAL` |
 
@@ -485,6 +496,18 @@ ros2 param set /personality_node C 40
 /internal_need/state.levelEvents[signal_event.demand] == /internal_need/signal_event.event_type
 ```
 
+当前需求等级区间：
+
+| 需求 | NORMAL | TRIGGERED | URGENT | OVERFLOW |
+|---|---|---|---|---|
+| `Hunger` | `0-70` | `71-90` | 无 | `91-100` |
+| `Bladder` | `0-75` | `76-100` | 无 | 无 |
+| `Sleepiness` | `0-65` | `66-90` | 无 | `91-100` |
+| `Cleanliness` | `0-70` | `71-100` | 无 | 无 |
+| `Energy` | `0-80` | `81-90` | 无 | `91-100` |
+| `Social` | `0-60` | `61-70` | `71-85` | `86-100` |
+| `Exploration` | `0-60` | `61-100` | 无 | 无 |
+
 ### 3.4 `/internal_need/signal_event`
 
 需求等级变化时发布；同一等级不会重复发布。
@@ -493,7 +516,7 @@ ros2 param set /personality_node C 40
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "timestamp": 1710000000.0,
   "event_type": "NEED_HUNGER_TRIGGERED",
   "demand": "Hunger",
@@ -502,6 +525,8 @@ ros2 param set /personality_node C 40
   "previousLevel": "NORMAL",
   "triggerThreshold": 70,
   "triggerOperator": "gt",
+  "urgentThreshold": null,
+  "urgentOperator": null,
   "overflowThreshold": 90,
   "overflowOperator": "gt",
   "trigger": "LEVEL_CHANGED"
@@ -517,6 +542,9 @@ ros2 param set /personality_node C 40
 | `value` | 当前需求值 |
 | `level` | 当前等级 |
 | `previousLevel` | 上一次等级 |
+| `triggerThreshold / triggerOperator` | 首次触发线及比较符 |
+| `urgentThreshold / urgentOperator` | 可选的中间紧急线及比较符 |
+| `overflowThreshold / overflowOperator` | 可选的满溢线及比较符 |
 | `trigger` | 固定为 `LEVEL_CHANGED` |
 
 事件命名规则：
@@ -524,8 +552,12 @@ ros2 param set /personality_node C 40
 ```text
 NEED_<DEMAND>_RECOVERED
 NEED_<DEMAND>_TRIGGERED
+NEED_<DEMAND>_URGENT
 NEED_<DEMAND>_OVERFLOW
 ```
+
+当前只有 Social 会发布 `NEED_SOCIAL_URGENT`。Bladder、Cleanliness 和
+Exploration 未配置满溢线，到 `100` 时仍保持 `TRIGGERED`，不会发布满溢事件。
 
 ### 3.5 `/emotion/state`
 

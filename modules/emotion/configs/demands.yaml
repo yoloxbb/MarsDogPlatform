@@ -22,8 +22,8 @@
     "Hunger": {
       "chineseName": "饥渴值",
       "range": [0, 100],
-      "urgentThreshold": 70,
-      "urgentOperator": "gt",
+      "triggerThreshold": 70,
+      "triggerOperator": "gt",
       "morningInitialValue": 65,
       "morningRandomRange": [60, 70],
       "growthRules": [
@@ -46,9 +46,8 @@
       "range": [0, 100],
       "morningInitialValue": 30,
       "morningRandomRange": [20, 30],
-      "urgentThreshold": 75,
-      "urgentOperator": "gt",
-      "overflowThreshold": 90,
+      "triggerThreshold": 75,
+      "triggerOperator": "gt",
       "growthRules": [
         {"name": "白天", "startHour": 6, "endHour": 21, "delta": 3},
         {"name": "其他时间", "startHour": 21, "endHour": 6, "delta": 0}
@@ -68,8 +67,8 @@
       "range": [0, 100],
       "morningInitialValue": 15,
       "morningRandomRange": [10, 15],
-      "urgentThreshold": 65,
-      "urgentOperator": "gt",
+      "triggerThreshold": 65,
+      "triggerOperator": "gt",
       "overflowThreshold": 90,
       "growthRules": [
         {"name": "白天", "startHour": 6, "endHour": 21, "delta": 4},
@@ -95,9 +94,8 @@
       "range": [0, 100],
       "morningInitialValue": 10,
       "morningRandomRange": [5, 15],
-      "urgentThreshold": 70,
-      "urgentOperator": "gt",
-      "overflowThreshold": 90,
+      "triggerThreshold": 70,
+      "triggerOperator": "gt",
       "growthRules": [
         {"name": "白天", "startHour": 6, "endHour": 21, "delta": 2},
         {"name": "其他时间", "startHour": 21, "endHour": 6, "delta": 0}
@@ -112,8 +110,8 @@
       "startupBatteryValue": 100,
       "fullChargeEnduranceMinutes": 120,
       "naturalUpdateIntervalMinutes": 10,
-      "urgentThreshold": 80,
-      "urgentOperator": "gt",
+      "triggerThreshold": 80,
+      "triggerOperator": "gt",
       "overflowThreshold": 90,
       "rechargeTarget": 100
     },
@@ -122,9 +120,11 @@
       "range": [0, 100],
       "morningInitialValue": 20,
       "morningRandomRange": [20, 30],
-      "urgentThreshold": 60,
+      "triggerThreshold": 60,
+      "triggerOperator": "gt",
+      "urgentThreshold": 70,
       "urgentOperator": "gt",
-      "overflowThreshold": 80,
+      "overflowThreshold": 85,
       "growthRules": [
         {"name": "白天", "startHour": 6, "endHour": 18, "delta": 2},
         {"name": "傍晚", "startHour": 18, "endHour": 21, "delta": 3},
@@ -142,9 +142,8 @@
       "range": [0, 100],
       "morningInitialValue": 10,
       "morningRandomRange": [10, 20],
-      "urgentThreshold": 60,
-      "urgentOperator": "gt",
-      "overflowThreshold": 80,
+      "triggerThreshold": 60,
+      "triggerOperator": "gt",
       "growthRules": [
         {
           "name": "白天且电量充足",

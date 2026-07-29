@@ -112,18 +112,14 @@ class MarsdogNeedSystem(
         signals: list[dict[str, Any]] = []
         for demand, value in self.state.demands.items():
             config = self.configs.get("demands", {}).get(demand, {})
-            threshold = config.get("urgentThreshold")
-            operator = config.get("urgentOperator", "gt")
-            if threshold is None:
-                continue
-            if IsConditionMatched(float(value), str(operator), float(threshold)):
+            if self._IsDemandTriggered(demand, value):
                 signals.append(self._BuildDemandSignal(demand, value, config))
         return signals
 
     def GetInternalNeedStateValue(self, timestamp: float | None = None) -> dict[str, Any]:
         """获取可发布到 `/internal_need/state` 的完整状态。"""
         return {
-            "schema_version": "1.0",
+            "schema_version": "2.0",
             "timestamp": self._GetTimestamp(timestamp),
             "demands": {
                 demand: self._BuildDemandState(demand, value)
@@ -218,10 +214,13 @@ class MarsdogNeedSystem(
         levelInfo = self.GetDemandLevelValue(demand, value)
         return {
             "value": value,
-            "triggerThreshold": config.get("urgentThreshold"),
-            "triggerOperator": config.get("urgentOperator"),
+            "triggerThreshold": config.get("triggerThreshold"),
+            "triggerOperator": config.get("triggerOperator"),
+            "urgentThreshold": config.get("urgentThreshold"),
+            "urgentOperator": config.get("urgentOperator"),
             "overflowThreshold": config.get("overflowThreshold"),
             "triggered": self._IsDemandTriggered(demand, value),
+            "urgent": self._IsDemandUrgentLevel(demand, value),
             "overflow": self._IsDemandOverflow(demand, value),
             "level": levelInfo["level"],
             "levelEvent": levelInfo["eventType"],
@@ -233,24 +232,43 @@ class MarsdogNeedSystem(
         return {
             "type": demand,
             "value": value,
-            "triggerThreshold": config.get("urgentThreshold"),
-            "triggerOperator": config.get("urgentOperator"),
+            "triggerThreshold": config.get("triggerThreshold"),
+            "triggerOperator": config.get("triggerOperator"),
+            "urgentThreshold": config.get("urgentThreshold"),
+            "urgentOperator": config.get("urgentOperator"),
+            "urgent": self._IsDemandUrgentLevel(demand, value),
             "overflow": self._IsDemandOverflow(demand, value),
         }
 
     def _IsDemandTriggered(self, demand: str, value: int) -> bool:
         """判断需求是否超过触发阈值。"""
         config = self.configs.get("demands", {}).get(demand, {})
+        threshold = config.get("triggerThreshold")
+        operator = config.get("triggerOperator", "gt")
+        return threshold is not None and IsConditionMatched(
+            float(value), str(operator), float(threshold)
+        )
+
+    def _IsDemandUrgentLevel(self, demand: str, value: int) -> bool:
+        """判断需求是否越过可选的 URGENT 中间等级阈值。"""
+        config = self.configs.get("demands", {}).get(demand, {})
         threshold = config.get("urgentThreshold")
-        operator = config.get("urgentOperator", "gt")
-        return threshold is not None and IsConditionMatched(float(value), str(operator), float(threshold))
+        operator = config.get("urgentOperator", config.get("triggerOperator", "gt"))
+        return threshold is not None and IsConditionMatched(
+            float(value), str(operator), float(threshold)
+        )
 
     def _IsDemandOverflow(self, demand: str, value: int) -> bool:
         """判断需求是否超过满溢阈值。"""
         config = self.configs.get("demands", {}).get(demand, {})
         threshold = config.get("overflowThreshold")
-        operator = config.get("overflowOperator", config.get("urgentOperator", "gt"))
-        return threshold is not None and IsConditionMatched(float(value), str(operator), float(threshold))
+        operator = config.get(
+            "overflowOperator",
+            config.get("urgentOperator", config.get("triggerOperator", "gt")),
+        )
+        return threshold is not None and IsConditionMatched(
+            float(value), str(operator), float(threshold)
+        )
 
     def _GetStringList(self, value: object) -> list[str]:
         """将输入规整为字符串列表。"""

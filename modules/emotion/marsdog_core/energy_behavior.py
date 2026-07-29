@@ -108,8 +108,8 @@ class EnergyBehaviorAPI:
 
     def _ApplyRechargeResultEmotion(self, oldValue: int, newValue: int) -> None:
         """根据充电执行结果施加情绪变化。"""
-        threshold = float(self._GetEnergyConfig().get("urgentThreshold", 80))
-        operator = self._GetEnergyConfig().get("urgentOperator", "gt")
+        threshold = float(self._GetEnergyConfig().get("triggerThreshold", 80))
+        operator = self._GetEnergyConfig().get("triggerOperator", "gt")
         oldTriggered = IsConditionMatched(float(oldValue), operator, threshold)
         newTriggered = IsConditionMatched(float(newValue), operator, threshold)
         if oldTriggered and not newTriggered:

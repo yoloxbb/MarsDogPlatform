@@ -40,6 +40,7 @@ class MidnightScenarioTest(unittest.TestCase):
             1030.0,
         )
 
+        self.assertEqual(initial["schema_version"], "1.0")
         self.assertEqual(initial["event_type"], "TIME_INITIALIZED")
         self.assertEqual(firstStep["event_type"], "TIME_TEST_STEP")
         self.assertEqual(firstStep["timeContext"]["scale"], 24)

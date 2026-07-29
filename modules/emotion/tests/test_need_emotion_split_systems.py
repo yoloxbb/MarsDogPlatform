@@ -16,14 +16,18 @@ class NeedEmotionSplitSystemTest(unittest.TestCase):
         self.assertFalse(hasattr(system, "actionPlanner"))
         self.assertFalse(hasattr(system, "behaviorTreeRunner"))
 
-    def test_need_signals_include_threshold_and_overflow(self):
-        """需求状态输出应包含触发和满溢信号。"""
+    def test_need_state_uses_v2_threshold_protocol(self):
+        """需求状态应使用 V2 阈值协议并输出可空的中间紧急线。"""
         system = MarsdogNeedSystem()
         system.SetDemandValue("Hunger", 95)
 
         state = system.GetInternalNeedStateValue(timestamp=1.0)
 
+        self.assertEqual(state["schema_version"], "2.0")
         self.assertTrue(state["demands"]["Hunger"]["triggered"])
+        self.assertFalse(state["demands"]["Hunger"]["urgent"])
+        self.assertIsNone(state["demands"]["Hunger"]["urgentThreshold"])
+        self.assertIsNone(state["demands"]["Hunger"]["urgentOperator"])
         self.assertTrue(state["demands"]["Hunger"]["overflow"])
         self.assertEqual(state["demands"]["Hunger"]["level"], "OVERFLOW")
         self.assertEqual(state["demands"]["Hunger"]["levelEvent"], "NEED_HUNGER_OVERFLOW")
@@ -32,7 +36,17 @@ class NeedEmotionSplitSystemTest(unittest.TestCase):
 
         events = system.GetDemandSignalEventsValue(timestamp=2.0)
 
+        self.assertEqual(events[0]["schema_version"], "2.0")
         self.assertEqual(state["levelEvents"][events[0]["demand"]], events[0]["event_type"])
+
+        system.SetDemandValue("Social", 71)
+        socialState = system.GetInternalNeedStateValue(timestamp=3.0)["demands"]["Social"]
+        self.assertEqual(socialState["level"], "URGENT")
+        self.assertTrue(socialState["triggered"])
+        self.assertTrue(socialState["urgent"])
+        self.assertFalse(socialState["overflow"])
+        self.assertEqual(socialState["urgentThreshold"], 70)
+        self.assertEqual(socialState["urgentOperator"], "gt")
 
     def test_eat_result_updates_internal_demands(self):
         """进食完成结果应降低 Hunger 并联动 Bladder 与 Cleanliness。"""

@@ -86,8 +86,8 @@ class CleanlinessBehaviorAPI:
 
     def _ApplyGroomResultEmotion(self, oldValue: int, newValue: int) -> None:
         """根据清洁执行结果施加情绪变化。"""
-        threshold = float(self._GetCleanlinessConfig().get("urgentThreshold", 70))
-        operator = self._GetCleanlinessConfig().get("urgentOperator", "gt")
+        threshold = float(self._GetCleanlinessConfig().get("triggerThreshold", 70))
+        operator = self._GetCleanlinessConfig().get("triggerOperator", "gt")
         oldTriggered = IsConditionMatched(float(oldValue), operator, threshold)
         newTriggered = IsConditionMatched(float(newValue), operator, threshold)
         if oldTriggered and not newTriggered:

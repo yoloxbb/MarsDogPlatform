@@ -66,15 +66,18 @@
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "timestamp": 1710000000.0,
   "demands": {
     "Hunger": {
       "value": 65,
       "triggerThreshold": 70,
       "triggerOperator": "gt",
+      "urgentThreshold": null,
+      "urgentOperator": null,
       "overflowThreshold": 90,
       "triggered": false,
+      "urgent": false,
       "overflow": false,
       "level": "NORMAL",
       "levelEvent": "NEED_HUNGER_RECOVERED",
@@ -103,6 +106,10 @@
 `/internal_need/signal_event` 只在需求等级变化时发布一次。
 `/internal_need/state.levelEvents[demand]` 与 signal 事件里的 `event_type`
 使用同一套事件名，可直接对比。
+
+需求 state 和 signal 均使用 `schema_version=2.0`。等级计算顺序为
+`NORMAL → TRIGGERED → URGENT → OVERFLOW`，没有配置对应阈值时跳过该等级。
+目前仅 `Social` 配置 `URGENT`，对应事件为 `NEED_SOCIAL_URGENT`。
 
 ## 4. 情绪输出
 
@@ -202,6 +209,17 @@ ros2 param set /personality_node C 40
 - 离开锁定期后执行晨起初始化。
 - 内部需求行为被 `INTERRUPTED / CANCELLED / TIMEOUT` 时，按 `actionDemandMap` 找到需求并扣减。
 - 默认中断扣减 `-20`，`Bladder` 专属中断扣减 `-40`。
+- `GetMostUrgentDemand()` 只让已越过首次触发线的需求参与比较，再按原始值排序。
+
+| 需求 | 首次触发 | 中间紧急 | 满溢 |
+|---|---:|---:|---:|
+| `Hunger` | `>70` | 无 | `>90` |
+| `Bladder` | `>75` | 无 | 无 |
+| `Sleepiness` | `>65` | 无 | `>90` |
+| `Cleanliness` | `>70` | 无 | 无 |
+| `Energy` | `>80` | 无 | `>90` |
+| `Social` | `>60` | `>70` | `>85` |
+| `Exploration` | `>60` | 无 | 无 |
 
 ### Hunger
 
@@ -222,7 +240,7 @@ ros2 param set /personality_node C 40
 - 白天 `06:00-21:00`：每 Tick `+3`。
 - 其他时间：`+0`。
 - 触发：`>75`。
-- 满溢：`>90`。
+- 不配置满溢等级，到 `100` 仍为 `TRIGGERED`。
 - 行为结果 `ACTION_DEFECATE + COMPLETED`：`Bladder = 0`。
 
 ### Sleepiness
@@ -248,7 +266,7 @@ ros2 param set /personality_node C 40
 - 白天 `06:00-21:00`：每 Tick `+2`。
 - 其他时间：`+0`。
 - 触发：`>70`。
-- 满溢：`>90`。
+- 不配置满溢等级，到 `100` 仍为 `TRIGGERED`。
 - 进食完成：`+20`。
 - `ACTION_GROOM + COMPLETED`：`Cleanliness -= 50`。
 
@@ -281,7 +299,8 @@ ros2 param set /personality_node C 40
 - 傍晚 `18:00-21:00`：每 Tick `+3`。
 - 夜间 `21:00-06:00`：`+0`。
 - 触发：`>60`。
-- 满溢：`>80`。
+- 中间紧急：`>70`。
+- 满溢：`>85`。
 - 明确 `OwnerLeftHome`：单次 `+30`。
 - `ACTION_SOCIAL_* + COMPLETED` 根据 `metadata.socialOutcome` 结算：
   - `OwnerInteraction`：`-25`
@@ -296,7 +315,7 @@ ros2 param set /personality_node C 40
 - 白天 `06:00-21:00` 且 `Energy < 50`（电量 `>50%`）：每 Tick `+5`。
 - 其他时间或精力不足：`+0`。
 - 触发：`>60`。
-- 满溢：`>80`。
+- 不配置满溢等级，到 `100` 仍为 `TRIGGERED`。
 - 视觉 `tracked_objects` 不直接改变 `Exploration`，也不保存探索目标上下文。
 - `ACTION_EXPLORE* + COMPLETED` 统一 `Exploration -= 15`，忽略 `metadata.discoveryType`。
 

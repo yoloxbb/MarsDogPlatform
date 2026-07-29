@@ -64,6 +64,5 @@ docs/*.jpeg
 !docs/internal_need_emotion_update_logic.md
 !docs/ros2_topic_contract.md
 !docs/time_compression_test_guide.md
-!docs/2026-07-26_work_summary.md
-!docs/2026-07-27_work_summary.md
 !docs/2026-07-29_emotion_v2_integration_guide.md
+!docs/2026-07-29_internal_need_v2_integration_guide.md

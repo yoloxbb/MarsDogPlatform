@@ -150,15 +150,18 @@ ros2 param set /personality_node C 40
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "timestamp": 1710000000.0,
   "demands": {
     "Hunger": {
       "value": 71,
       "triggerThreshold": 70,
       "triggerOperator": "gt",
+      "urgentThreshold": null,
+      "urgentOperator": null,
       "overflowThreshold": 90,
       "triggered": true,
+      "urgent": false,
       "overflow": false,
       "level": "TRIGGERED",
       "levelEvent": "NEED_HUNGER_TRIGGERED",
@@ -180,6 +183,9 @@ ros2 param set /personality_node C 40
       "value": 71,
       "triggerThreshold": 70,
       "triggerOperator": "gt",
+      "urgentThreshold": null,
+      "urgentOperator": null,
+      "urgent": false,
       "overflow": false
     }
   ],
@@ -194,13 +200,26 @@ ros2 param set /personality_node C 40
 
 ## 5. 内部需求等级事件
 
-每个需求都有 3 个等级：
+需求按最多 4 个等级计算，没有配置对应阈值的等级会跳过：
 
 | 等级 | 含义 |
 |---|---|
 | `NORMAL` | 未触发 |
 | `TRIGGERED` | 超过触发阈值 |
+| `URGENT` | 超过可选的中间紧急阈值 |
 | `OVERFLOW` | 超过满溢阈值 |
+
+当前阈值：
+
+| 需求 | NORMAL | TRIGGERED | URGENT | OVERFLOW |
+|---|---|---|---|---|
+| `Hunger` | `0-70` | `71-90` | 无 | `91-100` |
+| `Bladder` | `0-75` | `76-100` | 无 | 无 |
+| `Sleepiness` | `0-65` | `66-90` | 无 | `91-100` |
+| `Cleanliness` | `0-70` | `71-100` | 无 | 无 |
+| `Energy` | `0-80` | `81-90` | 无 | `91-100` |
+| `Social` | `0-60` | `61-70` | `71-85` | `86-100` |
+| `Exploration` | `0-60` | `61-100` | 无 | 无 |
 
 需求等级变化时发布 `/internal_need/signal_event`。同一等级不会重复发布。
 `/internal_need/state.levelEvents[demand]` 与 `/internal_need/signal_event.event_type`
@@ -210,6 +229,7 @@ ros2 param set /personality_node C 40
 
 ```text
 NEED_<DEMAND>_TRIGGERED
+NEED_<DEMAND>_URGENT
 NEED_<DEMAND>_OVERFLOW
 NEED_<DEMAND>_RECOVERED
 ```
@@ -218,7 +238,7 @@ NEED_<DEMAND>_RECOVERED
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "timestamp": 1710000000.0,
   "event_type": "NEED_HUNGER_TRIGGERED",
   "demand": "Hunger",
@@ -227,6 +247,8 @@ NEED_<DEMAND>_RECOVERED
   "previousLevel": "NORMAL",
   "triggerThreshold": 70,
   "triggerOperator": "gt",
+  "urgentThreshold": null,
+  "urgentOperator": null,
   "overflowThreshold": 90,
   "overflowOperator": "gt",
   "trigger": "LEVEL_CHANGED"
@@ -235,15 +257,15 @@ NEED_<DEMAND>_RECOVERED
 
 当前自动生成的事件：
 
-| 需求 | 触发事件 | 满溢事件 | 恢复事件 |
-|---|---|---|---|
-| `Hunger` | `NEED_HUNGER_TRIGGERED` | `NEED_HUNGER_OVERFLOW` | `NEED_HUNGER_RECOVERED` |
-| `Bladder` | `NEED_BLADDER_TRIGGERED` | `NEED_BLADDER_OVERFLOW` | `NEED_BLADDER_RECOVERED` |
-| `Sleepiness` | `NEED_SLEEPINESS_TRIGGERED` | `NEED_SLEEPINESS_OVERFLOW` | `NEED_SLEEPINESS_RECOVERED` |
-| `Cleanliness` | `NEED_CLEANLINESS_TRIGGERED` | `NEED_CLEANLINESS_OVERFLOW` | `NEED_CLEANLINESS_RECOVERED` |
-| `Energy` | `NEED_ENERGY_TRIGGERED` | `NEED_ENERGY_OVERFLOW` | `NEED_ENERGY_RECOVERED` |
-| `Social` | `NEED_SOCIAL_TRIGGERED` | `NEED_SOCIAL_OVERFLOW` | `NEED_SOCIAL_RECOVERED` |
-| `Exploration` | `NEED_EXPLORATION_TRIGGERED` | `NEED_EXPLORATION_OVERFLOW` | `NEED_EXPLORATION_RECOVERED` |
+| 需求 | 触发事件 | 中间紧急事件 | 满溢事件 | 恢复事件 |
+|---|---|---|---|---|
+| `Hunger` | `NEED_HUNGER_TRIGGERED` | 无 | `NEED_HUNGER_OVERFLOW` | `NEED_HUNGER_RECOVERED` |
+| `Bladder` | `NEED_BLADDER_TRIGGERED` | 无 | 无 | `NEED_BLADDER_RECOVERED` |
+| `Sleepiness` | `NEED_SLEEPINESS_TRIGGERED` | 无 | `NEED_SLEEPINESS_OVERFLOW` | `NEED_SLEEPINESS_RECOVERED` |
+| `Cleanliness` | `NEED_CLEANLINESS_TRIGGERED` | 无 | 无 | `NEED_CLEANLINESS_RECOVERED` |
+| `Energy` | `NEED_ENERGY_TRIGGERED` | 无 | `NEED_ENERGY_OVERFLOW` | `NEED_ENERGY_RECOVERED` |
+| `Social` | `NEED_SOCIAL_TRIGGERED` | `NEED_SOCIAL_URGENT` | `NEED_SOCIAL_OVERFLOW` | `NEED_SOCIAL_RECOVERED` |
+| `Exploration` | `NEED_EXPLORATION_TRIGGERED` | 无 | 无 | `NEED_EXPLORATION_RECOVERED` |
 
 ## 6. 内部需求自然更新
 
@@ -299,7 +321,7 @@ virtualDateTime = virtualStartDateTime + monotonicElapsedSeconds * scale
 - 白天 `06:00-21:00`：每 Tick `+3`。
 - 其他时间：`+0`。
 - 触发：`>75`。
-- 满溢：`>90`。
+- 不配置满溢等级，到 `100` 仍为 `TRIGGERED`。
 - `ACTION_DEFECATE + COMPLETED`：`Bladder = 0`。
 - `INTERRUPTED / CANCELLED / TIMEOUT`：`Bladder -= 40`。
 
@@ -328,7 +350,7 @@ virtualDateTime = virtualStartDateTime + monotonicElapsedSeconds * scale
 - 白天 `06:00-21:00`：每 Tick `+2`。
 - 其他时间：`+0`。
 - 触发：`>70`。
-- 满溢：`>90`。
+- 不配置满溢等级，到 `100` 仍为 `TRIGGERED`。
 - 进食完成：`Cleanliness += 20`。
 - `ACTION_GROOM + COMPLETED`：`Cleanliness -= 50`。
 
@@ -361,7 +383,8 @@ virtualDateTime = virtualStartDateTime + monotonicElapsedSeconds * scale
 - 傍晚 `18:00-21:00`：每 Tick `+3`。
 - 夜间 `21:00-06:00`：`+0`。
 - 触发：`>60`。
-- 满溢：`>80`。
+- 中间紧急：`>70`。
+- 满溢：`>85`。
 - 主人离家状态：单次 `Social += 30`。
 - `ACTION_SOCIAL_* + COMPLETED`：
   - `socialOutcome=OwnerInteraction`：`Social -= 25`
@@ -375,7 +398,7 @@ virtualDateTime = virtualStartDateTime + monotonicElapsedSeconds * scale
 - `06:00-21:00` 且 `Energy < 50`（电量 `>50%`）：每 Tick `+5`。
 - 其他情况：`+0`。
 - 触发：`>60`。
-- 满溢：`>80`。
+- 不配置满溢等级，到 `100` 仍为 `TRIGGERED`。
 - 视觉 `tracked_objects` 不直接改变 `Exploration`，也不保存探索目标上下文。
 - `ACTION_EXPLORE* + COMPLETED`：
   - 统一 `Exploration -= 15`

@@ -123,7 +123,7 @@ class HungerBehaviorAPI:
 
     def _ApplyEatResultEmotion(self, oldValue: int, newValue: int, efficiencyName: str) -> None:
         """根据进食执行结果施加情绪变化。"""
-        threshold = int(self._GetHungerConfig().get("urgentThreshold", 70))
+        threshold = int(self._GetHungerConfig().get("triggerThreshold", 70))
         if efficiencyName == EatEfficiencyType.HALF_INTERRUPTED.value:
             self.ApplyActionResultEmotion(ActionResultType.ACTION_INTERRUPTED)
         elif oldValue > threshold and newValue <= threshold:
