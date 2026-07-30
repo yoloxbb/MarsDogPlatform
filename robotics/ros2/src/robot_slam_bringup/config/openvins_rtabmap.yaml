@@ -1,0 +1,310 @@
+# RTAB-Map + OpenVINS 双目视觉惯性建图参数。
+openvins_stereo_odometry:
+  ros__parameters:
+    # ===== ROS wrapper / TF / sync =====
+    use_sim_time: false
+    frame_id: "camera_link"
+    odom_frame_id: "odom"
+    publish_tf: true
+    wait_for_transform: 0.2
+    wait_imu_to_init: true
+    subscribe_imu: true
+    approx_sync: true
+    approx_sync_max_interval: 0.01
+    sync_queue_size: 10
+    qos: 2  
+    qos_image: 2
+    qos_camera_info: 2
+    qos_imu: 2
+
+    # ===== RTAB-Map odometry core =====
+    # 10 = OpenVINS。源码见 rtabmap/corelib/include/rtabmap/core/Parameters.h:469。
+    "Odom/Strategy": "10"
+    "Odom/ResetCountdown": "0"
+    "Odom/FillInfoData": "true"
+    "Odom/ImageBufferSize": "1"
+    "Odom/GuessMotion": "true"
+    "Odom/FilteringStrategy": "0"
+    "Odom/AlignWithGround": "false"
+    "Odom/KeyFrameThr": "0.3"
+    "Odom/VisKeyFrameThr": "150"
+
+    # ===== OpenVINS config override =====
+    # 非空时，RTAB-Map 会读取 OpenVINS 原生 yaml，并覆盖下面 OdomOpenVINS/* 的同名参数。
+    "OdomOpenVINS/ConfigPath": ""
+
+    # ===== OpenVINS tracker / front-end =====
+    "OdomOpenVINS/UseStereo": "true"
+    "OdomOpenVINS/UseKLT": "true"
+    "OdomOpenVINS/NumPts": "500"
+    "OdomOpenVINS/MinPxDist": "10"
+    # OpenVINS 包装层还会读取这些通用视觉参数。
+    "FAST/Threshold": "10"
+    "Vis/GridRows": "5"
+    "Vis/GridCols": "5"
+    "Vis/CorNNDR": "0.8"
+    "Vis/MinDepth": "0.1"
+    "Vis/MaxDepth": "8.0"
+    "Vis/DepthAsMask": "true"
+
+    # ===== OpenVINS feature initialization =====
+    "OdomOpenVINS/FiTriangulate1d": "false"
+    "OdomOpenVINS/FiRefineFeatures": "true"
+    "OdomOpenVINS/FiMaxRuns": "5"
+    "OdomOpenVINS/FiMaxBaseline": "40"
+    "OdomOpenVINS/FiMaxCondNumber": "10000"
+
+    # ===== OpenVINS state / sliding window =====
+    "OdomOpenVINS/UseFEJ": "true"
+    # 0=discrete, 1=rk4, 2=analytical。
+    "OdomOpenVINS/Integration": "1"
+    "OdomOpenVINS/CalibCamExtrinsics": "false"
+    "OdomOpenVINS/CalibCamIntrinsics": "false"
+    "OdomOpenVINS/CalibCamTimeoffset": "true"
+    "OdomOpenVINS/CalibIMUIntrinsics": "false"
+    "OdomOpenVINS/CalibIMUGSensitivity": "false"
+    "OdomOpenVINS/MaxClones": "15"
+    "OdomOpenVINS/MaxSLAM": "50"
+    "OdomOpenVINS/MaxSLAMInUpdate": "30"
+    "OdomOpenVINS/MaxMSCKFInUpdate": "80"
+    # OpenVINS landmark representation enum，默认跟 RTAB-Map 源码一致。
+    "OdomOpenVINS/FeatRepMSCKF": "0"
+    "OdomOpenVINS/FeatRepSLAM": "4"
+    "OdomOpenVINS/DtSLAMDelay": "0.0"
+    "OdomOpenVINS/GravityMag": "9.81"
+    "OdomOpenVINS/LeftMaskPath": ""
+    "OdomOpenVINS/RightMaskPath": ""
+
+    # ===== OpenVINS initialization =====
+    "OdomOpenVINS/InitWindowTime": "2.0"
+    "OdomOpenVINS/InitIMUThresh": "1.0"
+    "OdomOpenVINS/InitMaxDisparity": "10.0"
+    "OdomOpenVINS/InitMaxFeatures": "50"
+    "OdomOpenVINS/InitDynUse": "false"
+    "OdomOpenVINS/InitDynMLEOptCalib": "false"
+    "OdomOpenVINS/InitDynMLEMaxIter": "50"
+    "OdomOpenVINS/InitDynMLEMaxTime": "0.05"
+    "OdomOpenVINS/InitDynMLEMaxThreads": "6"
+    "OdomOpenVINS/InitDynNumPose": "6"
+    "OdomOpenVINS/InitDynMinDeg": "10.0"
+    "OdomOpenVINS/InitDynInflationOri": "10.0"
+    "OdomOpenVINS/InitDynInflationVel": "100.0"
+    "OdomOpenVINS/InitDynInflationBg": "10.0"
+    "OdomOpenVINS/InitDynInflationBa": "100.0"
+    "OdomOpenVINS/InitDynMinRecCond": "1e-15"
+
+    # ===== OpenVINS ZUPT =====
+    "OdomOpenVINS/TryZUPT": "true"
+    "OdomOpenVINS/ZUPTChi2Multiplier": "0.5"
+    # 参数名源码里就是 Velodicy，不是 Velocity。
+    "OdomOpenVINS/ZUPTMaxVelodicy": "0.1"
+    "OdomOpenVINS/ZUPTNoiseMultiplier": "10.0"
+    "OdomOpenVINS/ZUPTMaxDisparity": "0.5"
+    "OdomOpenVINS/ZUPTOnlyAtBeginning": "false"
+
+    # ===== OpenVINS IMU / visual measurement noise =====
+    # 当前为旧 WIT IMU 标定值；GO2 使用 D435i 时应以实机 Allan 标定结果替换，
+    # 不要仅凭型号照抄其他相机的噪声参数。
+    "OdomOpenVINS/AccelerometerNoiseDensity": "0.008"
+    "OdomOpenVINS/AccelerometerRandomWalk": "0.0004"
+    "OdomOpenVINS/GyroscopeNoiseDensity": "0.0001"
+    "OdomOpenVINS/GyroscopeRandomWalk": "0.00001"
+    # "OdomOpenVINS/AccelerometerNoiseDensity": "0.01"
+    # "OdomOpenVINS/AccelerometerRandomWalk": "0.001"
+    # "OdomOpenVINS/GyroscopeNoiseDensity": "0.001"
+    # "OdomOpenVINS/GyroscopeRandomWalk": "0.0001"
+    "OdomOpenVINS/UpMSCKFSigmaPx": "1.0"
+    "OdomOpenVINS/UpMSCKFChi2Multiplier": "1.0"
+    "OdomOpenVINS/UpSLAMSigmaPx": "1.0"
+    "OdomOpenVINS/UpSLAMChi2Multiplier": "1.0"
+
+    # ===== image handling =====
+    # 通用默认值保持 true；HB 启动文件在 OpenVINS 节点上单独覆盖为 false，
+    # 让它使用原始图像、CameraInfo K/D 和 Kalibr 原始相机 TF。
+    "Rtabmap/ImagesAlreadyRectified": "true"
+
+    always_process_most_recent_frame: false
+
+rtabmap:
+  ros__parameters:
+    # ===== ROS wrapper / TF / sync =====
+    use_sim_time: false
+    frame_id: "camera_link"
+    odom_frame_id: "odom"
+    map_frame_id: "map"
+    publish_tf: true
+    wait_for_transform: 0.2
+    database_path: "~/.ros/rtabmap_openvins_mapping.db"
+    delete_db_on_start: false
+
+    # 使用双目图像建图，不使用深度相机。
+    subscribe_stereo: true
+    subscribe_rgb: false
+    subscribe_rgbd: false
+    subscribe_depth: false
+    # 对比版：保留左右目图像，由RTAB-Map按需生成深度。
+    # false可避免把较激进的SGBM稠密深度直接写入所有地图节点。
+    stereo_to_depth: false
+    subscribe_scan: false
+    subscribe_scan_cloud: false
+    subscribe_odom_info: true
+    subscribe_imu: false
+    approx_sync: true
+    approx_sync_max_interval: 0.01
+    sync_queue_size: 10
+    qos: 2
+    qos_image: 2
+    qos_camera_info: 2
+    qos_imu: 2
+
+    # ===== RTAB-Map main loop =====
+    "Rtabmap/DetectionRate": "1"
+    "Rtabmap/ImageBufferSize": "1"
+    "Rtabmap/CreateIntermediateNodes": "false"
+    "Rtabmap/ImagesAlreadyRectified": "true"
+    "Rtabmap/LoopThr": "0.11"
+    "Rtabmap/LoopRatio": "0"
+    "Rtabmap/PublishStats": "true"
+    "Rtabmap/PublishLastSignature": "true"
+    "Rtabmap/PublishPdf": "false"
+    "Rtabmap/PublishLikelihood": "false"
+    "Rtabmap/MemoryThr": "0"
+    "Rtabmap/TimeThr": "700"
+
+    # ===== memory / database =====
+    "Mem/IncrementalMemory": "true"
+    "Mem/LocalizationReadOnly": "false"
+    "Mem/ImageKept": "false"
+    "Mem/BinDataKept": "true"
+    "Mem/RawDescriptorsKept": "true"
+    "Mem/IntermediateNodeDataKept": "false"
+    "Mem/InitWMWithAllNodes": "false"
+    # OpenVINS 跟踪特征不是 RTAB-Map 回环词袋的描述子，建议让 RTAB-Map 自己提回环特征。
+    "Mem/UseOdomFeatures": "false"
+    "Mem/UseOdomGravity": "true"
+    "Mem/CovOffDiagIgnored": "true"
+
+    # ===== graph SLAM / loop closure =====
+    "RGBD/Enabled": "true"
+    "RGBD/LinearUpdate": "0.10"
+    "RGBD/AngularUpdate": "0.10"
+    "RGBD/LinearSpeedUpdate": "0.0"
+    "RGBD/AngularSpeedUpdate": "0.0"
+    "RGBD/OptimizeFromGraphEnd": "false"
+    "RGBD/OptimizeMaxError": "3.0"
+    "RGBD/ProximityBySpace": "true"
+    "RGBD/ProximityByTime": "false"
+    "RGBD/NeighborLinkRefining": "false"
+    "RGBD/LoopClosureIdentityGuess": "false"
+    "RGBD/LoopClosureReextractFeatures": "false"
+    "RGBD/LocalBundleOnLoopClosure": "false"
+    "RGBD/MaxLoopClosureDistance": "0.0"
+    "RGBD/MaxOdomCacheSize": "10"
+    "RGBD/LocalizationSmoothing": "true"
+    "RGBD/LocalizationPriorError": "0.001"
+
+    # ===== registration used to verify loop closures =====
+    "Reg/Strategy": "0"
+    # 地面机器人只做 2D 导航可以改 true；四足/无人机/手持建图一般保持 false。
+    "Reg/Force3DoF": "false"
+    "Reg/RepeatOnce": "true"
+    "Vis/MinInliers": "20"
+    "Vis/Iterations": "300"
+    "Vis/FeatureType": "8"
+    "Vis/MaxFeatures": "1000"
+    "Vis/SSC": "false"
+    "Vis/DepthAsMask": "true"
+    "Vis/MinDepth": "0.1"
+    "Vis/MaxDepth": "8.0"
+    "Vis/GridRows": "5"
+    "Vis/GridCols": "5"
+    "Vis/CorType": "0"
+    "Vis/CorNNType": "1"
+    "Vis/CorNNDR": "0.8"
+    "Vis/CorGuessWinSize": "40"
+    "Vis/PnPReprojError": "3.0"
+    "Vis/PnPRefineIterations": "1"
+    "Vis/PnPVarianceMedianRatio": "4"
+    "Vis/BundleAdjustment": "1"
+
+    # ===== visual dictionary / loop image features =====
+    "Kp/DetectorStrategy": "8"
+    "Kp/MaxFeatures": "800"
+    "Kp/BadSignRatio": "0.5"
+    "Kp/NndrRatio": "0.8"
+    "Kp/NNStrategy": "1"
+    "Kp/IncrementalDictionary": "true"
+    "Kp/IncrementalFlann": "true"
+    "Kp/GridRows": "1"
+    "Kp/GridCols": "1"
+    "Kp/RoiRatios": "0.0 0.0 0.0 0.0"
+
+    # ===== graph optimizer =====
+    "Optimizer/Strategy": "1"
+    "Optimizer/Iterations": "20"
+    "Optimizer/Epsilon": "0.00001"
+    "Optimizer/Robust": "false"
+    "Optimizer/VarianceIgnored": "false"
+    # VIO 场景建议 0.1~0.3；若图优化出现姿态拉扯，先降到 0。
+    "Optimizer/GravitySigma": "0.3"
+
+    # ===== dense stereo depth（低噪点对比版） =====
+    # 0=StereoBM。它在弱纹理区域更倾向于不输出深度，点云更稀疏但飞点较少。
+    "Stereo/DenseStrategy": "0"
+    # 15x15窗口牺牲物体边缘细节，以换取比5x5 SGBM更稳定的视差块。
+    "StereoBM/BlockSize": "15"
+    "StereoBM/MinDisparity": "0"
+    # 当前fx约314、基线约49.4 mm，96视差已经覆盖约0.16 m以上范围。
+    "StereoBM/NumDisparities": "96"
+    "StereoBM/PreFilterSize": "9"
+    "StereoBM/PreFilterCap": "31"
+    "StereoBM/UniquenessRatio": "20"
+    "StereoBM/TextureThreshold": "10"
+    "StereoBM/SpeckleWindowSize": "200"
+    "StereoBM/SpeckleRange": "2"
+    "StereoBM/Disp12MaxDiff": "1"
+
+    # ===== occupancy grid from stereo =====
+    "RGBD/CreateOccupancyGrid": "true"
+    "Grid/Sensor": "1"
+    "Grid/CellSize": "0.05"
+    # 当前约49.4 mm基线在3 m外深度误差增长很快，先保留可靠近场点云。
+    "Grid/RangeMin": "0.3"
+    "Grid/RangeMax": "3.0"
+    # 4与纯双目配置默认值一致；相对2会将每帧点数降低到约四分之一。
+    "Grid/DepthDecimation": "4"
+    "Grid/PreVoxelFiltering": "true"
+    # 删除孤立飞点；0.1/5与刚才纯双目测试中实际生效的参数一致。
+    "Grid/NoiseFilteringRadius": "0.1"
+    "Grid/NoiseFilteringMinNeighbors": "5"
+    "Grid/3D": "true"
+    "Grid/RayTracing": "true"
+    "Grid/NormalsSegmentation": "true"
+    "Grid/MaxGroundAngle": "45"
+    "Grid/NormalK": "20"
+    "Grid/ClusterRadius": "0.1"
+    "Grid/MinClusterSize": "10"
+    "Grid/MaxObstacleHeight": "0.0"
+    "Grid/MinGroundHeight": "0.0"
+    "Grid/MaxGroundHeight": "0.0"
+    "Grid/FootprintLength": "0.0"
+    "Grid/FootprintWidth": "0.0"
+    "Grid/FootprintHeight": "0.0"
+    "GridGlobal/UpdateError": "0.01"
+    "GridGlobal/OccupancyThr": "0.5"
+    "GridGlobal/ProbHit": "0.7"
+    "GridGlobal/ProbMiss": "0.4"
+
+rtabmap_viz:
+  ros__parameters:
+    use_sim_time: false
+    frame_id: "camera_link"
+    odom_frame_id: "odom"
+    map_frame_id: "map"
+    subscribe_stereo: true
+    subscribe_odom_info: true
+    approx_sync: true
+    sync_queue_size: 10
+    qos: 2
+    qos_image: 2
+    qos_camera_info: 2

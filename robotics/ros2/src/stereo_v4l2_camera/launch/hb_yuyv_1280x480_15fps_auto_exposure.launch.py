@@ -24,7 +24,7 @@ def float_parameter(name):
 
 
 def generate_launch_description():
-    """以 YUYV 15 FPS 和相机固件自动曝光启动 OpenVINS USB 双目相机."""
+    """以 YUYV 15 FPS 和固件自动曝光启动 HB USB 双目相机."""
     config_dir = os.path.join(
         get_package_share_directory('stereo_v4l2_camera'), 'config')
     arguments = [
@@ -105,14 +105,14 @@ def generate_launch_description():
         name='stereo_v4l2_direct_node',
         output='screen',
         parameters=[{
-            # 1280x400 拼接帧拆分后，每目输出一张 640x400 mono8 图像。
+            # 1280x480 拼接帧拆分后，每目输出一张 640x480 mono8 图像。
             'video_device': LaunchConfiguration('video_device'),
             'image_width': int_parameter('image_width'),
             'image_height': int_parameter('image_height'),
             'pixel_format': LaunchConfiguration('pixel_format'),
             'framerate': int_parameter('framerate'),
             'publish_framerate': int_parameter('publish_framerate'),
-            # OpenVINS 双目同步订阅使用可靠 QoS，左右目必须保持一致。
+            # 下游双目同步订阅要求左右目使用完全一致的 QoS。
             'qos_depth': int_parameter('qos_depth'),
             'reliable_qos': bool_parameter('reliable_qos'),
             'buffer_count': int_parameter('buffer_count'),
@@ -177,5 +177,5 @@ def generate_launch_description():
         ],
     )
 
-    # 相机启动文件只发布图像和 CameraInfo，外参由 OpenVINS/建图启动文件统一发布。
+    # 这里只发布图像和 CameraInfo，外参由上层算法组合启动文件统一发布。
     return LaunchDescription(arguments + [direct_camera_node])
