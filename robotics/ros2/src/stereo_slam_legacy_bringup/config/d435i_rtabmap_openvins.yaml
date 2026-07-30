@@ -1,0 +1,732 @@
+# RTAB-Map + OpenVINS 双目视觉惯性建图参数模板（ROS 2 Humble）
+#
+# 注释核对依据：
+#   RTAB-Map      commit 5fad2d29c347e21f5ececb1701148c72d0c4dbb8
+#   rtabmap_ros   commit 2eef2b3231090f0a5cc2e092fd993166157cdd64
+#   OpenVINS      commit 69488123ed9362dd44b6f28e7f4680abbff1442b
+#
+# 说明：
+#   1. 带“/”的键是 RTAB-Map core 参数，ROS 2 中以字符串传入。
+#   2. 标为“当前节点不读取”的 ROS 参数保留原值，但不会影响对应节点。
+#   3. 注释只描述源码可以直接确认的含义，不包含调参建议。
+
+openvins_stereo_odometry:
+  ros__parameters:
+    # ===== ROS wrapper / TF / sync =====
+
+    # 使用 ROS 仿真时钟 /clock；false 表示使用系统时钟。
+    use_sim_time: false
+
+    # 里程计输出的机体坐标系；传感器数据会通过 TF 转换到此坐标系。
+    frame_id: "camera_link"
+
+    # 里程计坐标系，也是 publish_tf=true 时所发布 TF 的父坐标系。
+    odom_frame_id: "odom"
+
+    # 发布 odom_frame_id -> frame_id 的 TF。
+    publish_tf: true
+
+    # 查询传感器坐标系到 frame_id 的 TF 时允许等待的最长时间，单位秒。
+    wait_for_transform: 0.2
+
+    # true 时订阅 imu，并在第一帧图像前等待 IMU 初始化；还会等待时间戳不早于图像的 IMU 数据。
+    wait_imu_to_init: true
+
+    # 当前 stereo_odometry 源码不读取该参数；IMU 订阅由 wait_imu_to_init 控制。
+    subscribe_imu: true
+
+    # true 使用 ApproximateTime 同步双目图像和 CameraInfo；false 使用 ExactTime。
+    approx_sync: true
+
+    # ApproximateTime 允许的一组消息最大时间跨度，单位秒；仅在值大于 0 时设置。
+    approx_sync_max_interval: 0.1
+
+    # 已弃用的 sync_queue_size 别名；设置 message_filters 同步队列长度。
+    queue_size: 30
+
+    # RMW reliability 枚举；stereo_odometry 用它设置图像订阅和里程计相关发布器。
+    # 0=SYSTEM_DEFAULT，1=RELIABLE，2=BEST_EFFORT。
+    qos: 2
+
+    # CameraInfo 订阅的 RMW reliability 枚举。
+    qos_camera_info: 2
+
+    # IMU 订阅的 RMW reliability 枚举；仅在 wait_imu_to_init=true 时声明和使用。
+    qos_imu: 2
+
+    # ===== RTAB-Map odometry core =====
+
+    # 里程计实现：0=F2M，1=F2F，2=Fovis，3=viso2，4=DVO-SLAM，5=ORB-SLAM，
+    # 6=OKVIS，7=LOAM，8=MSCKF-VIO，9=VINS-Fusion，10=OpenVINS，
+    # 11=FLOAM，12=Open3D，13=cuVSLAM，14=LIO-SAM。
+    "Odom/Strategy": "10"
+
+    # 连续 X 帧无法估计里程计后自动重置；0 禁用。重置后从最后成功位姿继续。
+    "Odom/ResetCountdown": "0"
+
+    # 在 OdomInfo 中填充内点、外点和特征等详细数据。
+    "Odom/FillInfoData": "true"
+
+    # 里程计输入数据缓冲区大小；0 表示不限制。
+    "Odom/ImageBufferSize": "1"
+
+    # 使用上一时刻估计的运动预测下一次变换。
+    "Odom/GuessMotion": "true"
+
+    # 输出里程计平滑策略：0=不滤波，1=卡尔曼滤波，2=粒子滤波。
+    "Odom/FilteringStrategy": "0"
+
+    # 初始化时将里程计姿态与地面对齐。
+    "Odom/AlignWithGround": "false"
+
+    # 当当前内点数低于上一帧特征数的该比例时创建视觉关键帧；0 表示每帧都是关键帧。
+    "Odom/KeyFrameThr": "0.3"
+
+    # 当当前内点数低于该绝对数量时创建视觉关键帧；0 表示每帧都是关键帧。
+    "Odom/VisKeyFrameThr": "150"
+
+    # ===== OpenVINS config override =====
+
+    # OpenVINS 原生 YAML 路径。非空且文件存在时，文件中的对应配置在本组参数之后加载并覆盖它们。
+    # RTAB-Map 的该加载路径不会从文件读取相机内参和相机-IMU 外参；这些由输入数据提供。
+    "OdomOpenVINS/ConfigPath": ""
+
+    # ===== OpenVINS tracker / front-end =====
+
+    # 多相机输入时，是否在相机对之间跟踪双目约束。
+    "OdomOpenVINS/UseStereo": "true"
+
+    # true 使用 KLT 跟踪；false 使用 ORB 描述子和鲁棒匹配。
+    "OdomOpenVINS/UseKLT": "true"
+
+    # 每个相机尝试提取并跟踪的特征点数量。
+    "OdomOpenVINS/NumPts": "500"
+
+    # 特征点之间要求的最小像素距离。
+    "OdomOpenVINS/MinPxDist": "10"
+
+    # FAST 检测器中心像素与圆周像素之间的强度差阈值。
+    "FAST/Threshold": "15"
+
+    # OpenVINS 跟踪器图像网格的行数。
+    "Vis/GridRows": "5"
+
+    # OpenVINS 跟踪器图像网格的列数。
+    "Vis/GridCols": "5"
+
+    # 描述子 KNN 匹配的最近邻距离比值。
+    "Vis/CorNNDR": "0.8"
+
+    # 特征初始化可接受的最小三角化距离。
+    "Vis/MinDepth": "0.1"
+
+    # 特征初始化可接受的最大三角化距离；0 在包装层中转换为无穷大。
+    "Vis/MaxDepth": "8.0"
+
+    # 是否启用图像掩膜；掩膜内容由 LeftMaskPath 和 RightMaskPath 提供。
+    "Vis/DepthAsMask": "true"
+
+    # ===== OpenVINS feature initialization =====
+
+    # true 使用一维三角化；false 使用三维三角化。
+    "OdomOpenVINS/FiTriangulate1d": "false"
+
+    # 是否使用 Levenberg-Marquardt 对已三角化特征进行细化。
+    "OdomOpenVINS/FiRefineFeatures": "true"
+
+    # Levenberg-Marquardt 特征细化的最大运行次数。
+    "OdomOpenVINS/FiMaxRuns": "5"
+
+    # 接受三角化特征时允许的最大基线比值。
+    "OdomOpenVINS/FiMaxBaseline": "40"
+
+    # 接受三角化特征时，线性三角化矩阵允许的最大条件数。
+    "OdomOpenVINS/FiMaxCondNumber": "10000"
+
+    # ===== OpenVINS state / sliding window =====
+
+    # 是否使用 First-Estimate Jacobian（FEJ）。
+    "OdomOpenVINS/UseFEJ": "true"
+
+    # IMU 状态传播积分方式：0=DISCRETE，1=RK4，2=ANALYTICAL。
+    # RK4 和 ANALYTICAL 都使用解析协方差传播。
+    "OdomOpenVINS/Integration": "1"
+
+    # 是否在线估计 IMU 到相机的外参位姿。
+    "OdomOpenVINS/CalibCamExtrinsics": "false"
+
+    # 是否在线估计相机内参。
+    "OdomOpenVINS/CalibCamIntrinsics": "false"
+
+    # 是否在线估计相机到 IMU 的时间偏移。
+    "OdomOpenVINS/CalibCamTimeoffset": "false"
+
+    # 是否在线估计 IMU 内参。
+    "OdomOpenVINS/CalibIMUIntrinsics": "false"
+
+    # 是否在线估计 IMU 的重力敏感性参数。
+    "OdomOpenVINS/CalibIMUGSensitivity": "false"
+
+    # 滑动窗口中保留的最大克隆位姿数量。
+    "OdomOpenVINS/MaxClones": "15"
+
+    # 状态中最多估计的 SLAM 特征数量。
+    "OdomOpenVINS/MaxSLAM": "50"
+
+    # 单次 EKF 更新最多纳入的 SLAM 特征数量。
+    "OdomOpenVINS/MaxSLAMInUpdate": "30"
+
+    # 每个图像时刻最多用于更新的 MSCKF 特征数量。
+    "OdomOpenVINS/MaxMSCKFInUpdate": "80"
+
+    # MSCKF 特征表示枚举：
+    # 0=GLOBAL_3D，1=GLOBAL_FULL_INVERSE_DEPTH，2=ANCHORED_3D，
+    # 3=ANCHORED_FULL_INVERSE_DEPTH，4=ANCHORED_MSCKF_INVERSE_DEPTH，
+    # 5=ANCHORED_INVERSE_DEPTH_SINGLE，6=UNKNOWN。
+    "OdomOpenVINS/FeatRepMSCKF": "0"
+
+    # SLAM 特征表示枚举；枚举取值同 FeatRepMSCKF。
+    "OdomOpenVINS/FeatRepSLAM": "4"
+
+    # 初始化完成后，开始估计 SLAM 特征前等待的时间，单位秒。
+    "OdomOpenVINS/DtSLAMDelay": "0.0"
+
+    # 全局坐标系中的重力加速度模长，单位 m/s^2。
+    "OdomOpenVINS/GravityMag": "9.81"
+
+    # 左图灰度掩膜文件路径；非空时读取为单通道图像。
+    "OdomOpenVINS/LeftMaskPath": ""
+
+    # 右图灰度掩膜文件路径；非空时读取为单通道图像。
+    "OdomOpenVINS/RightMaskPath": ""
+
+    # ===== OpenVINS initialization =====
+
+    # 初始化所使用的数据时间窗口，单位秒。
+    "OdomOpenVINS/InitWindowTime": "2.0"
+
+    # 根据加速度方差判断设备正在运动的阈值。
+    "OdomOpenVINS/InitIMUThresh": "1.0"
+
+    # 判断设备静止时允许的最大图像视差；数值与图像分辨率相关。
+    "OdomOpenVINS/InitMaxDisparity": "10.0"
+
+    # 初始化阶段尝试跟踪的特征数量。
+    "OdomOpenVINS/InitMaxFeatures": "50"
+
+    # 是否使用动态初始化。
+    "OdomOpenVINS/InitDynUse": "false"
+
+    # 动态初始化的 MLE 中是否同时优化标定参数。
+    "OdomOpenVINS/InitDynMLEOptCalib": "false"
+
+    # 动态初始化 MLE 优化的最大迭代次数；0 跳过 MLE。
+    "OdomOpenVINS/InitDynMLEMaxIter": "50"
+
+    # 动态初始化 MLE 优化允许的最长时间，单位秒。
+    "OdomOpenVINS/InitDynMLEMaxTime": "0.05"
+
+    # 动态初始化 MLE 使用的最大线程数。
+    "OdomOpenVINS/InitDynMLEMaxThreads": "6"
+
+    # 初始化窗口中均匀选取的位姿数量。
+    "OdomOpenVINS/InitDynNumPose": "6"
+
+    # 尝试动态初始化前所需的累计旋转角度，单位度。
+    "OdomOpenVINS/InitDynMinDeg": "10.0"
+
+    # 对恢复出的初始姿态协方差施加的膨胀倍数。
+    "OdomOpenVINS/InitDynInflationOri": "10.0"
+
+    # 对恢复出的初始速度协方差施加的膨胀倍数。
+    "OdomOpenVINS/InitDynInflationVel": "100.0"
+
+    # 对恢复出的初始陀螺仪偏置协方差施加的膨胀倍数。
+    "OdomOpenVINS/InitDynInflationBg": "10.0"
+
+    # 对恢复出的初始加速度计偏置协方差施加的膨胀倍数。
+    "OdomOpenVINS/InitDynInflationBa": "100.0"
+
+    # 协方差恢复/信息矩阵求逆可接受的最小倒条件数阈值。
+    "OdomOpenVINS/InitDynMinRecCond": "1e-15"
+
+    # ===== OpenVINS ZUPT =====
+
+    # 是否尝试零速度更新（ZUPT）。
+    "OdomOpenVINS/TryZUPT": "true"
+
+    # ZUPT 卡方检验阈值的倍率。
+    "OdomOpenVINS/ZUPTChi2Multiplier": "0.5"
+
+    # 尝试 ZUPT 时允许的最大速度；超过该值不执行 ZUPT。
+    "OdomOpenVINS/ZUPTMaxVelodicy": "0.1"
+
+    # ZUPT 测量 IMU 噪声矩阵的倍率。
+    "OdomOpenVINS/ZUPTNoiseMultiplier": "10.0"
+
+    # 尝试 ZUPT 时允许的最大图像视差；超过该值不执行 ZUPT。
+    "OdomOpenVINS/ZUPTMaxDisparity": "0.5"
+
+    # 是否只在开始阶段的静态初始化期间使用 ZUPT。
+    "OdomOpenVINS/ZUPTOnlyAtBeginning": "false"
+
+    # ===== OpenVINS IMU / visual measurement noise =====
+
+    # 加速度计白噪声密度，单位 m/s^2/sqrt(Hz)。
+    "OdomOpenVINS/AccelerometerNoiseDensity": "0.01025"
+
+    # 加速度计偏置随机游走，单位 m/s^3/sqrt(Hz)。
+    "OdomOpenVINS/AccelerometerRandomWalk": "0.000633"
+
+    # 陀螺仪白噪声密度，单位 rad/s/sqrt(Hz)。
+    "OdomOpenVINS/GyroscopeNoiseDensity": "0.00246"
+
+    # 陀螺仪偏置随机游走，单位 rad/s^2/sqrt(Hz)。
+    "OdomOpenVINS/GyroscopeRandomWalk": "0.0000307"
+
+    # MSCKF 特征原始像素测量的噪声标准差，单位像素。
+    "OdomOpenVINS/UpMSCKFSigmaPx": "1.0"
+
+    # MSCKF 特征更新卡方检验阈值的倍率。
+    "OdomOpenVINS/UpMSCKFChi2Multiplier": "1.5"
+
+    # SLAM 特征原始像素测量的噪声标准差，单位像素。
+    "OdomOpenVINS/UpSLAMSigmaPx": "1.0"
+
+    # SLAM 特征更新卡方检验阈值的倍率。
+    "OdomOpenVINS/UpSLAMChi2Multiplier": "1.0"
+
+    # ===== image handling =====
+
+    # true 表示输入图像已经校正；false 时 RTAB-Map 根据标定信息执行校正。
+    "Rtabmap/ImagesAlreadyRectified": "true"
+
+rtabmap:
+  ros__parameters:
+    # ===== ROS wrapper / TF / sync =====
+
+    # 使用 ROS 仿真时钟 /clock；false 表示使用系统时钟。
+    use_sim_time: false
+
+    # 机器人/传感器数据转换到的基准坐标系。
+    frame_id: "camera_link"
+
+    # 非空时，rtabmap 从 TF 获取该坐标系到 frame_id 的里程计，而不订阅 odom 话题。
+    odom_frame_id: "odom"
+
+    # 全局地图坐标系。
+    map_frame_id: "map"
+
+    # 在图优化启用时发布 map_frame_id -> odom_frame_id 的 TF。
+    publish_tf: true
+
+    # 查询输入数据相关 TF 时允许等待的最长时间，单位秒。
+    wait_for_transform: 0.2
+
+    # RTAB-Map 数据库文件路径；“~”会被替换为用户主目录。空字符串表示不保存地图。
+    database_path: "~/.ros/rtabmap_openvins_mapping.db"
+
+    # true 时在初始化 RTAB-Map 前删除 database_path 指向的数据库。
+    delete_db_on_start: false
+
+    # 订阅双目左/右图像及对应 CameraInfo。
+    subscribe_stereo: true
+
+    # 订阅已经组合好的 RGBDImage 数据。
+    subscribe_rgbd: false
+
+    # 订阅 RGB 图像和深度图像；不能与 subscribe_stereo 同时启用。
+    subscribe_depth: false
+
+    # 订阅二维 LaserScan。
+    subscribe_scan: false
+
+    # 订阅三维 PointCloud2 激光点云。
+    subscribe_scan_cloud: false
+
+    # 将 OdomInfo 纳入输入同步并提供给 RTAB-Map。
+    subscribe_odom_info: true
+
+
+    # true 使用 ApproximateTime 同步已启用的输入话题；false 使用 ExactTime。
+    approx_sync: true
+
+    # 当前 CoreWrapper/CommonDataSubscriber 源码未读取该参数。
+    approx_sync_max_interval: 0.1
+
+    # 已弃用的 sync_queue_size 别名；设置 message_filters 同步队列长度。
+    queue_size: 30
+
+    # 各专用 qos_* 参数未单独设置时继承的 RMW reliability 枚举。
+    # 0=SYSTEM_DEFAULT，1=RELIABLE，2=BEST_EFFORT。
+    qos: 2
+
+    # 图像订阅的 RMW reliability 枚举。
+    qos_image: 2  
+
+    # CameraInfo 订阅的 RMW reliability 枚举；默认继承 qos_image。
+    qos_camera_info: 2
+
+    # IMU 订阅的 RMW reliability 枚举。
+    qos_imu: 2
+
+    # ===== RTAB-Map main loop =====
+
+    # RTAB-Map 检测/地图更新频率，单位 Hz；输入图像会被过滤以满足该频率。
+    "Rtabmap/DetectionRate": "1"
+
+    # RTAB-Map 输入数据缓冲区大小；0 表示不限制。
+    "Rtabmap/ImageBufferSize": "1"
+
+    # 在回环检测节点之间创建中间节点；仅在 DetectionRate>0 时使用。
+    "Rtabmap/CreateIntermediateNodes": "false"
+
+    # true 表示输入图像已经校正；false 时 RTAB-Map 根据标定信息执行校正。
+    "Rtabmap/ImagesAlreadyRectified": "true"
+
+    # 接受全局回环假设的阈值。
+    "Rtabmap/LoopThr": "0.11"
+
+    # 当前回环假设必须大于 LoopRatio × 上一次假设值；0 不施加该比例限制。
+    "Rtabmap/LoopRatio": "0"
+
+    # 是否发布 RTAB-Map 统计信息。
+    "Rtabmap/PublishStats": "true"
+
+    # 是否发布最后一个 Signature 节点。
+    "Rtabmap/PublishLastSignature": "true"
+
+    # 是否发布 RTAB-Map 的 PDF 数据。
+    "Rtabmap/PublishPdf": "false"
+
+    # 是否在统计信息中发布似然值。
+    "Rtabmap/PublishLikelihood": "false"
+
+    # Working Memory 中允许的最大节点数；0 表示不限制，超过后部分节点转入 LTM。
+    "Rtabmap/MemoryThr": "0"
+
+    # 单次地图更新允许的最长时间，单位毫秒；0 表示不限制。
+    # 超过后部分 Working Memory 节点会转入 LTM。
+    "Rtabmap/TimeThr": "700"
+
+    # ===== memory / database =====
+
+    # true 为增量 SLAM 模式；false 为定位模式。
+    "Mem/IncrementalMemory": "true"
+
+    # 定位模式下以只读方式打开数据库；IncrementalMemory=true 时忽略。
+    "Mem/LocalizationReadOnly": "false"
+
+    # 是否在 RAM 中保留未压缩原始图像。
+    "Mem/ImageKept": "false"
+
+    # 是否在数据库中保留二进制传感器数据。
+    "Mem/BinDataKept": "true"
+
+    # 是否在内存中保留原始局部特征描述子。
+    "Mem/RawDescriptorsKept": "true"
+
+    # 是否在数据库中保留中间节点的数据。
+    "Mem/IntermediateNodeDataKept": "false"
+
+    # 初始化 Working Memory 时是否加载 LTM 中的全部节点；false 只初始化上一会话节点。
+    "Mem/InitWMWithAllNodes": "false"
+
+    # true 使用里程计提供的特征；false 由 RTAB-Map 重新提取特征。
+    "Mem/UseOdomFeatures": "false"
+
+    # 使用里程计姿态而不是 IMU 姿态为新节点添加重力约束。
+    # 该设置假设里程计已经与重力对齐，并且仅在 Optimizer/GravitySigma 非零时参与图优化。
+    "Mem/UseOdomGravity": "true"
+
+    # 忽略协方差矩阵中的非对角元素。
+    "Mem/CovOffDiagIgnored": "true"
+
+    # ===== graph SLAM / loop closure =====
+
+    # 启用带度量信息的 SLAM；false 时只做基于图像的经典 RTAB-Map 回环检测。
+    "RGBD/Enabled": "true"
+
+    # 新增地图节点所需的最小线位移，单位米。
+    # LinearUpdate 和 AngularUpdate 都为 0 时，静止状态也可更新地图。
+    "RGBD/LinearUpdate": "0.10"
+
+    # 新增地图节点所需的最小角位移，单位弧度。
+    "RGBD/AngularUpdate": "0.10"
+
+    # 允许更新地图的最大线速度，单位 m/s；0 表示不限制。
+    "RGBD/LinearSpeedUpdate": "0.0"
+
+    # 允许更新地图的最大角速度，单位 rad/s；0 表示不限制。
+    "RGBD/AngularSpeedUpdate": "0.0"
+
+    # true 从最新节点开始优化图；false 从当前图中最老节点开始优化。
+    "RGBD/OptimizeFromGraphEnd": "false"
+
+    # 图优化误差比超过该值时拒绝回环；误差比为约束绝对误差/标准差；0 禁用。
+    "RGBD/OptimizeMaxError": "3.0"
+
+    # 在 Working Memory 中检测空间上相邻位置的局部回环。
+    "RGBD/ProximityBySpace": "true"
+
+    # 在 Short-Term Memory 的全部位置上按时间邻近关系检测局部回环。
+    "RGBD/ProximityByTime": "false"
+
+    # 新节点加入图时，使用 Reg/Strategy 对其与上一节点的邻接约束进行细化。
+    "RGBD/NeighborLinkRefining": "false"
+
+    # 计算回环变换时使用单位变换作为初始猜测；false 表示不提供猜测。
+    "RGBD/LoopClosureIdentityGuess": "false"
+
+    # 计算回环时即使节点已有特征也重新提取；重新提取的原始特征不保存到数据库。
+    "RGBD/LoopClosureReextractFeatures": "false"
+
+    # 检测到回环时，对回环邻域执行局部 Bundle Adjustment。
+    "RGBD/LocalBundleOnLoopClosure": "false"
+
+    # 回环/定位结果与地图距离超过该值时拒绝，单位米；0 禁用。
+    "RGBD/MaxLoopClosureDistance": "0.0"
+
+    # 定位模式下的最大里程计缓存节点数；用于平滑定位和验证定位变换；0 禁用缓存。
+    "RGBD/MaxOdomCacheSize": "10"
+
+    # MaxOdomCacheSize>0 时，根据优化后的里程计缓存位姿调整定位约束。
+    "RGBD/LocalizationSmoothing": "true"
+
+    # 定位时施加到地图位姿先验上的方差，即 error²；仅在 MaxOdomCacheSize>0 时使用。
+    "RGBD/LocalizationPriorError": "0.001"
+
+    # ===== registration used to verify loop closures =====
+
+    # 配准策略：0=视觉，1=ICP，2=视觉+ICP。
+    "Reg/Strategy": "0"
+
+    # 强制配准结果为 x、y、yaw 三自由度；z、roll、pitch 置零。
+    "Reg/Force3DoF": "false"
+
+    # 首次配准未提供初值时，再以第一次结果为初值执行一次配准。
+    "Reg/RepeatOnce": "true"
+
+    # 接受或计算视觉变换所需的最少特征对应内点数。
+    "Vis/MinInliers": "20"
+
+    # 估计视觉变换时的最大迭代次数。
+    "Vis/Iterations": "300"
+
+    # 特征类型：0=SURF，1=SIFT，2=ORB，3=FAST/FREAK，4=FAST/BRIEF，
+    # 5=GFTT/FREAK，6=GFTT/BRIEF，7=BRISK，8=GFTT/ORB，9=KAZE，
+    # 10=ORB-OCTREE，11=SuperPoint，12=SURF/FREAK，13=GFTT/DAISY，
+    # 14=SURF/DAISY，15=PyDetector，16=SuperPoint-Rpautrat。
+    "Vis/FeatureType": "8"
+
+    # 视觉配准最多提取的特征数量；0 表示不限制。
+    "Vis/MaxFeatures": "1000"
+
+    # 是否使用 SSC（Suppression via Square Covering）限制特征点。
+    "Vis/SSC": "false"
+
+    # 提取视觉特征时是否使用深度图作为掩膜。
+    "Vis/DepthAsMask": "true"
+
+    # 视觉特征允许的最小深度；0 表示不限制。
+    "Vis/MinDepth": "0.1"
+
+    # 视觉特征允许的最大深度；0 表示不限制。
+    "Vis/MaxDepth": "8.0"
+
+    # 将图像分成该行数的网格，在各网格中均匀提取特征。
+    "Vis/GridRows": "5"
+
+    # 将图像分成该列数的网格，在各网格中均匀提取特征。
+    "Vis/GridCols": "5"
+
+    # 特征对应计算方式：0=描述子特征匹配，1=光流。
+    "Vis/CorType": "0"
+
+    # CorType=0 时的最近邻搜索：0=FLANN Naive，1=FLANN KDTree，2=FLANN LSH，
+    # 3=BruteForce，4=BruteForce GPU，5=BruteForce CrossCheck，6=SuperGlue，7=GMS。
+    "Vis/CorNNType": "1"
+
+    # CorType=0 时 KNN 特征匹配使用的最近邻距离比值。
+    "Vis/CorNNDR": "0.8"
+
+    # 有初始变换猜测时，在投影点周围搜索对应特征的窗口大小，单位像素；0 禁用。
+    "Vis/CorGuessWinSize": "40"
+
+    # PnP RANSAC 的重投影误差阈值。
+    "Vis/PnPReprojError": "3.0"
+
+    # PnP 结果的细化迭代次数；使用 Vis/BundleAdjustment 时源码建议设为 0。
+    "Vis/PnPRefineIterations": "0"
+
+    # PnP 后根据 3D 对应点计算变换方差时使用的中值比率；应大于 1。
+    # 比率越大，计算出的协方差越小。
+    "Vis/PnPVarianceMedianRatio": "4"
+
+    # 视觉配准 Bundle Adjustment：0=禁用，1=g2o，2=cvsba，3=Ceres。
+    "Vis/BundleAdjustment": "1"
+
+    # ===== visual dictionary / loop image features =====
+
+    # 词袋局部特征检测/描述策略；枚举定义与 Vis/FeatureType 相同。
+    "Kp/DetectorStrategy": "8"
+
+    # 每幅图像最多提取的词袋特征数；0 不限制，负数表示不提取。
+    "Kp/MaxFeatures": "800"
+
+    # 判断坏 Signature 的特征数量比例阈值。
+    # 当 Kp/MaxFeatures=0 时，阈值基于每幅图平均词数计算。
+    "Kp/BadSignRatio": "0.5"
+
+    # 词袋特征匹配的 NNDR 比值。
+    "Kp/NndrRatio": "0.8"
+
+    # 词典最近邻搜索策略：0=FLANN Naive，1=FLANN KDTree，2=FLANN LSH，
+    # 3=BruteForce，4=BruteForce GPU。
+    "Kp/NNStrategy": "1"
+
+    "Kp/IncrementalDictionary": "true"
+
+    # 使用 FLANN 时增量添加/删除索引项，而不是每次重建全部索引。
+    "Kp/IncrementalFlann": "true"
+
+    # 词袋特征均匀提取网格的行数。
+    "Kp/GridRows": "1"
+
+    # 词袋特征均匀提取网格的列数。
+    "Kp/GridCols": "1"
+
+    # 图像 ROI 排除比例，顺序为 left right top bottom。
+    "Kp/RoiRatios": "0.0 0.0 0.0 0.0"
+
+    # ===== graph optimizer =====
+
+    # 图优化后端：0=TORO，1=g2o，2=GTSAM，3=Ceres；必须已编译相应后端。
+    "Optimizer/Strategy": "2"
+
+    # 图优化最大迭代次数；0 会禁用图优化及 map->odom TF 发布。
+    "Optimizer/Iterations": "20"
+
+    # 当误差改善小于该值时停止图优化。
+    "Optimizer/Epsilon": "0.00001"
+
+    # 使用 Vertigo 鲁棒图优化；只支持 g2o 和 GTSAM。
+    "Optimizer/Robust": "false"
+
+    # 忽略约束方差并为每个约束使用单位信息矩阵。
+    "Optimizer/VarianceIgnored": "false"
+
+    # 保持各位姿重力方向的标准差约束；0 禁用。
+    # 仅 g2o 和 GTSAM 支持，适用于已与重力对齐的视觉/激光惯性里程计。
+    "Optimizer/GravitySigma": "0.3"
+
+    # ===== occupancy grid from stereo =====
+
+    # 为每个节点创建局部占据栅格；具体生成方式由 Grid/* 控制。
+    "RGBD/CreateOccupancyGrid": "true"
+
+    # 占据栅格传感器来源：0=激光扫描，1=深度图，2=两者。
+    "Grid/Sensor": "1"
+
+    # 占据栅格分辨率，单位米/格。
+    "Grid/CellSize": "0.08"
+
+    # 从传感器原点起的最小距离过滤阈值，单位米。
+    "Grid/RangeMin": "0.1"
+
+    # 从传感器原点起的最大距离过滤阈值，单位米；0 表示无限。
+    "Grid/RangeMax": "3.0"
+
+    # 由深度图生成点云前的深度图降采样倍数。
+    "Grid/DepthDecimation": "4"
+
+    # 分割地面和障碍物前，按 Grid/CellSize 对输入点云做体素降采样。
+    "Grid/PreVoxelFiltering": "true"
+
+    # true 构建三维占据栅格；false 将点云投影到 XY 平面生成二维栅格。
+    "Grid/3D": "false"
+
+    # 对每个占据单元执行射线追踪，填充传感器与占据单元之间的未知空间。
+    # Grid/3D=true 时需要 RTAB-Map 编译 OctoMap 支持，否则三维射线追踪被忽略。
+    "Grid/RayTracing": "true"
+
+    # 使用点法向量分割地面与障碍物；false 使用快速直通滤波。
+    "Grid/NormalsSegmentation": "true"
+
+    # 法向量与地面法向量夹角不超过该角度的点标记为地面，单位度。
+    "Grid/MaxGroundAngle": "45"
+
+    # 计算点法向量使用的 K 近邻数量。
+    "Grid/NormalK": "20"
+
+    # 法向量分割后聚类的最大半径。
+    "Grid/ClusterRadius": "0.1"
+
+    # 投影到栅格中的最小点簇大小。
+    "Grid/MinClusterSize": "10"
+
+    # 障碍物允许的最大高度；0 禁用该过滤。
+    "Grid/MaxObstacleHeight": "0.0"
+
+    # 地面允许的最小高度；0 禁用该过滤。
+    "Grid/MinGroundHeight": "0.0"
+
+    # 地面允许的最大高度；0 禁用。NormalsSegmentation=false 时应设置该阈值。
+    "Grid/MaxGroundHeight": "0.0"
+
+    # 用于过滤机器人足迹范围内点的足迹长度。
+    "Grid/FootprintLength": "0.0"
+
+    # 足迹宽度；仅在 FootprintLength 已设置时使用。
+    "Grid/FootprintWidth": "0.0"
+
+    # 足迹高度；仅在 FootprintLength 和 FootprintWidth 已设置时使用。
+    "Grid/FootprintHeight": "0.0"
+
+    # 优化图中的位姿移动超过该距离后才更新全局栅格，单位米。
+    "GridGlobal/UpdateError": "0.01"
+
+    # 占据概率达到该阈值时将单元判定为占据；范围 0 到 1。
+    "GridGlobal/OccupancyThr": "0.5"
+
+    # 观测到命中时的概率更新值；范围 0.5 到 1。
+    "GridGlobal/ProbHit": "0.7"
+
+    # 观测到未命中时的概率更新值；范围 0 到 0.5。
+    "GridGlobal/ProbMiss": "0.4"
+
+rtabmap_viz:
+  ros__parameters:
+    # 使用 ROS 仿真时钟 /clock；false 表示使用系统时钟。
+    use_sim_time: false
+
+    # 可视化数据转换使用的基准坐标系。
+    frame_id: "camera_link"
+
+    # 可视化使用的里程计坐标系。
+    odom_frame_id: "odom"
+
+    # 可视化使用的全局地图坐标系。
+    map_frame_id: "map"
+
+    # 订阅双目左/右图像及对应 CameraInfo。
+    subscribe_stereo: true
+
+    # 将 OdomInfo 纳入输入同步。
+    subscribe_odom_info: true
+
+    # true 使用 ApproximateTime 同步已启用的输入话题；false 使用 ExactTime。
+    approx_sync: true
+
+    # 已弃用的 sync_queue_size 别名；设置 message_filters 同步队列长度。
+    queue_size: 30
+
+    # 各专用 qos_* 参数未单独设置时继承的 RMW reliability 枚举。
+    # 0=SYSTEM_DEFAULT，1=RELIABLE，2=BEST_EFFORT。
+    qos: 2
+
+    # 图像订阅的 RMW reliability 枚举。
+    qos_image: 2
+
+    # CameraInfo 订阅的 RMW reliability 枚举；默认继承 qos_image。
+    qos_camera_info: 2

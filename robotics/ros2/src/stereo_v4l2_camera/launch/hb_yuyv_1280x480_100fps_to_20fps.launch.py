@@ -9,12 +9,11 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
-    """以 2560x720 YUYV 采集双目拼接图，并分别发布 1280x720 图像。"""
     package_config_dir = os.path.join(
         get_package_share_directory('stereo_v4l2_camera'), 'config')
 
     arguments = [
-        DeclareLaunchArgument('video_device', default_value='/dev/video0'),
+        DeclareLaunchArgument('video_device', default_value='/dev/video2'),
         DeclareLaunchArgument('buffer_count', default_value='4'),
         DeclareLaunchArgument('poll_timeout_ms', default_value='1000'),
         DeclareLaunchArgument('reconnect_delay_ms', default_value='1000'),
@@ -29,14 +28,14 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'left_camera_info_file',
             default_value=os.path.join(
-                package_config_dir, 'left_hb_2560.yaml'),
-            description='左目 1280x720 CameraInfo 文件。',
+                package_config_dir, 'left_hb.yaml'),
+            description='左目 640x480 CameraInfo 文件。',
         ),
         DeclareLaunchArgument(
             'right_camera_info_file',
             default_value=os.path.join(
-                package_config_dir, 'right_hb_2560.yaml'),
-            description='右目 1280x720 CameraInfo 文件。',
+                package_config_dir, 'right_hb.yaml'),
+            description='右目 640x480 CameraInfo 文件。',
         ),
     ]
 
@@ -47,11 +46,11 @@ def generate_launch_description():
         output='screen',
         parameters=[{
             'video_device': LaunchConfiguration('video_device'),
-            'image_width': 2560,
-            'image_height': 720,
+            'image_width': 1280,
+            'image_height': 480,
             'pixel_format': 'YUYV',
             # 使用本次 1280x720 单目高分辨率标定对应的采集模式。
-            'framerate': 60,
+            'framerate': 100,
             # 发布线程只取最新帧，以 20 Hz 向 VIO 输出并降低处理压力。
             'publish_framerate': 20,
             'buffer_count': ParameterValue(

@@ -22,6 +22,8 @@ install(PROGRAMS wit_imu/wit_imu_node.py
   RENAME wit_imu_node_py)
 
 install(DIRECTORY launch
-  DESTINATION share/${PROJECT_NAME})
+  DESTINATION share/${PROJECT_NAME}
+  PATTERN "__pycache__" EXCLUDE
+  PATTERN "*.pyc" EXCLUDE)
 
 ament_package()

@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>stereo_slam_legacy_bringup</name>
+  <version>0.1.0</version>
+  <description>历史双目 SLAM、定位和导航兼容入口。</description>
+  <maintainer email="your.email@example.com">yahboom</maintainer>
+  <license>TODO: License declaration</license>
+
+  <depend>ament_index_python</depend>
+  <depend>rclpy</depend>
+  <depend>sensor_msgs</depend>
+
+  <exec_depend>image_proc</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>nav2_bringup</exec_depend>
+  <exec_depend>nav2_common</exec_depend>
+  <exec_depend>rclcpp_components</exec_depend>
+  <exec_depend>realsense2_camera</exec_depend>
+  <exec_depend>robot_localization</exec_depend>
+  <exec_depend>rtabmap_ros</exec_depend>
+  <exec_depend>rtabmap_odom</exec_depend>
+  <exec_depend>rtabmap_slam</exec_depend>
+  <exec_depend>rtabmap_sync</exec_depend>
+  <exec_depend>rtabmap_util</exec_depend>
+  <exec_depend>rtabmap_viz</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <exec_depend>stereo_image_proc</exec_depend>
+  <exec_depend>stereo_sync</exec_depend>
+  <exec_depend>stereo_v4l2_camera</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>v4l2_camera</exec_depend>
+  <exec_depend>wit_imu</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
