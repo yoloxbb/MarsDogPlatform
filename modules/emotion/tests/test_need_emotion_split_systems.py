@@ -160,14 +160,26 @@ class NeedEmotionSplitSystemTest(unittest.TestCase):
                 "triggerOperator": "gte",
             },
         )
-        self.assertIn("Calm", triggeredByEmotion)
+        self.assertNotIn("Calm", triggeredByEmotion)
         self.assertNotIn("Excite", triggeredByEmotion)
 
-    def test_emotion_signal_events_emit_only_on_threshold_entry(self):
-        """情绪事件只应在未触发到触发时输出一次。"""
+    def test_emotion_state_uses_calm_as_fallback(self):
+        """无其他触发情绪时 state 应只把 Calm 标记为兜底触发状态。"""
         system = MarsdogEmotionSystem()
 
-        self.assertEqual(system.GetEmotionSignalEventsValue(timestamp=1.0), [])
+        state = system.GetEmotionStateValue(timestamp=1.0)
+        triggeredEmotions = {item["emotion"] for item in state["triggered"]}
+
+        self.assertTrue(state["emotions"]["Calm"]["triggered"])
+        self.assertEqual(triggeredEmotions, {"Calm"})
+
+    def test_emotion_signal_events_emit_only_on_threshold_entry(self):
+        """普通情绪只发上升沿，存在普通触发时不应混入 Calm 事件。"""
+        system = MarsdogEmotionSystem()
+
+        initialEvents = system.GetEmotionSignalEventsValue(timestamp=1.0)
+        self.assertEqual(len(initialEvents), 1)
+        self.assertEqual(initialEvents[0]["event_type"], "EMO_CALM_TRIGGERED")
 
         system.SetEmotionValue("Joy", 35)
         events = system.GetEmotionSignalEventsValue(timestamp=2.0)

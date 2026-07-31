@@ -168,12 +168,12 @@ class EmotionEngineNode(Node):
             self.PublishState(tickDateTime)
 
     def OnEmotionDecayTimer(self) -> None:
-        """按真实经过时间逐秒执行情绪自然衰减。"""
+        """按真实秒衰减情绪，并以 1 Hz 驱动持续平静事件。"""
         dueTickCount = self.emotionDecayScheduler.GetDueTickCountValue(
             time.monotonic()
         )
         for _ in range(dueTickCount):
-            # 延迟时逐真实秒补算，确保阈值下降和后续重新触发状态准确。
+            # 延迟时逐真实秒补算；即使数值不变也要检查 Calm 兜底心跳。
             self.system.ApplyEmotionDecay(1.0)
             self.PublishSignalEvents()
 
@@ -214,7 +214,7 @@ class EmotionEngineNode(Node):
         self.statePublisher.publish(message)
 
     def PublishSignalEvents(self, virtualDateTime: datetime | None = None) -> None:
-        """发布情绪阈值上升沿事件，未产生新触发时不发布。"""
+        """发布普通情绪上升沿事件或持续的 Calm 兜底事件。"""
         currentVirtualTime = virtualDateTime or self.timeController.GetVirtualDateTimeValue()
         for signalEvent in self.system.GetEmotionSignalEventsValue():
             payload = GetMessageWithTimeContextValue(

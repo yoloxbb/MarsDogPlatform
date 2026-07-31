@@ -142,9 +142,11 @@
 }
 ```
 
-`/emotion/signal_event` 只在情绪从未触发变为已触发时发布。触发后的数值升高、
-旧等级边界和主导情绪变化均不会产生事件；降到阈值以下不发恢复事件，但允许
-以后再次达到阈值时重新触发。
+Joy、Excite、Anxiety、Fear、Curious 只在未触发变为已触发时发布
+`/emotion/signal_event`。触发后的数值升高和主导情绪变化均不会产生事件；降到
+阈值以下不发恢复事件，但允许以后再次达到阈值时重新触发。Calm 是兜底状态：
+其他五种情绪均未触发时，以真实时间 1 Hz 持续发布
+`EMO_CALM_TRIGGERED`；任一其他情绪触发时立即停止。
 
 ```json
 {
@@ -366,12 +368,16 @@ finalDelta = round(baseDelta * k_emotion * metadataMultiplier)
 
 | 情绪 | 触发条件 | 事件 |
 |---|---|---|
-| Calm | `>=0` | `EMO_CALM_TRIGGERED`；启动即触发，不主动发启动事件 |
+| Calm | 其他五种情绪均未触发 | `EMO_CALM_TRIGGERED`；平静期间真实时间 1 Hz 持续发布 |
 | Joy | `>=30` | `EMO_JOY_TRIGGERED` |
 | Excite | `>=40` | `EMO_EXCITE_TRIGGERED` |
 | Anxiety | `>=25` | `EMO_ANXIETY_TRIGGERED` |
 | Fear | `>=30` | `EMO_FEAR_TRIGGERED` |
 | Curious | `>=20` | `EMO_CURIOUS_TRIGGERED` |
+
+Calm 配置中的 `triggerThreshold=0` 和 `triggerOperator=gte` 继续保留在 V2
+消息中，但 `Calm.triggered` 及事件发布以“其他五种情绪均未触发”为准。普通
+情绪事件仍只发上升沿；Calm 事件属于持续状态心跳。
 
 ## 8. 行为结果输入
 

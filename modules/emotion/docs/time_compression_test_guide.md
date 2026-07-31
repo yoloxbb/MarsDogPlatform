@@ -223,11 +223,11 @@ ros2 topic pub --once /behavior/result_event std_msgs/msg/String \
 | Energy | 普通时段按倍率耗电；凌晨30秒特殊加速只按1倍累计30秒；06:00不重置电量 |
 | 需求 Tick | 真实周期符合 `600 / time_scale` 秒 |
 | Tick 补算 | 节点短暂延迟后数值不丢增长 Tick |
-| 情绪衰减 | 倍率 `1/7/24/100` 下轨迹一致；`Anxiety/Calm` 保持不变，降到阈值以下不发恢复事件 |
+| 情绪衰减 | 倍率 `1/7/24/100` 下轨迹一致；`Anxiety/Calm` 数值保持不变，普通情绪降到阈值以下不发恢复事件 |
 | 需求协议 | state/signal 均为 V2；仅 Social 具有 `URGENT`，事件名为 `NEED_SOCIAL_URGENT` |
 | 需求边界 | Social 按 `60/61/70/71/85/86` 切换等级；Bladder/Cleanliness/Exploration 到100仍为 `TRIGGERED` |
 | 需求事件 | `state.levelEvents[demand]` 与 signal 的 `event_type` 一致；紧迫度只比较已触发需求 |
-| 情绪事件 | 只在未触发到触发时发布 `EMO_<EMOTION>_TRIGGERED`，高值和主导变化不重复发布 |
+| 情绪事件 | 普通情绪只发上升沿；无其他触发情绪时 Calm 按真实时间 1 Hz 持续发布，且不受倍率影响 |
 | 睡眠 | 即时响应睡眠信号时，约清醒 6 小时 40-50 分，约 5 次睡眠会话 |
 | 一天结束 | `virtualElapsedSeconds >= 86400` |
 | 可重复性 | 相同 `random_seed` 和相同输入事件得到相同数值轨迹 |

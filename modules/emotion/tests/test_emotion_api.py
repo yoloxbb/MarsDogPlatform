@@ -79,7 +79,7 @@ class EmotionAPITest(unittest.TestCase):
         self.assertEqual(system.GetEmotionValue("Anxiety"), anxietyAfterEvent)
 
     def test_emotion_threshold_boundaries(self):
-        """六种情绪应只根据各自的单一阈值判断触发状态。"""
+        """普通情绪按阈值触发，任一普通触发都应关闭 Calm 兜底状态。"""
         thresholds = {
             "Joy": 30,
             "Excite": 40,
@@ -92,8 +92,10 @@ class EmotionAPITest(unittest.TestCase):
             self.assertFalse(system.IsEmotionTriggered(emotion, threshold - 1))
             self.assertTrue(system.IsEmotionTriggered(emotion, threshold))
             self.assertTrue(system.IsEmotionTriggered(emotion, 100))
+            system.SetEmotionValue(emotion, threshold)
+            self.assertFalse(system.IsCalmFallbackActive())
 
-        # Calm 的阈值为0，状态值又限制在0-100，因此始终处于触发状态。
+        # Calm 是兜底状态，自身数值不参与判断。
         system = MarsdogEmotionSystem()
         self.assertTrue(system.IsEmotionTriggered("Calm", -1))
         self.assertTrue(system.IsEmotionTriggered("Calm", 0))
@@ -103,7 +105,9 @@ class EmotionAPITest(unittest.TestCase):
         """情绪首次达到阈值时应生成一次精简的 V2 signal event。"""
         system = MarsdogEmotionSystem()
 
-        self.assertEqual(system.GetEmotionSignalEventsValue(timestamp=1.0), [])
+        initialEvents = system.GetEmotionSignalEventsValue(timestamp=1.0)
+        self.assertEqual(len(initialEvents), 1)
+        self.assertEqual(initialEvents[0]["event_type"], "EMO_CALM_TRIGGERED")
         system.SetEmotionValue("Joy", 35)
         events = system.GetEmotionSignalEventsValue(timestamp=2.0)
 
@@ -134,26 +138,43 @@ class EmotionAPITest(unittest.TestCase):
         system.SetEmotionValue("Joy", 100)
         self.assertEqual(system.GetEmotionSignalEventsValue(timestamp=2.0), [])
         system.SetEmotionValue("Joy", 29)
-        self.assertEqual(system.GetEmotionSignalEventsValue(timestamp=3.0), [])
+        calmEvents = system.GetEmotionSignalEventsValue(timestamp=3.0)
+        self.assertEqual(len(calmEvents), 1)
+        self.assertEqual(calmEvents[0]["event_type"], "EMO_CALM_TRIGGERED")
         system.SetEmotionValue("Joy", 30)
         events = system.GetEmotionSignalEventsValue(timestamp=4.0)
 
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0]["event_type"], "EMO_JOY_TRIGGERED")
 
-    def test_dominant_change_and_calm_do_not_emit_extra_events(self):
-        """主导情绪变化和始终触发的 Calm 都不得产生额外事件。"""
+    def test_calm_event_repeats_only_without_other_triggered_emotions(self):
+        """无其他触发情绪时 Calm 应持续发送，其他情绪触发后立即停止。"""
         system = MarsdogEmotionSystem()
+        firstCalmEvents = system.GetEmotionSignalEventsValue(timestamp=0.0)
+        secondCalmEvents = system.GetEmotionSignalEventsValue(timestamp=0.5)
+
+        self.assertEqual(firstCalmEvents[0]["event_type"], "EMO_CALM_TRIGGERED")
+        self.assertEqual(secondCalmEvents[0]["event_type"], "EMO_CALM_TRIGGERED")
+
         system.SetEmotionValue("Joy", 30)
         system.SetEmotionValue("Fear", 30)
         initialEvents = system.GetEmotionSignalEventsValue(timestamp=1.0)
         self.assertEqual(len(initialEvents), 2)
+        self.assertNotIn("EMO_CALM_TRIGGERED", {event["event_type"] for event in initialEvents})
 
         system.SetEmotionValue("Fear", 100)
         system.SetEmotionValue("Calm", 100)
 
         self.assertEqual(system.GetDominantEmotion(), "Fear")
         self.assertEqual(system.GetEmotionSignalEventsValue(timestamp=2.0), [])
+
+        system.SetEmotionValue("Joy", 29)
+        system.SetEmotionValue("Fear", 29)
+        resumedEvents = system.GetEmotionSignalEventsValue(timestamp=3.0)
+        repeatedEvents = system.GetEmotionSignalEventsValue(timestamp=4.0)
+
+        self.assertEqual(resumedEvents[0]["event_type"], "EMO_CALM_TRIGGERED")
+        self.assertEqual(repeatedEvents[0]["event_type"], "EMO_CALM_TRIGGERED")
 
 
 if __name__ == "__main__":

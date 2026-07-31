@@ -629,10 +629,18 @@ Exploration 未配置满溢线，到 `100` 时仍保持 `TRIGGERED`，不会发�
 情绪层级、区间和主导情绪信号字段已从 V2 删除。`dominantEmotion` 只表示当前
 数值最大项，不参与触发事件生成。
 
+Calm 是兜底状态。只有 Joy、Excite、Anxiety、Fear、Curious 全部未触发时，
+`emotions.Calm.triggered=true` 且 `triggered[]` 包含 Calm；任一其他情绪达到
+阈值时，Calm 立即退出触发状态。Calm 消息仍保留配置字段
+`triggerThreshold=0` 和 `triggerOperator=gte`。
+
 ### 3.6 `/emotion/signal_event`
 
-只在情绪从未触发变为已触发时发布。触发后继续升高或主导情绪发生变化不会
-重复发布；降到阈值以下不发布恢复事件，但允许以后再次达到阈值时重新触发。
+Joy、Excite、Anxiety、Fear、Curious 只在未触发变为已触发时发布。触发后
+继续升高或主导情绪变化不会重复发布；降到阈值以下不发布恢复事件，但允许以后
+再次达到阈值时重新触发。Calm 是例外：没有其他触发情绪时按真实时间 1 Hz
+持续发布；任一其他情绪触发时停止，全部回落后恢复发布。该频率不受
+`time_scale` 影响。
 
 格式：
 
@@ -662,7 +670,7 @@ Exploration 未配置满溢线，到 `100` 时仍保持 `TRIGGERED`，不会发�
 
 | 情绪 | 触发条件 | event_type |
 |---|---|---|
-| `Calm` | `>=0` | `EMO_CALM_TRIGGERED`；启动快照已触发，不主动发送 |
+| `Calm` | 其他五种情绪均未触发 | `EMO_CALM_TRIGGERED`；平静期间真实时间 1 Hz 持续发布 |
 | `Joy` | `>=30` | `EMO_JOY_TRIGGERED` |
 | `Excite` | `>=40` | `EMO_EXCITE_TRIGGERED` |
 | `Anxiety` | `>=25` | `EMO_ANXIETY_TRIGGERED` |

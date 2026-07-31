@@ -107,13 +107,29 @@ class EmotionAPI:
         emotionType: object,
         value: int | None = None,
     ) -> bool:
-        """判断指定情绪是否达到单一触发阈值。"""
+        """判断情绪是否触发；Calm 作为无其他触发情绪时的兜底状态。"""
         emotion = NormalizeEmotionType(emotionType)
+        if emotion == EmotionType.CALM.value:
+            # Calm 不依赖自身数值；任一其他情绪触发时立即退出平静状态。
+            return self.IsCalmFallbackActive()
         emotionValue = ClampValue(
             self.state.emotions[emotion]
             if value is None
             else int(value)
         )
+        return self._IsEmotionValueTriggered(emotion, emotionValue)
+
+    def IsCalmFallbackActive(self) -> bool:
+        """判断当前是否没有任何非 Calm 情绪越过各自阈值。"""
+        for emotion, value in self.state.emotions.items():
+            if emotion == EmotionType.CALM.value:
+                continue
+            if self._IsEmotionValueTriggered(emotion, value):
+                return False
+        return True
+
+    def _IsEmotionValueTriggered(self, emotion: str, emotionValue: int) -> bool:
+        """只根据指定情绪的数值和配置阈值执行基础判断。"""
         thresholdConfig = self._GetEmotionThresholdConfigValue(emotion)
         threshold = thresholdConfig.get("triggerThreshold")
         if threshold is None:
@@ -133,16 +149,27 @@ class EmotionAPI:
         }
 
     def GetEmotionSignalEventsValue(self, timestamp: float | None = None) -> list[dict[str, Any]]:
-        """获取并刷新未触发到已触发的情绪事件。"""
+        """获取情绪事件；普通情绪发上升沿，平静状态每次检查都发事件。"""
         previousSnapshot = getattr(self, "_lastEmotionSignalSnapshot", None)
         currentSnapshot = self.GetEmotionSignalSnapshotValue()
         if previousSnapshot is None:
             self._lastEmotionSignalSnapshot = currentSnapshot
-            return []
+            previousSnapshot = {}
 
         events: list[dict[str, Any]] = []
         eventTimestamp = self._GetEmotionSignalTimestamp(timestamp)
         for emotion, isTriggered in currentSnapshot.items():
+            if emotion == EmotionType.CALM.value:
+                # Calm 每次检查都输出；ROS2 节点用真实时间 1 Hz 驱动该检查。
+                if isTriggered:
+                    events.append(
+                        self._BuildEmotionSignalEvent(
+                            emotion,
+                            self.state.emotions[emotion],
+                            eventTimestamp,
+                        )
+                    )
+                continue
             # 只发布 false→true 上升沿；下降沿仅写回快照，供下次重新触发。
             if not isTriggered or bool(previousSnapshot.get(emotion, False)):
                 continue
@@ -250,7 +277,7 @@ class EmotionAPI:
         value: int,
         timestamp: float,
     ) -> dict[str, Any]:
-        """构造发布给行为组的单一阈值触发事件。"""
+        """构造发布给行为组的 V2 情绪信号事件。"""
         thresholdConfig = self._GetEmotionThresholdConfigValue(emotion)
         return {
             "schema_version": "2.0",

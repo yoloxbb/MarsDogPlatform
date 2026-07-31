@@ -436,6 +436,9 @@ virtualDateTime = virtualStartDateTime + monotonicElapsedSeconds * scale
 
 情绪状态不再包含 `levelEvents / dominantEmotionSignal / level / range` 等层级
 字段。`dominantEmotion` 仍按最大情绪值计算，但不参与信号事件生成。
+Calm 是兜底状态：只有 Joy、Excite、Anxiety、Fear、Curious 全部未触发时，
+`emotions.Calm.triggered=true` 且 `triggered[]` 包含 Calm；任一其他情绪触发时
+Calm 立即变为未触发。
 
 ## 9. 情绪事件计算
 
@@ -472,7 +475,8 @@ k_calm    = (O+A)/100
 真实执行频率固定为 1 Hz，不受 `time_scale` 和运行时倍率切换影响。
 节点延迟时仍逐真实秒补算并检查阈值状态，不能把多秒衰减值一次合并。该定时器
 只衰减配置了正数速率的情绪，`Anxiety` 仍可由感知事件和
-行为结果增减。虚拟 Tick 只负责情绪状态的时间上下文和发布节奏。
+行为结果增减。每次真实秒检查也驱动 Calm 兜底事件，因此平静期间按真实时间
+1 Hz 持续输出，虚拟 Tick 只负责情绪状态的时间上下文和发布节奏。
 
 ## 11. 时间上下文
 
@@ -503,18 +507,22 @@ random_seed>=0       可重复
 
 ## 12. 情绪阈值事件
 
-`/emotion/signal_event` 使用 `schema_version=2.0`，只在情绪从未触发变为已
-触发时发布。触发后继续升高、主导情绪变化和降到阈值以下都不发布事件；降到
-阈值以下会更新内部快照，因此以后再次达到阈值时能够重新触发。
+`/emotion/signal_event` 使用 `schema_version=2.0`。Joy、Excite、Anxiety、
+Fear、Curious 只在未触发变为已触发时发布；触发后继续升高、主导情绪变化和
+降到阈值以下都不发布事件。Calm 是例外：其他五种情绪均未触发时，以真实时间
+1 Hz 持续发布；任一其他情绪触发时停止，全部回落后恢复发布。
 
 | 情绪 | 触发条件 | 事件 |
 |---|---|---|
-| `Calm` | `>=0` | `EMO_CALM_TRIGGERED`；启动快照为已触发，不主动发送 |
+| `Calm` | 其他五种情绪均未触发 | `EMO_CALM_TRIGGERED`；平静期间真实时间 1 Hz 持续发布 |
 | `Joy` | `>=30` | `EMO_JOY_TRIGGERED` |
 | `Excite` | `>=40` | `EMO_EXCITE_TRIGGERED` |
 | `Anxiety` | `>=25` | `EMO_ANXIETY_TRIGGERED` |
 | `Fear` | `>=30` | `EMO_FEAR_TRIGGERED` |
 | `Curious` | `>=20` | `EMO_CURIOUS_TRIGGERED` |
+
+Calm 消息仍保留配置值 `triggerThreshold=0`、`triggerOperator=gte`，但其
+`triggered` 状态和事件是否发布以兜底条件为准，而不是只看 Calm 自身数值。
 
 ## 13. 行为结果输入
 

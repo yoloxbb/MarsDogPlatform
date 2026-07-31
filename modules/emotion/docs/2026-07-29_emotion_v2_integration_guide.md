@@ -26,7 +26,7 @@
 | `Anxiety` | `>=25` | `EMO_ANXIETY_TRIGGERED` |
 | `Fear` | `>=30` | `EMO_FEAR_TRIGGERED` |
 | `Curious` | `>=20` | `EMO_CURIOUS_TRIGGERED` |
-| `Calm` | `>=0` | `EMO_CALM_TRIGGERED` |
+| `Calm` | 其他五种情绪均未触发 | `EMO_CALM_TRIGGERED`，平静期间真实时间 1 Hz 持续发布 |
 
 例如原来监听以下事件：
 
@@ -63,7 +63,7 @@ dominantChanged
 
 ### 2.3 触发规则
 
-`/emotion/signal_event` 只表示阈值上升沿：
+普通情绪的 `/emotion/signal_event` 表示阈值上升沿：
 
 ```text
 未触发 false → 已触发 true：发布一次事件
@@ -72,6 +72,11 @@ dominantChanged
 未触发 false → 再次触发 true：重新发布一次事件
 主导情绪变化：不发布
 ```
+
+Calm 是例外。Joy、Excite、Anxiety、Fear、Curious 均未触发时，节点按真实时间
+1 Hz 持续发布 `EMO_CALM_TRIGGERED`；任一其他情绪触发时停止，全部回落后恢复
+发布。感知或行为结果到达时也会立即检查，因此平静状态下可能额外即时收到一条
+Calm。该频率不受 `time_scale` 影响。
 
 如果行为模块需要知道情绪是否已经恢复，必须读取
 `/emotion/state.emotions.<name>.triggered`，不能等待恢复事件。
@@ -107,13 +112,6 @@ dominantChanged
       "eventType": "EMO_JOY_TRIGGERED",
       "triggerThreshold": 30,
       "triggerOperator": "gte"
-    },
-    {
-      "emotion": "Calm",
-      "value": 30,
-      "eventType": "EMO_CALM_TRIGGERED",
-      "triggerThreshold": 0,
-      "triggerOperator": "gte"
     }
   ],
   "dominantEmotion": "Joy",
@@ -133,7 +131,10 @@ dominantChanged
 - 实际消息固定包含六种情绪；示例只展开了其中两种。
 - `dominantEmotion` 仍表示当前数值最大的情绪，但不触发信号事件。
 - `triggered[]` 是当前状态集合，不是本次新增事件列表。
-- `Calm` 阈值为0，因此始终在 `triggered[]` 中。
+- `Calm` 只有在其他五种情绪均未触发时才位于 `triggered[]`；Joy 示例中不会
+  同时包含 Calm。
+- Calm 的 V2 字段仍显示 `triggerThreshold=0 / triggerOperator=gte`，但
+  `triggered` 状态使用兜底条件判断。
 - `/emotion/state` 每个虚拟秒发布，消费方应把它当作当前权威状态。
 
 ## 4. `/emotion/signal_event` V2
@@ -153,10 +154,19 @@ dominantChanged
 }
 ```
 
-该 Topic 只发布新触发，不提供恢复、高等级或主导情绪变化事件。
+该 Topic 不提供恢复、高等级或主导情绪变化事件。普通情绪只发布新触发；Calm
+在没有其他触发情绪时持续发布：
 
-`Calm` 在情绪系统创建时已经满足 `>=0`，初始化快照会记录为已触发，因此正常
-启动不会额外发布 `EMO_CALM_TRIGGERED`。
+```json
+{
+  "schema_version": "2.0",
+  "event_type": "EMO_CALM_TRIGGERED",
+  "emotion": "Calm",
+  "value": 30,
+  "triggerThreshold": 0,
+  "triggerOperator": "gte"
+}
+```
 
 ## 5. 订阅代码修改示例
 
@@ -176,7 +186,7 @@ def HandleEmotionStateMessage(message) -> dict:
 
 
 def HandleEmotionSignalMessage(message) -> tuple[str, int]:
-    """解析 V2 情绪阈值上升沿事件。"""
+    """解析 V2 普通情绪上升沿或 Calm 持续事件。"""
     payload = json.loads(message.data)
     if payload.get("schema_version") != "2.0":
         raise ValueError("Unsupported emotion signal schema")
@@ -186,7 +196,8 @@ def HandleEmotionSignalMessage(message) -> tuple[str, int]:
 推荐处理方式：
 
 - `/emotion/state`：维护当前情绪状态和恢复状态。
-- `/emotion/signal_event`：只触发一次性的行为选择或动作请求。
+- `/emotion/signal_event`：普通情绪可触发一次性行为；Calm 应按持续状态或心跳
+  处理，不能每秒重复创建不可重入动作。
 - `dominantEmotion`：只用于当前表现选择，不用于判断是否出现新事件。
 
 ## 6. 可复现联调步骤
@@ -262,14 +273,16 @@ system.SetEmotionValue("Joy", 100)
 print(system.GetEmotionSignalEventsValue())  # 已触发后升高，无事件
 
 system.SetEmotionValue("Joy", 29)
-print(system.GetEmotionSignalEventsValue())  # 下降，无恢复事件
+print(system.GetEmotionSignalEventsValue())  # 下降后恢复 Calm 兜底事件
+print(system.GetEmotionSignalEventsValue())  # 平静期间继续输出 Calm
 
 system.SetEmotionValue("Joy", 30)
 print(system.GetEmotionSignalEventsValue())  # 再次进入，重新触发
 PY
 ```
 
-预期四次输出依次为：触发事件、空列表、空列表、触发事件。
+预期五次输出依次为：Joy 触发事件、空列表、Calm 事件、Calm 事件、Joy 触发
+事件。
 
 ## 7. 常见问题与解决方法
 
@@ -286,12 +299,14 @@ PY
 
 解决：订阅 `/emotion/state`，读取对应情绪的 `triggered=false`。
 
-### Calm 一直是 triggered
+### Calm 每秒都会收到
 
-原因：按当前产品约定，Calm 阈值保留为 `>=0`，而所有情绪值限制在0到100。
+原因：Calm 是无其他触发情绪时的兜底心跳，按真实时间 1 Hz 持续发布，不再是
+一次性上升沿。
 
-解决：不要把 Calm 的常驻状态当作新事件；只有收到 signal_event 才表示新触发，
-而正常启动不会发布 Calm 触发事件。
+解决：把 `EMO_CALM_TRIGGERED` 作为“当前保持平静”的持续信号。行为模块需要
+自行做动作幂等或状态保持，不要每秒重新启动同一个平静动作。任一其他情绪达到
+阈值后，Calm 事件会停止。
 
 ### 修改代码后仍看到 V1 字段
 
@@ -315,16 +330,17 @@ PY
 - [ ] `triggered[]` 使用 `emotion`，不再使用 `type`。
 - [ ] 所有旧 `EMO_*_LOW/MID/HIGH/NORMAL` 分支已经删除。
 - [ ] 新行为只监听 `EMO_<EMOTION>_TRIGGERED`。
+- [ ] 普通情绪按上升沿处理，Calm 按真实时间 1 Hz 的持续心跳处理。
 - [ ] 情绪恢复通过 `/emotion/state` 判断，不等待恢复事件。
 - [ ] 主导情绪变化不会被当作新触发。
-- [ ] 已验证 Calm 常驻触发但启动不产生 signal_event。
+- [ ] 已验证无其他触发情绪时持续收到 Calm，其他情绪触发时停止，回落后恢复。
 
 ## 9. 可积累经验
 
 - 状态 Topic 表达“现在是什么”，信号 Topic 表达“刚刚发生了什么”，两者不要
   使用同一套去重逻辑。
-- 单一阈值协议下，上升沿事件适合驱动一次性行为；恢复和持续条件更适合从状态
-  Topic 获取。
+- 单一阈值协议下，普通情绪上升沿适合驱动一次性行为；Calm 持续心跳必须使用
+  幂等或状态保持逻辑，避免重复启动动作。
 - 破坏性字段修改应同步升级 `schema_version`，订阅端应显式校验版本，避免静默
   误读。
 - 联调时应同时观察 state 和 signal：只观察 signal 无法判断当前是否已经恢复，
