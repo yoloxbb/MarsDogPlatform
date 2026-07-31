@@ -241,7 +241,9 @@ def generate_launch_description():
         executable="stereo_odometry",
         name="openvins_stereo_odometry",
         namespace=namespace,
-        output="screen",
+        # 同时写屏幕和 launch 进程日志，确保 OpenVINS 原生诊断可在运行后复查。
+        output="both",
+        emulate_tty=True,
         parameters=[
             params_file,
             {
@@ -269,7 +271,8 @@ def generate_launch_description():
             ("odom", odom_topic),
             ("odom_info", odom_info_topic),
         ],
-        arguments=["--ros-args", "--log-level", log_level],
+        # --uinfo 打开 RTAB-Map core/OpenVINS 的 INFO 输出；ROS 日志等级仍由 log_level 控制。
+        arguments=["--uinfo", "--ros-args", "--log-level", log_level],
     )
 
     rtabmap_common_parameters = [

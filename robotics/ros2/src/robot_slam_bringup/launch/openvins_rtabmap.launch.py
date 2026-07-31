@@ -27,6 +27,7 @@ def generate_launch_description():
     map_frame_id = LaunchConfiguration("map_frame_id")
     publish_odom_tf = LaunchConfiguration("publish_odom_tf")
     publish_map_tf = LaunchConfiguration("publish_map_tf")
+    publish_camera_imu_tf = LaunchConfiguration("publish_camera_imu_tf")
     planar_mode = LaunchConfiguration("planar_mode")
     localization = LaunchConfiguration("localization")
 
@@ -103,6 +104,14 @@ def generate_launch_description():
             description="是否由 RTAB-Map 发布 map 到 odom 的 TF。",
         ),
         DeclareLaunchArgument(
+            "publish_camera_imu_tf",
+            default_value="true",
+            description=(
+                "是否发布 2026-07-31 标定的 "
+                "camera_link 到外置 WIT imu_link 静态 TF。"
+            ),
+        ),
+        DeclareLaunchArgument(
             "planar_mode",
             default_value="false",
             description=(
@@ -118,22 +127,22 @@ def generate_launch_description():
         DeclareLaunchArgument(
             "left_image_topic",
             default_value="/camera/camera/infra1/image_rect_raw",
-            description="左目校正图像话题。",
+            description="D435i 驱动原生左红外矫正图像话题。",
         ),
         DeclareLaunchArgument(
             "right_image_topic",
             default_value="/camera/camera/infra2/image_rect_raw",
-            description="右目校正图像话题。",
+            description="D435i 驱动原生右红外矫正图像话题。",
         ),
         DeclareLaunchArgument(
             "left_info_topic",
-            default_value="/camera/camera/infra1/camera_info_kalibr",
-            description="左目 CameraInfo 话题。",
+            default_value="/camera/camera/infra1/camera_info",
+            description="D435i 驱动原生左红外 CameraInfo 话题。",
         ),
         DeclareLaunchArgument(
             "right_info_topic",
-            default_value="/camera/camera/infra2/camera_info_kalibr",
-            description="右目 CameraInfo 话题。",
+            default_value="/camera/camera/infra2/camera_info",
+            description="D435i 驱动原生右红外 CameraInfo 话题。",
         ),
         DeclareLaunchArgument(
             "odom_left_image_topic",
@@ -177,16 +186,15 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             "imu_topic",
-            default_value="/camera/camera/imu",
-            description="OpenVINS 使用的原始 IMU 话题。",
+            default_value="/imu/data_raw",
+            description="OpenVINS 直接使用的 WIT 原始 IMU 话题。",
         ),
         DeclareLaunchArgument(
             "orientation_imu_topic",
-            # 默认沿用 imu_topic，保证 HB 不传该参数时保持原来的重映射。
-            default_value=imu_topic,
+            default_value="/rtabmap/unused_orientation_imu",
             description=(
-                "RTAB-Map 使用的带 orientation IMU；"
-                "原始 IMU 无姿态时应传入一个未发布话题。"
+                "RTAB-Map 可选的姿态 IMU；默认保持为未发布话题，"
+                "避免和 OpenVINS 重复使用同一份 WIT IMU。"
             ),
         ),
         DeclareLaunchArgument(
@@ -234,6 +242,29 @@ def generate_launch_description():
             description="是否启动 rtabmap_viz。",
         ),
     ]
+
+    # 将 D435i 原生 camera_link -> 左目光学坐标系旋转，与
+    # 2026-07-31 Kalibr T_cam_imu（WIT IMU -> 左目光学坐标系）合成。
+    # 标定时间偏移 t_imu=t_cam+0.01311671095948102 s 不属于 TF；
+    # OpenVINS 当前通过 CalibCamTimeoffset=true 在运行时继续估计该偏移。
+    camera_to_wit_imu_tf = Node(
+        condition=IfCondition(publish_camera_imu_tf),
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        name="d435i_camera_to_wit_imu_20260731",
+        output="screen",
+        arguments=[
+            "--x", "-0.037283913338684735",
+            "--y", "-0.021068476495775222",
+            "--z", "0.004906068911756066",
+            "--qx", "0.7127580390029497",
+            "--qy", "-0.00127832915681575",
+            "--qz", "-0.7013739231475679",
+            "--qw", "0.00699740236273522",
+            "--frame-id", "camera_link",
+            "--child-frame-id", "imu_link",
+        ],
+    )
 
     # OpenVINS 双目惯性里程计节点。
     openvins_odometry_node = Node(
@@ -360,6 +391,7 @@ def generate_launch_description():
     return LaunchDescription(
         declared_arguments
         + [
+            camera_to_wit_imu_tf,
             openvins_odometry_node,
             rtabmap_mapping_node,
             rtabmap_localization_node,

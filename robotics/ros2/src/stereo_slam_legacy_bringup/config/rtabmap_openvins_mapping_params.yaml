@@ -104,10 +104,10 @@ openvins_stereo_odometry:
 
     # ===== OpenVINS IMU / visual measurement noise =====
     # 当前为旧 WIT IMU 标定值；GO2 使用 D435i 时应以实机 Allan 标定结果替换，
-    "OdomOpenVINS/AccelerometerNoiseDensity": "0.008"
-    "OdomOpenVINS/AccelerometerRandomWalk": "0.0004"
-    "OdomOpenVINS/GyroscopeNoiseDensity": "0.0001"
-    "OdomOpenVINS/GyroscopeRandomWalk": "0.00001"
+    "OdomOpenVINS/AccelerometerNoiseDensity": "0.08"
+    "OdomOpenVINS/AccelerometerRandomWalk": "0.004"
+    "OdomOpenVINS/GyroscopeNoiseDensity": "0.001"
+    "OdomOpenVINS/GyroscopeRandomWalk": "0.0001"
     # "OdomOpenVINS/AccelerometerNoiseDensity": "0.01"
     # "OdomOpenVINS/AccelerometerRandomWalk": "0.001"
     # "OdomOpenVINS/GyroscopeNoiseDensity": "0.001"

@@ -13,7 +13,6 @@ from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch_ros.parameter_descriptions import ParameterValue
 
 
 def package_launch(package_name, launch_name):
@@ -66,8 +65,6 @@ def generate_launch_description():
     exposure = LaunchConfiguration('exposure')
     gain = LaunchConfiguration('gain')
     log_level = LaunchConfiguration('log_level')
-    imu_time_offset_ms = LaunchConfiguration('imu_time_offset_ms')
-    openvins_imu_topic = LaunchConfiguration('openvins_imu_topic')
 
     declared_arguments = [
         DeclareLaunchArgument(
@@ -127,19 +124,6 @@ def generate_launch_description():
             default_value='info',
             description='OpenVINS 和 RTAB-Map 的日志等级。',
         ),
-        DeclareLaunchArgument(
-            'imu_time_offset_ms',
-            default_value='-13.371873203856067',
-            description=(
-                '加到 IMU 消息时间戳上的偏移，单位 ms。Kalibr 给出 '
-                't_imu=t_cam+13.371873 ms，因此这里取负值对齐到相机时间。'
-            ),
-        ),
-        DeclareLaunchArgument(
-            'openvins_imu_topic',
-            default_value='/imu/data_filtered_time_aligned',
-            description='完成固定时间偏移后，仅供 OpenVINS 使用的 IMU 话题。',
-        ),
     ]
 
     camera_launch = IncludeLaunchDescription(
@@ -172,28 +156,6 @@ def generate_launch_description():
     imu_launch = IncludeLaunchDescription(
         package_launch('wit_imu', 'wit_imu.launch.py'),
         condition=IfCondition(start_sensors),
-    )
-
-    # Kalibr 给出 t_imu=t_cam+13.371873 ms。转发节点的参数会直接加到
-    # IMU 时间戳，因此使用负值，把 IMU 时间轴平移回相机时间轴。
-    imu_time_relay = Node(
-        package='stereo_slam_legacy_bringup',
-        executable='d435i_extrinsics_relay',
-        name='wit_imu_time_offset_20260730',
-        output='screen',
-        parameters=[{
-            'input_topic': '/imu/data_filtered',
-            'output_topic': openvins_imu_topic,
-            'output_frame_id': 'imu_link',
-            'imu_time_offset_ms': ParameterValue(
-                imu_time_offset_ms, value_type=float),
-            # 本节点这里只转发 IMU；使用不存在的输入话题关闭 CameraInfo 转发。
-            'right_info_input_topic':
-                '/rtabmap/unused_right_camera_info_input',
-            'right_info_output_topic':
-                '/rtabmap/unused_right_camera_info_output',
-            'stereo_baseline': 0.050039552364669865,
-        }],
     )
 
     mapping_launch = IncludeLaunchDescription(
@@ -229,8 +191,8 @@ def generate_launch_description():
                 '/camera/camera/infra1/camera_info',
             'right_info_topic':
                 '/camera/camera/infra2/camera_info',
-            # OpenVINS 使用已低通并完成固定时间对齐的 IMU 数据。
-            'imu_topic': openvins_imu_topic,
+            # OpenVINS 直接使用 WIT 节点发布的低通 IMU 数据。
+            'imu_topic': '/imu/data_raw',
             # 滤波话题同样没有有效 orientation，禁止送给RTAB-Map异步接口。
             'orientation_imu_topic': '/rtabmap/unused_orientation_imu',
             'odom_topic': '/odom',
@@ -251,6 +213,5 @@ def generate_launch_description():
     return LaunchDescription(declared_arguments + [
         camera_launch,
         imu_launch,
-        imu_time_relay,
         delayed_mapping,
     ] + calibrated_camera_transforms())

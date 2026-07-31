@@ -155,6 +155,8 @@ def generate_launch_description():
         launch_arguments={
             'params_file': params_file,
             'frame_id': base_frame_id,
+            # HB 使用自己的 imu_link -> cam0/cam1 外参，禁用 D435i 外参。
+            'publish_camera_imu_tf': 'false',
             # OpenVINS 使用原始图像和 Kalibr 原始相机坐标系。
             'odom_left_image_topic': '/cam0/image_raw',
             'odom_right_image_topic': '/cam1/image_raw',
