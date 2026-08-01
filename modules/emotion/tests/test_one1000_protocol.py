@@ -3,20 +3,27 @@ import unittest
 
 from marsdog_core.one1000_protocol import (
     ONE1000_HEARTBEAT_TYPE,
+    ONE1000_POSITION_DATA_TYPE,
     ONE1000_SENTRY_CONTROL_TYPE,
     ONE1000_SENTRY_STATUS_TYPE,
     BuildOne1000CommandValue,
     BuildOne1000PacketValue,
     BuildOne1000TouchThresholdValue,
+    CalculateOne1000CRCValue,
+    One1000DistanceHeadPetDetector,
     One1000HeadPetEdgeDetector,
+    One1000DeviceResponse,
     One1000Heartbeat,
+    One1000Position,
     One1000SentryStatus,
     One1000StreamParser,
     One1000TLV,
     ParseOne1000HeartbeatValue,
+    ParseOne1000PositionValue,
     ParseOne1000SentryStatusValue,
 )
 from marsdog_ros2.one1000_tactile_node import (
+    BuildOne1000DistanceTactileEventValue,
     BuildOne1000StatusValue,
     BuildOne1000TactileEventValue,
 )
@@ -57,7 +64,10 @@ class One1000ProtocolTest(unittest.TestCase):
 
         self.assertEqual(len(parsedPackets), 1)
         self.assertEqual(parsedPackets[0].sequence, 7)
-        self.assertEqual([tlv.typeValue for tlv in parsedPackets[0].tlvs], [0x59, 0x00])
+        self.assertEqual(
+            [tlv.typeValue for tlv in parsedPackets[0].tlvs],
+            [0x59, 0x00],
+        )
 
     def test_stream_parser_recovers_after_crc_failure(self):
         """CRC 错帧后紧随的有效帧仍应被解析。"""
@@ -76,6 +86,60 @@ class One1000ProtocolTest(unittest.TestCase):
 
         self.assertEqual(len(packets), 1)
         self.assertEqual(packets[0].sequence, 2)
+
+    def test_stream_parser_accepts_firmware_c5_length_mismatch(self):
+        """5.1.x 固件 C5 声明33但实际38字节时仍应保留有效外层包。"""
+        positionValue = bytes(range(38))
+        tlvData = bytes((ONE1000_POSITION_DATA_TYPE, 33)) + positionValue
+        crcValue = CalculateOne1000CRCValue(tlvData)
+        packet = b"".join(
+            (
+                b"\x55\xAA\x07\x28\x00",
+                tlvData,
+                crcValue.to_bytes(2, "big"),
+            )
+        )
+
+        parsedPackets = One1000StreamParser().FeedBytesValue(packet)
+
+        self.assertEqual(len(parsedPackets), 1)
+        self.assertEqual(parsedPackets[0].sequence, 7)
+        self.assertEqual(len(parsedPackets[0].tlvs), 1)
+        self.assertEqual(
+            parsedPackets[0].tlvs[0],
+            One1000TLV(ONE1000_POSITION_DATA_TYPE, positionValue),
+        )
+
+    def test_position_parser_decodes_distance_in_meters(self):
+        """C5 应按厂商小端结构解析米制距离和新增质量字段。"""
+        position = ParseOne1000PositionValue(
+            One1000TLV(
+                ONE1000_POSITION_DATA_TYPE,
+                self._BuildPositionValue(0.095),
+            )
+        )
+
+        self.assertIsNotNone(position)
+        self.assertEqual(position.syncCounter, 17)
+        self.assertEqual(position.anchorMacId, 0x11223344)
+        self.assertEqual(position.beaconId, 0x55667788)
+        self.assertEqual(position.beaconType, 2)
+        self.assertAlmostEqual(position.distanceMeters, 0.095)
+        self.assertAlmostEqual(position.angleDegrees, -12.5)
+        self.assertEqual(position.rssiValues, (-40, -41, -42, -43, -44, -45))
+        self.assertEqual(position.rxPower, -46)
+        self.assertEqual(position.positionConfidence, 95)
+
+    def test_position_parser_rejects_truncated_and_nonfinite_values(self):
+        """长度不足或距离非有限数的 C5 不能进入摸头判断。"""
+        truncated = One1000TLV(ONE1000_POSITION_DATA_TYPE, b"\x00" * 26)
+        nonfinite = One1000TLV(
+            ONE1000_POSITION_DATA_TYPE,
+            self._BuildPositionValue(float("nan")),
+        )
+
+        self.assertIsNone(ParseOne1000PositionValue(truncated))
+        self.assertIsNone(ParseOne1000PositionValue(nonfinite))
 
     def test_sentry_status_decodes_head_touch_bits(self):
         """0x54 的人体位、摸头位和调试字段应按小端结构解析。"""
@@ -130,6 +194,96 @@ class One1000ProtocolTest(unittest.TestCase):
         self.assertFalse(detector.ShouldEmitEventValue(released, 1.1))
         self.assertTrue(detector.ShouldEmitEventValue(touched, 1.2))
 
+    def test_distance_detector_repeats_every_two_seconds_while_near(self):
+        """有效距离严格小于10cm时应首次触发并每2秒重复触发。"""
+        detector = One1000DistanceHeadPetDetector(
+            thresholdCentimeters=10.0,
+            cooldownSeconds=2.0,
+        )
+
+        self.assertFalse(
+            detector.ShouldEmitEventValue(
+                self._BuildPositionValueObject(0.10),
+                0.0,
+            )
+        )
+        self.assertTrue(
+            detector.ShouldEmitEventValue(
+                self._BuildPositionValueObject(0.099),
+                1.0,
+            )
+        )
+        self.assertFalse(
+            detector.ShouldEmitEventValue(
+                self._BuildPositionValueObject(0.050),
+                2.99,
+            )
+        )
+        self.assertTrue(
+            detector.ShouldEmitEventValue(
+                self._BuildPositionValueObject(0.050),
+                3.0,
+            )
+        )
+        self.assertFalse(
+            detector.ShouldEmitEventValue(
+                self._BuildPositionValueObject(0.080),
+                4.0,
+            )
+        )
+        self.assertTrue(
+            detector.ShouldEmitEventValue(
+                self._BuildPositionValueObject(0.080),
+                5.0,
+            )
+        )
+
+    def test_distance_detector_stops_repeating_after_beacon_leaves(self):
+        """信标离开阈值后应停止，重新进入仍需满足最近事件间隔。"""
+        detector = One1000DistanceHeadPetDetector(10.0, 2.0)
+
+        self.assertTrue(
+            detector.ShouldEmitEventValue(
+                self._BuildPositionValueObject(0.080),
+                0.0,
+            )
+        )
+        self.assertFalse(
+            detector.ShouldEmitEventValue(
+                self._BuildPositionValueObject(0.150),
+                0.5,
+            )
+        )
+        self.assertFalse(
+            detector.ShouldEmitEventValue(
+                self._BuildPositionValueObject(0.080),
+                1.0,
+            )
+        )
+        self.assertFalse(
+            detector.ShouldEmitEventValue(
+                self._BuildPositionValueObject(0.150),
+                1.5,
+            )
+        )
+        self.assertTrue(
+            detector.ShouldEmitEventValue(
+                self._BuildPositionValueObject(0.080),
+                2.0,
+            )
+        )
+
+    def test_zero_distance_does_not_trigger_head_pet(self):
+        """固件可能用0表示无效测距，不能因此误报摸头。"""
+        detector = One1000DistanceHeadPetDetector(10.0, 0.0)
+
+        self.assertFalse(
+            detector.ShouldEmitEventValue(
+                self._BuildPositionValueObject(0.0),
+                0.0,
+            )
+        )
+
     def test_tactile_payload_uses_existing_head_pet_event(self):
         """ROS2 输出应复用已有 EVT_TACTILE_HEAD_PET 情绪事件名。"""
         payload = BuildOne1000TactileEventValue(
@@ -143,6 +297,21 @@ class One1000ProtocolTest(unittest.TestCase):
         self.assertEqual(payload["source"], "ONE1000")
         self.assertEqual(payload["sensorType"], "UWB_RADAR")
         self.assertEqual(payload["touchState"], "STARTED")
+
+    def test_distance_tactile_payload_uses_existing_head_pet_event(self):
+        """距离触发应复用摸头事件名并携带米和厘米诊断值。"""
+        payload = BuildOne1000DistanceTactileEventValue(
+            self._BuildPositionValueObject(0.075),
+            thresholdCentimeters=10.0,
+            timestamp=123.5,
+        )
+
+        self.assertEqual(payload["event_type"], "EVT_TACTILE_HEAD_PET")
+        self.assertEqual(payload["sensorType"], "UWB_DISTANCE")
+        self.assertEqual(payload["detectionMethod"], "DISTANCE_THRESHOLD")
+        self.assertAlmostEqual(payload["distanceCentimeters"], 7.5)
+        self.assertEqual(payload["distanceThresholdCentimeters"], 10.0)
+        self.assertEqual(payload["beaconId"], 0x55667788)
 
     def test_status_payload_reports_active_radar_and_raw_touch(self):
         """周期状态应同时暴露 0x59 雷达状态和 0x54 原始摸头位。"""
@@ -191,6 +360,70 @@ class One1000ProtocolTest(unittest.TestCase):
         self.assertFalse(stalePayload["connected"])
         self.assertEqual(stalePayload["heartbeat"]["radarState"], "ACTIVE")
 
+    def test_status_payload_accepts_position_packets_without_heartbeat(self):
+        """新固件只有 C5 数据时也应判定协议链路在线并展示命令统计。"""
+        payload = BuildOne1000StatusValue(
+            serialPort="/dev/ttyUSB0",
+            serialOpen=True,
+            heartbeat=None,
+            heartbeatAgeSeconds=None,
+            sentryStatus=None,
+            sentryStatusAgeSeconds=None,
+            byteAgeSeconds=0.05,
+            packetAgeSeconds=0.1,
+            receivedByteCount=1459,
+            validPacketCount=31,
+            positionPacketCount=31,
+            startupCommandsQueued=True,
+            commandSentCount=3,
+            commandResponseCount=1,
+            lastCommandResponse=One1000DeviceResponse(0x57, 0),
+            detectionMode="distance",
+            distanceThresholdCentimeters=10.0,
+            distanceTouchActive=True,
+            position=self._BuildPositionValueObject(0.08),
+            positionAgeSeconds=0.02,
+            timestamp=3.0,
+        )
+
+        self.assertTrue(payload["connected"])
+        self.assertTrue(payload["protocol"]["active"])
+        self.assertTrue(payload["protocol"]["uartActive"])
+        self.assertEqual(payload["protocol"]["positionPacketCount"], 31)
+        self.assertIsNone(payload["heartbeat"])
+        self.assertEqual(payload["commands"]["sentCount"], 3)
+        self.assertEqual(payload["commands"]["responseCount"], 1)
+        self.assertTrue(payload["commands"]["lastResponse"]["success"])
+        self.assertEqual(payload["detection"]["mode"], "distance")
+        self.assertTrue(payload["detection"]["distanceTouchActive"])
+        self.assertAlmostEqual(payload["position"]["distanceCentimeters"], 8.0)
+        self.assertTrue(payload["position"]["withinTouchThreshold"])
+
+    def test_status_payload_keeps_debug_uart_stream_connected(self):
+        """雷达调试固件只输出文本字节时也应显示 UART 在线。"""
+        payload = BuildOne1000StatusValue(
+            serialPort="/dev/ttyUSB0",
+            serialOpen=True,
+            heartbeat=None,
+            heartbeatAgeSeconds=None,
+            sentryStatus=None,
+            sentryStatusAgeSeconds=None,
+            byteAgeSeconds=0.02,
+            packetAgeSeconds=None,
+            receivedByteCount=2000,
+            validPacketCount=0,
+            positionPacketCount=0,
+            startupCommandsQueued=True,
+            commandSentCount=3,
+            commandResponseCount=0,
+            timestamp=4.0,
+        )
+
+        self.assertTrue(payload["connected"])
+        self.assertTrue(payload["protocol"]["uartActive"])
+        self.assertFalse(payload["protocol"]["active"])
+        self.assertEqual(payload["commands"]["responseCount"], 0)
+
     def test_status_payload_rejects_unpaired_status_age(self):
         """诊断对象与状态年龄必须成对提供。"""
         with self.assertRaises(ValueError):
@@ -221,6 +454,52 @@ class One1000ProtocolTest(unittest.TestCase):
             headTouchDetected=touched,
             maxRadarValue=10.0,
             livingBodyFirstIndex=2,
+        )
+
+    def _BuildPositionValue(self, distanceMeters: float) -> bytes:
+        """构造包含完整38字节字段的新固件 C5 Value。"""
+        return struct.pack(
+            "<IIIHfffB6b4bB",
+            17,
+            0x11223344,
+            0x55667788,
+            2,
+            distanceMeters,
+            -12.5,
+            1.25,
+            6,
+            -40,
+            -41,
+            -42,
+            -43,
+            -44,
+            -45,
+            -46,
+            -47,
+            -48,
+            -49,
+            95,
+        )
+
+    def _BuildPositionValueObject(
+        self,
+        distanceMeters: float,
+    ) -> One1000Position:
+        """构造供距离阈值和状态消息测试使用的定位对象。"""
+        return One1000Position(
+            syncCounter=17,
+            anchorMacId=0x11223344,
+            beaconId=0x55667788,
+            beaconType=2,
+            distanceMeters=distanceMeters,
+            angleDegrees=-12.5,
+            pitchDegrees=1.25,
+            rssiValues=(-40, -41, -42, -43, -44, -45),
+            rxPower=-46,
+            rssiFirstPath=-47,
+            rssiNonFirstPath=-48,
+            rssiBluetooth=-49,
+            positionConfidence=95,
         )
 
 

@@ -24,6 +24,11 @@ def generate_launch_description() -> LaunchDescription:
     one1000Enabled = LaunchConfiguration("one1000_tactile_enabled")
     one1000Parameters = {
         "serial_port": LaunchConfiguration("one1000_serial_port"),
+        "detection_mode": LaunchConfiguration("one1000_detection_mode"),
+        "distance_threshold_cm": ParameterValue(
+            LaunchConfiguration("one1000_distance_threshold_cm"),
+            value_type=float,
+        ),
         "auto_start_sentry": ParameterValue(
             LaunchConfiguration("one1000_auto_start_sentry"),
             value_type=bool,
@@ -88,7 +93,17 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument(
                 "one1000_auto_start_sentry",
                 default_value="true",
-                description="Configure and start ONE1000 sentry automatically",
+                description="Start ONE1000 sentry automatically in radar mode",
+            ),
+            DeclareLaunchArgument(
+                "one1000_detection_mode",
+                default_value="distance",
+                description="ONE1000 head-pet source: distance or radar",
+            ),
+            DeclareLaunchArgument(
+                "one1000_distance_threshold_cm",
+                default_value="10.0",
+                description="Trigger when valid beacon distance is below this value",
             ),
             DeclareLaunchArgument(
                 "one1000_touch_threshold",
@@ -97,8 +112,8 @@ def generate_launch_description() -> LaunchDescription:
             ),
             DeclareLaunchArgument(
                 "one1000_touch_cooldown_seconds",
-                default_value="1.0",
-                description="Real-time cooldown between head-pet events",
+                default_value="2.0",
+                description="Real-time interval between head-pet events",
             ),
             Node(
                 package="marsdog_need_emotion",

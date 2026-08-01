@@ -14,6 +14,7 @@ ONE1000_SENTRY_CONTROL_TYPE = 0x4A
 ONE1000_SENTRY_STATUS_TYPE = 0x54
 ONE1000_TOUCH_THRESHOLD_TYPE = 0x57
 ONE1000_HEARTBEAT_TYPE = 0x59
+ONE1000_POSITION_DATA_TYPE = 0xC5
 ONE1000_SENTRY_CLEAR_CACHE_COMMAND = 0x03
 ONE1000_SENTRY_START_COMMAND = 0x04
 ONE1000_SENTRY_STOP_COMMAND = 0x05
@@ -62,6 +63,25 @@ class One1000SentryStatus:
     headTouchDetected: bool
     maxRadarValue: float
     livingBodyFirstIndex: int
+
+
+@dataclass(frozen=True)
+class One1000Position:
+    """表示 ONE1000 `0xC5` 上报的信标定位结果。"""
+
+    syncCounter: int
+    anchorMacId: int
+    beaconId: int
+    beaconType: int
+    distanceMeters: float
+    angleDegrees: float
+    pitchDegrees: float
+    rssiValues: tuple[int, ...]
+    rxPower: int | None
+    rssiFirstPath: int | None
+    rssiNonFirstPath: int | None
+    rssiBluetooth: int | None
+    positionConfidence: int | None
 
 
 def CalculateOne1000CRCValue(data: bytes | bytearray | memoryview) -> int:
@@ -156,6 +176,65 @@ def ParseOne1000SentryStatusValue(
     )
 
 
+def ParseOne1000PositionValue(tlv: One1000TLV) -> One1000Position | None:
+    """解析 `0xC5` 定位结果，距离单位统一为米。"""
+    fixedFormat = "<IIIHfffB"
+    fixedLength = 27
+    if (
+        tlv.typeValue != ONE1000_POSITION_DATA_TYPE
+        or len(tlv.value) < fixedLength
+    ):
+        return None
+    (
+        syncCounter,
+        anchorMacId,
+        beaconId,
+        beaconType,
+        distanceMeters,
+        angleDegrees,
+        pitchDegrees,
+        rssiLength,
+    ) = unpack(fixedFormat, tlv.value[:fixedLength])
+    if not all(
+        isfinite(value)
+        for value in (distanceMeters, angleDegrees, pitchDegrees)
+    ):
+        return None
+
+    rssiEnd = fixedLength + rssiLength
+    if rssiEnd > len(tlv.value):
+        return None
+    # RSSI 使用 int8；固件版本不同，后面还可能追加0到5个质量字段。
+    rssiValues = tuple(
+        int.from_bytes(bytes((value,)), "little", signed=True)
+        for value in tlv.value[fixedLength:rssiEnd]
+    )
+    qualityBytes = tlv.value[rssiEnd:]
+    signedQualityValues = tuple(
+        int.from_bytes(bytes((value,)), "little", signed=True)
+        for value in qualityBytes[:4]
+    )
+    paddedQualityValues: tuple[int | None, ...] = (
+        signedQualityValues + (None, None, None, None)
+    )[:4]
+    positionConfidence = qualityBytes[4] if len(qualityBytes) >= 5 else None
+    return One1000Position(
+        syncCounter=int(syncCounter),
+        anchorMacId=int(anchorMacId),
+        beaconId=int(beaconId),
+        beaconType=int(beaconType),
+        distanceMeters=float(distanceMeters),
+        angleDegrees=float(angleDegrees),
+        pitchDegrees=float(pitchDegrees),
+        rssiValues=rssiValues,
+        rxPower=paddedQualityValues[0],
+        rssiFirstPath=paddedQualityValues[1],
+        rssiNonFirstPath=paddedQualityValues[2],
+        rssiBluetooth=paddedQualityValues[3],
+        positionConfidence=positionConfidence,
+    )
+
+
 def BuildOne1000TouchThresholdValue(touchThreshold: int) -> bytes:
     """把摸头灵敏度阈值编码为 `0x57` 的小端 uint16 Value。"""
     if isinstance(touchThreshold, bool) or not isinstance(touchThreshold, int):
@@ -247,6 +326,15 @@ class One1000StreamParser:
                 return None
             typeValue = tlvData[cursor]
             valueLength = tlvData[cursor + 1]
+            remainingValueLength = len(tlvData) - cursor - 2
+            if (
+                typeValue == ONE1000_POSITION_DATA_TYPE
+                and valueLength == 33
+                and remainingValueLength == 38
+            ):
+                # 部分 5.1.x 固件的 C5 实际 Value 为38字节，但内层 Length
+                # 仍错误填写33；外层总长度和 CRC 正确，因此只对该精确形态兼容。
+                valueLength = remainingValueLength
             valueEnd = cursor + 2 + valueLength
             if valueEnd > len(tlvData):
                 return None
@@ -264,7 +352,9 @@ class One1000HeadPetEdgeDetector:
             raise TypeError("ONE1000 touch cooldown must be numeric")
         normalizedCooldown = float(cooldownSeconds)
         if not isfinite(normalizedCooldown) or normalizedCooldown < 0:
-            raise ValueError("ONE1000 touch cooldown must be finite and non-negative")
+            raise ValueError(
+                "ONE1000 touch cooldown must be finite and non-negative"
+            )
         self.cooldownSeconds = normalizedCooldown
         self._touchActive = False
         self._lastEventTimestamp: float | None = None
@@ -300,6 +390,90 @@ class One1000HeadPetEdgeDetector:
             return False
         self._lastEventTimestamp = timestamp
         return True
+
+
+class One1000DistanceHeadPetDetector:
+    """把小于距离阈值的连续 C5 定位结果转换成周期摸头事件。"""
+
+    def __init__(
+        self,
+        thresholdCentimeters: float = 10.0,
+        cooldownSeconds: float = 2.0,
+    ) -> None:
+        """初始化严格小于阈值的距离判定和真实时间重复间隔。"""
+        self.thresholdCentimeters = _NormalizePositiveFloatValue(
+            thresholdCentimeters,
+            "distance touch threshold centimeters",
+        )
+        self.cooldownSeconds = _NormalizeNonNegativeFloatValue(
+            cooldownSeconds,
+            "touch cooldown",
+        )
+        self._touchActive = False
+        self._lastEventTimestamp: float | None = None
+
+    def ShouldEmitEventValue(
+        self,
+        position: One1000Position,
+        monotonicTimestamp: float,
+    ) -> bool:
+        """距离持续小于阈值时，首次及之后每个间隔返回 True。"""
+        if not isinstance(position, One1000Position):
+            raise TypeError("ONE1000 position is invalid")
+        timestamp = _NormalizeNonNegativeFloatValue(
+            monotonicTimestamp,
+            "distance touch timestamp",
+        )
+        if position.distanceMeters <= 0:
+            # 0米通常表示无效测距，不能把它误判成信标贴近基站。
+            return False
+
+        distanceCentimeters = position.distanceMeters * 100.0
+        if distanceCentimeters >= self.thresholdCentimeters:
+            self._touchActive = False
+            return False
+
+        self._touchActive = True
+        # 持续贴近时不等待离开阈值，而是按真实时间间隔重复产生摸头事件。
+        if (
+            self._lastEventTimestamp is not None
+            and timestamp - self._lastEventTimestamp < self.cooldownSeconds
+        ):
+            return False
+        self._lastEventTimestamp = timestamp
+        return True
+
+    def GetTouchActiveValue(self) -> bool:
+        """返回最近一次有效距离是否处于摸头阈值内。"""
+        return self._touchActive
+
+
+def _NormalizePositiveFloatValue(value: object, fieldName: str) -> float:
+    """校验必须大于0的有限浮点参数。"""
+    if isinstance(value, bool):
+        raise TypeError(f"ONE1000 {fieldName} must be numeric")
+    try:
+        normalizedValue = float(value)
+    except (TypeError, ValueError) as error:
+        raise TypeError(f"ONE1000 {fieldName} must be numeric") from error
+    if not isfinite(normalizedValue) or normalizedValue <= 0:
+        raise ValueError(f"ONE1000 {fieldName} must be finite and positive")
+    return normalizedValue
+
+
+def _NormalizeNonNegativeFloatValue(value: object, fieldName: str) -> float:
+    """校验必须大于等于0的有限浮点参数。"""
+    if isinstance(value, bool):
+        raise TypeError(f"ONE1000 {fieldName} must be numeric")
+    try:
+        normalizedValue = float(value)
+    except (TypeError, ValueError) as error:
+        raise TypeError(f"ONE1000 {fieldName} must be numeric") from error
+    if not isfinite(normalizedValue) or normalizedValue < 0:
+        raise ValueError(
+            f"ONE1000 {fieldName} must be finite and non-negative"
+        )
+    return normalizedValue
 
 
 def _NormalizeByteValue(value: object, fieldName: str) -> int:

@@ -188,7 +188,8 @@ Energy 在凌晨需求锁定和睡眠期间仍持续衰减，并由需求 Tick �
 - `/perception/audio_event`：`std_msgs/String` JSON，需求节点和情绪节点都订阅。
 - `/perception/visual_event`：`std_msgs/String` JSON，需求节点和情绪节点都订阅。
 - `/perception/tactile_event`：`std_msgs/String` JSON，需求节点和情绪节点都订阅；
-  ONE1000 适配节点在有效摸头上升沿发布 `EVT_TACTILE_HEAD_PET`。
+  ONE1000 距离模式在信标持续小于10cm时首次及每2秒发布
+  `EVT_TACTILE_HEAD_PET`，雷达模式仍按有效摸头上升沿发布。
 - `/behavior/result_event`：`std_msgs/String` JSON，需求节点和情绪节点都订阅。
 - `/personality/state`：`std_msgs/String` JSON，需求节点和情绪节点都订阅，用于同步性格参数。
 - `/simulation/time_state`：`std_msgs/String` JSON，需求和情绪节点订阅的权威虚拟时间 Tick。
@@ -237,7 +238,8 @@ ACTION_EXPLORE / ACTION_SPACE_EXPLORE / ACTION_OBJECT_EXPLORE`。其他 action
 - `/perception/tactile_event`：`one1000_tactile_node` 的摸头离散事件输出，
   `RELIABLE, depth=10`。
 - `/one1000/status`：`one1000_tactile_node` 以真实时间 1 Hz 发布硬件诊断状态，
-  包含连接、心跳、雷达状态和最近的原始摸头位，`RELIABLE, depth=10`。
+  包含协议活动、C5当前距离、命令响应、心跳、雷达状态和最近的原始摸头位，
+  `RELIABLE, depth=10`。无心跳但持续收到有效 C5 时仍会显示 `connected=true`。
 
 需求和情绪 Topic 均使用 `schema_version=2.0`。需求 V2 支持可选的
 `URGENT` 中间等级；情绪 V2 不包含等级、区间或主导情绪事件字段。
@@ -267,9 +269,11 @@ ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
 - `midnight_duration_seconds`：只读正数；凌晨六小时使用的真实秒数，默认30。
 - `one1000_tactile_enabled`：联调 launch 是否启动 ONE1000 触摸节点，默认 `false`。
 - `one1000_serial_port`：ONE1000 串口设备，默认 `/dev/ttyUSB1`。
-- `one1000_auto_start_sentry`：是否自动设置阈值、清缓存并启动哨兵，默认 `true`。
+- `one1000_detection_mode`：`distance` 或 `radar`，默认 `distance`。
+- `one1000_distance_threshold_cm`：距离模式严格小于此值时触发，默认10cm。
+- `one1000_auto_start_sentry`：雷达模式是否自动启动哨兵，默认 `true`；距离模式忽略。
 - `one1000_touch_threshold`：厂商摸头灵敏度阈值，`1-65535`，默认30。
-- `one1000_touch_cooldown_seconds`：两次摸头事件的真实时间冷却，默认1秒。
+- `one1000_touch_cooldown_seconds`：两次摸头事件的真实时间间隔，默认2秒。
 
 运行中修改倍率：
 
@@ -316,7 +320,8 @@ ros2 run marsdog_need_emotion personality_node
 
 ```bash
 ros2 launch marsdog_need_emotion one1000_tactile.launch.py \
-  serial_port:=/dev/ttyUSB1 touch_threshold:=30
+  serial_port:=/dev/ttyUSB1 \
+  detection_mode:=distance distance_threshold_cm:=10.0
 ```
 
 设置预设：

@@ -28,8 +28,8 @@
 | `marsdog_ros2/emotion_engine_node.py` | 发布 `/emotion/state` 和 `/emotion/signal_event` |
 | `marsdog_ros2/personality_node.py` | 维护性格参数并发布 `/personality/state` |
 | `marsdog_ros2/perception_adapter.py` | 适配音频、视觉和触觉感知 Topic |
-| `marsdog_core/one1000_protocol.py` | ONE1000 UART 帧、CRC、0x54 状态解析和摸头边沿识别 |
-| `marsdog_ros2/one1000_tactile_node.py` | 读取 ONE1000 并发布摸头事件和 1 Hz 硬件诊断状态 |
+| `marsdog_core/one1000_protocol.py` | ONE1000 UART 帧、CRC、0x54状态、C5距离解析和两类摸头边沿识别 |
+| `marsdog_ros2/one1000_tactile_node.py` | 默认按C5距离小于10cm发布摸头事件，并提供雷达兼容模式和1 Hz诊断 |
 | `marsdog_ros2/behavior_result_adapter.py` | 适配 `/behavior/result_event` |
 | `marsdog_ros2/personality_adapter.py` | 适配 `/personality/state` |
 | `marsdog_ros2/time_context.py` | 为需求/情绪输出附加统一虚拟时间上下文 |
@@ -63,8 +63,8 @@
 | `/personality/state` | `std_msgs/String` JSON | `personality_node` | 性格状态，启动时和性格变化后发布 |
 | `/simulation/time_state` | `std_msgs/String` JSON | `time_controller_node` | 时间初始化、逐秒 Tick、倍率变化 |
 | `/simulation/midnight_test_result` | `std_msgs/String` JSON | `midnight_test_node` | 凌晨场景完成状态和最终需求/睡眠快照 |
-| `/perception/tactile_event` | `std_msgs/String` JSON | `one1000_tactile_node` | ONE1000 有效摸头上升沿事件 |
-| `/one1000/status` | `std_msgs/String` JSON | `one1000_tactile_node` | 真实时间 1 Hz 发布心跳、雷达和原始摸头诊断状态 |
+| `/perception/tactile_event` | `std_msgs/String` JSON | `one1000_tactile_node` | 距离模式阈值内每2秒摸头事件；雷达模式上升沿事件 |
+| `/one1000/status` | `std_msgs/String` JSON | `one1000_tactile_node` | 真实时间 1 Hz 发布 UART、C5距离、命令、心跳、雷达和摸头诊断状态 |
 
 ## 3. 内部需求输出
 

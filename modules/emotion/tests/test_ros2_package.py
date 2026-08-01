@@ -69,8 +69,11 @@ class Ros2PackageTest(unittest.TestCase):
         self.assertTrue(launchFile.exists())
         self.assertIn('executable="one1000_tactile_node"', launchText)
         self.assertIn('"serial_port"', launchText)
+        self.assertIn('"detection_mode"', launchText)
+        self.assertIn('"distance_threshold_cm"', launchText)
         self.assertIn('"touch_threshold"', launchText)
         self.assertIn('"touch_cooldown_seconds"', launchText)
+        self.assertIn('default_value="2.0"', launchText)
 
         nodeText = (
             PROJECT_ROOT / "marsdog_ros2" / "one1000_tactile_node.py"

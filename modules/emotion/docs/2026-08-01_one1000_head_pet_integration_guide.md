@@ -2,13 +2,13 @@
 
 ## 1. 实现结果
 
-全迹 ONE1000 的哨兵雷达摸头位已转换为现有情绪事件
-`EVT_TACTILE_HEAD_PET`，不需要修改情绪配置中的事件名。
+全迹 ONE1000 的 C5 信标距离和哨兵雷达摸头位均可转换为现有情绪事件
+`EVT_TACTILE_HEAD_PET`。当前默认使用距离方案，不需要雷达摸头位。
 
 数据链路：
 
 ```text
-ONE1000 UART 0x54 bit1
+ONE1000 UART 0xC5 distance < 0.10m
   -> one1000_tactile_node
   -> /perception/tactile_event
   -> emotion_engine_node
@@ -21,10 +21,9 @@ ONE1000 UART 0x54 bit1
 
 - 波特率：`115200`
 - 数据格式：`8N1`
-- 当前机器识别结果：ONE1000 为 `/dev/ttyUSB1`
+- 当前机器识别结果：ONE1000 为 `/dev/ttyUSB0`
 - 当前机器稳定路径：
-  `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AP2315SD-if00-port0`
-- `/dev/ttyUSB0` 当前是 CH340 IMU，不能作为 ONE1000 使用。
+  `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AG00S82A-if00-port0`
 
 建议联调使用 by-id 路径，USB 拔插后设备编号变化也不会串错设备：
 
@@ -34,8 +33,9 @@ ls -l /dev/serial/by-id/
 
 本实现依据资料目录中的
 `ONE1000软件资料/串口通信协议和解析参考/ONE1000_AOA定位和雷达_串口协议_V1.6_20260317.pdf`：
-UART 帧头为 `55 AA`，CRC 使用 `CRC16-XMODEM`，`0x4A` 控制哨兵，`0x54`
-状态 bit1 表示摸头，`0x57` 设置摸头阈值，`0x59` 为每秒心跳。
+UART 帧头为 `55 AA`，CRC 使用 `CRC16-XMODEM`，`0xC5` 的小端 float 距离单位
+为米；`0x4A` 控制哨兵，`0x54` 状态 bit1 表示雷达摸头，`0x57` 设置雷达阈值，
+`0x59` 为每秒心跳。
 
 ## 3. 构建和加载环境
 
@@ -52,7 +52,7 @@ source install/setup.bash
 
 ```bash
 groups
-ls -l /dev/ttyUSB1
+ls -l /dev/ttyUSB0
 ```
 
 组权限修改只在确实缺少 `dialout` 时执行，并重新登录：
@@ -69,9 +69,10 @@ sudo usermod -aG dialout "$USER"
 source /opt/ros/humble/setup.bash
 source /home/bird/Marsdog/install/setup.bash
 ros2 launch marsdog_need_emotion one1000_tactile.launch.py \
-  serial_port:=/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AP2315SD-if00-port0 \
-  touch_threshold:=30 \
-  touch_cooldown_seconds:=1.0
+  serial_port:=/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AG00S82A-if00-port0 \
+  detection_mode:=distance \
+  distance_threshold_cm:=10.0 \
+  touch_cooldown_seconds:=2.0
 ```
 
 终端2查看摸头原始事件：
@@ -89,18 +90,15 @@ ros2 topic hz /one1000/status
 ros2 topic echo /one1000/status --field data
 ```
 
-`/one1000/status` 固定为真实时间 1 Hz；`/perception/tactile_event` 只在摸头上升沿
-发布，不能用 `hz` 判断它是否正常。
+`/one1000/status` 固定为真实时间 1 Hz；距离持续小于10cm时，
+`/perception/tactile_event` 默认每2秒发布一次。没有满足距离条件时不会输出，
+因此不能只用 `hz` 判断它是否正常。
 
-正常启动日志依次包含：
+距离模式正常启动日志包含：
 
 ```text
 ONE1000 serial opened
-ONE1000 heartbeat
-ONE1000 command sent: set touch threshold=30
-ONE1000 command sent: clear sentry cache
-ONE1000 command sent: start sentry
-ONE1000 heartbeat: ... radar=0x05
+ONE1000 head-pet detection: mode=distance, distance_threshold=10.0cm
 ```
 
 有效摸头后会看到：
@@ -110,13 +108,17 @@ ONE1000 heartbeat: ... radar=0x05
   "schema_version": "1.0",
   "event_type": "EVT_TACTILE_HEAD_PET",
   "source": "ONE1000",
-  "sensorType": "UWB_RADAR",
-  "touchState": "STARTED"
+  "sensorType": "UWB_DISTANCE",
+  "touchState": "STARTED",
+  "distanceMeters": 0.075,
+  "distanceCentimeters": 7.5,
+  "distanceThresholdCentimeters": 10.0
 }
 ```
 
-连续保持手不放只发一次。需要松手，再次摸头，并满足默认1秒真实时间冷却，
-才会发布下一次事件。冷却不受虚拟时间倍率影响。
+有效 C5 距离满足 `0 < distance < 0.10m` 时立即触发；0米按无效值处理，恰好
+10cm不触发。只要信标持续在10cm内，之后默认每2秒再次发布一次；移到10cm或
+更远后停止。重复间隔不受虚拟时间倍率影响。
 
 ## 5. 与需求/情绪一起启动
 
@@ -132,9 +134,10 @@ ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
   midnight_duration_seconds:=30 \
   random_seed:=12345 \
   one1000_tactile_enabled:=true \
-  one1000_serial_port:=/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AP2315SD-if00-port0 \
-  one1000_touch_threshold:=30 \
-  one1000_touch_cooldown_seconds:=1.0
+  one1000_serial_port:=/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AG00S82A-if00-port0 \
+  one1000_detection_mode:=distance \
+  one1000_distance_threshold_cm:=10.0 \
+  one1000_touch_cooldown_seconds:=2.0
 ```
 
 另开终端观察四条 Topic：
@@ -155,8 +158,8 @@ ros2 topic echo /one1000/status --field data
 | Excite | `+5` |
 
 Joy 初始为0，触发阈值为30，因此第一次摸头后 Joy 为25，不会发布
-`EMO_JOY_TRIGGERED`；松手并在默认1秒冷却结束后尽快第二次有效摸头，Joy 会先
-按真实时间略微衰减，再增加25（通常约48），从而发布一次该事件。这不表示
+`EMO_JOY_TRIGGERED`；信标持续保持在10cm内，默认2秒后自动产生第二次事件，
+Joy 会先按真实时间略微衰减，再增加25，从而发布一次该事件。这不表示
 第一次摸头丢失，可以直接从 `/emotion/state` 看到数值变化。若两次间隔过长，
 第一次增加的 Joy 已衰减较多，第二次也可能仍未达到阈值。
 
@@ -176,12 +179,16 @@ Joy 初始为0，触发阈值为30，因此第一次摸头后 Joy 为25，不会
   "timestamp": 1785556800.0,
   "event_type": "EVT_TACTILE_HEAD_PET",
   "source": "ONE1000",
-  "sensorType": "UWB_RADAR",
+  "sensorType": "UWB_DISTANCE",
   "touchState": "STARTED",
-  "rawStatus": 3,
-  "livingBodyDetected": true,
-  "maxRadarValue": 42.5,
-  "livingBodyFirstIndex": 17
+  "detectionMethod": "DISTANCE_THRESHOLD",
+  "distanceMeters": 0.075,
+  "distanceCentimeters": 7.5,
+  "distanceThresholdCentimeters": 10.0,
+  "anchorMacId": 287454020,
+  "beaconId": 1432778632,
+  "beaconType": 2,
+  "positionConfidence": 95
 }
 ```
 
@@ -191,7 +198,17 @@ Joy 初始为0，触发阈值为30，因此第一次摸头后 Joy 为25，不会
 `/one1000/status` 使用相同的 `std_msgs/msg/String` 和 `schema_version=1.0`，按
 真实时间 1 Hz 发布。重点字段：
 
-- `connected`：最近2.5秒内是否收到心跳。
+- `connected`：最近2.5秒内是否收到 UART 字节、有效协议包或心跳。
+- `detection.mode`：默认 `distance`；旧硬件雷达位方案为 `radar`。
+- `detection.distanceTouchActive`：最近有效距离是否小于阈值。
+- `protocol.uartActive`：包括固件调试文本在内的 UART 原始活动。
+- `protocol.active`：UART数据是否通过外层长度与 CRC 校验。
+- `protocol.positionPacketCount`：兼容解析的 `0xC5` 定位包累计数量。
+- `position.distanceCentimeters`：当前信标到基站的厘米距离。
+- `position.withinTouchThreshold`：当前距离是否满足摸头阈值。
+- `commands.sentCount`：节点已向 ONE1000 发送的命令数。
+- `commands.responseCount`：ONE1000 已返回的命令响应数。
+- `commands.lastResponse`：最近响应及是否成功；没有响应时为 `null`。
 - `heartbeat.radarState`：正常启动后应为 `ACTIVE`。
 - `heartbeat.radarActive`：正常启动后应为 `true`。
 - `sentryStatus.headTouchDetected`：ONE1000 原始摸头位。
@@ -199,21 +216,62 @@ Joy 初始为0，触发阈值为30，因此第一次摸头后 Joy 为25，不会
 
 如果 `radarActive=true` 但触摸时 `headTouchDetected` 始终为 `false`，问题位于
 ONE1000 检测、安装方向或阈值，不是 ROS2 事件转换。如果原始位能变为 `true`，
-但 `/perception/tactile_event` 没有消息，再检查边沿与冷却逻辑。
+但 `/perception/tactile_event` 没有消息，再检查阈值和重复间隔逻辑。
+
+部分 5.1.x 固件持续输出 C5 定位包但没有 `0x59` 心跳，并把 C5 内层长度写成
+33、实际携带38字节。当前实现已兼容该精确格式。默认距离模式不会发送哨兵启动
+命令，因为当前设备进入哨兵模式后会停止 C5 定位流。正常距离模式应表现为：
+
+```json
+{
+  "connected": true,
+  "protocol": {"positionPacketCount": 31},
+  "detection": {"mode": "distance"},
+  "position": {"distanceCentimeters": 8.0, "withinTouchThreshold": true},
+  "commands": {"sentCount": 0, "responseCount": 0}
+}
+```
+
+把信标移入10cm内会立即发布一次摸头事件；持续保持时每2秒继续发布。
+
+如果发送哨兵启动命令后出现以下组合：
+
+```json
+{
+  "connected": true,
+  "protocol": {"uartActive": true, "active": false},
+  "commands": {"sentCount": 3, "responseCount": 0}
+}
+```
+
+并且原始串口出现 `session cmd deinit`、`cir Ready`，说明命令实际到达设备，
+但设备运行的是雷达调试固件：活动期只输出文本，没有文档要求的 `0x54/0x59`
+业务包。该状态无法仅靠上位机解析得到摸头 bit1，需要向厂商索取支持串口协议
+V1.6 的正式固件，或取得该调试文本中摸头结果的定义。
 
 ## 7. 参数说明
 
 | 参数 | 默认值 | 说明 |
 |---|---:|---|
 | `serial_port` | `/dev/ttyUSB1` | 独立 launch 的设备路径 |
-| `auto_start_sentry` | `true` | 自动设置阈值、清缓存并启动哨兵 |
+| `detection_mode` | `distance` | `distance` 使用C5距离；`radar` 使用0x54摸头位 |
+| `distance_threshold_cm` | `10.0` | 有效距离严格小于该值时触发 |
+| `auto_start_sentry` | `true` | 仅雷达模式自动设置阈值、清缓存并启动哨兵 |
 | `touch_threshold` | `30` | 厂商摸头阈值，范围 `1-65535` |
-| `touch_cooldown_seconds` | `1.0` | 两次事件之间的真实时间冷却 |
+| `touch_cooldown_seconds` | `2.0` | 阈值内重复发布事件的真实时间间隔 |
 | `command_interval_seconds` | `0.3` | 命令间隔，最小0.2秒；节点参数可用 |
 | `stop_sentry_on_shutdown` | `true` | Ctrl+C 时停止哨兵并恢复串口配置 |
 
 主联调 launch 中参数名前增加 `one1000_`，例如
-`one1000_touch_threshold`。
+`one1000_distance_threshold_cm`。
+
+需要切回厂商雷达摸头位时使用：
+
+```bash
+ros2 launch marsdog_need_emotion one1000_tactile.launch.py \
+  serial_port:=/dev/ttyUSB1 detection_mode:=radar \
+  auto_start_sentry:=true touch_threshold:=30
+```
 
 厂商手册只给出默认值30，未定义调节方向与灵敏度的稳定关系。建议从默认值开始，
 根据实际安装位置小步调整，每次修改后重启节点并同时检查误报和漏报。

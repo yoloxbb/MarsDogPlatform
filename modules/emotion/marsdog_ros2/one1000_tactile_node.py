@@ -13,6 +13,7 @@ from typing import Any
 
 from marsdog_core.one1000_protocol import (
     ONE1000_HEARTBEAT_TYPE,
+    ONE1000_POSITION_DATA_TYPE,
     ONE1000_SENTRY_CLEAR_CACHE_COMMAND,
     ONE1000_SENTRY_CONTROL_TYPE,
     ONE1000_SENTRY_START_COMMAND,
@@ -21,13 +22,17 @@ from marsdog_core.one1000_protocol import (
     ONE1000_TOUCH_THRESHOLD_TYPE,
     BuildOne1000CommandValue,
     BuildOne1000TouchThresholdValue,
+    One1000DistanceHeadPetDetector,
+    One1000DeviceResponse,
     One1000HeadPetEdgeDetector,
     One1000Heartbeat,
+    One1000Position,
     One1000SentryStatus,
     One1000StreamParser,
     One1000TLV,
     ParseOne1000DeviceResponseValue,
     ParseOne1000HeartbeatValue,
+    ParseOne1000PositionValue,
     ParseOne1000SentryStatusValue,
 )
 
@@ -163,6 +168,47 @@ def BuildOne1000TactileEventValue(
     }
 
 
+def BuildOne1000DistanceTactileEventValue(
+    position: One1000Position,
+    thresholdCentimeters: float,
+    timestamp: float | None = None,
+) -> dict[str, Any]:
+    """把阈值内的 C5 距离构造成 `/perception/tactile_event` V1 消息。"""
+    if not isinstance(position, One1000Position):
+        raise TypeError("ONE1000 distance tactile event position is invalid")
+    normalizedThreshold = _NormalizePositiveNumberValue(
+        thresholdCentimeters,
+        "distance threshold centimeters",
+    )
+    distanceCentimeters = position.distanceMeters * 100.0
+    if (
+        position.distanceMeters <= 0
+        or distanceCentimeters >= normalizedThreshold
+    ):
+        raise ValueError(
+            "ONE1000 distance tactile event requires a near beacon"
+        )
+    eventTimestamp = time.time() if timestamp is None else float(timestamp)
+    if not isfinite(eventTimestamp):
+        raise ValueError("ONE1000 tactile timestamp must be finite")
+    return {
+        "schema_version": "1.0",
+        "timestamp": eventTimestamp,
+        "event_type": "EVT_TACTILE_HEAD_PET",
+        "source": "ONE1000",
+        "sensorType": "UWB_DISTANCE",
+        "touchState": "STARTED",
+        "detectionMethod": "DISTANCE_THRESHOLD",
+        "distanceMeters": position.distanceMeters,
+        "distanceCentimeters": distanceCentimeters,
+        "distanceThresholdCentimeters": normalizedThreshold,
+        "anchorMacId": position.anchorMacId,
+        "beaconId": position.beaconId,
+        "beaconType": position.beaconType,
+        "positionConfidence": position.positionConfidence,
+    }
+
+
 def BuildOne1000StatusValue(
     serialPort: str,
     serialOpen: bool,
@@ -170,6 +216,20 @@ def BuildOne1000StatusValue(
     heartbeatAgeSeconds: float | None,
     sentryStatus: One1000SentryStatus | None,
     sentryStatusAgeSeconds: float | None,
+    byteAgeSeconds: float | None = None,
+    packetAgeSeconds: float | None = None,
+    receivedByteCount: int = 0,
+    validPacketCount: int = 0,
+    positionPacketCount: int = 0,
+    startupCommandsQueued: bool = False,
+    commandSentCount: int = 0,
+    commandResponseCount: int = 0,
+    lastCommandResponse: One1000DeviceResponse | None = None,
+    detectionMode: str = "radar",
+    distanceThresholdCentimeters: float = 10.0,
+    distanceTouchActive: bool = False,
+    position: One1000Position | None = None,
+    positionAgeSeconds: float | None = None,
     timestamp: float | None = None,
 ) -> dict[str, Any]:
     """构造可按 1 Hz 发布的 ONE1000 硬件诊断状态。"""
@@ -189,10 +249,24 @@ def BuildOne1000StatusValue(
         sentryStatusAgeSeconds,
         "sentry status",
     )
+    normalizedPacketAge = _NormalizeOptionalAgeSecondsValue(
+        packetAgeSeconds,
+        "valid packet",
+    )
+    normalizedByteAge = _NormalizeOptionalAgeSecondsValue(
+        byteAgeSeconds,
+        "received byte",
+    )
+    normalizedPositionAge = _NormalizeOptionalAgeSecondsValue(
+        positionAgeSeconds,
+        "position",
+    )
     if (heartbeat is None) != (normalizedHeartbeatAge is None):
         raise ValueError("ONE1000 heartbeat and age must be provided together")
     if (sentryStatus is None) != (normalizedSentryAge is None):
-        raise ValueError("ONE1000 sentry status and age must be provided together")
+        raise ValueError(
+            "ONE1000 sentry status and age must be provided together"
+        )
     if heartbeat is not None and not isinstance(heartbeat, One1000Heartbeat):
         raise TypeError("ONE1000 heartbeat status is invalid")
     if sentryStatus is not None and not isinstance(
@@ -200,11 +274,69 @@ def BuildOne1000StatusValue(
         One1000SentryStatus,
     ):
         raise TypeError("ONE1000 sentry diagnostic status is invalid")
+    if (position is None) != (normalizedPositionAge is None):
+        raise ValueError("ONE1000 position and age must be provided together")
+    if position is not None and not isinstance(position, One1000Position):
+        raise TypeError("ONE1000 position diagnostic is invalid")
+    normalizedDetectionMode = _NormalizeDetectionModeValue(detectionMode)
+    normalizedDistanceThreshold = _NormalizePositiveNumberValue(
+        distanceThresholdCentimeters,
+        "distance threshold centimeters",
+    )
+    if not isinstance(distanceTouchActive, bool):
+        raise TypeError("ONE1000 distanceTouchActive must be boolean")
+    receivedByteCount = _NormalizeCounterValue(
+        receivedByteCount,
+        "received byte",
+    )
+    validPacketCount = _NormalizeCounterValue(
+        validPacketCount,
+        "valid packet",
+    )
+    positionPacketCount = _NormalizeCounterValue(
+        positionPacketCount,
+        "position packet",
+    )
+    commandSentCount = _NormalizeCounterValue(
+        commandSentCount,
+        "command sent",
+    )
+    commandResponseCount = _NormalizeCounterValue(
+        commandResponseCount,
+        "command response",
+    )
+    if not isinstance(startupCommandsQueued, bool):
+        raise TypeError("ONE1000 startupCommandsQueued must be boolean")
+    if (receivedByteCount == 0) != (normalizedByteAge is None):
+        raise ValueError("ONE1000 received byte count and age must match")
+    if (validPacketCount == 0) != (normalizedPacketAge is None):
+        raise ValueError("ONE1000 valid packet count and age must match")
+    if positionPacketCount > validPacketCount:
+        raise ValueError("ONE1000 position packet count exceeds valid packets")
+    if commandResponseCount > commandSentCount:
+        raise ValueError(
+            "ONE1000 command response count exceeds sent commands"
+        )
+    if lastCommandResponse is not None and not isinstance(
+        lastCommandResponse,
+        One1000DeviceResponse,
+    ):
+        raise TypeError("ONE1000 command response diagnostic is invalid")
 
-    connected = bool(
+    heartbeatActive = bool(
         serialOpen
         and heartbeat is not None
         and normalizedHeartbeatAge <= ONE1000_HEARTBEAT_TIMEOUT_SECONDS
+    )
+    protocolActive = bool(
+        serialOpen
+        and validPacketCount > 0
+        and normalizedPacketAge <= ONE1000_HEARTBEAT_TIMEOUT_SECONDS
+    )
+    uartActive = bool(
+        serialOpen
+        and receivedByteCount > 0
+        and normalizedByteAge <= ONE1000_HEARTBEAT_TIMEOUT_SECONDS
     )
     return {
         "schema_version": "1.0",
@@ -212,7 +344,29 @@ def BuildOne1000StatusValue(
         "source": "ONE1000",
         "serialPort": serialPort.strip(),
         "serialOpen": serialOpen,
-        "connected": connected,
+        "connected": heartbeatActive or protocolActive or uartActive,
+        "detection": {
+            "mode": normalizedDetectionMode,
+            "distanceThresholdCentimeters": normalizedDistanceThreshold,
+            "distanceTouchActive": distanceTouchActive,
+        },
+        "protocol": {
+            "active": protocolActive,
+            "uartActive": uartActive,
+            "receivedByteCount": receivedByteCount,
+            "lastByteAgeSeconds": normalizedByteAge,
+            "validPacketCount": validPacketCount,
+            "positionPacketCount": positionPacketCount,
+            "lastPacketAgeSeconds": normalizedPacketAge,
+        },
+        "commands": {
+            "startupCommandsQueued": startupCommandsQueued,
+            "sentCount": commandSentCount,
+            "responseCount": commandResponseCount,
+            "lastResponse": _BuildOne1000CommandResponseStatusValue(
+                lastCommandResponse
+            ),
+        },
         "heartbeat": _BuildOne1000HeartbeatStatusValue(
             heartbeat,
             normalizedHeartbeatAge,
@@ -221,6 +375,24 @@ def BuildOne1000StatusValue(
             sentryStatus,
             normalizedSentryAge,
         ),
+        "position": _BuildOne1000PositionDiagnosticValue(
+            position,
+            normalizedPositionAge,
+            normalizedDistanceThreshold,
+        ),
+    }
+
+
+def _BuildOne1000CommandResponseStatusValue(
+    response: One1000DeviceResponse | None,
+) -> dict[str, Any] | None:
+    """把最近一次设备命令响应转换成诊断字段。"""
+    if response is None:
+        return None
+    return {
+        "responseType": response.responseType,
+        "status": response.status,
+        "success": response.status == 0,
     }
 
 
@@ -262,6 +434,38 @@ def _BuildOne1000SentryDiagnosticValue(
     }
 
 
+def _BuildOne1000PositionDiagnosticValue(
+    position: One1000Position | None,
+    ageSeconds: float | None,
+    thresholdCentimeters: float,
+) -> dict[str, Any] | None:
+    """把最近一次 `0xC5` 定位结果转换成距离摸头诊断字段。"""
+    if position is None or ageSeconds is None:
+        return None
+    distanceCentimeters = position.distanceMeters * 100.0
+    return {
+        "ageSeconds": ageSeconds,
+        "syncCounter": position.syncCounter,
+        "anchorMacId": position.anchorMacId,
+        "beaconId": position.beaconId,
+        "beaconType": position.beaconType,
+        "distanceMeters": position.distanceMeters,
+        "distanceCentimeters": distanceCentimeters,
+        "withinTouchThreshold": bool(
+            position.distanceMeters > 0
+            and distanceCentimeters < thresholdCentimeters
+        ),
+        "angleDegrees": position.angleDegrees,
+        "pitchDegrees": position.pitchDegrees,
+        "rssiValues": list(position.rssiValues),
+        "rxPower": position.rxPower,
+        "rssiFirstPath": position.rssiFirstPath,
+        "rssiNonFirstPath": position.rssiNonFirstPath,
+        "rssiBluetooth": position.rssiBluetooth,
+        "positionConfidence": position.positionConfidence,
+    }
+
+
 def _GetOne1000RangingStateValue(status: int) -> str:
     """把厂商测距状态码转换成可读名称。"""
     return {
@@ -295,6 +499,38 @@ def _NormalizeOptionalAgeSecondsValue(
     return normalizedAge
 
 
+def _NormalizeCounterValue(value: int, fieldName: str) -> int:
+    """校验诊断消息中的非负整数计数器。"""
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TypeError(f"ONE1000 {fieldName} count must be an integer")
+    if value < 0:
+        raise ValueError(f"ONE1000 {fieldName} count must be non-negative")
+    return value
+
+
+def _NormalizeDetectionModeValue(detectionMode: object) -> str:
+    """校验摸头来源模式，只允许距离或厂商雷达状态。"""
+    if not isinstance(detectionMode, str):
+        raise TypeError("ONE1000 detection mode must be a string")
+    normalizedMode = detectionMode.strip().lower()
+    if normalizedMode not in {"distance", "radar"}:
+        raise ValueError("ONE1000 detection mode must be distance or radar")
+    return normalizedMode
+
+
+def _NormalizePositiveNumberValue(value: object, fieldName: str) -> float:
+    """校验诊断和事件中必须大于0的有限数值。"""
+    if isinstance(value, bool):
+        raise TypeError(f"ONE1000 {fieldName} must be numeric")
+    try:
+        normalizedValue = float(value)
+    except (TypeError, ValueError) as error:
+        raise TypeError(f"ONE1000 {fieldName} must be numeric") from error
+    if not isfinite(normalizedValue) or normalizedValue <= 0:
+        raise ValueError(f"ONE1000 {fieldName} must be finite and positive")
+    return normalizedValue
+
+
 class One1000TactileNode(Node):
     """读取 ONE1000 串口并发布摸头触觉事件。"""
 
@@ -302,11 +538,18 @@ class One1000TactileNode(Node):
         """声明参数、打开串口并启动非阻塞读取定时器。"""
         if rclpy is None or String is None:
             raise RuntimeError(
-                "ROS2 runtime is not available. Please run this node inside a ROS2 environment."
+                "ROS2 runtime is not available. "
+                "Please run this node inside a ROS2 environment."
             )
         super().__init__("one1000_tactile_node")
         self._DeclareParametersValue()
         serialPort = str(self.get_parameter("serial_port").value)
+        self._detectionMode = _NormalizeDetectionModeValue(
+            self.get_parameter("detection_mode").value
+        )
+        self._distanceThresholdCentimeters = float(
+            self.get_parameter("distance_threshold_cm").value
+        )
         self._autoStartSentry = bool(
             self.get_parameter("auto_start_sentry").value
         )
@@ -337,7 +580,11 @@ class One1000TactileNode(Node):
         self._serialPort = serialPort
         self._serial = One1000SerialPort(serialPort)
         self._parser = One1000StreamParser()
-        self._edgeDetector = One1000HeadPetEdgeDetector(cooldownSeconds)
+        self._radarEdgeDetector = One1000HeadPetEdgeDetector(cooldownSeconds)
+        self._distanceEdgeDetector = One1000DistanceHeadPetDetector(
+            self._distanceThresholdCentimeters,
+            cooldownSeconds,
+        )
         self._commandQueue: deque[tuple[int, bytes, str]] = deque()
         self._sequence = 0
         self._openedAt = time.monotonic()
@@ -351,10 +598,25 @@ class One1000TactileNode(Node):
         self._lastHeartbeatTimestamp: float | None = None
         self._lastSentryStatus: One1000SentryStatus | None = None
         self._lastSentryStatusTimestamp: float | None = None
+        self._lastPosition: One1000Position | None = None
+        self._lastPositionTimestamp: float | None = None
+        self._receivedByteCount = 0
+        self._lastReceivedByteTimestamp: float | None = None
+        self._validPacketCount = 0
+        self._positionPacketCount = 0
+        self._lastPacketTimestamp: float | None = None
+        self._commandSentCount = 0
+        self._commandResponseCount = 0
+        self._lastCommandResponse: One1000DeviceResponse | None = None
         self._readTimer = self.create_timer(0.01, self.OnSerialTimer)
         self._statusTimer = self.create_timer(1.0, self.PublishStatusValue)
         self.get_logger().info(
-            f"ONE1000 serial opened: {serialPort}, {ONE1000_SERIAL_BAUD_RATE} 8N1"
+            "ONE1000 serial opened: %s, %d 8N1"
+            % (serialPort, ONE1000_SERIAL_BAUD_RATE)
+        )
+        self.get_logger().info(
+            "ONE1000 head-pet detection: mode=%s, distance_threshold=%.1fcm"
+            % (self._detectionMode, self._distanceThresholdCentimeters)
         )
 
     def _DeclareParametersValue(self) -> None:
@@ -362,7 +624,23 @@ class One1000TactileNode(Node):
         self.declare_parameter(
             "serial_port",
             DEFAULT_ONE1000_SERIAL_PORT,
-            descriptor=_ReadOnlyParameterDescriptor("ONE1000 serial device path"),
+            descriptor=_ReadOnlyParameterDescriptor(
+                "ONE1000 serial device path"
+            ),
+        )
+        self.declare_parameter(
+            "detection_mode",
+            "distance",
+            descriptor=_ReadOnlyParameterDescriptor(
+                "Head-pet source: distance or radar"
+            ),
+        )
+        self.declare_parameter(
+            "distance_threshold_cm",
+            10.0,
+            descriptor=_ReadOnlyParameterDescriptor(
+                "Trigger head-pet when valid C5 distance is below this value"
+            ),
         )
         self.declare_parameter(
             "auto_start_sentry",
@@ -387,9 +665,9 @@ class One1000TactileNode(Node):
         )
         self.declare_parameter(
             "touch_cooldown_seconds",
-            1.0,
+            2.0,
             descriptor=_ReadOnlyParameterDescriptor(
-                "Real-time cooldown between head-pet events"
+                "Real-time interval between head-pet events"
             ),
         )
         self.declare_parameter(
@@ -409,6 +687,10 @@ class One1000TactileNode(Node):
             raise ValueError("command_interval_seconds must be at least 0.2")
         if not isfinite(cooldownSeconds) or cooldownSeconds < 0:
             raise ValueError("touch_cooldown_seconds must be non-negative")
+        _NormalizePositiveNumberValue(
+            self._distanceThresholdCentimeters,
+            "distance threshold centimeters",
+        )
         BuildOne1000TouchThresholdValue(self._touchThreshold)
 
     def OnSerialTimer(self) -> None:
@@ -417,7 +699,19 @@ class One1000TactileNode(Node):
             return
         try:
             serialData = self._serial.ReadAvailableValue()
-            for packet in self._parser.FeedBytesValue(serialData):
+            self._receivedByteCount += len(serialData)
+            if serialData:
+                self._lastReceivedByteTimestamp = time.monotonic()
+            packets = self._parser.FeedBytesValue(serialData)
+            if packets:
+                self._lastPacketTimestamp = time.monotonic()
+            for packet in packets:
+                self._validPacketCount += 1
+                if any(
+                    tlv.typeValue == ONE1000_POSITION_DATA_TYPE
+                    for tlv in packet.tlvs
+                ):
+                    self._positionPacketCount += 1
                 for tlv in packet.tlvs:
                     self._HandleTLVValue(tlv)
             self._QueueStartupCommandsValue()
@@ -427,9 +721,11 @@ class One1000TactileNode(Node):
             self.ShutdownValue()
 
     def _HandleTLVValue(self, tlv: One1000TLV) -> None:
-        """按 TLV 类型处理响应、心跳和摸头状态。"""
+        """按 TLV 类型处理响应、定位、心跳和摸头状态。"""
         response = ParseOne1000DeviceResponseValue(tlv)
         if response is not None:
+            self._commandResponseCount += 1
+            self._lastCommandResponse = response
             logMethod = (
                 self.get_logger().info
                 if response.status == 0
@@ -459,6 +755,22 @@ class One1000TactileNode(Node):
                     self._lastHeartbeatState = heartbeatState
             return
 
+        if tlv.typeValue == ONE1000_POSITION_DATA_TYPE:
+            position = ParseOne1000PositionValue(tlv)
+            if position is None:
+                return
+            self._lastPosition = position
+            self._lastPositionTimestamp = time.monotonic()
+            if (
+                self._detectionMode == "distance"
+                and self._distanceEdgeDetector.ShouldEmitEventValue(
+                    position,
+                    time.monotonic(),
+                )
+            ):
+                self.PublishDistanceHeadPetEventValue(position)
+            return
+
         if tlv.typeValue != ONE1000_SENTRY_STATUS_TYPE:
             return
         sentryStatus = ParseOne1000SentryStatusValue(tlv)
@@ -466,19 +778,25 @@ class One1000TactileNode(Node):
             return
         self._lastSentryStatus = sentryStatus
         self._lastSentryStatusTimestamp = time.monotonic()
-        if self._edgeDetector.ShouldEmitEventValue(
-            sentryStatus,
-            time.monotonic(),
+        if (
+            self._detectionMode == "radar"
+            and self._radarEdgeDetector.ShouldEmitEventValue(
+                sentryStatus,
+                time.monotonic(),
+            )
         ):
             self.PublishHeadPetEventValue(sentryStatus)
 
     def _QueueStartupCommandsValue(self) -> None:
-        """首次心跳后依次排入阈值、清缓存和启动哨兵命令。"""
+        """雷达模式在首次心跳到达或上电500ms后排入哨兵启动命令。"""
         if (
-            not self._autoStartSentry
+            self._detectionMode != "radar"
+            or not self._autoStartSentry
             or self._startupCommandsQueued
-            or not self._firstHeartbeatReceived
-            or time.monotonic() - self._openedAt < 0.5
+            or (
+                not self._firstHeartbeatReceived
+                and time.monotonic() - self._openedAt < 0.5
+            )
         ):
             return
         self._commandQueue.extend(
@@ -504,7 +822,10 @@ class One1000TactileNode(Node):
 
     def _SendNextCommandValue(self) -> None:
         """到达最小命令间隔后发送队首命令。"""
-        if not self._commandQueue or time.monotonic() < self._nextCommandTimestamp:
+        if (
+            not self._commandQueue
+            or time.monotonic() < self._nextCommandTimestamp
+        ):
             return
         commandType, commandValue, description = self._commandQueue.popleft()
         self._WriteCommandValue(commandType, commandValue)
@@ -518,7 +839,11 @@ class One1000TactileNode(Node):
         )
         self.get_logger().info(f"ONE1000 command sent: {description}")
 
-    def _WriteCommandValue(self, commandType: int, commandValue: bytes) -> None:
+    def _WriteCommandValue(
+        self,
+        commandType: int,
+        commandValue: bytes,
+    ) -> None:
         """写入命令并递增 uint8 序号。"""
         packet = BuildOne1000CommandValue(
             self._sequence,
@@ -526,6 +851,7 @@ class One1000TactileNode(Node):
             commandValue,
         )
         self._serial.WriteValue(packet)
+        self._commandSentCount += 1
         self._sequence = (self._sequence + 1) & 0xFF
 
     def PublishHeadPetEventValue(
@@ -542,6 +868,23 @@ class One1000TactileNode(Node):
             % (sentryStatus.rawStatus, sentryStatus.maxRadarValue)
         )
 
+    def PublishDistanceHeadPetEventValue(
+        self,
+        position: One1000Position,
+    ) -> None:
+        """发布由 C5 近距离上升沿产生的单次摸头事件。"""
+        payload = BuildOne1000DistanceTactileEventValue(
+            position,
+            self._distanceThresholdCentimeters,
+        )
+        message = String()
+        message.data = json.dumps(payload, ensure_ascii=False)
+        self.eventPublisher.publish(message)
+        self.get_logger().info(
+            "Published EVT_TACTILE_HEAD_PET: distance=%.2fcm, beacon=0x%X"
+            % (position.distanceMeters * 100.0, position.beaconId)
+        )
+
     def PublishStatusValue(self) -> None:
         """以真实时间 1 Hz 发布串口、心跳和原始摸头诊断状态。"""
         monotonicTimestamp = time.monotonic()
@@ -553,6 +896,18 @@ class One1000TactileNode(Node):
             monotonicTimestamp,
             self._lastSentryStatusTimestamp,
         )
+        packetAge = self._GetStatusAgeSecondsValue(
+            monotonicTimestamp,
+            self._lastPacketTimestamp,
+        )
+        byteAge = self._GetStatusAgeSecondsValue(
+            monotonicTimestamp,
+            self._lastReceivedByteTimestamp,
+        )
+        positionAge = self._GetStatusAgeSecondsValue(
+            monotonicTimestamp,
+            self._lastPositionTimestamp,
+        )
         payload = BuildOne1000StatusValue(
             serialPort=self._serialPort,
             serialOpen=not self._closed,
@@ -560,6 +915,22 @@ class One1000TactileNode(Node):
             heartbeatAgeSeconds=heartbeatAge,
             sentryStatus=self._lastSentryStatus,
             sentryStatusAgeSeconds=sentryStatusAge,
+            byteAgeSeconds=byteAge,
+            packetAgeSeconds=packetAge,
+            receivedByteCount=self._receivedByteCount,
+            validPacketCount=self._validPacketCount,
+            positionPacketCount=self._positionPacketCount,
+            startupCommandsQueued=self._startupCommandsQueued,
+            commandSentCount=self._commandSentCount,
+            commandResponseCount=self._commandResponseCount,
+            lastCommandResponse=self._lastCommandResponse,
+            detectionMode=self._detectionMode,
+            distanceThresholdCentimeters=self._distanceThresholdCentimeters,
+            distanceTouchActive=(
+                self._distanceEdgeDetector.GetTouchActiveValue()
+            ),
+            position=self._lastPosition,
+            positionAgeSeconds=positionAge,
         )
         message = String()
         message.data = json.dumps(payload, ensure_ascii=False)
@@ -583,7 +954,9 @@ class One1000TactileNode(Node):
         try:
             if self._stopSentryOnShutdown and self._sentryStartSent:
                 # 关闭阶段只有一个短命令；确保与上一命令满足厂商要求的 200 ms 间隔。
-                remainingSeconds = self._nextCommandTimestamp - time.monotonic()
+                remainingSeconds = (
+                    self._nextCommandTimestamp - time.monotonic()
+                )
                 if remainingSeconds > 0:
                     time.sleep(remainingSeconds)
                 self._WriteCommandValue(
@@ -644,7 +1017,8 @@ def main(args=None) -> None:
     """启动 ONE1000 触摸事件节点。"""
     if rclpy is None:
         raise RuntimeError(
-            "ROS2 runtime is not available. Please run this node inside a ROS2 environment."
+            "ROS2 runtime is not available. "
+            "Please run this node inside a ROS2 environment."
         )
     rclpy.init(args=args)
     node = None

@@ -36,7 +36,7 @@
 | `/emotion/signal_event` | `RELIABLE, depth=10` | `emotion_engine_node` | 情绪首次达到触发阈值时发布 |
 | `/simulation/midnight_test_result` | `RELIABLE + TRANSIENT_LOCAL, depth=1` | `midnight_test_node` | 凌晨测试完成时发布 `PASSED/FAILED` 和最终状态 |
 | `/perception/tactile_event` | `RELIABLE, depth=10` | `one1000_tactile_node` | ONE1000 摸头状态从未触摸变为触摸时发布 |
-| `/one1000/status` | `RELIABLE, depth=10` | `one1000_tactile_node` | 真实时间 1 Hz 发布串口、心跳、雷达和原始摸头诊断状态 |
+| `/one1000/status` | `RELIABLE, depth=10` | `one1000_tactile_node` | 真实时间 1 Hz 发布串口、C5距离、雷达和摸头诊断状态 |
 
 情绪自然衰减由 `emotion_engine_node` 的单调真实时钟以 1 Hz 驱动，不依赖
 `/simulation/time_state` 的虚拟 Tick 频率，也不随 `time_scale` 加速。
@@ -157,7 +157,8 @@
 触觉事件使用单个 `event_type`。情绪节点命中
 `configs/emotions.yaml:eventRules` 时更新情绪；需求节点接收事件但当前不修改需求值。
 
-ONE1000 临时适配节点当前只发布摸头事件：
+ONE1000 临时适配节点当前只发布摸头事件。默认使用 C5 信标距离，小于10cm时
+发布：
 
 ```json
 {
@@ -165,12 +166,16 @@ ONE1000 临时适配节点当前只发布摸头事件：
   "timestamp": 1785556800.0,
   "event_type": "EVT_TACTILE_HEAD_PET",
   "source": "ONE1000",
-  "sensorType": "UWB_RADAR",
+  "sensorType": "UWB_DISTANCE",
   "touchState": "STARTED",
-  "rawStatus": 3,
-  "livingBodyDetected": true,
-  "maxRadarValue": 42.5,
-  "livingBodyFirstIndex": 17
+  "detectionMethod": "DISTANCE_THRESHOLD",
+  "distanceMeters": 0.075,
+  "distanceCentimeters": 7.5,
+  "distanceThresholdCentimeters": 10.0,
+  "anchorMacId": 287454020,
+  "beaconId": 1432778632,
+  "beaconType": 2,
+  "positionConfidence": 95
 }
 ```
 
@@ -179,19 +184,24 @@ ONE1000 临时适配节点当前只发布摸头事件：
 | `event_type` | 必填 string | 当前 ONE1000 固定为 `EVT_TACTILE_HEAD_PET` |
 | `timestamp` | 必填 number | 传感器事件产生时的真实 Unix 时间 |
 | `source` | 必填 string | ONE1000 节点固定为 `ONE1000` |
-| `sensorType` | 必填 string | ONE1000 节点固定为 `UWB_RADAR` |
-| `touchState` | 必填 string | 当前只在上升沿发布，固定为 `STARTED` |
+| `sensorType` | 必填 string | 距离模式为 `UWB_DISTANCE`，雷达模式为 `UWB_RADAR` |
+| `touchState` | 必填 string | 每次摸头事件固定为 `STARTED` |
+| `distanceMeters / distanceCentimeters` | 距离模式字段 | C5 原始米制距离及其厘米换算值 |
+| `distanceThresholdCentimeters` | 距离模式字段 | 启动时配置的严格小于阈值，默认10cm |
+| `anchorMacId / beaconId / beaconType` | 距离模式字段 | C5 基站和信标标识 |
 | `rawStatus` | 调试字段 | ONE1000 `0x54` 原始状态位；bit0 为活体，bit1 为摸头 |
 | `livingBodyDetected` | 调试字段 | 是否同时检测到活体 |
 | `maxRadarValue` | 调试字段 | 厂商协议提供的雷达调试值，不参与情绪计算 |
 | `livingBodyFirstIndex` | 调试字段 | 厂商协议提供的活体首次位置索引，不参与情绪计算 |
 
-节点仅在有效摸头位的上升沿发布，连续保持触摸不会重复发布；松手后再次摸头且
-超过 `touch_cooldown_seconds` 才会产生下一条事件。冷却使用真实时间，不受
+距离模式在有效距离满足 `0 < distance < 10cm` 时首次发布；0米按无效测距
+处理，恰好10cm不触发。持续保持在阈值内时，每经过
+`touch_cooldown_seconds` 再发布一次，默认间隔2秒；离开阈值后停止。雷达模式
+保持原有摸头位上升沿规则。重复间隔使用真实时间，不受
 `time_scale` 或凌晨加速影响。默认性格下每次
 `EVT_TACTILE_HEAD_PET` 使 `Joy +25 / Calm +15 / Excite +5`。初始 Joy 为0，
-因此第一次摸头不会达到 Joy 的30阈值；默认1秒冷却结束后尽快进行第二次有效
-摸头，Joy 会在真实时间衰减后再次增加25并越过阈值，发布
+因此第一次摸头不会达到 Joy 的30阈值；信标持续保持在10cm内，默认2秒后第二次
+事件会让 Joy 在真实时间衰减后再次增加25并越过阈值，发布
 `EMO_JOY_TRIGGERED`。
 
 ### 2.4 `/behavior/result_event`
@@ -736,6 +746,26 @@ ONE1000 节点按真实时间 1 Hz 持续发布诊断状态，不受 `time_scale
   "serialPort": "/dev/ttyUSB1",
   "serialOpen": true,
   "connected": true,
+  "detection": {
+    "mode": "distance",
+    "distanceThresholdCentimeters": 10.0,
+    "distanceTouchActive": true
+  },
+  "protocol": {
+    "active": true,
+    "uartActive": true,
+    "receivedByteCount": 1459,
+    "lastByteAgeSeconds": 0.05,
+    "validPacketCount": 31,
+    "positionPacketCount": 31,
+    "lastPacketAgeSeconds": 0.1
+  },
+  "commands": {
+    "startupCommandsQueued": false,
+    "sentCount": 0,
+    "responseCount": 0,
+    "lastResponse": null
+  },
   "heartbeat": {
     "counter": 42,
     "ageSeconds": 0.2,
@@ -745,14 +775,14 @@ ONE1000 节点按真实时间 1 Hz 持续发布诊断状态，不受 `time_scale
     "radarState": "ACTIVE",
     "radarActive": true
   },
-  "sentryStatus": {
-    "ageSeconds": 0.1,
-    "rawStatus": 0,
-    "detectionValid": true,
-    "livingBodyDetected": false,
-    "headTouchDetected": false,
-    "maxRadarValue": 0.0,
-    "livingBodyFirstIndex": 0
+  "sentryStatus": null,
+  "position": {
+    "ageSeconds": 0.02,
+    "anchorMacId": 287454020,
+    "beaconId": 1432778632,
+    "distanceMeters": 0.08,
+    "distanceCentimeters": 8.0,
+    "withinTouchThreshold": true
   }
 }
 ```
@@ -760,13 +790,34 @@ ONE1000 节点按真实时间 1 Hz 持续发布诊断状态，不受 `time_scale
 | 字段 | 说明 |
 |---|---|
 | `serialOpen` | 节点是否仍持有串口 |
-| `connected` | 串口已打开且最近2.5秒内收到过 `0x59` 心跳 |
+| `connected` | 串口已打开，且最近2.5秒内收到过 UART 字节、有效协议包或心跳 |
+| `detection.mode` | `distance` 使用 C5 距离；`radar` 使用厂商 0x54 摸头位 |
+| `detection.distanceTouchActive` | 最近有效距离是否严格小于配置阈值 |
+| `protocol.uartActive` | 最近2.5秒内是否收到过任意 UART 字节，包括调试文本 |
+| `protocol.active` | 最近2.5秒内是否收到通过外层长度和 CRC 校验的数据包 |
+| `protocol.receivedByteCount` | 本次节点运行累计读取的 UART 字节数 |
+| `protocol.validPacketCount` | 通过外层协议校验的数据包数 |
+| `protocol.positionPacketCount` | 收到的 `0xC5` UWB 定位包数 |
+| `position` | 最近一次解析成功的 C5 定位；尚未收到时为 `null` |
+| `position.distanceCentimeters` | 信标到基站的当前厘米距离 |
+| `position.withinTouchThreshold` | 当前有效距离是否满足严格小于阈值 |
+| `commands.sentCount / responseCount` | 主机已发送命令数和设备 `0x00` 响应数 |
+| `commands.lastResponse` | 最近命令响应；未收到任何响应时为 `null` |
 | `heartbeat` | 最近心跳；尚未收到时为 `null` |
 | `heartbeat.radarState` | `DEINITIALIZED / ACTIVE / RANGING_CONFLICT_TIMEOUT / UNKNOWN` |
 | `heartbeat.radarActive` | `radarStatus == 0x05` |
 | `sentryStatus` | 最近一次 `0x54` 结果；尚未收到时为 `null` |
 | `sentryStatus.headTouchDetected` | 厂商原始摸头 bit1；事件边沿判断前的直接状态 |
 | `ageSeconds` | 该硬件数据距本条诊断消息的真实秒数 |
+
+部分 5.1.x 固件会把 `0xC5` Value 内层长度错误填写为33，但外层实际携带38字节，
+总长度和 CRC 正确。适配节点只对 `C5 + 声明33 + 实际38` 这一精确组合兼容，
+其他长度异常仍拒绝。默认 `distance` 模式不会发送哨兵命令，避免雷达模式切断
+C5 定位流；只有显式选择 `radar` 模式后，节点才会在收到心跳或等待500ms后
+发送设置阈值、清缓存和启动哨兵命令。
+另有调试固件在哨兵活动期输出 `session cmd deinit / cir Ready` 文本而不是标准
+`0x54/0x59`：此时 `connected=true`、`uartActive=true`，但
+`protocol.active=false`，表示物理串口在线但业务协议不兼容。
 
 诊断命令：
 
