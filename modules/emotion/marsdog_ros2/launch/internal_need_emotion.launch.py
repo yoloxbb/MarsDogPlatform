@@ -2,13 +2,14 @@
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description() -> LaunchDescription:
-    """生成联调用的四节点启动描述。"""
+    """生成核心四节点和可选 ONE1000 节点的联调启动描述。"""
     timeScale = ParameterValue(LaunchConfiguration("time_scale"), value_type=int)
     virtualStartTime = LaunchConfiguration("virtual_start_time")
     randomSeed = ParameterValue(LaunchConfiguration("random_seed"), value_type=int)
@@ -20,6 +21,22 @@ def generate_launch_description() -> LaunchDescription:
         LaunchConfiguration("midnight_duration_seconds"),
         value_type=float,
     )
+    one1000Enabled = LaunchConfiguration("one1000_tactile_enabled")
+    one1000Parameters = {
+        "serial_port": LaunchConfiguration("one1000_serial_port"),
+        "auto_start_sentry": ParameterValue(
+            LaunchConfiguration("one1000_auto_start_sentry"),
+            value_type=bool,
+        ),
+        "touch_threshold": ParameterValue(
+            LaunchConfiguration("one1000_touch_threshold"),
+            value_type=int,
+        ),
+        "touch_cooldown_seconds": ParameterValue(
+            LaunchConfiguration("one1000_touch_cooldown_seconds"),
+            value_type=float,
+        ),
+    }
     timeControllerParameters = {
         "time_scale": timeScale,
         "virtual_start_time": virtualStartTime,
@@ -58,6 +75,31 @@ def generate_launch_description() -> LaunchDescription:
                 default_value="30.0",
                 description="Real seconds used for virtual 00:00-06:00",
             ),
+            DeclareLaunchArgument(
+                "one1000_tactile_enabled",
+                default_value="false",
+                description="Start ONE1000 UWB head-pet adapter",
+            ),
+            DeclareLaunchArgument(
+                "one1000_serial_port",
+                default_value="/dev/ttyUSB1",
+                description="ONE1000 serial device path",
+            ),
+            DeclareLaunchArgument(
+                "one1000_auto_start_sentry",
+                default_value="true",
+                description="Configure and start ONE1000 sentry automatically",
+            ),
+            DeclareLaunchArgument(
+                "one1000_touch_threshold",
+                default_value="30",
+                description="ONE1000 head-touch threshold",
+            ),
+            DeclareLaunchArgument(
+                "one1000_touch_cooldown_seconds",
+                default_value="1.0",
+                description="Real-time cooldown between head-pet events",
+            ),
             Node(
                 package="marsdog_need_emotion",
                 executable="time_controller_node",
@@ -84,6 +126,14 @@ def generate_launch_description() -> LaunchDescription:
                 name="emotion_engine_node",
                 output="screen",
                 parameters=[calculationTimeParameters],
+            ),
+            Node(
+                package="marsdog_need_emotion",
+                executable="one1000_tactile_node",
+                name="one1000_tactile_node",
+                output="screen",
+                parameters=[one1000Parameters],
+                condition=IfCondition(one1000Enabled),
             ),
         ]
     )

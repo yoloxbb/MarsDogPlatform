@@ -10,6 +10,7 @@
 - ROS2 输入适配
 - ROS2 状态/事件发布
 - 行为结果数值结算
+- ONE1000 UWB 雷达摸头事件适配
 
 ## 1. 代码结构
 
@@ -26,7 +27,9 @@
 | `marsdog_ros2/internal_need_node.py` | 发布 `/internal_need/state` 和 `/internal_need/signal_event` |
 | `marsdog_ros2/emotion_engine_node.py` | 发布 `/emotion/state` 和 `/emotion/signal_event` |
 | `marsdog_ros2/personality_node.py` | 维护性格参数并发布 `/personality/state` |
-| `marsdog_ros2/perception_adapter.py` | 适配 `/perception/audio_event`、`/perception/visual_event` |
+| `marsdog_ros2/perception_adapter.py` | 适配音频、视觉和触觉感知 Topic |
+| `marsdog_core/one1000_protocol.py` | ONE1000 UART 帧、CRC、0x54 状态解析和摸头边沿识别 |
+| `marsdog_ros2/one1000_tactile_node.py` | 读取 ONE1000 并发布摸头事件和 1 Hz 硬件诊断状态 |
 | `marsdog_ros2/behavior_result_adapter.py` | 适配 `/behavior/result_event` |
 | `marsdog_ros2/personality_adapter.py` | 适配 `/personality/state` |
 | `marsdog_ros2/time_context.py` | 为需求/情绪输出附加统一虚拟时间上下文 |
@@ -42,6 +45,7 @@
 |---|---|---|---|
 | `/perception/audio_event` | `std_msgs/String` JSON | 需求节点、情绪节点 | 声音事件，直接读取 `event_type` |
 | `/perception/visual_event` | `std_msgs/String` JSON | 需求节点、情绪节点 | 视觉事件，读取 `events[]` 和目标字段 |
+| `/perception/tactile_event` | `std_msgs/String` JSON | 需求节点、情绪节点 | 触觉事件，读取单个 `event_type` |
 | `/behavior/result_event` | `std_msgs/String` JSON | 需求节点、情绪节点 | 外部结果输入 |
 | `/personality/state` | `std_msgs/String` JSON | 需求节点、情绪节点 | 性格参数同步输入 |
 | `/simulation/time_state` | `std_msgs/String` JSON | 需求节点、情绪节点 | 权威时间状态和逐虚拟秒 Tick |
@@ -59,6 +63,8 @@
 | `/personality/state` | `std_msgs/String` JSON | `personality_node` | 性格状态，启动时和性格变化后发布 |
 | `/simulation/time_state` | `std_msgs/String` JSON | `time_controller_node` | 时间初始化、逐秒 Tick、倍率变化 |
 | `/simulation/midnight_test_result` | `std_msgs/String` JSON | `midnight_test_node` | 凌晨场景完成状态和最终需求/睡眠快照 |
+| `/perception/tactile_event` | `std_msgs/String` JSON | `one1000_tactile_node` | ONE1000 有效摸头上升沿事件 |
+| `/one1000/status` | `std_msgs/String` JSON | `one1000_tactile_node` | 真实时间 1 Hz 发布心跳、雷达和原始摸头诊断状态 |
 
 ## 3. 内部需求输出
 
@@ -531,6 +537,15 @@ ros2 param set /time_controller_node time_scale 1
 模式切换由统一时间节点一次完成。虚拟时间连续，需求/情绪 Tick 进度、当前
 需求值、情绪值和睡眠状态均保留。
 
+启用 ONE1000 并与需求/情绪一起启动：
+
+```bash
+ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
+  time_scale:=100 virtual_start_time:=00:00 \
+  one1000_tactile_enabled:=true \
+  one1000_serial_port:=/dev/ttyUSB1
+```
+
 也可以分别启动：
 
 ```bash
@@ -538,11 +553,13 @@ ros2 run marsdog_need_emotion personality_node
 ros2 run marsdog_need_emotion time_controller_node
 ros2 run marsdog_need_emotion internal_need_node
 ros2 run marsdog_need_emotion emotion_engine_node
+ros2 launch marsdog_need_emotion one1000_tactile.launch.py
 ```
 
 ## 10. 当前缺口
 
 - 真实 ROS2 runtime 仍需在目标环境完整验证。
 - 当前仍使用 `std_msgs/String + JSON`，尚未定义正式 msg。
-- 触摸事件 `EVT_TACTILE_*` 在配置中保留，但没有 topic 接入。
+- 当前 ONE1000 只接入 `EVT_TACTILE_HEAD_PET`；其余身体部位的
+  `EVT_TACTILE_*` 仍需后续真实触摸传感器或额外识别规则提供。
 - `EVT_AUDIO_LOUD / EVT_AUDIO_WITH_HUMAN` 在配置中保留，但新版感知文档当前未提供对应输入。

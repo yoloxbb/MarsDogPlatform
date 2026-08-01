@@ -57,6 +57,14 @@ class MarsdogEmotionSystem(EmotionAPI, PersonalityAPI):
                 appliedEvents.append(eventName)
         return appliedEvents
 
+    def OnTactileEvent(self, metadata: dict[str, Any] | None = None) -> list[str]:
+        """处理 `/perception/tactile_event` 中的单个触觉情绪事件。"""
+        payload = dict(metadata or {})
+        eventName = str(payload.get("event_type", ""))
+        if not eventName:
+            return []
+        return [eventName] if self.ApplyEmotionEvent(eventName, payload) else []
+
     def OnBehaviorResultEvent(self, resultData: dict[str, Any] | None = None) -> bool:
         """根据行为组回传结果更新情绪。"""
         payload = NormalizeBehaviorResultEventValue(resultData, self._GetActionDemandMap())

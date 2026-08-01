@@ -13,7 +13,11 @@ from marsdog_core import (
 )
 from marsdog_core.emotion_system import MarsdogEmotionSystem
 from marsdog_ros2.behavior_result_adapter import ApplyBehaviorResultMessage
-from marsdog_ros2.perception_adapter import ApplyAudioEventMessage, ApplyVisualEventMessage
+from marsdog_ros2.perception_adapter import (
+    ApplyAudioEventMessage,
+    ApplyTactileEventMessage,
+    ApplyVisualEventMessage,
+)
 from marsdog_ros2.personality_adapter import ApplyPersonalityStateMessage
 from marsdog_ros2.time_context import GetMessageWithTimeContextValue, GetRandomGeneratorValue
 from marsdog_ros2.time_state_adapter import (
@@ -67,6 +71,7 @@ class EmotionEngineNode(Node):
         self.signalPublisher = self.create_publisher(String, "/emotion/signal_event", 10)
         self.create_subscription(String, "/perception/visual_event", self.OnVisualEventMessage, _BestEffortQoS(5))
         self.create_subscription(String, "/perception/audio_event", self.OnAudioEventMessage, _ReliableQoS(10))
+        self.create_subscription(String, "/perception/tactile_event", self.OnTactileEventMessage, _ReliableQoS(10))
         self.create_subscription(String, "/behavior/result_event", self.OnBehaviorResultMessage, _ReliableQoS(10))
         self.create_subscription(String, "/personality/state", self.OnPersonalityStateMessage, _ReliableTransientLocalQoS(1))
         self.create_subscription(
@@ -115,6 +120,11 @@ class EmotionEngineNode(Node):
     def OnAudioEventMessage(self, message) -> None:
         """处理感知声音情绪事件。"""
         ApplyAudioEventMessage(self.system, message)
+        self.PublishSignalEvents()
+
+    def OnTactileEventMessage(self, message) -> None:
+        """处理感知触觉情绪事件。"""
+        ApplyTactileEventMessage(self.system, message)
         self.PublishSignalEvents()
 
     def OnBehaviorResultMessage(self, message) -> None:

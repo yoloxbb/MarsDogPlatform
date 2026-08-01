@@ -22,6 +22,14 @@ def ApplyAudioEventMessage(system: Any, message: object) -> list[str]:
     return list(system.OnAudioEvent(payload) or [])
 
 
+def ApplyTactileEventMessage(system: Any, message: object) -> list[str]:
+    """把 `/perception/tactile_event` 消息转发给核心系统。"""
+    payload = _NormalizeMessageToDict(message)
+    if not payload or not hasattr(system, "OnTactileEvent"):
+        return []
+    return list(system.OnTactileEvent(payload) or [])
+
+
 def _NormalizeMessageToDict(message: object) -> dict[str, Any]:
     """把 ROS2 String、JSON 字符串或 dict 统一转换为字典。"""
     if message is None:

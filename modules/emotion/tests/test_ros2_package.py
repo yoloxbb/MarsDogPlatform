@@ -32,6 +32,7 @@ class Ros2PackageTest(unittest.TestCase):
         self.assertIn("internal_need_node = marsdog_ros2.internal_need_node:main", setupText)
         self.assertIn("emotion_engine_node = marsdog_ros2.emotion_engine_node:main", setupText)
         self.assertIn("personality_node = marsdog_ros2.personality_node:main", setupText)
+        self.assertIn("one1000_tactile_node = marsdog_ros2.one1000_tactile_node:main", setupText)
         self.assertNotIn("behavior_node = marsdog_ros2.behavior_node:main", setupText)
 
     def test_internal_need_emotion_launch_file_is_declared(self):
@@ -52,6 +53,40 @@ class Ros2PackageTest(unittest.TestCase):
         self.assertIn('"random_seed"', launchText)
         self.assertIn('"midnight_acceleration_enabled"', launchText)
         self.assertIn('"midnight_duration_seconds"', launchText)
+        self.assertIn('"one1000_tactile_enabled"', launchText)
+        self.assertIn('executable="one1000_tactile_node"', launchText)
+
+    def test_one1000_tactile_launch_is_declared(self):
+        """ONE1000 应提供可单独硬件联调的 launch。"""
+        launchFile = (
+            PROJECT_ROOT
+            / "marsdog_ros2"
+            / "launch"
+            / "one1000_tactile.launch.py"
+        )
+        launchText = launchFile.read_text(encoding="utf-8")
+
+        self.assertTrue(launchFile.exists())
+        self.assertIn('executable="one1000_tactile_node"', launchText)
+        self.assertIn('"serial_port"', launchText)
+        self.assertIn('"touch_threshold"', launchText)
+        self.assertIn('"touch_cooldown_seconds"', launchText)
+
+        nodeText = (
+            PROJECT_ROOT / "marsdog_ros2" / "one1000_tactile_node.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn('"/perception/tactile_event"', nodeText)
+        self.assertIn('"/one1000/status"', nodeText)
+        self.assertIn("self.PublishStatusValue", nodeText)
+
+    def test_calculation_nodes_subscribe_to_tactile_topic(self):
+        """需求和情绪节点都应消费统一触觉 Topic。"""
+        for nodeFile in ("internal_need_node.py", "emotion_engine_node.py"):
+            nodeText = (
+                PROJECT_ROOT / "marsdog_ros2" / nodeFile
+            ).read_text(encoding="utf-8")
+            self.assertIn('"/perception/tactile_event"', nodeText)
+            self.assertIn("ApplyTactileEventMessage", nodeText)
 
     def test_midnight_test_launch_uses_discrete_test_time_source(self):
         """凌晨测试 launch 应在30秒内离散推进并自动完成睡眠握手。"""

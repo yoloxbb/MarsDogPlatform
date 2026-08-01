@@ -2,7 +2,11 @@ import json
 import unittest
 
 from marsdog_core import MarsdogEmotionSystem, MarsdogNeedSystem
-from marsdog_ros2.perception_adapter import ApplyAudioEventMessage, ApplyVisualEventMessage
+from marsdog_ros2.perception_adapter import (
+    ApplyAudioEventMessage,
+    ApplyTactileEventMessage,
+    ApplyVisualEventMessage,
+)
 
 
 class DummyMessage:
@@ -60,6 +64,43 @@ class PerceptionAdapterTest(unittest.TestCase):
         self.assertEqual(events, ["EVT_VISION_TOY"])
         self.assertEqual(system.GetEmotionValue("Excite"), 30)
         self.assertEqual(system.GetEmotionValue("Curious"), 23)
+
+    def test_tactile_event_updates_emotion_system(self):
+        """ONE1000 摸头事件应进入既有触觉情绪映射。"""
+        system = MarsdogEmotionSystem()
+        beforeEmotions = dict(system.state.emotions)
+
+        events = ApplyTactileEventMessage(
+            system,
+            {"event_type": "EVT_TACTILE_HEAD_PET", "source": "ONE1000"},
+        )
+
+        self.assertEqual(events, ["EVT_TACTILE_HEAD_PET"])
+        self.assertEqual(
+            system.GetEmotionValue("Joy") - beforeEmotions["Joy"],
+            25,
+        )
+        self.assertEqual(
+            system.GetEmotionValue("Calm") - beforeEmotions["Calm"],
+            15,
+        )
+        self.assertEqual(
+            system.GetEmotionValue("Excite") - beforeEmotions["Excite"],
+            5,
+        )
+
+    def test_tactile_event_does_not_change_internal_needs(self):
+        """临时摸头传感器只影响情绪，不改变内部需求。"""
+        system = MarsdogNeedSystem()
+        beforeDemands = dict(system.state.demands)
+
+        events = ApplyTactileEventMessage(
+            system,
+            {"event_type": "EVT_TACTILE_HEAD_PET"},
+        )
+
+        self.assertEqual(events, ["EVT_TACTILE_HEAD_PET"])
+        self.assertEqual(system.state.demands, beforeDemands)
 
     def test_invalid_json_message_is_ignored(self):
         """非法 JSON 输入不应修改系统状态。"""

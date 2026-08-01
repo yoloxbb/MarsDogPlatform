@@ -8,7 +8,11 @@ from datetime import datetime
 from marsdog_core import MarsdogTimeController, VirtualTickScheduler
 from marsdog_core.need_system import MarsdogNeedSystem
 from marsdog_ros2.behavior_result_adapter import ApplyBehaviorResultMessage
-from marsdog_ros2.perception_adapter import ApplyAudioEventMessage, ApplyVisualEventMessage
+from marsdog_ros2.perception_adapter import (
+    ApplyAudioEventMessage,
+    ApplyTactileEventMessage,
+    ApplyVisualEventMessage,
+)
 from marsdog_ros2.personality_adapter import ApplyPersonalityStateMessage
 from marsdog_ros2.time_context import GetMessageWithTimeContextValue, GetRandomGeneratorValue
 from marsdog_ros2.time_state_adapter import (
@@ -64,6 +68,7 @@ class InternalNeedNode(Node):
         self.signalPublisher = self.create_publisher(String, "/internal_need/signal_event", 10)
         self.create_subscription(String, "/perception/visual_event", self.OnVisualEventMessage, _BestEffortQoS(5))
         self.create_subscription(String, "/perception/audio_event", self.OnAudioEventMessage, _ReliableQoS(10))
+        self.create_subscription(String, "/perception/tactile_event", self.OnTactileEventMessage, _ReliableQoS(10))
         self.create_subscription(String, "/behavior/result_event", self.OnBehaviorResultMessage, _ReliableQoS(10))
         self.create_subscription(String, "/personality/state", self.OnPersonalityStateMessage, _ReliableTransientLocalQoS(1))
         self.create_subscription(
@@ -109,6 +114,11 @@ class InternalNeedNode(Node):
     def OnAudioEventMessage(self, message) -> None:
         """处理感知声音事件。"""
         ApplyAudioEventMessage(self.system, message)
+        self.PublishSignalEvents()
+
+    def OnTactileEventMessage(self, message) -> None:
+        """接收感知触觉事件；当前不改变内部需求值。"""
+        ApplyTactileEventMessage(self.system, message)
         self.PublishSignalEvents()
 
     def OnBehaviorResultMessage(self, message) -> None:

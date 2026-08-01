@@ -88,6 +88,12 @@ class MarsdogNeedSystem(
             self.OnOwnerPresenceChanged(True)
         return [eventName]
 
+    def OnTactileEvent(self, metadata: dict[str, Any] | None = None) -> list[str]:
+        """接收触觉事件但不改变当前内部需求值。"""
+        payload = dict(metadata or {})
+        eventName = str(payload.get("event_type", ""))
+        return [eventName] if eventName else []
+
     def OnBehaviorResultEvent(self, resultData: dict[str, Any] | None = None) -> bool:
         """根据行为组回传的结果事件结算需求值。"""
         payload = NormalizeBehaviorResultEventValue(resultData, self._GetActionDemandMap())

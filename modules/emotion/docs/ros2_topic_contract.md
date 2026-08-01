@@ -19,6 +19,7 @@
 |---|---|---|---|
 | `/perception/audio_event` | `RELIABLE, depth=10` | `internal_need_node`，`emotion_engine_node` | 声音事件输入 |
 | `/perception/visual_event` | `BEST_EFFORT, depth=5` | `internal_need_node`，`emotion_engine_node` | 视觉事件输入 |
+| `/perception/tactile_event` | `RELIABLE, depth=10` | `internal_need_node`，`emotion_engine_node` | 触觉事件输入；当前由 ONE1000 适配节点发布摸头事件 |
 | `/behavior/result_event` | `RELIABLE, depth=10` | `internal_need_node`，`emotion_engine_node` | 行为结果输入 |
 | `/personality/state` | `RELIABLE + TRANSIENT_LOCAL, depth=1` | `internal_need_node`，`emotion_engine_node` | 性格状态同步 |
 | `/simulation/time_state` | `RELIABLE + TRANSIENT_LOCAL, depth=1000` | `internal_need_node`，`emotion_engine_node` | 权威虚拟时间和逐秒 Tick |
@@ -34,6 +35,8 @@
 | `/emotion/state` | `RELIABLE, depth=10` | `emotion_engine_node` | 每个虚拟秒发布；真实频率为 `time_scale` Hz |
 | `/emotion/signal_event` | `RELIABLE, depth=10` | `emotion_engine_node` | 情绪首次达到触发阈值时发布 |
 | `/simulation/midnight_test_result` | `RELIABLE + TRANSIENT_LOCAL, depth=1` | `midnight_test_node` | 凌晨测试完成时发布 `PASSED/FAILED` 和最终状态 |
+| `/perception/tactile_event` | `RELIABLE, depth=10` | `one1000_tactile_node` | ONE1000 摸头状态从未触摸变为触摸时发布 |
+| `/one1000/status` | `RELIABLE, depth=10` | `one1000_tactile_node` | 真实时间 1 Hz 发布串口、心跳、雷达和原始摸头诊断状态 |
 
 情绪自然衰减由 `emotion_engine_node` 的单调真实时钟以 1 Hz 驱动，不依赖
 `/simulation/time_state` 的虚拟 Tick 频率，也不随 `time_scale` 加速。
@@ -149,7 +152,49 @@
 | `EVT_VISION_ANIMAL_PLAY` | 情绪事件 |
 | `EVT_VISION_ANIMAL_BOUNDARY` | 情绪事件 |
 
-### 2.3 `/behavior/result_event`
+### 2.3 `/perception/tactile_event`
+
+触觉事件使用单个 `event_type`。情绪节点命中
+`configs/emotions.yaml:eventRules` 时更新情绪；需求节点接收事件但当前不修改需求值。
+
+ONE1000 临时适配节点当前只发布摸头事件：
+
+```json
+{
+  "schema_version": "1.0",
+  "timestamp": 1785556800.0,
+  "event_type": "EVT_TACTILE_HEAD_PET",
+  "source": "ONE1000",
+  "sensorType": "UWB_RADAR",
+  "touchState": "STARTED",
+  "rawStatus": 3,
+  "livingBodyDetected": true,
+  "maxRadarValue": 42.5,
+  "livingBodyFirstIndex": 17
+}
+```
+
+| 字段 | 要求 | 说明 |
+|---|---|---|
+| `event_type` | 必填 string | 当前 ONE1000 固定为 `EVT_TACTILE_HEAD_PET` |
+| `timestamp` | 必填 number | 传感器事件产生时的真实 Unix 时间 |
+| `source` | 必填 string | ONE1000 节点固定为 `ONE1000` |
+| `sensorType` | 必填 string | ONE1000 节点固定为 `UWB_RADAR` |
+| `touchState` | 必填 string | 当前只在上升沿发布，固定为 `STARTED` |
+| `rawStatus` | 调试字段 | ONE1000 `0x54` 原始状态位；bit0 为活体，bit1 为摸头 |
+| `livingBodyDetected` | 调试字段 | 是否同时检测到活体 |
+| `maxRadarValue` | 调试字段 | 厂商协议提供的雷达调试值，不参与情绪计算 |
+| `livingBodyFirstIndex` | 调试字段 | 厂商协议提供的活体首次位置索引，不参与情绪计算 |
+
+节点仅在有效摸头位的上升沿发布，连续保持触摸不会重复发布；松手后再次摸头且
+超过 `touch_cooldown_seconds` 才会产生下一条事件。冷却使用真实时间，不受
+`time_scale` 或凌晨加速影响。默认性格下每次
+`EVT_TACTILE_HEAD_PET` 使 `Joy +25 / Calm +15 / Excite +5`。初始 Joy 为0，
+因此第一次摸头不会达到 Joy 的30阈值；默认1秒冷却结束后尽快进行第二次有效
+摸头，Joy 会在真实时间衰减后再次增加25并越过阈值，发布
+`EMO_JOY_TRIGGERED`。
+
+### 2.4 `/behavior/result_event`
 
 用于更新需求值和行为结果引起的情绪变化。
 
@@ -234,7 +279,7 @@
 | `CANCELLED` | `ActionInterrupted` |
 | `STARTED` | 不影响情绪 |
 
-### 2.4 `/personality/state`
+### 2.5 `/personality/state`
 
 `personality_node` 发布该 topic，需求节点和情绪节点订阅后同步本地性格参数。
 
@@ -281,7 +326,7 @@ ros2 param set /personality_node E 30
 ros2 param set /personality_node C 40
 ```
 
-### 2.5 `/simulation/time_state`
+### 2.6 `/simulation/time_state`
 
 生产运行时 `time_controller_node` 是唯一权威虚拟时间源。`time_scale` 允许
 `1-100` 整数，需求和情绪节点只消费本 Topic，不再各自使用需求自然更新定时器。
@@ -385,7 +430,7 @@ ros2 param set /personality_node C 40
 
 ### 3.2 `/personality/state`
 
-格式同 2.4。该 topic 使用 `TRANSIENT_LOCAL`，后启动的需求节点和情绪节点也能收到最近一次性格状态。
+格式同 2.5。该 topic 使用 `TRANSIENT_LOCAL`，后启动的需求节点和情绪节点也能收到最近一次性格状态。
 
 ### 3.3 `/internal_need/state`
 
@@ -677,6 +722,59 @@ Joy、Excite、Anxiety、Fear、Curious 只在未触发变为已触发时发布�
 | `Fear` | `>=30` | `EMO_FEAR_TRIGGERED` |
 | `Curious` | `>=20` | `EMO_CURIOUS_TRIGGERED` |
 
+### 3.7 `/one1000/status`
+
+ONE1000 节点按真实时间 1 Hz 持续发布诊断状态，不受 `time_scale` 或凌晨加速
+影响。该 Topic 用于判断节点和硬件是否存活；业务摸头事件仍只从
+`/perception/tactile_event` 获取。
+
+```json
+{
+  "schema_version": "1.0",
+  "timestamp": 1785563000.0,
+  "source": "ONE1000",
+  "serialPort": "/dev/ttyUSB1",
+  "serialOpen": true,
+  "connected": true,
+  "heartbeat": {
+    "counter": 42,
+    "ageSeconds": 0.2,
+    "rangingStatus": 6,
+    "rangingState": "TIMEOUT",
+    "radarStatus": 5,
+    "radarState": "ACTIVE",
+    "radarActive": true
+  },
+  "sentryStatus": {
+    "ageSeconds": 0.1,
+    "rawStatus": 0,
+    "detectionValid": true,
+    "livingBodyDetected": false,
+    "headTouchDetected": false,
+    "maxRadarValue": 0.0,
+    "livingBodyFirstIndex": 0
+  }
+}
+```
+
+| 字段 | 说明 |
+|---|---|
+| `serialOpen` | 节点是否仍持有串口 |
+| `connected` | 串口已打开且最近2.5秒内收到过 `0x59` 心跳 |
+| `heartbeat` | 最近心跳；尚未收到时为 `null` |
+| `heartbeat.radarState` | `DEINITIALIZED / ACTIVE / RANGING_CONFLICT_TIMEOUT / UNKNOWN` |
+| `heartbeat.radarActive` | `radarStatus == 0x05` |
+| `sentryStatus` | 最近一次 `0x54` 结果；尚未收到时为 `null` |
+| `sentryStatus.headTouchDetected` | 厂商原始摸头 bit1；事件边沿判断前的直接状态 |
+| `ageSeconds` | 该硬件数据距本条诊断消息的真实秒数 |
+
+诊断命令：
+
+```bash
+ros2 topic hz /one1000/status
+ros2 topic echo /one1000/status --field data
+```
+
 ## 4. 调试命令
 
 1 倍启动四个节点：
@@ -749,6 +847,7 @@ ros2 topic echo /internal_need/state --field data
 ros2 topic echo /internal_need/signal_event --field data
 ros2 topic echo /emotion/state --field data
 ros2 topic echo /emotion/signal_event --field data
+ros2 topic echo /one1000/status --field data
 ```
 
 发布行为结果示例：
