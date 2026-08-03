@@ -44,7 +44,7 @@ openvins_stereo_odometry:
     "Vis/GridCols": "5"
     "Vis/CorNNDR": "0.8"
     "Vis/MinDepth": "0.1"
-    "Vis/MaxDepth": "8.0"
+    "Vis/MaxDepth": "5.0"
     "Vis/DepthAsMask": "true"
 
     # ===== OpenVINS feature initialization =====
@@ -100,15 +100,15 @@ openvins_stereo_odometry:
     "OdomOpenVINS/ZUPTMaxVelodicy": "0.1"
     "OdomOpenVINS/ZUPTNoiseMultiplier": "10.0"
     "OdomOpenVINS/ZUPTMaxDisparity": "0.5"
-    "OdomOpenVINS/ZUPTOnlyAtBeginning": "false"
+    "OdomOpenVINS/ZUPTOnlyAtBeginning": "true"
 
     # ===== OpenVINS IMU / visual measurement noise =====
     # 当前为旧 WIT IMU 标定值；GO2 使用 D435i 时应以实机 Allan 标定结果替换，
     # 不要仅凭型号照抄其他相机的噪声参数。
-    "OdomOpenVINS/AccelerometerNoiseDensity": "0.008"
-    "OdomOpenVINS/AccelerometerRandomWalk": "0.0004"
-    "OdomOpenVINS/GyroscopeNoiseDensity": "0.0001"
-    "OdomOpenVINS/GyroscopeRandomWalk": "0.00001"
+    "OdomOpenVINS/AccelerometerNoiseDensity": "0.08"
+    "OdomOpenVINS/AccelerometerRandomWalk": "0.004"
+    "OdomOpenVINS/GyroscopeNoiseDensity": "0.001"
+    "OdomOpenVINS/GyroscopeRandomWalk": "0.0001"
     # "OdomOpenVINS/AccelerometerNoiseDensity": "0.01"
     # "OdomOpenVINS/AccelerometerRandomWalk": "0.001"
     # "OdomOpenVINS/GyroscopeNoiseDensity": "0.001"
@@ -123,7 +123,7 @@ openvins_stereo_odometry:
     # 让它使用原始图像、CameraInfo K/D 和 Kalibr 原始相机 TF。
     "Rtabmap/ImagesAlreadyRectified": "true"
 
-    always_process_most_recent_frame: false
+    always_process_most_recent_frame: true
 
 rtabmap:
   ros__parameters:

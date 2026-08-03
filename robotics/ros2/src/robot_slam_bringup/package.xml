@@ -18,11 +18,13 @@
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>nav2_bringup</exec_depend>
   <exec_depend>nav2_common</exec_depend>
+  <exec_depend>realsense2_camera</exec_depend>
   <exec_depend>rclcpp_components</exec_depend>
   <exec_depend>rtabmap_odom</exec_depend>
   <exec_depend>rtabmap_slam</exec_depend>
   <exec_depend>rtabmap_viz</exec_depend>
   <exec_depend>stereo_v4l2_camera</exec_depend>
+  <exec_depend>vins</exec_depend>
   <exec_depend>wit_imu</exec_depend>
 
   <test_depend>ament_copyright</test_depend>

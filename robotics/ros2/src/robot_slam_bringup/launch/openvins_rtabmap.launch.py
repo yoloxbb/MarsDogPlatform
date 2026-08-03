@@ -107,7 +107,7 @@ def generate_launch_description():
             "publish_camera_imu_tf",
             default_value="true",
             description=(
-                "是否发布 2026-07-31 标定的 "
+                "是否发布 2026-08-03 标定的 "
                 "camera_link 到外置 WIT imu_link 静态 TF。"
             ),
         ),
@@ -244,23 +244,23 @@ def generate_launch_description():
     ]
 
     # 将 D435i 原生 camera_link -> 左目光学坐标系旋转，与
-    # 2026-07-31 Kalibr T_cam_imu（WIT IMU -> 左目光学坐标系）合成。
-    # 标定时间偏移 t_imu=t_cam+0.01311671095948102 s 不属于 TF；
+    # 2026-08-03 16:45 Kalibr T_cam_imu（WIT IMU -> 左目光学坐标系）合成。
+    # 标定时间偏移 t_imu=t_cam+0.011865574428769277 s 不属于 TF；
     # OpenVINS 当前通过 CalibCamTimeoffset=true 在运行时继续估计该偏移。
     camera_to_wit_imu_tf = Node(
         condition=IfCondition(publish_camera_imu_tf),
         package="tf2_ros",
         executable="static_transform_publisher",
-        name="d435i_camera_to_wit_imu_20260731",
+        name="d435i_camera_to_wit_imu_20260803",
         output="screen",
         arguments=[
-            "--x", "-0.037283913338684735",
-            "--y", "-0.021068476495775222",
-            "--z", "0.004906068911756066",
-            "--qx", "0.7127580390029497",
-            "--qy", "-0.00127832915681575",
-            "--qz", "-0.7013739231475679",
-            "--qw", "0.00699740236273522",
+            "--x", "-0.03453964436591465",
+            "--y", "-0.020484129171029215",
+            "--z", "0.00486747161468371",
+            "--qx", "0.7052099474822251",
+            "--qy", "-0.011074111237417432",
+            "--qz", "-0.7087317863872082",
+            "--qw", "0.015985899937620437",
             "--frame-id", "camera_link",
             "--child-frame-id", "imu_link",
         ],
@@ -360,7 +360,6 @@ def generate_launch_description():
             "delete_db_on_start": False,
             "Mem/IncrementalMemory": "false",
             "Mem/InitWMWithAllNodes": "true",
-            # RTAB-Map 0.23.8 仍需写入数据库 Info 表，不能使用只读模式。
             "Mem/LocalizationReadOnly": "false",
         }],
         remappings=rtabmap_remappings,
