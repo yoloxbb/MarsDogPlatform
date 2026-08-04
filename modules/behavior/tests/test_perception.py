@@ -1,4 +1,4 @@
-"""Tests: audio command injection, check_person, and perception integration."""
+"""Tests: audio event injection, check_person, and perception integration."""
 
 from __future__ import annotations
 
@@ -8,11 +8,13 @@ from pathlib import Path
 
 from bionic_dog_bt.tree_builder import create_runtime
 from bionic_dog_bt.mock_perception_client import MockPerceptionClient
-from bionic_dog_bt.behavior_tree_node import Status
-from bionic_dog_bt.constants import (
-    STATUS_RUNNING, STATUS_SUCCESS, STATUS_FAILURE,
-    COMMAND_BEHAVIOR_MAP,
+from bionic_dog_bt.constants import VOICE_EVENT_BEHAVIOR_MAP
+from bionic_dog_bt.visual_context import (
+    select_exploration_context,
+    select_hunger_context,
+    select_social_animal,
 )
+from marsdog_behavior.perception_client_adapter import PerceptionClientAdapter
 
 
 @pytest.fixture
@@ -59,56 +61,187 @@ class TestPerceptionClient:
         client.set_no_person()
         assert not client.is_person_present()
 
+    def test_set_person_false_clears_stale_target(self):
+        client = MockPerceptionClient()
+        client.set_person_present(True, identity="owner")
+        client.set_person_present(False)
 
-# ── Voice Command Tests ──────────────────────────────────────────────────────
+        result = client.check_person()
+        assert result["present"] is False
+        assert result["count"] == 0
+        assert result["identity"] == "unknown"
+        assert result["active_target"] == {}
 
-class TestVoiceCommands:
-    """Tests for inject_audio_command mapping."""
+    def test_virtual_animals_and_objects(self):
+        client = MockPerceptionClient()
+        client.set_animals(["cat", "dog"])
+        client.set_objects([
+            *client.detect_objects(),
+            {"label": "dog bowl", "confidence": 0.95},
+        ])
 
-    def test_known_command_generates_behavior(self, runtime):
+        objects = client.detect_objects()
+        assert {item["label"] for item in objects} == {
+            "cat",
+            "dog",
+            "dog bowl",
+        }
+
+
+class TestVisualContext:
+    def test_social_selects_highest_confidence_cat_or_dog(self):
+        target = select_social_animal([
+            {"label": "cat", "confidence": 0.7},
+            {"label": "dog", "confidence": 0.9, "track_id": 7},
+            {"label": "dog bowl", "confidence": 0.99},
+        ])
+
+        assert target["target_type"] == "animal"
+        assert target["species"] == "dog"
+        assert target["track_id"] == 7
+
+    @pytest.mark.parametrize(
+        ("objects", "route"),
+        [
+            ([{"label": "slipper", "confidence": 0.8}], "play_item"),
+            ([{"label": "sock", "confidence": 0.8}], "play_item"),
+            ([{"label": "dog toy ball", "confidence": 0.8}], "play_item"),
+            ([{"label": "trash can", "confidence": 0.8}], "trash_can"),
+            (
+                [{"label": "cardboard shipping box", "confidence": 0.8}],
+                "delivery_box",
+            ),
+            ([{"label": "tissue paper", "confidence": 0.8}], "tissue"),
+            ([{"label": "door", "confidence": 0.8}], "door"),
+            ([{"label": "dog food can", "confidence": 0.8}], "dog_food"),
+            ([{"label": "stairs", "confidence": 0.8}], "unfamiliar_object"),
+            ([], "empty"),
+        ],
+    )
+    def test_exploration_classification(self, objects, route):
+        assert select_exploration_context(objects)["route"] == route
+
+    @pytest.mark.parametrize(
+        ("objects", "route"),
+        [
+            ([{"label": "dog food can", "confidence": 0.9}], "dog_food"),
+            ([{"label": "dog treat bag", "confidence": 0.9}], "dog_food"),
+            ([{"label": "dog bowl", "confidence": 0.9}], "no_dog_food"),
+            ([], "no_dog_food"),
+        ],
+    )
+    def test_hunger_classification(self, objects, route):
+        assert select_hunger_context(objects)["route"] == route
+
+    def test_legacy_service_object_json_is_normalized(self):
+        result = {"objects": '[{"label":"cat","confidence":0.91}]'}
+
+        assert PerceptionClientAdapter._objects_from_result(result) == [
+            {"label": "cat", "confidence": 0.91}
+        ]
+
+    def test_failed_person_check_uses_scene_cache_before_animal_route(self):
+        adapter = object.__new__(PerceptionClientAdapter)
+        cached = {
+            "route": "human",
+            "target": {"target_type": "human", "target_id": "owner"},
+        }
+        adapter._social_context_from_cache = lambda: cached
+        resolved = []
+
+        adapter._on_social_person_result(None, resolved.append)
+
+        assert resolved == [cached]
+
+    def test_emotion_context_normalizes_legacy_string_boolean(self):
+        adapter = object.__new__(PerceptionClientAdapter)
+        adapter.get_active_identity = lambda: "owner"
+
+        assert adapter._emotion_context_from_person({
+            "present": "false",
+            "count": "0",
+        }) == {"route": "solo", "target": None}
+
+        human = adapter._emotion_context_from_person({
+            "present": "true",
+            "count": "1",
+        })
+        assert human["route"] == "human"
+        assert human["target"]["target_id"] == "owner"
+
+
+# ── Voice Event Tests ────────────────────────────────────────────────────────
+
+class TestVoiceEvents:
+    """Tests for strict event_type mapping."""
+
+    def test_known_event_generates_behavior(self, runtime):
         root, bb, executor, provider, loader = runtime
-        behavior = provider.inject_audio_command("CMD_SIT")
+        behavior = provider.inject_audio_event("EVT_VOICE_COMMAND_SIT")
         assert behavior is not None
-        assert behavior.behavior_name == "respond_owner_call"
-        assert behavior.params.get("command_id") == "CMD_SIT"
-        assert behavior.params.get("source") == "audio_command"
+        assert behavior.behavior_name == "sit_down"
+        assert behavior.params.get("trigger_event") == "EVT_VOICE_COMMAND_SIT"
+        assert behavior.params.get("source") == "audio_direct"
 
-    def test_unknown_command_returns_none(self, runtime):
+    @pytest.mark.parametrize(
+        ("event_type", "expected_behavior"),
+        [
+            ("EVT_VOICE_COMMAND_SIT", "sit_down"),
+            ("EVT_VOICE_COMMAND_LIE_DOWN", "lie_down"),
+            ("EVT_VOICE_COMMAND_STAND_UP", "stand_up"),
+            ("EVT_VOICE_COMMAND_WAIT", "wait_in_place"),
+            ("EVT_VOICE_COMMAND_COME", "come_to_owner"),
+            ("EVT_VOICE_COMMAND_FOLLOW", "follow_owner"),
+            ("EVT_VOICE_COMMAND_SHAKE_HAND", "give_paw"),
+            ("EVT_VOICE_COMMAND_HIGH_FIVE", "high_five"),
+            ("EVT_VOICE_COMMAND_ROLL_OVER", "roll_over"),
+            ("EVT_VOICE_COMMAND_SPIN", "spin_around"),
+            ("EVT_VOICE_COMMAND_RETURN", "return_to_owner"),
+            ("EVT_VOICE_COMMAND_DROP", "drop_object"),
+            ("EVT_VOICE_COMMAND_PLAY_DEAD", "play_dead"),
+            ("EVT_VOICE_COMMAND_BRING", "bring_object"),
+            ("EVT_VOICE_COMMAND_FETCH", "fetch_object"),
+        ],
+    )
+    def test_strong_events_have_dedicated_behaviors(
+        self, runtime, event_type, expected_behavior
+    ):
         root, bb, executor, provider, loader = runtime
-        behavior = provider.inject_audio_command("CMD_UNKNOWN")
+        behavior = provider.inject_audio_event(event_type)
+
+        assert behavior is not None
+        assert behavior.behavior_name == expected_behavior
+        assert behavior.priority_level == 1
+        assert behavior.params["trigger_event"] == event_type
+
+    def test_unknown_event_returns_none(self, runtime):
+        root, bb, executor, provider, loader = runtime
+        behavior = provider.inject_audio_event("EVT_VOICE_COMMAND_DOES_NOT_EXIST")
         assert behavior is None
 
-    def test_cmd_praise_generates_emotion_behavior(self, runtime):
+    def test_stop_event_generates_emergency_stop(self, runtime):
         root, bb, executor, provider, loader = runtime
-        behavior = provider.inject_audio_command("CMD_PRAISE")
-        assert behavior is not None
-        assert behavior.need_type == "emotional"
-        # source_emotion should be Joy (CMD_PRAISE routes through inject_happy_overflow)
-        assert behavior.params.get("source_emotion") == "Joy"
-        assert behavior.params.get("source") == "audio_command"
-
-    def test_cmd_stop_generates_emergency_stop(self, runtime):
-        root, bb, executor, provider, loader = runtime
-        behavior = provider.inject_audio_command("CMD_STOP")
+        behavior = provider.inject_audio_event("EVT_VOICE_COMMAND_STOP")
         assert behavior is not None
         assert behavior.behavior_name == "emergency_stop"
 
-    def test_voice_command_sets_person_present(self, runtime):
+    def test_voice_event_sets_person_present(self, runtime):
         root, bb, executor, provider, loader = runtime
-        # Voice command implies a person is speaking
-        provider.inject_audio_command("CMD_PRAISE")
+        provider.inject_audio_event("EVT_VOICE_COMMAND_SIT")
         assert bb.perception_client.is_person_present()
 
-    def test_voice_command_in_tree(self, runtime):
+    def test_voice_event_in_tree(self, runtime):
         root, bb, executor, provider, loader = runtime
-        # Inject voice command and run through tree
-        provider.inject_audio_command("CMD_COME_HERE")
+        provider.inject_audio_event("EVT_VOICE_COMMAND_COME")
         candidate = provider.select()
         bb.set_active_behavior(candidate)
         _tick(root, bb, 1)
         assert bb.current_behavior is not None
-        assert bb.current_behavior.behavior_name == "respond_owner_call"
-        assert bb.current_behavior.params.get("command_id") == "CMD_COME_HERE"
+        assert bb.current_behavior.behavior_name == "come_to_owner"
+        assert (
+            bb.current_behavior.params.get("trigger_event")
+            == "EVT_VOICE_COMMAND_COME"
+        )
 
 
 # ── check_person Integration Tests ───────────────────────────────────────────
@@ -121,7 +254,7 @@ class TestCheckPersonIntegration:
         # Set person present
         bb.perception_client.set_person_present(True, identity="owner")
 
-        # Inject express_happy (no voice command, so check_person runs at exec)
+        # Inject express_happy, so check_person runs at execution time.
         provider.inject_happy_overflow(85)
         candidate = provider.select()
         bb.set_active_behavior(candidate)
@@ -148,46 +281,49 @@ class TestCheckPersonIntegration:
         # Solo mode (no person)
         assert bb.current_behavior.params.get("interactive") is False
 
-    def test_voice_command_emotional_preserves_source(self, runtime):
-        root, bb, executor, provider, loader = runtime
-        # Voice command already sets source="audio_command",
-        # so check_person should NOT override interactive mode
-        bb.perception_client.set_no_person()  # no person, but...
-
-        provider.inject_audio_command("CMD_PRAISE")
-        candidate = provider.select()
-        bb.set_active_behavior(candidate)
-
-        _tick(root, bb, 1)
-        assert bb.current_behavior is not None
-        # Voice command implies person, so even though check_person says no,
-        # the source="audio_command" flag prevents override
-        assert bb.current_behavior.params.get("source") == "audio_command"
-
     def test_need_behavior_does_not_check_person(self, runtime):
         root, bb, executor, provider, loader = runtime
         # Need behaviors should NOT call check_person
         bb.perception_client.set_person_present(True)
+        bb.perception_client.set_objects([
+            {"label": "dog food can", "confidence": 0.9},
+        ])
 
         provider.inject_hunger(85)
         candidate = provider.select()
         bb.set_active_behavior(candidate)
 
         _tick(root, bb, 1)
-        assert bb.current_behavior.behavior_name == "seek_food_or_water"
-        # Need behavior should not have interactive param
-        assert "interactive" not in bb.current_behavior.params
+        assert bb.current_behavior.behavior_name == "eatNormally"
+        # Hunger visual routing is object-based, not person-based.
+        assert bb.current_behavior.params.get("interactive") is False
+        assert bb.current_behavior.params["visual_route"] == "dog_food"
 
 
-# ── COMMAND_BEHAVIOR_MAP Validation ──────────────────────────────────────────
+# ── VOICE_EVENT_BEHAVIOR_MAP Validation ──────────────────────────────────────
 
-class TestCommandMap:
-    """Verify command mapping coverage."""
+class TestVoiceEventMap:
+    """Verify voice event mapping coverage."""
 
-    def test_expected_commands_mapped(self):
+    def test_expected_events_mapped(self):
         expected = {
-            "CMD_SIT", "CMD_COME_HERE", "CMD_HAND", "CMD_FIVE",
-            "CMD_FOLLOW", "CMD_STOP", "CMD_PRAISE", "CMD_COMFORT", "CMD_ENCOUR",
+            "EVT_VOICE_CALL_NAME",
+            "EVT_VOICE_COMMAND_SIT",
+            "EVT_VOICE_COMMAND_LIE_DOWN",
+            "EVT_VOICE_COMMAND_STAND_UP",
+            "EVT_VOICE_COMMAND_WAIT",
+            "EVT_VOICE_COMMAND_COME",
+            "EVT_VOICE_COMMAND_FOLLOW",
+            "EVT_VOICE_COMMAND_SHAKE_HAND",
+            "EVT_VOICE_COMMAND_HIGH_FIVE",
+            "EVT_VOICE_COMMAND_ROLL_OVER",
+            "EVT_VOICE_COMMAND_SPIN",
+            "EVT_VOICE_COMMAND_RETURN",
+            "EVT_VOICE_COMMAND_DROP",
+            "EVT_VOICE_COMMAND_PLAY_DEAD",
+            "EVT_VOICE_COMMAND_BRING",
+            "EVT_VOICE_COMMAND_FETCH",
+            "EVT_VOICE_COMMAND_STOP",
         }
-        mapped = set(COMMAND_BEHAVIOR_MAP.keys())
+        mapped = set(VOICE_EVENT_BEHAVIOR_MAP)
         assert expected == mapped, f"Missing: {expected - mapped}, Extra: {mapped - expected}"

@@ -21,9 +21,14 @@ _log = get_logger("result_mapper")
 # BT internal status → result_type mapping
 _RESULT_TYPE_MAP = {
     "SUCCESS":  "COMPLETED",
+    "SUCCEEDED": "COMPLETED",
+    "COMPLETED": "COMPLETED",
     "FAILURE":  "FAILED",
+    "FAILED":   "FAILED",
     "TIMEOUT":  "TIMEOUT",
     "CANCELED": "INTERRUPTED",
+    "CANCELLED": "INTERRUPTED",
+    "INTERRUPTED": "INTERRUPTED",
 }
 
 
@@ -59,14 +64,34 @@ class ResultEventMapper:
         self._last_published_event_id = event_id
         return payload
 
-    def build_result_event(self, behavior_name: str, status: str) -> Optional[str]:
-        """Build a result event JSON payload. Returns None if not a demand behavior."""
+    def build_result_event(self, behavior_name: str, status: str,
+                           metadata: dict | None = None) -> Optional[str]:
+        """Build a result event JSON payload. Returns None if not a demand behavior.
+
+        Dynamic *metadata* from the executor (e.g. ``energyValue`` after
+        recharge) is deep-merged over the static defaults from
+        ``BEHAVIOR_ACTION_MAP``.
+        """
         mapping = BEHAVIOR_ACTION_MAP.get(behavior_name)
         if mapping is None:
             return None
 
         action_type, demand_type, default_metadata = mapping
-        result_type = _RESULT_TYPE_MAP.get(status, "FAILED")
+        result_type = _RESULT_TYPE_MAP.get(str(status).upper(), "FAILED")
+
+        merged_metadata = dict(default_metadata)
+        if metadata:
+            merged_metadata.update(metadata)
+
+        # The internal-need contract treats energyValue as actual battery
+        # percentage.  Older executors may omit it or use one of the legacy
+        # aliases.  Canonicalise it here so every successful recharge emits
+        # one deterministic settlement event.
+        if action_type == "ACTION_RECHARGE" and result_type == "COMPLETED":
+            energy_value = _energy_value_from(merged_metadata)
+            merged_metadata.pop("energy_value", None)
+            merged_metadata.pop("batteryValue", None)
+            merged_metadata["energyValue"] = energy_value
 
         event_id = f"result-{self._seq:06d}"
         self._seq += 1
@@ -77,7 +102,7 @@ class ResultEventMapper:
             "action_type": action_type,
             "demand_type": demand_type,
             "result_type": result_type,
-            "metadata": dict(default_metadata),
+            "metadata": merged_metadata,
         })
         self._last_published_event_id = event_id
 
@@ -92,3 +117,17 @@ class ResultEventMapper:
 def should_publish_result(behavior_name: str) -> bool:
     """Check if a behavior should generate /behavior/result_event messages."""
     return behavior_name in BEHAVIOR_ACTION_MAP
+
+
+def _energy_value_from(metadata: dict) -> float | int:
+    """Return a clamped actual battery percentage; default is fully charged."""
+    value = metadata.get(
+        "energyValue",
+        metadata.get("energy_value", metadata.get("batteryValue", 100)),
+    )
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        number = 100.0
+    number = min(100.0, max(0.0, number))
+    return int(number) if number.is_integer() else number

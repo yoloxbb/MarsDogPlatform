@@ -59,7 +59,6 @@ class LogEvent(str, Enum):
     EMOTION_SIGNAL = "emotion_signal"
     NEED_STATE = "need_state"
     NEED_SIGNAL = "need_signal"
-    EMOTION_OVERFLOW = "emotion_overflow"
 
     # System
     TREE_TICK = "tree_tick"

@@ -104,7 +104,10 @@ class MockActionExecutor:
 
         Resolves legacy aliases before looking up action sequences.
         """
-        behavior_name = active_behavior.behavior_name
+        behavior_name = str(
+            active_behavior.params.get("executor_behavior_name")
+            or active_behavior.behavior_name
+        )
         # Resolve legacy alias if new semantic name
         behavior_name = self._resolve_legacy(behavior_name)
 
@@ -161,6 +164,7 @@ class MockActionExecutor:
 
             if goal.current_step >= goal.total_steps:
                 goal.status = STATUS_SUCCESS
+                result_metadata = self._build_result_metadata(goal)
                 self._completed[goal.goal_id] = BehaviorFeedbackEvent(
                     behavior_id=goal.behavior.behavior_id,
                     behavior_name=goal.behavior.behavior_name,
@@ -170,6 +174,7 @@ class MockActionExecutor:
                     reward=1.0,
                     emotion_delta={"satisfaction": 0.1},
                     need_delta={goal.behavior.need_type: -0.5},
+                    metadata=result_metadata,
                     timestamp=now,
                 )
 
@@ -215,19 +220,55 @@ class MockActionExecutor:
         return goal_id in self._goals
 
     @staticmethod
+    def _build_result_metadata(goal: MockGoal) -> dict:
+        """Build executor-reported dynamic metadata for a completed goal.
+
+        For recharge behaviors the metadata carries the simulated battery
+        level so the need system can calculate remaining Energy.
+        """
+        behavior_name = goal.behavior.behavior_name
+        params = goal.behavior.params or {}
+
+        # Behaviors whose action_type is ACTION_RECHARGE report energyValue.
+        if behavior_name in ("restInPlace", "recharge"):
+            recovery_mode = params.get("recoveryMode", "passive")
+            if recovery_mode == "charging":
+                energy_value = 88  # simulate a deep recharge
+            else:
+                energy_value = 55  # simulate a partial rest
+            return {"energyValue": energy_value}
+
+        return {}
+
+    @staticmethod
     def _resolve_legacy(behavior_name: str) -> str:
         """Resolve new semantic behavior names to legacy catalog entries."""
         _alias_map = {
             # Emotion behaviors → old config/catalog names
             "expressCalm": "express_happy",
+            "expressCalmWithHuman": "express_happy",
+            "expressCalmAlone": "express_happy",
             "expressJoy": "express_happy",
+            "expressJoyWithHuman": "express_happy",
+            "expressJoyAlone": "express_happy",
             "expressExcitement": "express_happy",
+            "expressExcitementWithHuman": "express_happy",
+            "expressExcitementAlone": "express_happy",
             "expressAnxiety": "express_fear",
+            "expressAnxietyWithHuman": "express_fear",
+            "expressAnxietyAlone": "express_fear",
             "expressFear": "express_fear",
+            "expressFearWithHuman": "express_fear",
+            "expressFearAlone": "express_fear",
             "expressCuriosity": "express_curiosity",
+            "expressCuriosityWithHuman": "express_curiosity",
+            "expressCuriosityAlone": "express_curiosity",
+            "spinOnce": "spinInCircle",
             # Need behaviors → old names
             "eatNormally": "seek_food_or_water",
-            "eatExcitedly": "seek_food_or_water",
+            "eatExcitedly": "seek_food_or_water_urgent",
+            "seekFood": "seek_food_or_water",
+            "seekFoodUrgently": "seek_food_or_water",
             "defecate": "excretion_request",
             "sleepNow": "sleep_request",
             "cleanSelf": "clean_self",
@@ -243,5 +284,11 @@ class MockActionExecutor:
             "exploreRoom": "explore_environment",
             "inspectObject": "explore_environment",
             "inspectKnownObject": "explore_environment",
+            "inspectFamiliarPlayItem": "explore_environment",
+            "inspectTrashCan": "explore_environment",
+            "inspectDeliveryBox": "explore_environment",
+            "inspectTissuePaper": "explore_environment",
+            "inspectDoor": "explore_environment",
+            "inspectDogFood": "explore_environment",
         }
         return _alias_map.get(behavior_name, behavior_name)

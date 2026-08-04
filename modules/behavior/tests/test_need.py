@@ -1,4 +1,4 @@
-"""Tests: need module, trigger/overflow levels, and need relevance checking."""
+"""Tests: internal need V2 levels and relevance."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from bionic_dog_bt.behavior_tree_node import Status
 from bionic_dog_bt.constants import (
     NEED_LEVEL_NORMAL,
     NEED_LEVEL_TRIGGERED,
+    NEED_LEVEL_URGENT,
     NEED_LEVEL_OVERFLOW,
     NEED_BEHAVIOR_MAP,
     STATUS_RUNNING,
@@ -65,18 +66,57 @@ class TestNeedModule:
         assert need_module.is_overflowing("Hunger")
         assert need_module.is_triggered("Hunger")  # overflow implies triggered
 
-    def test_energy_inverted(self, need_module):
-        """Energy uses 'lt' operator: low value = triggered."""
-        need_module.set_need("Energy", 50)
+    def test_energy_is_battery_deficit(self, need_module):
+        """Energy V2 is demand intensity, not remaining battery."""
+        need_module.set_need("Energy", 80)
         assert need_module.get_level("Energy") == NEED_LEVEL_NORMAL
 
-        need_module.set_need("Energy", 15)  # < 20 = TRIGGERED
+        need_module.set_need("Energy", 81)
         assert need_module.get_level("Energy") == NEED_LEVEL_TRIGGERED
         assert need_module.is_triggered("Energy")
 
-        need_module.set_need("Energy", 5)  # < 10 = OVERFLOW
+        need_module.set_need("Energy", 91)
         assert need_module.get_level("Energy") == NEED_LEVEL_OVERFLOW
         assert need_module.is_overflowing("Energy")
+
+    @pytest.mark.parametrize(
+        ("demand", "normal_value", "triggered_value"),
+        [
+            ("Bladder", 75, 100),
+            ("Cleanliness", 70, 100),
+            ("Exploration", 60, 100),
+        ],
+    )
+    def test_demands_without_overflow_stay_triggered_at_100(
+        self,
+        need_module,
+        demand,
+        normal_value,
+        triggered_value,
+    ):
+        need_module.set_need(demand, normal_value)
+        assert need_module.get_level(demand) == NEED_LEVEL_NORMAL
+        need_module.set_need(demand, triggered_value)
+        assert need_module.get_level(demand) == NEED_LEVEL_TRIGGERED
+        assert not need_module.is_overflowing(demand)
+
+    def test_social_has_urgent_level(self, need_module):
+        expected = [
+            (60, NEED_LEVEL_NORMAL),
+            (61, NEED_LEVEL_TRIGGERED),
+            (70, NEED_LEVEL_TRIGGERED),
+            (71, NEED_LEVEL_URGENT),
+            (85, NEED_LEVEL_URGENT),
+            (86, NEED_LEVEL_OVERFLOW),
+        ]
+        for value, level in expected:
+            need_module.set_need("Social", value)
+            assert need_module.get_level("Social") == level
+
+        state = need_module.get_need("Social")
+        assert state.triggered is True
+        assert state.urgent is True
+        assert state.overflow is True
 
     def test_set_need_returns_new_level(self, need_module):
         result = need_module.set_need("Hunger", 75)  # NORMAL → TRIGGERED
@@ -89,10 +129,10 @@ class TestNeedModule:
         need_module.set_need("Hunger", 80)
         need_module.set_need("Bladder", 95)
         need_module.set_need("Social", 70)
-        need_module.set_need("Energy", 15)
+        need_module.set_need("Energy", 81)
 
         assert need_module.get_level("Hunger") == NEED_LEVEL_TRIGGERED
-        assert need_module.get_level("Bladder") == NEED_LEVEL_OVERFLOW
+        assert need_module.get_level("Bladder") == NEED_LEVEL_TRIGGERED
         assert need_module.get_level("Social") == NEED_LEVEL_TRIGGERED
         assert need_module.get_level("Energy") == NEED_LEVEL_TRIGGERED
 
@@ -127,13 +167,28 @@ class TestNeedRelevance:
 
     def test_hunger_behavior_fails_when_recovered(self, runtime):
         root, bb, executor, provider, loader = runtime
-        bb.need_module.set_need("Hunger", 50)  # NORMAL (below trigger=70)
-        provider.inject_hunger(50)
+        provider.inject_hunger(71)
         candidate = provider.select()
+        bb.need_module.set_need("Hunger", 50)
         bb.set_active_behavior(candidate)
 
         cond = BehaviorRelevanceCondition("test", bb)
         assert cond.update() == Status.FAILURE
+
+    def test_need_candidate_stays_relevant_across_active_levels(self, runtime):
+        root, bb, executor, provider, loader = runtime
+        bb.perception_client.set_person_present(True, identity="owner")
+        provider.inject_social_need(61)
+        candidate = provider.select()
+        assert candidate.behavior_name == "seekHumanInteraction"
+
+        # V2 relevance only checks the first trigger line. Moving to URGENT
+        # selects a different edge behavior but does not mean the need recovered.
+        bb.need_module.set_need("Social", 71)
+        bb.set_active_behavior(candidate)
+
+        cond = BehaviorRelevanceCondition("test", bb)
+        assert cond.update() == Status.SUCCESS
 
     def test_bladder_behavior_checks_correctly(self, runtime):
         root, bb, executor, provider, loader = runtime
@@ -163,41 +218,38 @@ class TestNeedRelevance:
 class TestNeedEmotionIntegration:
     """Scenarios with both needs and emotions."""
 
-    def test_excretion_then_happy_with_need_decay(self, runtime):
-        """Core scenario: Bladder overflow + Joy overflow simultaneously.
-        Excretion (Lv1) runs first. If Bladder is satisfied during excretion,
+    def test_bladder_then_joy_recovery(self, runtime):
+        """Core scenario: Bladder trigger + Joy trigger simultaneously.
+        Bladder response (Lv2) runs first. If Bladder is satisfied during it,
         BehaviorRelevanceCondition should still allow it (it already started).
-        Joy decays, express_happy should be skipped at Lv5.
+        A Joy recovery state invalidates the pending Lv5 behavior.
         """
         root, bb, executor, provider, loader = runtime
 
         # Simulate receiving both states
-        provider.inject_excretion(95)   # Bladder OVERFLOW
-        provider.inject_happy_overflow(85)  # Joy OVERFLOW
+        provider.inject_excretion(100)
+        provider.inject_joy_trigger(30)
 
         candidate = provider.select()
-        assert candidate.behavior_name == "excretion_request"  # Lv1 > Lv5
+        assert candidate.behavior_name == "barkShortAlert"
         bb.set_active_behavior(candidate)
         _tick(root, bb, 1)
-        assert bb.current_behavior.behavior_name == "excretion_request"
+        assert bb.current_behavior.behavior_name == "barkShortAlert"
 
-        # Fast Joy decay during excretion (upstream /emotion node)
-        joy_state = bb.emotion_module.get_emotion("Joy")
-        joy_state.decay_rate = 500.0
-        time.sleep(0.05)
-        bb.tick_emotions()  # simulate upstream /emotion node processing
+        # /emotion/state reports recovery while the need behavior is running.
+        bb.emotion_module.update_state("Joy", 29.0, False)
         _tick(root, bb, 1)
 
-        current_joy = bb.emotion_module.get_value("Joy")
-        assert current_joy < 70.0, f"Joy decayed to {current_joy}"
-
-        # After excretion completes (let it run), a new tick with Joy below
-        # threshold should NOT start express_happy
         from bionic_dog_bt.datatypes import ActiveBehavior
         happy_candidate = ActiveBehavior(
-            behavior_id="test_joy", behavior_name="express_happy",
-            priority_level=5, value=current_joy, confidence=0.8,
-            need_type="emotional", timeout_sec=5.0,
+            behavior_id="test_joy",
+            behavior_name="expressJoy",
+            priority_level=5,
+            value=29.0,
+            confidence=0.8,
+            need_type="emotional",
+            timeout_sec=5.0,
+            params={"source_emotion": "Joy"},
         )
         bb.set_active_behavior(happy_candidate)
         cond = BehaviorRelevanceCondition("test", bb)
@@ -211,15 +263,18 @@ class TestNeedBehaviorMap:
 
     def test_all_need_behaviors_mapped(self):
         expected = {
-            "seek_food_or_water",
-            "excretion_request",
-            "sleep_request",
-            "clean_self",
-            "seek_social_interaction",
-            "explore_environment",
+            "eatNormally", "eatExcitedly", "seekFood", "seekFoodUrgently",
+            "barkShortAlert",
+            "sleepOnSide", "sleepNow",
+            "lickPaws",
+            "restInPlace", "recharge",
+            "seekHumanInteraction", "seekInteraction", "inviteHumanToPlay",
+            "testAnimalBoundary", "greetAnimal", "inviteAnimalToPlay",
+            "exploreRoom", "inspectObject",
+            "inspectFamiliarPlayItem", "inspectTrashCan",
+            "inspectDeliveryBox", "inspectTissuePaper",
+            "inspectDoor", "inspectDogFood",
         }
         mapped = set(NEED_BEHAVIOR_MAP.keys())
         missing = expected - mapped
-        extra = mapped - expected
         assert not missing, f"Missing need mappings: {missing}"
-        assert not extra, f"Extra need mappings: {extra}"

@@ -20,6 +20,9 @@ from bionic_dog_bt.constants import (
 def runtime():
     config_path = str(Path(__file__).parent.parent / "config" / "behaviors.yaml")
     root, bb, executor, provider, loader = create_runtime(config_path=config_path)
+    bb.perception_client.set_objects([
+        {"label": "dog food can", "confidence": 0.9},
+    ])
     return root, bb, executor, provider, loader
 
 
@@ -40,11 +43,11 @@ class TestSafePoint:
         """When safe_to_interrupt is false, higher priority can't preempt."""
         root, bb, executor, provider, loader = runtime
 
-        # seek_food_or_water has interrupt_policy=safe_point
+        # eatNormally has interrupt_policy=safe_point
         # action_sequence step 2 (approach_resource) has safe_to_interrupt=false
         bb.set_active_behavior(provider.inject_hunger(85))
         _tick(root, bb, 1)
-        assert bb.current_behavior.behavior_name == "seek_food_or_water"
+        assert bb.current_behavior.behavior_name == "eatNormally"
 
         # Ensure we're in a non-safe step. Step 0 (locate_resource, 2s, safe=true)
         # After a short time, we should still be in step 0
@@ -68,13 +71,13 @@ class TestSafePoint:
             _tick(root, bb, 1)
             # Should NOT preempt because safe_to_interrupt is false
             assert not bb.preemption_occurred
-            assert bb.current_behavior.behavior_name == "seek_food_or_water"
+            assert bb.current_behavior.behavior_name == "eatNormally"
 
     def test_safe_point_allows_when_safe(self, runtime):
         """When safe_to_interrupt is true, higher priority can preempt."""
         root, bb, executor, provider, loader = runtime
 
-        # Start seek_food_or_water (safe_point)
+        # Start eatNormally (safe_point)
         bb.set_active_behavior(provider.inject_hunger(85))
         _tick(root, bb, 1)
 

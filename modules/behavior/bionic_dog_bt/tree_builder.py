@@ -38,8 +38,8 @@ def build_tree(
     └── Lv6_Idle → Sequence[ActiveLevelCondition(6), BehaviorRelevanceCondition, ExecuteActiveBehavior]
 
     BehaviorRelevanceCondition gates emotion-triggered behaviors:
-    if the source emotion has decayed below its overflow threshold, the
-    condition fails, and the selector moves to the next priority level.
+    if V2 state reports ``triggered=false`` for the source emotion, the
+    condition fails and discards the queued behavior.
     """
     root = Selector("Root", memory=False)
 

@@ -36,7 +36,7 @@ class InteractionResolver:
                             need_type: str) -> dict:
         """Resolve whether the behavior should run in interactive or solo mode.
 
-        Only applies to emotion-triggered behaviors. Voice commands
+        Only applies to emotion-triggered behaviors. Direct audio events
         already have their source set and shouldn't be overridden.
 
         Args:
@@ -50,8 +50,8 @@ class InteractionResolver:
         if need_type != "emotional":
             return params
 
-        # Voice commands already have source=audio_command → don't override
-        if "source" in params:
+        # Direct audio events already carry their interaction context.
+        if params.get("source") == "audio_direct":
             return params
 
         person = self.check_person()

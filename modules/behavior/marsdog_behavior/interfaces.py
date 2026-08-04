@@ -123,7 +123,7 @@ class BehaviorFeedback:
     behavior_name: str
     status: str = "SUCCESS"
     result: str = "completed"
-    source_event: str = ""          # trigger_event from signal (e.g. "EMO_JOY_HIGH", "NEED_HUNGER_TRIGGERED", "CMD_SIT")
+    source_event: str = ""          # e.g. "EMO_JOY_TRIGGERED", "NEED_HUNGER_TRIGGERED", "EVT_VOICE_COMMAND_SIT"
     reason: str = ""
     reward: float = 0.0
     emotion_delta_json: str = "{}"

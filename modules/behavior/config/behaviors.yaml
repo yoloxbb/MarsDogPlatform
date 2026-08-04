@@ -410,3 +410,273 @@ behaviors:
         duration: 10.0
         safe_to_interrupt: true
     style_modifiers: {}
+
+  # ── Lv1: Voice Commands (语音指令对应的独立动作) ─────────────────────────────
+
+  sit_down:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: posture
+        action: sit
+        duration: 2.0
+        safe_to_interrupt: true
+      - node: head_tail_ear
+        action: look_at_target
+        duration: 0.5
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  lie_down:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: posture
+        action: lie_down
+        duration: 2.0
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  stand_up:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: posture
+        action: stand
+        duration: 1.5
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  wait_in_place:
+    priority_level: 1
+    base_priority: 75
+    interrupt_policy: safe_point
+    timeout_sec: 30.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: posture
+        action: sit_still
+        duration: 10.0
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  come_to_owner:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 12.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: perception
+        action: locate_owner
+        duration: 0.5
+        safe_to_interrupt: true
+      - node: navigation
+        action: approach_target
+        duration: 2.0
+        safe_to_interrupt: false
+      - node: posture
+        action: sit
+        duration: 1.0
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  follow_owner:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: safe_point
+    timeout_sec: 30.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: perception
+        action: locate_owner
+        duration: 0.5
+        safe_to_interrupt: true
+      - node: navigation
+        action: follow_target
+        duration: 15.0
+        safe_to_interrupt: false
+    style_modifiers: {}
+
+  give_paw:
+    priority_level: 1
+    base_priority: 75
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: posture
+        action: lift_paw
+        duration: 2.0
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  high_five:
+    priority_level: 1
+    base_priority: 75
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: posture
+        action: lift_paw_high
+        duration: 2.0
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  roll_over:
+    priority_level: 1
+    base_priority: 70
+    interrupt_policy: safe_point
+    timeout_sec: 6.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: full_body
+        action: roll_over
+        duration: 3.0
+        safe_to_interrupt: false
+    style_modifiers: {}
+
+  spin_around:
+    priority_level: 1
+    base_priority: 70
+    interrupt_policy: immediate
+    timeout_sec: 6.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: full_body
+        action: spin
+        duration: 2.0
+        safe_to_interrupt: false
+    style_modifiers: {}
+
+  go_back:
+    priority_level: 1
+    base_priority: 70
+    interrupt_policy: immediate
+    timeout_sec: 6.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: navigation
+        action: move_backward
+        duration: 2.0
+        safe_to_interrupt: false
+    style_modifiers: {}
+
+  return_to_owner:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 12.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: perception
+        action: locate_owner
+        duration: 0.5
+        safe_to_interrupt: true
+      - node: navigation
+        action: return_to_owner
+        duration: 3.0
+        safe_to_interrupt: false
+      - node: posture
+        action: sit
+        duration: 1.0
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  drop_object:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 3.0
+    cooldown_sec: 0.5
+    action_sequence:
+      - node: full_body
+        action: drop
+        duration: 1.0
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  play_dead:
+    priority_level: 1
+    base_priority: 70
+    interrupt_policy: safe_point
+    timeout_sec: 8.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: posture
+        action: lie_side
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: full_body
+        action: stay_still
+        duration: 4.0
+        safe_to_interrupt: false
+    style_modifiers: {}
+
+  bring_object:
+    priority_level: 1
+    base_priority: 70
+    interrupt_policy: immediate
+    timeout_sec: 20.0
+    cooldown_sec: 1.0
+    action_sequence:
+      - node: perception
+        action: locate_object
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: navigation
+        action: approach_object
+        duration: 2.0
+        safe_to_interrupt: false
+      - node: full_body
+        action: grab
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: navigation
+        action: return_to_owner
+        duration: 3.0
+        safe_to_interrupt: false
+      - node: full_body
+        action: release
+        duration: 1.0
+        safe_to_interrupt: true
+    style_modifiers: {}
+
+  fetch_object:
+    priority_level: 1
+    base_priority: 70
+    interrupt_policy: immediate
+    timeout_sec: 30.0
+    cooldown_sec: 2.0
+    action_sequence:
+      - node: perception
+        action: scan_for_object
+        duration: 1.5
+        safe_to_interrupt: true
+      - node: navigation
+        action: approach_object
+        duration: 3.0
+        safe_to_interrupt: false
+      - node: full_body
+        action: grab
+        duration: 1.0
+        safe_to_interrupt: true
+      - node: navigation
+        action: return_to_owner
+        duration: 3.0
+        safe_to_interrupt: false
+      - node: full_body
+        action: release
+        duration: 1.0
+        safe_to_interrupt: true
+    style_modifiers: {}

@@ -15,83 +15,86 @@ audio_direct:
     params:
       use_wake_angle: true
 
-  EVT_VOICE_COMMAND_KNOWN:
-    command_map:
-      CMD_SIT:
-        category: external_interaction
-        intent: command_sit
-        sub_priority: 1
-
-      CMD_COME_HERE:
-        category: external_interaction
-        intent: command_come_here
-        sub_priority: 1
-
-      CMD_FOLLOW:
-        category: external_interaction
-        intent: command_follow
-        sub_priority: 1
-
-      CMD_HAND:
-        category: external_interaction
-        intent: command_handshake
-        sub_priority: 1
-
-      CMD_FIVE:
-        category: external_interaction
-        intent: command_high_five
-        sub_priority: 1
-
-      CMD_ROLL:
-        category: external_interaction
-        intent: command_roll
-        sub_priority: 1
-
-      CMD_SPIN:
-        category: external_interaction
-        intent: command_spin
-        sub_priority: 1
-
-      CMD_BACK:
-        category: external_interaction
-        intent: command_retrieve
-        sub_priority: 1
-
-      CMD_SPIT:
-        category: safety
-        intent: command_spit_out
-        sub_priority: 1
-
-      CMD_DEAD:
-        category: external_interaction
-        intent: command_play_dead
-        sub_priority: 1
-
-      CMD_STOP:
-        category: safety
-        intent: emergency_stop
-        sub_priority: 1
-
-      CMD_PRAISE:
-        category: emotion_expression
-        intent: express_joy
-        sub_priority: 1
-
-      CMD_ENCOUR:
-        category: emotion_expression
-        intent: express_joy
-        sub_priority: 1
-
-      CMD_COMFORT:
-        category: external_interaction
-        intent: comfort_owner
-        sub_priority: 1
-
-  EVT_VOICE_COMMAND_UNKNOWN:
+  # ── Exact event_type mappings (EVT_VOICE_COMMAND_<ACTION>) ───────────
+  EVT_VOICE_COMMAND_SIT:
     category: external_interaction
-    intent: confused_response
+    intent: command_sit
     sub_priority: 1
-    enabled: false
+
+  EVT_VOICE_COMMAND_LIE_DOWN:
+    category: external_interaction
+    intent: command_lie_down
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_STAND_UP:
+    category: external_interaction
+    intent: command_stand_up
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_WAIT:
+    category: external_interaction
+    intent: command_wait
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_COME:
+    category: external_interaction
+    intent: command_come_here
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_SHAKE_HAND:
+    category: external_interaction
+    intent: command_handshake
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_HIGH_FIVE:
+    category: external_interaction
+    intent: command_high_five
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_FOLLOW:
+    category: external_interaction
+    intent: command_follow
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_ROLL_OVER:
+    category: external_interaction
+    intent: command_roll
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_SPIN:
+    category: external_interaction
+    intent: command_spin
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_RETURN:
+    category: external_interaction
+    intent: command_retrieve
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_DROP:
+    category: external_interaction
+    intent: command_spit_out
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_PLAY_DEAD:
+    category: external_interaction
+    intent: command_play_dead
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_BRING:
+    category: external_interaction
+    intent: command_bring
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_FETCH:
+    category: external_interaction
+    intent: command_fetch
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_STOP:
+    category: safety
+    intent: emergency_stop
+    sub_priority: 1
 
 # ═══════════════════════════════════════════════════════════════════════════
 # need — 需求等级变化事件 → category + intent
@@ -100,29 +103,43 @@ audio_direct:
 need:
   NEED_HUNGER_TRIGGERED:
     category: normal_physiology
-    intent: eat_normal
-    behavior_name: eatNormally
+    visual_required: hunger_food_context
+    routes:
+      dog_food:
+        intent: eat_normal
+        behavior_name: eatNormally
+        variant: food_visible
+      no_dog_food:
+        intent: seek_food
+        behavior_name: seekFood
+        variant: food_search
 
   NEED_HUNGER_OVERFLOW:
     category: normal_physiology
-    intent: eat_excited
-    behavior_name: eatExcitedly
+    visual_required: hunger_food_context
+    routes:
+      dog_food:
+        intent: eat_excited
+        behavior_name: eatExcitedly
+        variant: food_visible_urgent
+      no_dog_food:
+        intent: seek_food_urgent
+        behavior_name: seekFoodUrgently
+        variant: food_search_urgent
+        params:
+          executor_behavior_name: seekFood
 
   NEED_BLADDER_TRIGGERED:
     category: urgent_physiology
-    intent: eliminate
-    behavior_name: defecate
-
-  NEED_BLADDER_OVERFLOW:
-    category: urgent_physiology
-    intent: eliminate
-    behavior_name: defecate
+    intent: request_elimination
+    behavior_name: barkShortAlert
+    variant: request
 
   NEED_SLEEPINESS_TRIGGERED:
     category: urgent_physiology
-    intent: sleep_shallow
-    behavior_name: sleepNow
-    variant: shallow
+    intent: settle_to_sleep
+    behavior_name: sleepOnSide
+    variant: light
 
   NEED_SLEEPINESS_OVERFLOW:
     category: urgent_physiology
@@ -132,65 +149,128 @@ need:
 
   NEED_CLEANLINESS_TRIGGERED:
     category: normal_physiology
-    intent: self_groom
-    behavior_name: cleanSelf
+    intent: groom_light
+    behavior_name: lickPaws
+    variant: light
 
   NEED_ENERGY_TRIGGERED:
     category: safety
     intent: recover_energy
     behavior_name: restInPlace
     variant: low_energy
+    # restInPlace is also routed through Nav2 to charging waypoint B.
+    # Keep its tree-side deadline above Nav2's default 300 s timeout.
+    timeout_sec: 330.0
 
   NEED_ENERGY_OVERFLOW:
     category: safety
     intent: recharge_critical
     behavior_name: recharge
     variant: critical
+    # Covers Nav2's default 300 s route timeout plus the recharge stage.
+    timeout_sec: 330.0
 
   NEED_SOCIAL_TRIGGERED:
     category: psychological_need
-    intent: social_seek
-    # Fine-grained intent resolved by state_event_refiner.py
+    visual_required: social_target
+    sub_priority: 2
+    routes:
+      human:
+        intent: human_attention_interaction
+        behavior_name: seekHumanInteraction
+        variant: human_seek
+      animal:
+        intent: animal_boundary_test
+        behavior_name: testAnimalBoundary
+        variant: animal_boundary
+
+  NEED_SOCIAL_URGENT:
+    category: psychological_need
+    visual_required: social_target
+    sub_priority: 1
+    routes:
+      human:
+        intent: social_engage
+        behavior_name: seekInteraction
+        variant: human_engage
+      animal:
+        intent: animal_social_greet
+        behavior_name: greetAnimal
+        variant: animal_greet
 
   NEED_SOCIAL_OVERFLOW:
     category: psychological_need
-    intent: social_seek
-    # Fine-grained intent resolved by state_event_refiner.py
+    visual_required: social_target
+    sub_priority: 0
+    routes:
+      human:
+        intent: human_play_invite
+        behavior_name: inviteHumanToPlay
+        variant: human_play
+      animal:
+        intent: animal_play_invite
+        behavior_name: inviteAnimalToPlay
+        variant: animal_play
 
   NEED_EXPLORATION_TRIGGERED:
     category: psychological_need
-    intent: explore_space
-    behavior_name: exploreRoom
+    visual_required: exploration_context
+    routes:
+      play_item:
+        intent: inspect_familiar_play_item
+        behavior_name: inspectFamiliarPlayItem
+        variant: play_item
+        params: &known_object_executor
+          executor_behavior_name: inspectKnownObject
+      trash_can:
+        intent: inspect_trash_can
+        behavior_name: inspectTrashCan
+        variant: trash_can
+        params: *known_object_executor
+      delivery_box:
+        intent: inspect_delivery_box
+        behavior_name: inspectDeliveryBox
+        variant: delivery_box
+        params: *known_object_executor
+      tissue:
+        intent: inspect_tissue
+        behavior_name: inspectTissuePaper
+        variant: tissue
+        params: *known_object_executor
+      door:
+        intent: inspect_door
+        behavior_name: inspectDoor
+        variant: door
+        params: *known_object_executor
+      dog_food:
+        intent: inspect_dog_food
+        behavior_name: inspectDogFood
+        variant: dog_food
+        params: *known_object_executor
+      unfamiliar_object:
+        intent: inspect_generic_object
+        behavior_name: inspectObject
+        variant: unfamiliar
+      empty:
+        intent: explore_space
+        behavior_name: exploreRoom
+        variant: room
 
 # ═══════════════════════════════════════════════════════════════════════════
-# emotion — 情绪区间变化事件 → 6个正式语义行为
+# emotion — 情绪 V2 单阈值上升沿事件
 # 由 config/emotion_behavior_map.yaml 提供完整映射
 # ═══════════════════════════════════════════════════════════════════════════
 
 emotion:
-  EMO_JOY_LOW:
+  EMO_JOY_TRIGGERED:
     category: emotion_expression
-  EMO_JOY_MID:
+  EMO_EXCITE_TRIGGERED:
     category: emotion_expression
-  EMO_JOY_HIGH:
+  EMO_ANXIETY_TRIGGERED:
     category: emotion_expression
-  EMO_EXCITE_LOW:
+  EMO_FEAR_TRIGGERED:
     category: emotion_expression
-  EMO_EXCITE_HIGH:
+  EMO_CURIOUS_TRIGGERED:
     category: emotion_expression
-  EMO_ANXIETY_LOW:
-    category: emotion_expression
-  EMO_ANXIETY_HIGH:
-    category: emotion_expression
-  EMO_FEAR_LOW:
-    category: emotion_expression
-  EMO_FEAR_HIGH:
-    category: emotion_expression
-  EMO_CURIOUS_LOW:
-    category: emotion_expression
-  EMO_CURIOUS_HIGH:
-    category: emotion_expression
-  EMO_CALM_NORMAL:
-    category: emotion_expression
-  EMO_CALM_HIGH:
+  EMO_CALM_TRIGGERED:
     category: emotion_expression

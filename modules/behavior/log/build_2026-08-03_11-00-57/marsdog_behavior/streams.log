@@ -1,0 +1,16 @@
+[1.350s] Invoking command in '/home/cat/xbb/20260702_MarsDogTree/build/marsdog_behavior': PYTHONPATH=/home/cat/xbb/20260702_MarsDogTree/build/marsdog_behavior/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/cat/xbb/20260702_MarsDogTree/install/marsdog_behavior/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /home/cat/xbb/20260702_MarsDogTree/build/marsdog_behavior/build --no-deps symlink_data
+[1.675s] running develop
+[1.864s] running egg_info
+[1.864s] writing marsdog_behavior.egg-info/PKG-INFO
+[1.864s] writing dependency_links to marsdog_behavior.egg-info/dependency_links.txt
+[1.864s] writing entry points to marsdog_behavior.egg-info/entry_points.txt
+[1.864s] writing top-level names to marsdog_behavior.egg-info/top_level.txt
+[1.868s] reading manifest file 'marsdog_behavior.egg-info/SOURCES.txt'
+[1.874s] writing manifest file 'marsdog_behavior.egg-info/SOURCES.txt'
+[1.876s] running build_ext
+[1.877s] Creating /home/cat/xbb/20260702_MarsDogTree/install/marsdog_behavior/lib/python3.10/site-packages/marsdog-behavior.egg-link (link to .)
+[1.878s] Installing behavior_tree_node script to /home/cat/xbb/20260702_MarsDogTree/install/marsdog_behavior/lib/marsdog_behavior
+[1.878s] 
+[1.878s] Installed /home/cat/xbb/20260702_MarsDogTree/build/marsdog_behavior
+[1.878s] running symlink_data
+[1.960s] Invoked command in '/home/cat/xbb/20260702_MarsDogTree/build/marsdog_behavior' returned '0': PYTHONPATH=/home/cat/xbb/20260702_MarsDogTree/build/marsdog_behavior/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/cat/xbb/20260702_MarsDogTree/install/marsdog_behavior/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /home/cat/xbb/20260702_MarsDogTree/build/marsdog_behavior/build --no-deps symlink_data

@@ -36,18 +36,19 @@ uv run python -m marsdog_behavior.standalone_demo
 
 | Topic | 类型 | QoS | 说明 |
 |-------|------|-----|------|
-| `/emotion/state` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | 6 种情绪当前值 + levelEvents，1Hz |
-| `/emotion/signal_event` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | 情绪区间变化事件，事件驱动 |
-| `/internal_need/state` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | 7 种需求当前值 + levelEvents，1Hz |
-| `/internal_need/signal_event` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | 需求等级变化事件，事件驱动 |
+| `/emotion/state` | `std_msgs/String` (JSON) | BEST_EFFORT, depth=5 | V2：6 种情绪当前值 + triggered，1Hz |
+| `/emotion/signal_event` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | V2：单阈值上升沿事件 |
+| `/internal_need/state` | `std_msgs/String` (JSON) | BEST_EFFORT, depth=5 | V2：7 种需求完整当前状态，1Hz |
+| `/internal_need/signal_event` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | V2：需求等级变化事件 |
 | `/perception/audio_event` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | 声音事件（仅白名单事件生成候选） |
-| `/perception/visual_event` | `std_msgs/String` (JSON) | BEST_EFFORT, depth=5 | 视觉事件（仅用于 active_target 缓存） |
+| `/perception/visual_event` | `std_msgs/String` (JSON) | BEST_EFFORT, depth=5 | 场景缓存（视觉服务不可用时回退，不直接生成候选） |
 
 ### 发布
 
 | Topic | 类型 | QoS | 说明 |
 |-------|------|-----|------|
 | `/behavior/result_event` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | 需求行为结果（STARTED/COMPLETED/FAILED/TIMEOUT/INTERRUPTED） |
+| `/behavior/attention_tracking` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | 语音会话的人脸居中/人体跟随开关与模式 |
 
 ### Action Client
 
@@ -55,11 +56,48 @@ uv run python -m marsdog_behavior.standalone_demo
 |--------|------|------|
 | `/execute_behavior` | Client → Server | 下发 `behavior_name` 到 `marsdog_action_executor` |
 
-### Service Client（预留）
+### Service Client
 
 | Service | 说明 |
 |---------|------|
-| `/perception/perception_task` | `check_person` / `detect_objects`（当前用 visual_event 缓存替代） |
+| `/perception/vision/task` | `marsdog_vision_interaction/srv/VisionTask`；Emotion/Hunger/Social/Exploration 调用 `check_person` / `detect_objects` |
+| `/perception/perception_task` | 旧 `PerceptionTask` 接口兼容回退 |
+
+`VisionTask` 的传输字段：
+
+```text
+# Request
+string task_id
+string task_type       # check_person | detect_objects
+string params_json     # {} 或 {"confidence": 0.5}
+---
+# Response
+bool success
+string task_id
+string task_type
+string result_json
+string error_message
+float64 latency_ms
+```
+
+新版 `check_person.result_json` 为 `{"ok":true,"present":true,"count":1}`，
+`detect_objects.result_json` 为 `{"ok":true,"objects":[...]}`。适配器也会归一化
+旧 `PerceptionTask` 的 `[{"key":"...","value":"..."}]` 返回格式。
+
+情绪事件调用 `check_person` 后按以下规则创建候选：
+
+| `event_type` | `present=true` | `present=false` |
+|---|---|---|
+| `EMO_CALM_TRIGGERED` | `expressCalmWithHuman` | `expressCalmAlone` |
+| `EMO_JOY_TRIGGERED` | `expressJoyWithHuman` | `expressJoyAlone` |
+| `EMO_EXCITE_TRIGGERED` | `expressExcitementWithHuman` | `expressExcitementAlone` |
+| `EMO_ANXIETY_TRIGGERED` | `expressAnxietyWithHuman` | `expressAnxietyAlone` |
+| `EMO_FEAR_TRIGGERED` | `expressFearWithHuman` | `expressFearAlone` |
+| `EMO_CURIOUS_TRIGGERED` | `expressCuriosityWithHuman` | `expressCuriosityAlone` |
+
+如果等待 Service 期间 `/emotion/state` 已变为 `triggered=false`，迟到结果不会
+生成行为候选。视觉 Service 不可用时回退到 `/perception/visual_event` 场景
+缓存；Standalone 模式使用虚拟人物场景。
 
 ---
 
@@ -81,9 +119,9 @@ ros2 run marsdog_action_executor action_executor_node
 
 | Topic | 类型 | 频率 | 说明 |
 |-------|------|------|------|
-| `/execute_behavior/goal` | `std_msgs/String` (JSON) | 事件驱动 | goal 下发时 |
-| `/execute_behavior/feedback` | `std_msgs/String` (JSON) | 10Hz | 进度 + 当前动作 |
-| `/execute_behavior/result` | `std_msgs/String` (JSON) | 事件驱动 | 完成/取消/超时时 |
+| `/debug/execute_behavior/goal` | `std_msgs/String` (JSON) | 事件驱动 | goal 下发时 |
+| `/debug/execute_behavior/feedback` | `std_msgs/String` (JSON) | 每个 Stage 后 | 进度 + 当前动作 |
+| `/debug/execute_behavior/result` | `std_msgs/String` (JSON) | 事件驱动 | 完成/取消/超时时 |
 
 > 这三个是调试接口，不作为行为树项目的正式依赖。
 
@@ -133,91 +171,143 @@ ros2 run marsdog_action_executor action_executor_node
 
 ```json
 {
+  "schema_version": "2.0",
+  "timestamp": 1785290000.0,
   "emotions": {
-    "Joy": {"value": 72, "level": "MID", "levelEvent": "EMO_JOY_MID", "triggered": true},
-    "Excite": {"value": 10, "level": "NONE", "levelEvent": null, "triggered": false},
-    "Anxiety": {"value": 5, "level": "NONE", "levelEvent": null, "triggered": false},
-    "Fear": {"value": 3, "level": "NONE", "levelEvent": null, "triggered": false},
-    "Curious": {"value": 15, "level": "NONE", "levelEvent": null, "triggered": false},
-    "Calm": {"value": 50, "level": "NORMAL", "levelEvent": "EMO_CALM_NORMAL", "triggered": true}
+    "Joy": {"value": 30, "triggerThreshold": 30, "triggerOperator": "gte", "triggered": true},
+    "Excite": {"value": 20, "triggerThreshold": 40, "triggerOperator": "gte", "triggered": false},
+    "Anxiety": {"value": 10, "triggerThreshold": 25, "triggerOperator": "gte", "triggered": false},
+    "Fear": {"value": 10, "triggerThreshold": 30, "triggerOperator": "gte", "triggered": false},
+    "Curious": {"value": 10, "triggerThreshold": 20, "triggerOperator": "gte", "triggered": false},
+    "Calm": {"value": 30, "triggerThreshold": 0, "triggerOperator": "gte", "triggered": true}
   },
-  "levelEvents": {
-    "Joy": "EMO_JOY_MID",
-    "Excite": null,
-    "Anxiety": null,
-    "Fear": null,
-    "Curious": null,
-    "Calm": "EMO_CALM_NORMAL"
-  },
+  "triggered": [
+    {"emotion": "Joy", "value": 30, "eventType": "EMO_JOY_TRIGGERED", "triggerThreshold": 30, "triggerOperator": "gte"},
+    {"emotion": "Calm", "value": 30, "eventType": "EMO_CALM_TRIGGERED", "triggerThreshold": 0, "triggerOperator": "gte"}
+  ],
   "dominantEmotion": "Joy"
 }
 ```
+
+行为树只接受 `schema_version="2.0"`。state 是当前权威状态，只更新缓存；
+`triggered=false` 用于使尚未执行的情绪候选失效，不产生恢复候选。
+`triggered[]` 是当前集合，不是本次新增事件列表。
 
 ### 4.2 `/emotion/signal_event`
 
 ```json
 {
-  "event_type": "EMO_JOY_MID",
+  "schema_version": "2.0",
+  "timestamp": 1785290000.0,
+  "event_type": "EMO_JOY_TRIGGERED",
   "emotion": "Joy",
-  "value": 72,
-  "level": "MID",
-  "range": [61, 85],
-  "trigger": "LEVEL_CHANGED",
-  "isDominant": true
+  "value": 30,
+  "triggerThreshold": 30,
+  "triggerOperator": "gte",
+  "timeContext": {}
 }
 ```
+
+signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢复和主导情绪
+变化都不发布事件。行为树同时校验 `event_type` 与 `emotion`，并将其映射为
+一次性 Lv5 情绪行为候选。
 
 ### 4.3 `/internal_need/state`
 
 ```json
 {
+  "schema_version": "2.0",
+  "timestamp": 1710000000.0,
   "demands": {
-    "Hunger": {"value": 71, "level": "TRIGGERED", "levelEvent": "NEED_HUNGER_TRIGGERED", "triggered": true},
-    "Bladder": {"value": 50, "level": "NORMAL", "levelEvent": "NEED_BLADDER_RECOVERED", "triggered": false},
-    "Sleepiness": {"value": 30, "level": "NORMAL", "levelEvent": "NEED_SLEEPINESS_RECOVERED", "triggered": false},
-    "Cleanliness": {"value": 40, "level": "NORMAL", "levelEvent": "NEED_CLEANLINESS_RECOVERED", "triggered": false},
-    "Energy": {"value": 85, "level": "NORMAL", "levelEvent": "NEED_ENERGY_RECOVERED", "triggered": false},
-    "Social": {"value": 40, "level": "NORMAL", "levelEvent": "NEED_SOCIAL_RECOVERED", "triggered": false},
-    "Exploration": {"value": 30, "level": "NORMAL", "levelEvent": "NEED_EXPLORATION_RECOVERED", "triggered": false}
+    "Social": {
+      "value": 71,
+      "triggerThreshold": 60,
+      "triggerOperator": "gt",
+      "urgentThreshold": 70,
+      "urgentOperator": "gt",
+      "overflowThreshold": 85,
+      "triggered": true,
+      "urgent": true,
+      "overflow": false,
+      "level": "URGENT",
+      "levelEvent": "NEED_SOCIAL_URGENT",
+      "levelActive": true
+    }
   },
-  "levelEvents": {
-    "Hunger": "NEED_HUNGER_TRIGGERED",
-    "Bladder": "NEED_BLADDER_RECOVERED",
-    "Sleepiness": "NEED_SLEEPINESS_RECOVERED",
-    "Cleanliness": "NEED_CLEANLINESS_RECOVERED",
-    "Energy": "NEED_ENERGY_RECOVERED",
-    "Social": "NEED_SOCIAL_RECOVERED",
-    "Exploration": "NEED_EXPLORATION_RECOVERED"
-  }
+  "timeContext": {}
 }
 ```
+
+行为树只接受 `schema_version="2.0"`，并校验 `value`、阈值、布尔状态、
+`level` 和 `levelEvent` 彼此一致。state 是权威状态，不直接生成行为候选；
+它会更新相关性，并清除与当前等级不一致的排队候选。
+
+首次触发线必须读取 `triggerThreshold / triggerOperator`。可选中间紧急线
+使用 `urgentThreshold / urgentOperator`；未配置时必须为 `null/null`。
 
 ### 4.4 `/internal_need/signal_event`
 
 ```json
 {
-  "event_type": "NEED_HUNGER_TRIGGERED",
-  "demand": "Hunger",
+  "schema_version": "2.0",
+  "timestamp": 1710000000.0,
+  "event_type": "NEED_SOCIAL_URGENT",
+  "demand": "Social",
   "value": 71,
-  "level": "TRIGGERED",
-  "previousLevel": "NORMAL",
-  "trigger": "LEVEL_CHANGED"
+  "level": "URGENT",
+  "previousLevel": "TRIGGERED",
+  "triggerThreshold": 60,
+  "triggerOperator": "gt",
+  "urgentThreshold": 70,
+  "urgentOperator": "gt",
+  "overflowThreshold": 85,
+  "overflowOperator": "gt",
+  "trigger": "LEVEL_CHANGED",
+  "timeContext": {}
 }
 ```
+
+等级变化时发布变化后的当前等级。Social 下降序列为
+`OVERFLOW → NEED_SOCIAL_URGENT`、
+`URGENT → NEED_SOCIAL_TRIGGERED`、
+`TRIGGERED → NEED_SOCIAL_RECOVERED`。RECOVERED 只更新状态和清理旧候选，
+不创建行为。
+
+| 需求 | NORMAL | TRIGGERED | URGENT | OVERFLOW |
+|------|--------|-----------|--------|----------|
+| Hunger | 0-70 | 71-90 | — | 91-100 |
+| Bladder | 0-75 | 76-100 | — | — |
+| Sleepiness | 0-65 | 66-90 | — | 91-100 |
+| Cleanliness | 0-70 | 71-100 | — | — |
+| Energy | 0-80 | 81-90 | — | 91-100 |
+| Social | 0-60 | 61-70 | 71-85 | 86-100 |
+| Exploration | 0-60 | 61-100 | — | — |
+
+所有比较符均为严格 `gt`。Bladder、Cleanliness、Exploration 到 100 仍为
+`TRIGGERED`。Energy 是电量缺口（`100 - 实际电量百分比`）；结果 metadata
+里的 `energyValue / energy_value / batteryValue` 仍是实际电量，不做反转。
 
 ### 4.5 `/perception/audio_event`
 
 ```json
 {
-  "event_type": "EVT_VOICE_COMMAND_KNOWN",
-  "command_id": "CMD_SIT",
+  "event_type": "EVT_VOICE_COMMAND_SIT",
   "intent_confidence": 0.95,
-  "is_executable": true,
   "asr_text": "坐下"
 }
 ```
 
-行为树白名单：`EVT_VOICE_CALL_NAME`、`EVT_VOICE_COMMAND_KNOWN`。
+行为树直接处理 `EVT_VOICE_CALL_NAME` 和已配置的
+`EVT_VOICE_COMMAND_<ACTION>` 完整事件名。
+
+- 当前 ROS2 运行时收到 `EVT_VOICE_CALL_NAME` 后开启
+  `/behavior/attention_tracking` 的 `face_body_centering`，不创建
+  `respond_owner_call` 动作候选，避免 Nav2 `/spin` 与后台闭环争用底盘。
+- `IntentMapper` 仍保留唤醒角度到 `respond_owner_call` 的兼容映射，供
+  standalone/单元测试使用；它不是当前部署链路。
+- 强指令只按 `event_type` 映射为一对一的专用 Behavior。
+- `EVT_VOICE_COMMAND_DROP` 输出 Lv1 `drop_object`；
+  `EVT_VOICE_COMMAND_STOP` 输出 Lv0 `emergency_stop`。
 
 ### 4.6 `/perception/visual_event`
 
@@ -228,7 +318,8 @@ ros2 run marsdog_action_executor action_executor_node
 }
 ```
 
-行为树只用 `active_target` 缓存，`events` 数组不生成行为候选。
+行为树缓存 `humans`、`active_target` 和 `tracked_objects`，供视觉服务不可用时
+回退；`events` 数组本身不生成行为候选。
 
 ### 4.7 `/behavior/result_event`
 
@@ -243,16 +334,35 @@ ros2 run marsdog_action_executor action_executor_node
 }
 ```
 
+充电行为 `recharge` / `restInPlace` 成功后固定发布内部需求可结算的规范字段：
+
+```json
+{
+  "action_type": "ACTION_RECHARGE",
+  "demand_type": "Energy",
+  "result_type": "COMPLETED",
+  "metadata": {"energyValue": 88, "recoveryMode": "charging"}
+}
+```
+
+`energyValue` 是实际电量百分比，缺失或非法时按契约补为 `100`，并限制在
+`0..100`。终态发布后行为树会清空 `current_behavior/current_goal_id`；同一 tick
+内刚启动的抢占替代行为不会被误清理。
+
 ### 4.8 `/execute_behavior` Goal（Action Client 下发）
 
 ```json
 {
   "behavior_name": "expressJoy",
   "priority_level": 5,
-  "params_json": "{\"source\":\"emotion\",\"trigger_event\":\"EMO_JOY_MID\",\"level\":\"MID\",\"variant\":\"joy_mid\",\"interaction_mode\":\"solo\",\"result_mapping\":null}",
+  "params_json": "{\"source\":\"emotion\",\"trigger_event\":\"EMO_JOY_TRIGGERED\",\"variant\":\"joy\",\"interaction_mode\":\"solo\",\"executor_behavior_name\":\"expressJoy\",\"result_mapping\":null}",
   "timeout_sec": 8.0
 }
 ```
+
+情绪候选在行为树内使用 `expressJoyWithHuman` / `expressJoyAlone`。Action
+Client 通过 `executor_behavior_name` 向现有执行器发送基础模板
+`expressJoy`，反馈回到行为树时恢复为原始的分支 Behavior 名。
 
 ---
 
@@ -271,9 +381,9 @@ ros2 topic echo /internal_need/state --once
 # 查看行为结果
 ros2 topic echo /behavior/result_event
 
-# 手动发声音指令（触发 CMD_SIT）
+# 手动发声音事件（触发 sit_down）
 ros2 topic pub --once /perception/audio_event std_msgs/msg/String \
-  "{data: '{\"event_type\":\"EVT_VOICE_COMMAND_KNOWN\",\"command_id\":\"CMD_SIT\",\"is_executable\":true,\"intent_confidence\":0.95}'}"
+  "{data: '{\"event_type\":\"EVT_VOICE_COMMAND_SIT\",\"intent_confidence\":0.95}'}"
 
 # 手动发视觉事件
 ros2 topic pub --once /perception/visual_event std_msgs/msg/String \
@@ -281,11 +391,11 @@ ros2 topic pub --once /perception/visual_event std_msgs/msg/String \
 
 # 手动发情绪 signal_event
 ros2 topic pub --once /emotion/signal_event std_msgs/msg/String \
-  "{data: '{\"event_type\":\"EMO_JOY_HIGH\",\"emotion\":\"Joy\",\"value\":90,\"level\":\"HIGH\",\"trigger\":\"LEVEL_CHANGED\"}'}"
+  "{data: '{\"schema_version\":\"2.0\",\"event_type\":\"EMO_JOY_TRIGGERED\",\"emotion\":\"Joy\",\"value\":30,\"triggerThreshold\":30,\"triggerOperator\":\"gte\"}'}"
 
 # 手动发需求 signal_event
 ros2 topic pub --once /internal_need/signal_event std_msgs/msg/String \
-  "{data: '{\"event_type\":\"NEED_HUNGER_TRIGGERED\",\"demand\":\"Hunger\",\"value\":75,\"level\":\"TRIGGERED\"}'}"
+  "{data: '{\"schema_version\":\"2.0\",\"event_type\":\"NEED_SOCIAL_URGENT\",\"demand\":\"Social\",\"value\":71,\"level\":\"URGENT\",\"previousLevel\":\"TRIGGERED\",\"triggerThreshold\":60,\"triggerOperator\":\"gt\",\"urgentThreshold\":70,\"urgentOperator\":\"gt\",\"overflowThreshold\":85,\"overflowOperator\":\"gt\",\"trigger\":\"LEVEL_CHANGED\"}'}"
 ```
 
 ---
@@ -302,7 +412,7 @@ ros2 topic pub --once /internal_need/signal_event std_msgs/msg/String \
 │                         → /internal_need/signal_event (event)     │
 │  perception_bridge      → /perception/audio_event (event)         │
 │                         → /perception/visual_event (event)        │
-│                         ← /perception/perception_task (service)    │
+│                         ← /perception/vision/task (service)        │
 └──────────────────────────┬───────────────────────────────────────┘
                            │
 ┌──────────────────────────▼───────────────────────────────────────┐
@@ -328,7 +438,12 @@ ros2 topic pub --once /internal_need/signal_event std_msgs/msg/String \
 
 | 文档 | 内容 |
 |------|------|
-| [visualization_interface.md](visualization_interface.md) | Topic JSON Schema 完整定义、状态机、可视化布局 |
-| [event_intent_pipeline.md](event_intent_pipeline.md) | 事件→Intent→Behavior 管道、白名单、链路示例 |
-| [behavior_tree_internals.md](behavior_tree_internals.md) | 行为树内部逻辑：7层仲裁、抢占、相关性 |
-| [behavior_semantic_map.md](behavior_semantic_map.md) | 需求/情绪→行为完整映射表 |
+| [HANDOFF.md](HANDOFF.md) | 项目边界、上下游契约、队列、跟随和充电流程 |
+| [event_behavior_table.md](event_behavior_table.md) | 语音/需求/情绪事件到 Behavior 的完整映射 |
+| [behavior_tree_architecture.md](behavior_tree_architecture.md) | 行为树内部逻辑：7层仲裁、抢占、相关性 |
+| [architecture.md](architecture.md) | 整体模块架构 |
+# 会话注视控制
+
+行为树将 `EVT_VOICE_CALL_NAME` 和同一 `interaction_id` 的会话结束事件
+转换为 `/behavior/attention_tracking`（`std_msgs/String` JSON）。动作系统据此
+启动或停止纯角速度的人脸/人体居中控制；该通道不等同于 `CMD_FOLLOW`。

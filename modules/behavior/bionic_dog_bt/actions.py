@@ -10,23 +10,16 @@ This is the core action node that handles:
 
 from __future__ import annotations
 
-import time
 from typing import Protocol
 
 from .behavior_tree_node import Node, Status
+from .arbitration import evaluate_preemption
 from .blackboard import Blackboard
 from .datatypes import ExecutorFeedback, BehaviorFeedbackEvent
 from .logger import get_logger, LogEvent
 from .constants import (
     STATUS_RUNNING,
     STATUS_SUCCESS,
-    STATUS_FAILURE,
-    STATUS_CANCELED,
-    SAME_LEVEL_PREEMPTION_DELTA,
-    INTERRUPT_IMMEDIATE,
-    INTERRUPT_SAFE_POINT,
-    INTERRUPT_NON_INTERRUPTIBLE,
-    PRIORITY_LEVELS,
 )
 
 _log = get_logger("actions")
@@ -89,12 +82,23 @@ class ExecuteActiveBehavior(Node):
         # ── Check timeout on current behavior ────────────────────────────────
         if bb.current_behavior is not None and bb.current_status == STATUS_RUNNING:
             if bb.check_timeout():
+                timed_out = bb.current_behavior
                 bb.mark_timeout()
                 if bb.current_goal_id:
                     ex.cancel_goal(bb.current_goal_id)
+                bb.last_feedback_event = BehaviorFeedbackEvent(
+                    behavior_id=timed_out.behavior_id,
+                    behavior_name=timed_out.behavior_name,
+                    status="TIMEOUT",
+                    result="timeout",
+                    reason=(
+                        f"Behavior exceeded timeout "
+                        f"({timed_out.timeout_sec:.1f}s)"
+                    ),
+                )
                 _log.event(LogEvent.BEHAVIOR_TIMEOUT,
-                           behavior_name=bb.current_behavior.behavior_name,
-                           timeout_sec=bb.current_behavior.timeout_sec)
+                           behavior_name=timed_out.behavior_name,
+                           timeout_sec=timed_out.timeout_sec)
                 return Status.FAILURE
 
         # ── Check result of completed goal ───────────────────────────────────
@@ -179,6 +183,14 @@ class ExecuteActiveBehavior(Node):
         bb.preemption_occurred = True
         bb.preemption_detail = reason
 
+        bb.last_feedback_event = BehaviorFeedbackEvent(
+            behavior_id=current.behavior_id,
+            behavior_name=current.behavior_name,
+            status="CANCELED",
+            result="canceled",
+            reason=f"Preempted by {active.behavior_name}: {reason}",
+            reward=-0.1,
+        )
         if bb.current_goal_id:
             ex.cancel_goal(bb.current_goal_id)
 
@@ -189,20 +201,33 @@ class ExecuteActiveBehavior(Node):
     def _send_goal(self, active, bb: Blackboard) -> None:
         """Send a goal to the executor and update blackboard.
 
-        For emotion-triggered behaviors, calls check_person() to determine
-        interactive vs solo mode. This simulates the /perception/perception_task
-        service call that happens at execution time.
+        Emotion candidates normally arrive with a visual-service-resolved
+        interaction mode. Older/unresolved callers retain a latest-scene
+        compatibility check here.
         """
         # ── Check person presence for emotion-triggered behaviors ────────────
-        if active.need_type == "emotional":
+        source = active.params.get("source", "")
+        is_direct_audio = source == "audio_direct"
+        if (
+            active.need_type == "emotional"
+            and not is_direct_audio
+            and not active.params.get("visual_resolved")
+        ):
             person = bb.perception_client.check_person()
-            if person["present"] and "source" not in active.params:
-                # Not already set by a voice command — discover at execution time
+            if person["present"]:
                 active.params["interactive"] = True
+                active.params["interaction_mode"] = "interactive"
                 active.params["target_identity"] = person["identity"]
+                active.params["target"] = {
+                    "target_type": "human",
+                    "target_id": person["identity"],
+                }
                 self.log(f"check_person: INTERACTIVE (identity={person['identity']})")
-            elif "source" not in active.params:
+            else:
                 active.params["interactive"] = False
+                active.params["interaction_mode"] = "solo"
+                active.params.pop("target_identity", None)
+                active.params["target"] = None
                 self.log(f"check_person: SOLO (no person present)")
 
         goal_id = self.executor.send_goal(active)
@@ -216,47 +241,13 @@ class ExecuteActiveBehavior(Node):
                    mode=mode, goal_id=goal_id)
 
     def _evaluate_preemption(self, active, current, bb: Blackboard) -> tuple[bool, str]:
-        """Evaluate whether active should preempt current.
-
-        Returns (can_preempt: bool, reason: str).
-        """
-        # ── New behavior priority is higher (lower level number) ─────────────
-        if active.priority_level < current.priority_level:
-            return self._check_interrupt_policy(active, current)
-
-        # ── Same priority level ──────────────────────────────────────────────
-        if active.priority_level == current.priority_level:
-            delta = active.value - current.value
-            if delta >= SAME_LEVEL_PREEMPTION_DELTA:
-                return self._check_interrupt_policy(active, current)
-            else:
-                return (False,
-                        f"Same-level delta={delta:.1f} < {SAME_LEVEL_PREEMPTION_DELTA} "
-                        f"(new={active.value:.0f} vs cur={current.value:.0f})")
-
-        # ── New behavior priority is lower (higher level number) ─────────────
-        return (False,
-                f"Lower priority: Lv{active.priority_level} > Lv{current.priority_level}")
-
-    def _check_interrupt_policy(self, active, current) -> tuple[bool, str]:
-        """Check if active can interrupt current based on interrupt_policy."""
-        policy = current.interrupt_policy
-
-        # emergency_stop at Lv0 always wins, regardless of policy
-        if active.behavior_name == "emergency_stop" and active.priority_level == 0:
-            return (True, "emergency_stop overrides all")
-
-        if policy == INTERRUPT_IMMEDIATE:
-            return (True, "immediate preempt")
-
-        elif policy == INTERRUPT_SAFE_POINT:
-            fb = self.blackboard.executor_feedback
-            if fb is not None and fb.safe_to_interrupt:
-                return (True, "safe_point reached")
-            else:
-                return (False, "safe_point not reached, waiting")
-
-        elif policy == INTERRUPT_NON_INTERRUPTIBLE:
-            return (False, "current behavior is non_interruptible")
-
-        return (False, f"unknown policy: {policy}")
+        """Evaluate whether active should preempt current."""
+        return evaluate_preemption(
+            active.priority_level,
+            active.value,
+            active.behavior_name,
+            current.priority_level,
+            current.value,
+            current.interrupt_policy,
+            bb.executor_feedback,
+        )

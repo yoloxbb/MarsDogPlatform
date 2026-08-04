@@ -23,6 +23,9 @@ def runtime():
     """Create a full runtime with mock components."""
     config_path = str(Path(__file__).parent.parent / "config" / "behaviors.yaml")
     root, bb, executor, provider, loader = create_runtime(config_path=config_path)
+    bb.perception_client.set_objects([
+        {"label": "dog food can", "confidence": 0.9},
+    ])
     return root, bb, executor, provider, loader
 
 
@@ -156,7 +159,7 @@ class TestPriorityLevels:
         bb.set_active_behavior(provider.inject_hunger(85))
         status = _tick(root, bb, 1)
         assert status == Status.RUNNING
-        assert bb.current_behavior.behavior_name == "seek_food_or_water"
+        assert bb.current_behavior.behavior_name == "eatNormally"
 
         # Inject owner call (Lv1) which is higher priority
         provider.inject_owner_call(85)
@@ -216,6 +219,7 @@ class TestPriorityLevels:
         assert bb.current_behavior.behavior_name == "respond_owner_call"
 
         # Inject social need (Lv4) - lower priority
+        bb.perception_client.set_person_present(True, identity="owner")
         provider.inject_social_need(75)
         candidate = provider.select()
         bb.set_active_behavior(candidate)
@@ -235,34 +239,34 @@ class TestSameLevelPreemption:
         """Same level, small value delta → no preempt."""
         root, bb, executor, provider, loader = runtime
 
-        # Start seek_food_or_water (Lv3, val=80)
+        # Start eatNormally (Lv3, val=80)
         bb.set_active_behavior(provider.inject_hunger(80))
         _tick(root, bb, 1)
-        assert bb.current_behavior.behavior_name == "seek_food_or_water"
+        assert bb.current_behavior.behavior_name == "eatNormally"
 
-        # Inject clean_self (Lv3, val=85) — delta=5 < 15
+        # Inject lickPaws (Lv3, val=85) — delta=5 < 15
         provider.inject_cleanliness(85)
         candidate = provider.select()
         bb.set_active_behavior(candidate)
 
         status = _tick(root, bb, 1)
         assert not bb.preemption_occurred
-        assert bb.current_behavior.behavior_name == "seek_food_or_water"
+        assert bb.current_behavior.behavior_name == "eatNormally"
 
     def test_large_delta_preempts(self, runtime):
         """Same level, large value delta → preempt."""
         root, bb, executor, provider, loader = runtime
 
-        # Start seek_food_or_water (Lv3, val=80)
+        # Start eatNormally (Lv3, val=80)
         bb.set_active_behavior(provider.inject_hunger(80))
         _tick(root, bb, 1)
-        assert bb.current_behavior.behavior_name == "seek_food_or_water"
+        assert bb.current_behavior.behavior_name == "eatNormally"
 
-        # Inject clean_self (Lv3, val=96) — delta=16 >= 15
+        # Cleanliness V2 has only TRIGGERED; value 96 maps to lickPaws.
         provider.inject_cleanliness(96)
         candidate = provider.select()
         bb.set_active_behavior(candidate)
 
         status = _tick(root, bb, 1)
         assert bb.preemption_occurred
-        assert bb.current_behavior.behavior_name == "clean_self"
+        assert bb.current_behavior.behavior_name == "lickPaws"

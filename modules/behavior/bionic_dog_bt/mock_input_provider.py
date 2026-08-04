@@ -20,18 +20,31 @@ from typing import Optional
 
 from .datatypes import ActiveBehavior
 from .blackboard import Blackboard
-from .constants import PRIORITY_LEVELS, DEFAULT_IDLE_BEHAVIOR, COMMAND_BEHAVIOR_MAP
+from .constants import (
+    PRIORITY_LEVELS,
+    DEFAULT_IDLE_BEHAVIOR,
+    DEFAULT_EMOTION_CONFIG,
+    DEFAULT_NEED_CONFIG,
+    NEED_LEVEL_NORMAL,
+    EMOTION_EVENT_BEHAVIOR_MAP,
+    NEED_EVENT_BEHAVIOR_MAP,
+    VOICE_EVENT_BEHAVIOR_MAP,
+)
 from .emotion_module import EmotionModule
 from .need_module import NeedModule
 from .mock_perception_client import MockPerceptionClient
-from .emotion_behavior_table import select_emotion_behavior, get_dominant_emotion
+from .visual_context import (
+    select_exploration_context,
+    select_hunger_context,
+    select_social_animal,
+)
 
 
 class MockInputProvider:
     """Simulates upstream inputs that generate behavior candidates.
 
     Emotion-triggered injections update EmotionModule so BehaviorRelevanceCondition
-    can verify the emotion is still overflowing at execution time.
+    can verify the V2 ``triggered`` flag at execution time.
     Need-triggered injections update NeedModule for the same purpose.
     """
 
@@ -76,44 +89,23 @@ class MockInputProvider:
 
     # ── Lv1 PhysioUrgent ─────────────────────────────────────────────────────
 
-    def inject_excretion(self, value: float = 95.0) -> ActiveBehavior:
-        """Bladder overflow → excretion_request (ROS2 Bladder > 90)."""
-        self._need_module.set_need("Bladder", value)
-        b = ActiveBehavior(
-            behavior_id=self._gen_id(),
-            behavior_name="excretion_request",
-            priority_level=PRIORITY_LEVELS["PHYSIO_URGENT"],
-            value=value, confidence=0.95,
-            need_type="physiological_urgent",
-            interrupt_policy="safe_point",
-            timeout_sec=60.0, cooldown_sec=0.0,
-        )
-        self._add_candidate(b)
-        return b
+    def inject_excretion(self, value: float = 95.0) -> Optional[ActiveBehavior]:
+        """Inject a Bladder event selected from the current need level."""
+        return self._inject_need_value("Bladder", value)
 
-    def inject_sleep(self, value: float = 90.0) -> ActiveBehavior:
-        """Sleepiness overflow → sleep_request (ROS2 Sleepiness > 90)."""
-        self._need_module.set_need("Sleepiness", value)
-        b = ActiveBehavior(
-            behavior_id=self._gen_id(),
-            behavior_name="sleep_request",
-            priority_level=PRIORITY_LEVELS["PHYSIO_URGENT"],
-            value=value, confidence=0.9,
-            need_type="physiological_urgent",
-            interrupt_policy="safe_point",
-            timeout_sec=120.0, cooldown_sec=0.0,
-        )
-        self._add_candidate(b)
-        return b
+    def inject_sleep(self, value: float = 90.0) -> Optional[ActiveBehavior]:
+        """Inject a Sleepiness event selected from the current need level."""
+        return self._inject_need_value("Sleepiness", value)
 
     # ── Lv2 External Interaction ─────────────────────────────────────────────
 
-    def inject_owner_call(self, value: float = 85.0, command_id: str = None) -> ActiveBehavior:
-        """Owner calls the dog by name (external event or voice command)."""
-        params = {"target": "owner"}
-        if command_id:
-            params["command_id"] = command_id
-            params["source"] = "audio_command"
+    def inject_owner_call(self, value: float = 85.0) -> ActiveBehavior:
+        """Owner calls the dog by name."""
+        params = {
+            "target": "owner",
+            "source": "audio_direct",
+            "trigger_event": "EVT_VOICE_CALL_NAME",
+        }
         b = ActiveBehavior(
             behavior_id=self._gen_id(),
             behavior_name="respond_owner_call",
@@ -128,12 +120,9 @@ class MockInputProvider:
         self._add_candidate(b)
         return b
 
-    def inject_touch_head(self, value: float = 70.0, command_id: str = None) -> ActiveBehavior:
-        """Someone touches the dog's head (external event or voice command)."""
+    def inject_touch_head(self, value: float = 70.0) -> ActiveBehavior:
+        """Someone touches the dog's head."""
         params = {"touch_zone": "head"}
-        if command_id:
-            params["command_id"] = command_id
-            params["source"] = "audio_command"
         b = ActiveBehavior(
             behavior_id=self._gen_id(),
             behavior_name="respond_touch_head",
@@ -149,134 +138,131 @@ class MockInputProvider:
 
     # ── Lv3 PhysioNormal ─────────────────────────────────────────────────────
 
-    def inject_hunger(self, value: float = 85.0) -> ActiveBehavior:
-        """Hunger triggered → seek_food_or_water (ROS2 Hunger > 70)."""
-        self._need_module.set_need("Hunger", value)
-        b = ActiveBehavior(
-            behavior_id=self._gen_id(),
-            behavior_name="seek_food_or_water",
-            priority_level=PRIORITY_LEVELS["PHYSIO_NORMAL"],
-            value=value, confidence=0.8,
-            need_type="physiological",
-            interrupt_policy="safe_point",
-            timeout_sec=30.0, cooldown_sec=5.0,
-        )
-        self._add_candidate(b)
-        return b
+    def inject_hunger(self, value: float = 85.0) -> Optional[ActiveBehavior]:
+        """Inject a Hunger event selected from the current need level."""
+        return self._inject_need_value("Hunger", value)
 
-    def inject_cleanliness(self, value: float = 75.0) -> ActiveBehavior:
-        """Cleanliness triggered → clean_self (ROS2 Cleanliness > 70)."""
-        self._need_module.set_need("Cleanliness", value)
-        b = ActiveBehavior(
-            behavior_id=self._gen_id(),
-            behavior_name="clean_self",
-            priority_level=PRIORITY_LEVELS["PHYSIO_NORMAL"],
-            value=value, confidence=0.7,
-            need_type="physiological",
-            interrupt_policy="safe_point",
-            timeout_sec=15.0, cooldown_sec=3.0,
-        )
-        self._add_candidate(b)
-        return b
+    def inject_cleanliness(self, value: float = 75.0) -> Optional[ActiveBehavior]:
+        """Inject a Cleanliness event selected from the current need level."""
+        return self._inject_need_value("Cleanliness", value)
 
     # ── Lv4 Psychological ────────────────────────────────────────────────────
 
-    def inject_social_need(self, value: float = 75.0) -> ActiveBehavior:
-        """Social need triggered → seek_social_interaction (ROS2 Social > 60)."""
-        self._need_module.set_need("Social", value)
-        b = ActiveBehavior(
-            behavior_id=self._gen_id(),
-            behavior_name="seek_social_interaction",
-            priority_level=PRIORITY_LEVELS["PSYCHOLOGICAL"],
-            value=value, confidence=0.75,
-            need_type="psychological",
-            interrupt_policy="immediate",
-            timeout_sec=20.0, cooldown_sec=5.0,
-        )
-        self._add_candidate(b)
-        return b
+    def inject_social_need(self, value: float = 75.0) -> Optional[ActiveBehavior]:
+        """Inject a Social event selected from the current need level."""
+        return self._inject_need_value("Social", value)
 
-    def inject_explore(self, value: float = 70.0) -> ActiveBehavior:
-        """Exploration need triggered → explore_environment (ROS2 Exploration > 60)."""
-        self._need_module.set_need("Exploration", value)
-        b = ActiveBehavior(
-            behavior_id=self._gen_id(),
-            behavior_name="explore_environment",
-            priority_level=PRIORITY_LEVELS["PSYCHOLOGICAL"],
-            value=value, confidence=0.7,
-            need_type="psychological",
-            interrupt_policy="immediate",
-            timeout_sec=25.0, cooldown_sec=3.0,
-        )
-        self._add_candidate(b)
-        return b
+    def inject_explore(self, value: float = 70.0) -> Optional[ActiveBehavior]:
+        """Inject an Exploration event selected from the current need level."""
+        return self._inject_need_value("Exploration", value)
+
+    def inject_energy(self, value: float = 85.0) -> Optional[ActiveBehavior]:
+        """Inject an Energy event selected from the current need level."""
+        return self._inject_need_value("Energy", value)
 
     # ── Lv5 EmotionExpression ────────────────────────────────────────────────
 
-    def inject_happy_overflow(self, value: float = 85.0, command_id: str = None) -> Optional[ActiveBehavior]:
-        """Joy overflow → select from emotion behavior table."""
-        self._emotion_module.set_emotion("Joy", value)
-        if command_id:
-            self._perception.set_person_present(True, identity="owner")
-        return self._inject_emotion_behavior("Joy", value, command_id)
+    def inject_joy_trigger(self, value: float = 30.0) -> Optional[ActiveBehavior]:
+        """Inject the Joy V2 single-threshold event."""
+        return self._inject_emotion_value("Joy", value)
+
+    def inject_happy_overflow(self, value: float = 85.0) -> Optional[ActiveBehavior]:
+        """Deprecated compatibility alias for :meth:`inject_joy_trigger`."""
+        return self.inject_joy_trigger(value)
 
     def inject_fear(self, value: float = 80.0) -> Optional[ActiveBehavior]:
-        """Fear overflow → select from emotion behavior table."""
-        self._emotion_module.set_emotion("Fear", value)
-        return self._inject_emotion_behavior("Fear", value)
+        """Inject the exact Fear strength event for ``value``."""
+        return self._inject_emotion_value("Fear", value)
 
     def inject_curiosity(self, value: float = 65.0) -> Optional[ActiveBehavior]:
-        """Curious overflow → select from emotion behavior table."""
-        self._emotion_module.set_emotion("Curious", value)
-        return self._inject_emotion_behavior("Curious", value)
+        """Inject the exact Curious strength event for ``value``."""
+        return self._inject_emotion_value("Curious", value)
 
     def inject_emotion_expression(self, value: float = 80.0) -> Optional[ActiveBehavior]:
         """Generic emotion-driven behavior injection.
 
-        Finds the dominant emotion and selects a behavior from the table
-        based on intensity zone and check_person() result.
+        Finds the dominant emotion, checks its V2 threshold, and
+        delegates to ``inject_emotion_event``.
         """
         dominant = self._emotion_module.get_dominant_emotion()
         if dominant is None:
             return None
         emotion_name, current_val = dominant
-        return self._inject_emotion_behavior(emotion_name, current_val)
+        return self._inject_emotion_value(emotion_name, current_val)
 
-    def _inject_emotion_behavior(self, emotion_name: str, value: float,
-                                  command_id: str = None) -> Optional[ActiveBehavior]:
-        """Internal: select a behavior from the emotion table and inject it.
-
-        1. Check check_person() for interactive vs solo
-        2. Select behavior name from EMOTION_BEHAVIOR_TABLE
-        3. Create ActiveBehavior with need_type="emotional"
-        """
-        interactive = self._perception.is_person_present()
-        behavior_name = select_emotion_behavior(emotion_name, value, interactive)
-
-        if behavior_name is None:
+    def inject_emotion_event(
+        self,
+        event_type: str,
+        value: float,
+    ) -> Optional[ActiveBehavior]:
+        """Inject one exact V2 ``EMO_*_TRIGGERED`` event."""
+        entry = EMOTION_EVENT_BEHAVIOR_MAP.get(event_type)
+        if entry is None:
             return None
 
-        params = {}
-        if command_id:
-            params["command_id"] = command_id
-            params["source"] = "audio_command"
-        params["source_emotion"] = emotion_name
-        params["emotion_value"] = value
-        params["interactive"] = interactive
+        emotion_name = entry["emotion_name"]
+        self._emotion_module.update_state(emotion_name, value, True)
+        person = self._perception.check_person()
+        interactive = bool(person.get("present"))
+        visual_route = "human" if interactive else "solo"
+        route_entry = entry["routes"][visual_route]
+        target = None
+        if interactive:
+            identity = str(person.get("identity", "unknown"))
+            target = {
+                "target_type": "human",
+                "target_id": identity,
+                "identity": identity,
+            }
+        params = {
+            "source": "emotion",
+            "source_emotion": emotion_name,
+            "emotion_value": value,
+            "level": entry["level"],
+            "visual_route": visual_route,
+            "visual_resolved": True,
+            "interactive": interactive,
+            "interaction_mode": "interactive" if interactive else "solo",
+            "executor_behavior_name": route_entry["executor_behavior_name"],
+            "target": target,
+            "target_identity": (
+                target.get("identity") if target is not None else None
+            ),
+            "trigger_event": event_type,
+            "variant": entry["variant"],
+        }
 
         b = ActiveBehavior(
             behavior_id=self._gen_id(),
-            behavior_name=behavior_name,
+            behavior_name=route_entry["behavior_name"],
             priority_level=PRIORITY_LEVELS["EMOTION_EXPRESSION"],
             value=value, confidence=0.85,
             need_type="emotional",
-            interrupt_policy="immediate",
+            interrupt_policy="safe_point",
             timeout_sec=8.0, cooldown_sec=1.0,
             params=params,
             style={"emotion": emotion_name},
         )
         self._add_candidate(b)
         return b
+
+    def _inject_emotion_value(
+        self,
+        emotion_name: str,
+        value: float,
+    ) -> Optional[ActiveBehavior]:
+        """Convert a mock emotion value to its V2 single-threshold event."""
+        config = DEFAULT_EMOTION_CONFIG.get(emotion_name)
+        if config is None:
+            return None
+        if value < config["trigger_threshold"]:
+            self._emotion_module.update_state(emotion_name, value, False)
+            return None
+
+        return self.inject_emotion_event(
+            f"EMO_{emotion_name.upper()}_TRIGGERED",
+            value,
+        )
 
     # ── Lv6 Idle ─────────────────────────────────────────────────────────────
 
@@ -294,78 +280,264 @@ class MockInputProvider:
         self._add_candidate(b)
         return b
 
+    # ── Need Event Injection ────────────────────────────────────────────────
+
+    def inject_need_event(
+        self,
+        event_type: str,
+        value: float,
+    ) -> Optional[ActiveBehavior]:
+        """Inject one exact configured V2 need event."""
+        entry = NEED_EVENT_BEHAVIOR_MAP.get(event_type)
+        if entry is None:
+            return None
+
+        need_name = entry["need_name"]
+        self._need_module.set_need(need_name, value)
+        current_level = self._need_module.get_level(need_name)
+        expected_level = event_type.rsplit("_", 1)[-1]
+        if current_level != expected_level:
+            return None
+        self._need_module.level_events[need_name] = event_type
+
+        visual_route = None
+        target = None
+        effective_entry = entry
+        routes = entry.get("visual_routes", {})
+        if need_name == "Hunger":
+            context = select_hunger_context(
+                self._perception.detect_objects(0.5)
+            )
+            visual_route = context["route"]
+            target = context["target"]
+            effective_entry = {**entry, **routes[visual_route]}
+        elif need_name == "Social":
+            person = self._perception.check_person()
+            if person.get("present"):
+                visual_route = "human"
+                identity = str(person.get("identity", "unknown"))
+                target = {
+                    "target_type": "human",
+                    "target_id": identity,
+                    "identity": identity,
+                }
+            else:
+                target = select_social_animal(
+                    self._perception.detect_objects(0.5)
+                )
+                if target is None:
+                    return None
+                visual_route = "animal"
+            effective_entry = {**entry, **routes[visual_route]}
+        elif need_name == "Exploration":
+            context = select_exploration_context(
+                self._perception.detect_objects(0.5)
+            )
+            visual_route = context["route"]
+            target = context["target"]
+            effective_entry = {**entry, **routes[visual_route]}
+
+        priority_level = effective_entry["priority_level"]
+        timeout_by_level = {
+            0: 5.0,
+            2: 60.0,
+            3: 30.0,
+            4: 25.0,
+        }
+        cooldown_by_level = {
+            0: 0.0,
+            2: 0.0,
+            3: 5.0,
+            4: 5.0,
+        }
+        params = {
+            "source": "need",
+            "source_need": need_name,
+            "trigger_event": event_type,
+            "need_value": value,
+            "level": expected_level,
+            "variant": effective_entry["variant"],
+            "sub_priority": effective_entry.get("sub_priority", 0),
+        }
+        if effective_entry.get("executor_behavior_name"):
+            params["executor_behavior_name"] = effective_entry[
+                "executor_behavior_name"
+            ]
+        if visual_route is not None:
+            params.update({
+                "visual_route": visual_route,
+                "target": target,
+                "object_category": (
+                    target.get("object_category")
+                    if isinstance(target, dict)
+                    else None
+                ),
+                "interactive": visual_route in ("human", "animal"),
+                "interaction_mode": (
+                    "interactive"
+                    if visual_route in ("human", "animal")
+                    else "solo"
+                ),
+            })
+
+        behavior = ActiveBehavior(
+            behavior_id=self._gen_id(),
+            behavior_name=effective_entry["behavior_name"],
+            priority_level=priority_level,
+            value=value,
+            confidence=0.8,
+            need_type=effective_entry["need_type"],
+            interrupt_policy="safe_point",
+            timeout_sec=timeout_by_level[priority_level],
+            cooldown_sec=cooldown_by_level[priority_level],
+            params=params,
+        )
+        self._add_candidate(behavior)
+        return behavior
+
+    def _inject_need_value(
+        self,
+        need_name: str,
+        value: float,
+    ) -> Optional[ActiveBehavior]:
+        """Convert a mock need value to its exact configured V2 event."""
+        self._need_module.set_need(need_name, value)
+        level = self._need_module.get_level(need_name)
+        if level == NEED_LEVEL_NORMAL:
+            return None
+        return self.inject_need_event(
+            f"NEED_{need_name.upper()}_{level}",
+            value,
+        )
+
     # ── Batch Injection (ROS2 state simulation) ──────────────────────────────
 
-    def inject_emotion_state(self, emotions: dict[str, float]) -> None:
+    def inject_emotion_state(self, emotions: dict) -> None:
         """Simulate receiving a full /emotion/state message.
 
-        Sets all provided emotions and generates candidates for any
-        that are overflowing.
+        State updates never generate candidates. Dict values may be either
+        numbers or V2 objects containing ``value`` and ``triggered``.
         """
-        for name, value in emotions.items():
-            self._emotion_module.set_emotion(name, value)
-            # Check if overflowing and generate appropriate candidate
-            if name == "Joy" and value >= 70:
-                self.inject_happy_overflow(value)
-            elif name == "Fear" and value >= 60:
-                self.inject_fear(value)
-            elif name == "Curious" and value >= 50:
-                self.inject_curiosity(value)
+        for name, emotion_info in emotions.items():
+            if isinstance(emotion_info, dict):
+                value = float(emotion_info["value"])
+                triggered = bool(emotion_info["triggered"])
+            else:
+                value = float(emotion_info)
+                threshold = DEFAULT_EMOTION_CONFIG.get(
+                    name,
+                    {"trigger_threshold": 70.0},
+                )["trigger_threshold"]
+                triggered = value >= threshold
+            self._emotion_module.update_state(name, value, triggered)
 
     def inject_need_state(self, needs: dict[str, float]) -> None:
         """Simulate receiving a full /internal_need/state message.
 
-        Sets all provided needs and generates candidates for any
-        that are at TRIGGERED or OVERFLOW level.
+        State snapshots update the cache but never create edge candidates.
         """
         for name, value in needs.items():
             self._need_module.set_need(name, value)
-            # Check level and generate appropriate candidate
-            level = self._need_module.get_level(name)
-            if level in ("TRIGGERED", "OVERFLOW"):
-                if name == "Hunger":
-                    self.inject_hunger(value)
-                elif name == "Bladder":
-                    self.inject_excretion(value)
-                elif name == "Sleepiness":
-                    self.inject_sleep(value)
-                elif name == "Cleanliness":
-                    self.inject_cleanliness(value)
-                elif name == "Social":
-                    self.inject_social_need(value)
-                elif name == "Exploration":
-                    self.inject_explore(value)
 
     # ── Audio Event Injection (ROS2 /perception/audio_event) ─────────────────
 
-    def inject_audio_command(self, command_id: str,
-                             value: float = 85.0) -> Optional[ActiveBehavior]:
-        """Simulate receiving EVT_VOICE_COMMAND_KNOWN from /perception/audio_event.
+    def inject_event(
+        self,
+        event_type: str,
+        value: float | None = None,
+    ) -> Optional[ActiveBehavior]:
+        """Inject any supported exact event type."""
+        if event_type in VOICE_EVENT_BEHAVIOR_MAP:
+            return self.inject_audio_event(
+                event_type,
+                value if value is not None else 85.0,
+            )
 
-        Maps command_id to the appropriate behavior via COMMAND_BEHAVIOR_MAP.
-        Returns the created ActiveBehavior, or None if command is unknown.
-        """
-        behavior_name = COMMAND_BEHAVIOR_MAP.get(command_id)
+        if event_type in NEED_EVENT_BEHAVIOR_MAP:
+            if value is None:
+                entry = NEED_EVENT_BEHAVIOR_MAP[event_type]
+                config = DEFAULT_NEED_CONFIG[entry["need_name"]]
+                level = event_type.rsplit("_", 1)[-1]
+                threshold_key = {
+                    "TRIGGERED": "trigger_threshold",
+                    "URGENT": "urgent_threshold",
+                    "OVERFLOW": "overflow_threshold",
+                }[level]
+                value = float(config[threshold_key]) + 1.0
+            return self.inject_need_event(event_type, value)
+
+        if event_type in EMOTION_EVENT_BEHAVIOR_MAP:
+            if value is None:
+                emotion_name = EMOTION_EVENT_BEHAVIOR_MAP[event_type]["emotion_name"]
+                value = DEFAULT_EMOTION_CONFIG[emotion_name]["trigger_threshold"]
+            return self.inject_emotion_event(event_type, value)
+
+        return None
+
+    def inject_audio_event(
+        self,
+        event_type: str,
+        value: float = 85.0,
+    ) -> Optional[ActiveBehavior]:
+        """Simulate an event-type-driven /perception/audio_event."""
+        behavior_name = VOICE_EVENT_BEHAVIOR_MAP.get(event_type)
         if behavior_name is None:
             return None
 
-        # Route to the appropriate inject method with command context
-        if behavior_name == "respond_owner_call":
-            return self.inject_owner_call(value, command_id=command_id)
-        elif behavior_name == "respond_touch_head":
-            return self.inject_touch_head(value, command_id=command_id)
-        elif behavior_name == "emergency_stop":
+        if event_type == "EVT_VOICE_CALL_NAME":
+            return self.inject_owner_call(value)
+
+        if behavior_name == "emergency_stop":
             return self.inject_emergency_stop(value)
-        elif behavior_name == "express_happy":
-            return self.inject_happy_overflow(value, command_id=command_id)
-        return None
+
+        # Strong commands have one-to-one semantic behaviors. They must not
+        # collapse back to respond_owner_call/respond_touch_head.
+        timeout_by_behavior = {
+            "sit_down": 5.0,
+            "lie_down": 5.0,
+            "stand_up": 5.0,
+            "wait_in_place": 30.0,
+            "come_to_owner": 12.0,
+            "follow_owner": 30.0,
+            "give_paw": 5.0,
+            "high_five": 5.0,
+            "roll_over": 6.0,
+            "spin_around": 6.0,
+            "return_to_owner": 12.0,
+            "drop_object": 3.0,
+            "play_dead": 8.0,
+            "bring_object": 20.0,
+            "fetch_object": 30.0,
+        }
+        if behavior_name not in timeout_by_behavior:
+            return None
+
+        self._perception.set_person_present(True, identity="owner")
+        behavior = ActiveBehavior(
+            behavior_id=self._gen_id(),
+            behavior_name=behavior_name,
+            priority_level=PRIORITY_LEVELS["EXTERNAL_INTERACTION"],
+            value=value,
+            confidence=0.9,
+            need_type="external",
+            interrupt_policy="immediate",
+            timeout_sec=timeout_by_behavior[behavior_name],
+            cooldown_sec=1.0,
+            params={
+                "trigger_event": event_type,
+                "source": "audio_direct",
+                "target": "owner",
+            },
+        )
+        self._add_candidate(behavior)
+        return behavior
 
     # ── Candidate Selection ──────────────────────────────────────────────────
 
     def select(self) -> Optional[ActiveBehavior]:
         """Select the best candidate from accumulated inputs.
 
-        Simulates upstream processing (emotion decay, need level recomputation)
+        Simulates upstream processing (local value decay, need level recomputation)
         before selection — this represents the time elapsed since the last BT tick
         during which /emotion and /internal_need nodes have been running.
 
@@ -376,7 +548,8 @@ class MockInputProvider:
         4. Clears candidate list after selection.
         """
         # ── Simulate upstream processing between BT ticks ─────────────────
-        # The real /emotion node decays emotions every 1s.
+        # The local value decay does not change the authoritative V2
+        # ``triggered`` flag. Tests simulate recovery with a state update.
         # The real /internal_need node recalculates levels every 600s.
         # Here we tick both to simulate elapsed time.
         self._emotion_module.tick()

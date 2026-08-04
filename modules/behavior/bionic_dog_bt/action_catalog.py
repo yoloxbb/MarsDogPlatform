@@ -724,6 +724,20 @@ BEHAVIOR_ACTION_CATALOG: dict[str, list[dict]] = {
         {"phase": "绕行观察", "duration": (1.5, 4.0), "safe_to_interrupt": True,
          "actions": ["ACT_CIRCLE_AROUND", "ACT_STARE_AND_TILT_HEAD"]},
     ],
+
+    # ── Event-strength-specific need behaviors ─────────────────────────────
+    "barkShortAlert": [
+        {"phase": "需求提醒", "duration": (0.5, 1.5), "safe_to_interrupt": True,
+         "actions": ["ACT_WHINE_OR_BARK_SOFTLY", "ACT_BARK_OR_HOWL"]},
+    ],
+    "seekInteraction": [
+        {"phase": "寻找互动对象", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_SEARCH_FOR_PERSON", "ACT_TROT_AND_LOOK_AROUND"]},
+        {"phase": "主动接近", "duration": (1.5, 4.0), "safe_to_interrupt": False,
+         "actions": ["ACT_FOLLOW_AND_CLING", "ACT_RUB_AGAINST_LEG_OR_LEAN"]},
+        {"phase": "强化互动", "duration": (1.0, 3.0), "safe_to_interrupt": True,
+         "actions": ["ACT_NUDGE_HAND_WITH_HEAD", "ACT_PAW_AT_ARM_OR_PANTS"]},
+    ],
 }
 
 

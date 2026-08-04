@@ -18,6 +18,7 @@ Commands:
     excretion   - Inject excretion_request
     sleep       - Inject sleep_request
     idle        - Inject idle_look_around
+    event       - Inject an EVT_VOICE_* event
     tick        - Advance one tick
     auto        - Run auto ticks until idle settles
     status      - Show current state
@@ -81,13 +82,21 @@ def _print_state(blackboard, tree_status, console):
     all_needs = blackboard.need_module.get_all_needs()
     if all_needs:
         for name, state in sorted(all_needs.items()):
-            level_color = {"NORMAL": "dim", "TRIGGERED": "yellow", "OVERFLOW": "bold red"}
+            level_color = {
+                "NORMAL": "dim",
+                "TRIGGERED": "yellow",
+                "URGENT": "bold magenta",
+                "OVERFLOW": "bold red",
+            }
             lc = level_color.get(state.level, "dim")
             table.add_row(
                 f"need.{name}",
                 f"[{lc}]val={state.current_value:.1f} level={state.level}[/{lc}] "
-                f"(trig={state.trigger_operator} {state.trigger_threshold:.0f}, "
-                f"ovfl={state.overflow_operator} {state.overflow_threshold:.0f})"
+                f"(trigger={state.trigger_operator} {state.trigger_threshold:.0f}, "
+                f"urgent={state.urgent_operator or '-'} "
+                f"{state.urgent_threshold if state.urgent_threshold is not None else '-'}, "
+                f"overflow={state.overflow_operator or '-'} "
+                f"{state.overflow_threshold if state.overflow_threshold is not None else '-'})"
             )
     else:
         table.add_row("need_states", "(none active)")
@@ -96,11 +105,15 @@ def _print_state(blackboard, tree_status, console):
     all_emotions = blackboard.emotion_module.get_all_emotions()
     if all_emotions:
         for name, state in sorted(all_emotions.items()):
-            overflow_mark = " [bold red]OVERFLOW[/bold red]" if blackboard.emotion_module.is_overflowing(name) else ""
+            trigger_mark = (
+                " [bold green]TRIGGERED[/bold green]"
+                if blackboard.emotion_module.is_triggered(name)
+                else ""
+            )
             table.add_row(
                 f"emotion.{name}",
-                f"val={state.current_value:.1f} / thr={state.overflow_threshold:.0f} "
-                f"(decay={state.decay_rate:.1f}/s){overflow_mark}"
+                f"val={state.current_value:.1f} / thr={state.trigger_threshold:.0f}"
+                f"{trigger_mark}"
             )
     else:
         table.add_row("emotion_states", "(none active)")
@@ -152,7 +165,7 @@ def main():
         "Commands: owner_call | touch_head | danger | emergency | hunger | clean\n"
         "          social | happy | fear | curious | explore | excretion | sleep\n"
         "          idle | tick | auto | status\n"
-        "          cmd <CMD_XXX>      — voice command (CMD_SIT, CMD_PRAISE, ...)\n"
+        "          event <EVENT_TYPE> [value] — inject an exact event_type\n"
         "          person on|off       — toggle person presence for check_person\n"
         "          emotion <name> <val> — set emotion value\n"
         "          quit",
@@ -168,7 +181,7 @@ def main():
         "hunger": lambda: input_provider.inject_hunger(85),
         "clean": lambda: input_provider.inject_cleanliness(60),
         "social": lambda: input_provider.inject_social_need(75),
-        "happy": lambda: input_provider.inject_happy_overflow(80),
+        "happy": lambda: input_provider.inject_joy_trigger(30),
         "fear": lambda: input_provider.inject_fear(80),
         "curious": lambda: input_provider.inject_curiosity(70),
         "explore": lambda: input_provider.inject_explore(60),
@@ -240,20 +253,31 @@ def main():
                 console.print(f"Person present: {pc.is_person_present()}, "
                               f"identity={pc.check_person()['identity']}")
             continue
-        elif cmd.startswith("cmd"):
-            parts = cmd.split(maxsplit=1)
+        elif cmd.startswith("event"):
+            parts = cmd.split()
             if len(parts) >= 2:
-                command_id = parts[1].strip()
-                behavior = input_provider.inject_audio_command(command_id)
+                event_type = parts[1]
+                try:
+                    value = float(parts[2]) if len(parts) >= 3 else None
+                except ValueError:
+                    console.print("[red]Invalid event value[/red]")
+                    continue
+                behavior = input_provider.inject_event(event_type, value)
                 if behavior:
-                    console.print(f"[cyan]Voice command {command_id} → {behavior.behavior_name}[/cyan]")
+                    console.print(
+                        f"[cyan]Event {event_type} "
+                        f"→ {behavior.behavior_name}[/cyan]"
+                    )
                     candidate = input_provider.select()
                     if candidate:
                         blackboard.set_active_behavior(candidate)
                 else:
-                    console.print(f"[red]Unknown command: {command_id}[/red]")
-                    console.print("[dim]Known: CMD_SIT, CMD_COME_HERE, CMD_HAND, CMD_FIVE, "
-                                  "CMD_FOLLOW, CMD_STOP, CMD_PRAISE, CMD_COMFORT, CMD_ENCOUR[/dim]")
+                    console.print(f"[red]Unknown event: {event_type}[/red]")
+                    console.print(
+                        "[dim]Examples: EVT_VOICE_COMMAND_SIT, "
+                        "NEED_SOCIAL_URGENT 71, "
+                        "EMO_JOY_TRIGGERED 30[/dim]"
+                    )
             continue
         elif cmd.startswith("emotion"):
             # Manually set an emotion: "emotion happy 90"
@@ -271,8 +295,15 @@ def main():
                 all_em = blackboard.emotion_module.get_all_emotions()
                 if all_em:
                     for name, state in sorted(all_em.items()):
-                        ov = "OVERFLOW" if blackboard.emotion_module.is_overflowing(name) else "normal"
-                        console.print(f"  {name}: {state.current_value:.1f} / {state.overflow_threshold:.0f} [{ov}]")
+                        trigger_state = (
+                            "TRIGGERED"
+                            if blackboard.emotion_module.is_triggered(name)
+                            else "not-triggered"
+                        )
+                        console.print(
+                            f"  {name}: {state.current_value:.1f} / "
+                            f"{state.trigger_threshold:.0f} [{trigger_state}]"
+                        )
                 else:
                     console.print("[dim]No active emotions[/dim]")
             continue
