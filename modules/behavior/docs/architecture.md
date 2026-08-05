@@ -120,10 +120,11 @@ Social 在 URGENT/OVERFLOW 时仍为 `triggered=true`。Energy 输入值是电�
 
 默认每 100 ms 执行一次：
 
-1. 候选池删除过期候选。
+1. 候选池删除过期候选，并拒绝已 queued/in-flight 的同名 Behavior。
 2. 按 `priority_level ASC → sub_priority ASC → intensity DESC → created_at DESC` 选出一个不在冷却期的候选。
 3. 未选候选继续留在池中；冷却中的候选等待冷却结束或 TTL 到期。
-4. 候选转换为 `ActiveBehavior`，完整保留 `candidate_id`、TTL 来源时间和 `interrupt_policy`。
+4. 候选被选中时按 `behavior_name + candidate_id` 建立 in-flight reservation，
+   再转换为 `ActiveBehavior`；终态或未实际 dispatch 时释放。
 5. reactive root 从 Lv0 到 Lv6 重新评估。
 6. 情绪和需求候选都检查对应 state 的 `triggered`；等级变化时清除旧等级候选。
 7. 执行节点决定启动、继续、抢占、超时或完成。
@@ -153,7 +154,7 @@ Feedback 的 `safe_to_interrupt` 参与 safe-point 抢占。Result 转换成内�
 
 ## 5. 并发与一致性
 
-- 默认 `rclpy.spin(node)` 使用单线程执行器，subscription 与 timer 回调串行；`CandidatePool` 仍用锁保护队列和去重键，以支持测试和未来多线程执行器。
+- 默认 `rclpy.spin(node)` 使用单线程执行器，subscription 与 timer 回调串行；`CandidatePool` 仍用同一把锁保护队列、复合去重键和 in-flight reservation，以支持测试和未来多线程执行器。
 - Action feedback/result 回调异步写缓存；`ActionClientAdapter` 用独立锁保护 goal 状态。
 - 上游回调更新黑板的情绪/需求输入状态，tick 更新行为执行状态。
 - 周期 state 是当前事实，signal 是边沿事件；两者不能互相替代。

@@ -247,6 +247,7 @@ class BehaviorTreeRosNode(NodeBase):
         self._runtime = BehaviorRuntime(
             self._executor,
             blackboard=self._blackboard,
+            candidate_gate=self._candidate_allowed_during_interaction,
         )
         # Compatibility aliases for standalone tools and existing callers.
         self._tree = self._runtime.tree
@@ -866,6 +867,19 @@ class BehaviorTreeRosNode(NodeBase):
                 "PUB %s: %s", self.ATTENTION_TRACKING_TOPIC, encoded
             )
 
+    def _candidate_allowed_during_interaction(self, candidate: dict) -> bool:
+        """Reserve the decision channel for human interaction until it ends.
+
+        Attention tracking is session state rather than an Action goal, so it
+        does not otherwise participate in normal BT priority arbitration.
+        Treat an active voice session as a virtual Lv1 behavior: safety and
+        explicit/external interaction work may run, while lower-priority work
+        remains queued until the matching idle event closes the session.
+        """
+        if not self._attention_interaction_id:
+            return True
+        return int(candidate.get("priority_level", 6)) <= 1
+
     # ── Candidate Generation (via intent_mapper) ──────────────────────────
 
     def _invalidate_emotion_visual_request(self, emotion_name: str) -> int:
@@ -1033,15 +1047,22 @@ class BehaviorTreeRosNode(NodeBase):
             )
 
     def _add_candidate(self, candidate) -> None:
-        """Add a BehaviorCandidate to the pool with composite-key dedup."""
+        """Add a candidate unless its behavior is queued or in-flight."""
         dedup_key = candidate.dedup_key
         bhv_name = candidate.behavior_name
-        allow_repeat = getattr(candidate, "allow_repeat", False)
-        if not allow_repeat and self._is_duplicate_or_running(bhv_name, dedup_key):
+        if self._is_duplicate_or_running(bhv_name, dedup_key):
+            self._logger.debug(
+                "Candidate suppressed: %s already queued/in-flight",
+                bhv_name,
+            )
             return
         pool_dict = candidate.to_pool_dict()
         pool_dict.setdefault("dedup_key", dedup_key)
-        self._candidate_pool.add(**pool_dict)
+        if not self._candidate_pool.add(**pool_dict):
+            self._logger.debug(
+                "Candidate suppressed: %s already queued/in-flight",
+                bhv_name,
+            )
 
     def _is_duplicate_or_running(self, behavior_name: str,
                                   dedup_key: tuple = None) -> bool:

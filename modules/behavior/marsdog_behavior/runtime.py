@@ -10,7 +10,7 @@ from __future__ import annotations
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Optional
+from typing import Callable, Optional
 
 from bionic_dog_bt.behavior_tree_node import Status
 from bionic_dog_bt.arbitration import evaluate_preemption
@@ -46,9 +46,11 @@ class BehaviorRuntime:
         *,
         blackboard: Blackboard | None = None,
         candidate_pool: CandidatePool | None = None,
+        candidate_gate: Callable[[dict], bool] | None = None,
     ):
         self.blackboard = blackboard or Blackboard()
         self.candidate_pool = candidate_pool or CandidatePool()
+        self.candidate_gate = candidate_gate
         self.tree = build_tree(self.blackboard, executor)
         self._last_started_goal_id = ""
 
@@ -65,14 +67,48 @@ class BehaviorRuntime:
 
         # The root is intentionally reactive: every tick starts evaluation at
         # Lv0 while child nodes preserve executor state on the blackboard.
-        self.tree.reset()
-        tree_status = self.tree.tick()
+        # A selected candidate is already reserved by name.  Release that
+        # reservation if tree evaluation raises before it can be dispatched.
+        try:
+            self.tree.reset()
+            tree_status = self.tree.tick()
+        except Exception:
+            if candidate is not None and not self._candidate_is_running(
+                candidate
+            ):
+                self.candidate_pool.release_inflight(
+                    candidate["behavior_name"],
+                    candidate.get("candidate_id"),
+                )
+            raise
         self.blackboard.tick_count += 1
         self.blackboard.last_tick_time = time.time()
 
         started = self._take_started_behavior()
         completed = self.blackboard.last_feedback_event
         self.blackboard.last_feedback_event = None
+
+        if completed is not None:
+            self.candidate_pool.release_inflight(
+                completed.behavior_name,
+                completed.behavior_id,
+            )
+
+        # Relevance conditions or another guard may reject a selected
+        # candidate before send_goal().  It must not leave a permanent
+        # reservation behind.  A successfully started candidate retains its
+        # reservation until one of the terminal paths above is observed.
+        if candidate is not None and (
+            (
+                started is None
+                or started.behavior_id != candidate.get("candidate_id")
+            )
+            and not self._candidate_is_running(candidate)
+        ):
+            self.candidate_pool.release_inflight(
+                candidate["behavior_name"],
+                candidate.get("candidate_id"),
+            )
 
         # A terminal event is the lifecycle boundary.  Keeping the completed
         # object in current_behavior made dashboards report "recharge" forever
@@ -95,18 +131,29 @@ class BehaviorRuntime:
             completed_event=completed,
         )
 
+    def _candidate_is_running(self, candidate: dict) -> bool:
+        """Return whether the selected reservation owns the active goal."""
+        current = self.blackboard.current_behavior
+        return bool(
+            current is not None
+            and self.blackboard.current_status == STATUS_RUNNING
+            and current.behavior_id == candidate.get("candidate_id")
+        )
+
     def _can_run_candidate_now(self, candidate: dict) -> bool:
         """Keep blocked work queued until it can start or preempt safely."""
+        if self.candidate_gate is not None and not self.candidate_gate(candidate):
+            return False
+
         blackboard = self.blackboard
         current = blackboard.current_behavior
         if current is None or blackboard.current_status != STATUS_RUNNING:
             return True
 
-        # A duplicate of the running behavior is intentionally claimed so the
-        # action node can consume it as redundant instead of replaying it after
-        # the current invocation completes.
+        # CandidatePool should suppress this before injection.  Keep the guard
+        # for callers that manually mutate the pool/runtime during tests.
         if candidate["behavior_name"] == current.behavior_name:
-            return True
+            return False
 
         active = self.candidate_to_active_behavior(candidate)
         can_preempt, _ = evaluate_preemption(

@@ -239,7 +239,7 @@ class MockInputProvider:
             value=value, confidence=0.85,
             need_type="emotional",
             interrupt_policy="safe_point",
-            timeout_sec=8.0, cooldown_sec=1.0,
+            timeout_sec=30.0, cooldown_sec=1.0,
             params=params,
             style={"emotion": emotion_name},
         )

@@ -436,7 +436,10 @@ dedup_key = (source, trigger_event, behavior_name, variant, interaction_mode)
 - 需求: `("need", "NEED_HUNGER_TRIGGERED", "eatNormally", "food_visible", "solo")`
 - 音频: `("audio_direct", "EVT_VOICE_COMMAND_SIT", "sit_down", "", "solo")`
 
-**去重窗口**: 候选的 TTL 默认 **10.0 秒**，TTL 过期或候选被选中执行后释放去重键。
+复合 key 用于记录事件来源；另外按 `behavior_name` 做强唯一约束。同名行为只要
+已经 queued 或 in-flight，即使来自不同事件或设置 `allow_repeat=true` 也不能
+再次进入。TTL 过期会释放 queued key；被选中后转为 in-flight reservation，
+直到对应 `candidate_id` 的终态到达。
 
 ### 4.4 默认冷却/超时 (按 priority_level)
 
@@ -464,26 +467,30 @@ dedup_key = (source, trigger_event, behavior_name, variant, interaction_mode)
 class CandidatePool:
     _candidates: list[dict]      # 候选队列
     _seen_keys: set[tuple]       # 去重键集合
+    _inflight: dict[str, str]    # behavior_name → candidate_id
     _lock: threading.Lock        # 线程安全锁
 ```
 
 ### 5.2 生命周期
 
 ```
-add()                           select_best()
-  │                                │
-  │  1. discard_expired()          │  1. discard_expired()
-  │  2. 检查 dedup_key 重复        │  2. 排序: level ASC → sub_priority ASC
-  │  3. 加入 _candidates + _seen_keys  │            → value DESC → created_at DESC
-  │                                │  3. 找第一个不在冷却中的候选
-  │                                │  4. pop 并释放 _seen_keys
-  │                                │
-  ▼                                ▼
-  [候选在池中等待] ──────────────────→ [被选中执行]
-  │
-  ├── TTL 过期 → _discard_expired() → 释放 _seen_keys
-  └── 未被选中 → 保留在池中继续等待
+add()                              select_best()
+  │                                   │
+  │  1. discard_expired()             │  1. discard_expired()
+  │  2. 拒绝同名 queued/in-flight     │  2. 排序并选择可运行候选
+  │  3. 检查 dedup_key                │  3. pop queued key
+  │  4. 加入 queue                    │  4. 建立 name → candidate_id reservation
+  │                                   │
+  ▼                                   ▼
+  [QUEUED] ─────────────────────────> [IN_FLIGHT]
+  │                                   │
+  ├── TTL/权威状态失效 → 释放          ├── 终态 → release_inflight()
+  └── 未被选中 → 继续等待              └── 未实际 dispatch → 立即释放
 ```
+
+`allow_repeat` 只允许前一轮终态之后重新加入，不绕过 queued、in-flight 或
+post-completion cooldown。释放时校验 `candidate_id`，迟到的旧终态不能释放同名
+的新一轮执行。
 
 ### 5.3 冷却中的候选
 

@@ -4,6 +4,9 @@ from marsdog_behavior.ros_node import BehaviorTreeRosNode
 class _Harness:
     _on_audio_direct = BehaviorTreeRosNode._on_audio_direct
     _publish_attention_control = BehaviorTreeRosNode._publish_attention_control
+    _candidate_allowed_during_interaction = (
+        BehaviorTreeRosNode._candidate_allowed_during_interaction
+    )
 
     def __init__(self):
         self._attention_interaction_id = ""
@@ -67,3 +70,20 @@ def test_stale_session_end_does_not_stop_current_attention():
     })
     assert node._attention_interaction_id == "session-2"
     assert not node.published
+
+
+def test_active_voice_session_blocks_only_lower_priority_candidates():
+    node = _Harness()
+    node._attention_interaction_id = "session-1"
+
+    assert node._candidate_allowed_during_interaction({"priority_level": 0})
+    assert node._candidate_allowed_during_interaction({"priority_level": 1})
+    assert not node._candidate_allowed_during_interaction({"priority_level": 2})
+    assert not node._candidate_allowed_during_interaction({"priority_level": 5})
+
+    node._on_audio_direct("EVT_STATE_CHANGED", {
+        "interaction_id": "session-1",
+        "state": "idle",
+        "state_reason": "interaction_timeout",
+    })
+    assert node._candidate_allowed_during_interaction({"priority_level": 5})

@@ -47,6 +47,12 @@ created_at DESC
 
 当前实现是真正的延迟队列：暂时不能抢占、处于 cooldown 或等待 safe point 的候选保留在池中，直到可执行、权威 state 使其失效或 TTL 到期。不会因当前有更高优先级行为而直接丢弃。
 
+同名 Behavior 使用独立的执行中占位，不进入普通延迟逻辑：一个名字在
+`QUEUED` 或 `IN_FLIGHT` 时，其他来源、其他 dedup key 以及
+`allow_repeat=true` 的同名事件都会被抑制。成功、失败、超时、取消、抢占、
+Goal 拒绝等终态释放占位；未通过相关性检查、实际没有 dispatch 的候选也立即
+释放。`allow_repeat` 只表示终态之后可以再次触发，不能产生并发重复动作。
+
 抢占规则：
 
 - 更高优先级候选按当前行为的 `immediate/safe_point/non_interruptible` 策略处理。
@@ -72,6 +78,11 @@ EVT_STATE_CHANGED(state=idle, same interaction_id)
 ```
 
 跟随生命周期由语音会话决定。`follow_owner` 不能被理解为固定行进动作；实际闭环在动作系统中运行。
+
+从名字唤醒到匹配的 `idle` 结束事件之间，该会话在仲裁中视为虚拟 Lv1
+行为：Lv0 安全行为和 Lv1 外部交互仍可执行，Lv2–Lv6 候选保留在候选池中，
+待会话结束后恢复调度。这样用户沉默但语音系统仍在等待指令时，不会插入情绪、
+需求或空闲动作。
 
 ## 5. 视觉上下文
 
@@ -139,13 +150,15 @@ ros2 launch marsdog_behavior behavior_tree.launch.py
 预期日志必须显示真实 `ActionClientAdapter`，否则正在用 Mock。
 
 ```bash
-uv run pytest
+env PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 uv run pytest
 ros2 topic echo /behavior/attention_tracking
 ros2 topic echo /behavior/result_event
 ros2 action info /execute_behavior
 ```
 
-当前全量基线为 `272 passed, 18 skipped`；依赖环境差异可造成 skip，但不能新增失败。
+当前系统 ROS 环境中的 `launch_testing` 插件与项目 pytest 版本不兼容，因此上述
+命令禁用自动加载的外部插件；项目普通单元测试不依赖它们。当前全量基线为
+`276 passed, 18 skipped`，依赖环境差异可造成 skip，但不能新增失败。
 
 ## 10. 修改时必须回归
 

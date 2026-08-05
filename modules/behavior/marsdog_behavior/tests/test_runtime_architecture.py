@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
+from bionic_dog_bt.behavior_tree_node import Status
 from bionic_dog_bt.blackboard import Blackboard
 from bionic_dog_bt.mock_action_executor import MockActionExecutor
 from bionic_dog_bt.yaml_loader import YAMLLoader
@@ -47,6 +48,95 @@ def test_candidate_pool_preserves_non_selected_candidates():
 
     assert selected["behavior_name"] == "high_priority"
     assert [item["behavior_name"] for item in pool.candidates] == ["low_priority"]
+
+
+def test_runtime_candidate_gate_keeps_blocked_work_queued():
+    interaction_active = True
+    config_path = (
+        Path(__file__).resolve().parents[2] / "config" / "behaviors.yaml"
+    )
+    runtime = BehaviorRuntime(
+        MockActionExecutor(YAMLLoader(str(config_path))),
+        candidate_gate=lambda candidate: (
+            not interaction_active or candidate["priority_level"] <= 1
+        ),
+    )
+    runtime.candidate_pool.add(
+        "expressCalmAlone",
+        5,
+        dedup_key=("emotion", "calm"),
+    )
+
+    assert runtime._can_run_candidate_now(
+        runtime.candidate_pool.candidates[0]
+    ) is False
+    assert runtime.candidate_pool.select_best(
+        runtime.blackboard,
+        can_run=runtime._can_run_candidate_now,
+    ) is None
+    assert runtime.candidate_pool.size() == 1
+
+    interaction_active = False
+    selected = runtime.candidate_pool.select_best(
+        runtime.blackboard,
+        can_run=runtime._can_run_candidate_now,
+    )
+    assert selected["behavior_name"] == "expressCalmAlone"
+
+
+def test_same_behavior_name_is_unique_across_different_event_keys():
+    pool = CandidatePool()
+
+    assert pool.add(
+        "shared_behavior",
+        4,
+        dedup_key=("need", "NEED_SOCIAL_TRIGGERED"),
+    ) is True
+    assert pool.add(
+        "shared_behavior",
+        1,
+        dedup_key=("audio_direct", "EVT_VOICE_COMMAND_TEST"),
+    ) is False
+    assert pool.size() == 1
+
+
+def test_allow_repeat_never_bypasses_queued_or_inflight_uniqueness():
+    pool = CandidatePool()
+    blackboard = Blackboard()
+
+    assert pool.add(
+        "expressCalmAlone",
+        5,
+        candidate_id="calm-1",
+        dedup_key=("emotion", "calm", "first"),
+        allow_repeat=True,
+    ) is True
+    assert pool.add(
+        "expressCalmAlone",
+        5,
+        dedup_key=("emotion", "calm", "queued-repeat"),
+        allow_repeat=True,
+    ) is False
+
+    selected = pool.select_best(blackboard)
+    assert selected["candidate_id"] == "calm-1"
+    assert pool.is_inflight("expressCalmAlone")
+    assert pool.add(
+        "expressCalmAlone",
+        5,
+        dedup_key=("emotion", "calm", "running-repeat"),
+        allow_repeat=True,
+    ) is False
+
+    assert pool.release_inflight("expressCalmAlone", "stale-id") is False
+    assert pool.is_inflight("expressCalmAlone")
+    assert pool.release_inflight("expressCalmAlone", "calm-1") is True
+    assert pool.add(
+        "expressCalmAlone",
+        5,
+        dedup_key=("emotion", "calm", "after-terminal"),
+        allow_repeat=True,
+    ) is True
 
 
 def test_candidate_pool_discards_expired_candidates():
@@ -92,6 +182,16 @@ def test_candidate_in_cooldown_remains_queued():
     assert pool.size() == 1
 
 
+def test_allow_repeat_still_respects_post_completion_cooldown():
+    pool = CandidatePool()
+    blackboard = Blackboard()
+    blackboard.set_cooldown("repeatable", 5.0)
+    pool.add("repeatable", 5, allow_repeat=True)
+
+    assert pool.select_best(blackboard) is None
+    assert pool.size() == 1
+
+
 def test_candidate_blocked_by_runtime_predicate_remains_queued():
     pool = CandidatePool()
     blackboard = Blackboard()
@@ -125,6 +225,41 @@ def test_runtime_reports_a_behavior_start_only_once():
     assert first.started_behavior is not None
     assert first.started_behavior.behavior_id == "candidate-1"
     assert second.started_behavior is None
+    assert runtime.candidate_pool.is_inflight("respond_owner_call")
+    assert runtime.candidate_pool.add(
+        "respond_owner_call",
+        1,
+        dedup_key=("another", "event"),
+        allow_repeat=True,
+    ) is False
+
+
+def test_runtime_releases_selected_candidate_that_was_not_dispatched():
+    class _RejectingTree:
+        def reset(self):
+            pass
+
+        def tick(self):
+            return Status.FAILURE
+
+    config_path = (
+        Path(__file__).resolve().parents[2] / "config" / "behaviors.yaml"
+    )
+    runtime = BehaviorRuntime(
+        MockActionExecutor(YAMLLoader(str(config_path)))
+    )
+    runtime.tree = _RejectingTree()
+    runtime.candidate_pool.add(
+        "respond_owner_call",
+        1,
+        candidate_id="not-dispatched",
+    )
+
+    outcome = runtime.tick()
+
+    assert outcome.started_behavior is None
+    assert not runtime.candidate_pool.is_inflight("respond_owner_call")
+    assert runtime.candidate_pool.add("respond_owner_call", 1) is True
 
 
 def test_runtime_reports_timeout_as_terminal_event():
@@ -147,6 +282,8 @@ def test_runtime_reports_timeout_as_terminal_event():
 
     assert outcome.completed_event is not None
     assert outcome.completed_event.status == "TIMEOUT"
+    assert not runtime.candidate_pool.is_inflight("respond_owner_call")
+    assert runtime.candidate_pool.add("respond_owner_call", 1) is True
 
 
 def test_runtime_reports_interrupted_event_before_replacement():
@@ -178,3 +315,5 @@ def test_runtime_reports_interrupted_event_before_replacement():
     assert outcome.started_behavior.behavior_name == "emergency_stop"
     assert runtime.blackboard.current_behavior is not None
     assert runtime.blackboard.current_behavior.behavior_name == "emergency_stop"
+    assert not runtime.candidate_pool.is_inflight("respond_owner_call")
+    assert runtime.candidate_pool.is_inflight("emergency_stop")

@@ -159,7 +159,7 @@ def _category_to_need_type(category: str) -> str:
 
 
 def _default_timeout_for_level(level: int) -> float:
-    defaults = {0: 5.0, 1: 8.0, 2: 60.0, 3: 30.0, 4: 25.0, 5: 8.0, 6: 30.0}
+    defaults = {0: 5.0, 1: 8.0, 2: 60.0, 3: 30.0, 4: 25.0, 5: 30.0, 6: 30.0}
     return defaults.get(level, 30.0)
 
 

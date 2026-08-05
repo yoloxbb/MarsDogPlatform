@@ -76,7 +76,7 @@ marsdog_behavior/                   # ← 仓库根目录软链接到 ~/ros2_ws/
 │   ├── ros_node.py                 # 主 ROS2 节点（订阅/发布/Timer/AC）
 │   ├── runtime.py                  # 传输无关运行时（仲裁/BT tick/生命周期事件）
 │   ├── intent_mapper.py              # Event→Intent→Behavior 管道
-│   ├── candidate_pool.py           # 候选池（去重/TTL/排序/冷却等待）
+│   ├── candidate_pool.py           # 候选池（同名唯一占位/TTL/排序/冷却等待）
 │   ├── config_paths.py             # 源码/ROS2 安装配置路径解析
 │   ├── behavior_selector.py        # 旧调用方兼容门面
 │   ├── relevance_checker.py        # 独立相关性检查兼容模块
@@ -327,7 +327,7 @@ LOG_FILE=/tmp/bt.log uv run python -m marsdog_behavior.ros_node
 ### 行为树负责
 
 1. 接收 `/emotion/signal_event`、`/internal_need/signal_event`、`/perception/audio_event`（白名单）→ 通过 intent 管道生成候选
-2. 维护候选行为池（去重、TTL、来源记录）
+2. 维护候选行为池（同名 queued/in-flight 唯一占位、TTL、来源记录）
 3. 按优先级、抢占规则、冷却、超时和情绪/需求 `triggered` 相关性选择行为
 4. 执行前判断 interactive / solo
 5. 通过 Action Client 向 `/execute_behavior` 下发 `behavior_name`

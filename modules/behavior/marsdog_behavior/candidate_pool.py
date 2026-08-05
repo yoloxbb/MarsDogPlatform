@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import threading
 import time
+import uuid
 from typing import Callable, Optional
 
 from bionic_dog_bt.logger import get_logger, LogEvent
@@ -22,6 +23,12 @@ class CandidatePool:
     def __init__(self):
         self._candidates: list[dict] = []
         self._seen_keys: set[tuple] = set()
+        # behavior_name -> candidate/behavior id.  Selection reserves the
+        # semantic behavior until its terminal lifecycle event is observed.
+        # This prevents a second event source (or allow_repeat) from injecting
+        # the same behavior while the first invocation is being dispatched or
+        # executed.
+        self._inflight: dict[str, str] = {}
         self._lock = threading.Lock()
 
     def add(self, behavior_name: str, priority_level: int, value: float = 50.0,
@@ -34,21 +41,29 @@ class CandidatePool:
             allow_repeat: bool = False, emotion_priority: int = 50) -> bool:
         """Add a candidate. Returns True if added, False if duplicate.
 
-        Dedup uses composite key when available, falling back to behavior_name.
-        When *allow_repeat* is True the composite-key dedup is skipped so
-        every occurrence generates a fresh candidate.
+        A behavior name is unique across both the queued and in-flight states.
+        The composite key remains useful for diagnostics/source identity, but
+        ``allow_repeat`` only permits a new invocation after the previous one
+        reaches a terminal state; it never permits concurrent duplicates.
         """
         with self._lock:
             now = time.time()
             self._discard_expired(now)
 
-            # Composite key dedup (skipped for repeatable candidates)
-            key = dedup_key or (behavior_name,)
-            if not allow_repeat and key in self._seen_keys:
+            if behavior_name in self._inflight:
+                return False
+            if any(
+                item["behavior_name"] == behavior_name
+                for item in self._candidates
+            ):
                 return False
 
-            if not allow_repeat:
-                self._seen_keys.add(key)
+            key = dedup_key or (behavior_name,)
+            if key in self._seen_keys:
+                return False
+
+            candidate_id = candidate_id or f"cand_{uuid.uuid4().hex[:12]}"
+            self._seen_keys.add(key)
             self._candidates.append({
                 "behavior_name": behavior_name,
                 "priority_level": priority_level,
@@ -108,11 +123,8 @@ class CandidatePool:
             ))
             best_index = None
             for index, candidate in enumerate(self._candidates):
-                cooldown_ready = (
-                    candidate.get("allow_repeat")
-                    or not blackboard.is_in_cooldown(
-                        candidate["behavior_name"]
-                    )
+                cooldown_ready = not blackboard.is_in_cooldown(
+                    candidate["behavior_name"]
                 )
                 if not cooldown_ready:
                     continue
@@ -125,6 +137,7 @@ class CandidatePool:
 
             best = self._candidates.pop(best_index)
             self._seen_keys.discard(best["dedup_key"])
+            self._inflight[best["behavior_name"]] = best["candidate_id"]
 
             _log.event(LogEvent.CANDIDATE_SELECT,
                        behavior_name=best["behavior_name"],
@@ -151,20 +164,55 @@ class CandidatePool:
         self._candidates = retained
 
     def is_duplicate(self, behavior_name: str, dedup_key: tuple = None) -> bool:
-        """Check if a candidate is already in the pool."""
+        """Check whether a behavior is queued or reserved in-flight."""
         with self._lock:
             self._discard_expired(time.time())
+            if behavior_name in self._inflight:
+                return True
+            if any(
+                item["behavior_name"] == behavior_name
+                for item in self._candidates
+            ):
+                return True
             if dedup_key:
                 return dedup_key in self._seen_keys
-            for existing in self._candidates:
-                if existing["behavior_name"] == behavior_name:
-                    return True
         return False
+
+    def release_inflight(
+        self,
+        behavior_name: str,
+        candidate_id: str | None = None,
+    ) -> bool:
+        """Release a selected behavior after a terminal or no-dispatch path.
+
+        When *candidate_id* is supplied, a stale terminal callback cannot
+        release a newer invocation that happens to use the same behavior name.
+        """
+        with self._lock:
+            reserved_id = self._inflight.get(behavior_name)
+            if reserved_id is None:
+                return False
+            if candidate_id and reserved_id != candidate_id:
+                return False
+            del self._inflight[behavior_name]
+            return True
+
+    def is_inflight(self, behavior_name: str) -> bool:
+        """Return whether *behavior_name* is selected/dispatched and active."""
+        with self._lock:
+            return behavior_name in self._inflight
+
+    @property
+    def inflight(self) -> dict[str, str]:
+        """Return a snapshot of current behavior-name reservations."""
+        with self._lock:
+            return dict(self._inflight)
 
     def clear(self) -> None:
         with self._lock:
             self._candidates.clear()
             self._seen_keys.clear()
+            self._inflight.clear()
 
     def discard_emotion(self, emotion_name: str) -> int:
         """Discard queued candidates tied to a recovered V2 emotion.
