@@ -91,6 +91,43 @@ openvins_stereo_odometry:
     # RTAB-Map 的该加载路径不会从文件读取相机内参和相机-IMU 外参；这些由输入数据提供。
     "OdomOpenVINS/ConfigPath": ""
 
+    # ===== OpenVINS visual-loss leg velocity aiding =====
+
+    # 默认关闭，保持原 OpenVINS 行为；独立启动入口会覆盖为 true。
+    "OdomOpenVINS/LegVelocityEnabled": "false"
+    # 是否融合 base_link 原点的垂直速度 vz。
+    "OdomOpenVINS/LegVelocityUseVertical": "true"
+    # 是否融合独立足式运动学给出的 yaw_rate。
+    "OdomOpenVINS/LegVelocityUseYawRate": "true"
+    # 足式消息时间戳相对相机/IMU 时钟的偏移，单位秒。
+    "OdomOpenVINS/LegVelocityTimeOffset": "0.0"
+    # 相机帧使用足式观测时允许的最大消息年龄，单位秒。
+    "OdomOpenVINS/LegVelocityMaxAge": "0.15"
+    # 连续无实际视觉更新达到此帧数后进入足式辅助。
+    "OdomOpenVINS/LegVelocityLossFrames": "3"
+    # 距上次视觉更新超过此时间后进入足式辅助，单位秒。
+    "OdomOpenVINS/LegVelocityLossTime": "0.2"
+    # 视觉恢复后同时使用视觉和足式速度的最短时间，单位秒。
+    "OdomOpenVINS/LegVelocityRecoveryTime": "0.5"
+    # 恢复窗口内所需的最少活动视觉观测数。
+    "OdomOpenVINS/LegVelocityMinActiveObservations": "60"
+    # 恢复窗口内所需的最少已接受视觉约束数。
+    "OdomOpenVINS/LegVelocityRecoveryAccepted": "10"
+    # 水平速度方差下限，单位 (m/s)^2。
+    "OdomOpenVINS/LegVelocityHorizontalVarianceFloor": "0.05"
+    # 垂直速度方差下限，单位 (m/s)^2。
+    "OdomOpenVINS/LegVelocityVerticalVarianceFloor": "0.10"
+    # 偏航角速度方差下限，单位 (rad/s)^2。
+    "OdomOpenVINS/LegVelocityYawRateVarianceFloor": "0.02"
+    # 四维创新卡方门控阈值倍率。
+    "OdomOpenVINS/LegVelocityChi2Multiplier": "1.0"
+    # 足式线速度模长上限，单位 m/s。
+    "OdomOpenVINS/LegVelocityMaxLinearSpeed": "5.0"
+    # 足式垂直速度绝对值上限，单位 m/s。
+    "OdomOpenVINS/LegVelocityMaxVerticalSpeed": "2.0"
+    # 足式偏航角速度绝对值上限，单位 rad/s。
+    "OdomOpenVINS/LegVelocityMaxYawRate": "6.0"
+
     # ===== OpenVINS tracker / front-end =====
 
     # 多相机输入时，是否在相机对之间跟踪双目约束。

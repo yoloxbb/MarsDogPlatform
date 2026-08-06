@@ -39,6 +39,8 @@ def generate_launch_description():
     left_info_topic = LaunchConfiguration('left_info_topic')
     right_info_topic = LaunchConfiguration('right_info_topic')
     imu_topic = LaunchConfiguration('imu_topic')
+    leg_velocity_enabled = LaunchConfiguration('leg_velocity_enabled')
+    leg_odom_topic = LaunchConfiguration('leg_odom_topic')
     startup_delay = LaunchConfiguration('startup_delay')
     log_level = LaunchConfiguration('log_level')
 
@@ -101,6 +103,16 @@ def generate_launch_description():
             description='D435i 驱动发布的合并 IMU 话题。',
         ),
         DeclareLaunchArgument(
+            'leg_velocity_enabled',
+            default_value='false',
+            description='视觉退化时是否启用 OpenVINS 内部足式速度辅助。',
+        ),
+        DeclareLaunchArgument(
+            'leg_odom_topic',
+            default_value='/odom_leg',
+            description='足式运动学里程计话题。',
+        ),
+        DeclareLaunchArgument(
             'startup_delay',
             default_value='1.0',
             description='等待外部 D435i 和 TF 稳定的时间，单位秒。',
@@ -139,6 +151,8 @@ def generate_launch_description():
             'left_info_topic': left_info_topic,
             'right_info_topic': right_info_topic,
             'imu_topic': imu_topic,
+            'leg_velocity_enabled': leg_velocity_enabled,
+            'leg_odom_topic': leg_odom_topic,
             # D435i 原始 IMU 不含 orientation，不能送入 RTAB-Map 异步接口。
             'orientation_imu_topic': '/rtabmap/unused_orientation_imu',
             'odom_topic': '/odom',
