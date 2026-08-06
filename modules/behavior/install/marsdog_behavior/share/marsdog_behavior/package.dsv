@@ -1,9 +1,0 @@
-source;share/marsdog_behavior/hook/pythonpath.ps1
-source;share/marsdog_behavior/hook/pythonpath.dsv
-source;share/marsdog_behavior/hook/pythonpath.sh
-source;share/marsdog_behavior/hook/ament_prefix_path.ps1
-source;share/marsdog_behavior/hook/ament_prefix_path.dsv
-source;share/marsdog_behavior/hook/ament_prefix_path.sh
-source;../../build/marsdog_behavior/share/marsdog_behavior/hook/pythonpath_develop.ps1
-source;../../build/marsdog_behavior/share/marsdog_behavior/hook/pythonpath_develop.dsv
-source;../../build/marsdog_behavior/share/marsdog_behavior/hook/pythonpath_develop.sh

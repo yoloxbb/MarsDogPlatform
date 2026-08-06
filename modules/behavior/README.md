@@ -173,17 +173,17 @@ uv run python -m marsdog_behavior.standalone_demo
 mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
 
 ln -s /path/to/marsdog_interfaces .
-ln -s /home/cat/xbb/20260702_MarsDogTree marsdog_behavior
+ln -s /path/to/20260702_MarsDogTree marsdog_behavior
 ln -s /path/to/marsdog_action_executor .
 
 # 2. 一次性构建全部（marsdog_interfaces 必须先于其他包就绪）
 cd ~/ros2_ws
 source /opt/ros/humble/setup.bash
-
+colcon build --symlink-install
 source install/setup.bash
 
 # 3. 启动动作执行器（先启动，行为树才能通过 ActionClient 对接）
-· ······· &
+ros2 run marsdog_action_executor action_executor_node &
 
 # 4. 启动行为树节点
 ros2 launch marsdog_behavior behavior_tree.launch.py

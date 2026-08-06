@@ -142,8 +142,7 @@ Calm 不续排。恢复、失败、次数或总时长达到上限时停止。多
 
 ```bash
 source /opt/ros/humble/setup.bash
-source /home/cat/ros2_ws/install/setup.bash
-cd /home/cat/xbb/20260702_MarsDogTree
+source ~/ros2_ws/install/setup.bash
 ros2 launch marsdog_behavior behavior_tree.launch.py
 ```
 
@@ -158,7 +157,7 @@ ros2 action info /execute_behavior
 
 当前系统 ROS 环境中的 `launch_testing` 插件与项目 pytest 版本不兼容，因此上述
 命令禁用自动加载的外部插件；项目普通单元测试不依赖它们。当前全量基线为
-`276 passed, 18 skipped`，依赖环境差异可造成 skip，但不能新增失败。
+`278 passed, 18 skipped`，依赖环境差异可造成 skip，但不能新增失败。
 
 ## 10. 修改时必须回归
 
