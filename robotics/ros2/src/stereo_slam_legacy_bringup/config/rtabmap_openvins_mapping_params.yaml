@@ -269,7 +269,7 @@ rtabmap:
     "Grid/CellSize": "0.05"
     # 当前约49.4 mm基线在3 m外深度误差增长很快，先保留可靠近场点云。
     "Grid/RangeMin": "0.3"
-    "Grid/RangeMax": "3.0"
+    "Grid/RangeMax": "3.5"
     # 4与纯双目配置默认值一致；相对2会将每帧点数降低到约四分之一。
     "Grid/DepthDecimation": "4"
     "Grid/PreVoxelFiltering": "true"
@@ -283,8 +283,8 @@ rtabmap:
     "Grid/NormalK": "20"
     "Grid/ClusterRadius": "0.1"
     "Grid/MinClusterSize": "10"
-    "Grid/MaxObstacleHeight": "0.0"
-    "Grid/MinGroundHeight": "0.0"
+    "Grid/MaxObstacleHeight": "0.3"
+    "Grid/MinGroundHeight": "-0.3"
     "Grid/MaxGroundHeight": "0.0"
     "Grid/FootprintLength": "0.0"
     "Grid/FootprintWidth": "0.0"
