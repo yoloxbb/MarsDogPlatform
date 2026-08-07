@@ -57,6 +57,8 @@ def generate_launch_description():
     orientation_imu_topic = LaunchConfiguration('orientation_imu_topic')
     odom_topic = LaunchConfiguration('odom_topic')
     odom_info_topic = LaunchConfiguration('odom_info_topic')
+    leg_velocity_enabled = LaunchConfiguration('leg_velocity_enabled')
+    leg_odom_topic = LaunchConfiguration('leg_odom_topic')
     startup_delay = LaunchConfiguration('startup_delay')
     nav2_startup_delay = LaunchConfiguration('nav2_startup_delay')
     nav2_autostart = LaunchConfiguration('nav2_autostart')
@@ -110,6 +112,16 @@ def generate_launch_description():
             'launch_viz',
             default_value='false',
             description='是否启动 rtabmap_viz；GO2 无桌面运行时建议关闭。',
+        ),
+        DeclareLaunchArgument(
+            'leg_velocity_enabled',
+            default_value='true',
+            description='视觉退化时是否启用 OpenVINS 足式速度辅助。',
+        ),
+        DeclareLaunchArgument(
+            'leg_odom_topic',
+            default_value='/odom_leg',
+            description='足式运动学里程计话题。',
         ),
         DeclareLaunchArgument(
             'use_sim_time',
@@ -319,6 +331,8 @@ def generate_launch_description():
             'orientation_imu_topic': orientation_imu_topic,
             'odom_topic': odom_topic,
             'odom_info_topic': odom_info_topic,
+            'leg_velocity_enabled': leg_velocity_enabled,
+            'leg_odom_topic': leg_odom_topic,
             # 使用绝对话题名与 GO2 Nav2 参数保持一致。
             'map_topic': '/map',
             'local_grid_obstacle_topic': '/rtabmap/local_grid_obstacle',

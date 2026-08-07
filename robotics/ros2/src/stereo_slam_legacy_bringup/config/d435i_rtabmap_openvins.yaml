@@ -290,7 +290,7 @@ openvins_stereo_odometry:
     # ===== OpenVINS ZUPT =====
 
     # 是否尝试零速度更新（ZUPT）。
-    "OdomOpenVINS/TryZUPT": "true"
+    "OdomOpenVINS/TryZUPT": "false"
 
     # ZUPT 卡方检验阈值的倍率。
     "OdomOpenVINS/ZUPTChi2Multiplier": "0.5"

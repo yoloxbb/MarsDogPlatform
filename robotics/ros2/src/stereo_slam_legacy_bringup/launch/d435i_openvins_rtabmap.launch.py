@@ -99,7 +99,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'imu_topic',
-            default_value='/camera/camera/imu',
+            default_value='/imu/data_raw',
             description='D435i 驱动发布的合并 IMU 话题。',
         ),
         DeclareLaunchArgument(

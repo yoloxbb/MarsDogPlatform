@@ -36,7 +36,7 @@ openvins_stereo_odometry:
     # ===== OpenVINS tracker / front-end =====
     "OdomOpenVINS/UseStereo": "true"
     "OdomOpenVINS/UseKLT": "true"
-    "OdomOpenVINS/NumPts": "500"
+    "OdomOpenVINS/NumPts": "800"
     "OdomOpenVINS/MinPxDist": "10"
     # OpenVINS 包装层还会读取这些通用视觉参数。
     "FAST/Threshold": "10"
@@ -94,7 +94,7 @@ openvins_stereo_odometry:
     "OdomOpenVINS/InitDynMinRecCond": "1e-15"
 
     # ===== OpenVINS ZUPT =====
-    "OdomOpenVINS/TryZUPT": "true"
+    "OdomOpenVINS/TryZUPT": "false"
     "OdomOpenVINS/ZUPTChi2Multiplier": "0.5"
     # 参数名源码里就是 Velodicy，不是 Velocity。
     "OdomOpenVINS/ZUPTMaxVelodicy": "0.1"
@@ -205,7 +205,7 @@ rtabmap:
     # ===== registration used to verify loop closures =====
     "Reg/Strategy": "0"
     # 地面机器人只做 2D 导航可以改 true；四足/无人机/手持建图一般保持 false。
-    "Reg/Force3DoF": "false"
+    "Reg/Force3DoF": "true"
     "Reg/RepeatOnce": "true"
     "Vis/MinInliers": "10"
     "Vis/Iterations": "300"

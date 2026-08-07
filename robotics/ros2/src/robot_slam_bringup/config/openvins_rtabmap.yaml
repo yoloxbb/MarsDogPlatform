@@ -94,7 +94,7 @@ openvins_stereo_odometry:
     "OdomOpenVINS/InitDynMinRecCond": "1e-15"
 
     # ===== OpenVINS ZUPT =====
-    "OdomOpenVINS/TryZUPT": "true"
+    "OdomOpenVINS/TryZUPT": "false"
     "OdomOpenVINS/ZUPTChi2Multiplier": "0.5"
     # 参数名源码里就是 Velodicy，不是 Velocity。
     "OdomOpenVINS/ZUPTMaxVelodicy": "0.1"
