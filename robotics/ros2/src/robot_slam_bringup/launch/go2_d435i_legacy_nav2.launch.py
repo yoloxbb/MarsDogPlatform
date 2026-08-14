@@ -1,4 +1,4 @@
-"""在 GO2 上复用通用 OpenVINS/RTAB-Map 管线并可选启动 Nav2。"""
+"""在 GO2 上使用原生 D435i 双目与原生 WIT IMU，复用 OpenVINS/RTAB-Map 管线并可选启动 Nav2。"""
 
 import os
 
@@ -27,7 +27,7 @@ def package_launch(package_name, launch_name):
 
 
 def generate_launch_description():
-    """组合外部 D435i、通用建图/重定位管线以及可选 Nav2 导航."""
+    """组合原生 D435i、原生 WIT IMU、通用建图/重定位管线以及可选 Nav2 导航."""
     legacy_package_share = get_package_share_directory(
         'stereo_slam_legacy_bringup')
     nav2_package_share = get_package_share_directory('robot_slam_bringup')
@@ -51,12 +51,8 @@ def generate_launch_description():
     left_image_topic = LaunchConfiguration('left_image_topic')
     right_image_topic = LaunchConfiguration('right_image_topic')
     left_info_topic = LaunchConfiguration('left_info_topic')
-    right_driver_info_topic = LaunchConfiguration('right_driver_info_topic')
     right_info_topic = LaunchConfiguration('right_info_topic')
     imu_topic = LaunchConfiguration('imu_topic')
-    openvins_imu_topic = LaunchConfiguration('openvins_imu_topic')
-    left_camera_frame_id = LaunchConfiguration('left_camera_frame_id')
-    kalibr_imu_frame_id = LaunchConfiguration('kalibr_imu_frame_id')
     orientation_imu_topic = LaunchConfiguration('orientation_imu_topic')
     odom_topic = LaunchConfiguration('odom_topic')
     odom_info_topic = LaunchConfiguration('odom_info_topic')
@@ -178,51 +174,20 @@ def generate_launch_description():
             description='D435i 驱动发布的左红外 CameraInfo 话题。',
         ),
         DeclareLaunchArgument(
-            'right_driver_info_topic',
-            default_value='/camera/camera/infra2/camera_info',
-            description='D435i 驱动发布的原始右红外 CameraInfo 话题。',
-        ),
-        DeclareLaunchArgument(
             'right_info_topic',
-            default_value=(
-                '/camera/camera/infra2/'
-                'camera_info_kalibr_extrinsics'
-            ),
-            description=(
-                '只替换双目基线 P[3] 后供 OpenVINS 使用的 CameraInfo。'
-            ),
+            default_value='/camera/camera/infra2/camera_info',
+            description='D435i 驱动原生发布的右红外 CameraInfo 话题。',
         ),
         DeclareLaunchArgument(
             'imu_topic',
-            default_value='/camera/camera/imu',
-            description=(
-                'D435i 合并后的 IMU 话题；RealSense 驱动需提前启用 '
-                'unite_imu_method。'
-            ),
-        ),
-        DeclareLaunchArgument(
-            'openvins_imu_topic',
-            default_value='/camera/camera/imu_kalibr',
-            description='改写 frame_id 后，仅供 OpenVINS 使用的 IMU 话题。',
-        ),
-        DeclareLaunchArgument(
-            'left_camera_frame_id',
-            default_value='camera_infra1_optical_frame',
-            description=(
-                '左目图像消息的 frame_id，也是 Kalibr T_cam_imu 的 cam0。'
-            ),
-        ),
-        DeclareLaunchArgument(
-            'kalibr_imu_frame_id',
-            default_value='d435i_kalibr_imu',
-            description='避免与 RealSense 原 TF 冲突的虚拟 Kalibr IMU 坐标系。',
+            default_value='/imu/data_raw',
+            description='WIT IMU 驱动原生话题，直接供 OpenVINS 使用，不做转发。',
         ),
         DeclareLaunchArgument(
             'orientation_imu_topic',
             default_value='/rtabmap/unused_orientation_imu',
             description=(
-                'RTAB-Map 使用的带 orientation IMU；D435i 原始 IMU '
-                '没有姿态，默认保持为未发布话题。'
+                'RTAB-Map 异步姿态 IMU 输入；当前不使用，默认保持为未发布话题。'
             ),
         ),
         DeclareLaunchArgument(
@@ -269,43 +234,28 @@ def generate_launch_description():
         ),
     ]
 
-    # Kalibr 给出的 T_cam_imu 是 IMU 到左目相机的变换。将虚拟 IMU
-    # 挂在现有左目光学坐标系下，可使用新外参且不会覆盖 RealSense 原有 TF。
+
     kalibr_extrinsic_tf = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
-        name='d435i_kalibr_extrinsic_tf',
+        name='camera_to_wit_imu_kalibr_extrinsic_tf',
         output='screen',
         arguments=[
-            '--x', '0.00643667445704867',
-            '--y', '-0.0028342499608111547',
-            '--z', '-0.016981060410297476',
-            '--qx', '-0.0047162887457236',
-            '--qy', '0.0032407684553346',
-            '--qz', '-0.0008502833328930',
-            '--qw', '0.9999832653892463',
-            '--frame-id', left_camera_frame_id,
-            '--child-frame-id', kalibr_imu_frame_id,
+            '--x', '-0.034675482490387',
+            '--y', '-0.020943006517538',
+            '--z', '0.008633613611199',
+            '--qx', '0.707265522596187',
+            '--qy', '-0.005278522343855',
+            '--qz', '-0.706848217515136 ',
+            '--qw', '0.010640260536412',
+            '--frame-id', 'camera_link',
+            '--child-frame-id', 'imu_link',
         ],
     )
 
-    # Kalibr 标定时使用的就是该 D435i IMU 话题，因此测量轴不旋转；
-    # 只更换为上面新建的虚拟 frame_id，使 OpenVINS 读取新外参。
-    kalibr_imu_relay = Node(
-        package='stereo_slam_legacy_bringup',
-        executable='d435i_extrinsics_relay',
-        name='d435i_extrinsics_relay',
-        output='screen',
-        parameters=[{
-            'input_topic': imu_topic,
-            'output_topic': openvins_imu_topic,
-            'output_frame_id': kalibr_imu_frame_id,
-            'right_info_input_topic': right_driver_info_topic,
-            'right_info_output_topic': right_info_topic,
-            # Kalibr 的 T_cn_cnm1 给出 cam0 到 cam1 基线。
-            'stereo_baseline': 0.04997166711450362,
-        }],
-    )
+
+    # D435i 图像/CameraInfo 与 WIT IMU 均直接使用各自驱动的原生话题。
+    # 不启动 relay，不改写 IMU header.frame_id，也不生成 CameraInfo 中间话题。
 
     # 与 HB 启动文件使用同一个公共建图管线；D435i 的红外图像已经校正，
     # 因此 OpenVINS 和 RTAB-Map 可以消费同一组 image_rect_raw。
@@ -332,8 +282,8 @@ def generate_launch_description():
             'right_image_topic': right_image_topic,
             'left_info_topic': left_info_topic,
             'right_info_topic': right_info_topic,
-            'imu_topic': openvins_imu_topic,
-            # D435i 原始 IMU 没有 orientation，不能交给 RTAB-Map 异步接口。
+            'imu_topic': imu_topic,
+            # 当前不向 RTAB-Map 提供异步 orientation IMU。
             'orientation_imu_topic': orientation_imu_topic,
             'odom_topic': odom_topic,
             'odom_info_topic': odom_info_topic,
@@ -413,7 +363,6 @@ def generate_launch_description():
 
     return LaunchDescription(declared_arguments + [
         kalibr_extrinsic_tf,
-        kalibr_imu_relay,
         delayed_mapping_pipeline,
         delayed_nav2,
     ])

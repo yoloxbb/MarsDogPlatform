@@ -1,0 +1,314 @@
+# GO2 + D435i + 外置 WIT IMU + OpenVINS 足式辅助 + RTAB-Map 平面建图。
+# /odom_leg(child=base_footprint) 与机器人静态 TF 由用户单独启动；
+# OpenVINS 独占发布 odom -> base_footprint。
+
+openvins_stereo_odometry:
+  ros__parameters:
+    # ROS、同步和 TF
+    use_sim_time: false
+    frame_id: "base_footprint"
+
+
+    odom_frame_id: "odom"
+    publish_tf: true
+    wait_for_transform: 0.2
+    wait_imu_to_init: true
+    subscribe_imu: true
+    approx_sync: true
+    approx_sync_max_interval: 0.01
+    topic_queue_size: 5
+    sync_queue_size: 5
+    imu_queue_size: 1000
+    leg_odom_queue_size: 200
+    qos: 2
+    qos_image: 2
+    qos_camera_info: 2
+    qos_imu: 2
+    qos_leg_odom: 2
+
+    # Kalibr 标定为 t_imu=t_cam+0.0118656 s，OpenVINS 还会在线估计该值。
+    # 多取 30 ms 的未来 IMU，确保足式更新插值点两侧都有 IMU 样本。
+    imu_lookahead: 0.03
+    always_check_imu_tf: false
+    always_process_most_recent_frame: false
+
+    # OpenVINS odometry
+    "Odom/Strategy": "10"
+    "Odom/ResetCountdown": "0"
+    "Odom/FillInfoData": "true"
+    "Odom/ImageBufferSize": "1"
+    "Odom/GuessMotion": "true"
+    "Odom/FilteringStrategy": "0"
+    "Odom/AlignWithGround": "false"
+    # OpenVINS 内部仍估计完整 6DoF；RTAB-Map odometry 基类只发布 x/y/yaw。
+    "Reg/Force3DoF": "true"
+    "Odom/KeyFrameThr": "0.3"
+    "Odom/VisKeyFrameThr": "120"
+
+    # OpenVINS 直接使用 D435i 矫正后的双目图像和 ROS TF 外参。
+    "OdomOpenVINS/ConfigPath": ""
+    "OdomOpenVINS/UseStereo": "true"
+    "OdomOpenVINS/UseKLT": "true"
+    # 从旧配置的 800/500 降为 400，给 15 Hz 输入留出计算余量。
+    "OdomOpenVINS/NumPts": "800"
+    "OdomOpenVINS/MinPxDist": "10"
+    "FAST/Threshold": "10"
+    "Vis/GridRows": "5"
+    "Vis/GridCols": "5"
+    "Vis/CorNNDR": "0.8"
+    "Vis/MinDepth": "0.1"
+    "Vis/MaxDepth": "10.0"
+    "Vis/DepthAsMask": "true"
+
+    "OdomOpenVINS/FiTriangulate1d": "false"
+    "OdomOpenVINS/FiRefineFeatures": "true"
+    "OdomOpenVINS/FiMaxRuns": "5"
+    "OdomOpenVINS/FiMaxBaseline": "40"
+    "OdomOpenVINS/FiMaxCondNumber": "10000"
+
+    # 缩小滑窗和单次更新规模，降低偶发 300~450 ms 尖峰。
+    "OdomOpenVINS/UseFEJ": "true"
+    "OdomOpenVINS/Integration": "1"
+    "OdomOpenVINS/CalibCamExtrinsics": "false"
+    "OdomOpenVINS/CalibCamIntrinsics": "false"
+    "OdomOpenVINS/CalibCamTimeoffset": "true"
+    "OdomOpenVINS/CalibIMUIntrinsics": "false"
+    "OdomOpenVINS/CalibIMUGSensitivity": "false"
+    "OdomOpenVINS/MaxClones": "12"
+    "OdomOpenVINS/MaxSLAM": "30"
+    "OdomOpenVINS/MaxSLAMInUpdate": "20"
+    "OdomOpenVINS/MaxMSCKFInUpdate": "60"
+    "OdomOpenVINS/FeatRepMSCKF": "0"
+    "OdomOpenVINS/FeatRepSLAM": "4"
+    "OdomOpenVINS/DtSLAMDelay": "0.0"
+    "OdomOpenVINS/GravityMag": "9.81"
+    "OdomOpenVINS/LeftMaskPath": ""
+    "OdomOpenVINS/RightMaskPath": ""
+
+    "OdomOpenVINS/InitWindowTime": "2.0"
+    "OdomOpenVINS/InitIMUThresh": "1.0"
+    "OdomOpenVINS/InitMaxDisparity": "10.0"
+    "OdomOpenVINS/InitMaxFeatures": "50"
+    "OdomOpenVINS/InitDynUse": "false"
+    "OdomOpenVINS/InitDynMLEOptCalib": "false"
+    "OdomOpenVINS/InitDynMLEMaxIter": "50"
+    "OdomOpenVINS/InitDynMLEMaxTime": "0.05"
+    "OdomOpenVINS/InitDynMLEMaxThreads": "6"
+    "OdomOpenVINS/InitDynNumPose": "6"
+    "OdomOpenVINS/InitDynMinDeg": "10.0"
+    "OdomOpenVINS/InitDynInflationOri": "10.0"
+    "OdomOpenVINS/InitDynInflationVel": "100.0"
+    "OdomOpenVINS/InitDynInflationBg": "10.0"
+    "OdomOpenVINS/InitDynInflationBa": "100.0"
+    "OdomOpenVINS/InitDynMinRecCond": "1e-15"
+
+    "OdomOpenVINS/TryZUPT": "true"
+    "OdomOpenVINS/ZUPTChi2Multiplier": "0.5"
+    "OdomOpenVINS/ZUPTMaxVelodicy": "0.1"
+    "OdomOpenVINS/ZUPTNoiseMultiplier": "10.0"
+    "OdomOpenVINS/ZUPTMaxDisparity": "0.5"
+    "OdomOpenVINS/ZUPTOnlyAtBeginning": "true"
+
+    # WIT IMU 当前标定噪声。
+    "OdomOpenVINS/AccelerometerNoiseDensity": "0.08"
+    "OdomOpenVINS/AccelerometerRandomWalk": "0.004"
+    "OdomOpenVINS/GyroscopeNoiseDensity": "0.001"
+    "OdomOpenVINS/GyroscopeRandomWalk": "0.0001"
+    "OdomOpenVINS/UpMSCKFSigmaPx": "1.0"
+    "OdomOpenVINS/UpMSCKFChi2Multiplier": "1.5"
+    "OdomOpenVINS/UpSLAMSigmaPx": "1.0"
+    "OdomOpenVINS/UpSLAMChi2Multiplier": "1.5"
+
+    # 非对称迟滞：视觉首次没有实际 EKF 更新时立即使用 /odom_leg；视觉重新出现后继续足式辅助，
+    # 只有连续恢复 0.5 s、每帧活动观测不少于 50 且累计接受约束不少于 12 时才回到纯视觉。
+    # vz 使用 Go2 SportModeState 的真实垂直速度；Force3DoF 只负责将对外位姿压平。
+    "OdomOpenVINS/LegVelocityEnabled": "true"
+    "OdomOpenVINS/LegVelocityUseVertical": "true"
+    "OdomOpenVINS/LegVelocityUseYawRate": "true"
+    "OdomOpenVINS/LegVelocityTimeOffset": "0.0"
+    "OdomOpenVINS/LegVelocityMaxAge": "0.20"
+    "OdomOpenVINS/LegVelocityLossFrames": "3"
+    "OdomOpenVINS/LegVelocityLossTime": "0.25"
+    "OdomOpenVINS/LegVelocityRecoveryTime": "0.5"
+    "OdomOpenVINS/LegVelocityMinActiveObservations": "50"
+    "OdomOpenVINS/LegVelocityRecoveryAccepted": "12"
+    "OdomOpenVINS/LegVelocityHorizontalVarianceFloor": "0.05"
+    "OdomOpenVINS/LegVelocityVerticalVarianceFloor": "0.10"
+    "OdomOpenVINS/LegVelocityYawRateVarianceFloor": "0.02"
+    "OdomOpenVINS/LegVelocityChi2Multiplier": "1.0"
+    "OdomOpenVINS/LegVelocityMaxLinearSpeed": "3.0"
+    "OdomOpenVINS/LegVelocityMaxVerticalSpeed": "1.0"
+    "OdomOpenVINS/LegVelocityMaxYawRate": "4.0"
+
+    "Rtabmap/ImagesAlreadyRectified": "true"
+
+rtabmap:
+  ros__parameters:
+    use_sim_time: false
+    frame_id: "base_footprint"
+    odom_frame_id: "odom"
+    map_frame_id: "map"
+    publish_tf: true
+    wait_for_transform: 0.2
+    database_path: "~/.ros/rtabmap_go2_openvins_leg_mapping.db"
+    delete_db_on_start: false
+
+    subscribe_stereo: true
+    subscribe_rgb: false
+    subscribe_rgbd: false
+    subscribe_depth: false
+    stereo_to_depth: false
+    subscribe_scan: false
+    subscribe_scan_cloud: false
+    subscribe_odom_info: true
+    subscribe_imu: false
+    approx_sync: true
+    approx_sync_max_interval: 0.01
+    topic_queue_size: 5
+    sync_queue_size: 5
+    qos: 2
+    qos_image: 2
+    qos_camera_info: 2
+
+    # 1.5 Hz 比旧配置 1 Hz 更及时，同时避免稠密双目持续占满 CPU。
+    "Rtabmap/DetectionRate": "1.5"
+    "Rtabmap/ImageBufferSize": "1"
+    "Rtabmap/CreateIntermediateNodes": "false"
+    "Rtabmap/ImagesAlreadyRectified": "true"
+    "Rtabmap/LoopThr": "0.11"
+    "Rtabmap/LoopRatio": "0"
+    "Rtabmap/PublishStats": "true"
+    "Rtabmap/PublishLastSignature": "true"
+    "Rtabmap/PublishPdf": "false"
+    "Rtabmap/PublishLikelihood": "false"
+    "Rtabmap/MemoryThr": "0"
+    "Rtabmap/TimeThr": "700"
+
+    "Mem/IncrementalMemory": "true"
+    "Mem/LocalizationReadOnly": "false"
+    "Mem/ImageKept": "false"
+    "Mem/BinDataKept": "true"
+    "Mem/RawDescriptorsKept": "true"
+    "Mem/IntermediateNodeDataKept": "false"
+    "Mem/InitWMWithAllNodes": "false"
+    "Mem/UseOdomFeatures": "false"
+    "Mem/UseOdomGravity": "true"
+    "Mem/CovOffDiagIgnored": "true"
+
+    "RGBD/Enabled": "true"
+    "RGBD/LinearUpdate": "0.10"
+    "RGBD/AngularUpdate": "0.10"
+    "RGBD/LinearSpeedUpdate": "0.0"
+    "RGBD/AngularSpeedUpdate": "0.0"
+    "RGBD/OptimizeFromGraphEnd": "false"
+    "RGBD/OptimizeMaxError": "3.0"
+    "RGBD/ProximityBySpace": "true"
+    "RGBD/ProximityByTime": "false"
+    "RGBD/NeighborLinkRefining": "false"
+    "RGBD/LoopClosureIdentityGuess": "false"
+    "RGBD/LoopClosureReextractFeatures": "false"
+    "RGBD/LocalBundleOnLoopClosure": "false"
+    "RGBD/MaxLoopClosureDistance": "0.0"
+    "RGBD/MaxOdomCacheSize": "10"
+
+    "Reg/Strategy": "0"
+    "Reg/Force3DoF": "true"
+    "Reg/RepeatOnce": "true"
+    "Vis/MinInliers": "20"
+    "Vis/Iterations": "300"
+    "Vis/FeatureType": "8"
+    "Vis/MaxFeatures": "800"
+    "Vis/SSC": "false"
+    "Vis/DepthAsMask": "true"
+    "Vis/MinDepth": "0.1"
+    "Vis/MaxDepth": "6.0"
+    "Vis/GridRows": "5"
+    "Vis/GridCols": "5"
+    "Vis/CorType": "0"
+    "Vis/CorNNType": "1"
+    "Vis/CorNNDR": "0.8"
+    "Vis/CorGuessWinSize": "40"
+    "Vis/PnPReprojError": "3.0"
+    "Vis/PnPRefineIterations": "1"
+    "Vis/PnPVarianceMedianRatio": "4"
+    "Vis/BundleAdjustment": "1"
+
+    "Kp/DetectorStrategy": "8"
+    "Kp/MaxFeatures": "600"
+    "Kp/BadSignRatio": "0.5"
+    "Kp/NndrRatio": "0.8"
+    "Kp/NNStrategy": "1"
+    "Kp/IncrementalDictionary": "true"
+    "Kp/IncrementalFlann": "true"
+
+    "Optimizer/Strategy": "1"
+    "Optimizer/Iterations": "15"
+    "Optimizer/Epsilon": "0.00001"
+    "Optimizer/Robust": "false"
+    "Optimizer/VarianceIgnored": "false"
+    "Optimizer/GravitySigma": "0.3"
+
+    # 与已验证的 GO2 里程计建图管线使用同一稠密双目策略。
+    # StereoBM 在弱纹理地面上宁可不输出也不生成过多稠密飞点。
+    "Stereo/DenseStrategy": "0"
+    "StereoBM/BlockSize": "15"
+    "StereoBM/MinDisparity": "0"
+    "StereoBM/NumDisparities": "128"
+    "StereoBM/PreFilterSize": "9"
+    "StereoBM/PreFilterCap": "31"
+    "StereoBM/UniquenessRatio": "15"
+    "StereoBM/TextureThreshold": "10"
+    "StereoBM/SpeckleWindowSize": "100"
+    "StereoBM/SpeckleRange": "4"
+    "StereoBM/Disp12MaxDiff": "-1"
+
+    # 与 stereo_camera_pkg/nav.launch.py 中表现稳定的 GO2 分割参数对齐。
+    "RGBD/CreateOccupancyGrid": "true"
+    "Grid/Sensor": "1"
+    "Grid/CellSize": "0.05"
+    "Grid/RangeMin": "0.02"
+    "Grid/RangeMax": "4.0"
+    "Grid/DepthDecimation": "4"
+    "Grid/PreVoxelFiltering": "true"
+    "Grid/NoiseFilteringRadius": "0.12"
+    "Grid/NoiseFilteringMinNeighbors": "4"
+    "Grid/3D": "true"
+    "Grid/RayTracing": "true"
+    "Grid/MapFrameProjection": "true"
+    # Force3DoF 保证此处取到的 roll/pitch/z 与 GO2 平面里程计相同。
+    "Grid/NormalsSegmentation": "true"
+    "Grid/GroundIsObstacle": "false"
+    "Grid/FlatObstacleDetected": "true"
+    "Grid/MaxGroundAngle": "25"
+    "Grid/NormalK": "12"
+    "Grid/ClusterRadius": "0.15"
+    "Grid/MinClusterSize": "12"
+    # 法向量模式不用高度带限定地面，避免把低矮障碍整体当成地面。
+    "Grid/MinGroundHeight": "0.0"
+    "Grid/MaxGroundHeight": "0.0"
+    "Grid/MaxObstacleHeight": "1.2"
+    "Grid/FootprintLength": "0.0"
+    "Grid/FootprintWidth": "0.0"
+    "Grid/FootprintHeight": "0.0"
+    "GridGlobal/UpdateError": "0.01"
+    "GridGlobal/OccupancyThr": "0.5"
+    "GridGlobal/ProbHit": "0.7"
+    "GridGlobal/ProbMiss": "0.4"
+
+rtabmap_viz:
+  ros__parameters:
+    use_sim_time: false
+    frame_id: "base_footprint"
+    odom_frame_id: "odom"
+    map_frame_id: "map"
+    subscribe_stereo: true
+    # 直接订阅 /odom，初始化阶段没有历史 odom->base_footprint TF 时显示丢失状态，
+    # 避免不断报 "Could not get odometry pose from TF"。
+    subscribe_odom: true
+    subscribe_odom_info: true
+    approx_sync: true
+    topic_queue_size: 5
+    sync_queue_size: 5
+    qos: 2
+    qos_image: 2
+    qos_camera_info: 2
