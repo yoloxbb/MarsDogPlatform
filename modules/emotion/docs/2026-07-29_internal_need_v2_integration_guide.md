@@ -115,6 +115,25 @@ URGENT -> TRIGGERED    发布 NEED_SOCIAL_TRIGGERED
 TRIGGERED -> NORMAL    发布 NEED_SOCIAL_RECOVERED
 ```
 
+行为组回传有效的 `COMPLETED` 后，需求节点会先结算对应需求。如果结算前后等级
+相同且需求仍为 `TRIGGERED / URGENT / OVERFLOW`，系统会复用当前等级事件名再
+发布一次，字段集合不变：
+
+```json
+{
+  "event_type": "NEED_EXPLORATION_TRIGGERED",
+  "demand": "Exploration",
+  "value": 85,
+  "level": "TRIGGERED",
+  "previousLevel": "TRIGGERED",
+  "trigger": "ACTION_RESULT_STILL_ACTIVE"
+}
+```
+
+若结算导致等级变化，只发布原有 `LEVEL_CHANGED` 事件，不额外重发。降到
+`NORMAL` 时发布 `RECOVERED`。`STARTED / FAILED / INTERRUPTED / CANCELLED /
+TIMEOUT` 当前不会触发同等级重发，避免失败结果形成快速循环。
+
 其他现有事件名 `NEED_<DEMAND>_TRIGGERED / OVERFLOW / RECOVERED` 保持不变，
 但没有配置对应等级的需求不会产生该等级事件。
 

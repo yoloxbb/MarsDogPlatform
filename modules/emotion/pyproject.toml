@@ -1,9 +1,8 @@
 [project]
-name = "marsdog-behavior"
+name = "marsdog-need-emotion"
 version = "0.1.0"
-description = "Marsdog behavior arbitration core with ROS2 adapter."
+description = "Marsdog internal need, emotion, personality and virtual time ROS2 nodes."
 requires-python = ">=3.10"
 
 [tool.pytest.ini_options]
-pythonpath = ["."]
 testpaths = ["tests"]

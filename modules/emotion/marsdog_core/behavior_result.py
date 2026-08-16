@@ -47,7 +47,11 @@ def NormalizeBehaviorResultEventValue(
     if actionDemandMap is not None and expectedDemand is None:
         return None
 
-    demand = _NormalizeOptionalDemand(payload.get("demand_type", payload.get("demandType")))
+    demandValue = payload.get("demand_type", payload.get("demandType"))
+    demand = _NormalizeOptionalDemand(demandValue)
+    # 显式填写的 demand_type 非法时必须拒绝，不能把它当成缺省值自动补全。
+    if demandValue not in (None, "") and demand is None:
+        return None
     if demand is not None and expectedDemand is not None and demand != expectedDemand:
         return None
 

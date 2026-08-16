@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import json
 from datetime import datetime
 from math import isfinite
 from typing import Any
+
+from marsdog_ros2.common.json_message import NormalizeJsonMessageValue
 
 
 TIME_EVENT_TYPES = {
@@ -21,7 +22,7 @@ DEFAULT_DEMAND_TICK_SECONDS = 10 * 60
 
 def GetTimeStateMessageValue(message: object) -> dict[str, Any]:
     """解析并校验 `/simulation/time_state` 消息。"""
-    payload = _NormalizeMessageToDict(message)
+    payload = NormalizeJsonMessageValue(message)
     if not payload or payload.get("event_type") not in TIME_EVENT_TYPES:
         return {}
     if not isinstance(payload.get("timeContext"), dict):
@@ -35,7 +36,11 @@ def GetTimeContextDateTimeValue(
 ) -> datetime | None:
     """从时间状态消息读取带时区的 ISO 8601 时间。"""
     timeContext = payload.get("timeContext", {})
-    value = timeContext.get(fieldName) if isinstance(timeContext, dict) else None
+    value = (
+        timeContext.get(fieldName)
+        if isinstance(timeContext, dict)
+        else None
+    )
     if not isinstance(value, str):
         return None
     try:
@@ -90,25 +95,3 @@ def _GetRealSecondsPerStepValue(metadata: object) -> float:
     stepCount = int(stepCountNumber)
     # 凌晨特殊加速只按真实经过时间以1倍耗电，不按六小时虚拟跳时耗电。
     return durationSeconds / stepCount
-
-
-def _NormalizeMessageToDict(message: object) -> dict[str, Any]:
-    """把 ROS2 String、JSON 字符串或 dict 转换为字典。"""
-    if message is None:
-        return {}
-    if isinstance(message, dict):
-        return dict(message)
-    if isinstance(message, str):
-        return _LoadJsonDict(message)
-    if hasattr(message, "data"):
-        return _NormalizeMessageToDict(getattr(message, "data"))
-    return {}
-
-
-def _LoadJsonDict(text: str) -> dict[str, Any]:
-    """解析 JSON 对象，非法内容返回空字典。"""
-    try:
-        data = json.loads(text)
-    except (TypeError, ValueError):
-        return {}
-    return data if isinstance(data, dict) else {}

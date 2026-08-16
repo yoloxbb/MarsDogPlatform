@@ -72,7 +72,7 @@ ros2 launch marsdog_need_emotion internal_need_emotion.launch.py \
 | Topic | 类型 | 发布节点 | 发布规则 |
 |---|---|---|---|
 | `/internal_need/state` | `std_msgs/String` JSON | `internal_need_node` | 每 1 秒持续发布 |
-| `/internal_need/signal_event` | `std_msgs/String` JSON | `internal_need_node` | 需求等级变化时发布 |
+| `/internal_need/signal_event` | `std_msgs/String` JSON | `internal_need_node` | 需求等级变化或完成后仍激活时发布 |
 | `/emotion/state` | `std_msgs/String` JSON | `emotion_engine_node` | 每个虚拟秒发布；真实频率为 `time_scale` Hz |
 | `/emotion/signal_event` | `std_msgs/String` JSON | `emotion_engine_node` | 情绪首次达到触发阈值时发布 |
 | `/personality/state` | `std_msgs/String` JSON | `personality_node` | 启动时和性格变化后发布 |
@@ -221,7 +221,9 @@ ros2 param set /personality_node C 40
 | `Social` | `0-60` | `61-70` | `71-85` | `86-100` |
 | `Exploration` | `0-60` | `61-100` | 无 | 无 |
 
-需求等级变化时发布 `/internal_need/signal_event`。同一等级不会重复发布。
+需求等级变化时发布 `/internal_need/signal_event`。有效的 `COMPLETED` 结果结算
+后，如果动作对应需求仍处于同一激活等级，则复用当前等级事件名再发布一次；
+其他普通同等级数值变化不会发布。
 `/internal_need/state.levelEvents[demand]` 与 `/internal_need/signal_event.event_type`
 使用同一套事件名，可直接按 `demand` 对比两者是否一致。
 
@@ -254,6 +256,18 @@ NEED_<DEMAND>_RECOVERED
   "trigger": "LEVEL_CHANGED"
 }
 ```
+
+`trigger` 有两个取值：
+
+- `LEVEL_CHANGED`：当前等级与上一次等级不同，此时 `previousLevel` 通常与
+  `level` 不同。
+- `ACTION_RESULT_STILL_ACTIVE`：行为完成后仍停留在同一激活等级，此时
+  `previousLevel == level`。
+
+同等级重发不会增加或删除字段，也不会产生新的事件名。例如
+`Exploration=100` 完成一次探索后降到 `85`，仍为 `TRIGGERED`，将再次发布
+`NEED_EXPLORATION_TRIGGERED`。如果行为结算同时造成等级变化，则只发布一条
+`LEVEL_CHANGED` 事件，避免重复通知。
 
 当前自动生成的事件：
 
@@ -448,6 +462,11 @@ Calm 立即变为未触发。
 finalDelta = round(baseDelta * k_emotion * metadataMultiplier)
 ```
 
+声音、视觉和触摸事件统一按精确 `event_type` 去重。默认配置
+`eventDeduplicationWindowSeconds=10`：首次事件正常计算，距上次接受事件不足10个
+真实秒的同名事件被忽略，满10秒后可以再次计算；不同事件互不影响。去重使用本机
+单调时钟，不使用输入消息中的 `timestamp`。配置为 `0` 时关闭该去重。
+
 性格系数：
 
 ```text
@@ -555,7 +574,7 @@ Calm 消息仍保留配置值 `triggerThreshold=0`、`triggerOperator=gte`，但
 | `action_type` | 必填 | 必须是已登记的内部需求相关 `ACTION_*` |
 | `demand_type` | 建议填写 | 填写时必须与 `action_type` 映射一致，否则拒绝处理 |
 | `result_type` | 必填 | 只接受 `STARTED / COMPLETED / FAILED / INTERRUPTED / CANCELLED / TIMEOUT` |
-| `metadata` | 必填 JSON 对象 | 没有额外字段时传 `{}`；非对象会被拒绝 |
+| `metadata` | 建议填写 JSON 对象 | 缺省或 `null` 按 `{}` 处理；其他非对象值会被拒绝 |
 
 当前接受的 `action_type -> demand_type`：
 

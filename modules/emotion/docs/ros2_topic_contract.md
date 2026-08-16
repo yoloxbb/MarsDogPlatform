@@ -31,17 +31,22 @@
 | `/personality/state` | `RELIABLE + TRANSIENT_LOCAL, depth=1` | `personality_node` | 启动时和性格变化后发布 |
 | `/simulation/time_state` | `RELIABLE + TRANSIENT_LOCAL, depth=1000` | `time_controller_node`；测试时为 `midnight_test_node` | 初始化、逐虚拟秒 Tick、倍率变化或测试跳步 |
 | `/internal_need/state` | `RELIABLE, depth=10` | `internal_need_node` | 每 1 秒持续发布 |
-| `/internal_need/signal_event` | `RELIABLE, depth=10` | `internal_need_node` | 需求等级变化时发布 |
+| `/internal_need/signal_event` | `RELIABLE, depth=10` | `internal_need_node` | 需求等级变化或完成后仍激活时发布 |
 | `/emotion/state` | `RELIABLE, depth=10` | `emotion_engine_node` | 每个虚拟秒发布；真实频率为 `time_scale` Hz |
 | `/emotion/signal_event` | `RELIABLE, depth=10` | `emotion_engine_node` | 情绪首次达到触发阈值时发布 |
 | `/simulation/midnight_test_result` | `RELIABLE + TRANSIENT_LOCAL, depth=1` | `midnight_test_node` | 凌晨测试完成时发布 `PASSED/FAILED` 和最终状态 |
-| `/perception/tactile_event` | `RELIABLE, depth=10` | `one1000_tactile_node` | ONE1000 摸头状态从未触摸变为触摸时发布 |
+| `/perception/tactile_event` | `RELIABLE, depth=10` | `one1000_tactile_node` | 距离模式首次进入、重新进入及持续贴近每2秒发布；雷达模式按上升沿发布 |
 | `/one1000/status` | `RELIABLE, depth=10` | `one1000_tactile_node` | 真实时间 1 Hz 发布串口、C5距离、雷达和摸头诊断状态 |
 
 情绪自然衰减由 `emotion_engine_node` 的单调真实时钟以 1 Hz 驱动，不依赖
 `/simulation/time_state` 的虚拟 Tick 频率，也不随 `time_scale` 加速。
 当前只有 `Joy / Excite / Fear / Curious` 自然衰减，`Anxiety / Calm` 不随
 时间变化，但仍可由输入事件和行为结果修改。
+
+情绪节点对声音、视觉和触摸输入统一执行同名事件去重。默认
+`configs/emotions.yaml:eventDeduplicationWindowSeconds=10`：同一个事件名距上次
+接受不足10个真实秒时不会再次计算情绪，满10秒后可再次触发；不同事件名互不
+影响。需求节点不使用该情绪去重状态，行为结果事件也不受此规则影响。
 
 ## 2. 输入 Topic
 
@@ -74,20 +79,9 @@
 | `masterId` / `master_id` / `speakerIsMaster` | 可选 bool | `EVT_VOICE_PRAISE` 的主人声纹倍率字段 |
 | 其他字段 | 可选 | 可作为事件倍率或扩展元数据 |
 
-当前声音事件映射：
-
-| event_type | 影响 |
-|---|---|
-| `EVT_VOICE_PRAISE` | 情绪事件 |
-| `EVT_VOICE_SCOLD` | 情绪事件 |
-| `EVT_VOICE_COMMAND_KNOWN` | 情绪事件 |
-| `EVT_VOICE_COMMAND_UNKNOWN` | 情绪事件 |
-| `EVT_VOICE_HAPPY` | 情绪事件 |
-| `EVT_VOICE_SAD` | 情绪事件 |
-| `EVT_VOICE_NEUTRAL` | 情绪事件 |
-| `EVT_VOICE_CALL_NAME` | 情绪事件；需求节点标记主人出现 |
-| `EVT_VOICE_MASTER_ID` | 情绪事件；需求节点标记主人出现 |
-| `EVT_VOICE_STRANGER_ID` | 情绪事件 |
+完整声音基础增量和元数据倍率见自动生成的
+[情绪事件映射目录](emotion_event_catalog.md#声音输入)。需求节点只对
+`EVT_VOICE_CALL_NAME / EVT_VOICE_MASTER_ID` 额外标记主人出现。
 
 ### 2.2 `/perception/visual_event`
 
@@ -130,32 +124,16 @@
 | `hands` | 可选 list | 当前不直接参与需求/情绪计算 |
 | `tracked_objects` | 可选 list | 当前不直接参与需求/情绪计算 |
 
-当前视觉事件映射：
-
-| event_type | 影响 |
-|---|---|
-| `EVT_VISION_MASTER` | 情绪事件；需求节点标记主人出现 |
-| `EVT_VISION_MASTER_HAPPY` | 情绪事件 |
-| `EVT_VISION_MASTER_SAD` | 情绪事件 |
-| `EVT_VISION_MASTER_NEUTRAL` | 情绪事件 |
-| `EVT_VISION_STRANGER` | 情绪事件 |
-| `EVT_VISION_STRANGER_ALERT` | 情绪事件 |
-| `EVT_VISION_STRANGER_FRIEND` | 情绪事件 |
-| `EVT_VISION_FOOD` | 情绪事件 |
-| `EVT_VISION_TOY` | 情绪事件 |
-| `EVT_VISION_FALL` | 情绪事件 |
-| `EVT_VISION_STOP_GESTURE` | 情绪事件 |
-| `EVT_VISION_HAND_TO_NOSE` | 情绪事件 |
-| `EVT_VISION_HAND_TO_NOSE_FEAR` | 情绪事件 |
-| `EVT_VISION_ANIMAL_CALM` | 情绪事件 |
-| `EVT_VISION_ANIMAL_GREET` | 情绪事件 |
-| `EVT_VISION_ANIMAL_PLAY` | 情绪事件 |
-| `EVT_VISION_ANIMAL_BOUNDARY` | 情绪事件 |
+完整视觉基础增量见自动生成的
+[情绪事件映射目录](emotion_event_catalog.md#视觉输入)。需求节点只对
+`EVT_VISION_MASTER` 额外标记主人出现。
 
 ### 2.3 `/perception/tactile_event`
 
 触觉事件使用单个 `event_type`。情绪节点命中
 `configs/emotions.yaml:eventRules` 时更新情绪；需求节点接收事件但当前不修改需求值。
+完整触摸基础增量见自动生成的
+[情绪事件映射目录](emotion_event_catalog.md#触摸输入)。
 
 ONE1000 临时适配节点当前只发布摸头事件。默认使用 C5 信标距离，小于10cm时
 发布：
@@ -196,8 +174,9 @@ ONE1000 临时适配节点当前只发布摸头事件。默认使用 C5 信标�
 
 距离模式在有效距离满足 `0 < distance < 10cm` 时首次发布；0米按无效测距
 处理，恰好10cm不触发。持续保持在阈值内时，每经过
-`touch_cooldown_seconds` 再发布一次，默认间隔2秒；离开阈值后停止。雷达模式
-保持原有摸头位上升沿规则。重复间隔使用真实时间，不受
+`touch_cooldown_seconds` 再发布一次，默认间隔2秒；离开阈值后停止，重新进入
+时立即发布，不继承上一次贴近的冷却时间。雷达模式保持原有摸头位上升沿规则。
+持续贴近的重复间隔使用真实时间，不受
 `time_scale` 或凌晨加速影响。默认性格下每次
 `EVT_TACTILE_HEAD_PET` 使 `Joy +25 / Calm +15 / Excite +5`。初始 Joy 为0，
 因此第一次摸头不会达到 Joy 的30阈值；信标持续保持在10cm内，默认2秒后第二次
@@ -231,12 +210,12 @@ ONE1000 临时适配节点当前只发布摸头事件。默认使用 C5 信标�
 
 | 字段 | 要求 | 说明 |
 |---|---|---|
-| `event_id` | 必填 string | 同一节点内重复 `event_id` 只处理一次 |
+| `event_id` | 建议填写 string | 同一节点内重复 `event_id` 只处理一次；不填则无法去重 |
 | `timestamp` | 建议填写 number | Unix 时间戳；当前只透传，不参与计算 |
 | `action_type` | 必填 string | 必须是已登记的内部需求相关 `ACTION_*` |
-| `demand_type` | 必填 string | 必须与 `action_type` 映射一致，否则拒绝处理 |
+| `demand_type` | 建议填写 string | 可按 action 自动补全；显式填写时必须合法且与映射一致 |
 | `result_type` | 必填 string | 只接受 `STARTED / COMPLETED / FAILED / INTERRUPTED / CANCELLED / TIMEOUT` |
-| `metadata` | 必填 object | 没有额外字段时传 `{}`；非 object 会被拒绝 |
+| `metadata` | 建议填写 object | 缺省或 `null` 按 `{}` 处理；其他非 object 值会被拒绝 |
 
 当前接受的 `action_type -> demand_type`：
 
@@ -565,7 +544,8 @@ ros2 param set /personality_node C 40
 
 ### 3.4 `/internal_need/signal_event`
 
-需求等级变化时发布；同一等级不会重复发布。
+需求等级变化时发布。有效的 `COMPLETED` 结果结算后，如果动作对应需求仍处于
+同一激活等级，则复用当前等级事件名再发布一次；其他同等级数值变化不会发布。
 
 格式：
 
@@ -596,11 +576,17 @@ ros2 param set /personality_node C 40
 | `demand` | 需求名 |
 | `value` | 当前需求值 |
 | `level` | 当前等级 |
-| `previousLevel` | 上一次等级 |
+| `previousLevel` | 上一次等级；行为完成后同等级重发时与 `level` 相同 |
 | `triggerThreshold / triggerOperator` | 首次触发线及比较符 |
 | `urgentThreshold / urgentOperator` | 可选的中间紧急线及比较符 |
 | `overflowThreshold / overflowOperator` | 可选的满溢线及比较符 |
-| `trigger` | 固定为 `LEVEL_CHANGED` |
+| `trigger` | 等级变化为 `LEVEL_CHANGED`；行为完成后仍激活为 `ACTION_RESULT_STILL_ACTIVE` |
+
+同等级重发沿用 `schema_version=2.0` 和现有字段集合。例如探索需求从 `100`
+结算到 `85` 后仍为 `TRIGGERED`，再次发布 `NEED_EXPLORATION_TRIGGERED`，其中
+`previousLevel=level=TRIGGERED`。如果结算导致等级变化，只发布原有
+`LEVEL_CHANGED` 事件，不重复发布。当前只对有效的 `COMPLETED` 启用同等级
+重发，避免失败、中断或超时形成快速循环。
 
 事件命名规则：
 

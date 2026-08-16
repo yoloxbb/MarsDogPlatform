@@ -238,8 +238,8 @@ class One1000ProtocolTest(unittest.TestCase):
             )
         )
 
-    def test_distance_detector_stops_repeating_after_beacon_leaves(self):
-        """信标离开阈值后应停止，重新进入仍需满足最近事件间隔。"""
+    def test_distance_detector_reenters_immediately_after_beacon_leaves(self):
+        """信标离开阈值后应停止，重新进入时应立即触发。"""
         detector = One1000DistanceHeadPetDetector(10.0, 2.0)
 
         self.assertTrue(
@@ -254,7 +254,7 @@ class One1000ProtocolTest(unittest.TestCase):
                 0.5,
             )
         )
-        self.assertFalse(
+        self.assertTrue(
             detector.ShouldEmitEventValue(
                 self._BuildPositionValueObject(0.080),
                 1.0,

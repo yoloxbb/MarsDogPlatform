@@ -49,7 +49,8 @@ personalitySystem = MarsdogPersonalitySystem()
 - `GetAllDemandLevels()`：读取全部需求等级。
 - `GetDemandLevelEventsValue()`：读取全部需求当前等级对应的事件名映射。
 - `GetDemandSignalSnapshotValue()`：读取当前需求等级快照。
-- `GetDemandSignalEventsValue(timestamp=None)`：获取需求等级变化事件；调用后会刷新快照。
+- `GetDemandSignalEventsValue(timestamp=None)`：获取需求等级变化事件，以及行为完成后
+  仍停留在同一激活等级的重发事件；调用后会刷新快照并消费待重发标记。
 - `GetInternalNeedStateValue(timestamp=None)`：返回可发布到 `/internal_need/state` 的完整状态。
 
 需求 V2 阈值如下，比较符均为严格大于：
@@ -71,7 +72,8 @@ personalitySystem = MarsdogPersonalitySystem()
 - `ResetDemandsToMorningInitialValues(currentTime=None)`：恢复晨起需求值，但不重置持续耗电的 Energy。
 - `ApplyInterruptedDemandDelta(demandType)`：内部需求行为被打断时扣减对应需求。
 - `GetDemandTypeByAction(actionType)`：根据 `ACTION_*` 查对应需求类型，用于行为结果结算。
-- `OnBehaviorResultEvent(resultData)`：消费 `/behavior/result_event` 并更新需求。
+- `OnBehaviorResultEvent(resultData)`：消费 `/behavior/result_event` 并更新需求；成功处理
+  `COMPLETED` 后登记一次对应需求的重发检查。
 
 ## 饥渴接口
 
@@ -147,7 +149,9 @@ Energy 在凌晨需求锁定和睡眠期间仍持续衰减，并由需求 Tick �
 - `GetAllEmotions()`：返回所有情绪值。
 - `GetDominantEmotion()`：返回当前值最高的情绪。
 - `ApplyEmotionDelta(emotionType, delta)`：按增量修改情绪。
-- `ApplyEmotionEvent(eventName, metadata=None)`：按 `configs/emotions.yaml:eventRules` 应用外部事件。
+- `ApplyEmotionEvent(eventName, metadata=None)`：按 `configs/emotions.yaml:eventRules`
+  应用外部事件；同名事件在 `eventDeduplicationWindowSeconds` 窗口内只计算一次。
+- `GetEmotionEventDeduplicationWindowSecondsValue()`：读取当前外部同名事件去重窗口秒数。
 - `GetEmotionEventMappingValue(eventName)`：读取指定事件映射。
 - `GetLastEmotionEventResultValue()`：读取最近一次情绪事件计算结果。
 - `ApplyEmotionDecay(elapsedSeconds=1.0)`：按真实经过秒数衰减
@@ -217,7 +221,7 @@ Energy 在凌晨需求锁定和睡眠期间仍持续衰减，并由需求 Tick �
 - `action_type`：必填，必须能映射到内部需求。
 - `demand_type`：建议填写；填写时必须与 `action_type` 映射一致。
 - `result_type`：必填，只接受 `STARTED / COMPLETED / FAILED / INTERRUPTED / CANCELLED / TIMEOUT`。
-- `metadata`：必填 JSON 对象；无额外字段时传 `{}`。
+- `metadata`：建议填写 JSON 对象；缺省或 `null` 按 `{}` 处理，其他类型会被拒绝。
 
 当前接受 `ACTION_EAT / ACTION_DEFECATE / ACTION_SLEEP / ACTION_GROOM /
 ACTION_RECHARGE / ACTION_PLAY_INVITE / ACTION_SOCIAL_GREET /
@@ -228,7 +232,8 @@ ACTION_EXPLORE / ACTION_SPACE_EXPLORE / ACTION_OBJECT_EXPLORE`。其他 action
 ### 输出
 
 - `/internal_need/state`：内部需求状态，1 秒持续发布。
-- `/internal_need/signal_event`：内部需求等级变化事件，等级变化时发布。
+- `/internal_need/signal_event`：内部需求等级变化时发布；行为完成后对应需求仍停留在
+  同一激活等级时，复用当前等级事件名再次发布。
 - `/emotion/state`：情绪状态，每个虚拟秒发布。
 - `/emotion/signal_event`：普通情绪从未触发变为已触发时发布；没有其他触发
   情绪时以真实时间 1 Hz 持续发布 Calm，且不受 `time_scale` 影响。

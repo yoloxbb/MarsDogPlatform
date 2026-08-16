@@ -115,16 +115,68 @@ class Ros2PackageTest(unittest.TestCase):
         timeNodeText = (
             PROJECT_ROOT / "marsdog_ros2" / "time_controller_node.py"
         ).read_text(encoding="utf-8")
+        parameterText = (
+            PROJECT_ROOT / "marsdog_ros2" / "common" / "parameters.py"
+        ).read_text(encoding="utf-8")
 
         self.assertIn('"time_scale"', timeNodeText)
-        self.assertIn("MAX_TIME_SCALE_VALUE", timeNodeText)
-        self.assertIn("to_value=MAX_TIME_SCALE_VALUE", timeNodeText)
+        self.assertIn("TimeScaleParameterDescriptorValue", timeNodeText)
+        self.assertIn("MAX_TIME_SCALE_VALUE", parameterText)
+        self.assertIn("to_value=MAX_TIME_SCALE_VALUE", parameterText)
         self.assertNotIn('"time_mode"', timeNodeText)
         self.assertIn('"midnight_acceleration_enabled"', timeNodeText)
         self.assertIn('"midnight_duration_seconds"', timeNodeText)
         self.assertIn('"TIME_ACCELERATED_STEP"', timeNodeText)
         self.assertNotIn("MIDNIGHT_ACCELERATION_SCALE", timeNodeText)
         self.assertNotIn("requires time_scale=24", timeNodeText)
+
+    def test_ros2_common_helpers_are_centralized(self):
+        """JSON、QoS 和参数公共实现不应继续散落在各节点。"""
+        commonDirectory = PROJECT_ROOT / "marsdog_ros2" / "common"
+        for fileName in (
+            "json_message.py",
+            "qos.py",
+            "parameters.py",
+            "calculation_time.py",
+        ):
+            self.assertTrue((commonDirectory / fileName).exists())
+
+        adapterFiles = (
+            "behavior_result_adapter.py",
+            "perception_adapter.py",
+            "personality_adapter.py",
+            "time_state_adapter.py",
+        )
+        for fileName in adapterFiles:
+            adapterText = (
+                PROJECT_ROOT / "marsdog_ros2" / fileName
+            ).read_text(encoding="utf-8")
+            self.assertIn("NormalizeJsonMessageValue", adapterText)
+            self.assertNotIn("def _NormalizeMessageToDict", adapterText)
+
+        nodeFiles = (
+            "emotion_engine_node.py",
+            "internal_need_node.py",
+            "midnight_test_node.py",
+            "one1000_tactile_node.py",
+            "personality_node.py",
+            "time_controller_node.py",
+        )
+        for fileName in nodeFiles:
+            nodeText = (
+                PROJECT_ROOT / "marsdog_ros2" / fileName
+            ).read_text(encoding="utf-8")
+            self.assertNotIn("def _ReliableQoS", nodeText)
+            self.assertNotIn("def _ReliableTransientLocalQoS", nodeText)
+            self.assertNotIn("def _NormalizeJsonMessageValue", nodeText)
+
+        midnightNodeText = (
+            PROJECT_ROOT / "marsdog_ros2" / "midnight_test_node.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "from marsdog_ros2.common.json_message import NormalizeJsonMessageValue",
+            midnightNodeText,
+        )
 
     def test_calculation_nodes_consume_authoritative_time_topic(self):
         """计算节点应消费统一时间 Topic，情绪衰减另用真实时间定时器。"""

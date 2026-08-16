@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from math import isfinite
 from typing import Any
 
 from .rules import IsConditionMatched
@@ -50,6 +51,8 @@ class EmotionAPI:
         mapping = self.GetEmotionEventMappingValue(event)
         if not mapping:
             return False
+        if not self._TryAcceptEmotionEventValue(event):
+            return False
 
         eventMetadata = dict(metadata or {})
         multiplier = self._GetEmotionEventMultiplier(mapping, eventMetadata)
@@ -83,6 +86,27 @@ class EmotionAPI:
     def GetLastEmotionEventResultValue(self) -> dict[str, Any]:
         """获取最近一次外部情绪事件的计算结果。"""
         return dict(getattr(self.state, "lastEmotionEventResult", {}))
+
+    def GetEmotionEventDeduplicationWindowSecondsValue(self) -> float:
+        """获取当前外部同名情绪事件去重窗口秒数。"""
+        return float(getattr(self, "eventDeduplicationWindowSeconds", 10.0))
+
+    def _TryAcceptEmotionEventValue(self, eventName: str) -> bool:
+        """同名事件在窗口内只接受首次，满窗口或时钟回退时重新接受。"""
+        windowSeconds = self.GetEmotionEventDeduplicationWindowSecondsValue()
+        timestamp = float(self._eventTimeProvider())
+        if not isfinite(timestamp):
+            raise ValueError("emotion event time must be finite")
+
+        lastAcceptedAt = self.state.lastEmotionEventAcceptedAt.get(eventName)
+        if lastAcceptedAt is not None and windowSeconds > 0:
+            elapsedSeconds = timestamp - lastAcceptedAt
+            # 回退的单调时钟视为新时间基准，避免事件被无限期抑制。
+            if 0 <= elapsedSeconds < windowSeconds:
+                return False
+
+        self.state.lastEmotionEventAcceptedAt[eventName] = timestamp
+        return True
 
     def ApplyEmotionDecay(self, elapsedSeconds: float = 1.0) -> dict[str, int]:
         """按自然平复公式衰减情绪值。"""

@@ -89,6 +89,34 @@ class PerceptionAdapterTest(unittest.TestCase):
             5,
         )
 
+    def test_perception_events_deduplicate_same_name_for_ten_seconds(self):
+        """声音、视觉和触摸入口都应统一抑制10秒内的同名事件。"""
+        cases = (
+            (
+                ApplyAudioEventMessage,
+                {"event_type": "EVT_VOICE_PRAISE"},
+                ["EVT_VOICE_PRAISE"],
+            ),
+            (
+                ApplyVisualEventMessage,
+                {"events": ["EVT_VISION_TOY", "EVT_VISION_TOY"]},
+                ["EVT_VISION_TOY"],
+            ),
+            (
+                ApplyTactileEventMessage,
+                {"event_type": "EVT_TACTILE_HEAD_PET"},
+                ["EVT_TACTILE_HEAD_PET"],
+            ),
+        )
+
+        for applyMessage, payload, expectedEvents in cases:
+            with self.subTest(event=expectedEvents[0]):
+                system = MarsdogEmotionSystem(eventTimeProvider=lambda: 100.0)
+                self.assertEqual(applyMessage(system, payload), expectedEvents)
+                emotionsAfterFirstMessage = system.GetAllEmotions()
+                self.assertEqual(applyMessage(system, payload), [])
+                self.assertEqual(system.GetAllEmotions(), emotionsAfterFirstMessage)
+
     def test_tactile_event_does_not_change_internal_needs(self):
         """临时摸头传感器只影响情绪，不改变内部需求。"""
         system = MarsdogNeedSystem()

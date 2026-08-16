@@ -35,13 +35,23 @@ class DemandAPI:
 
     def IsDemandUrgent(self, demandType: object) -> bool:
         """判断指定需求是否越过首次触发线，供紧迫度筛选使用。"""
+        return self._IsDemandThresholdMatched(demandType)
+
+    def _IsDemandThresholdMatched(
+        self,
+        demandType: object,
+        value: int | None = None,
+        defaultOperator: str | None = None,
+    ) -> bool:
+        """统一判断指定需求值是否越过首次触发阈值。"""
         demand = NormalizeDemandType(demandType)
         demandConfig = self.configs.get("demands", {}).get(demand, {})
         threshold = demandConfig.get("triggerThreshold")
-        operator = demandConfig.get("triggerOperator")
+        operator = demandConfig.get("triggerOperator", defaultOperator)
         if threshold is None or operator is None:
             return False
-        return IsConditionMatched(self.state.demands[demand], operator, threshold)
+        demandValue = self.state.demands[demand] if value is None else int(value)
+        return IsConditionMatched(demandValue, operator, threshold)
 
     def GetMostUrgentDemand(self) -> str:
         """获取当前最紧急的需求名称。"""
@@ -132,7 +142,7 @@ class DemandAPI:
         }
 
     def GetDemandSignalEventsValue(self, timestamp: float | None = None) -> list[dict[str, Any]]:
-        """获取并刷新需求等级变化事件。"""
+        """获取并刷新需求等级变化或行为完成后仍激活的重发事件。"""
         previousSnapshot = getattr(self, "_lastDemandSignalSnapshot", None)
         currentSnapshot = self.GetDemandSignalSnapshotValue()
         if previousSnapshot is None:
@@ -142,11 +152,25 @@ class DemandAPI:
         events: list[dict[str, Any]] = []
         eventTimestamp = self._GetDemandSignalTimestamp(timestamp)
         previousLevels = previousSnapshot.get("levels", {})
+        pendingRetriggers = set(getattr(self, "_pendingDemandSignalRetriggers", set()))
         for demand, levelInfo in self.GetAllDemandLevels().items():
             currentLevel = str(levelInfo.get("level", "NORMAL"))
             previousLevel = str(previousLevels.get(demand, "NORMAL"))
-            if currentLevel == previousLevel:
+            if currentLevel != previousLevel:
+                events.append(
+                    self._BuildDemandSignalEvent(
+                        demand,
+                        self.state.demands[demand],
+                        previousLevel,
+                        levelInfo,
+                        eventTimestamp,
+                    )
+                )
                 continue
+
+            if demand not in pendingRetriggers or not bool(levelInfo.get("active")):
+                continue
+            # 行为已经完成但需求仍停留在原激活等级时，复用当前事件名再次通知行为侧。
             events.append(
                 self._BuildDemandSignalEvent(
                     demand,
@@ -154,11 +178,24 @@ class DemandAPI:
                     previousLevel,
                     levelInfo,
                     eventTimestamp,
+                    "ACTION_RESULT_STILL_ACTIVE",
                 )
             )
 
         self._lastDemandSignalSnapshot = currentSnapshot
+        self._pendingDemandSignalRetriggers = set()
         return events
+
+    def _QueueDemandSignalRetrigger(self, demandType: object) -> bool:
+        """登记一次行为完成后仍激活的需求信号重发检查。"""
+        try:
+            demand = NormalizeDemandType(demandType)
+        except (TypeError, ValueError):
+            return False
+        pendingRetriggers = set(getattr(self, "_pendingDemandSignalRetriggers", set()))
+        pendingRetriggers.add(demand)
+        self._pendingDemandSignalRetriggers = pendingRetriggers
+        return True
 
     def _BuildDemandSignalEvent(
         self,
@@ -167,6 +204,7 @@ class DemandAPI:
         previousLevel: str,
         levelInfo: dict[str, Any],
         timestamp: float,
+        triggerReason: str = "LEVEL_CHANGED",
     ) -> dict[str, Any]:
         """构造发布到 `/internal_need/signal_event` 的需求事件。"""
         return {
@@ -183,7 +221,7 @@ class DemandAPI:
             "urgentOperator": levelInfo.get("urgentOperator"),
             "overflowThreshold": levelInfo.get("overflowThreshold"),
             "overflowOperator": levelInfo.get("overflowOperator"),
-            "trigger": "LEVEL_CHANGED",
+            "trigger": triggerReason,
         }
 
     def _GetDemandLevelEventType(self, demand: str, level: str) -> str:

@@ -50,6 +50,84 @@ class EmotionAPITest(unittest.TestCase):
         self.assertEqual(system.GetEmotionValue("Excite"), 24)
         self.assertEqual(system.GetEmotionValue("Calm"), 36)
 
+    def test_same_emotion_event_is_deduplicated_within_default_window(self):
+        """同名外部事件在默认10秒内只计算一次，满10秒可以再次计算。"""
+        currentTime = [100.0]
+        system = MarsdogEmotionSystem(eventTimeProvider=lambda: currentTime[0])
+
+        self.assertEqual(system.GetEmotionEventDeduplicationWindowSecondsValue(), 10.0)
+        self.assertTrue(system.ApplyEmotionEvent("EVT_VOICE_PRAISE"))
+        emotionsAfterFirstEvent = system.GetAllEmotions()
+
+        currentTime[0] = 109.999
+        self.assertFalse(system.ApplyEmotionEvent("EVT_VOICE_PRAISE"))
+        self.assertEqual(system.GetAllEmotions(), emotionsAfterFirstEvent)
+
+        currentTime[0] = 110.0
+        self.assertTrue(system.ApplyEmotionEvent("EVT_VOICE_PRAISE"))
+        self.assertEqual(system.GetEmotionValue("Joy"), 60)
+
+    def test_event_deduplication_is_independent_and_configurable(self):
+        """不同事件互不抑制，自定义窗口和0秒关闭配置都应生效。"""
+        currentTime = [100.0]
+        system = MarsdogEmotionSystem(
+            eventTimeProvider=lambda: currentTime[0],
+            eventDeduplicationWindowSeconds=2,
+        )
+
+        self.assertTrue(system.ApplyEmotionEvent("EVT_VOICE_PRAISE"))
+        self.assertTrue(system.ApplyEmotionEvent("EVT_VOICE_COMFORT"))
+        currentTime[0] = 101.999
+        self.assertFalse(system.ApplyEmotionEvent("EVT_VOICE_PRAISE"))
+        currentTime[0] = 102.0
+        self.assertTrue(system.ApplyEmotionEvent("EVT_VOICE_PRAISE"))
+        self.assertEqual(system.GetEmotionValue("Joy"), 60)
+
+        disabledSystem = MarsdogEmotionSystem(
+            eventTimeProvider=lambda: 100.0,
+            eventDeduplicationWindowSeconds=0,
+        )
+        self.assertTrue(disabledSystem.ApplyEmotionEvent("EVT_VOICE_PRAISE"))
+        self.assertTrue(disabledSystem.ApplyEmotionEvent("EVT_VOICE_PRAISE"))
+
+    def test_reset_clears_emotion_event_deduplication_state(self):
+        """重置系统状态后同名事件应能立即作为新事件再次计算。"""
+        system = MarsdogEmotionSystem(eventTimeProvider=lambda: 100.0)
+
+        self.assertTrue(system.ApplyEmotionEvent("EVT_VOICE_PRAISE"))
+        self.assertFalse(system.ApplyEmotionEvent("EVT_VOICE_PRAISE"))
+        system.state.ResetToDefault()
+
+        self.assertTrue(system.ApplyEmotionEvent("EVT_VOICE_PRAISE"))
+        self.assertEqual(system.GetEmotionValue("Joy"), 30)
+
+    def test_negative_event_deduplication_window_is_rejected(self):
+        """外部事件去重窗口必须是非负有限数字。"""
+        with self.assertRaises(ValueError):
+            MarsdogEmotionSystem(eventDeduplicationWindowSeconds=-1)
+
+    def test_new_voice_event_fixed_mappings(self):
+        """新增声音事件应按确认的固定基础增量映射，且不引入 Trust。"""
+        system = MarsdogEmotionSystem()
+        expectedMappings = {
+            "EVT_VOICE_COMFORT": {"Anxiety": -25, "Fear": -15, "Calm": 20},
+            "EVT_VOICE_PLAY_INTERACTION": {"Excite": 15, "Joy": 10},
+            "EVT_VOICE_STATUS_CARE": {"Joy": 5, "Calm": 10},
+            "EVT_VOICE_POSITIVE_EMOTION": {"Joy": 15, "Excite": 5},
+            "EVT_VOICE_NEGATIVE_EMOTION": {
+                "Calm": 15,
+                "Curious": 5,
+                "Excite": -15,
+                "Joy": -5,
+            },
+        }
+
+        for eventName, expectedDeltas in expectedMappings.items():
+            with self.subTest(eventName=eventName):
+                mapping = system.GetEmotionEventMappingValue(eventName)
+                self.assertEqual(mapping.get("deltas"), expectedDeltas)
+                self.assertNotIn("Trust", mapping.get("deltas", {}))
+
     def test_apply_emotion_decay(self):
         """自然平复应按秒扣减配置情绪，并保持 Anxiety 和 Calm。"""
         system = MarsdogEmotionSystem()

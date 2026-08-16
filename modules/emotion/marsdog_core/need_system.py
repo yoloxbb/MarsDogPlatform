@@ -68,6 +68,7 @@ class MarsdogNeedSystem(
         self.random = randomGenerator or random.Random()
         self._timeProvider = timeProvider or time.time
         self.InitializeStartupEnergy()
+        self._pendingDemandSignalRetriggers: set[str] = set()
         self._lastDemandSignalSnapshot = self.GetDemandSignalSnapshotValue()
 
     def OnVisualEvent(self, metadata: dict[str, Any] | None = None) -> list[str]:
@@ -111,7 +112,11 @@ class MarsdogNeedSystem(
             return self._ApplyInterruptedBehaviorResult(action, payload)
         if result != "COMPLETED":
             return False
-        return self._ApplyCompletedBehaviorResult(action, metadata)
+        applied = self._ApplyCompletedBehaviorResult(action, metadata)
+        if applied:
+            # 只登记主动作对应需求；联动需求若跨等级仍由原有等级变化机制发布。
+            self._QueueDemandSignalRetrigger(payload.get("demand_type"))
+        return applied
 
     def GetAllDemandSignals(self) -> list[dict[str, Any]]:
         """获取全部超过触发阈值的需求信号。"""
@@ -248,12 +253,7 @@ class MarsdogNeedSystem(
 
     def _IsDemandTriggered(self, demand: str, value: int) -> bool:
         """判断需求是否超过触发阈值。"""
-        config = self.configs.get("demands", {}).get(demand, {})
-        threshold = config.get("triggerThreshold")
-        operator = config.get("triggerOperator", "gt")
-        return threshold is not None and IsConditionMatched(
-            float(value), str(operator), float(threshold)
-        )
+        return self._IsDemandThresholdMatched(demand, value, "gt")
 
     def _IsDemandUrgentLevel(self, demand: str, value: int) -> bool:
         """判断需求是否越过可选的 URGENT 中间等级阈值。"""

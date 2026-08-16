@@ -8,23 +8,22 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from marsdog_core import RealTimeTickScheduler
+from marsdog_ros2.common.json_message import NormalizeJsonMessageValue
+from marsdog_ros2.common.parameters import ReadOnlyParameterDescriptorValue
+from marsdog_ros2.common.qos import (
+    ReliableQoSValue,
+    ReliableTransientLocalQoSValue,
+)
 
 try:
     import rclpy
-    from rcl_interfaces.msg import ParameterDescriptor
     from rclpy.executors import ExternalShutdownException
     from rclpy.node import Node
-    from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
     from std_msgs.msg import String
 except ModuleNotFoundError:
     rclpy = None
-    ParameterDescriptor = None
     ExternalShutdownException = None
     Node = object
-    QoSProfile = None
-    ReliabilityPolicy = None
-    HistoryPolicy = None
-    DurabilityPolicy = None
     String = None
 
 
@@ -111,20 +110,6 @@ def BuildMidnightTestTimeStateValue(
     }
 
 
-def _NormalizeJsonMessageValue(message: object) -> dict[str, Any]:
-    """把 ROS2 String 或 JSON 字符串解析为字典。"""
-    value = getattr(message, "data", message)
-    if isinstance(value, dict):
-        return dict(value)
-    if not isinstance(value, str):
-        return {}
-    try:
-        result = json.loads(value)
-    except (TypeError, ValueError):
-        return {}
-    return result if isinstance(result, dict) else {}
-
-
 class MidnightTestNode(Node):
     """发布离散测试时间并自动完成凌晨睡眠行为握手。"""
 
@@ -171,29 +156,29 @@ class MidnightTestNode(Node):
         self.timeStatePublisher = self.create_publisher(
             String,
             "/simulation/time_state",
-            _ReliableTransientLocalQoS(1000),
+            ReliableTransientLocalQoSValue(1000),
         )
         self.behaviorResultPublisher = self.create_publisher(
             String,
             "/behavior/result_event",
-            _ReliableQoS(10),
+            ReliableQoSValue(10),
         )
         self.resultPublisher = self.create_publisher(
             String,
             "/simulation/midnight_test_result",
-            _ReliableTransientLocalQoS(1),
+            ReliableTransientLocalQoSValue(1),
         )
         self.create_subscription(
             String,
             "/internal_need/signal_event",
             self.OnNeedSignalMessage,
-            _ReliableQoS(10),
+            ReliableQoSValue(10),
         )
         self.create_subscription(
             String,
             "/internal_need/state",
             self.OnNeedStateMessage,
-            _ReliableQoS(10),
+            ReliableQoSValue(10),
         )
         self.scenarioTimer = self.create_timer(
             self.stepRealSeconds,
@@ -216,21 +201,21 @@ class MidnightTestNode(Node):
         self.declare_parameter(
             "scenario_duration_seconds",
             30.0,
-            descriptor=_ReadOnlyParameterDescriptor(
+            descriptor=ReadOnlyParameterDescriptorValue(
                 "Real seconds used to run virtual 00:00-06:00"
             ),
         )
         self.declare_parameter(
             "completion_hold_seconds",
             2.0,
-            descriptor=_ReadOnlyParameterDescriptor(
+            descriptor=ReadOnlyParameterDescriptorValue(
                 "Real seconds to wait for final calculation state"
             ),
         )
         self.declare_parameter(
             "auto_start_sleep",
             True,
-            descriptor=_ReadOnlyParameterDescriptor(
+            descriptor=ReadOnlyParameterDescriptorValue(
                 "Automatically publish ACTION_SLEEP STARTED"
             ),
         )
@@ -265,7 +250,7 @@ class MidnightTestNode(Node):
         """收到凌晨困倦触发信号后自动发送入睡开始结果。"""
         if not self.autoStartSleep or self.autoSleepEventSent:
             return
-        payload = _NormalizeJsonMessageValue(message)
+        payload = NormalizeJsonMessageValue(message)
         if payload.get("event_type") != "NEED_SLEEPINESS_TRIGGERED":
             return
 
@@ -288,7 +273,7 @@ class MidnightTestNode(Node):
 
     def OnNeedStateMessage(self, message) -> None:
         """记录场景期间最新需求状态和是否实际进入过睡眠。"""
-        payload = _NormalizeJsonMessageValue(message)
+        payload = NormalizeJsonMessageValue(message)
         if not payload:
             return
         self.latestNeedState = payload
@@ -380,36 +365,6 @@ class MidnightTestNode(Node):
         )
         # 抛出专用异常退出 spin，避免在定时器回调内部调用 shutdown 形成等待。
         raise MidnightScenarioCompleted()
-
-
-def _ReliableQoS(depth: int):
-    """创建 RELIABLE QoS。"""
-    if QoSProfile is None:
-        return depth
-    return QoSProfile(
-        history=HistoryPolicy.KEEP_LAST,
-        depth=depth,
-        reliability=ReliabilityPolicy.RELIABLE,
-    )
-
-
-def _ReliableTransientLocalQoS(depth: int):
-    """创建 RELIABLE + TRANSIENT_LOCAL QoS。"""
-    if QoSProfile is None:
-        return depth
-    return QoSProfile(
-        history=HistoryPolicy.KEEP_LAST,
-        depth=depth,
-        reliability=ReliabilityPolicy.RELIABLE,
-        durability=DurabilityPolicy.TRANSIENT_LOCAL,
-    )
-
-
-def _ReadOnlyParameterDescriptor(description: str):
-    """创建启动后不可动态修改的 ROS2 参数描述。"""
-    if ParameterDescriptor is None:
-        return None
-    return ParameterDescriptor(description=description, read_only=True)
 
 
 def main(args=None) -> int:

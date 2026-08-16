@@ -433,7 +433,13 @@ class One1000DistanceHeadPetDetector:
             self._touchActive = False
             return False
 
+        wasTouchActive = self._touchActive
         self._touchActive = True
+        if not wasTouchActive:
+            # 首次进入或离开后重新进入时立即触发，冷却只限制持续贴近的重复事件。
+            self._lastEventTimestamp = timestamp
+            return True
+
         # 持续贴近时不等待离开阈值，而是按真实时间间隔重复产生摸头事件。
         if (
             self._lastEventTimestamp is not None

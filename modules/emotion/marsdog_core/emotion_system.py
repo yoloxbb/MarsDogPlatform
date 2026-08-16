@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import random
 import time
+from math import isfinite
 from pathlib import Path
 from typing import Any, Callable
 
@@ -23,6 +24,21 @@ UNSATISFIED_RESULTS = {"FAILED", "TIMEOUT"}
 INTERRUPTED_RESULTS = {"INTERRUPTED", "CANCELLED"}
 
 
+def _NormalizeEventDeduplicationWindowSecondsValue(value: object) -> float:
+    """校验并返回外部情绪事件的同名去重窗口秒数。"""
+    if isinstance(value, bool):
+        raise ValueError("event deduplication window must be a non-negative number")
+    try:
+        normalizedValue = float(value)
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            "event deduplication window must be a non-negative number"
+        ) from error
+    if not isfinite(normalizedValue) or normalizedValue < 0:
+        raise ValueError("event deduplication window must be a non-negative number")
+    return normalizedValue
+
+
 class MarsdogEmotionSystem(EmotionAPI, PersonalityAPI):
     """只负责情绪计算、衰减和情绪信号输出的系统。"""
 
@@ -31,12 +47,26 @@ class MarsdogEmotionSystem(EmotionAPI, PersonalityAPI):
         configDir: str | Path | None = None,
         randomGenerator: random.Random | None = None,
         timeProvider: Callable[[], float] | None = None,
+        eventTimeProvider: Callable[[], float] | None = None,
+        eventDeduplicationWindowSeconds: float | None = None,
     ) -> None:
-        """初始化情绪计算系统。"""
+        """初始化情绪计算系统和外部事件去重时钟。"""
         self.state = MarsdogState()
         self.configs = LoadAllConfigs(configDir)
         self.random = randomGenerator or random.Random()
         self._timeProvider = timeProvider or time.time
+        self._eventTimeProvider = eventTimeProvider or time.monotonic
+        configuredWindow = self.configs.get("emotions", {}).get(
+            "eventDeduplicationWindowSeconds",
+            10,
+        )
+        self.eventDeduplicationWindowSeconds = (
+            _NormalizeEventDeduplicationWindowSecondsValue(
+                configuredWindow
+                if eventDeduplicationWindowSeconds is None
+                else eventDeduplicationWindowSeconds
+            )
+        )
         self._emotionCallbacks = []
         self._lastEmotionSignalSnapshot = self.GetEmotionSignalSnapshotValue()
 

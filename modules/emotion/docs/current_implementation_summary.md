@@ -57,13 +57,13 @@
 | Topic | 类型 | 节点 | 说明 |
 |---|---|---|---|
 | `/internal_need/state` | `std_msgs/String` JSON | `internal_need_node` | 全量内部需求状态，1 秒持续发布 |
-| `/internal_need/signal_event` | `std_msgs/String` JSON | `internal_need_node` | 需求等级变化时发布 |
+| `/internal_need/signal_event` | `std_msgs/String` JSON | `internal_need_node` | 需求等级变化或完成后仍激活时发布 |
 | `/emotion/state` | `std_msgs/String` JSON | `emotion_engine_node` | 全量情绪状态，每个虚拟秒发布 |
 | `/emotion/signal_event` | `std_msgs/String` JSON | `emotion_engine_node` | 情绪首次达到触发阈值时发布 |
 | `/personality/state` | `std_msgs/String` JSON | `personality_node` | 性格状态，启动时和性格变化后发布 |
 | `/simulation/time_state` | `std_msgs/String` JSON | `time_controller_node` | 时间初始化、逐秒 Tick、倍率变化 |
 | `/simulation/midnight_test_result` | `std_msgs/String` JSON | `midnight_test_node` | 凌晨场景完成状态和最终需求/睡眠快照 |
-| `/perception/tactile_event` | `std_msgs/String` JSON | `one1000_tactile_node` | 距离模式阈值内每2秒摸头事件；雷达模式上升沿事件 |
+| `/perception/tactile_event` | `std_msgs/String` JSON | `one1000_tactile_node` | 距离模式进入/重新进入时立即发布并在阈值内每2秒重复；雷达模式上升沿事件 |
 | `/one1000/status` | `std_msgs/String` JSON | `one1000_tactile_node` | 真实时间 1 Hz 发布 UART、C5距离、命令、心跳、雷达和摸头诊断状态 |
 
 ## 3. 内部需求输出
@@ -109,7 +109,10 @@
 }
 ```
 
-`/internal_need/signal_event` 只在需求等级变化时发布一次。
+`/internal_need/signal_event` 在需求等级变化时发布一次；有效的 `COMPLETED`
+结果结算后，如果动作对应需求仍停留在同一激活等级，也会复用当前等级事件名
+重发一次，此时 `trigger=ACTION_RESULT_STILL_ACTIVE` 且
+`previousLevel == level`。其他普通同等级数值变化不会发布。
 `/internal_need/state.levelEvents[demand]` 与 signal 事件里的 `event_type`
 使用同一套事件名，可直接对比。
 
@@ -357,6 +360,10 @@ k_calm    = (O+A)/100
 finalDelta = round(baseDelta * k_emotion * metadataMultiplier)
 ```
 
+声音、视觉和触摸输入按事件名共享去重规则：默认10个真实秒内同名事件只计算
+一次，窗口由 `configs/emotions.yaml:eventDeduplicationWindowSeconds` 配置；设置
+为 `0` 可关闭。不同事件名、需求计算和行为结果事件不受影响。
+
 ### 自然衰减
 
 情绪节点按单调真实时间每 1 秒执行一次，不随 `time_scale` 加速：
@@ -416,7 +423,7 @@ Calm 配置中的 `triggerThreshold=0` 和 `triggerOperator=gte` 继续保留在
 | `action_type` | 必填 | 必须是内部需求相关 `ACTION_*` |
 | `demand_type` | 建议填写 | 填写时必须与 `action_type` 映射一致 |
 | `result_type` | 必填 | `STARTED / COMPLETED / FAILED / INTERRUPTED / CANCELLED / TIMEOUT` |
-| `metadata` | 必填 JSON 对象 | 没有额外字段时传 `{}` |
+| `metadata` | 建议填写 JSON 对象 | 缺省或 `null` 按 `{}` 处理；其他类型会被拒绝 |
 
 当前接受的 action：
 

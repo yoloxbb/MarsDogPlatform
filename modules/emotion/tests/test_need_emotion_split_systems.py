@@ -260,6 +260,28 @@ class NeedEmotionSplitSystemTest(unittest.TestCase):
         self.assertFalse(accepted)
         self.assertEqual(system.GetDemandValue("Hunger"), 80)
 
+    def test_behavior_result_rejects_explicit_invalid_demand_type(self):
+        """显式填写的非法 demand_type 不能被当成缺省值自动补全。"""
+        system = MarsdogNeedSystem()
+        system.SetDemandValue("Hunger", 80)
+
+        accepted = system.OnBehaviorResultEvent(
+            {
+                "event_id": "result-invalid-demand-1",
+                "action_type": "ACTION_EAT",
+                "demand_type": "UnknownDemand",
+                "result_type": "COMPLETED",
+                "metadata": {
+                    "foodType": "NormalFood",
+                    "portions": 1,
+                    "eatEfficiency": "Full",
+                },
+            }
+        )
+
+        self.assertFalse(accepted)
+        self.assertEqual(system.GetDemandValue("Hunger"), 80)
+
     def test_emotion_result_ignores_unknown_action(self):
         """情绪系统不应因无关或未知 action 结果改变情绪。"""
         system = MarsdogEmotionSystem(randomGenerator=random.Random(1))

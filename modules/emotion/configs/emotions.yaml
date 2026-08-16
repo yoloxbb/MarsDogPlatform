@@ -1,5 +1,6 @@
 {
   "emotions": {
+    "eventDeduplicationWindowSeconds": 10,
     "types": {
       "Joy": {"internalName": "emo_joy", "chineseName": "愉悦", "range": [0, 100]},
       "Excite": {"internalName": "emo_excite", "chineseName": "兴奋", "range": [0, 100]},
@@ -44,6 +45,9 @@
       "EVT_VOICE_SCOLD": {
         "deltas": {"Anxiety": 25, "Fear": 15, "Joy": -10}
       },
+      "EVT_VOICE_COMFORT": {
+        "deltas": {"Anxiety": -25, "Fear": -15, "Calm": 20}
+      },
       "EVT_VOICE_COMMAND_KNOWN": {
         "deltas": {"Curious": 15, "Calm": 10}
       },
@@ -61,6 +65,18 @@
       },
       "EVT_VOICE_CALL_NAME": {
         "deltas": {"Joy": 20, "Excite": 10}
+      },
+      "EVT_VOICE_PLAY_INTERACTION": {
+        "deltas": {"Excite": 15, "Joy": 10}
+      },
+      "EVT_VOICE_STATUS_CARE": {
+        "deltas": {"Joy": 5, "Calm": 10}
+      },
+      "EVT_VOICE_POSITIVE_EMOTION": {
+        "deltas": {"Joy": 15, "Excite": 5}
+      },
+      "EVT_VOICE_NEGATIVE_EMOTION": {
+        "deltas": {"Calm": 15, "Curious": 5, "Excite": -15, "Joy": -5}
       },
       "EVT_VOICE_MASTER_ID": {
         "deltas": {"Calm": 15}

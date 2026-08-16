@@ -44,9 +44,7 @@ log/
 *.bak
 
 # Generated or local-only documentation artifacts.
-# Tracked docs are still tracked; these rules mainly prevent new handoff drafts,
-# spreadsheets, screenshots, and exported documents from being added by mistake.
-docs/*.md
+# Markdown 文档默认纳入版本控制；只忽略表格、截图和二进制导出文件。
 docs/*.csv
 docs/*.xls
 docs/*.xlsx
@@ -57,13 +55,3 @@ docs/*.drawio
 docs/*.png
 docs/*.jpg
 docs/*.jpeg
-
-# Keep interface docs that are useful for team integration.
-!docs/api.md
-!docs/current_implementation_summary.md
-!docs/internal_need_emotion_update_logic.md
-!docs/ros2_topic_contract.md
-!docs/time_compression_test_guide.md
-!docs/2026-07-29_emotion_v2_integration_guide.md
-!docs/2026-07-29_internal_need_v2_integration_guide.md
-!docs/2026-08-01_one1000_head_pet_integration_guide.md

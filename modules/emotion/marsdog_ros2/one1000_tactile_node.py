@@ -35,23 +35,21 @@ from marsdog_core.one1000_protocol import (
     ParseOne1000PositionValue,
     ParseOne1000SentryStatusValue,
 )
+from marsdog_ros2.common.parameters import (
+    ReadOnlyIntegerParameterDescriptorValue,
+    ReadOnlyParameterDescriptorValue,
+)
+from marsdog_ros2.common.qos import ReliableQoSValue
 
 try:
     import rclpy
-    from rcl_interfaces.msg import IntegerRange, ParameterDescriptor
     from rclpy.executors import ExternalShutdownException
     from rclpy.node import Node
-    from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
     from std_msgs.msg import String
 except ModuleNotFoundError:
     rclpy = None
-    IntegerRange = None
-    ParameterDescriptor = None
     ExternalShutdownException = None
     Node = object
-    QoSProfile = None
-    ReliabilityPolicy = None
-    HistoryPolicy = None
     String = None
 
 
@@ -570,12 +568,12 @@ class One1000TactileNode(Node):
         self.eventPublisher = self.create_publisher(
             String,
             "/perception/tactile_event",
-            _ReliableQoS(10),
+            ReliableQoSValue(10),
         )
         self.statusPublisher = self.create_publisher(
             String,
             "/one1000/status",
-            _ReliableQoS(10),
+            ReliableQoSValue(10),
         )
         self._serialPort = serialPort
         self._serial = One1000SerialPort(serialPort)
@@ -624,56 +622,56 @@ class One1000TactileNode(Node):
         self.declare_parameter(
             "serial_port",
             DEFAULT_ONE1000_SERIAL_PORT,
-            descriptor=_ReadOnlyParameterDescriptor(
+            descriptor=ReadOnlyParameterDescriptorValue(
                 "ONE1000 serial device path"
             ),
         )
         self.declare_parameter(
             "detection_mode",
             "distance",
-            descriptor=_ReadOnlyParameterDescriptor(
+            descriptor=ReadOnlyParameterDescriptorValue(
                 "Head-pet source: distance or radar"
             ),
         )
         self.declare_parameter(
             "distance_threshold_cm",
             10.0,
-            descriptor=_ReadOnlyParameterDescriptor(
+            descriptor=ReadOnlyParameterDescriptorValue(
                 "Trigger head-pet when valid C5 distance is below this value"
             ),
         )
         self.declare_parameter(
             "auto_start_sentry",
             True,
-            descriptor=_ReadOnlyParameterDescriptor(
+            descriptor=ReadOnlyParameterDescriptorValue(
                 "Configure threshold and start sentry automatically"
             ),
         )
         self.declare_parameter(
             "touch_threshold",
             30,
-            descriptor=_ReadOnlyIntegerParameterDescriptor(
+            descriptor=ReadOnlyIntegerParameterDescriptorValue(
                 "ONE1000 head-touch threshold", 1, 65535
             ),
         )
         self.declare_parameter(
             "command_interval_seconds",
             0.3,
-            descriptor=_ReadOnlyParameterDescriptor(
+            descriptor=ReadOnlyParameterDescriptorValue(
                 "Minimum interval between ONE1000 commands"
             ),
         )
         self.declare_parameter(
             "touch_cooldown_seconds",
             2.0,
-            descriptor=_ReadOnlyParameterDescriptor(
+            descriptor=ReadOnlyParameterDescriptorValue(
                 "Real-time interval between head-pet events"
             ),
         )
         self.declare_parameter(
             "stop_sentry_on_shutdown",
             True,
-            descriptor=_ReadOnlyParameterDescriptor(
+            descriptor=ReadOnlyParameterDescriptorValue(
                 "Stop sentry before closing the serial port"
             ),
         )
@@ -972,45 +970,6 @@ class One1000TactileNode(Node):
                 )
         finally:
             self._serial.CloseValue()
-
-
-def _ReliableQoS(depth: int):
-    """创建 RELIABLE QoS，便于触觉离散事件可靠交付。"""
-    if QoSProfile is None:
-        return depth
-    return QoSProfile(
-        history=HistoryPolicy.KEEP_LAST,
-        depth=depth,
-        reliability=ReliabilityPolicy.RELIABLE,
-    )
-
-
-def _ReadOnlyParameterDescriptor(description: str):
-    """创建启动后不可动态修改的 ROS2 参数描述。"""
-    if ParameterDescriptor is None:
-        return None
-    return ParameterDescriptor(description=description, read_only=True)
-
-
-def _ReadOnlyIntegerParameterDescriptor(
-    description: str,
-    minimumValue: int,
-    maximumValue: int,
-):
-    """创建带闭区间约束的只读整数参数描述。"""
-    if ParameterDescriptor is None or IntegerRange is None:
-        return None
-    return ParameterDescriptor(
-        description=description,
-        read_only=True,
-        integer_range=[
-            IntegerRange(
-                from_value=minimumValue,
-                to_value=maximumValue,
-                step=1,
-            )
-        ],
-    )
 
 
 def main(args=None) -> None:

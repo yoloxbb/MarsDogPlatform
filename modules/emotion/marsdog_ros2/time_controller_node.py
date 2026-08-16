@@ -12,30 +12,24 @@ from marsdog_core import (
     RealTimeTickScheduler,
     VirtualTickScheduler,
 )
-from marsdog_core.types import (
-    MAX_TIME_SCALE_VALUE,
-    MIN_TIME_SCALE_VALUE,
-    NormalizeTimeScaleValue,
+from marsdog_core.types import NormalizeTimeScaleValue
+from marsdog_ros2.common.parameters import (
+    ParameterDescriptorValue,
+    TimeScaleParameterDescriptorValue,
 )
+from marsdog_ros2.common.qos import ReliableTransientLocalQoSValue
 
 try:
     import rclpy
-    from rcl_interfaces.msg import IntegerRange, ParameterDescriptor, SetParametersResult
+    from rcl_interfaces.msg import SetParametersResult
     from rclpy.executors import ExternalShutdownException
     from rclpy.node import Node
-    from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
     from std_msgs.msg import String
 except ModuleNotFoundError:
     rclpy = None
-    IntegerRange = None
-    ParameterDescriptor = None
     SetParametersResult = None
     ExternalShutdownException = None
     Node = object
-    QoSProfile = None
-    DurabilityPolicy = None
-    HistoryPolicy = None
-    ReliabilityPolicy = None
     String = None
 
 
@@ -83,7 +77,7 @@ class TimeControllerNode(Node):
         self.statePublisher = self.create_publisher(
             String,
             "/simulation/time_state",
-            _ReliableTransientLocalQoS(1000),
+            ReliableTransientLocalQoSValue(1000),
         )
         self.add_on_set_parameters_callback(self.OnSetParameters)
         virtualStartDateTime = self.timeController.GetVirtualStartDateTimeValue()
@@ -218,12 +212,12 @@ class TimeControllerNode(Node):
         self.declare_parameter(
             "time_scale",
             1,
-            descriptor=_TimeScaleParameterDescriptor(readOnly=False),
+            descriptor=TimeScaleParameterDescriptorValue(readOnly=False),
         )
         self.declare_parameter(
             "virtual_start_time",
             "auto",
-            descriptor=_ParameterDescriptor(
+            descriptor=ParameterDescriptorValue(
                 "Virtual start time: auto or HH:MM",
                 readOnly=True,
             ),
@@ -231,7 +225,7 @@ class TimeControllerNode(Node):
         self.declare_parameter(
             "midnight_acceleration_enabled",
             False,
-            descriptor=_ParameterDescriptor(
+            descriptor=ParameterDescriptorValue(
                 "Accelerate virtual 00:00-06:00 with discrete 10-minute steps",
                 readOnly=True,
             ),
@@ -239,7 +233,7 @@ class TimeControllerNode(Node):
         self.declare_parameter(
             "midnight_duration_seconds",
             30.0,
-            descriptor=_ParameterDescriptor(
+            descriptor=ParameterDescriptorValue(
                 "Real seconds used for each virtual 00:00-06:00 window",
                 readOnly=True,
             ),
@@ -369,42 +363,6 @@ class TimeControllerNode(Node):
                 self.timeController.GetTimeRevisionValue(),
             )
         )
-
-
-def _ParameterDescriptor(description: str, readOnly: bool):
-    """创建 ROS2 参数描述。"""
-    if ParameterDescriptor is None:
-        return None
-    return ParameterDescriptor(description=description, read_only=readOnly)
-
-
-def _TimeScaleParameterDescriptor(readOnly: bool):
-    """创建限制为 1-100 整数的 ROS2 倍率参数描述。"""
-    if ParameterDescriptor is None or IntegerRange is None:
-        return None
-    return ParameterDescriptor(
-        description="Virtual time scale: integer from 1 to 100",
-        read_only=readOnly,
-        integer_range=[
-            IntegerRange(
-                from_value=MIN_TIME_SCALE_VALUE,
-                to_value=MAX_TIME_SCALE_VALUE,
-                step=1,
-            )
-        ],
-    )
-
-
-def _ReliableTransientLocalQoS(depth: int):
-    """创建 RELIABLE + TRANSIENT_LOCAL QoS。"""
-    if QoSProfile is None:
-        return depth
-    return QoSProfile(
-        history=HistoryPolicy.KEEP_LAST,
-        depth=depth,
-        reliability=ReliabilityPolicy.RELIABLE,
-        durability=DurabilityPolicy.TRANSIENT_LOCAL,
-    )
 
 
 def main(args=None) -> None:

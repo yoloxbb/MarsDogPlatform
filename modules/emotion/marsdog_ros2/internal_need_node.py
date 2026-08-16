@@ -8,13 +8,24 @@ from datetime import datetime
 from marsdog_core import MarsdogTimeController, VirtualTickScheduler
 from marsdog_core.need_system import MarsdogNeedSystem
 from marsdog_ros2.behavior_result_adapter import ApplyBehaviorResultMessage
+from marsdog_ros2.common.calculation_time import (
+    DeclareCalculationTimeParametersValue,
+)
+from marsdog_ros2.common.qos import (
+    BestEffortQoSValue,
+    ReliableQoSValue,
+    ReliableTransientLocalQoSValue,
+)
 from marsdog_ros2.perception_adapter import (
     ApplyAudioEventMessage,
     ApplyTactileEventMessage,
     ApplyVisualEventMessage,
 )
 from marsdog_ros2.personality_adapter import ApplyPersonalityStateMessage
-from marsdog_ros2.time_context import GetMessageWithTimeContextValue, GetRandomGeneratorValue
+from marsdog_ros2.time_context import (
+    GetMessageWithTimeContextValue,
+    GetRandomGeneratorValue,
+)
 from marsdog_ros2.time_state_adapter import (
     GetEnergyElapsedSecondsPerDemandTickValue,
     GetTimeContextDateTimeValue,
@@ -23,20 +34,13 @@ from marsdog_ros2.time_state_adapter import (
 
 try:
     import rclpy
-    from rcl_interfaces.msg import ParameterDescriptor
     from rclpy.executors import ExternalShutdownException
     from rclpy.node import Node
-    from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
     from std_msgs.msg import String
 except ModuleNotFoundError:
     rclpy = None
-    ParameterDescriptor = None
     ExternalShutdownException = None
     Node = object
-    QoSProfile = None
-    ReliabilityPolicy = None
-    HistoryPolicy = None
-    DurabilityPolicy = None
     String = None
 
 
@@ -49,7 +53,7 @@ class InternalNeedNode(Node):
             raise RuntimeError("ROS2 runtime is not available. Please run this node inside a ROS2 environment.")
 
         super().__init__("internal_need_node")
-        self._DeclareTimeParameters()
+        DeclareCalculationTimeParametersValue(self)
         timeScale = self.get_parameter("time_scale").value
         virtualStartTime = self.get_parameter("virtual_start_time").value
         randomSeed = self.get_parameter("random_seed").value
@@ -64,18 +68,51 @@ class InternalNeedNode(Node):
         if self._IsMorningStart(virtualStartDateTime):
             self.system.ResetDemandsToMorningInitialValues(virtualStartDateTime)
 
-        self.statePublisher = self.create_publisher(String, "/internal_need/state", 10)
-        self.signalPublisher = self.create_publisher(String, "/internal_need/signal_event", 10)
-        self.create_subscription(String, "/perception/visual_event", self.OnVisualEventMessage, _BestEffortQoS(5))
-        self.create_subscription(String, "/perception/audio_event", self.OnAudioEventMessage, _ReliableQoS(10))
-        self.create_subscription(String, "/perception/tactile_event", self.OnTactileEventMessage, _ReliableQoS(10))
-        self.create_subscription(String, "/behavior/result_event", self.OnBehaviorResultMessage, _ReliableQoS(10))
-        self.create_subscription(String, "/personality/state", self.OnPersonalityStateMessage, _ReliableTransientLocalQoS(1))
+        self.statePublisher = self.create_publisher(
+            String,
+            "/internal_need/state",
+            10,
+        )
+        self.signalPublisher = self.create_publisher(
+            String,
+            "/internal_need/signal_event",
+            10,
+        )
+        self.create_subscription(
+            String,
+            "/perception/visual_event",
+            self.OnVisualEventMessage,
+            BestEffortQoSValue(5),
+        )
+        self.create_subscription(
+            String,
+            "/perception/audio_event",
+            self.OnAudioEventMessage,
+            ReliableQoSValue(10),
+        )
+        self.create_subscription(
+            String,
+            "/perception/tactile_event",
+            self.OnTactileEventMessage,
+            ReliableQoSValue(10),
+        )
+        self.create_subscription(
+            String,
+            "/behavior/result_event",
+            self.OnBehaviorResultMessage,
+            ReliableQoSValue(10),
+        )
+        self.create_subscription(
+            String,
+            "/personality/state",
+            self.OnPersonalityStateMessage,
+            ReliableTransientLocalQoSValue(1),
+        )
         self.create_subscription(
             String,
             "/simulation/time_state",
             self.OnTimeStateMessage,
-            _ReliableTransientLocalQoS(1000),
+            ReliableTransientLocalQoSValue(1000),
         )
         self.create_timer(1.0, self.PublishState)
         self.get_logger().info(
@@ -84,26 +121,6 @@ class InternalNeedNode(Node):
                 self.timeController.GetTimeScaleValue(),
                 virtualStartDateTime.isoformat(),
             )
-        )
-
-    def _DeclareTimeParameters(self) -> None:
-        """声明仅允许启动时设置的时间测试参数。"""
-        self.declare_parameter(
-            "time_scale",
-            1,
-            descriptor=_ReadOnlyParameterDescriptor(
-                "Virtual time scale: integer from 1 to 100"
-            ),
-        )
-        self.declare_parameter(
-            "virtual_start_time",
-            "auto",
-            descriptor=_ReadOnlyParameterDescriptor("Virtual start time: auto or HH:MM"),
-        )
-        self.declare_parameter(
-            "random_seed",
-            -1,
-            descriptor=_ReadOnlyParameterDescriptor("Random seed: -1 or a non-negative integer"),
         )
 
     def OnVisualEventMessage(self, message) -> None:
@@ -242,47 +259,6 @@ class InternalNeedNode(Node):
             and startDateTime.minute == 0
             and startDateTime.second == 0
         )
-
-
-def _BestEffortQoS(depth: int):
-    """创建 BEST_EFFORT QoS。"""
-    if QoSProfile is None:
-        return depth
-    return QoSProfile(
-        history=HistoryPolicy.KEEP_LAST,
-        depth=depth,
-        reliability=ReliabilityPolicy.BEST_EFFORT,
-    )
-
-
-def _ReliableQoS(depth: int):
-    """创建 RELIABLE QoS。"""
-    if QoSProfile is None:
-        return depth
-    return QoSProfile(
-        history=HistoryPolicy.KEEP_LAST,
-        depth=depth,
-        reliability=ReliabilityPolicy.RELIABLE,
-    )
-
-
-def _ReliableTransientLocalQoS(depth: int):
-    """创建可接收最新保留状态的 RELIABLE + TRANSIENT_LOCAL QoS。"""
-    if QoSProfile is None:
-        return depth
-    return QoSProfile(
-        history=HistoryPolicy.KEEP_LAST,
-        depth=depth,
-        reliability=ReliabilityPolicy.RELIABLE,
-        durability=DurabilityPolicy.TRANSIENT_LOCAL,
-    )
-
-
-def _ReadOnlyParameterDescriptor(description: str):
-    """创建启动后不可动态修改的 ROS2 参数描述。"""
-    if ParameterDescriptor is None:
-        return None
-    return ParameterDescriptor(description=description, read_only=True)
 
 
 def main(args=None) -> None:

@@ -126,6 +126,82 @@ class DemandAPITest(unittest.TestCase):
         self.assertEqual(events[0]["event_type"], "NEED_HUNGER_RECOVERED")
         self.assertEqual(events[0]["previousLevel"], "OVERFLOW")
 
+    def test_completed_behavior_retriggers_same_active_demand_level(self):
+        """行为完成后需求仍处于原激活等级时应复用当前事件名再次发布。"""
+        system = MarsdogNeedSystem()
+        system.SetDemandValue("Exploration", 100)
+        initialEvents = system.GetDemandSignalEventsValue(timestamp=1.0)
+        self.assertEqual(initialEvents[0]["event_type"], "NEED_EXPLORATION_TRIGGERED")
+
+        self.assertTrue(
+            system.OnBehaviorResultEvent(
+                {
+                    "event_id": "explore-completed-still-active",
+                    "action_type": "ACTION_EXPLORE",
+                    "result_type": "COMPLETED",
+                    "metadata": {},
+                }
+            )
+        )
+        events = system.GetDemandSignalEventsValue(timestamp=2.0)
+
+        self.assertEqual(system.GetDemandValue("Exploration"), 85)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["event_type"], "NEED_EXPLORATION_TRIGGERED")
+        self.assertEqual(events[0]["level"], "TRIGGERED")
+        self.assertEqual(events[0]["previousLevel"], "TRIGGERED")
+        self.assertEqual(events[0]["trigger"], "ACTION_RESULT_STILL_ACTIVE")
+        self.assertEqual(system.GetDemandSignalEventsValue(timestamp=3.0), [])
+
+    def test_completed_behavior_level_change_does_not_duplicate_retrigger(self):
+        """行为完成使需求降级时只应发布原有等级变化事件。"""
+        system = MarsdogNeedSystem()
+        system.SetDemandValue("Hunger", 95)
+        initialEvents = system.GetDemandSignalEventsValue(timestamp=1.0)
+        self.assertEqual(initialEvents[0]["event_type"], "NEED_HUNGER_OVERFLOW")
+
+        self.assertTrue(
+            system.OnBehaviorResultEvent(
+                {
+                    "event_id": "eat-completed-level-changed",
+                    "action_type": "ACTION_EAT",
+                    "result_type": "COMPLETED",
+                    "metadata": {
+                        "foodType": "NormalFood",
+                        "portions": 1,
+                        "eatEfficiency": "Full",
+                    },
+                }
+            )
+        )
+        events = system.GetDemandSignalEventsValue(timestamp=2.0)
+
+        self.assertEqual(system.GetDemandValue("Hunger"), 75)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["event_type"], "NEED_HUNGER_TRIGGERED")
+        self.assertEqual(events[0]["previousLevel"], "OVERFLOW")
+        self.assertEqual(events[0]["trigger"], "LEVEL_CHANGED")
+
+    def test_interrupted_behavior_does_not_immediately_retrigger_same_level(self):
+        """中断结果暂不强制重发，避免失败结果与行为侧形成快速循环。"""
+        system = MarsdogNeedSystem()
+        system.SetDemandValue("Exploration", 100)
+        system.GetDemandSignalEventsValue(timestamp=1.0)
+
+        self.assertTrue(
+            system.OnBehaviorResultEvent(
+                {
+                    "event_id": "explore-interrupted-no-retrigger",
+                    "action_type": "ACTION_EXPLORE",
+                    "result_type": "INTERRUPTED",
+                    "metadata": {},
+                }
+            )
+        )
+
+        self.assertEqual(system.GetDemandValue("Exploration"), 80)
+        self.assertEqual(system.GetDemandSignalEventsValue(timestamp=2.0), [])
+
     def test_social_signal_events_cover_all_v2_level_transitions(self):
         """Social 进入和退出三段触发区间时都应发布当前等级事件。"""
         system = MarsdogNeedSystem()

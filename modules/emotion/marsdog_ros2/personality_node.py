@@ -6,7 +6,12 @@ import json
 from typing import Any
 
 from marsdog_core.personality_system import MarsdogPersonalitySystem
-from marsdog_core.types import NormalizePersonalityProfileType, PersonalityParam, PersonalityProfileType
+from marsdog_core.types import (
+    NormalizePersonalityProfileType,
+    PersonalityParam,
+    PersonalityProfileType,
+)
+from marsdog_ros2.common.qos import ReliableTransientLocalQoSValue
 
 try:
     import rclpy
@@ -14,7 +19,6 @@ try:
     from rclpy.executors import ExternalShutdownException
     from rclpy.node import Node
     from rclpy.parameter import Parameter
-    from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
     from std_msgs.msg import String
 except ModuleNotFoundError:
     rclpy = None
@@ -22,10 +26,6 @@ except ModuleNotFoundError:
     ExternalShutdownException = None
     Node = object
     Parameter = None
-    QoSProfile = None
-    DurabilityPolicy = None
-    HistoryPolicy = None
-    ReliabilityPolicy = None
     String = None
 
 
@@ -43,7 +43,11 @@ class PersonalityNode(Node):
         self._pendingParameterSync = False
 
         self._DeclarePersonalityParameters()
-        self.statePublisher = self.create_publisher(String, "/personality/state", _ReliableTransientLocalQoS(1))
+        self.statePublisher = self.create_publisher(
+            String,
+            "/personality/state",
+            ReliableTransientLocalQoSValue(1),
+        )
         self.add_on_set_parameters_callback(self.OnSetParameters)
         self.create_timer(0.2, self.SyncRosParametersIfNeeded)
         self.PublishState()
@@ -177,18 +181,6 @@ class PersonalityNode(Node):
             "params": self.system.GetAllPersonalityParams(),
             "reason": reason,
         }
-
-
-def _ReliableTransientLocalQoS(depth: int):
-    """创建 RELIABLE + TRANSIENT_LOCAL QoS。"""
-    if QoSProfile is None:
-        return depth
-    return QoSProfile(
-        history=HistoryPolicy.KEEP_LAST,
-        depth=depth,
-        reliability=ReliabilityPolicy.RELIABLE,
-        durability=DurabilityPolicy.TRANSIENT_LOCAL,
-    )
 
 
 def main(args=None) -> None:
