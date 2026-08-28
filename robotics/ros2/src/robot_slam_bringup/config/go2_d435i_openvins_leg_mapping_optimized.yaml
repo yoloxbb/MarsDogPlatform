@@ -20,7 +20,8 @@ openvins_stereo_odometry:
     sync_queue_size: 5
     imu_queue_size: 1000
     leg_odom_queue_size: 200
-    qos: 2
+    # /odom 输出使用 Reliable，匹配 Nav2 controller_server 的订阅 QoS。
+    qos: 1
     qos_image: 2
     qos_camera_info: 2
     qos_imu: 2
@@ -49,7 +50,6 @@ openvins_stereo_odometry:
     "OdomOpenVINS/ConfigPath": ""
     "OdomOpenVINS/UseStereo": "true"
     "OdomOpenVINS/UseKLT": "true"
-    # 从旧配置的 800/500 降为 400，给 15 Hz 输入留出计算余量。
     "OdomOpenVINS/NumPts": "800"
     "OdomOpenVINS/MinPxDist": "10"
     "FAST/Threshold": "10"
@@ -110,10 +110,16 @@ openvins_stereo_odometry:
     "OdomOpenVINS/ZUPTOnlyAtBeginning": "true"
 
     # WIT IMU 当前标定噪声。
-    "OdomOpenVINS/AccelerometerNoiseDensity": "0.08"
-    "OdomOpenVINS/AccelerometerRandomWalk": "0.004"
-    "OdomOpenVINS/GyroscopeNoiseDensity": "0.001"
-    "OdomOpenVINS/GyroscopeRandomWalk": "0.0001"
+    # "OdomOpenVINS/AccelerometerNoiseDensity": "0.08"
+    # "OdomOpenVINS/AccelerometerRandomWalk": "0.004"
+    # "OdomOpenVINS/GyroscopeNoiseDensity": "0.001"
+    # "OdomOpenVINS/GyroscopeRandomWalk": "0.0001"
+
+    "OdomOpenVINS/AccelerometerNoiseDensity": "0.02523"
+    "OdomOpenVINS/AccelerometerRandomWalk": "0.000467"
+    "OdomOpenVINS/GyroscopeNoiseDensity": "0.000608"
+    "OdomOpenVINS/GyroscopeRandomWalk": "0.00001066"
+    
     "OdomOpenVINS/UpMSCKFSigmaPx": "1.0"
     "OdomOpenVINS/UpMSCKFChi2Multiplier": "1.5"
     "OdomOpenVINS/UpSLAMSigmaPx": "1.0"
@@ -161,7 +167,7 @@ rtabmap:
     subscribe_scan: false
     subscribe_scan_cloud: false
     subscribe_odom_info: true
-    subscribe_imu: false
+    subscribe_imu: true
     approx_sync: true
     approx_sync_max_interval: 0.01
     topic_queue_size: 5
@@ -170,8 +176,8 @@ rtabmap:
     qos_image: 2
     qos_camera_info: 2
 
-    # 1.5 Hz 比旧配置 1 Hz 更及时，同时避免稠密双目持续占满 CPU。
-    "Rtabmap/DetectionRate": "1.5"
+    # 兼顾稠密双目负载和局部避障时效；实测单帧约 0.3~0.4 秒。
+    "Rtabmap/DetectionRate": "5.0"
     "Rtabmap/ImageBufferSize": "1"
     "Rtabmap/CreateIntermediateNodes": "false"
     "Rtabmap/ImagesAlreadyRectified": "true"
@@ -182,7 +188,9 @@ rtabmap:
     "Rtabmap/PublishPdf": "false"
     "Rtabmap/PublishLikelihood": "false"
     "Rtabmap/MemoryThr": "0"
-    "Rtabmap/TimeThr": "700"
+    # 限制回环检测占用时间，避免障碍点云因单帧计算过久继续积压。
+    "Rtabmap/TimeThr": "450"
+
 
     "Mem/IncrementalMemory": "true"
     "Mem/LocalizationReadOnly": "false"
@@ -201,7 +209,7 @@ rtabmap:
     "RGBD/LinearSpeedUpdate": "0.0"
     "RGBD/AngularSpeedUpdate": "0.0"
     "RGBD/OptimizeFromGraphEnd": "false"
-    "RGBD/OptimizeMaxError": "3.0"
+    "RGBD/OptimizeMaxError": "1.5"
     "RGBD/ProximityBySpace": "true"
     "RGBD/ProximityByTime": "false"
     "RGBD/NeighborLinkRefining": "false"
@@ -228,7 +236,7 @@ rtabmap:
     "Vis/CorNNType": "1"
     "Vis/CorNNDR": "0.8"
     "Vis/CorGuessWinSize": "40"
-    "Vis/PnPReprojError": "3.0"
+    "Vis/PnPReprojError": "2.0"
     "Vis/PnPRefineIterations": "1"
     "Vis/PnPVarianceMedianRatio": "4"
     "Vis/BundleAdjustment": "1"
@@ -248,49 +256,70 @@ rtabmap:
     "Optimizer/VarianceIgnored": "false"
     "Optimizer/GravitySigma": "0.3"
 
-    # 与已验证的 GO2 里程计建图管线使用同一稠密双目策略。
-    # StereoBM 在弱纹理地面上宁可不输出也不生成过多稠密飞点。
     "Stereo/DenseStrategy": "0"
     "StereoBM/BlockSize": "15"
     "StereoBM/MinDisparity": "0"
-    "StereoBM/NumDisparities": "128"
+    "StereoBM/NumDisparities": "64"
     "StereoBM/PreFilterSize": "9"
     "StereoBM/PreFilterCap": "31"
     "StereoBM/UniquenessRatio": "15"
     "StereoBM/TextureThreshold": "10"
     "StereoBM/SpeckleWindowSize": "100"
     "StereoBM/SpeckleRange": "4"
-    "StereoBM/Disp12MaxDiff": "-1"
+    # 原值 "-1"（关闭）。改为 1 启用左右视差一致性检查：只保留左右图互相验证
+    # 通过的视差，D435i 红外弱纹理面上的错误匹配大部分在这一步被剔除。
+    # 这是 BM 路径下代价最低的减噪手段，几乎不增加 CPU。
+    "StereoBM/Disp12MaxDiff": "1"
 
-    # 与 stereo_camera_pkg/nav.launch.py 中表现稳定的 GO2 分割参数对齐。
     "RGBD/CreateOccupancyGrid": "true"
     "Grid/Sensor": "1"
     "Grid/CellSize": "0.05"
-    "Grid/RangeMin": "0.02"
-    "Grid/RangeMax": "4.0"
-    "Grid/DepthDecimation": "4"
-    "Grid/PreVoxelFiltering": "true"
+    # 原值 "0.02"。D435i 红外双目在 2 cm 处不存在有效视差，这段范围产出的
+    # 只能是噪声。0.3 m 接近双目实际最小工作距离。
+    "Grid/RangeMin": "0.3"
+    "Grid/RangeMax": "3.0"
+    "Grid/DepthDecimation": "6"
+    "Grid/PreVoxelFiltering": "True"
     "Grid/NoiseFilteringRadius": "0.12"
-    "Grid/NoiseFilteringMinNeighbors": "4"
+    # 原值 "2"，比 rtabmap 默认值 5 更宽松（Parameters.h:923）。BM 的典型失效
+    # 模式是成块错误视差，只要 2 个邻居就能互相"保活"，滤波形同虚设。恢复到 5。
+    "Grid/NoiseFilteringMinNeighbors": "5"
     "Grid/3D": "true"
     "Grid/RayTracing": "true"
-    "Grid/MapFrameProjection": "true"
-    # Force3DoF 保证此处取到的 roll/pitch/z 与 GO2 平面里程计相同。
+    "Grid/MapFrameProjection": "false"
     "Grid/NormalsSegmentation": "true"
     "Grid/GroundIsObstacle": "false"
-    "Grid/FlatObstacleDetected": "true"
-    "Grid/MaxGroundAngle": "25"
-    "Grid/NormalK": "12"
+    "Grid/FlatObstacleDetected": "false"
+    "Grid/MaxGroundAngle": "45"
+    # 原值 "12"，低于默认 20（Parameters.h:912）。邻居太少导致法线抖动，
+    # 平地上的点法线一旦超过 MaxGroundAngle 就被误判成障碍，
+    # 表现为地面"撒盐"式假障碍。恢复到 20。
+    "Grid/NormalK": "20"
     "Grid/ClusterRadius": "0.15"
-    "Grid/MinClusterSize": "12"
-    # 法向量模式不用高度带限定地面，避免把低矮障碍整体当成地面。
-    "Grid/MinGroundHeight": "0.0"
-    "Grid/MaxGroundHeight": "0.0"
-    "Grid/MaxObstacleHeight": "1.2"
-    "Grid/FootprintLength": "0.0"
-    "Grid/FootprintWidth": "0.0"
-    "Grid/FootprintHeight": "0.0"
-    "GridGlobal/UpdateError": "0.01"
+    # 原值 "12"。util3d_mapping.hpp:186 证实这是去掉地面后对剩余障碍点做
+    # 欧氏聚类的丢弃门限：小于该点数的簇直接不写入地图。
+    # 这是清除孤立散点最直接的开关，提高到 20。
+    "Grid/MinClusterSize": "20"
+    "Grid/MinGroundHeight": "-0.5"
+    "Grid/MaxGroundHeight": "0.12"
+    "Grid/MaxObstacleHeight": "0.7"
+    # 三项原值均为 "0.0"（关闭）。GO2 行走时摆动的腿会进入 D435i 红外视野下方，
+    # 生成随步态移动的假障碍。LocalMapMaker.hpp:92-108 的 cropBox 位于整条链最
+    # 前端（法线分割和噪声滤波之前），是最省算力的过滤点，且 negative=true 表示
+    # 删除 box 内的点。box 以 base_footprint 原点为中心：
+    # x∈[-L/2,+L/2]、y∈[-W/2,+W/2]、z∈[0,H]（z 下界硬编码为 0，即地面）。
+    # GO2 机身约 0.65×0.28×0.40 m，这里各留出摆腿余量。
+    # 注意三项必须同时非 0，否则 Width/Height 会被源码忽略。
+    "Grid/FootprintLength": "0.70"
+    "Grid/FootprintWidth": "0.40"
+    "Grid/FootprintHeight": "0.40"
+    # 原值 "0.01"（rtabmap 默认，Parameters.h:926）。GlobalMap.cpp:102-137 的
+    # fullUpdateNeeded() 一旦发现任一节点位姿变化超过该阈值，就 clear() 并重建整张
+    # 全局栅格。0.01 m 远小于一个栅格边长，足式里程计的常态亚厘米抖动即可触发：
+    # 实测 TimeUpdatingMaps p95 达 750~780 ms，且 /map 反复重建会经 Nav2 的
+    # StaticLayer 传导成全局路径抖动。取一个栅格边长（Grid/CellSize 0.05），
+    # 亚栅格位姿修正不再触发重建，回环等真实修正仍然会重建。
+    "GridGlobal/UpdateError": "0.05"
     "GridGlobal/OccupancyThr": "0.5"
     "GridGlobal/ProbHit": "0.7"
     "GridGlobal/ProbMiss": "0.4"

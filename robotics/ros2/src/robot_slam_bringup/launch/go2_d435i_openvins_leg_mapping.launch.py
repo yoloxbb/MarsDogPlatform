@@ -1,25 +1,47 @@
-"""以 base_footprint 启动 GO2 的平面 OpenVINS/RTAB-Map 建图管线."""
+"""以 base_footprint 启动 GO2 的 OpenVINS/RTAB-Map 建图及可选 Nav2 管线."""
 
 import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, TimerAction
-from launch.conditions import IfCondition
+from launch.actions import (
+    DeclareLaunchArgument,
+    GroupAction,
+    IncludeLaunchDescription,
+    TimerAction,
+)
+from launch.conditions import IfCondition, UnlessCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.descriptions import ParameterFile
 from launch_ros.parameter_descriptions import ParameterValue
+from nav2_common.launch import ReplaceString, RewrittenYaml
+
+
+def package_launch(package_name, launch_name):
+    """返回指定 ROS 包中的 Python launch 启动源。"""
+    launch_path = os.path.join(
+        get_package_share_directory(package_name), "launch", launch_name
+    )
+    return PythonLaunchDescriptionSource(launch_path)
 
 
 def generate_launch_description():
-    """创建不嵌套其他 launch 文件的完整建图启动描述."""
+    """创建 OpenVINS/RTAB-Map 建图和可选 Nav2 导航启动描述."""
     package_share = get_package_share_directory("robot_slam_bringup")
 
     params_file = LaunchConfiguration("params_file")
+    nav2_params_file = LaunchConfiguration("nav2_params_file")
     database_path = LaunchConfiguration("database_path")
     delete_db_on_start = LaunchConfiguration("delete_db_on_start")
     use_sim_time = LaunchConfiguration("use_sim_time")
     startup_delay = LaunchConfiguration("startup_delay")
+    nav2_startup_delay = LaunchConfiguration("nav2_startup_delay")
+    localization = LaunchConfiguration("localization")
+    navigation = LaunchConfiguration("navigation")
+    nav2_autostart = LaunchConfiguration("nav2_autostart")
+    nav2_use_composition = LaunchConfiguration("nav2_use_composition")
     log_level = LaunchConfiguration("log_level")
 
     start_realsense = LaunchConfiguration("start_realsense")
@@ -58,6 +80,15 @@ def generate_launch_description():
             description="本管线独立使用的优化参数文件。",
         ),
         DeclareLaunchArgument(
+            "nav2_params_file",
+            default_value=os.path.join(
+                package_share,
+                "config",
+                "go2_nav2_stvl.yaml",
+            ),
+            description="GO2 使用的 Nav2 Humble 参数文件。",
+        ),
+        DeclareLaunchArgument(
             "database_path",
             default_value=os.path.expanduser(
                 "~/.ros/rtabmap_go2_openvins_leg_mapping.db"
@@ -76,6 +107,33 @@ def generate_launch_description():
             "startup_delay",
             default_value="3.0",
             description="等待相机、IMU 和外部机器人 TF 稳定的秒数。",
+        ),
+        DeclareLaunchArgument(
+            "nav2_startup_delay",
+            default_value="5.0",
+            description="等待 RTAB-Map 发布地图和 TF 后启动 Nav2 的秒数。",
+        ),
+        DeclareLaunchArgument(
+            "localization",
+            default_value="false",
+            description="false 为增量建图；true 为读取已有数据库重定位。",
+        ),
+        DeclareLaunchArgument(
+            "navigation",
+            default_value="false",
+            description="是否启动 Nav2 导航服务器。",
+        ),
+        DeclareLaunchArgument(
+            "nav2_autostart",
+            default_value="false",
+            description="是否自动激活 Nav2 生命周期节点。",
+        ),
+        DeclareLaunchArgument(
+            "nav2_use_composition",
+            # Humble navigation_launch.py 用 PythonExpression 解析该值，需使用
+            # Python 布尔字面量，不能写成小写的 false。
+            default_value="True",
+            description="是否把 Nav2 节点加载到同一个组件容器。",
         ),
         DeclareLaunchArgument(
             "log_level", default_value="info", description="建图节点日志等级。"
@@ -166,7 +224,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             "imu_topic",
             default_value="/camera/camera/imu",
-            description="OpenVINS 使用的外置 WIT 原始 IMU。",
+            description="OpenVINS 使用的d435i原始 IMU。",
         ),
         DeclareLaunchArgument(
             "leg_odom_topic",
@@ -304,27 +362,52 @@ def generate_launch_description():
         arguments=["--ros-args", "--log-level", log_level],
     )
 
-    rtabmap_node = Node(
+    rtabmap_common_parameters = [
+        params_file,
+        {
+            "use_sim_time": use_sim_time,
+            "frame_id": frame_id,
+            "odom_frame_id": odom_frame_id,
+            "map_frame_id": map_frame_id,
+            "publish_tf": ParameterValue(publish_map_tf, value_type=bool),
+            "database_path": database_path,
+            "Reg/Force3DoF": ParameterValue(planar_mode, value_type=str),
+        },
+    ]
+
+    rtabmap_mapping_node = Node(
+        condition=UnlessCondition(localization),
         package="rtabmap_slam",
         executable="rtabmap",
         name="rtabmap",
         output="screen",
         emulate_tty=True,
-        parameters=[
-            params_file,
-            {
-                "use_sim_time": use_sim_time,
-                "frame_id": frame_id,
-                "odom_frame_id": odom_frame_id,
-                "map_frame_id": map_frame_id,
-                "publish_tf": ParameterValue(publish_map_tf, value_type=bool),
-                "database_path": database_path,
-                "delete_db_on_start": ParameterValue(
-                    delete_db_on_start, value_type=bool
-                ),
-                "Reg/Force3DoF": ParameterValue(planar_mode, value_type=str),
-            },
-        ],
+        parameters=rtabmap_common_parameters + [{
+            "delete_db_on_start": ParameterValue(
+                delete_db_on_start, value_type=bool
+            ),
+            "Mem/IncrementalMemory": "true",
+            "Mem/InitWMWithAllNodes": "false",
+            "Mem/LocalizationReadOnly": "false",
+        }],
+        remappings=mapping_remappings,
+        arguments=["--ros-args", "--log-level", log_level],
+    )
+
+    # 定位模式绝不删除数据库，也不向已有地图增加新节点。
+    rtabmap_localization_node = Node(
+        condition=IfCondition(localization),
+        package="rtabmap_slam",
+        executable="rtabmap",
+        name="rtabmap",
+        output="screen",
+        emulate_tty=True,
+        parameters=rtabmap_common_parameters + [{
+            "delete_db_on_start": False,
+            "Mem/IncrementalMemory": "false",
+            "Mem/InitWMWithAllNodes": "true",
+            "Mem/LocalizationReadOnly": "false",
+        }],
         remappings=mapping_remappings,
         arguments=["--ros-args", "--log-level", log_level],
     )
@@ -353,7 +436,69 @@ def generate_launch_description():
     # TF 树中只能由 OpenVINS 发布 odom -> base_footprint。
     delayed_mapping = TimerAction(
         period=startup_delay,
-        actions=[openvins_odometry_node, rtabmap_node, rtabmap_viz_node],
+        actions=[
+            openvins_odometry_node,
+            rtabmap_mapping_node,
+            rtabmap_localization_node,
+            rtabmap_viz_node,
+        ],
+    )
+
+    # RTAB-Map 继续独占 map -> odom，OpenVINS 继续独占
+    # odom -> base_footprint；这里只启动 Nav2 的导航服务器，不启动 SLAM/AMCL。
+    nav2_params_with_frames = ReplaceString(
+        source_file=nav2_params_file,
+        replacements={
+            "GO2_MAP_FRAME": map_frame_id,
+            "GO2_ODOM_FRAME": odom_frame_id,
+            "SLAM_WS_SHARE": package_share,
+        },
+    )
+    rewritten_nav2_params = RewrittenYaml(
+        source_file=nav2_params_with_frames,
+        param_rewrites={
+            "use_sim_time": use_sim_time,
+            "robot_base_frame": frame_id,
+            "odom_topic": odom_topic,
+        },
+        convert_types=True,
+    )
+    configured_nav2_params = ParameterFile(
+        rewritten_nav2_params, allow_substs=True
+    )
+
+    nav2_container = Node(
+        condition=IfCondition(nav2_use_composition),
+        package="rclcpp_components",
+        executable="component_container_isolated",
+        name="nav2_container",
+        output="screen",
+        parameters=[
+            configured_nav2_params,
+            {"autostart": ParameterValue(nav2_autostart, value_type=bool)},
+        ],
+        arguments=["--ros-args", "--log-level", log_level],
+        remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
+    )
+    nav2_launch = IncludeLaunchDescription(
+        package_launch("nav2_bringup", "navigation_launch.py"),
+        launch_arguments={
+            "use_sim_time": use_sim_time,
+            "params_file": rewritten_nav2_params,
+            "autostart": nav2_autostart,
+            "use_composition": nav2_use_composition,
+            "container_name": "nav2_container",
+            "log_level": log_level,
+        }.items(),
+    )
+    delayed_nav2 = TimerAction(
+        period=nav2_startup_delay,
+        actions=[
+            GroupAction(
+                condition=IfCondition(navigation),
+                actions=[nav2_container, nav2_launch],
+            )
+        ],
     )
 
     return LaunchDescription(
@@ -363,5 +508,6 @@ def generate_launch_description():
             wit_imu_node,
             camera_to_wit_imu_tf,
             delayed_mapping,
+            delayed_nav2,
         ]
     )

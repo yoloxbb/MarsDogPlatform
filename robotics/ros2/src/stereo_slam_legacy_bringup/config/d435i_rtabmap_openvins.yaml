@@ -678,7 +678,7 @@ rtabmap:
     "Grid/DepthDecimation": "4"
 
     # 分割地面和障碍物前，按 Grid/CellSize 对输入点云做体素降采样。
-    "Grid/PreVoxelFiltering": "true"
+    "Grid/PreVoxelFiltering": "false"
 
     # true 构建三维占据栅格；false 将点云投影到 XY 平面生成二维栅格。
     "Grid/3D": "false"

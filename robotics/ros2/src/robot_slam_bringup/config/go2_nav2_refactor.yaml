@@ -2,18 +2,63 @@
 # Install in the Jetson Docker first:
 #   sudo apt update
 #   sudo apt install ros-humble-spatio-temporal-voxel-layer
+#
+# ============================================================================
+# 注释来源说明（全部逐条对照源码，非文档/记忆）
+# ----------------------------------------------------------------------------
+# Nav2 源码：/root/nav2_ws/src/navigation2（overlay，AMENT_PREFIX_PATH 位置
+#   55~93，优先于 /opt/ros/humble 的位置 98），版本 1.1.20+7 commits，
+#   HEAD 3c3db59d（2026-06-03）。下文 “xxx.cpp:NN” 均指该目录下的路径。
+# STVL：spatio-temporal-voxel-layer v2.3.4，**只有系统 deb 安装、没有本地源码**。
+#   语义取自上游 main 分支 src/spatio_temporal_voxel_layer.cpp，并与本机 .so
+#   的符号/字符串交叉验证；下文写作 “STVL upstream:NN”。
+# 括号里的 “默认 X” 是源码 declare/getParam 的默认值，用来看本文件哪些是
+#   刻意偏离默认的调参。
+#
+# 本文件由 launch 里的 ReplaceString 替换三个占位符，**不要手工改写**：
+#   GO2_MAP_FRAME / GO2_ODOM_FRAME / SLAM_WS_SHARE
+#
+# 实际启动方式：go2_d435i_openvins_leg_mapping.launch.py 通过
+#   nav2_bringup/navigation_launch.py 启动。该 launch 的 lifecycle_nodes
+#   （navigation_launch.py:43-49）只有 7 个：
+#     controller_server / smoother_server / planner_server / behavior_server
+#     / bt_navigator / waypoint_follower / velocity_smoother
+#   ⇒ 本文件里的 map_server、map_saver、robot_state_publisher 三节
+#     在当前 launch 下**根本不会被加载**（地图由 rtabmap 发布 /map）。
+# ============================================================================
 
 bt_navigator:
   ros__parameters:
     use_sim_time: False
+    # BT 里所有“全局坐标系/机器人坐标系/里程计话题”的统一来源，写入 blackboard
+    # 供各 BT 节点读取。
     global_frame: GO2_MAP_FRAME
-    robot_base_frame: base_link
+    robot_base_frame: base_footprint
     odom_topic: /odom
+    # 下面三个时间参数由 nav2_behavior_tree/include/nav2_behavior_tree/
+    # bt_action_server_impl.hpp:57-67 在 bt_navigator **节点级**声明，
+    # 117-123 行读出后一律 std::chrono::milliseconds(...) ⇒ **单位是毫秒**，
+    # 134-138 行写入 BT blackboard。
+    #
+    # BT 主循环 tick 周期（默认 10 ms）。20 ms = 50 Hz，够快且省 CPU。
+    # 注意 bt_action_node.hpp:68 / bt_service_node.hpp:69：
+    #   max_timeout_ = bt_loop_duration * 0.5，即单次 tick 内等结果最多 10 ms，
+    #   源码注释原话 “timeout should be less than bt_loop_duration to be able
+    #   to finish the current tick”。
     bt_loop_duration: 20
+    # 写入 blackboard 的 "server_timeout"（默认 20 ms）：BT action/service 节点
+    # 单次等待下游服务器**响应**的超时。
     default_server_timeout: 20
+    # 等待 action/service **服务器上线**的超时（默认 1000 ms）。这里放宽到
+    # 10 s，因为 Jetson 上 controller/planner 等节点配置+激活较慢；超时后
+    # bt_action_node.hpp:101-105 会报 “Timed out waiting for action server”。
     wait_for_service_timeout: 10000
+    # 自定义 BT：把默认树里的 BackUp 恢复行为去掉（四足倒退容易撞到后方盲区）。
     default_nav_to_pose_bt_xml: "SLAM_WS_SHARE/config/navigate_to_pose_no_backup.xml"
     default_nav_through_poses_bt_xml: "SLAM_WS_SHARE/config/navigate_through_poses_no_backup.xml"
+    # BT 节点插件库清单：BehaviorTreeFactory 只能实例化在此注册过的节点类型。
+    # 这里是 Humble 的全量默认列表，保持全量即可（未被 XML 用到的只是多 dlopen
+    # 一个 .so，不影响行为），删掉却会让引用到的 XML 直接解析失败。
     plugin_lib_names:
       - nav2_compute_path_to_pose_action_bt_node
       - nav2_compute_path_through_poses_action_bt_node
@@ -62,6 +107,8 @@ bt_navigator:
       - nav2_drive_on_heading_cancel_bt_node
       - nav2_is_battery_charging_condition_bt_node
 
+# bt_navigator 为每棵树各创建一个内部 rclcpp 节点（BT action 客户端挂在上面），
+# 名字由 bt_navigator 拼出，这里只需要跟主节点保持 use_sim_time 一致。
 bt_navigator_navigate_through_poses_rclcpp_node:
   ros__parameters:
     use_sim_time: False
@@ -73,212 +120,428 @@ bt_navigator_navigate_to_pose_rclcpp_node:
 controller_server:
   ros__parameters:
     use_sim_time: False
+    # 控制主循环频率（controller_server.cpp:51，默认 20.0）。
+    # ★硬约束：optimizer.cpp:95-114 setOffset() 会算
+    #     controller_period = 1.0 / controller_frequency
+    #   然后与 MPPI 的 model_dt 比较：
+    #     controller_period + eps < model_dt  → 只告警；
+    #     |controller_period - model_dt| < eps → shift_control_sequence = true（本配置命中）；
+    #     否则 → throw std::runtime_error(
+    #            "Controller period more then model dt, set it equal to model dt")
+    #   本配置 20.0 Hz ⇒ 0.05 s，正好等于下面的 model_dt: 0.05 ✓。
+    #   ⇒ 改 controller_frequency 必须同步改 model_dt，否则**启动即抛异常**。
     controller_frequency: 20.0
     odom_topic: /odom
+    # controller_server.cpp:56-58，默认均为 0.0001。
+    # controller_server.hpp:196-203 getThresholdedTwist()：里程计速度分量绝对值
+    # 低于阈值就当 0 交给控制器/进度检查器，用来滤掉 odom 的抖动残余速度。
+    # 0.001 比默认宽 10 倍，适配足式里程计比轮式噪一些的现实。
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.001
     min_theta_velocity_threshold: 0.001
+    # controller_server.cpp:62（默认 0.0 = 一次算不出就立刻失败）。
+    # 490-501 行：控制器抛异常时，若 failure_tolerance > 0 则先不报错，
+    # 直到 (now - last_valid_cmd_time_) > failure_tolerance 才向 BT 报失败；
+    # 取 -1.0 表示无限重试。0.5 s ≈ 允许连续 10 个控制周期算不出解，
+    # 避免 MPPI 偶发一帧全轨迹碰撞（fail_flag）就直接触发恢复行为。
     failure_tolerance: 0.5
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["general_goal_checker"]
     controller_plugins: ["FollowPath"]
 
+    # 进度检查器：判断“机器人是不是卡住了”，失败会让 BT 走恢复分支。
+    # 参数前缀是插件实例名（pose_progress_checker.cpp / simple_progress_checker.cpp
+    # 均用 plugin_name + ".xxx"），所以必须嵌在 progress_checker: 下面。
     progress_checker:
       plugin: "nav2_controller::PoseProgressChecker"
+      # simple_progress_checker.cpp:41（默认 0.5 m）。
       required_movement_radius: 0.06
+      # pose_progress_checker.cpp:41（默认 0.5 rad）。PoseProgressChecker 相对
+      # SimpleProgressChecker 多这一条：位移**或**转角任一达标就算有进展
+      # （isRobotMovedEnough: dist > radius || angle > required_movement_angle），
+      # 对原地调整朝向的四足很关键，否则转身会被判成卡住。
       required_movement_angle: 0.35
+      # simple_progress_checker.cpp:43（默认 10.0 s）。在这段时间内既没走够
+      # 0.06 m 也没转够 0.35 rad ⇒ 判定无进展。5 s 比默认激进，卡住能更早恢复。
       movement_time_allowance: 5.0
 
+    # 到点判据。simple_goal_checker.cpp:73-84 用 plugin_name + ".xxx"，
+    # 必须嵌在实例名下面。
     general_goal_checker:
+      # 默认 true：一旦 xy 达标就锁定，之后只检查 yaw，不会因为原地转向时
+      # 位置微漂而反复回到“还没到 xy”的状态。
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.3
+      xy_goal_tolerance: 0.3   # 默认 0.25
+      yaw_goal_tolerance: 0.3  # 默认 0.25
+      # 未设置的还有 symmetric_yaw_tolerance（默认 false）。
 
     FollowPath:
       plugin: "nav2_mppi_controller::MPPIController"
+      # ✗ 无效参数：nav2_mppi_controller 全包 0 处引用 "debug_trajectory_details"，
+      #   它只存在于 dwb_core ⇒ 这是从 DWB 配置抄过来的残留，删掉无影响。
       debug_trajectory_details: False
+      # controller.cpp:visualize（默认 false）：发布候选轨迹点云给 RViz 调试，
+      # 2200 条轨迹的可视化开销很大，实机务必 False。
       visualize: False
+      # controller.cpp:reset_period（默认 1.0 s）：控制器空闲超过该时长后
+      # 重置内部控制序列，避免用上次任务的陈旧解做热启动。
       reset_period: 1.0
+      # ---- 采样器规模（optimizer.cpp:getParams）----
+      # 单步积分步长（默认 0.05f）。★必须 == 1/controller_frequency，见上文硬约束。
       model_dt: 0.05
+      # 预测步数（默认 56）。60 × 0.05 = 3.0 s 预测视野，与 prune_distance: 3.0
+      # 和 obstacle_range: 3.0 是同一量级，三者应一起调。
       time_steps: 60
+      # 每轮采样的轨迹条数（默认 1000）。2200 条是 Jetson 上的算力/质量折中：
+      # 这是 MPPI 单周期耗时的主因，若出现控制周期超时优先降这个值。
       batch_size: 2200
+      # 每个控制周期内的优化迭代轮数（默认 1）。保持 1，靠 batch_size 换质量。
       iteration_count: 1
+      # softmax 温度（默认 0.3f）。越小越贪心地只信最优轨迹，越大越平滑地
+      # 在多条轨迹间取加权平均。
       temperature: 0.3
+      # 控制序列的时间平滑系数（默认 0.015f），抑制相邻周期指令跳变。
       gamma: 0.015
-      vx_max: 0.45
+      # ---- 运动学约束（采样上下界，注意与 velocity_smoother 保持一致）----
+      vx_max: 0.45   # 默认 0.5
+      # 默认 -0.35。★这个值还被 PathAngleCritic 反向读取，见下方 PathAngleCritic。
       vx_min: -0.4
-      vy_max: 0.0
-      wz_max: 0.8
-      vx_std: 0.3
-      vy_std: 0.0
-      wz_std: 0.8
+      # DiffDrive 是非全向模型（motion_models.hpp:138-152 isHolonomic() 返回
+      # false），vy_max / vy_std 在采样与打分中都不参与 ⇒ 这里的 0.0 只是显式声明。
+      vy_max: 0.0    # 默认 0.5
+      wz_max: 0.8    # 默认 1.9，四足原地转速刻意压低
+      # ---- 采样噪声标准差 ----
+      vx_std: 0.3    # 默认 0.2，加大线速度探索范围
+      vy_std: 0.0    # 同上，DiffDrive 下不生效
+      wz_std: 0.8    # 默认 0.4，加大角速度探索范围以便绕障
+      # 默认 1：单周期内若全部轨迹都碰撞（fail_flag），最多再重采样几次。
       retry_attempt_limit: 2
+      # 默认 "DiffDrive"。可选 DiffDrive / Omni / Ackermann。
       motion_model: "DiffDrive"
+      # ---- path_handler.cpp ----
+      # 默认 1.5 m：把全局路径裁到机器人前方这么长再喂给采样器。
       prune_distance: 3.0
+      # 默认 0.1 s：查 TF 时允许的时间外插容差。0.2 与各 costmap 保持一致。
       transform_tolerance: 0.2
+      # 未设置的 path_handler 参数（用默认值）：max_robot_pose_search_dist
+      # （默认 = costmap 最大距离）、enforce_path_inversion(false)、
+      # inversion_xy_tolerance(0.2)、inversion_yaw_tolerance(0.4)。
 
+      # 评价函数列表。MPPI 对每条采样轨迹累加各 critic 的代价
+      # （data.costs += ...），再做 softmax 加权得到最终指令。
+      # 各 critic 的参数前缀是 “FollowPath.<CriticName>.”。
       critics: ["ConstraintCritic", "ObstaclesCritic", "GoalCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic", "TwirlingCritic", "VelocityDeadbandCritic"]
 
+      # 所有 critic 都从基类拿到 enabled（critic_function.hpp:81，默认 true），
+      # 以及各自的 cost_power（代价的幂次）与 cost_weight（权重）。
+
+      # 惩罚超出 vx_max/vx_min/wz_max 约束的采样轨迹。
       ConstraintCritic:
         cost_power: 1
-        cost_weight: 4.0
+        cost_weight: 4.0   # 默认 4.0（未偏离）
 
+      # ★整个配置里最关键、也最容易配错的 critic（obstacles_critic.cpp）。
       ObstaclesCritic:
         enabled: true
         cost_power: 1
+        # 默认 1.5：对“距离障碍还有余量”的轨迹施加的软斥力权重。
+        # 提到 4.0 ⇒ 明显更愿意贴着走廊中线、远离墙面。
         repulsion_weight: 4.0
+        # 默认 20.0：进入 collision_margin_distance 以内的硬性权重。
         critical_weight: 20.0
+        # ★启动期一致性检查（obstacles_critic.cpp:initialize 末尾）：
+        #     if (costmap_ros_->getUseRadius() == consider_footprint_) { 告警;
+        #        if (getUseRadius()) throw nav2_core::PlannerException(
+        #          "Considering footprint in collision checking but no robot
+        #           footprint provided in the costmap."); }
+        #   costmap_2d_ros.cpp:408-422：use_radius_ 默认 true，只有当 footprint
+        #   非空且 makeFootprintFromString 解析成功才变 false。
+        #   本配置 local_costmap 给了合法 footprint ⇒ use_radius_=false，
+        #   false == true 不成立 ⇒ 不告警不抛异常 ✓。
+        #   ⇒ 一旦把 local_costmap 的 footprint 删空、退回 robot_radius，
+        #     controller_server 会**启动即抛异常**。两处必须一起改。
         consider_footprint: true
+        # 默认 10000.0：被判定为碰撞的轨迹所加的代价。
         collision_cost: 1000000.0
+        # 默认 0.10 m：离障碍近于此距离，改用 critical_weight 强惩罚。
         collision_margin_distance: 0.10
+        # 默认 0.5 m：距目标点小于此值时关闭软斥力（否则终点靠墙永远到不了）。
         near_goal_distance: 0.6
+        # ★下面两个不是在 initialize() 里读的，而是在 findCircumscribedCost()
+        #   的插件遍历里读（obstacles_critic.cpp:66-109），**只有当 costmap 里
+        #   确实存在 InflationLayer 时才会被赋值**，默认 0.55 / 10.0。
+        #   distanceToObstacle() 用它们反解膨胀代价曲线求出到障碍的距离：
+        #     dist = (scale*min_radius - log(cost) + log(253)) / scale
+        #   ⇒ ★必须与 controller 所用 costmap（= local_costmap）的
+        #     inflation_layer 完全一致，否则距离估计系统性偏差。
+        #   本配置：这里 0.25/4.0，local_costmap.inflation_layer 也是 0.25/4.0 ✓
+        #   （global_costmap 的 5.0 与本 critic 无关，controller 只用 local）。
+        #   另外 score() 里有保护：inflation_radius==0 || scale==0 时直接跳过
+        #   斥力项（源码注释 “Cannot process repulsion if inflation layer does
+        #   not exist”），即缺少膨胀层时本 critic 退化为纯碰撞检查。
         inflation_radius: 0.25
         cost_scaling_factor: 4.0
+        # 碰撞判定 inCollision()（obstacles_critic.cpp:196-215）：
+        #   LETHAL_OBSTACLE              → 碰撞
+        #   INSCRIBED_INFLATED_OBSTACLE  → consider_footprint 为 true 时**不算**碰撞
+        #                                  （交给精确 footprint 判定），否则算
+        #   NO_INFORMATION               → 取 LayeredCostmap::isTrackingUnknown()，
+        #                                  即 costmap **节点级**的 track_unknown_space，
+        #                                  不是 stvl_layer 里那个同名参数。
 
+      # 靠近目标时把轨迹终点往目标点拉。
       GoalCritic:
         cost_power: 1
-        cost_weight: 5.0
-        threshold_to_consider: 1.4
+        cost_weight: 5.0            # 默认 5.0
+        threshold_to_consider: 1.4  # 默认 1.4：离目标 1.4 m 内才启用
 
+      # 让整条轨迹形状贴合全局路径（横向对齐）。
       PathAlignCritic:
         cost_power: 1
-        cost_weight: 14.0
+        cost_weight: 14.0            # 默认 10.0，提高对全局路径的跟随刚性
+        # 默认 0.07。path_align_critic.cpp score()：若被裁段落中处于障碍
+        # (invalid) 的路径点比例 > 该值且 invalid 数 > 2，就整体跳过本 critic
+        # ——即“全局路径本身已经穿障时，别再硬贴着它走”。0.05 更严格。
         max_path_occupancy_ratio: 0.05
+        # 默认 20：对齐时忽略路径末端这么多个点（避免终点吸引与 GoalCritic 打架）。
+        # 注意 score() 还有一条：path_segments_count < offset_from_furthest 时
+        # 直接跳过 ⇒ 全局路径点数不足 20 时本 critic 完全不生效。
         offset_from_furthest: 20
-        trajectory_point_step: 4
-        threshold_to_consider: 0.7
-        use_path_orientations: false
+        trajectory_point_step: 4     # 默认 4：轨迹上每 4 个点取 1 个参与打分，省算力
+        threshold_to_consider: 0.7   # 默认 0.5：离目标此距离内停用（交给 GoalCritic）
+        use_path_orientations: false  # 默认 false：只对齐位置，不对齐路径点朝向
 
+      # 沿路径“往前推进”的驱动力（纵向前进），与 PathAlign 的横向对齐互补。
       PathFollowCritic:
-        threshold_to_consider: 1.4
-        offset_from_furthest: 6
+        threshold_to_consider: 1.4   # 默认 1.4
+        offset_from_furthest: 6      # 默认 6
         cost_power: 1
-        cost_weight: 5.0
+        cost_weight: 5.0             # 默认 5.0
 
+      # 惩罚“车头朝向与前方路径切线的夹角”。
       PathAngleCritic:
-        offset_from_furthest: 4
+        offset_from_furthest: 4      # 默认 4
         cost_power: 1
-        cost_weight: 1.0
-        threshold_to_consider: 0.7
+        cost_weight: 1.0             # 默认 2.0，减半：允许四足更自由地斜着切入
+        threshold_to_consider: 0.7   # 默认 0.5
+        # 默认 1.2 rad：夹角小于此值不惩罚。1.0 稍严格。
         max_angle_to_furthest: 1.0
+        # ★path_angle_critic.cpp:23-56 会读**父级**的 vx_min 来推断能否倒车：
+        #     |vx_min| < 1e-6 → reversing_allowed_ = false
+        #     vx_min < 0      → reversing_allowed_ = true
+        #   且随后 if (!reversing_allowed_) forward_preference_ = true;
+        #   ⇒ 本配置 vx_min = -0.4 < 0，允许倒车，此处的 true 才真正是“配置说了算”。
         forward_preference: true
 
+      # 额外偏好前进方向（默认 cost_weight 5.0），与上面共同压制倒车。
       PreferForwardCritic:
         cost_power: 1
         cost_weight: 5.0
-        threshold_to_consider: 0.5
+        threshold_to_consider: 0.5   # 默认 0.5
 
+      # 惩罚原地打转：cost = mean(|wz|) * weight ^ power。
+      # 注意它靠 data.goal_checker 判断是否已接近目标来提前 return，
+      # 没有 threshold_to_consider 参数。
       TwirlingCritic:
         cost_power: 1
+        # 默认 10.0 → 0.3，大幅降低。四足原地转向代价很低且常需要，
+        # 保留默认会让机器人宁愿绕大弯也不肯转身。
         cost_weight: 0.3
 
+      # 惩罚“小于死区、下发后电机不会动”的速度指令（velocity_deadband_critic.cpp）：
+      # 代价 = max(|deadband| - |v|, 0)，即把指令推离死区，避免原地微抖不走。
       VelocityDeadbandCritic:
         cost_power: 1
-        cost_weight: 8.0
+        cost_weight: 8.0   # 默认 35.0
+        # [vx, vy, wz]。中间的 vy 只在 data.motion_model->isHolonomic() 为真时
+        # 才参与（DiffDrive 下不生效）。0.08 m/s 与 0.12 rad/s 是 GO2 实测的
+        # 运动死区。
         deadband_velocities: [0.08, 0.0, 0.12]
 
+# ============================ 局部代价地图 ============================
+# 供 controller_server（MPPI）与 behavior_server 使用。滚动窗口跟着机器人走。
 local_costmap:
   local_costmap:
     ros__parameters:
+      # costmap_2d_ros.cpp:101（默认 5.0）：地图数据更新频率。
+      # 12 Hz 略低于 MPPI 的 20 Hz，是 Jetson 上的算力折中。
       update_frequency: 12.0
-      publish_frequency: 5.0
+      publish_frequency: 5.0   # 默认 1.0：只影响对外发布（RViz），不影响控制
+      # 局部图必须用里程计系，才能在 map->odom 跳变（回环修正）时保持连续。
       global_frame: GO2_ODOM_FRAME
-      robot_base_frame: base_link
+      robot_base_frame: base_footprint
       use_sim_time: False
-      transform_tolerance: 0.2
-      rolling_window: true
-      width: 5
-      height: 5
-      resolution: 0.05
+      transform_tolerance: 0.2   # 默认 0.3
+      rolling_window: true       # 默认 false：局部图必须为 true
+      width: 5                   # 默认 5，单位米
+      height: 5                  # 默认 5，单位米
+      resolution: 0.05           # 默认 0.1
+      # ★costmap_2d_ros.cpp:408-422：先置 use_radius_=true，随后若 footprint
+      #   既非 "" 也非 "[]" 且解析成功，则 use_radius_=false 并忽略 robot_radius。
+      #   ⇒ 下面 footprint 生效，robot_radius: 0.0 只是显式表明“不用圆模型”。
+      #   ⇒ 也正是它让 ObstaclesCritic 的 consider_footprint: true 合法（见上）。
       robot_radius: 0.0
+      # GO2 机身 0.76 × 0.32 m 的矩形轮廓（base_footprint 居中）。
       footprint: "[[0.38, 0.16], [0.38, -0.16], [-0.38, -0.16], [-0.38, 0.16]]"
+      # 图层按顺序叠加：先写障碍，再膨胀。
       plugins: ["stvl_layer", "inflation_layer"]
 
+      # ---- Spatio-Temporal Voxel Layer ----
+      # 用体素栅格 + 时间衰减取代 ObstacleLayer：适合 D435i 这种“看得见就标、
+      # 转头就没”的深度相机，靠 voxel_decay 让旧障碍自然过期，而不是依赖
+      # 完整的射线清除。
+      # ⚠ 本机只装了 deb（v2.3.4），无本地源码；以下行号指上游 main 分支的
+      #   src/spatio_temporal_voxel_layer.cpp（已与本机 .so 交叉验证）。
       stvl_layer:
         plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
         enabled: true
+        # 体素存活时间（秒）。局部图 2.5 s：足够短，动态障碍走开后很快消失。
         voxel_decay: 2.5
+        # GlobalDecayModel 枚举：0=LINEAR, 1=EXPONENTIAL, 2=PERSISTENT。
+        # 0 = 线性衰减，行为最直观。
         decay_model: 0
-        voxel_size: 0.05
+        voxel_size: 0.05         # 体素边长，与 resolution 对齐
+        # 该图层自己对未知区域的处理（局部图不追踪未知，未观测即视为自由）。
+        # 注意这跟 ObstaclesCritic 里 NO_INFORMATION 判定用的是**不同**的参数
+        # （后者取节点级 LayeredCostmap 的 track_unknown_space）。
         track_unknown_space: false
+        # ✗ 无效：STVL 只在**观测源**下声明 max_obstacle_height，图层级没有这个
+        #   参数 ⇒ 这一行不生效，真正起作用的是下面 obstacle_mark / ground_clear
+        #   各自的 max_obstacle_height。留着无害但会误导。
         max_obstacle_height: 0.45
+        # ✗ 无效：上游源码与本机 .so 中 0 处出现 "unknown_threshold"，
+        #   这是老 voxel_layer 的参数残留。
         unknown_threshold: 15
+        # 一个 2D 栅格被标记为障碍所需的最少体素数。局部图取 2（比全局严），
+        # 单个孤立体素不足以在局部图上生成障碍，抑制散点误刹。
         mark_threshold: 2
+        # 每周期清掉机器人自身 footprint 内的体素，防止把自己的腿当障碍。
         update_footprint_enabled: true
+        # 与底层 costmap 的合并方式：0=Overwrite, 1=Max（取最大值）。
         combination_method: 1
+        # ✗ 无效：同 unknown_threshold，老 voxel_layer 残留。
         origin_z: 0.0
-        publish_voxel_map: false
+        publish_voxel_map: false   # 调试用体素点云，实机关闭省带宽
         transform_tolerance: 0.2
-        mapping_mode: false
-        map_save_duration: 60.0
+        mapping_mode: false        # true 才会把体素图存盘
+        map_save_duration: 60.0    # 仅 mapping_mode 为 true 时有意义
+        # 两个观测源：一个只标障碍，一个只清空。这样“地面点”专门负责把
+        # 过期障碍清掉，而不会自己被标成障碍。
         observation_sources: obstacle_mark ground_clear
 
+        # 障碍源：rtabmap 输出的障碍点云。
         obstacle_mark:
           enabled: true
           data_type: "PointCloud2"
           topic: /local_grid_obstacle
           marking: true
           clearing: false
-          obstacle_range: 3.0
-          min_obstacle_height: 0.10
+          obstacle_range: 3.0      # 只采纳 3 m 内的点，与 prune_distance 对齐
+          # 高度窗口：只把 0.15~0.45 m 的点当障碍。下界 0.15 避开地面与
+          # 摆动的腿，上界 0.45 避开机身上方（GO2 站立约 0.35 m）。
+          min_obstacle_height: 0.15
           max_obstacle_height: 0.45
-          expected_update_rate: 0.0
-          observation_persistence: 0.0
+          expected_update_rate: 0.0  # 0 = 不检查话题超时
+          observation_persistence: 0.0  # 0 = 只用最新一帧
           inf_is_valid: false
+          # ✓ 有效（上游 stvl.cpp:190，默认 "passthrough"）。可选
+          #   none / passthrough / voxel。passthrough 即用上面的高度窗口过滤。
           filter: "passthrough"
-          voxel_min_points: 0
+          voxel_min_points: 0        # filter=voxel 时才有意义
+          # 读完即清空缓存，保证每周期只吃一帧，避免积压导致障碍滞后。
           clear_after_reading: true
 
+        # 清除源：rtabmap 输出的地面点云。地面点所在射线上的旧障碍被清掉。
         ground_clear:
           enabled: true
           data_type: "PointCloud2"
           topic: /local_grid_ground
           marking: false
           clearing: true
+          # 3.2 > obstacle_mark 的 3.0：清除范围略大于标记范围，
+          # 保证边缘处的障碍能被清掉而不是卡在边界上。
           obstacle_range: 3.2
           min_obstacle_height: 0.0
-          max_obstacle_height: 0.15
+          max_obstacle_height: 0.15   # 与 obstacle_mark 的 0.15 下界严丝合缝
           expected_update_rate: 0.0
           observation_persistence: 0.0
           inf_is_valid: false
           filter: "passthrough"
           voxel_min_points: 0
           clear_after_reading: true
+          # 下面 6 个是 STVL 做射线清除（frustum 清除）才需要的参数，
+          # 所以只在 clearing 源上给。
           min_z: 0.0
           max_z: 3.2
+          # 相机视锥的垂直/水平半张角（弧度）。D435i 红外双目约 50°×63°，
+          # 0.8745 rad ≈ 50.1°，1.10 rad ≈ 63.0°。
           vertical_fov_angle: 0.8745
           horizontal_fov_angle: 1.10
+          # 落在视锥内但本帧未被观测到的体素，衰减加速倍率。5.0 = 视野内的
+          # 旧障碍消失得比 voxel_decay 快 5 倍，转头重新看到空地就迅速清除。
           decay_acceleration: 5.0
+          # ModelType 枚举：0=DEPTH_CAMERA（视锥模型），1=THREE_DIMENSIONAL_LIDAR。
+          # D435i 必须用 0。
           model_type: 0
 
+      # ---- 膨胀层 ----
+      # inflation_layer.hpp:148-162 的代价曲线：
+      #   distance == 0                        → LETHAL_OBSTACLE (254)
+      #   distance*res <= inscribed_radius     → INSCRIBED_INFLATED_OBSTACLE (253)
+      #   否则 cost = 252 * exp(-cost_scaling_factor * (distance*res - inscribed_radius))
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         enabled: True
+        # 越大 → 代价随距离衰减越快 → 只在贴近障碍处才有高代价。
+        # ★必须与 ObstaclesCritic.cost_scaling_factor 一致（见上）。
         cost_scaling_factor: 4.0
+        # 膨胀半径 0.25 m ≈ 机身半宽 0.16 + 约 9 cm 余量。
+        # ★同样必须与 ObstaclesCritic.inflation_radius 一致。
         inflation_radius: 0.25
+      # 默认 false：只发增量更新，省带宽（局部图更新频繁）。
       always_send_full_costmap: False
 
+# ============================ 全局代价地图 ============================
+# 供 planner_server（Smac Hybrid A*）与 smoother_server 使用。
 global_costmap:
   global_costmap:
     ros__parameters:
+      # 全局规划频率低，0.5 Hz 足够；这也直接决定 STVL 的衰减推进节奏。
       update_frequency: 0.5
       publish_frequency: 0.5
       global_frame: GO2_MAP_FRAME
-      robot_base_frame: base_link
+      robot_base_frame: base_footprint
       use_sim_time: False
       transform_tolerance: 0.2
+      # 同 local_costmap：footprint 生效，robot_radius 被忽略。
       robot_radius: 0.0
       footprint: "[[0.38, 0.16], [0.38, -0.16], [-0.38, -0.16], [-0.38, 0.16]]"
       resolution: 0.05
+      # ★节点级（costmap_2d_ros.cpp:97，默认 false）。这是 LayeredCostmap 的
+      #   isTrackingUnknown() 的真正来源，未观测区域记为 NO_INFORMATION。
+      #   配 planner 的 allow_unknown: false ⇒ 不许穿越未探索区域。
       track_unknown_space: true
+      # 顺序：静态地图 → STVL 动态障碍 → 膨胀。
       plugins: ["static_layer", "stvl_layer", "inflation_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         enabled: True
-        map_topic: /map
+        map_topic: /map              # rtabmap 发布的占据栅格
+        # rtabmap 用 volatile QoS 周期性重发地图，所以不需要 transient_local；
+        # 配合 subscribe_to_updates 收增量。
         map_subscribe_transient_local: False
         subscribe_to_updates: True
+        # ✗ 下面 4 个位置错了：static_layer.cpp:157-161 是**节点级**读取
+        #   （node->get_parameter("track_unknown_space") 等，没有图层名前缀），
+        #   而 declareParameter 列表里只有 enabled / subscribe_to_updates /
+        #   map_subscribe_transient_local / transform_tolerance / map_topic /
+        #   footprint_clearing_enabled。
+        #   ⇒ 嵌在 static_layer: 下面**不生效**，实际用的是节点级值。
+        #   本配置行为上恰好无害：track_unknown_space 节点级已设为 true（一致），
+        #   use_maximum(false) / trinary_costmap(true) 与默认一致，
+        #   trinary_costmap=true 时 unknown_cost_value 也不参与三值化。
+        #   即“冗余”，不是 bug；要真正改这几项须移到 global_costmap 节点级。
         track_unknown_space: True
         use_maximum: False
         trinary_costmap: True
@@ -286,20 +549,25 @@ global_costmap:
       stvl_layer:
         plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
         enabled: true
+        # 全局图 8.0 s ≫ 局部图 2.5 s：全局路径需要更长的障碍记忆，
+        # 免得规划器反复在“刚看见/已忘记”的障碍间来回改线。
         voxel_decay: 8.0
-        decay_model: 0
+        decay_model: 0             # LINEAR
         voxel_size: 0.05
-        track_unknown_space: true
-        max_obstacle_height: 0.45
-        unknown_threshold: 15
+        track_unknown_space: true  # 与节点级一致
+        max_obstacle_height: 0.45  # ✗ 图层级无效，同 local_costmap 的说明
+        unknown_threshold: 15      # ✗ 无效（voxel_layer 残留）
+        # 1（比局部图的 2 宽松）：全局图宁可多记障碍，规划时早点绕开。
         mark_threshold: 1
         update_footprint_enabled: true
-        combination_method: 1
-        origin_z: 0.0
+        combination_method: 1      # Max，叠在 static_layer 之上
+        origin_z: 0.0              # ✗ 无效（voxel_layer 残留）
         publish_voxel_map: false
         transform_tolerance: 0.2
         mapping_mode: false
         map_save_duration: 60.0
+        # 全局图只有一个源：既标记又清除（没有独立的地面清除源，
+        # 靠 clearing: true 自清）。
         observation_sources: obstacle_mark
 
         obstacle_mark:
@@ -307,8 +575,11 @@ global_costmap:
           data_type: "PointCloud2"
           topic: /local_grid_obstacle
           marking: true
-          clearing: false
+          # 与局部图不同：这里 true，同一个源兼做清除。
+          clearing: true
           obstacle_range: 3.0
+          # 0.10（低于局部图的 0.15）：全局图对矮障碍更敏感，
+          # 台阶、门槛这类低矮物体也进图，规划阶段就绕开。
           min_obstacle_height: 0.10
           max_obstacle_height: 0.45
           expected_update_rate: 0.0
@@ -321,98 +592,163 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         enabled: True
+        # 5.0 > 局部图的 4.0：全局图代价衰减更快，走廊中间的代价更低，
+        # 规划出的路径更贴中线。这个值与 ObstaclesCritic 无关
+        # （controller 只读 local_costmap），不需要与之匹配。
         cost_scaling_factor: 5.0
         inflation_radius: 0.25
+      # True：全局图更新慢、订阅者少，直接发全图更省事。
       always_send_full_costmap: True
 
+# ⚠ navigation_launch.py 不启动 map_server（见文件头），本节当前不生效。
+#   yaml_filename 在 map_server.cpp:71 声明为 rclcpp::PARAMETER_STRING
+#   （无默认值）；若哪天真把 map_server 加进 lifecycle_nodes，
+#   空字符串会在 on_configure 载图时失败。地图目前由 rtabmap 发布 /map。
 map_server:
   ros__parameters:
     use_sim_time: False
     yaml_filename: ""
 
+# ⚠ 同上，map_saver 也未被启动。以下为 map_saver.cpp:50-53 的参数。
 map_saver:
   ros__parameters:
     use_sim_time: False
-    save_map_timeout: 5.0
-    free_thresh_default: 0.25
-    occupied_thresh_default: 0.65
+    save_map_timeout: 5.0          # 默认 2.0 s：等待 /map 消息的超时
+    free_thresh_default: 0.25      # 默认 0.25：占据概率低于此值写为自由
+    occupied_thresh_default: 0.65  # 默认 0.65：高于此值写为占据
     map_subscribe_transient_local: True
 
 planner_server:
   ros__parameters:
+    # planner_server.cpp:55（默认 1.0 Hz）：仅用于自检——实际规划耗时低于
+    # 该周期时不做任何事，超出则打印告警，不会限制 BT 的请求频率。
     expected_planner_frequency: 1.0
     use_sim_time: False
     planner_plugins: ["GridBased"]
     GridBased:
+      # Hybrid A*：在 (x, y, yaw) 三维栅格上用运动基元搜索，产出满足最小转弯
+      # 半径的可行路径。smac_planner_hybrid.cpp:70-138 恰好声明 20 个参数，
+      # 下面用 ✗ 标出的都不在其中。
       plugin: "nav2_smac_planner/SmacPlannerHybrid"
+      # false：不降采样代价地图。5 cm 分辨率下直接搜索，精度优先。
       downsample_costmap: false
-      downsampling_factor: 1
-      tolerance: 0.15
+      downsampling_factor: 1     # downsample_costmap 为 false 时无意义
+      tolerance: 0.15            # 到不了精确目标时可接受的终点误差（米）
+      # 配合节点级 track_unknown_space: true ⇒ 不规划穿越未探索区域。
       allow_unknown: false
-      max_iterations: 1000000
+      max_iterations: 1000000    # 搜索节点数上限（兜底，正常由时间先触顶）
+      # 已进入 tolerance 范围后，再多搜这么多次以求更优解。
       max_on_approach_iterations: 1000
-      max_planning_time: 2.0
+      max_planning_time: 2.0     # 单次规划墙钟上限（秒），超时返回当前最优
+      # DUBIN = 只前进的运动基元；REEDS_SHEPP 才允许倒车。
+      # 注意这与 controller 的 vx_min: -0.4（允许倒车）是刻意的组合：
+      # 全局路径不含倒车段，但局部控制器可以短暂倒车脱困。
       motion_model_for_search: "DUBIN"
+      # 偏航离散化格数：72 ⇒ 每格 5°。越大越精细也越慢越吃内存。
       angle_quantization_bins: 72
+      # 解析扩展（用 Dubin 曲线直连目标）的触发比例与最大长度。
       analytic_expansion_ratio: 3.5
       analytic_expansion_max_length: 3.0
+      # ✗ 无效：nav2_smac_planner 全包无此参数（Jazzy/Rolling 才有）。
       analytic_expansion_max_cost: 200.0
+      # ✗ 无效：同上。
       analytic_expansion_max_cost_override: false
+      # 0.10 m：四足几乎可原地转向，给一个很小的值。
+      # ★注意 smoother_server 的 minimum_turning_radius 必须同步，否则
+      #   平滑器会把规划器认可的急弯当成违反约束去强行拉直。
       minimum_turning_radius: 0.10
-      reverse_penalty: 2.2
-      change_penalty: 0.0
-      non_straight_penalty: 1.2
-      cost_penalty: 2.0
+      # ---- 运动基元代价惩罚（相对值，1.0 为基准）----
+      reverse_penalty: 2.2       # 倒车基元惩罚（DUBIN 下不产生倒车，故不生效）
+      change_penalty: 0.0        # 改变转向方向的惩罚，0 = 不惩罚
+      non_straight_penalty: 1.2  # 非直行基元惩罚，>1 使路径偏直
+      cost_penalty: 2.0          # 代价地图数值的权重，越大越远离障碍
+      # 轻微偏好“晚一点分叉”，减少等代价路径间的抖动。
       retrospective_penalty: 0.025
+      # 预计算 Dubin 距离查表的覆盖尺寸（米）。
       lookup_table_size: 20.0
+      # false：不缓存障碍启发式。缓存能加速连续同目标规划，但地图变化时
+      # 会用到过期数据；本系统边建图边导航，关掉更安全。
       cache_obstacle_heuristic: false
+      # ✗ 以下 6 个均不在 nav2_smac_planner 中（Jazzy/Rolling 参数）：
       debug_visualizations: false
       use_quadratic_cost_penalty: false
       downsample_obstacle_heuristic: true
       allow_primitive_interpolation: false
       coarse_search_resolution: 4
       goal_heading_mode: "DEFAULT"
+      # True：规划完在插件内部先做一次平滑（与 smoother_server 是两回事）。
       smooth_path: True
+      # types.hpp:70-98 SmootherParams::get() 用前缀 name + ".smoother."，
+      # 且**只声明 5 个**：tolerance / max_iterations / w_data / w_smooth /
+      # do_refinement。
       smoother:
-        max_iterations: 1000
-        w_smooth: 0.30
-        w_data: 0.20
-        tolerance: 1.0e-10
-        do_refinement: True
+        max_iterations: 1000    # 默认 1000
+        w_smooth: 0.30          # 默认 0.3：平滑项权重
+        w_data: 0.20            # 默认 0.2：贴合原路径项权重
+        tolerance: 1.0e-10      # 默认 1e-10：收敛判据
+        do_refinement: True     # 默认 true：多跑一轮精修
+        # ✗ 无效：SmootherParams 未声明 refinement_num（Jazzy/Rolling 参数）。
         refinement_num: 2
 
 smoother_server:
   ros__parameters:
     use_sim_time: False
     smoother_plugins: ["constrained_smoother"]
+    # 基于 Ceres 的约束平滑。参数前缀 "<插件名>."，optimizer 子项前缀
+    # "<插件名>.optimizer."，见 options.hpp:47-182。
     constrained_smoother:
       plugin: "nav2_constrained_smoother/ConstrainedSmoother"
+      # 默认 true → false：与规划器的 DUBIN（无倒车）一致，
+      # 平滑时不生成倒车段/拐点(cusp)。
       reversing_enabled: false
+      # 默认 1 → 3：先每 3 个点抽 1 个再优化，Ceres 问题规模降到 1/3，
+      # Jetson 上明显更快；代价是平滑后路径的点密度下降。
       path_downsampling_factor: 3
-      path_upsampling_factor: 1
-      keep_start_orientation: true
-      keep_goal_orientation: true
+      path_upsampling_factor: 1   # 默认 1：优化后不再插值加密
+      keep_start_orientation: true  # 默认 true：不改起点朝向（就是当前车头朝向）
+      keep_goal_orientation: true   # 默认 true：不改终点朝向（保住目标 yaw）
+      # ★options.hpp:53-55：max_curvature = 1.0 / minimum_turning_radius。
+      #   默认 0.4，这里 0.10 必须与 planner 的 minimum_turning_radius 一致，
+      #   否则两者对“急弯是否合法”的判断不一致。
       minimum_turning_radius: 0.10
+      # ---- Ceres 各残差项权重 ----
+      # 默认 30.0 → 0.0：完全关闭曲率约束项。既然 minimum_turning_radius
+      # 已放到 0.10（四足可原地转），再罚曲率只会把路径拉直、抵消平滑效果。
       w_curve: 0.0
-      w_dist: 0.0
-      w_smooth: 2000000.0
-      w_cost: 0.015
+      w_dist: 0.0          # 默认 0.0：不惩罚偏离原始路径点
+      w_smooth: 2000000.0  # 默认 2000000.0：主导项，量纲上远大于其他项
+      w_cost: 0.015        # 默认 0.015：代价地图项，把路径推离障碍
+      # 默认 3.0 → 1.0：cusp（倒车拐点）区域的代价权重倍率
+      # （options.hpp:63-66：cusp_costmap_weight = w_cost * 该倍率）。
+      # reversing_enabled: false 下本就不产生 cusp，取 1.0 = 不额外加权。
       w_cost_cusp_multiplier: 1.0
-      cusp_zone_length: 2.5
+      cusp_zone_length: 2.5  # 默认 2.5 m：cusp 前后被视为 cusp 区的长度
+      # 未设置的还有 cost_check_points（默认空；非空时长度必须是 3 的倍数，
+      # 否则 options.hpp:86-93 直接 throw）。
       optimizer:
+        # 只允许 "DENSE_QR" 和 "SPARSE_NORMAL_CHOLESKY"（options.hpp:180-182
+        # 的 solver_types），其他值会 throw "Invalid parameter:
+        # linear_solver_type"。
         linear_solver_type: "SPARSE_NORMAL_CHOLESKY"
-        max_iterations: 70
-        debug_optimizer: false
+        max_iterations: 70      # 默认 100 → 70：限制单次平滑耗时
+        debug_optimizer: false  # 默认 false：打开会打印 Ceres 完整迭代报告
+        # 三个收敛判据。gradient_tol 默认 1e-10，这里 5000.0 极其宽松——
+        # 配合 w_smooth 达 2e6 的量纲，梯度绝对值本身就很大，用大阈值提前收敛
+        # 以省时间。
         gradient_tol: 5000.0
-        fn_tol: 1.0e-15
-        param_tol: 1.0e-20
+        fn_tol: 1.0e-15         # 默认 1e-7
+        param_tol: 1.0e-20      # 默认 1e-15
 
 behavior_server:
   ros__parameters:
+    # behavior_server.cpp:34-84：以下均为**节点级**参数。
+    # 恢复行为用 local_costmap 的原始代价做碰撞检查。
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
+    # timed_behavior.hpp:119-122（默认 10.0 Hz）：恢复行为自身的执行循环频率。
     cycle_frequency: 15.0
     behavior_plugins: ["spin", "backup", "drive_on_heading", "assisted_teleop", "wait"]
+    # 插件仍全部注册，但自定义 BT XML 里已移除 BackUp 分支 ⇒ backup 不会被调用。
     spin:
       plugin: "nav2_behaviors/Spin"
     backup:
@@ -423,15 +759,29 @@ behavior_server:
       plugin: "nav2_behaviors/Wait"
     assisted_teleop:
       plugin: "nav2_behaviors/AssistedTeleop"
+    # 恢复行为在里程计系里执行（原地转、后退都是相对运动），
+    # 不受 map->odom 跳变影响。
     global_frame: GO2_ODOM_FRAME
-    robot_base_frame: base_link
+    robot_base_frame: base_footprint
     transform_tolerance: 0.2
     use_sim_time: False
+    # ★下面 4 个的层级是**对的**：spin.cpp:53-71 用 node->get_parameter("xxx")
+    #   读取，没有插件名前缀，所以必须放在 behavior_server 节点级。
+    #   （对比：DriveOnHeading 的 acceleration_limit / deceleration_limit /
+    #   minimum_speed 用 behavior_name_ + ".xxx"，若要设必须嵌在
+    #   drive_on_heading: 或 backup: 下——本配置没设，用默认值。）
+    # 恢复动作前向前推演这么久做碰撞检查（秒）。
+    # 注意 drive_on_heading.hpp:236-249 也读同名的节点级参数 ⇒ Spin 与
+    # BackUp/DriveOnHeading **共用**这一个值。
     simulate_ahead_time: 1.0
-    max_rotational_vel: 0.6
-    min_rotational_vel: 0.18
-    rotational_acc_lim: 1.6
+    max_rotational_vel: 0.6   # Spin 的最大角速度，低于 controller 的 wz_max 0.8
+    min_rotational_vel: 0.18  # 最小角速度，需高于 GO2 的角速度死区 0.12
+    rotational_acc_lim: 1.6   # 角加速度上限
+    # AssistedTeleop 的 projection_time / simulation_time_step / cmd_vel_teleop
+    # （assisted_teleop.cpp:35-51，同为节点级）未设置，用默认值。
 
+# ⚠ navigation_launch.py 不启动 robot_state_publisher（URDF/TF 由外部管线发布），
+#   本节当前不生效。
 robot_state_publisher:
   ros__parameters:
     use_sim_time: False
@@ -439,25 +789,51 @@ robot_state_publisher:
 waypoint_follower:
   ros__parameters:
     use_sim_time: False
+    # waypoint_follower.cpp:37-59（默认 20），172 行用作
+    # rclcpp::WallRate r(loop_rate_) ⇒ 单位是 Hz，航点状态机的轮询频率。
     loop_rate: 20
+    # 默认 true → false：某个航点走不到时跳过它继续后面的，不中止整条任务。
     stop_on_failure: false
     waypoint_task_executor_plugin: "wait_at_waypoint"
+    # wait_at_waypoint.cpp:46-70 用 plugin_name + ".xxx" ⇒ 必须嵌在实例名下。
     wait_at_waypoint:
       plugin: "nav2_waypoint_follower::WaitAtWaypoint"
       enabled: True
+      # ★单位是**毫秒**（默认 0）。200 ms = 每到一个航点停 0.2 s。
+      #   源码有个隐蔽行为：
+      #     if (waypoint_pause_duration_ == 0) { is_enabled_ = false;
+      #       ... "disabling task executor plugin." }
+      #   ⇒ 写 0 不是“不等待”，是**整个插件被静默禁用**。
       waypoint_pause_duration: 200
 
 velocity_smoother:
   ros__parameters:
+    # velocity_smoother.cpp:55-101：以下全部为节点级参数。
     use_sim_time: False
+    # 默认 20.0 Hz：平滑器自身输出频率，与 controller_frequency 一致，
+    # 保证每个控制指令都恰好被平滑一次、不插值也不丢帧。
     smoothing_frequency: 20.0
+    # 默认 false：为 true 时，若某一轴被加速度限制削减，会按同比例缩放其他轴
+    # 以保持运动方向不变。四足对方向偏差不敏感，关掉更简单。
     scale_velocities: False
+    # OPEN_LOOP：以上一次**发出的**指令作为平滑起点；CLOSED_LOOP 则用 odom
+    # 实测速度。足式里程计速度噪声较大，开环更稳。
     feedback: "OPEN_LOOP"
+    # [vx, vy, wz]。★必须与 MPPI 的 vx_max/vx_min/wz_max 一致，
+    # 否则平滑器会把控制器刚算出的合法指令再削一刀，形成隐性降速。
+    # 本配置：0.45 / -0.4 / ±0.8，与 FollowPath 完全对应 ✓。
     max_velocity: [0.45, 0.0, 0.8]
     min_velocity: [-0.4, 0.0, -0.8]
+    # 加/减速度上限（单位 m/s²、rad/s²）。减速给得比加速更狠（2.5 vs 1.5），
+    # 保证遇障时能快速停下。
     max_accel: [1.5, 0.0, 2.8]
     max_decel: [-2.5, 0.0, -3.2]
+    # feedback 为 OPEN_LOOP 时不订阅 odom，这两个参数仅在 CLOSED_LOOP 下生效。
     odom_topic: "/odom"
     odom_duration: 0.1
+    # 输出死区：绝对值低于此值的分量置 0。这里全 0 ⇒ 不做死区处理，
+    # 死区已由 MPPI 的 VelocityDeadbandCritic 在规划阶段处理。
     deadband_velocity: [0.0, 0.0, 0.0]
+    # 默认 1.0 s → 0.5 s：超过这么久没收到新指令就发零速停车。
+    # 缩短一半，让控制链断开时更快停住。
     velocity_timeout: 0.5
