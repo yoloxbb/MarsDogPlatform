@@ -2,10 +2,14 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import (
+    LaunchConfiguration,
+    NotEqualsSubstitution,
+    PathJoinSubstitution,
+)
 from launch_ros.actions import Node
 from nav2_common.launch import ReplaceString, RewrittenYaml
 
@@ -22,6 +26,8 @@ def generate_launch_description():
     use_nav2 = LaunchConfiguration('use_nav2')
     database_path = LaunchConfiguration('database_path')
     nav2_params_file = LaunchConfiguration('nav2_params')
+    keepout_mask = LaunchConfiguration('keepout_mask')
+    keepout_enabled = NotEqualsSubstitution(keepout_mask, '')
     left_image = LaunchConfiguration('left_image')
     right_image = LaunchConfiguration('right_image')
     left_camera_info = LaunchConfiguration('left_camera_info')
@@ -241,6 +247,7 @@ def generate_launch_description():
             'GO2_MAP_FRAME': map_frame,
             'GO2_ODOM_FRAME': odom_frame,
             'SLAM_WS_SHARE': pkg_robot_slam_bringup,
+            'KEEPOUT_ZONE_ENABLED': keepout_enabled,
         },
     )
     configured_nav2_params_file = RewrittenYaml(
@@ -250,6 +257,64 @@ def generate_launch_description():
             'odom_topic': odom_topic,
         },
         convert_types=True,
+    )
+    # KeepoutFilter 使用独立 mask map_server 和过滤信息服务，不替换
+    # RTAB-Map 发布的 /map。只有传入 mask 路径时才启动这组节点。
+    keepout_mask_server = Node(
+        package='nav2_map_server',
+        executable='map_server',
+        name='keepout_filter_mask_server',
+        output='screen',
+        parameters=[
+            {
+                'use_sim_time': False,
+                'yaml_filename': keepout_mask,
+                'topic_name': 'keepout_filter_mask',
+                'frame_id': map_frame,
+            }
+        ],
+        remappings=[('/tf', 'tf'), ('/tf_static', 'tf_static')],
+    )
+    keepout_filter_info_server = Node(
+        package='nav2_map_server',
+        executable='costmap_filter_info_server',
+        name='keepout_costmap_filter_info_server',
+        output='screen',
+        parameters=[
+            {
+                'use_sim_time': False,
+                'type': 0,
+                'filter_info_topic': '/keepout_costmap_filter_info',
+                'mask_topic': '/keepout_filter_mask',
+                'base': 0.0,
+                'multiplier': 1.0,
+            }
+        ],
+        remappings=[('/tf', 'tf'), ('/tf_static', 'tf_static')],
+    )
+    keepout_lifecycle_manager = Node(
+        package='nav2_lifecycle_manager',
+        executable='lifecycle_manager',
+        name='lifecycle_manager_keepout_zone',
+        output='screen',
+        parameters=[
+            {
+                'use_sim_time': False,
+                'autostart': True,
+                'node_names': [
+                    'keepout_filter_mask_server',
+                    'keepout_costmap_filter_info_server',
+                ],
+            }
+        ],
+    )
+    keepout_nodes = GroupAction(
+        condition=IfCondition(keepout_enabled),
+        actions=[
+            keepout_mask_server,
+            keepout_filter_info_server,
+            keepout_lifecycle_manager,
+        ],
     )
 
     return LaunchDescription([
@@ -330,6 +395,14 @@ def generate_launch_description():
                 pkg_robot_slam_bringup, 'config', 'nav.yaml'),
             description='CAPO + RTAB-Map 使用的 Nav2 参数文件'
         ),
+        DeclareLaunchArgument(
+            'keepout_mask',
+            default_value='',
+            description=(
+                'Keepout mask YAML 路径；留空表示不启用。PGM/YAML 应与原始地图'
+                '保持相同的尺寸、分辨率和原点。'
+            ),
+        ),
 
         # 不再启动旧的 /odom_leg 发布器，odom -> base_footprint 由 CAPO 独占发布。
         Node(
@@ -389,12 +462,17 @@ def generate_launch_description():
             arguments=['--ros-args', '--log-level', 'warn']
         ),
 
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([nav2_launch]),
+        GroupAction(
             condition=IfCondition(use_nav2),
-            launch_arguments=[
-                ('use_sim_time', 'false'),
-                ('params_file', configured_nav2_params_file)
-            ]
+            actions=[
+                IncludeLaunchDescription(
+                    PythonLaunchDescriptionSource([nav2_launch]),
+                    launch_arguments=[
+                        ('use_sim_time', 'false'),
+                        ('params_file', configured_nav2_params_file)
+                    ]
+                ),
+                keepout_nodes,
+            ],
         ),
     ])

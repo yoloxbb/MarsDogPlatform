@@ -218,6 +218,22 @@ local_costmap:
       footprint: "[[0.38, 0.16], [0.38, -0.16], [-0.38, -0.16], [-0.38, 0.16]]"  # 机身碰撞轮廓
       # 图层顺序：STVL 时空体素、孤立点去噪、障碍膨胀。
       plugins: ["stvl_layer", "denoise_layer", "inflation_layer"]  # 局部代价地图图层
+      # KeepoutFilter 叠加独立掩码；随后复用本层普通障碍物的膨胀参数，
+      # 避免规划路径贴着禁行区边缘通过。
+      filters: ["keepout_filter", "keepout_inflation_layer"]
+
+      keepout_filter:
+        plugin: "nav2_costmap_2d::KeepoutFilter"
+        enabled: KEEPOUT_ZONE_ENABLED
+        filter_info_topic: /keepout_costmap_filter_info
+        override_lethal_cost: true
+        lethal_override_cost: 200
+
+      keepout_inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        enabled: KEEPOUT_ZONE_ENABLED
+        cost_scaling_factor: 4.0
+        inflation_radius: 0.4
 
       # SpatioTemporalVoxelLayer 替代 VoxelLayer 的理由：
       # VoxelLayer 的清除依赖 3D 射线（voxel_grid.hpp ClearVoxelInMap），一条射线穿过
@@ -315,6 +331,8 @@ global_costmap:
       track_unknown_space: true  # 保留未知区域状态
       # 静态地图永久保留；STVL 仅管理实时点云障碍；膨胀层最后处理两类障碍。
       plugins: ["static_layer", "stvl_layer", "inflation_layer"]  # 全局代价地图图层
+      # 全局规划也必须看到同一块 Keepout 掩码，并使用与全局障碍物一致的安全边界。
+      filters: ["keepout_filter", "keepout_inflation_layer"]
       static_layer:  # 静态地图层配置
         plugin: "nav2_costmap_2d::StaticLayer"  # 静态地图图层插件
         enabled: True  # 启用静态地图层
@@ -360,6 +378,19 @@ global_costmap:
         enabled: True  # 启用膨胀图层
         cost_scaling_factor: 8.0  # 衰减放缓，抬高 0.4 m 膨胀带内代价以增强推离效果；刻意低于局部层的 6.0，全局求居中、局部求通过性
         inflation_radius: 0.9  # 单位 m
+
+      keepout_filter:
+        plugin: "nav2_costmap_2d::KeepoutFilter"
+        enabled: KEEPOUT_ZONE_ENABLED
+        filter_info_topic: /keepout_costmap_filter_info
+        override_lethal_cost: true
+        lethal_override_cost: 200
+
+      keepout_inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        enabled: KEEPOUT_ZONE_ENABLED
+        cost_scaling_factor: 8.0
+        inflation_radius: 0.9
       always_send_full_costmap: True  # 每次发布完整全局代价地图
 
 planner_server:
