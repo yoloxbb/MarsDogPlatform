@@ -240,7 +240,7 @@ local_costmap:
       # 某个 (x,y) 列时只清掉一个 z 位，而 2D 栅格要降到 marked <= mark_threshold 才
       # 转为自由，因此清空一格需要多条不同俯仰角的射线；D435i 87°x58° 的视锥无法为
       # 6x6 m 局部图的侧后方提供任何清除射线，残留障碍只能等 rolling window 淘汰。
-      # STVL 的体素带时间戳并按 voxel_decay 自然过期，不依赖射线覆盖，视锥外的鬼影
+      # STVL 的体素带时间戳并按 voxel_decay 自然过期全局规划的路线不平滑，直线被规划为折了几次的路线，是全局规划器的参数问题吗？还是路径平滑器的问题，还是说是这个规划器的缺陷，不依赖射线覆盖，视锥外的鬼影
       # 也会自行消失。插件位于 /opt/ros/humble（libspatio_temporal_voxel_layer_core.so，
       # 依赖 openvdb_vendor，由 ROS 环境 hook 提供）。
       stvl_layer:  # 时空体素障碍层配置
@@ -409,10 +409,10 @@ planner_server:
       motion_model_for_search: "DUBIN"  # 全局路径只前进，倒车仅用于局部脱困
       angle_quantization_bins: 72  # 航向离散数量
       analytic_expansion_ratio: 3.5  # 解析扩展尝试间隔系数
-      analytic_expansion_max_length: 1.2  # 缩短直连段：解析扩展只做碰撞检查、不评代价，过长会切内角贴墙
-      minimum_turning_radius: 0.10  # 与平滑器保持一致
-      change_penalty: 0.0  # 换向惩罚系数
-      non_straight_penalty: 1.5  # 非直线运动惩罚系数
+      analytic_expansion_max_length: 3.0  # 缩短直连段：解析扩展只做碰撞检查、不评代价，过长会切内角贴墙
+      minimum_turning_radius: 0.15  # 与平滑器保持一致
+      change_penalty: 1.0  # 换向惩罚系数
+      non_straight_penalty: 1.7  # 非直线运动惩罚系数
       cost_penalty: 5.0  # 提高远离高代价障碍的偏好
       retrospective_penalty: 0.025  # 延后搜索节点的惩罚系数
       lookup_table_size: 20.0  # 启发式查找表边长，单位 m
@@ -426,8 +426,8 @@ planner_server:
       # 降权后仅作兜底，居中交给 smoother_server 的 constrained_smoother。
       smoother:  # 内置路径平滑参数
         max_iterations: 1000  # 平滑最大迭代次数
-        w_smooth: 0.20  # 降低几何拉直强度，减少切内角
-        w_data: 0.35  # 提高原路径保真，保住 A* 撑出的离墙余量
+        w_smooth: 0.80  # 降低几何拉直强度，减少切内角
+        w_data: 0.1  # 提高原路径保真，保住 A* 撑出的离墙余量
         tolerance: 1.0e-10  # 平滑收敛阈值
         do_refinement: True  # 启用多轮细化
 
@@ -451,7 +451,7 @@ smoother_server:
       w_curve: 0.1  # 四足可小半径转向，不额外惩罚曲率
       w_dist: 0.0  # 原路径距离项权重
       w_smooth: 2000000.0  # 路径平滑项权重
-      w_cost: 0.05  # 提高代价项权重，主动把路径推离膨胀带（原 0.015 为库默认值）
+      w_cost: 0.15  # 提高代价项权重，主动把路径推离膨胀带（原 0.015 为库默认值）
       optimizer:  # Ceres 优化器参数
         linear_solver_type: "SPARSE_NORMAL_CHOLESKY"  # 稀疏 Cholesky 求解器
         max_iterations: 70  # 限制单次平滑耗时

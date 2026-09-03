@@ -98,7 +98,7 @@ def generate_launch_description():
         # 回环假设阈值与单帧处理预算。
         'Rtabmap/ImageBufferSize': '1',
         'Rtabmap/CreateIntermediateNodes': 'false',
-        'Rtabmap/LoopThr': '0.11',
+        'Rtabmap/LoopThr': '0.2',  # 本轮优化：0.11 -> 0.2，提高回环候选置信度门槛
         'Rtabmap/LoopRatio': '0',
         'Rtabmap/PublishStats': 'true',
         'Rtabmap/PublishLastSignature': 'true',
@@ -133,7 +133,9 @@ def generate_launch_description():
         'RGBD/LoopClosureIdentityGuess': 'false',
         'RGBD/LoopClosureReextractFeatures': 'false',
         'RGBD/LocalBundleOnLoopClosure': 'false',
-        'RGBD/MaxLoopClosureDistance': '0.0',
+        # 3~5 m 为建议范围；先取 5 m，避免走廊回程时漏掉有效回环。
+        'RGBD/MaxLoopClosureDistance': '5.0',  # 本轮优化：0 -> 5.0 m，限制过远回环
+        'VhEp/Enabled': 'true',  # 本轮新增：启用极线几何验证，剔除错误回环候选
         'RGBD/MaxOdomCacheSize': '10',
 
         # 使用视觉特征对回环候选进行几何一致性验证。
@@ -172,6 +174,7 @@ def generate_launch_description():
         'Optimizer/Strategy': '1',
         'Optimizer/Iterations': '15',
         'Optimizer/Epsilon': '0.00001',
+        # 是否启用 Vertigo 鲁棒图优化；false 表示使用标准图优化。
         'Optimizer/Robust': 'false',
         'Optimizer/VarianceIgnored': 'false',
         'Optimizer/GravitySigma': '0.3',
@@ -383,7 +386,6 @@ def generate_launch_description():
             default_value='false',
             description='是否启动 Nav2 导航栈'
         ),
-
         DeclareLaunchArgument(
             'database_path',
             default_value='~/.ros/rtabmap_go2_leg_d435i.db',
@@ -433,7 +435,7 @@ def generate_launch_description():
             output='screen',
             parameters=[rtabmap_slam_params, {'database_path': database_path}],
             remappings=slam_remaps,
-            arguments=['--ros-args', '--log-level', 'warn', '--', '-d']
+            arguments=['--ros-args', '--log-level', 'info', '--', '-d']
         ),
 
         Node(
