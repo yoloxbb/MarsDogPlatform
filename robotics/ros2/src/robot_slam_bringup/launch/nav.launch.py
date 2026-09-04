@@ -435,7 +435,7 @@ def generate_launch_description():
             output='screen',
             parameters=[rtabmap_slam_params, {'database_path': database_path}],
             remappings=slam_remaps,
-            arguments=['--ros-args', '--log-level', 'info', '--', '-d']
+            arguments=['--ros-args', '--log-level', 'warn', '--', '-d']
         ),
 
         Node(

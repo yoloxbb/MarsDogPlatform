@@ -216,8 +216,8 @@ local_costmap:
       resolution: 0.05  # 单位 m/格
       # GO2 机身轮廓：0.76 m × 0.32 m。
       footprint: "[[0.38, 0.16], [0.38, -0.16], [-0.38, -0.16], [-0.38, 0.16]]"  # 机身碰撞轮廓
-      # 图层顺序：STVL 时空体素、孤立点去噪、障碍膨胀。
-      plugins: ["stvl_layer", "denoise_layer", "inflation_layer"]  # 局部代价地图图层
+      # 图层顺序：三维体素障碍、孤立点去噪、障碍膨胀。
+      plugins: ["voxel_layer", "denoise_layer", "inflation_layer"]  # 局部代价地图图层
       # KeepoutFilter 叠加独立掩码；随后复用本层普通障碍物的膨胀参数，
       # 避免规划路径贴着禁行区边缘通过。
       filters: ["keepout_filter", "keepout_inflation_layer"]
@@ -235,73 +235,51 @@ local_costmap:
         cost_scaling_factor: 4.0
         inflation_radius: 0.4
 
-      # SpatioTemporalVoxelLayer 替代 VoxelLayer 的理由：
-      # VoxelLayer 的清除依赖 3D 射线（voxel_grid.hpp ClearVoxelInMap），一条射线穿过
-      # 某个 (x,y) 列时只清掉一个 z 位，而 2D 栅格要降到 marked <= mark_threshold 才
-      # 转为自由，因此清空一格需要多条不同俯仰角的射线；D435i 87°x58° 的视锥无法为
-      # 6x6 m 局部图的侧后方提供任何清除射线，残留障碍只能等 rolling window 淘汰。
-      # STVL 的体素带时间戳并按 voxel_decay 自然过期全局规划的路线不平滑，直线被规划为折了几次的路线，是全局规划器的参数问题吗？还是路径平滑器的问题，还是说是这个规划器的缺陷，不依赖射线覆盖，视锥外的鬼影
-      # 也会自行消失。插件位于 /opt/ros/humble（libspatio_temporal_voxel_layer_core.so，
-      # 依赖 openvdb_vendor，由 ROS 环境 hook 提供）。
-      stvl_layer:  # 时空体素障碍层配置
-        plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"  # STVL 插件
-        enabled: true  # 启用时空体素层
-        # 体素在无新观测后的存活时间。必须远大于点云周期（实测 /local_grid_obstacle
-        # 约 1.7~2.5 Hz，即 0.4~0.6 s），否则视野内的真实障碍会在两帧之间被衰减掉；
-        # 视野内持续被观测的障碍每帧刷新时间戳，不会过期。5 s 兼顾鬼影清除与安全余量。
-        voxel_decay: 2.0  # 单位 s（decay_model=0 时为线性存活时间）
-        decay_model: 0  # 0=线性衰减，1=指数衰减，-1=永久保留
-        voxel_size: 0.05  # 与代价地图 resolution 一致，单位 m
-        # 必须为 false：相机水平视场仅约 71°，若把未观测区域标记为 NO_INFORMATION，
-        # 机器人会被大片未知区域包围而不敢运动。原 VoxelLayer 局部层同样未开启此项。
-        track_unknown_space: false  # 未观测区域视为自由空间
-        mark_threshold: 0  # 上游 RTAB-Map 已做 MinClusterSize=20 聚类过滤，无需再设门限
-        update_footprint_enabled: true  # 清除机身轮廓内障碍
-        combination_method: 1  # Max 合并
+      voxel_layer:  # 三维体素障碍层配置
+        plugin: "nav2_costmap_2d::VoxelLayer"  # Nav2 标准体素图层
+        enabled: true  # 启用体素图层
+        footprint_clearing_enabled: true  # 每周期清除机器人轮廓内部的障碍
+        max_obstacle_height: 0.45  # 图层最大障碍高度，单位 m
         origin_z: 0.0  # 体素层起始高度，单位 m
-        publish_voxel_map: false  # 不发布调试体素地图，节省 Jetson 算力
-        transform_tolerance: 0.2  # TF 允许延迟，单位 s
-        mapping_mode: false  # 导航模式，不做离线建图存盘
-        map_save_duration: 60.0  # mapping_mode 关闭时不生效，单位 s
-        observation_sources: rtabmap_mark rtabmap_clear  # 标记源与视锥清除源
+        z_resolution: 0.05  # 垂直体素分辨率，单位 m
+        z_voxels: 10  # 垂直覆盖 0～0.5 m
+        unknown_threshold: 9  # 射线清除后允许体素列恢复为空闲
+        mark_threshold: 1  # 至少两个体素才投影为二维障碍，过滤单点噪声
+        combination_method: 1  # 使用 Max 方式合并到主代价地图
+        publish_voxel_map: false  # 不发布调试体素地图，减少运行开销
+        observation_sources: obstacle_cloud ground_cloud  # 障碍点云和地面清除点云
 
-        # 标记源：RTAB-Map 已完成法线地面分割、噪声滤波与欧氏聚类，
-        # 此处只做高度带粗过滤，不再重复 3D 判断。
-        rtabmap_mark:  # 障碍标记观测源
-          data_type: PointCloud2  # 点云消息类型
-          topic: /local_grid_obstacle  # RTAB-Map 已去地面的障碍点云
-          marking: true  # 使用点云标记障碍
-          clearing: false  # 标记源不参与清除
-          obstacle_range: 3.0  # 与 Grid/RangeMax 及 MPPI 预测范围匹配，单位 m
+        obstacle_cloud:  # 障碍点云同时负责标记和清除
+          topic: /local_grid_obstacle  # RTAB-Map 去地面后的障碍点云
+          data_type: "PointCloud2"  # 点云消息类型
+          # 点云坐标已经转换到 base_footprint，但射线起点必须使用真实相机光心。
+          sensor_frame: camera_infra1_optical_frame  # 清除射线的传感器原点坐标系
+          marking: true  # 将有效障碍点写入体素层
+          clearing: true  # 沿障碍点云射线清除已经消失的旧体素
           min_obstacle_height: 0.15  # 避开地面与 GO2 摆腿，单位 m
-          max_obstacle_height: 0.45  # 图层有效障碍高度上限，单位 m
-          expected_update_rate: 0.0  # 不启用更新率超时检查
-          observation_persistence: 0.0  # 只使用最新观测，单位 s
-          inf_is_valid: false  # 点云无需处理 inf（该项针对激光扫描）
-          filter: "passthrough"  # 点云已由 Grid/DepthDecimation=6 稀疏到约 200 点，无需体素降采样
-          voxel_min_points: 0  # filter 为 voxel 时才生效
-          clear_after_reading: true  # 读取后清空缓冲，避免同批点云重复标记
+          max_obstacle_height: 0.45  # 障碍标记高度上限，单位 m
+          obstacle_max_range: 3.0  # 最大障碍标记距离，单位 m
+          obstacle_min_range: 0.2  # 忽略距离传感器原点过近的噪声，单位 m
+          raytrace_max_range: 3.2  # 最大射线清除距离，略大于标记距离
+          raytrace_min_range: 0.0  # 从传感器原点开始清除
+          observation_persistence: 0.0  # 每次只处理最新观测
+          expected_update_rate: 0.0  # 不启用点云更新率超时检查
+          inf_is_valid: false  # PointCloud2 不使用无穷距离点
 
-        # 清除源：STVL 不做射线追踪，而是用视锥模型找出"本应观测到却没有回波"
-        # 的体素并加速其衰减，因此与标记源共用同一话题（官方 example 亦如此）。
-        rtabmap_clear:  # 视锥加速清除源
-          data_type: PointCloud2  # 点云消息类型
-          topic: /local_grid_ground  # 保留当前 RTAB-Map 地面点云话题
-          marking: false  # 清除源不标记障碍
-          clearing: true  # 启用视锥加速衰减
-          min_z: 0.1  # 视锥近端，单位 m
-          max_z: 3.0  # 视锥远端，与 obstacle_range 对齐，单位 m
-          # D435i 深度视场 87°x58° 是 16:9 标称值；当前 camera_profile 为 640x480(4:3)，
-          # 垂直保持 58°(1.01 rad)，水平裁剪至约 71°(1.24 rad)。
-          vertical_fov_angle: 1.01  # 垂直视场角，单位 rad
-          horizontal_fov_angle: 1.24  # 水平视场角，单位 rad
-          # /local_grid_obstacle 的 frame 是 base_footprint（位于地面），而非相机光心
-          # （高约 0.35 m），视锥顶点因此偏低；用垂直填充补偿这一几何偏差。
-          vertical_fov_padding: 0.2  # 垂直视场填充，单位 m
-          # 因上述 frame 偏差导致视锥判定不够精确，取低于官方示例 15.0 的保守值，
-          # 主要依赖 voxel_decay 的时间衰减，视锥仅作温和加速。
-          decay_acceleration: 5.0  # 视锥内缺失观测的加速衰减系数，单位 1/s²
-          model_type: 0  # 0=深度相机视锥模型，1=3D 激光雷达
+        ground_cloud:  # 地面点云只负责射线清除
+          topic: /local_grid_ground  # RTAB-Map 分割出的地面点云
+          data_type: "PointCloud2"  # 点云消息类型
+          # 从相机光心射向新观测到的地面，才能穿过并清除原障碍所在的高层体素。
+          sensor_frame: camera_infra1_optical_frame  # 清除射线的传感器原点坐标系
+          marking: false  # 地面不能添加障碍
+          clearing: true  # 地面射线用于清除旧障碍体素
+          min_obstacle_height: -0.2  # 地面清除高度下限，单位 m
+          max_obstacle_height: 0.2  # 地面清除高度上限，单位 m
+          raytrace_max_range: 3.5  # 最大射线清除距离，单位 m
+          raytrace_min_range: 0.0  # 从传感器原点开始清除
+          observation_persistence: 0.0  # 每次只处理最新观测
+          expected_update_rate: 0.0  # 不启用点云更新率超时检查
+          inf_is_valid: false  # PointCloud2 不使用无穷距离点
 
       denoise_layer:  # 孤立障碍去噪层配置
         plugin: "nav2_costmap_2d::DenoiseLayer"  # 去噪图层插件

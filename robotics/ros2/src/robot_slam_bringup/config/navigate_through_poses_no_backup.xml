@@ -32,7 +32,7 @@
               <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
               <!-- 约束平滑器读全局代价地图，把路径推离膨胀带以求居中；
                    Ceres 无解或平滑后碰撞时失败，此时 {path} 保持规划器原值，
-                   由 AlwaysSuccess 吞掉失败，避免误触发清图/后退恢复行为。
+                   由 AlwaysSuccess 吞掉失败，避免误触发外层恢复流程。
                    原先此处需要避开 ReactiveSequence 反复重发规划请求的问题；现已改为
                    普通 Sequence，规划与平滑各自只跑一次。 -->
               <Fallback name="SmoothPathOrKeepOriginal">
@@ -42,17 +42,14 @@
             </Sequence>
           </Fallback>
         </Sequence>
-        <FollowPath path="{path}" controller_id="FollowPath"/>
+        <FollowPath
+          path="{path}"
+          controller_id="FollowPath"
+          goal_checker_id="general_goal_checker"/>
       </PipelineSequence>
       <ReactiveFallback name="RecoveryFallback">
         <GoalUpdated/>
-        <!-- RoundRobin 与重规划串成 Sequence，使三个恢复动作中任意一个完成后都重新规划，
-             不必在每个分支里各写一遍 ComputePathThroughPoses。
-             这依赖 BT.CPP 的 ControlNode::haltChild 只对 status==RUNNING 的子节点调
-             halt()：RoundRobin 返回 SUCCESS 时自身状态为 SUCCESS，所以 Sequence 收尾的
-             haltChildren() 不会触发 RoundRobinNode::halt() 把 current_child_idx_ 归零，
-             轮换得以保留。若实测发现恢复永远停在清局部图、从不后退，即为此假设失效，
-             改成在 RoundRobin 每个分支末尾各写一次重规划。 -->
+        <!-- 两种恢复动作按失败轮次轮换：先清局部图，再由 BackUpTwzFree 搜索全局图自由方向。 -->
         <Sequence name="RecoverThenReplan">
           <RoundRobin name="RecoveryActions">
             <!-- 只清局部图。全局代价地图刻意不清空：清空后规划器在一张空图上重新规划，
@@ -62,15 +59,13 @@
               <ClearEntireCostmap name="ClearLocalCostmap" service_name="local_costmap/clear_entirely_local_costmap"/>
               <Wait wait_duration="1"/>
             </Sequence>
-            <!-- BackUp action 由 BackUpTwzFree 接管：从全局代价地图搜索自由方向；
-                 当前禁止横移，因此选择更接近该方向的前进或后退。仍无法规划时，
-                 下一轮恢复再固定向前移动越过原位置。 -->
+            <!-- backup_dist=0.15 保留为标准 BT 接口的兼容值；BackUpTwzFree 启动后
+                 会根据自由空间质心动态选择 0.15～1.0 m 的实际距离。 -->
             <BackUp backup_dist="0.15" backup_speed="0.40" time_allowance="5"/>
-            <DriveOnHeading dist_to_travel="0.30" speed="0.40" time_allowance="5"/>
           </RoundRobin>
-          <!-- 恢复动作改变了机器人位姿，据此重新规划。
+          <!-- 清图或移动恢复完成后重新规划。
                规划失败必须由 AlwaysSuccess 吞掉：否则恢复动作被判定失败，RecoveryNode
-               会直接结束导航，不再尝试后续的 BackUp / DriveOnHeading。 -->
+               会直接结束导航，无法进入下一轮恢复。 -->
           <Sequence name="ReplanAndSmoothAfterRecovery">
             <Fallback name="ReplanOrKeepPath">
               <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>

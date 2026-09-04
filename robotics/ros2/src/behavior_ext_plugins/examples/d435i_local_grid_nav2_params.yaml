@@ -75,6 +75,10 @@ behavior_server:
     # BackUpTwzFree 参数。
     robot_radius: 0.25
     max_radius: 2.0
+    min_recovery_distance: 0.15
+    max_recovery_distance: 1.0
+    recovery_time_margin: 1.5
+    search_costmap_topic: "local_costmap/costmap_raw"
     service_name: "local_costmap/get_costmap"
     free_threshold: 5
     cost_threshold: 0.0
