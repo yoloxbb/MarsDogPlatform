@@ -282,11 +282,13 @@ local_costmap:
           voxel_min_points: 0  # filter 为 voxel 时才生效
           clear_after_reading: true  # 读取后清空缓冲，避免同批点云重复标记
 
-        # 清除源：STVL 不做射线追踪，而是用视锥模型找出"本应观测到却没有回波"
-        # 的体素并加速其衰减，因此与标记源共用同一话题（官方 example 亦如此）。
+        # 清除源：STVL 不做射线追踪，而是依据地面点云触发深度相机视锥更新，
+        # 对视锥内未持续观测到的体素加速衰减。
         rtabmap_clear:  # 视锥加速清除源
           data_type: PointCloud2  # 点云消息类型
           topic: /local_grid_ground  # 保留当前 RTAB-Map 地面点云话题
+          # 点云坐标已经转换到 base_footprint，显式指定相机光心作为清除视锥原点。
+          sensor_frame: camera_infra1_optical_frame  # 实际相机坐标系，高度约 0.44 m
           marking: false  # 清除源不标记障碍
           clearing: true  # 启用视锥加速衰减
           min_z: 0.1  # 视锥近端，单位 m
@@ -295,11 +297,9 @@ local_costmap:
           # 垂直保持 58°(1.01 rad)，水平裁剪至约 71°(1.24 rad)。
           vertical_fov_angle: 1.01  # 垂直视场角，单位 rad
           horizontal_fov_angle: 1.24  # 水平视场角，单位 rad
-          # /local_grid_obstacle 的 frame 是 base_footprint（位于地面），而非相机光心
-          # （高约 0.35 m），视锥顶点因此偏低；用垂直填充补偿这一几何偏差。
-          vertical_fov_padding: 0.2  # 垂直视场填充，单位 m
-          # 因上述 frame 偏差导致视锥判定不够精确，取低于官方示例 15.0 的保守值，
-          # 主要依赖 voxel_decay 的时间衰减，视锥仅作温和加速。
+          # 已使用真实相机坐标系作为视锥原点，无需再用额外填充补偿高度偏差。
+          vertical_fov_padding: 0.0  # 不额外扩大垂直清除范围，避免误清视野外体素
+          # 使用保守加速系数，主要依赖 voxel_decay 的时间衰减，视锥仅作温和加速。
           decay_acceleration: 5.0  # 视锥内缺失观测的加速衰减系数，单位 1/s²
           model_type: 0  # 0=深度相机视锥模型，1=3D 激光雷达
 
