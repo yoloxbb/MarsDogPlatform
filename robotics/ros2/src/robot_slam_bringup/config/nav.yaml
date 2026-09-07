@@ -249,7 +249,7 @@ local_costmap:
         # 体素在无新观测后的存活时间。必须远大于点云周期（实测 /local_grid_obstacle
         # 约 1.7~2.5 Hz，即 0.4~0.6 s），否则视野内的真实障碍会在两帧之间被衰减掉；
         # 视野内持续被观测的障碍每帧刷新时间戳，不会过期。5 s 兼顾鬼影清除与安全余量。
-        voxel_decay: 2.0  # 单位 s（decay_model=0 时为线性存活时间）
+        voxel_decay: 4.0  # 单位 s（decay_model=0 时为线性存活时间）
         decay_model: 0  # 0=线性衰减，1=指数衰减，-1=永久保留
         voxel_size: 0.05  # 与代价地图 resolution 一致，单位 m
         # 必须为 false：相机水平视场仅约 71°，若把未观测区域标记为 NO_INFORMATION，
