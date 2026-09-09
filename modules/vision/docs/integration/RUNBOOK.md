@@ -162,7 +162,7 @@ ros2 service type /perception/voice/task
 - `behavior_tree_node`
 - Voice → BT 的 `/perception/audio_event` 连接
 - Vision → BT/Action 的 `/perception/visual_event` 连接
-- Emotion → BT 的 `/emotion/state` 连接；Vision 不应订阅该 Topic
+- Emotion → Vision/BT 的 `/emotion/state` 连接
 - BT → Action 的 `/behavior/attention_tracking` 连接
 - `/execute_behavior` 一台 Server；不能同时启动两个动作执行器
 
@@ -184,9 +184,10 @@ ros2 topic echo /perception/visual_event
 ros2 node info /vision_interaction
 ```
 
-未登记人脸出现时只应看到 `EVT_VISION_STRANGER`，且 Vision 的订阅列表中不得
-出现 `/emotion/state`。情绪节点启动、停止或状态变化均不得改变 Vision 的陌生人
-事件名；Behavior Tree 负责把该视觉事实与 `/emotion/state` 组合成最终行为候选。
+未登记人脸出现时，Vision 的订阅列表应包含 `/emotion/state`。注入完整 JSON v2
+快照后，Anxiety/Fear 应产生 `EVT_VISION_STRANGER_ALERT`；无 Alert 且
+Joy/Excite/Calm 应产生 `EVT_VISION_STRANGER_FRIEND`。停止情绪 Topic 超过
+2.5 秒、发布非法快照或仅 Curious 触发时，应回退 `EVT_VISION_STRANGER`。
 
 ### 4.2 视觉 Service
 
@@ -303,8 +304,8 @@ Action SUCCESS(metadata_json.energyValue)
 | 左右抽搐 | 目标 ID 频繁变化、躯干中心不稳、死区过小或方向符号错误 |
 | 相机断流仍显示人物 | 检查代码/配置是否包含 `camera_stale_timeout_sec=0.5`，目标年龄不得被发布定时器刷新 |
 | 静态躺卧触发跌倒 | 应使用时序 GesturePose 引擎；确认不是旧随机 `PoseActionClassifier` |
-| Vision 出现陌生人 Alert/Friend 细分事件 | 运行的不是当前版本；Vision 应只发 `EVT_VISION_STRANGER` 且不订阅 `/emotion/state` |
-| 陌生人行为未结合情绪或重复/冲突 | 检查 BT 对 `EVT_VISION_STRANGER` 与 `/emotion/state` 的组合逻辑，以及 10 Hz 状态流的 queued/in-flight 去重 |
+| 陌生人只出现通用 Stranger | 检查 Vision 是否订阅 `/emotion/state`、JSON v2 是否完整、`triggered` 是否为 boolean 及状态是否超过 2.5 秒 |
+| Alert/Friend 重复或冲突 | 确认 Alert 优先且细分事件替换通用 Stranger；BT 仍需对 10 Hz 状态流做 queued/in-flight 去重 |
 | 充电一直不结束 | Action 未返回 SUCCESS，或 Result 未携带/转换 `energyValue` |
 | 充电被情绪中断 | 运行配置/代码不是带延迟队列和抢占修复的当前版本 |
 | 情绪动作后长期静止 | 检查 `emotion_continuation` 配置和 `/emotion/state.triggered` |
@@ -316,7 +317,7 @@ Action SUCCESS(metadata_json.energyValue)
 - [ ] Voice 的同一会话保持相同 `interaction_id`。
 - [ ] Vision 在当前相机下只输出单个稳定目标，坐标中心定义正确。
 - [ ] Vision 空闲时无物体推理；Action 开启后按 session 发布，停止或租约到期后清空。
-- [ ] Vision 对陌生人只发 `EVT_VISION_STRANGER` 且不订阅 `/emotion/state`；组合判断在 BT 验证。
+- [ ] Vision 订阅 `/emotion/state`；陌生人在 Anxiety/Fear 下发 Alert，在 Joy/Excite/Calm 下发 Friend，过期/非法时回退通用 Stranger。
 - [ ] BT 在 Action 不可抢占时保留候选，而不是丢弃。
 - [ ] Action 只接受行为表中的精确 `behavior_name`。
 - [ ] 会话结束 1 秒内 `/cmd_vel` 归零。

@@ -50,6 +50,33 @@ def test_draw_visual_debug_keeps_resolution_and_draws_overlay() -> None:
     assert np.any(result != frame)
 
 
+def test_face_overlay_color_changes_with_identity_state() -> None:
+    expected = {
+        "unverified": (119, 101, 255),
+        "unknown_candidate": (119, 101, 255),
+        "confirmed_unknown": (119, 101, 255),
+        "candidate_known": (87, 200, 255),
+        "confirmed_known": (143, 229, 62),
+    }
+    for identity_state, color in expected.items():
+        frame = np.zeros((100, 100, 3), dtype=np.uint8)
+        result = draw_visual_debug(
+            frame,
+            {
+                "faces": [{
+                    "x": 0.1,
+                    "y": 0.1,
+                    "w": 0.2,
+                    "h": 0.2,
+                    "confidence": 0.9,
+                    "identity_state": identity_state,
+                }]
+            },
+            control={"mode": "object_only"},
+        )
+        assert tuple(result[10, 20]) == color
+
+
 def test_side_by_side_eye_crop_has_single_view_resolution() -> None:
     frame = np.zeros((240, 640, 3), dtype=np.uint8)
     frame[:, 320:] = 255
@@ -124,6 +151,9 @@ def test_web_dashboard_asset_and_jpeg_state_are_packaged() -> None:
     assert "GesturePose 原始判定" in server._html.decode("utf-8")
     assert "关键点模型 A/B" in server._html.decode("utf-8")
     assert "MarsDog 物体识别调试" in server._html.decode("utf-8")
+    assert "陌生/未确认人脸" in server._html.decode("utf-8")
+    assert "候选已知人脸" in server._html.decode("utf-8")
+    assert "确认已知人脸" in server._html.decode("utf-8")
     assert "object-only" in server._html.decode("utf-8")
     assert "在线人脸录入" in server._html.decode("utf-8")
     assert "family_member_4" in server._html.decode("utf-8")

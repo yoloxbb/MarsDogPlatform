@@ -9,6 +9,8 @@ EVT_VISION_FOOD = "EVT_VISION_FOOD"
 EVT_VISION_TOY = "EVT_VISION_TOY"
 EVT_VISION_FALL = "EVT_VISION_FALL"
 EVT_VISION_STOP_GESTURE = "EVT_VISION_STOP_GESTURE"
+EVT_VISION_STRANGER_ALERT = "EVT_VISION_STRANGER_ALERT"
+EVT_VISION_STRANGER_FRIEND = "EVT_VISION_STRANGER_FRIEND"
 EVT_VISION_ANIMAL_CALM = "EVT_VISION_ANIMAL_CALM"
 EVT_VISION_ANIMAL_GREET = "EVT_VISION_ANIMAL_GREET"
 EVT_VISION_ANIMAL_PLAY = "EVT_VISION_ANIMAL_PLAY"
@@ -62,3 +64,12 @@ def face_identity_to_vision_event(identity: str) -> str:
         if identity and identity != "unknown"
         else EVT_VISION_STRANGER
     )
+
+
+def refine_stranger_vision_event(emotion_classification: str) -> str:
+    """Refine a stranger fact using a fresh authoritative emotion state."""
+    if emotion_classification == "alert":
+        return EVT_VISION_STRANGER_ALERT
+    if emotion_classification == "friend":
+        return EVT_VISION_STRANGER_FRIEND
+    return EVT_VISION_STRANGER

@@ -16,7 +16,7 @@
 | `/perception/vision/enrollment_event` | `std_msgs/msg/String` JSON | RELIABLE, KEEP_LAST 10 | Vision | 管理界面 |
 | `/perception/vision/task` | `marsdog_vision_interaction/srv/VisionTask` | Service | Vision | Behavior Tree、管理界面 |
 | `/api/v1/faces...` | FastAPI multipart/JSON/JPEG | HTTP；暂不鉴权 | Vision | 本地人脸管理界面 |
-| `/emotion/state` | `std_msgs/msg/String` JSON v2 | RELIABLE, KEEP_LAST 10 | Emotion | Behavior Tree |
+| `/emotion/state` | `std_msgs/msg/String` JSON v2 | RELIABLE, KEEP_LAST 10 | Emotion | Vision、Behavior Tree |
 | `/emotion/signal_event` | `std_msgs/msg/String` JSON | RELIABLE, KEEP_LAST 10 | Emotion | Behavior Tree |
 | `/internal_need/state` | `std_msgs/msg/String` JSON v2 | RELIABLE, KEEP_LAST 10 | InternalNeed | Behavior Tree |
 | `/internal_need/signal_event` | `std_msgs/msg/String` JSON | RELIABLE, KEEP_LAST 10 | InternalNeed | Behavior Tree |
@@ -29,7 +29,7 @@
 
 ## 2. `/perception/audio_event`
 
-`String.data` 为 `schema_version=1` 的 JSON。完整稳定字段为：
+`String.data` 为 `schema_version=2` 的 JSON。完整稳定字段为：
 
 ```text
 schema_version
@@ -38,8 +38,9 @@ event_type, interaction_id, utterance_id
 wake_word, wake_angle, wake_confidence
 asr_text, language
 speaker_id, speaker_confidence
-emotion, action, control
+social, intent, emotion, action, control
 command_id, intent_category, intent_source, intent_confidence
+nlu_protocol, raw_nlu_tag, specific_event_type, dispatch_role
 slots[], response_text
 is_executable, should_trigger_behavior_tree
 danger_type, danger_angle
@@ -54,12 +55,20 @@ latency_ms
 - `EVT_VOICE_COMMAND_FOLLOW`：除发送 `follow_owner` 行为外，把会话跟踪模式切换为 `follow_owner`。
 - `EVT_STATE_CHANGED` 且 `state="idle"`：结束匹配 `interaction_id` 的后台跟踪。
 
+事件名按识别来源强制隔离：
+
+- 确定性词库和 KWS 发布 `config/command_catalog.yaml` 声明的 81 个唯一特殊事件；
+- Model Intent 和兼容规则只发布 `EVT_VOICE_INTENT_*`；当前注册 34 个事件；
+- 两个集合交集必须为空。即使两条路径具有相同 `command_id`，`event_type` 也不能相同；
+- Behavior Tree 必须为 `EVT_VOICE_INTENT_*` 建立独立白名单，禁止去掉 `INTENT_`
+  后直接复用词库映射。只有 `should_trigger_behavior_tree=true` 的模型具体事件可执行。
+
 典型跟随事件：
 
 ```json
 {
-  "schema_version": 1,
-  "header": {"stamp": 1785780000.1, "frame_id": "base_link"},
+  "schema_version": 2,
+  "header": {"stamp": 1785780000.1, "frame_id": "microphone_array"},
   "event_type": "EVT_VOICE_COMMAND_FOLLOW",
   "interaction_id": "session-a1",
   "utterance_id": "utt-a1-2",
@@ -72,11 +81,15 @@ latency_ms
 }
 ```
 
+Model Intent 命中 SIT 白名单时，对应具体事件为
+`EVT_VOICE_INTENT_COMMAND_SIT`，后续摘要为
+`EVT_VOICE_INTENT_COMMAND_KNOWN`；不得发布词库的 `EVT_VOICE_COMMAND_SIT`。
+
 结束事件：
 
 ```json
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "event_type": "EVT_STATE_CHANGED",
   "interaction_id": "session-a1",
   "state": "idle",
@@ -85,7 +98,7 @@ latency_ms
 }
 ```
 
-`state_reason` 当前为 `interaction_timeout`、`utterance_limit` 或 `stop_listening`。
+`state_reason` 当前为 `interaction_timeout` 或 `stop_listening`。
 
 ## 3. `/perception/visual_event`
 
@@ -140,10 +153,11 @@ latency_ms
 
 `speaker_id`、`is_speaking`、`speaker_confidence` 是旧兼容占位，视觉项目不填充跨模态信息。
 
-陌生人脸在 Vision 中始终产生 `EVT_VISION_STRANGER`。Vision 不订阅
-`/emotion/state` 或 `/internal_need/state`，也不产生 Alert/Friend 细分视觉事件。
-Behavior Tree 分别消费 `/perception/visual_event` 和 `/emotion/state`，在下游完成
-陌生人事实与情绪状态的组合判断、候选去重和行为选择。
+陌生人脸在 Vision 中按新鲜 `/emotion/state.emotions.<name>.triggered` 细分：
+Anxiety/Fear 任一触发时发布 `EVT_VISION_STRANGER_ALERT`；否则
+Joy/Excite/Calm 任一触发时发布 `EVT_VISION_STRANGER_FRIEND`。Alert 优先，
+细分事件替换通用事件。状态默认 2.5 秒过期；缺失、过期、非法或仅
+Curious 触发时回退 `EVT_VISION_STRANGER`。Vision 不订阅 `/internal_need/state`。
 
 ### 3.1 `/perception/vision/object_detections`
 

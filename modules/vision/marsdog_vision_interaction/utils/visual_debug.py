@@ -26,6 +26,21 @@ _HAND_CONNECTIONS = (
 
 _MAX_OBJECT_OVERLAYS = 30
 
+# OpenCV colors are BGR. Keep these aligned with the dashboard legend.
+_FACE_UNKNOWN_COLOR = (119, 101, 255)  # RGB #FF6577
+_FACE_CANDIDATE_COLOR = (87, 200, 255)  # RGB #FFC857
+_FACE_CONFIRMED_COLOR = (143, 229, 62)  # RGB #3EE58F
+
+
+def _face_overlay_color(face: dict[str, Any]) -> tuple[int, int, int]:
+    """Return the identity-state color for one face overlay."""
+    identity_state = str(face.get("identity_state", "unverified"))
+    if identity_state == "confirmed_known":
+        return _FACE_CONFIRMED_COLOR
+    if identity_state == "candidate_known":
+        return _FACE_CANDIDATE_COLOR
+    return _FACE_UNKNOWN_COLOR
+
 
 def _pixel_box(
     item: dict[str, Any], width: int, height: int
@@ -193,14 +208,15 @@ def draw_visual_debug(
         if not isinstance(face, dict):
             continue
         x1, y1, x2, y2 = _pixel_box(face, width, height)
-        cv2.rectangle(output, (x1, y1), (x2, y2), (255, 180, 0), 2)
+        face_color = _face_overlay_color(face)
+        cv2.rectangle(output, (x1, y1), (x2, y2), face_color, 2)
         name = str(face.get("recognized_user", "") or "unknown")
         _text(
             output,
             f"face {name} {float(face.get('confidence', 0)):.2f}",
             x1,
             min(height - 8, y2 + 18),
-            (255, 220, 0),
+            face_color,
         )
 
     active = event.get("active_target", {})

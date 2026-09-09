@@ -6,7 +6,7 @@
 camera_driver:
   ros__parameters:
     # Portable OpenCV camera index. Override this parameter locally if needed.
-    device: "4"
+    device: "/dev/video0"
     width: 640
     # This binocular camera exposes both 320x240 eyes in one 640x240 frame.
     height: 240

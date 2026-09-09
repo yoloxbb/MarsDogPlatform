@@ -16,10 +16,14 @@ topics:
   object_detections: /perception/vision/object_detections
   gesture_debug: /perception/vision/gesture_debug
   enrollment_event: /perception/vision/enrollment_event
+  emotion_state: /emotion/state
   vision_task: /perception/vision/task
   observation_rate_hz: 1.0
   camera_stale_timeout_sec: 0.5
   object_cache_timeout_sec: 2.5
+
+stranger_emotion:
+  enabled: false
 
 providers:
   # Do not initialize YuNet, MediaPipe, HandLandmarker or ByteTrack.

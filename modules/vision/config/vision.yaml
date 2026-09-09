@@ -23,12 +23,21 @@ topics:
   object_detections: /perception/vision/object_detections
   gesture_debug: /perception/vision/gesture_debug
   enrollment_event: /perception/vision/enrollment_event
+  emotion_state: /emotion/state
   vision_task: /perception/vision/task
   observation_rate_hz: 10.0
   # Stop publishing cached scene facts if the external camera stream stalls.
   camera_stale_timeout_sec: 0.5
   # Latest successful periodic/Service detections are mirrored briefly.
   object_cache_timeout_sec: 2.0
+
+# Refine a current stranger-face fact using the authoritative emotion state.
+# Alert wins if alert and friend emotions are triggered simultaneously.
+stranger_emotion:
+  enabled: true
+  state_timeout_sec: 2.5
+  alert_emotions: [Anxiety, Fear]
+  friend_emotions: [Joy, Excite, Calm]
 
 # Aligned RealSense depth is the only source allowed to populate a target
 # range. Missing/stale depth, invalid CameraInfo, a timestamp mismatch or an
@@ -55,7 +64,7 @@ depth_fusion:
 providers:
   vision:
     type: observation
-    enabled: true
+    enabled: false
     config:
       face_detect_model: ${MARSDOG_VISION_MODEL_DIR}/face_detection_yunet_2023mar.onnx
       # Select lite/full at launch without editing the config:

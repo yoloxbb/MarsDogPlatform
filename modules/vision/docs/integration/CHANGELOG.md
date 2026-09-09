@@ -1,5 +1,19 @@
 # 对接归档变更记录
 
+## 1.4.0 — 2026-09-09
+
+- `/perception/audio_event` 对齐 Voice 当前 `schema_version=2`。
+- 确定性词库/KWS 保留目录声明的特殊事件；81 个命令组的 `event_type`、`command_id`
+  和 `command_key` 均要求唯一。
+- Model Intent 与兼容规则改用独立的 `EVT_VOICE_INTENT_*` 命名空间，模型具体动作、
+  社交大类、KNOWN、NEUTRAL 和 UNKNOWN 均不得复用词库事件名。
+- Tree 必须显式映射模型事件；禁止删除 `INTENT_` 前缀后复用确定性词库映射。
+- 恢复 Vision 对 `/emotion/state` JSON v2 的订阅：陌生人 + Anxiety/Fear
+  发布 `EVT_VISION_STRANGER_ALERT`；无 Alert 且 Joy/Excite/Calm 发布
+  `EVT_VISION_STRANGER_FRIEND`；缺失、非法或超过 2.5 秒时回退通用 Stranger。
+- Viewer 人脸框改为身份状态分色：未知/未确认红色、`candidate_known`
+  黄色、`confirmed_known` 绿色。
+
 ## 1.3.6 — 2026-09-03
 
 - `victory` V字手势由仅调试标签升级为正式 `hand_action=victory`，已确认固定身份且

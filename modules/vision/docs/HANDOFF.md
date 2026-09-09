@@ -1,6 +1,6 @@
 # 视觉项目交接说明
 
-> 对接基线：2026-09-03 / 多项目契约 1.3.6
+> 对接基线：2026-09-09 / 多项目契约 1.4.0
 
 ## 1. 本项目负责什么
 
@@ -23,6 +23,7 @@
 | 订阅 | `/camera/camera/color/image_raw` | `sensor_msgs/msg/Image` | BEST_EFFORT, KEEP_LAST 1 |
 | 订阅 | `/camera/camera/aligned_depth_to_color/image_raw` | `sensor_msgs/msg/Image` | BEST_EFFORT, KEEP_LAST 1；人体、动物和物体米制距离 |
 | 订阅 | `/camera/camera/color/camera_info` | `sensor_msgs/msg/CameraInfo` | BEST_EFFORT, KEEP_LAST 1；反投影内参 |
+| 订阅 | `/emotion/state` | `std_msgs/msg/String` JSON v2 | RELIABLE, KEEP_LAST 10；仅用于陌生人 Alert/Friend 细分 |
 | 发布 | `/perception/visual_event` | `std_msgs/msg/String` JSON | BEST_EFFORT, KEEP_LAST 5，默认 10 Hz |
 | 发布 | `/perception/vision/object_detections` | `std_msgs/msg/String` JSON v2 | BEST_EFFORT, KEEP_LAST 5，正式启动为 0 Hz，任务默认 2 Hz |
 | 调试发布 | `/perception/vision/gesture_debug` | `std_msgs/msg/String` JSON | 精确动作名、候选分数和时序命中，仅供调试 |
@@ -91,9 +92,12 @@ bbox/body_center 为有限归一化数值
 尺寸、frame、时间同步、有效样本或 0.5 秒新鲜度任一不合格均 fail closed：
 `range_valid=false,distance_m=null`，不使用人体框高度回退估距。
 
-陌生人脸存在时，视觉统一发布 `EVT_VISION_STRANGER`。视觉不订阅
-`/emotion/state` 或 `/internal_need/state`，也不根据机器人内部状态细分视觉事实。
-需要结合情绪判断陌生人行为时，由行为树分别消费视觉事件和情绪状态后完成融合。
+陌生人脸存在时，视觉读取 `/emotion/state` JSON v2 中的
+`emotions.<name>.triggered`：Anxiety/Fear 映射 `EVT_VISION_STRANGER_ALERT`，
+否则 Joy/Excite/Calm 映射 `EVT_VISION_STRANGER_FRIEND`。情绪快照默认
+2.5 秒过期；未收到、非法、过期或仅 Curious 触发时回退
+`EVT_VISION_STRANGER`。Alert 优先且细分事件替换通用事件。Vision 仍不订阅
+`/internal_need/state`。
 
 ## 5. VisionTask
 
@@ -227,8 +231,9 @@ uv run pytest
 - 静态躺卧不触发跌倒；直立到躺卧序列只产生一次跌倒边沿。
 - JSON 始终包含完整顶层字段，即使数组为空。
 - Topic QoS 保持 BEST_EFFORT depth 5，与 BT/Action 匹配。
-- 陌生人脸始终只发布 `EVT_VISION_STRANGER`；`vision_interaction` 的订阅列表中不得
-  出现 `/emotion/state`，情绪组合判断属于行为树。
+- `vision_interaction` 必须以 RELIABLE depth 10 订阅 `/emotion/state`；分别注入
+  Anxiety/Fear、Joy/Excite/Calm 后，陌生人应分别发布 Alert/Friend，过期或
+  非法状态应回退通用 Stranger。
 - 物体 Topic 的 `schema_version=2`，Action 只消费 `source=stream` 且匹配
   `stream.session_id` 的结果，同时校验 `header.stamp`、`status`，并在停止、
   错误或超时后立即停止使用旧框。
@@ -239,5 +244,5 @@ uv run pytest
 - 何时启动/停止跟随：语音会话 + 行为树。
 - 跟随速度、角速度、死区和 `/cmd_vel`：动作系统。
 - 寻物搜索、目标确认、靠近、丢失恢复和停车：动作系统。
-- 陌生人视觉事实与情绪状态的组合判断、情绪/需求行为选择和排队：行为树。
+- 陌生人视觉事实与情绪状态的事件细分：Vision；细分事件的行为映射、选择和排队：行为树。
 - 视觉只保证提供稳定、及时、坐标定义明确的事实数据。

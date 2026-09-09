@@ -136,16 +136,19 @@ ros2 service call /perception/vision/task \
 `stream.session_id`、租约剩余时间、请求标签、时间戳、推理耗时和停止原因；完整
 格式见 [docs/ROS2_CONTRACT.md](docs/ROS2_CONTRACT.md)。
 
-## 陌生人事件职责边界
+## 陌生人情绪细分事件
 
-视觉节点只判断“当前存在未登记人脸”，并统一发布
-`EVT_VISION_STRANGER`。本项目不订阅 `/emotion/state`，也不再产生
-`EVT_VISION_STRANGER_ALERT` 或 `EVT_VISION_STRANGER_FRIEND`。
+视觉节点订阅情绪系统的 `/emotion/state` JSON v2，并在识别到陌生人脸时
+读取 `emotions.<name>.triggered`：
 
-需要根据 Anxiety/Fear/Joy/Excite/Calm 等情绪决定陌生人行为时，由下游行为树同时
-消费 `/perception/visual_event` 和 `/emotion/state`，在自己的候选、优先级、去重和
-冷却生命周期内完成组合判断。这样视觉事件只表达可观测事实，不把机器人内部情绪
-写回视觉分类。
+- `Anxiety` 或 `Fear` 已触发：`EVT_VISION_STRANGER_ALERT`；
+- 否则 `Joy`、`Excite` 或 `Calm` 已触发：`EVT_VISION_STRANGER_FRIEND`；
+- 情绪状态未收到、超过 2.5 秒、格式非法或仅 `Curious` 触发：
+  回退 `EVT_VISION_STRANGER`。
+
+Alert 优先于 Friend，细分事件替换通用 Stranger，同包不双发。已知人脸
+仍走 `EVT_VISION_MASTER*`。情绪系统不应再把两个细分事件配置为情绪增量
+输入，否则可能形成 Vision → Emotion → Vision 的反馈环。
 
 ## 统一视觉调试页面
 

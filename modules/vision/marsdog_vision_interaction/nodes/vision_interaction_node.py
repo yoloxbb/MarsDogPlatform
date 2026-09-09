@@ -38,6 +38,9 @@ from marsdog_vision_interaction.core.held_object_pose import (
 from marsdog_vision_interaction.core.object_detection_session import (
     ObjectDetectionSessionManager,
 )
+from marsdog_vision_interaction.core.stranger_emotion_context import (
+    StrangerEmotionContext,
+)
 from marsdog_vision_interaction.fusion.stereo_fusion import get_target_manager
 from marsdog_vision_interaction.messages.face_identity import (
     ALLOWED_FACE_IDENTITIES,
@@ -48,6 +51,7 @@ from marsdog_vision_interaction.messages.visual_event import (
 from marsdog_vision_interaction.messages.visual_event_types import (
     face_identity_to_vision_event,
     pose_action_to_vision_event,
+    refine_stranger_vision_event,
 )
 from marsdog_vision_interaction.providers.base import BaseProvider
 from marsdog_vision_interaction.utils.config_loader import load_config
@@ -155,6 +159,7 @@ class VisionInteractionNode(Node):
         self._camera_callback_group = MutuallyExclusiveCallbackGroup()
         self._publish_callback_group = MutuallyExclusiveCallbackGroup()
         self._object_callback_group = MutuallyExclusiveCallbackGroup()
+        self._emotion_callback_group = MutuallyExclusiveCallbackGroup()
         self._service_callback_group = MutuallyExclusiveCallbackGroup()
         self._object_inference_lock = threading.Lock()
         self._providers: dict[str, BaseProvider | None] = {}
@@ -275,6 +280,27 @@ class VisionInteractionNode(Node):
                 "/perception/vision/enrollment_event",
             )
         )
+        self._emotion_state_topic = str(
+            topics.get("emotion_state", "/emotion/state")
+        )
+        stranger_emotion_config = self._config.get("stranger_emotion", {})
+        if not isinstance(stranger_emotion_config, dict):
+            stranger_emotion_config = {}
+        self._stranger_emotion_context = (
+            StrangerEmotionContext(
+                timeout_sec=float(
+                    stranger_emotion_config.get("state_timeout_sec", 2.5)
+                ),
+                alert_emotions=stranger_emotion_config.get(
+                    "alert_emotions", ["Anxiety", "Fear"]
+                ),
+                friend_emotions=stranger_emotion_config.get(
+                    "friend_emotions", ["Joy", "Excite", "Calm"]
+                ),
+            )
+            if bool(stranger_emotion_config.get("enabled", True))
+            else None
+        )
         self._visual_pub = self.create_publisher(
             String, self._visual_topic, _VISUAL_QOS
         )
@@ -293,6 +319,17 @@ class VisionInteractionNode(Node):
             self._on_camera,
             _CAMERA_QOS,
             callback_group=self._camera_callback_group,
+        )
+        self._emotion_state_sub = (
+            self.create_subscription(
+                String,
+                self._emotion_state_topic,
+                self._on_emotion_state,
+                _EVENT_QOS,
+                callback_group=self._emotion_callback_group,
+            )
+            if self._stranger_emotion_context is not None
+            else None
         )
         self._depth_sub = (
             self.create_subscription(
@@ -470,7 +507,7 @@ class VisionInteractionNode(Node):
         )
         logger.info(
             "Vision node ready: camera=%s visual=%s objects=%s startup=%.2fHz "
-            "held_pose=%s@%.2fHz depth=%s service=%s",
+            "held_pose=%s@%.2fHz depth=%s emotion=%s service=%s",
             self._camera_topic,
             self._visual_topic,
             self._object_topic,
@@ -478,6 +515,11 @@ class VisionInteractionNode(Node):
             self._held_object_enabled,
             self._held_object_rate_hz,
             self._depth_topic if self._depth_enabled else "disabled",
+            (
+                self._emotion_state_topic
+                if self._emotion_state_sub is not None
+                else "disabled"
+            ),
             service_name if self._service is not None else "unavailable",
         )
         vision_trace(
@@ -488,10 +530,28 @@ class VisionInteractionNode(Node):
             camera_topic=self._camera_topic,
             visual_topic=self._visual_topic,
             object_topic=self._object_topic,
+            emotion_topic=(
+                self._emotion_state_topic
+                if self._emotion_state_sub is not None
+                else "disabled"
+            ),
             service=service_name if self._service is not None else "unavailable",
             vision_epoch=self._vision_epoch,
             timing_trace_interval_sec=self._timing_trace_interval_sec,
         )
+
+    def _on_emotion_state(self, message: String) -> None:
+        """Cache one authoritative emotion snapshot for stranger fusion."""
+        context = self._stranger_emotion_context
+        if context is None:
+            return
+        try:
+            payload = json.loads(message.data)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            logger.debug("Ignored malformed /emotion/state JSON")
+            return
+        if not context.update(payload):
+            logger.debug("Ignored invalid or partial /emotion/state payload")
 
     def _apply_runtime_model_overrides(self) -> None:
         providers = self._config.get("providers")
@@ -1311,7 +1371,14 @@ class VisionInteractionNode(Node):
                 held_status,
             )
         VisionInteractionNode._update_held_object_stream(self, event, now)
-        event["events"] = self._derive_events(event)
+        emotion_classification = ""
+        emotion_context = getattr(self, "_stranger_emotion_context", None)
+        if emotion_context is not None:
+            emotion_classification = emotion_context.classify(now=now)
+        event["events"] = self._derive_events(
+            event,
+            emotion_classification=emotion_classification,
+        )
         # Cache exactly the complete packet that is published.  VisionTask
         # query_targets only ever copies this atomic snapshot; it never
         # rebuilds target IDs from unrelated caches.
@@ -2165,6 +2232,7 @@ class VisionInteractionNode(Node):
     @staticmethod
     def _derive_events(
         observation: dict[str, Any],
+        emotion_classification: str = "",
     ) -> list[str]:
         events: list[str] = []
         active = observation.get("active_target", {})
@@ -2173,7 +2241,12 @@ class VisionInteractionNode(Node):
             VisionInteractionNode._pose_event_identity_confirmed(active)
         )
         if observation.get("faces"):
-            events.append(face_identity_to_vision_event(identity))
+            face_event = face_identity_to_vision_event(identity)
+            if identity in ("", "unknown"):
+                face_event = refine_stranger_vision_event(
+                    emotion_classification
+                )
+            events.append(face_event)
         action = str(active.get("pose_action", ""))
         action_event = pose_action_to_vision_event(action, identity_confirmed)
         if action_event:

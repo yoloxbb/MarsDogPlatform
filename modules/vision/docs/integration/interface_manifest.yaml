@@ -1,7 +1,7 @@
 archive:
   name: marsdog_multi_project_contract
-  version: 1.3.6
-  baseline_date: "2026-09-03"
+  version: 1.4.0
+  baseline_date: "2026-09-09"
   json_encoding: UTF-8
 
 nodes:
@@ -22,10 +22,25 @@ topics:
   /perception/audio_event:
     type: std_msgs/msg/String
     payload: json
-    schema_version: 1
+    schema_version: 2
     publisher: voice
     subscribers: [behavior_tree]
     qos: {reliability: reliable, history: keep_last, depth: 10}
+    event_namespaces:
+      deterministic_catalog_and_kws:
+        authority: MarsDogVoiceInteraction/config/command_catalog.yaml
+        command_count: 81
+        unique_event_type_per_command: true
+        model_intent_overlap_allowed: false
+      model_intent:
+        prefix: EVT_VOICE_INTENT_
+        event_count: 34
+        catalog_overlap_allowed: false
+        consumer_mapping: explicit_allowlist_required
+    routing_rules:
+      strip_intent_prefix_and_reuse_catalog_mapping: false
+      command_id_may_match_across_sources: true
+      executable_field: should_trigger_behavior_tree
   /perception/voice/enrollment_event:
     type: std_msgs/msg/String
     payload: json
@@ -80,7 +95,11 @@ topics:
       EVT_VISION_MASTER:
         condition: face_present_and_active_identity_known
       EVT_VISION_STRANGER:
-        condition: stranger_face_present
+        condition: stranger_face_present_with_missing_stale_invalid_or_unclassified_emotion_state
+      EVT_VISION_STRANGER_ALERT:
+        condition: stranger_face_present_and_fresh_anxiety_or_fear_triggered
+      EVT_VISION_STRANGER_FRIEND:
+        condition: stranger_face_present_and_no_alert_and_fresh_joy_excite_or_calm_triggered
       EVT_VISION_MASTER_HAPPY:
         condition: fixed_face_identity_confirmed_with_happy_compatible_action
       EVT_VISION_MASTER_SAD:
@@ -131,7 +150,7 @@ topics:
     payload: json
     schema_version: "2.0"
     publisher: emotion
-    subscribers: [behavior_tree]
+    subscribers: [vision, behavior_tree]
     qos: {reliability: reliable, history: keep_last, depth: 10}
   /emotion/signal_event:
     type: std_msgs/msg/String
@@ -266,9 +285,10 @@ invariants:
   vision_stop_gesture_policy: raised_command_zone_open_palm_with_temporal_stability
   vision_jump_policy: full_body_two_frames_or_cropped_one_strong_or_two_takeoff_frames_plus_return
   vision_stomp_policy: ankle_lift_return_cycle_or_cropped_knee_cycle_with_stable_body
-  vision_stranger_event_policy: generic_evt_vision_stranger_only
-  stranger_emotion_fusion_owner: behavior_tree
-  vision_does_not_subscribe_emotion_state: true
+  vision_stranger_event_policy: alert_precedes_friend_refined_event_replaces_generic_with_safe_fallback
+  stranger_emotion_fusion_owner: vision
+  vision_emotion_state_timeout_sec: 2.5
+  vision_subscribes_emotion_state: true
   vision_does_not_subscribe_internal_need_state: true
   vision_mock_policy: "synthetic observations only when provider type is explicitly mock"
   fall_event_policy: "upright baseline plus rapid transition plus persistent lying"

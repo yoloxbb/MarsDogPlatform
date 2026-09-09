@@ -1,7 +1,7 @@
 # MarsDog 视觉测试工程师验收说明
 
 > 测试交付版本：`v1.0.0-alpha`；Git 分支：`test/v1.0.0-alpha`；
-> 文档基线：2026-09-04。本文以该分支的 `vision.yaml`、
+> 文档基线：2026-09-09。本文以该分支的 `vision.yaml`、
 > `vision_debug.launch.py` 和 [ROS2_CONTRACT.md](ROS2_CONTRACT.md) 为准，面向设备端
 > 功能验收、问题复现和测试证据交付。
 
@@ -228,7 +228,7 @@ unavailable` 时，本轮真实模型测试不得判为通过。
 | STOMP-01 | 跺脚 | 全身/缺脚踝跺脚；抬腿保持、跳跃、走路反例 | 脚踝/膝部通道、速度、幅度、换向 | `stomp_detector`、`recognized_actions` | 完成局部抬落周期；身体中心稳定；3/5帧确认；身份门控有效 |
 | HOLD-01 | 手持玩具/狗粮 | 手持正例；地面、桌面、远离手腕反例 | 手持状态和关联证据 | `active_target.held_object`、TOY/FOOD事件 | 两个物体结果确认；只关联当前人；身份门控有效 |
 | FALL-01 | 跌倒 | 直立布防→受控快速躺倒；静态躺卧 | 跌倒状态、红色事件记录 | `Fall event confirmed`、`fall_detector` | 真转换触发一次边沿；静态躺卧不触发；30 s 冷却 |
-| STRANGER-01 | 陌生人事件边界 | 陌生人、已知人；情绪状态变化 | 视觉事件和历史 | 节点订阅、`events[]` | 陌生人始终只发 Stranger；视觉不订阅情绪；组合判断属于行为树 |
+| STRANGER-01 | 陌生人情绪细分 | 陌生人、已知人；情绪状态变化/过期/非法 | 视觉事件和历史 | `/emotion/state` 订阅、`events[]` | Anxiety/Fear → Alert；无 Alert 且 Joy/Excite/Calm → Friend；无效状态 → Stranger |
 | EVT-01 | 视觉事件流 | 人/动作进入、保持、离开 | ENTER/ACTIVE/EXIT | `vision_epoch/sequence/events[]` | Topic 约 10 Hz；生命周期正确压缩；序号递增 |
 | OBJ-01 | 单次物体识别 | 页面点击一次，目标有/无 | 物体 Badge、紫框、耗时 | object Topic `source=service` | 单次不创建 session；空数组也是正常结果 |
 | OBJ-02 | 持续物体识别 | 启动、续租、停止、关页超时 | session、频率、停止原因 | `source/status/stream/stop_reason` | 固定 web session；不抢占 Action；租约终止清缓存 |
@@ -491,7 +491,7 @@ Visual state changed: track=<id> tracking=<state> identity=<name> identity_state
 |---|---|---|---|
 | 主人已确认并在跟踪 | `recognized_actions=jumping`、`pose_action=jump` | `EVT_VISION_MASTER`，随后 `EVT_VISION_MASTER_HAPPY` | 动作识别、折叠和事件路由均可 PASS |
 | 第一次匹配，仅 `candidate_known` | 同上 | 可有人脸事件，但不得有 `EVT_VISION_MASTER_HAPPY` | 动作识别 PASS；门禁阻止姿态事件 PASS |
-| 陌生人/unknown | 同上 | `EVT_VISION_STRANGER`；不得有 Happy | 动作识别 PASS；门禁 PASS |
+| 陌生人/unknown | 同上 | 根据情绪为 `EVT_VISION_STRANGER_ALERT/FRIEND`，无效状态回退 `EVT_VISION_STRANGER`；不得有 Happy | 动作识别 PASS；门禁 PASS |
 | 没有检测到人脸 | 可保留 GesturePose 诊断 | 通常没有 Master/Stranger，也不得有 Happy | 只判识别层和门禁层 |
 | 已知身份但 `temporarily_lost` | 可保留旧诊断 | 不得发布新的姿态事件 | 门禁 PASS |
 
@@ -523,12 +523,14 @@ Vision 事件路由正确率 = 门禁打开且期望事件正确次数 / 门禁�
 
 #### 5.6.7 当前正式事件库存
 
-当前代码实际可能写入 `/perception/visual_event.events[]` 的事件只有下表9种：
+当前代码实际可能写入 `/perception/visual_event.events[]` 的事件只有下表11种：
 
 | 正式事件 | 来源 | 是否需要姿态身份门禁 | 同包主要证据 |
 |---|---|---:|---|
 | `EVT_VISION_MASTER` | 当前有 `faces[]`，且主目标 `identity` 非空、非 `unknown` | 否；它本身也不证明 `confirmed_known` | `faces[]`、`active_target.identity/identity_state` |
-| `EVT_VISION_STRANGER` | 当前有 `faces[]`，且主目标身份未知 | 否 | `faces[]`、`active_target.identity_state` |
+| `EVT_VISION_STRANGER` | 当前有陌生人脸，但情绪状态缺失、过期、非法或无匹配分类 | 否 | `faces[]`、`active_target.identity_state` |
+| `EVT_VISION_STRANGER_ALERT` | 陌生人 + 新鲜情绪中 Anxiety/Fear 已触发 | 否 | `faces[]`、`active_target.identity_state`、`/emotion/state` |
+| `EVT_VISION_STRANGER_FRIEND` | 陌生人 + 无 Alert 且 Joy/Excite/Calm 已触发 | 否 | 同上 |
 | `EVT_VISION_MASTER_HAPPY` | GP-014～GP-021 的兼容动作 | 是 | `recognized_actions[]`、`pose_action` 或 `hands[].hand_action` |
 | `EVT_VISION_MASTER_SAD` | GP-003～GP-013 的兼容动作 | 是 | 同上 |
 | `EVT_VISION_MASTER_NEUTRAL` | GP-022、GP-023、GP-025 折叠出的 `neutral_stand_sit` | 是 | `pose_state`、`recognized_actions[]`、`pose_action` |
@@ -576,7 +578,8 @@ VISION_TRACE
 陌生人完成同样跳跃时，前两行 GesturePose 识别证据仍可成立，但正式证据应改为：
 
 ```text
-/perception/visual_event events[]=EVT_VISION_STRANGER
+/perception/visual_event events[]=EVT_VISION_STRANGER_ALERT|FRIEND
+# 情绪状态无效时回退 EVT_VISION_STRANGER
 VISION_TRACE record=event_suppressed reason_code=identity_not_confirmed
   pose_action=jump pose_event_gate=blocked
 ```
@@ -791,13 +794,11 @@ rg '"record":"held_object_evaluation"' /tmp/marsdog_vision_qa/HOLD-01/*.jsonl
 测试事件次数应数 `Fall event confirmed` 或页面 `ENTER`。陌生人即使状态机确认跌倒，
 也只保留调试诊断，不得发布正式跌倒事件。
 
-### 5.12 陌生人事件与下游融合边界
+### 5.12 陌生人脸与情绪状态融合
 
-视觉只负责判断人脸是否属于固定人脸库。陌生人出现时，无论机器人当前情绪如何，
-视觉端都只发布 `EVT_VISION_STRANGER`；`vision_interaction` 不订阅
-`/emotion/state`。情绪与陌生人事实的组合由下游行为树完成。
-
-先检查运行时订阅，输出中不得出现 `/emotion/state`：
+视觉节点识别到陌生人脸时，使用 `/emotion/state` JSON v2 的
+`emotions.<name>.triggered` 细分事件。运行时订阅中应出现
+`/emotion/state`，QoS 为 RELIABLE、KEEP_LAST depth 10：
 
 ```bash
 ros2 node info /vision_interaction
@@ -805,17 +806,15 @@ ros2 node info /vision_interaction
 
 | 情况 | Vision `events[]` 预期 | 验收重点 |
 |---|---|---|
-| 未录入人员持续在画面中 | 只含 `EVT_VISION_STRANGER` 人脸事件 | 10 Hz 状态流可重复，但不得改名 |
-| 外部 Anxiety/Fear 状态变化 | 仍为 `EVT_VISION_STRANGER` | 视觉不读取情绪，也不产生 Alert 细分 |
-| 外部 Joy/Excite/Calm 状态变化 | 仍为 `EVT_VISION_STRANGER` | 视觉不产生 Friend 细分 |
-| `/emotion/state` 停止或 JSON 非法 | 仍为 `EVT_VISION_STRANGER` | 视觉结果不依赖情绪节点可用性 |
+| Anxiety 或 Fear 的 `triggered=true` | `EVT_VISION_STRANGER_ALERT` | 两者任一成立即为 Alert |
+| 无 Alert，Joy、Excite 或 Calm 的 `triggered=true` | `EVT_VISION_STRANGER_FRIEND` | Alert 与 Friend 同时成立时 Alert 优先 |
+| `/emotion/state` 未收到、超过 2.5 s、JSON/schema/字段非法 | `EVT_VISION_STRANGER` | 安全回退；非法部分包不覆盖上一份完整快照 |
+| 仅 Curious 的 `triggered=true` | `EVT_VISION_STRANGER` | Curious 不在本次细分映射内 |
 | 已确认固定身份 | `EVT_VISION_MASTER` | 不得误报 Stranger |
 
-本项目的通过标准是：视觉事件中永远不出现
-`EVT_VISION_STRANGER_ALERT/EVT_VISION_STRANGER_FRIEND`，并且视觉节点没有情绪
-Topic 订阅。若测试产品最终的 Alert/Friend 行为，必须在行为树项目中关联同一时间段
-的 `EVT_VISION_STRANGER`、`/emotion/state`、候选仲裁日志和 Action Result；该结果
-不能记为 Vision 单模块通过证据。
+验收时应注入完整的 `emotions{}` 快照并修改 `triggered` 布尔值，不能只改
+`dominantEmotion`。细分事件替换通用 Stranger，同一 `events[]` 不得同时包含
+通用和细分名称。情绪系统不得把 Alert/Friend 反向配置为情绪增量输入。
 
 ### 5.13 视觉事件历史与发布频率
 
@@ -852,6 +851,52 @@ Vision events[] -> Viewer ENTER/ACTIVE/EXIT
 不能用 Viewer 记录代替。
 
 ### 5.14 单次与持续物体识别
+
+当前正式配置指向 `yoloe-26s-seg_rknn_model`。该交付模型的
+`metadata.yaml` 声明了以下 18 个类别；`label` 是 ROS 结果和
+`target_labels[]` 必须使用的精确英文名称：
+
+| Class ID | 精确 `label` | 中文说明 | 当前正式事件用途 |
+|---:|---|---|---|
+| 0 | `dog toy ball` | 狗玩具球 | 手腕关联确认后可生成 `EVT_VISION_TOY` |
+| 1 | `dog frisbee toy` | 狗飞盘玩具 | 手腕关联确认后可生成 `EVT_VISION_TOY` |
+| 2 | `dog tug ring toy` | 狗拉扯环玩具 | 手腕关联确认后可生成 `EVT_VISION_TOY` |
+| 3 | `dog collar` | 狗项圈 | 仅物体检测/跟踪，不生成专用事件 |
+| 4 | `dog bowl` | 狗碗 | 手腕关联确认后可生成 `EVT_VISION_FOOD` |
+| 5 | `dog leash` | 狗牵引绳 | 仅物体检测/跟踪，不生成专用事件 |
+| 6 | `dog treat bag` | 狗零食袋 | 手腕关联确认后可生成 `EVT_VISION_FOOD` |
+| 7 | `dog food can` | 狗粮罐头 | 手腕关联确认后可生成 `EVT_VISION_FOOD` |
+| 8 | `dog bed` | 狗窝 | 仅物体检测/跟踪，不生成专用事件 |
+| 9 | `trash can` | 垃圾桶 | 仅物体检测/跟踪，不生成专用事件 |
+| 10 | `cardboard shipping box` | 快递纸箱 | 仅物体检测/跟踪，不生成专用事件 |
+| 11 | `sock` | 袜子 | 仅物体检测/跟踪，不生成专用事件 |
+| 12 | `slipper` | 拖鞋 | 仅物体检测/跟踪，不生成专用事件 |
+| 13 | `tissue paper` | 纸巾 | 仅物体检测/跟踪，不生成专用事件 |
+| 14 | `door` | 门 | 仅物体检测/跟踪，不生成专用事件 |
+| 15 | `stairs` | 楼梯 | 仅物体检测/跟踪，不生成专用事件 |
+| 16 | `cat` | 猫 | 仅动物目标检测/跟踪，当前不生成动物事件 |
+| 17 | `dog` | 狗 | 仅动物目标检测/跟踪，当前不生成动物事件 |
+
+这个表是当前交付模型的类别表，不是 YOLOE 可以在运行时任意扩展的
+开放词表。如果设备替换了 `object_model`，必须以实际模型目录中的
+`metadata.yaml.names` 为准，同时更新本表；不能只修改 `target_labels[]`
+来增加新类别。
+
+同时可见目标数量需按模块分开验收，不存在一个通用的“最多目标数”：
+
+| 口径 | 当前上限/行为 | 验收解读 |
+|---|---|---|
+| 人体/Pose | `max_num_poses=5` | 人体 Provider 启用时，每个推理帧最多 5 人，`human_candidates[]` 设计上限为 5 |
+| 兼容主目标 | 1 | `active_target` 只选 1 人，不代表画面只识别 1 人 |
+| 手部 | `num_hands=2` | 手部 Provider 启用时，每个推理帧最多输出 2 只手 |
+| 人脸 | 业务层未设独立人数硬上限 | 人脸 Provider 启用时，YuNet 的 `top_k=5000` 只是 NMS 前内部候选上限，不是支持 5000 人的验收承诺 |
+| 物体原始单帧结果 | `max_detections=50` | 每次模型推理最多解码 50 个框 |
+| 页面物体叠框 | 30 | Viewer 只绘制置信度最高的 30 个物体框；不等于模型只识别 30 个 |
+
+物体跟踪会在短时间内保留最近的目标，因此 `objects[]`/`tracked_objects[]`
+可能同时包含本帧检出与未超时的旧轨迹，不应把数组长度强行当成
+`max_detections=50` 的同义词。多人正式验收上限仍以 5 人为准；更高数量
+必须单独做性能和准确率压测。
 
 正式启动时固定物体流为0 Hz；人物进入后，手持姿态内部流自动以2 Hz运行，人物
 离开2秒后停止。手动按钮、Action任务或内部流第一次调用都可能触发RKNN懒加载，
@@ -924,6 +969,22 @@ params_json: '{}'}"
 
 桌面宽度大于 1050 px 时，滚动右侧事件/诊断区，左侧实时画面应固定可见；窗口变窄
 后应恢复上下布局，不遮挡内容。验证复制、导出、清空事件历史均不影响 ROS Topic。
+
+实时画面的人脸框颜色会跟随 `identity_state` 变化：
+
+| 叠加项 | 页面颜色 | 是否随识别状态变化 |
+|---|---|---|
+| 人体框/Pose 骨架 | 绿色 | 否 |
+| 陌生/未确认人脸框 | 红色 `#FF6577` | `unverified`、`unknown_candidate`、`confirmed_unknown` |
+| 候选已知人脸框 | 黄色 `#FFC857` | `candidate_known` |
+| 确认已知人脸框 | 绿色 `#3EE58F` | `confirmed_known` |
+| 手部骨架 | 橙色 | 否 |
+| 物体框 | 品红/紫色 | 否 |
+| `active_target` 框和中心 | 红色 | 随主目标选择出现/消失，但它不是人脸身份颜色 |
+
+预期过程为红色（未知）→黄色（第一次已知匹配）→绿色（连续两次已知
+匹配确认）。`active_target` 仍会另外绘制红色人体主目标框，不要与较小的
+人脸身份框混淆。
 
 Lite/Full A/B 必须在相同相机、站位、光照、人物和动作下，各保持至少 150 个推理
 帧，记录：
