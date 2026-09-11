@@ -19,7 +19,12 @@ setup(
     install_requires=[
         "setuptools",
         "fastapi>=0.115,<1",
+        "numpy>=1.26,<2",
+        "opencv-contrib-python>=4.10,<5",
         "python-multipart>=0.0.9,<1",
+        "pyyaml>=6,<7",
+        "rknn-toolkit-lite2==2.3.2; sys_platform == 'linux' and platform_machine == 'aarch64'",
+        "ultralytics>=8.4.118",
         "uvicorn>=0.30,<1",
     ],
     zip_safe=True,

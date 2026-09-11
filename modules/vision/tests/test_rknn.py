@@ -6,6 +6,9 @@ import argparse
 from pathlib import Path
 
 from marsdog_vision_interaction.utils.config_loader import load_config
+from marsdog_vision_interaction.providers.object_detector import (
+    ObjectDetectorProvider,
+)
 
 
 def main() -> None:
@@ -26,6 +29,15 @@ def main() -> None:
     )
 
     from ultralytics import YOLOE
+
+    # Keep this standalone smoke test on the same runtime path as the ROS
+    # provider.  rknn-toolkit-lite2 otherwise only checks /usr/lib, while the
+    # project may intentionally keep the matching runtime next to rknnlite in
+    # the user's virtual environment.  Import Ultralytics first because its
+    # torch logging setup must run before rknn-toolkit-lite2 is imported.
+    ObjectDetectorProvider({
+        "object_model": str(args.model),
+    })._configure_rknn_runtime()
 
     model = YOLOE(str(args.model))
     results = model.predict(
