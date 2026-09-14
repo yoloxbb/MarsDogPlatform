@@ -15,7 +15,10 @@ from marsdog_vision_interaction.providers.vision_observation import (
 from marsdog_vision_interaction.nodes.vision_debug_viewer_node import (
     VisionDebugViewerNode,
 )
-from marsdog_vision_interaction.utils.visual_debug import draw_visual_debug
+from marsdog_vision_interaction.utils.visual_debug import (
+    _osd_scale,
+    draw_visual_debug,
+)
 from marsdog_vision_interaction.utils.web_debug_server import (
     VisionDebugWebServer,
 )
@@ -48,6 +51,16 @@ def test_draw_visual_debug_keeps_resolution_and_draws_overlay() -> None:
     )
     assert result.shape == frame.shape
     assert np.any(result != frame)
+
+
+def test_osd_scale_follows_final_output_resolution() -> None:
+    small = _osd_scale(240, 180)
+    reference = _osd_scale(640, 480)
+    large = _osd_scale(1280, 960)
+
+    assert small < reference < large
+    assert small >= 0.55
+    assert large <= 2.0
 
 
 def test_face_overlay_color_changes_with_identity_state() -> None:

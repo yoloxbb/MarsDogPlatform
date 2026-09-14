@@ -31,6 +31,35 @@ _FACE_UNKNOWN_COLOR = (119, 101, 255)  # RGB #FF6577
 _FACE_CANDIDATE_COLOR = (87, 200, 255)  # RGB #FFC857
 _FACE_CONFIRMED_COLOR = (143, 229, 62)  # RGB #3EE58F
 
+# OSD drawing sizes are defined against the normal 640x480 camera view.  The
+# viewer may crop a side-by-side input to 320x240 and then resize it again for
+# the web stream, so fixed OpenCV pixel sizes become disproportionately large
+# on small output frames.  Keep a small lower bound for legibility and cap the
+# upper bound so a high-resolution stream does not grow without limit.
+_OSD_REFERENCE_WIDTH = 640.0
+_OSD_REFERENCE_HEIGHT = 480.0
+_OSD_MIN_SCALE = 0.55
+_OSD_MAX_SCALE = 2.0
+
+
+def _osd_scale(width: int, height: int) -> float:
+    """Return a resolution-aware OSD scale for the final output frame."""
+    if width <= 0 or height <= 0:
+        return 1.0
+    resolution_scale = min(
+        float(width) / _OSD_REFERENCE_WIDTH,
+        float(height) / _OSD_REFERENCE_HEIGHT,
+    )
+    return min(
+        _OSD_MAX_SCALE,
+        max(_OSD_MIN_SCALE, resolution_scale),
+    )
+
+
+def _scaled_pixels(value: float, scale: float, minimum: int = 1) -> int:
+    """Scale a pixel dimension while keeping it visible."""
+    return max(minimum, int(round(float(value) * scale)))
+
 
 def _face_overlay_color(face: dict[str, Any]) -> tuple[int, int, int]:
     """Return the identity-state color for one face overlay."""
@@ -67,14 +96,35 @@ def _text(
     x: int,
     y: int,
     color: tuple[int, int, int] = (255, 255, 255),
+    *,
+    scale: float = 1.0,
 ) -> None:
+    # Long diagnostic strings should shrink to the available width instead of
+    # being clipped across the right edge of a small web frame.
+    base_font_scale = max(0.1, 0.52 * scale)
+    text_size, _ = cv2.getTextSize(
+        value,
+        cv2.FONT_HERSHEY_SIMPLEX,
+        base_font_scale,
+        max(1, _scaled_pixels(1, scale)),
+    )
+    available_width = max(1, frame.shape[1] - max(0, x) - 4)
+    font_scale = base_font_scale
+    if text_size[0] > available_width:
+        font_scale = max(
+            0.1,
+            base_font_scale * available_width / float(text_size[0]),
+        )
+    text_scale = font_scale / 0.52
+    outline_thickness = _scaled_pixels(3, text_scale)
+    text_thickness = _scaled_pixels(1, text_scale)
     cv2.putText(
         frame, value, (x, y), cv2.FONT_HERSHEY_SIMPLEX,
-        0.52, (0, 0, 0), 3, cv2.LINE_AA,
+        font_scale, (0, 0, 0), outline_thickness, cv2.LINE_AA,
     )
     cv2.putText(
         frame, value, (x, y), cv2.FONT_HERSHEY_SIMPLEX,
-        0.52, color, 1, cv2.LINE_AA,
+        font_scale, color, text_thickness, cv2.LINE_AA,
     )
 
 
@@ -85,6 +135,7 @@ def _draw_landmarks(
     color: tuple[int, int, int],
     *,
     min_confidence: float = 0.2,
+    scale: float = 1.0,
 ) -> dict[int, tuple[int, int]]:
     """Draw a normalized landmark graph and return its visible pixel points."""
     if not isinstance(landmarks, list):
@@ -106,12 +157,24 @@ def _draw_landmarks(
         if 0 <= x < width and 0 <= y < height:
             points[point_id] = (x, y)
 
+    line_thickness = _scaled_pixels(2, scale)
+    outer_radius = _scaled_pixels(3, scale)
+    inner_radius = _scaled_pixels(2, scale)
     for first, second in connections:
         if first in points and second in points:
-            cv2.line(frame, points[first], points[second], color, 2, cv2.LINE_AA)
+            cv2.line(
+                frame,
+                points[first],
+                points[second],
+                color,
+                line_thickness,
+                cv2.LINE_AA,
+            )
     for point in points.values():
-        cv2.circle(frame, point, 3, (20, 20, 20), -1, cv2.LINE_AA)
-        cv2.circle(frame, point, 2, color, -1, cv2.LINE_AA)
+        cv2.circle(
+            frame, point, outer_radius, (20, 20, 20), -1, cv2.LINE_AA
+        )
+        cv2.circle(frame, point, inner_radius, color, -1, cv2.LINE_AA)
     return points
 
 
@@ -127,6 +190,36 @@ def draw_visual_debug(
     height, width = output.shape[:2]
     event = event or {}
     control = control or {}
+    osd_scale = _osd_scale(width, height)
+    box_thickness = _scaled_pixels(2, osd_scale)
+    guide_thickness = _scaled_pixels(1, osd_scale)
+    margin = _scaled_pixels(10, osd_scale, minimum=4)
+    label_gap = _scaled_pixels(6, osd_scale, minimum=3)
+    label_baseline = _scaled_pixels(18, osd_scale, minimum=10)
+    line_pitch = _scaled_pixels(22, osd_scale, minimum=10)
+    input_baseline = max(
+        22,
+        label_baseline,
+        _scaled_pixels(22, osd_scale),
+    )
+    active_baseline = max(
+        _scaled_pixels(46, osd_scale),
+        input_baseline + line_pitch,
+    )
+    active_center_baseline = active_baseline + line_pitch
+    active_pose_baseline = active_center_baseline + line_pitch
+    gesture_baseline = max(
+        _scaled_pixels(112, osd_scale),
+        (
+            active_pose_baseline + line_pitch
+            if isinstance(event.get("active_target"), dict)
+            and float(
+                event.get("active_target", {}).get("confidence", 0.0) or 0.0
+            ) > 0.0
+            else input_baseline + 2 * line_pitch
+        ),
+    )
+    fall_baseline = gesture_baseline + line_pitch
     object_only = control.get("mode") == "object_only"
 
     if not object_only:
@@ -135,12 +228,18 @@ def draw_visual_debug(
             (width // 2, 0),
             (width // 2, height),
             (0, 255, 255),
-            1,
+            guide_thickness,
         )
         # Solid centre, inner stop band (±0.08), outer activation band (±0.14).
         for ratio in (0.42, 0.58, 0.36, 0.64):
             x = int(width * ratio)
-            cv2.line(output, (x, 0), (x, height), (80, 80, 80), 1)
+            cv2.line(
+                output,
+                (x, 0),
+                (x, height),
+                (80, 80, 80),
+                guide_thickness,
+            )
 
     tracked_objects = [
         item for item in event.get("tracked_objects", [])
@@ -152,35 +251,42 @@ def draw_visual_debug(
     )
     for detected_object in tracked_objects[:_MAX_OBJECT_OVERLAYS]:
         x1, y1, x2, y2 = _pixel_box(detected_object, width, height)
-        cv2.rectangle(output, (x1, y1), (x2, y2), (255, 0, 220), 2)
+        cv2.rectangle(
+            output, (x1, y1), (x2, y2), (255, 0, 220), box_thickness
+        )
         _text(
             output,
             f"object {detected_object.get('label', '?')} "
             f"{float(detected_object.get('confidence', 0.0)):.2f}",
             x1,
-            max(18, y1 - 6),
+            max(label_baseline, y1 - label_gap),
             (255, 80, 240),
+            scale=osd_scale,
         )
 
     for human in event.get("humans", []):
         if not isinstance(human, dict):
             continue
         x1, y1, x2, y2 = _pixel_box(human, width, height)
-        cv2.rectangle(output, (x1, y1), (x2, y2), (0, 220, 0), 2)
+        cv2.rectangle(
+            output, (x1, y1), (x2, y2), (0, 220, 0), box_thickness
+        )
         _text(
             output,
             f"body id={human.get('track_id', -1)} "
             f"{human.get('pose_state', '')} "
             f"{human.get('pose_action', '')}",
             x1,
-            max(18, y1 - 6),
+            max(label_baseline, y1 - label_gap),
             (0, 255, 0),
+            scale=osd_scale,
         )
         _draw_landmarks(
             output,
             human.get("keypoints", []),
             _POSE_CONNECTIONS,
             (0, 255, 0),
+            scale=osd_scale,
         )
 
     for hand in event.get("hands", []):
@@ -192,6 +298,7 @@ def draw_visual_debug(
             _HAND_CONNECTIONS,
             (20, 120, 255),
             min_confidence=0.0,
+            scale=osd_scale,
         )
         if points:
             anchor = points.get(0, next(iter(points.values())))
@@ -200,8 +307,9 @@ def draw_visual_debug(
                 f"{hand.get('handedness', 'hand')} "
                 f"{hand.get('hand_action', '')}",
                 anchor[0],
-                max(18, anchor[1] - 8),
+                max(label_baseline, anchor[1] - label_gap),
                 (30, 180, 255),
+                scale=osd_scale,
             )
 
     for face in event.get("faces", []):
@@ -209,14 +317,17 @@ def draw_visual_debug(
             continue
         x1, y1, x2, y2 = _pixel_box(face, width, height)
         face_color = _face_overlay_color(face)
-        cv2.rectangle(output, (x1, y1), (x2, y2), face_color, 2)
+        cv2.rectangle(
+            output, (x1, y1), (x2, y2), face_color, box_thickness
+        )
         name = str(face.get("recognized_user", "") or "unknown")
         _text(
             output,
             f"face {name} {float(face.get('confidence', 0)):.2f}",
             x1,
-            min(height - 8, y2 + 18),
+            min(height - label_gap, y2 + label_baseline),
             face_color,
+            scale=osd_scale,
         )
 
     active = event.get("active_target", {})
@@ -229,32 +340,48 @@ def draw_visual_debug(
             values = [0, 0, 0, 0]
         bbox = {"x": values[0], "y": values[1], "w": values[2], "h": values[3]}
         x1, y1, x2, y2 = _pixel_box(bbox, width, height)
-        cv2.rectangle(output, (x1, y1), (x2, y2), (0, 0, 255), 2)
+        cv2.rectangle(
+            output, (x1, y1), (x2, y2), (0, 0, 255), box_thickness
+        )
         center = active.get("body_center", [0.0, 0.0])
         if not isinstance(center, (list, tuple)) or len(center) < 2:
             center = [0.0, 0.0]
         cx, cy = int(float(center[0]) * width), int(float(center[1]) * height)
         cv2.drawMarker(
-            output, (cx, cy), (0, 0, 255), cv2.MARKER_CROSS, 20, 2
+            output,
+            (cx, cy),
+            (0, 0, 255),
+            cv2.MARKER_CROSS,
+            _scaled_pixels(20, osd_scale),
+            box_thickness,
         )
         state = str(active.get("tracking_state", "lost"))
         _text(
             output,
             f"ACTIVE id={active.get('track_id', 0)} {state}",
-            10, 46, (0, 80, 255),
+            margin,
+            active_baseline,
+            (0, 80, 255),
+            scale=osd_scale,
         )
         _text(
             output,
             f"center_x={float(center[0]):.3f} "
             f"err={float(center[0]) - 0.5:+.3f} "
             f"bbox_h={float(bbox['h']):.3f}",
-            10, 68, (0, 80, 255),
+            margin,
+            active_center_baseline,
+            (0, 80, 255),
+            scale=osd_scale,
         )
         _text(
             output,
             f"pose={active.get('pose_state', '')} "
             f"action={active.get('pose_action', '')}",
-            10, 90, (0, 80, 255),
+            margin,
+            active_pose_baseline,
+            (0, 80, 255),
+            scale=osd_scale,
         )
 
     mode = str(
@@ -271,16 +398,18 @@ def draw_visual_debug(
     _text(
         output,
         f"input={width}x{height}{layout_text} mode={mode}{freshness}",
-        10,
-        22,
+        margin,
+        input_baseline,
+        scale=osd_scale,
     )
     if event.get("events"):
         _text(
             output,
             "events=" + ",".join(str(item) for item in event["events"][:3]),
-            10,
-            height - 36,
+            margin,
+            height - _scaled_pixels(36, osd_scale, minimum=18),
             (80, 180, 255),
+            scale=osd_scale,
         )
     gesture_debug = control.get("_gesture_debug", {})
     if isinstance(gesture_debug, dict) and gesture_debug:
@@ -300,7 +429,14 @@ def draw_visual_debug(
                 if isinstance(item, dict)
             ]
             gesture_text = "candidates=" + ",".join(top)
-        _text(output, gesture_text, 10, 112, (80, 255, 255))
+        _text(
+            output,
+            gesture_text,
+            margin,
+            gesture_baseline,
+            (80, 255, 255),
+            scale=osd_scale,
+        )
         fall = gesture_debug.get("fall_detector", {})
         if isinstance(fall, dict) and fall:
             _text(
@@ -309,16 +445,18 @@ def draw_visual_debug(
                 f"armed={bool(fall.get('armed', False))} "
                 f"lying={float(fall.get('lying_score', 0.0)):.2f} "
                 f"transition={float(fall.get('transition_score', 0.0)):.2f}",
-                10,
-                134,
+                margin,
+                fall_baseline,
                 (80, 255, 255),
+                scale=osd_scale,
             )
     if cmd_vel is not None:
         _text(
             output,
             f"cmd linear.x={cmd_vel[0]:+.3f} angular.z={cmd_vel[1]:+.3f}",
-            10,
-            height - 14,
+            margin,
+            height - _scaled_pixels(14, osd_scale, minimum=8),
             (255, 255, 0),
+            scale=osd_scale,
         )
     return output
