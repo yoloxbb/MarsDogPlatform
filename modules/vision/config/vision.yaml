@@ -64,7 +64,7 @@ depth_fusion:
 providers:
   vision:
     type: observation
-    enabled: false
+    enabled: true
     config:
       face_detect_model: ${MARSDOG_VISION_MODEL_DIR}/face_detection_yunet_2023mar.onnx
       # Select lite/full at launch without editing the config:
@@ -91,7 +91,7 @@ providers:
       nms_threshold: 0.45
       face_input_size: [320, 320]
       # RealSense publishes a regular 640x480 color frame.
-      stereo_enabled: false
+      stereo_enabled: true
       stereo_view: left
       # Only split frames wide enough to contain two horizontal eyes.
       # A negotiated 424x240 mono profile is therefore kept at 424x240.
