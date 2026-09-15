@@ -51,3 +51,12 @@ recordings/
 *.swp
 *.swo
 *~
+
+# Local Agent and Trellis tooling
+.agents/
+.claude/
+.codex/
+.dsh/
+.trellis/
+.zcode/
+AGENTS.md

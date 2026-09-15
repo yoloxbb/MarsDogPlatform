@@ -19,6 +19,7 @@ Parameters:
 
 from __future__ import annotations
 
+from array import array
 import time
 from typing import Optional
 
@@ -234,7 +235,9 @@ class CameraDriverNode(Node):
         msg.encoding = "bgr8"  # OpenCV default is BGR
         msg.is_bigendian = False
         msg.step = frame.shape[1] * 3  # 3 bytes per pixel for bgr8
-        msg.data = frame.tobytes()
+        # Image.data accepts array.array('B') directly. This bypasses the
+        # generated setter's per-byte Python validation for high-rate frames.
+        msg.data = array("B", frame.tobytes())
 
         self._image_pub.publish(msg)
 

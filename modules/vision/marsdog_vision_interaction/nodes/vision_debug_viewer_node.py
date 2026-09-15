@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from array import array
 from collections import deque
 import copy
 import json
@@ -722,7 +723,9 @@ class VisionDebugViewerNode(Node):
             output.encoding = "bgr8"
             output.is_bigendian = False
             output.step = output.width * 3
-            output.data = rendered.tobytes()
+            # Image.data accepts array.array('B') directly, avoiding the
+            # generated setter's per-byte Python validation.
+            output.data = array("B", rendered.tobytes())
             self._debug_pub.publish(output)
         if self._web_server is not None:
             ok, encoded = cv2.imencode(
