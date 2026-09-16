@@ -7,6 +7,7 @@ Uses Python's standard logging with a custom logger that supports key=value kwar
 from __future__ import annotations
 
 import logging
+from logging.handlers import RotatingFileHandler
 import json
 import os
 import sys
@@ -26,6 +27,44 @@ _trace_lock = threading.Lock()
 _timing_trace_interval_ms: float = 5000.0
 _timing_trace_last_ms: dict[tuple[str, str, str], float] = {}
 _timing_trace_lock = threading.Lock()
+_LOG_MAX_BYTES = 20 * 1024 * 1024
+_LOG_BACKUP_COUNT = 4  # Five files total, including the active file.
+
+
+class _BoundedFileHandler(RotatingFileHandler):
+    """Rotate by UTF-8 bytes, including non-ASCII text and trace records."""
+
+    def __init__(self, filename: Path) -> None:
+        super().__init__(
+            filename, maxBytes=_LOG_MAX_BYTES,
+            backupCount=_LOG_BACKUP_COUNT, encoding="utf-8",
+        )
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            size = len((self.format(record) + self.terminator).encode("utf-8"))
+            if size > self.maxBytes:
+                # Keep JSONL parseable without allowing a single huge record
+                # to defeat the disk budget. Do not mutate other handlers' input.
+                record = logging.makeLogRecord(dict(record.__dict__))
+                record.msg = (
+                    'VISION_TRACE {"record":"log_record_omitted",'
+                    '"reason":"exceeds_file_limit"}'
+                )
+                record.args = ()
+                record.exc_info = None
+                record.exc_text = None
+                record.stack_info = None
+            super().emit(record)
+        except Exception:
+            self.handleError(record)
+
+    def shouldRollover(self, record: logging.LogRecord) -> bool:
+        if self.stream is None:
+            self.stream = self._open()
+        self.stream.seek(0, 2)
+        size = len((self.format(record) + self.terminator).encode("utf-8"))
+        return self.stream.tell() + size > self.maxBytes
 
 
 # ── Set custom logger class at import time ─────────────────────────
@@ -123,11 +162,7 @@ def setup_logging(
 
     if file:
         Path(log_dir).mkdir(parents=True, exist_ok=True)
-        date_str = datetime.now().strftime("%Y%m%d")
-        fh = logging.FileHandler(
-            str(Path(log_dir) / f"{node}_{date_str}.log"),
-            encoding="utf-8",
-        )
+        fh = _BoundedFileHandler(Path(log_dir) / f"{node}.log")
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(fmt)
         root.addHandler(fh)
@@ -190,11 +225,7 @@ def configure_event_trace(
     if not _trace_enabled:
         return
     Path(log_dir).mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    _trace_handler = logging.FileHandler(
-        Path(log_dir) / f"vision_trace_{timestamp}_{os.getpid()}.jsonl",
-        encoding="utf-8",
-    )
+    _trace_handler = _BoundedFileHandler(Path(log_dir) / "vision_trace_current.jsonl")
     _trace_handler.setFormatter(logging.Formatter("%(message)s"))
     _trace_logger.addHandler(_trace_handler)
     _trace_logger.setLevel(logging.INFO)

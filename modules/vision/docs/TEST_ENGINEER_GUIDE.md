@@ -151,9 +151,19 @@ ros2 launch marsdog_vision_interaction vision_debug.launch.py \
 ```
 
 `logging.event_trace=true` 时，节点同时生成
-`vision_trace_<时间>_<pid>.jsonl`。其中每行均以 `VISION_TRACE ` 开头，后接单行
+`vision_trace_current.jsonl`。其中每行均以 `VISION_TRACE ` 开头，后接单行
 JSON；`run_id/case_id` 来自上述 launch 参数，也可分别使用环境变量
 `MARSDOG_TEST_RUN_ID/MARSDOG_TEST_CASE_ID` 注入。
+
+普通日志为 `vision_interaction.log`；普通日志与 trace 分别按 20 MiB
+（20 × 1024 × 1024 字节）轮转。每组保留当前文件和 `.1` 至 `.4`
+四个备份，共 5 个文件，`.1` 最新；最旧备份自动删除。重启沿用同一组文件。
+单条超限记录替换为 `log_record_omitted` JSON 提示，避免破坏 JSONL 格式。
+两组合计最多 200 MiB；独立相机驱动的 `camera_driver.log` 另有一组。
+同时运行多个视觉实例时必须指定不同 `log_dir`，不支持多进程共同轮转同一文件。
+旧版带日期/PID 的日志不会自动删除，应先归档测试证据再人工清理。
+ROS launch 自身日志、终端 `tee` 文件和系统日志不受此上限控制。
+系统侧配置见 [日志容量管理](LOG_STORAGE.md)。
 
 ## 3. 启动与基础健康检查
 
@@ -620,7 +630,7 @@ timeout 15s ros2 topic echo /perception/visual_event \
 
 ```bash
 rg '"case_id":"GP-017-r01"' \
-  "test-evidence/$TEST_RUN_ID"/vision_trace_*.jsonl \
+  "test-evidence/$TEST_RUN_ID"/vision_trace_*.jsonl* \
   > "test-evidence/$TEST_RUN_ID/GP-017-r01-trace.jsonl"
 ```
 
