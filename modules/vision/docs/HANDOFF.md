@@ -113,7 +113,7 @@ Service 定义见 `srv/VisionTask.srv`。当前任务：
 | `recognize_face` | 对当前最大人脸识别 |
 | `start_face_enrollment` | 固定身份槽位；默认保持自然正对摄像头，自动连续采集三张注册 |
 | `cancel_face_enrollment` | 取消注册 |
-| `upload_face` | Base64 图片注册 |
+| `upload_face` | Base64 图片注册；同一身份重复时返回 `face_sample_duplicate` 和已有样本编号 |
 | `list_faces` | 查询已注册人脸 |
 | `list_face_records` | 查询身份、角色、样本数和稳定样本编号 |
 | `list_face_samples` / `get_face_sample` | 查询指定身份的全部/单张样本元数据 |
@@ -126,7 +126,9 @@ Service 定义见 `srv/VisionTask.srv`。当前任务：
 `family_member_3`、`family_member_4`。每个身份最多5张 JPG 模板。FastAPI 的
 Swagger 页面为 `/docs`，接口形状与声纹样本 CRUD 对齐：POST 新增、GET 列表/单条/
 图片、PUT 原位替换、DELETE 单条删除。当前 HTTP 接口暂不鉴权，远程监听仅允许
-用于可信隔离局域网。自由姓名旧数据不会自动删除，但不再载入运行时识别索引。
+用于可信隔离局域网。新增/替换会对同一身份的规范化 JPG 精确去重，重复返回
+`face_sample_duplicate` 和已有样本编号；每次请求通过 `X-Request-ID` 与服务端日志关联。
+自由姓名旧数据不会自动删除，但不再载入运行时识别索引。
 
 `query_targets.target_types` 支持 `human/person/animal/object`。`animal` 为 cat/dog，
 三类玩具属于 `object` 且 `object_kind=toy`。非人体 Track 只复用已经运行的物体检测

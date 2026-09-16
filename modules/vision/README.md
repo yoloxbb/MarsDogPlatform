@@ -292,7 +292,10 @@ uv run python tests/test_rknn.py path/to/input.jpg
 
 `sample_id` 范围固定为1～5。删除 `002.jpg` 后不会重编号 `003.jpg`；下一次新增会
 复用最小空闲编号。POST/PUT 请求使用 `multipart/form-data` 的 `image` 文件字段，
-默认单文件上限10 MiB。上传成功后会同步当前进程的人脸识别模板。
+默认单文件上限10 MiB。系统会对同一身份的规范化人脸 JPG 做精确去重；重复新增或
+替换其它样本返回 HTTP 409 和 `code=face_sample_duplicate`，并给出已存在的
+`duplicate_sample_id`。替换当前样本自身仍可幂等成功。上传成功后会同步当前进程的
+人脸识别模板。
 
 本机示例：
 
@@ -300,6 +303,32 @@ uv run python tests/test_rknn.py path/to/input.jpg
 curl -X POST http://127.0.0.1:8092/api/v1/faces/owner/samples \
   -F "image=@./owner.jpg"
 ```
+
+每次响应都带 `X-Request-ID`；新增、替换、删除的 JSON 成功响应以及业务错误响应也
+包含相同的 `request_id`，可用它在视觉日志中定位调用。重复上传示例：
+
+```bash
+curl -i -X POST http://127.0.0.1:8092/api/v1/faces/owner/samples \
+  -F "image=@./owner.jpg"
+```
+
+如果 `owner.jpg` 已经存在于主人样本中，返回 HTTP 409，响应形如：
+
+```json
+{
+  "detail": "该身份已存在相同人脸样本",
+  "code": "face_sample_duplicate",
+  "request_id": "...",
+  "name": "owner",
+  "duplicate_sample_id": 1,
+  "duplicate_sample_key": "001",
+  "shots": 1,
+  "max_samples_per_face": 5
+}
+```
+
+服务端会记录 `request_id`、HTTP 方法、路径、状态码和耗时，不记录图片二进制、人脸
+特征或请求体。
 
 需要局域网访问时：
 

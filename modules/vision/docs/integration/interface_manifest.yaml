@@ -239,6 +239,9 @@ http_apis:
     max_faces: 5
     max_samples_per_face: 5
     sample_id_range: [1, 5]
+    deduplication: exact_canonical_jpeg_per_identity
+    duplicate_error_code: face_sample_duplicate
+    request_id_header: X-Request-ID
     endpoints:
       add: POST /api/v1/faces/{name}/samples
       list_faces: GET /api/v1/faces

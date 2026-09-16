@@ -242,7 +242,7 @@ float64 latency_ms
 | `recognize_face` | `{}` | `ok`, `user_id`, `confidence`, `matched` |
 | `start_face_enrollment` | 固定 `name`, `required_shots`（默认 3，范围1～5） | `ok`, `step`, `total_steps`, `pose`, `prompt` |
 | `cancel_face_enrollment` | `{}` | `ok`, `cancelled` |
-| `upload_face` | 固定 `name`, `image_base64` | `ok`, `name`, `shots`, `sample_id` |
+| `upload_face` | 固定 `name`, `image_base64` | `ok`, `name`, `shots`, `sample_id`；重复时 `ok=false,status=409,code=face_sample_duplicate,duplicate_sample_id` |
 | `list_faces` | `{}` | `faces[]` |
 | `list_face_records` | `{}` | `count`, `allowed_names`, `available_names`, `faces[]` |
 | `list_face_samples` | `name` | `shots`, `sample_ids`, `samples[]` |
@@ -253,7 +253,8 @@ float64 latency_ms
 
 人脸固定身份为 `owner/family_member_1～4`，每个身份最多5张，稳定 `sample_id`
 为1～5。HTTP 样本 CRUD 见视觉项目 `README.md`；当前接口暂不鉴权，远程绑定仅限
-可信隔离局域网，生物数据只保存在视觉设备本地。
+可信隔离局域网，生物数据只保存在视觉设备本地。HTTP 响应包含 `X-Request-ID`，
+新增/替换/删除响应体和业务错误也返回相同的 `request_id`，用于关联结构化请求日志。
 
 `params_json` 必须是 JSON object。过渡期仍兼容 `[ {"key":"...","value":"..."} ]`。
 视觉节点测量并返回本次回调的 `latency_ms`；该值包括同步推理时间，但仍不能

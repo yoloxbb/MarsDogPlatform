@@ -341,6 +341,11 @@ curl -sS -X POST \
   http://127.0.0.1:8092/api/v1/faces/family_member_4/samples \
   -F "image=@./face-a.jpg"
 
+# 使用同一文件再次新增：应返回 HTTP 409，且不增加 shots 或 sample_id
+curl -sS -i -X POST \
+  http://127.0.0.1:8092/api/v1/faces/family_member_4/samples \
+  -F "image=@./face-a.jpg"
+
 # 查询列表、单张元数据和图片
 curl -sS http://127.0.0.1:8092/api/v1/faces/family_member_4/samples
 curl -sS http://127.0.0.1:8092/api/v1/faces/family_member_4/samples/1
@@ -358,14 +363,19 @@ curl -sS -X DELETE \
 | 检查 | 预期 |
 |---|---|
 | 新增 | HTTP 201；返回 `request_id,name,shots,sample_id,sample_key,image_path` |
+| 重复新增 | HTTP 409；`code=face_sample_duplicate`，返回 `duplicate_sample_id`/`duplicate_sample_key`；`shots` 不增加 |
 | 查询 | 返回 `role,shots,sample_ids,samples[]`，图片响应为 `image/jpeg` |
-| 替换 | `replaced=true` 且 `sample_id` 不变 |
+| 替换 | `replaced=true` 且 `sample_id` 不变；替换为其他样本的相同规范化 JPG 时 HTTP 409 |
 | 删除中间编号 | 其他编号不重排；`remaining_sample_ids` 保持稳定 |
 | 再次新增 | 复用最小空闲 `sample_id` |
 | 删除最后一张 | `face_removed=true`，该身份释放 |
 | 第 6 张 | HTTP 409，错误码 `face_sample_limit_reached` |
 | 非固定身份 | HTTP 422；不得创建自由姓名 |
 | 非 JPG/JPEG/PNG | HTTP 415；空文件 400；超过 10 MiB 为 413 |
+
+所有响应应检查 `X-Request-ID`。新增、替换、删除和业务错误 JSON 中的 `request_id`
+应与该响应头一致；用这个值在 `vision_interaction.log` 中关联请求方法、路径、状态码
+和耗时。日志不得出现图片内容或人脸特征。
 
 ### 5.5 人脸识别与姿态事件门控
 

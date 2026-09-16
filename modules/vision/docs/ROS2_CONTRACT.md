@@ -425,12 +425,12 @@ float64 latency_ms
 | `recognize_face` | `{}` | `ok,user_id,confidence,matched` | 对当前最大人脸同步识别 |
 | `start_face_enrollment` | 固定 `name`，可选 `required_shots`（默认 3，范围1～5） | `ok,name,step,total_steps,pose,prompt` | 在该身份剩余槽位中新建注册会话；自然面对摄像头，无动作要求 |
 | `cancel_face_enrollment` | `{}` | `ok,name,cancelled` | 无会话时失败 |
-| `upload_face` | 固定 `name,image_base64` | `ok,name,shots,sample_id,sample_key,image_path` | 解码图片、检测并保存最大人脸，复用最小空闲编号 |
+| `upload_face` | 固定 `name,image_base64` | `ok,name,shots,sample_id,sample_key,image_path`；重复时 `ok=false,status=409,code=face_sample_duplicate,duplicate_sample_id` | 解码图片、检测并保存最大人脸，复用最小空闲编号；同一身份精确去重 |
 | `list_faces` | `{}` | `ok,faces[]` | 返回注册名称，按字典序排序 |
 | `list_face_records` | `{}` | `ok,count,max_faces,max_samples_per_face,allowed_names,available_names,faces[]` | 返回固定身份的样本汇总 |
 | `list_face_samples` | `name` | `ok,name,role,shots,sample_ids,samples[]` | 返回一个身份的样本级记录 |
 | `get_face_sample` | `name,sample_id` | `ok,name,role,sample_id,image_path,image_url,...` | 查询一张人脸样本元数据 |
-| `replace_face_sample` | `name,sample_id,image_base64` | `ok,name,shots,sample_id,replaced` | 校验成功后原位替换并同步识别模板 |
+| `replace_face_sample` | `name,sample_id,image_base64` | `ok,name,shots,sample_id,replaced`；重复时 `ok=false,status=409,code=face_sample_duplicate,duplicate_sample_id` | 校验成功后原位替换并同步识别模板；替换自身允许幂等成功 |
 | `delete_face_sample` | `name,sample_id` | `ok,name,shots,deleted_sample_id,remaining_sample_ids,face_removed` | 只删除一张；最后一张删除后释放身份槽位 |
 | `delete_face` | `name` | `ok,name` | 删除本地人脸样本并同步内存库 |
 
@@ -463,7 +463,15 @@ POST/PUT 先完成图片解码、人脸检测、质量门控和裁剪，成功�
 `passed`、机器可读 `reason`、已计算的 `metrics` 和生效 `thresholds`。
 同一诊断结构用于连续录入事件；阈值统一读取 `face_enrollment.quality`。
 未传 `required_shots` 的连续录入使用 `face_enrollment.continuous.required_shots`
-并限制到剩余容量，显式传值仍执行容量校验。
+并限制到剩余容量，显式传值仍执行容量校验。新增和替换会比较同一身份下规范化
+人脸 JPG 的精确内容；重复时返回 HTTP 409、`code=face_sample_duplicate`、
+`duplicate_sample_id` 和 `duplicate_sample_key`，且不改变样本数量或注册表。
+替换当前样本自身允许幂等成功。
+
+每次 HTTP 响应都带 `X-Request-ID`。新增、替换、删除的响应体以及业务错误响应也
+返回相同的 `request_id`。服务端结构化日志使用该 ID 记录 HTTP 方法、路径、状态码
+和耗时，不记录图片二进制或人脸特征。客户端应优先依赖机器字段 `code`，不要依赖
+`detail` 的自然语言文本。
 
 当前 `/health` 和全部人脸 CRUD 接口暂不鉴权，不定义 token、Cookie 或认证请求头。
 绑定非回环地址时必须部署在可信隔离局域网；推荐 SSH 转发，不得将设备本地人脸
