@@ -459,6 +459,11 @@ float64 latency_ms
 删除样本不会给其它文件重编号；新增复用1～5中的最小空闲编号。默认上传上限10 MiB。
 POST/PUT 先完成图片解码、人脸检测、质量门控和裁剪，成功后才落盘；PUT 校验失败时
 旧文件不变。每次新增、替换和删除成功后都重建当前进程的多模板识别索引。
+质量拒绝的 HTTP 422 保留 `detail` 字符串，并增加 `quality` 对象：
+`passed`、机器可读 `reason`、已计算的 `metrics` 和生效 `thresholds`。
+同一诊断结构用于连续录入事件；阈值统一读取 `face_enrollment.quality`。
+未传 `required_shots` 的连续录入使用 `face_enrollment.continuous.required_shots`
+并限制到剩余容量，显式传值仍执行容量校验。
 
 当前 `/health` 和全部人脸 CRUD 接口暂不鉴权，不定义 token、Cookie 或认证请求头。
 绑定非回环地址时必须部署在可信隔离局域网；推荐 SSH 转发，不得将设备本地人脸

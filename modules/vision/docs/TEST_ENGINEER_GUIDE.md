@@ -290,16 +290,23 @@ fail-closed 原则。
 | 阶段/检查 | 页面或 Topic 字段 | 通过标准 |
 |---|---|---|
 | 搜索 | `status=searching, step,total_steps,prompt,done=false` | 未发现合格人脸时不保存图片 |
-| 稳定 | `status=tracking, confidence,progress_pct` | 进度连续增加；移动/质量下降后重新等待 |
+| 稳定 | `status=tracking, confidence,progress_pct` | 连续合格帧累加；质量下降后重新等待（不检测位移） |
 | 单张完成 | `status=captured,shots` | 只增加一张并继续下一张 |
 | 全部完成 | `status=done,shots,done=true` | 只发布一次完成状态并结束会话 |
 | 容量 | 页面名单或 `GET /api/v1/faces` | 固定 5 个身份，每个身份最多 5 张 |
+
+阈值统一读取 `config/vision.yaml` 的 `face_enrollment.quality`，修改后重启节点。
+上传与连续录入应使用同一张图片复测：检查 `quality.metrics` 的实际值、
+`quality.thresholds` 的生效阈值及 `quality.reason`。HTTP 422 响应保留 `detail` 字符串，
+额外返回 `quality`；连续录入查看 `enrollment_event`。指标可能只包含拒绝前已计算的项。
+亮度和清晰度按人脸 ROI 计算，外部脚本的整图质量分数不作为录入依据。
+`0.70` 需要用代表性成功/失败图片验证，不能据此保证截图中的图片可入库。
 
 当前质量拒绝提示及对应操作：
 
 | 提示 | 原因/处理 |
 |---|---|
-| `人脸检测置信度不足，请调整光线` | 检测置信度低于 0.85；调整光线和正脸角度 |
+| `人脸检测置信度不足，请调整光线` | 低于配置的 min_detection_confidence；当前 YAML 为 0.70，缺省为 0.85 |
 | `人脸太小，请靠近摄像头` | 人脸短边小于 80 px；靠近相机 |
 | `人脸区域无效，请重新站位` | 裁剪区域无效；回到画面中央 |
 | `画面过暗，请增加正面光线` | 灰度均值低于 35 |

@@ -509,7 +509,7 @@
         const shots = Number((faceRecords[name] || {}).shots || 0);
         const remaining = Math.max(0, 5 - shots);
         if (!remaining) throw new Error('该身份已达到5张上限，请先删除或替换样本');
-        await visionTask('start_face_enrollment', {name, required_shots: Math.min(3, remaining)});
+        await visionTask('start_face_enrollment', {name});
       } catch (error) { byId('faceActionError').textContent = error.message; }
     };
     byId('cancelEnrollment').onclick = async () => {

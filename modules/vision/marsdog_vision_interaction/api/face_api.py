@@ -18,10 +18,19 @@ from fastapi import (
     Response,
     UploadFile,
 )
+from fastapi.responses import JSONResponse
+
 from marsdog_vision_interaction.messages.face_identity import FaceIdentity
 
 
 logger = logging.getLogger(__name__)
+
+
+class _QualityRejection(Exception):
+    def __init__(self, status: int, error: str, quality: dict[str, Any]) -> None:
+        self.status = status
+        self.error = error
+        self.quality = quality
 
 
 class FaceApiServer:
@@ -125,6 +134,15 @@ class FaceApiServer:
                 "identity slots. Each identity accepts at most five samples."
             ),
         )
+        @app.exception_handler(_QualityRejection)
+        async def quality_rejection_handler(
+            request: Any, exc: _QualityRejection,
+        ) -> JSONResponse:
+            return JSONResponse(
+                status_code=exc.status,
+                content={"detail": exc.error, "quality": exc.quality},
+            )
+
         def raise_for_result(result: dict[str, Any]) -> None:
             if result.get("ok", False):
                 return
@@ -134,6 +152,8 @@ class FaceApiServer:
                 status = configured_status
             else:
                 status = 503 if "不可用" in error else 422
+            if "quality" in result:
+                raise _QualityRejection(status, error, result["quality"])
             raise HTTPException(status_code=status, detail=error)
 
         async def read_image(image: UploadFile) -> bytes:

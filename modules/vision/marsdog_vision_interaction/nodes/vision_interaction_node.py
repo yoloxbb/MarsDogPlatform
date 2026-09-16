@@ -135,7 +135,9 @@ class VisionInteractionNode(Node):
 
         storage_root = self._config.get("storage", {}).get("root", "data")
         set_storage_root(storage_root)
-        self._enrollment = FaceEnrollmentManager()
+        self._enrollment = FaceEnrollmentManager(
+            self._config.get("face_enrollment", {})
+        )
         self._target_manager = get_target_manager()
         vision_runtime_config = (
             self._config.get("providers", {}).get("vision", {}).get("config", {})
@@ -2357,7 +2359,7 @@ class VisionInteractionNode(Node):
             with self._enrollment_lock:
                 return self._enrollment.start_face(
                     str(params.get("name", "")),
-                    int(params.get("required_shots", 3)),
+                    params.get("required_shots"),
                 )
         if task_type == "cancel_face_enrollment":
             with self._enrollment_lock:

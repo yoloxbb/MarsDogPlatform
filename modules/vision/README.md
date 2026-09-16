@@ -241,6 +241,20 @@ uv run python tests/test_rknn.py path/to/input.jpg
 已经启动正式视觉节点；只有传入 `start_vision_node:=false` 时，才要求设备上已有
 可用的 `/perception/vision/task` Service。
 
+录入质量配置位于 `config/vision.yaml` 的 `face_enrollment`：上传 API、WebUI 和连续
+录入共用 `quality`，连续采集使用独立的 `continuous`。修改后需要重启节点。
+当前 YAML 的 `min_detection_confidence: 0.70` 是待样本验证的值；省略该配置时使用
+原有 `0.85`。它是 YuNet 检测置信度，不是 SFace 相似度或综合质量分数。
+亮度和 Laplacian 清晰度在检测到的人脸区域计算，不能直接对比整图评分。
+默认 `require_single_face: true`，上传多人照片也会拒绝；设为 `false` 时两种入口
+均选择最大人脸。有效关键点缺失的检测结果会拒绝录入。
+
+`continuous.stable_frames` 表示连续合格帧数，不检查位置或身份是否稳定；
+`continuous.required_shots` 是默认采集张数（1～5），未传张数时后端自动限制到剩余槽位。
+显式指定 `required_shots` 会覆盖默认值，超过剩余容量时返回错误。
+质量拒绝时 HTTP API 保留字符串 `detail`，并新增 `quality`，包含 `reason`、
+`metrics` 和 `thresholds`；连续录入通过 `enrollment_event` 返回相同诊断。
+
 每张样本会分别生成 SFace 模板，识别时对同一固定身份的所有模板取最高相似度。
 所有姿态/手势事件只在当前主目标属于固定人脸库（`owner` 或
 `family_member_1`～`family_member_4`），目标仍为 `tracking`，且身份状态达到 `confirmed_known` 后

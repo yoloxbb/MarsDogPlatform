@@ -686,13 +686,16 @@ class _FaceDetector:
     def detect(self, frame):
         detection = np.zeros((1, 15), dtype=np.float32)
         detection[0, :4] = (1.0, 1.0, 10.0, 10.0)
+        detection[0, 4:14] = (3, 3, 8, 3, 5, 5, 3, 8, 8, 8)
         detection[0, -1] = 0.99
         return None, detection
 
 
 def test_face_enrollment_completion_is_terminal_and_names_are_safe(tmp_path) -> None:
     set_storage_root(tmp_path)
-    manager = FaceEnrollmentManager()
+    manager = FaceEnrollmentManager({"quality": {
+        "min_face_size_px": 1, "min_brightness": 0, "min_blur_score": 0,
+    }})
     manager.set_face_detector(_FaceDetector())
     assert not manager.start_face("../outside")["ok"]
     assert not manager.delete_face("../outside")["ok"]

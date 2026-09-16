@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import math
 import shutil
 import threading
 import time
@@ -26,6 +28,7 @@ _REGISTRY_PATH = _STORAGE_ROOT / "face_registry.json"
 MAX_FACES = len(ALLOWED_FACE_IDENTITIES)
 MAX_SAMPLES_PER_FACE = 5
 _STORAGE_LOCK = threading.RLock()
+_LOGGER = logging.getLogger(__name__)
 
 
 def set_storage_root(path: str | Path) -> None:
@@ -201,10 +204,59 @@ _CONTINUOUS_PROMPT = "请自然面对摄像头并保持稳定，系统将连续�
 class FaceEnrollmentManager:
     """Own all face enrollment state; no voice-print data is stored here."""
 
-    def __init__(self) -> None:
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
+        self._quality, self._continuous = self._validate_config(config)
         self._face_detector: Any = None
         self._session: FaceEnrollment | None = None
         _FACES_DIR.mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def _validate_config(config: dict[str, Any] | None) -> tuple[dict, dict]:
+        if config is None:
+            config = {}
+        if not isinstance(config, dict):
+            raise ValueError("face_enrollment must be a mapping")
+        quality = {
+            "min_detection_confidence": 0.85,
+            "min_face_size_px": 80,
+            "min_brightness": 35.0,
+            "max_brightness": 225.0,
+            "min_blur_score": 35.0,
+            "require_single_face": True,
+        }
+        continuous = {"stable_frames": 3, "required_shots": 3}
+        unknown = set(config) - {"quality", "continuous"}
+        if unknown:
+            raise ValueError(f"Unknown face_enrollment settings: {sorted(unknown)}")
+        for name, defaults in (("quality", quality), ("continuous", continuous)):
+            supplied = config.get(name, {})
+            if not isinstance(supplied, dict):
+                raise ValueError(f"face_enrollment.{name} must be a mapping")
+            if set(supplied) - set(defaults):
+                raise ValueError(f"Unknown face_enrollment.{name} settings")
+            defaults.update(supplied)
+            for key, value in defaults.items():
+                label = f"face_enrollment.{name}.{key}"
+                if key == "require_single_face":
+                    if not isinstance(value, bool):
+                        raise ValueError(f"{label} must be boolean")
+                    continue
+                if isinstance(value, bool) or not isinstance(value, (int, float)):
+                    raise ValueError(f"{label} must be numeric")
+                if not math.isfinite(value):
+                    raise ValueError(f"{label} must be finite")
+                if key in {"min_face_size_px", "stable_frames", "required_shots"}:
+                    if not isinstance(value, int) or value < 1:
+                        raise ValueError(f"{label} must be a positive integer")
+                elif value < 0:
+                    raise ValueError(f"{label} must be nonnegative")
+        if quality["min_detection_confidence"] > 1:
+            raise ValueError("min_detection_confidence must be in [0, 1]")
+        if not 0 <= quality["min_brightness"] <= quality["max_brightness"] <= 255:
+            raise ValueError("brightness thresholds must satisfy 0 <= min <= max <= 255")
+        if continuous["required_shots"] > MAX_SAMPLES_PER_FACE:
+            raise ValueError(f"required_shots must not exceed {MAX_SAMPLES_PER_FACE}")
+        return quality, continuous
 
     @property
     def face_session(self) -> FaceEnrollment | None:
@@ -213,10 +265,11 @@ class FaceEnrollmentManager:
     def set_face_detector(self, detector: Any) -> None:
         self._face_detector = detector
 
-    def start_face(self, name: str, required_shots: int = 3) -> dict[str, Any]:
+    def start_face(self, name: str, required_shots: int | None = None) -> dict[str, Any]:
         try:
             name = validate_face_identity(name)
-            shot_count = int(required_shots)
+            shot_count = (self._continuous["required_shots"]
+                          if required_shots is None else int(required_shots))
         except (TypeError, ValueError) as exc:
             return {"ok": False, "status": 422, "error": str(exc)}
         if not 1 <= shot_count <= MAX_SAMPLES_PER_FACE:
@@ -235,6 +288,8 @@ class FaceEnrollmentManager:
                 "error": "已有进行中的人脸注册会话",
             }
         available_ids = _available_sample_ids(_FACES_DIR / name)
+        if required_shots is None and available_ids:
+            shot_count = min(shot_count, len(available_ids))
         if len(available_ids) < shot_count:
             return {
                 "ok": False,
@@ -251,6 +306,7 @@ class FaceEnrollmentManager:
             name=name,
             required_shots=shot_count,
             started_at=time.time(),
+            framed_required=self._continuous["stable_frames"],
             poses=poses,
             planned_sample_ids=available_ids[:shot_count],
         )
@@ -272,6 +328,7 @@ class FaceEnrollmentManager:
             return {"ok": False, "error": "没有进行中的人脸注册会话"}
 
         faces = self._detect_faces(frame)
+        best, quality, quality_error = self._evaluate_faces(frame, faces)
         if not faces:
             session.framed_count = 0
             return {
@@ -281,19 +338,15 @@ class FaceEnrollmentManager:
                 "total_steps": session.required_shots,
                 "status": "searching",
                 "pose": self._expected_pose(session),
+                "quality": quality,
                 "prompt": "未检测到人脸；" + self._current_prompt(session),
                 "done": False,
             }
 
-        if len(faces) != 1:
-            session.framed_count = 0
-            return self._waiting_result(session, "画面中必须只有一张人脸")
-
-        best = faces[0]
-        quality_error = self._quality_error(frame, best)
         if quality_error:
             session.framed_count = 0
-            return self._waiting_result(session, quality_error)
+            return self._waiting_result(session, quality_error, quality)
+        assert best is not None
         expected_pose = self._expected_pose(session)
         session.framed_count += 1
         if session.framed_count < session.framed_required:
@@ -305,6 +358,7 @@ class FaceEnrollmentManager:
                 "status": "tracking",
                 "pose": expected_pose,
                 "confidence": best["confidence"],
+                "quality": quality,
                 "progress_pct": int(
                     session.framed_count / session.framed_required * 100
                 ),
@@ -328,7 +382,7 @@ class FaceEnrollmentManager:
         path = face_dir / f"{sample_id:03d}.jpg"
         if not cv2.imwrite(str(path), frame[y1:y2, x1:x2]):
             session.framed_count = 0
-            return self._waiting_result(session, "保存人脸样本失败，请重试")
+            return self._waiting_result(session, "保存人脸样本失败，请重试", quality)
         session.captured_paths.append(_to_registry_path(path))
         session.shots_collected += 1
         session.framed_count = 0
@@ -349,6 +403,7 @@ class FaceEnrollmentManager:
                 "step": session.required_shots,
                 "total_steps": session.required_shots,
                 "status": "done",
+                "quality": quality,
                 "pose": expected_pose,
                 "shots": len(sample_ids),
                 "sample_ids": sample_ids,
@@ -366,6 +421,7 @@ class FaceEnrollmentManager:
             "step": session.current_step,
             "total_steps": session.required_shots,
             "status": "captured",
+            "quality": quality,
             "pose": self._expected_pose(session),
             "captured_pose": expected_pose,
             "shots": session.shots_collected,
@@ -388,6 +444,7 @@ class FaceEnrollmentManager:
         cls,
         session: FaceEnrollment,
         prompt: str,
+        quality: dict[str, Any],
     ) -> dict[str, Any]:
         return {
             "ok": True,
@@ -397,6 +454,7 @@ class FaceEnrollmentManager:
             "status": "searching",
             "pose": cls._expected_pose(session),
             "prompt": prompt,
+            "quality": quality,
             "done": False,
         }
 
@@ -406,6 +464,8 @@ class FaceEnrollmentManager:
         if not isinstance(landmarks, list) or len(landmarks) != 5:
             return False
         try:
+            if not np.isfinite(np.asarray(landmarks, dtype=float)).all():
+                return False
             right_eye, left_eye, _nose, right_mouth, left_mouth = landmarks
             eye_mid_y = (float(right_eye[1]) + float(left_eye[1])) / 2.0
             mouth_mid_y = (float(right_mouth[1]) + float(left_mouth[1])) / 2.0
@@ -415,35 +475,71 @@ class FaceEnrollmentManager:
             return False
         return eye_distance >= 1e-4 and face_height >= 1e-4
 
-    @staticmethod
-    def _quality_error(frame: np.ndarray, face: dict[str, Any]) -> str | None:
-        # Landmark-less adapters keep legacy behavior. YuNet sessions receive
-        # the stricter production quality gates below.
-        if not FaceEnrollmentManager._has_valid_landmarks(face):
+    def _evaluate_faces(
+        self, frame: np.ndarray, faces: list[dict[str, Any]],
+    ) -> tuple[dict[str, Any] | None, dict[str, Any], str | None]:
+        quality = {
+            "passed": False, "reason": None,
+            "metrics": {"face_count": len(faces)},
+            "thresholds": dict(self._quality),
+        }
+        if not faces:
+            quality["reason"] = "no_face"
+            return None, quality, "未检测到清晰人脸"
+        if self._quality["require_single_face"] and len(faces) != 1:
+            quality["reason"] = "multiple_faces"
+            return None, quality, "画面中必须只有一张人脸"
+        best = max(faces, key=lambda face: face["w"] * face["h"])
+        error = self._evaluate_quality(frame, best, quality)
+        quality["passed"] = error is None
+        return best, quality, error
+
+    def _evaluate_quality(
+        self, frame: np.ndarray, face: dict[str, Any], quality: dict[str, Any],
+    ) -> str | None:
+        metrics = quality["metrics"]
+        limits = self._quality
+
+        def reject(reason: str, error: str) -> str:
+            quality["reason"] = reason
+            return error
+
+        # Only genuine legacy adapters omit the landmark field. Invalid YuNet
+        # landmarks must never silently disable production quality checks.
+        if "landmarks" not in face:
+            quality["reason"] = "legacy_adapter_quality_skipped"
+            quality["skipped"] = True
             return None
+        metrics["landmarks_valid"] = self._has_valid_landmarks(face)
+        confidence = float(face.get("confidence", 0.0))
+        metrics["detection_confidence"] = confidence if math.isfinite(confidence) else None
         height, width = frame.shape[:2]
-        face_w = int(float(face.get("w", 0.0)) * width)
-        face_h = int(float(face.get("h", 0.0)) * height)
-        if float(face.get("confidence", 0.0)) < 0.85:
-            return "人脸检测置信度不足，请调整光线"
-        if min(face_w, face_h) < 80:
-            return "人脸太小，请靠近摄像头"
-        x1 = max(0, int(float(face["x"]) * width))
-        y1 = max(0, int(float(face["y"]) * height))
-        x2 = min(width, x1 + face_w)
-        y2 = min(height, y1 + face_h)
-        roi = frame[y1:y2, x1:x2]
-        if roi.size == 0:
-            return "人脸区域无效，请重新站位"
+        coordinates = [float(face.get(key, 0.0)) for key in ("x", "y", "w", "h")]
+        if not all(math.isfinite(value) for value in coordinates):
+            return reject("invalid_face_region", "人脸区域无效，请重新站位")
+        x, y, w, h = coordinates
+        x1, y1 = max(0, int(x * width)), max(0, int(y * height))
+        x2, y2 = min(width, int((x + w) * width)), min(height, int((y + h) * height))
+        metrics.update(face_width_px=max(0, x2 - x1), face_height_px=max(0, y2 - y1))
+        if x2 <= x1 or y2 <= y1:
+            return reject("invalid_face_region", "人脸区域无效，请重新站位")
         import cv2
-        gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-        brightness = float(gray.mean())
-        if brightness < 35.0:
-            return "画面过暗，请增加正面光线"
-        if brightness > 225.0:
-            return "画面过曝，请避开强光"
-        if float(cv2.Laplacian(gray, cv2.CV_64F).var()) < 35.0:
-            return "画面模糊，请保持头部稳定"
+
+        gray = cv2.cvtColor(frame[y1:y2, x1:x2], cv2.COLOR_BGR2GRAY)
+        metrics["brightness"] = float(gray.mean())
+        metrics["blur_score"] = float(cv2.Laplacian(gray, cv2.CV_64F).var())
+        if not math.isfinite(confidence) or confidence < limits["min_detection_confidence"]:
+            return reject("low_detection_confidence", "人脸检测置信度不足，请调整光线")
+        if not metrics["landmarks_valid"]:
+            return reject("invalid_landmarks", "人脸关键点无效，请正面面对摄像头")
+        if min(metrics["face_width_px"], metrics["face_height_px"]) < limits["min_face_size_px"]:
+            return reject("face_too_small", "人脸太小，请靠近摄像头")
+        if metrics["brightness"] < limits["min_brightness"]:
+            return reject("too_dark", "画面过暗，请增加正面光线")
+        if metrics["brightness"] > limits["max_brightness"]:
+            return reject("overexposed", "画面过曝，请避开强光")
+        if metrics["blur_score"] < limits["min_blur_score"]:
+            return reject("blurry", "画面模糊，请保持头部稳定")
         return None
 
     def enroll_face_from_image(
@@ -492,6 +588,7 @@ class FaceEnrollmentManager:
             "sample_id": sample_id,
             "sample_key": f"{sample_id:03d}",
             "image_path": str(path),
+            "quality": prepared["quality"],
             "max_faces": MAX_FACES,
             "max_samples_per_face": MAX_SAMPLES_PER_FACE,
         }
@@ -512,32 +609,29 @@ class FaceEnrollmentManager:
         if image is None:
             return {"ok": False, "status": 422, "error": "无法解码图片"}
         faces = self._detect_faces(image)
-        if not faces:
-            return {
-                "ok": False,
-                "status": 422,
-                "error": "未检测到清晰人脸",
-            }
-        best = max(faces, key=lambda face: face["w"] * face["h"])
-        quality_error = self._quality_error(image, best)
+        best, quality, quality_error = self._evaluate_faces(image, faces)
         if quality_error:
-            return {"ok": False, "status": 422, "error": quality_error}
+            _LOGGER.info("Face upload rejected: %s", json.dumps(quality, ensure_ascii=False))
+            return {"ok": False, "status": 422, "error": quality_error, "quality": quality}
+        assert best is not None
         height, width = image.shape[:2]
         x1 = max(0, int(best["x"] * width))
         y1 = max(0, int(best["y"] * height))
         x2 = min(width, int((best["x"] + best["w"]) * width))
         y2 = min(height, int((best["y"] + best["h"]) * height))
         if x2 <= x1 or y2 <= y1:
-            return {"ok": False, "status": 422, "error": "人脸区域无效"}
+            quality.update(passed=False, reason="invalid_face_region")
+            return {"ok": False, "status": 422, "error": "人脸区域无效", "quality": quality}
         encoded, jpeg = cv2.imencode(".jpg", image[y1:y2, x1:x2])
         if not encoded:
-            return {"ok": False, "status": 422, "error": "人脸图片编码失败"}
+            return {"ok": False, "status": 422, "error": "人脸图片编码失败", "quality": quality}
         return {
             "ok": True,
             "jpeg_bytes": jpeg.tobytes(),
             "source_width": width,
             "source_height": height,
             "face_confidence": float(best.get("confidence", 0.0)),
+            "quality": quality,
         }
 
     @staticmethod
@@ -599,7 +693,6 @@ class FaceEnrollmentManager:
                     ],
                 }
                 for item in detections
-                if float(item[-1]) >= 0.3
             ]
         except Exception:
             return []
@@ -745,6 +838,7 @@ class FaceEnrollmentManager:
             "sample_key": f"{normalized_sample_id:03d}",
             "image_path": str(path),
             "replaced": True,
+            "quality": prepared["quality"],
         }
 
     def delete_face_sample(self, name: str, sample_id: int) -> dict[str, Any]:

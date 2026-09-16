@@ -28,6 +28,11 @@ class _FaceDetector:
         height, width = frame.shape[:2]
         detection = np.zeros((1, 15), dtype=np.float32)
         detection[0, :4] = (0.0, 0.0, float(width), float(height))
+        detection[0, 4:14] = (
+            width * .3, height * .3, width * .7, height * .3,
+            width * .5, height * .5, width * .35, height * .7,
+            width * .65, height * .7,
+        )
         detection[0, -1] = 0.99
         return None, detection
 
@@ -40,7 +45,10 @@ def face_manager(tmp_path: Path):  # type: ignore[no-untyped-def]
         storage._REGISTRY_PATH,
     )
     set_storage_root(tmp_path)
-    manager = FaceEnrollmentManager()
+    # CRUD tests use solid images; quality boundary tests use textured images.
+    manager = FaceEnrollmentManager({"quality": {
+        "min_brightness": 0.0, "min_blur_score": 0.0,
+    }})
     manager.set_face_detector(_FaceDetector())
     try:
         yield manager
@@ -222,3 +230,40 @@ def test_remote_bind_without_token_is_allowed(
     server = _server(face_manager)
     server._host = "0.0.0.0"
     server._validate_bind()
+
+
+def test_quality_rejection_survives_http_serialization(face_manager):
+    # Configure a stricter confidence gate while retaining this fixture's storage.
+    strict = FaceEnrollmentManager({"quality": {"min_detection_confidence": 1.0}})
+    strict.set_face_detector(_FaceDetector())
+    server = _server(strict)
+    response = _request(
+        server, "POST", "/api/v1/faces/owner/samples",
+        files={"image": ("owner.jpg", _image(), "image/jpeg")},
+    )
+    assert response.status_code == 422
+    body = response.json()
+    assert isinstance(body["detail"], str)
+    assert body["quality"]["passed"] is False
+    assert body["quality"]["metrics"]["detection_confidence"] < 1.0
+    assert body["quality"]["thresholds"]["min_detection_confidence"] == 1.0
+    assert strict.get_face_paths("owner") == []
+
+
+def test_node_preserves_configured_default_and_explicit_shot_count(face_manager):
+    import threading
+    from types import SimpleNamespace
+    from marsdog_vision_interaction.nodes.vision_interaction_node import VisionInteractionNode
+
+    manager = FaceEnrollmentManager({"continuous": {"required_shots": 2}})
+    node = SimpleNamespace(
+        _enrollment=manager, _enrollment_lock=threading.Lock(), _providers={},
+    )
+    default = VisionInteractionNode._run_task(node, "start_face_enrollment", {"name": "owner"})
+    assert default["total_steps"] == 2
+    manager.cancel_face()
+    explicit = VisionInteractionNode._run_task(
+        node, "start_face_enrollment", {"name": "owner", "required_shots": 1},
+    )
+    assert explicit["total_steps"] == 1
+    manager.cancel_face()

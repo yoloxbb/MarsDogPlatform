@@ -17,6 +17,23 @@ face_api:
   port: 8092
   max_upload_mb: 10
 
+# Shared by image uploads and continuous enrollment. Restart after changes.
+face_enrollment:
+  quality:
+    # Validation value; calibrate with representative images. Code fallback: 0.85.
+    # YuNet detection confidence, NOT SFace identity similarity.
+    min_detection_confidence: 0.70
+    min_face_size_px: 80
+    min_brightness: 35.0
+    max_brightness: 225.0
+    min_blur_score: 35.0
+    require_single_face: true
+  continuous:
+    # Consecutive qualified frames, not a motion/identity stability check.
+    stable_frames: 3
+    # Default only; explicit API/Service requests override, maximum 5.
+    required_shots: 3
+
 topics:
   camera_image: /camera/camera/color/image_raw
   visual_event: /perception/visual_event
