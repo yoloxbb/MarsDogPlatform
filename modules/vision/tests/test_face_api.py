@@ -129,6 +129,60 @@ def test_sample_delete_does_not_renumber_and_add_reuses_smallest_gap(
     assert face_manager.list_face_samples("owner")["sample_ids"] == [1, 2, 3]
 
 
+def test_duplicate_upload_is_rejected_without_mutating_storage(
+    face_manager: FaceEnrollmentManager,
+) -> None:
+    image = _image(90)
+    created = face_manager.enroll_face_from_image("owner", image)
+    registry_before = storage._REGISTRY_PATH.read_bytes()
+    paths_before = sorted(
+        path.name for path in (storage._FACES_DIR / "owner").glob("*.jpg")
+    )
+
+    duplicate = face_manager.enroll_face_from_image("owner", image)
+
+    assert created["sample_id"] == 1
+    assert duplicate["status"] == 409
+    assert duplicate["code"] == "face_sample_duplicate"
+    assert duplicate["duplicate_sample_id"] == 1
+    assert duplicate["duplicate_sample_key"] == "001"
+    assert duplicate["shots"] == 1
+    assert storage._REGISTRY_PATH.read_bytes() == registry_before
+    assert sorted(
+        path.name for path in (storage._FACES_DIR / "owner").glob("*.jpg")
+    ) == paths_before
+
+
+def test_duplicate_replace_is_rejected_but_self_replace_is_idempotent(
+    face_manager: FaceEnrollmentManager,
+) -> None:
+    first = face_manager.enroll_face_from_image("owner", _image(30))
+    second = face_manager.enroll_face_from_image("owner", _image(60))
+
+    rejected = face_manager.replace_face_sample("owner", second["sample_id"], _image(30))
+    accepted = face_manager.replace_face_sample("owner", first["sample_id"], _image(30))
+
+    assert rejected["status"] == 409
+    assert rejected["code"] == "face_sample_duplicate"
+    assert rejected["duplicate_sample_id"] == first["sample_id"]
+    assert accepted["ok"] is True
+    assert accepted["replaced"] is True
+    assert face_manager.list_face_samples("owner")["sample_ids"] == [1, 2]
+
+
+def test_delete_then_readd_same_image_is_allowed(
+    face_manager: FaceEnrollmentManager,
+) -> None:
+    image = _image(110)
+    created = face_manager.enroll_face_from_image("owner", image)
+    deleted = face_manager.delete_face_sample("owner", created["sample_id"])
+    readded = face_manager.enroll_face_from_image("owner", image)
+
+    assert deleted["face_removed"] is True
+    assert readded["ok"] is True
+    assert readded["sample_id"] == 1
+
+
 def test_replace_is_in_place_and_last_delete_releases_identity(
     face_manager: FaceEnrollmentManager,
 ) -> None:
@@ -247,7 +301,48 @@ def test_quality_rejection_survives_http_serialization(face_manager):
     assert body["quality"]["passed"] is False
     assert body["quality"]["metrics"]["detection_confidence"] < 1.0
     assert body["quality"]["thresholds"]["min_detection_confidence"] == 1.0
+    assert body["request_id"] == response.headers["x-request-id"]
     assert strict.get_face_paths("owner") == []
+
+
+def test_duplicate_http_response_and_request_log_are_correlated(
+    face_manager: FaceEnrollmentManager,
+    caplog,
+) -> None:
+    server = _server(face_manager)
+    image = _image(130)
+    first = _request(
+        server,
+        "POST",
+        "/api/v1/faces/owner/samples",
+        files={"image": ("owner.jpg", image, "image/jpeg")},
+    )
+    caplog.clear()
+
+    with caplog.at_level("INFO", logger="marsdog_vision_interaction.api.face_api"):
+        duplicate = _request(
+            server,
+            "POST",
+            "/api/v1/faces/owner/samples",
+            files={"image": ("owner-copy.png", image, "image/png")},
+        )
+
+    body = duplicate.json()
+    request_logs = [
+        record.getMessage()
+        for record in caplog.records
+        if "Face API request:" in record.getMessage()
+    ]
+    assert first.status_code == 201
+    assert duplicate.status_code == 409
+    assert body["detail"]
+    assert body["code"] == "face_sample_duplicate"
+    assert body["duplicate_sample_id"] == 1
+    assert body["request_id"] == duplicate.headers["x-request-id"]
+    assert request_logs
+    assert body["request_id"] in request_logs[-1]
+    assert '"method": "POST"' in request_logs[-1]
+    assert '"status": 409' in request_logs[-1]
 
 
 def test_node_preserves_configured_default_and_explicit_shot_count(face_manager):

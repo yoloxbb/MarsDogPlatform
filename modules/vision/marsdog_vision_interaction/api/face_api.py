@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import threading
 import time
@@ -15,6 +16,7 @@ from fastapi import (
     File,
     HTTPException,
     Path,
+    Request,
     Response,
     UploadFile,
 )
@@ -31,6 +33,13 @@ class _QualityRejection(Exception):
         self.status = status
         self.error = error
         self.quality = quality
+
+
+class _ApiRejection(Exception):
+    def __init__(self, status: int, result: dict[str, Any]) -> None:
+        self.status = status
+        self.result = result
+        self.error = str(result.get("error", "face operation failed"))
 
 
 class FaceApiServer:
@@ -134,14 +143,82 @@ class FaceApiServer:
                 "identity slots. Each identity accepts at most five samples."
             ),
         )
+
+        @app.middleware("http")
+        async def request_context(request: Request, call_next: Any) -> Any:
+            request_id = uuid.uuid4().hex
+            request.state.request_id = request_id
+            started = time.perf_counter()
+            status = 500
+            error_type: str | None = None
+            try:
+                response = await call_next(request)
+                status = response.status_code
+                response.headers["X-Request-ID"] = request_id
+                return response
+            except Exception as exc:
+                error_type = type(exc).__name__
+                raise
+            finally:
+                record: dict[str, Any] = {
+                    "request_id": request_id,
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status": status,
+                    "elapsed_ms": round(
+                        (time.perf_counter() - started) * 1000.0,
+                        3,
+                    ),
+                }
+                if error_type is not None:
+                    record["error_type"] = error_type
+                logger.info(
+                    "Face API request: %s",
+                    json.dumps(record, ensure_ascii=False, sort_keys=True),
+                )
+
+        def request_id(request: Request) -> str:
+            return str(getattr(request.state, "request_id", uuid.uuid4().hex))
+
         @app.exception_handler(_QualityRejection)
         async def quality_rejection_handler(
-            request: Any, exc: _QualityRejection,
+            request: Request, exc: _QualityRejection,
         ) -> JSONResponse:
             return JSONResponse(
                 status_code=exc.status,
-                content={"detail": exc.error, "quality": exc.quality},
+                content={
+                    "detail": exc.error,
+                    "quality": exc.quality,
+                    "request_id": request_id(request),
+                },
             )
+
+        @app.exception_handler(_ApiRejection)
+        async def api_rejection_handler(
+            request: Request, exc: _ApiRejection,
+        ) -> JSONResponse:
+            content: dict[str, Any] = {
+                "detail": exc.error,
+                "request_id": request_id(request),
+            }
+            safe_fields = {
+                "allowed_names",
+                "available_slots",
+                "code",
+                "duplicate_sample_id",
+                "duplicate_sample_key",
+                "max_samples_per_face",
+                "name",
+                "sample_id",
+                "sample_key",
+                "shots",
+            }
+            content.update({
+                key: exc.result[key]
+                for key in safe_fields
+                if key in exc.result
+            })
+            return JSONResponse(status_code=exc.status, content=content)
 
         def raise_for_result(result: dict[str, Any]) -> None:
             if result.get("ok", False):
@@ -154,7 +231,7 @@ class FaceApiServer:
                 status = 503 if "不可用" in error else 422
             if "quality" in result:
                 raise _QualityRejection(status, error, result["quality"])
-            raise HTTPException(status_code=status, detail=error)
+            raise _ApiRejection(status, result)
 
         async def read_image(image: UploadFile) -> bytes:
             filename = str(image.filename or "")
@@ -193,6 +270,7 @@ class FaceApiServer:
             status_code=201,
         )
         async def add_face_sample(
+            request: Request,
             image: UploadFile = File(...),
             name: FaceIdentity = Path(
                 ...,
@@ -202,7 +280,7 @@ class FaceApiServer:
             payload = await read_image(image)
             result = self._upload_handler(name.value, payload)
             raise_for_result(result)
-            return {"request_id": uuid.uuid4().hex, **result}
+            return {"request_id": request_id(request), **result}
 
         @app.get("/api/v1/faces")
         async def list_faces() -> dict[str, Any]:
@@ -256,6 +334,7 @@ class FaceApiServer:
 
         @app.put("/api/v1/faces/{name}/samples/{sample_id}")
         async def replace_face_sample(
+            request: Request,
             image: UploadFile = File(...),
             name: FaceIdentity = Path(...),
             sample_id: int = Path(..., ge=1, le=5),
@@ -263,15 +342,16 @@ class FaceApiServer:
             payload = await read_image(image)
             result = self._sample_replace_handler(name.value, sample_id, payload)
             raise_for_result(result)
-            return {"request_id": uuid.uuid4().hex, **result}
+            return {"request_id": request_id(request), **result}
 
         @app.delete("/api/v1/faces/{name}/samples/{sample_id}")
         async def delete_face_sample(
+            request: Request,
             name: FaceIdentity = Path(...),
             sample_id: int = Path(..., ge=1, le=5),
         ) -> dict[str, Any]:
             result = self._sample_delete_handler(name.value, sample_id)
             raise_for_result(result)
-            return {"request_id": uuid.uuid4().hex, **result}
+            return {"request_id": request_id(request), **result}
 
         return app

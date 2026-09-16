@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import math
@@ -365,24 +366,41 @@ class FaceEnrollmentManager:
                 "done": False,
             }
 
-        height, width = frame.shape[:2]
-        x1 = max(0, int(best["x"] * width))
-        y1 = max(0, int(best["y"] * height))
-        x2 = min(width, int((best["x"] + best["w"]) * width))
-        y2 = min(height, int((best["y"] + best["h"]) * height))
-        if x2 <= x1 or y2 <= y1:
+        jpeg_bytes = self._encode_face_crop(frame, best)
+        if jpeg_bytes is None:
             session.framed_count = 0
             return {"ok": True, "status": "searching", "done": False}
 
-        import cv2
-
         face_dir = _FACES_DIR / session.name
-        face_dir.mkdir(parents=True, exist_ok=True)
-        sample_id = session.planned_sample_ids[session.shots_collected]
-        path = face_dir / f"{sample_id:03d}.jpg"
-        if not cv2.imwrite(str(path), frame[y1:y2, x1:x2]):
-            session.framed_count = 0
-            return self._waiting_result(session, "保存人脸样本失败，请重试", quality)
+        with _STORAGE_LOCK:
+            duplicate_id = self._find_duplicate_sample(face_dir, jpeg_bytes)
+            if duplicate_id is not None:
+                session.framed_count = 0
+                details = self._duplicate_sample_details(
+                    session.name,
+                    duplicate_id,
+                    len(_face_sample_ids(face_dir)),
+                )
+                return {
+                    "ok": True,
+                    "name": session.name,
+                    "step": session.current_step,
+                    "total_steps": session.required_shots,
+                    "status": "duplicate",
+                    "quality": quality,
+                    "pose": expected_pose,
+                    "prompt": "已存在相同人脸样本，请调整角度后重试",
+                    "done": False,
+                    **details,
+                }
+            sample_id = session.planned_sample_ids[session.shots_collected]
+            face_dir.mkdir(parents=True, exist_ok=True)
+            path = face_dir / f"{sample_id:03d}.jpg"
+            try:
+                self._write_sample_atomic(path, jpeg_bytes)
+            except OSError:
+                session.framed_count = 0
+                return self._waiting_result(session, "保存人脸样本失败，请重试", quality)
         session.captured_paths.append(_to_registry_path(path))
         session.shots_collected += 1
         session.framed_count = 0
@@ -569,6 +587,17 @@ class FaceEnrollmentManager:
         jpeg_bytes = bytes(prepared["jpeg_bytes"])
 
         with _STORAGE_LOCK:
+            duplicate_id = self._find_duplicate_sample(face_dir, jpeg_bytes)
+            if duplicate_id is not None:
+                return {
+                    "ok": False,
+                    "status": 409,
+                    **self._duplicate_sample_details(
+                        name,
+                        duplicate_id,
+                        len(_face_sample_ids(face_dir)),
+                    ),
+                }
             available_ids = _available_sample_ids(face_dir)
             if not available_ids:
                 return self._sample_capacity_error(name)
@@ -615,23 +644,74 @@ class FaceEnrollmentManager:
             return {"ok": False, "status": 422, "error": quality_error, "quality": quality}
         assert best is not None
         height, width = image.shape[:2]
-        x1 = max(0, int(best["x"] * width))
-        y1 = max(0, int(best["y"] * height))
-        x2 = min(width, int((best["x"] + best["w"]) * width))
-        y2 = min(height, int((best["y"] + best["h"]) * height))
-        if x2 <= x1 or y2 <= y1:
+        jpeg_bytes = self._encode_face_crop(image, best)
+        if jpeg_bytes is None:
             quality.update(passed=False, reason="invalid_face_region")
             return {"ok": False, "status": 422, "error": "人脸区域无效", "quality": quality}
-        encoded, jpeg = cv2.imencode(".jpg", image[y1:y2, x1:x2])
-        if not encoded:
-            return {"ok": False, "status": 422, "error": "人脸图片编码失败", "quality": quality}
         return {
             "ok": True,
-            "jpeg_bytes": jpeg.tobytes(),
+            "jpeg_bytes": jpeg_bytes,
             "source_width": width,
             "source_height": height,
             "face_confidence": float(best.get("confidence", 0.0)),
             "quality": quality,
+        }
+
+    @staticmethod
+    def _encode_face_crop(
+        frame: np.ndarray,
+        face: dict[str, Any],
+    ) -> bytes | None:
+        height, width = frame.shape[:2]
+        x1 = max(0, int(float(face["x"]) * width))
+        y1 = max(0, int(float(face["y"]) * height))
+        x2 = min(width, int((float(face["x"]) + float(face["w"])) * width))
+        y2 = min(height, int((float(face["y"]) + float(face["h"])) * height))
+        if x2 <= x1 or y2 <= y1:
+            return None
+        import cv2
+
+        encoded, jpeg = cv2.imencode(".jpg", frame[y1:y2, x1:x2])
+        return jpeg.tobytes() if encoded else None
+
+    @staticmethod
+    def _find_duplicate_sample(
+        directory: Path,
+        payload: bytes,
+        *,
+        exclude_sample_id: int | None = None,
+    ) -> int | None:
+        payload_digest = hashlib.sha256(payload).digest()
+        for sample_id in _face_sample_ids(directory):
+            if sample_id == exclude_sample_id:
+                continue
+            path = directory / f"{sample_id:03d}.jpg"
+            try:
+                existing = path.read_bytes()
+            except OSError:
+                continue
+            if (
+                len(existing) == len(payload)
+                and hashlib.sha256(existing).digest() == payload_digest
+                and existing == payload
+            ):
+                return sample_id
+        return None
+
+    @staticmethod
+    def _duplicate_sample_details(
+        name: str,
+        duplicate_id: int,
+        shots: int,
+    ) -> dict[str, Any]:
+        return {
+            "code": "face_sample_duplicate",
+            "error": "该身份已存在相同人脸样本",
+            "name": name,
+            "duplicate_sample_id": duplicate_id,
+            "duplicate_sample_key": f"{duplicate_id:03d}",
+            "shots": shots,
+            "max_samples_per_face": MAX_SAMPLES_PER_FACE,
         }
 
     @staticmethod
@@ -822,6 +902,21 @@ class FaceEnrollmentManager:
                     "ok": False,
                     "status": 404,
                     "error": "face sample not found",
+                }
+            duplicate_id = self._find_duplicate_sample(
+                directory,
+                bytes(prepared["jpeg_bytes"]),
+                exclude_sample_id=normalized_sample_id,
+            )
+            if duplicate_id is not None:
+                return {
+                    "ok": False,
+                    "status": 409,
+                    **self._duplicate_sample_details(
+                        normalized,
+                        duplicate_id,
+                        len(_face_sample_ids(directory)),
+                    ),
                 }
             path = directory / f"{normalized_sample_id:03d}.jpg"
             self._write_sample_atomic(path, bytes(prepared["jpeg_bytes"]))

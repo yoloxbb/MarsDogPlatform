@@ -125,6 +125,27 @@ def test_defaults_capacity_and_configured_stability(frame, tmp_path):
     assert manager.start_face('owner')['status'] == 409
 
 
+def test_continuous_enrollment_rejects_duplicate_without_advancing(frame):
+    manager = FaceEnrollmentManager({
+        'quality': {'min_brightness': 0.0, 'min_blur_score': 0.0},
+        'continuous': {'stable_frames': 1, 'required_shots': 2},
+    })
+    manager.set_face_detector(Detector(.99))
+    assert manager.start_face('owner')['ok'] is True
+
+    first = manager.process_face_frame(frame)
+    duplicate = manager.process_face_frame(frame)
+
+    assert first['status'] == 'captured'
+    assert duplicate['status'] == 'duplicate'
+    assert duplicate['code'] == 'face_sample_duplicate'
+    assert duplicate['duplicate_sample_id'] == 1
+    assert duplicate['shots'] == 1
+    assert manager.face_session is not None
+    assert manager.face_session.shots_collected == 1
+    assert manager.face_session.current_step == 2
+
+
 def test_successful_upload_returns_diagnostics(frame):
     manager = FaceEnrollmentManager()
     manager.set_face_detector(Detector(.99))
