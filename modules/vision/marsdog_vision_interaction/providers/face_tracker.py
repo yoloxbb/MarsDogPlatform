@@ -129,6 +129,7 @@ class TrackState:
     consecutive_same_identity: int = 0
     consecutive_unknown: int = 0
     last_seen_ts: float = 0.0
+    was_missing: bool = False
 
     bbox_xyxy: list[float] = field(default_factory=lambda: [0.0, 0.0, 0.0, 0.0])
     face_score: float = 0.0
@@ -161,6 +162,9 @@ class FaceRecognitionThrottle:
     Identity state machine:
       unverified → candidate_known (1st match) → confirmed_known (2nd match)
       unverified → unknown_candidate (1st miss) → confirmed_unknown (4th miss)
+
+    A track that was absent from a processed inference is re-entered as
+    unverified, even if ByteTrack reuses its numeric ID.
     """
 
     def __init__(
@@ -194,7 +198,7 @@ class FaceRecognitionThrottle:
 
     def should_recognize(
         self, track_id: int, face_score: float, bbox_w: int, bbox_h: int,
-        is_active: bool, now: float,
+        is_active: bool, now: float, *, force: bool = False,
     ) -> bool:
         """Check if this face should be recognized now."""
         if track_id < 0:
@@ -209,7 +213,14 @@ class FaceRecognitionThrottle:
         track = self._get_or_create(track_id, now)
         track.face_score = face_score
 
-        # New track or re-appeared after loss
+        # A re-entered track must be recognized before any old identity can be
+        # exposed again. ``force`` is supplied by mark_seen() when the
+        # provider observed this track missing in a previous inference.
+        if force:
+            return True
+
+        # New track or re-appeared after loss. Keep this fallback for callers
+        # that inspect the throttle without the provider lifecycle adapter.
         if track.recognition_attempts == 0:
             return True
         if now - track.last_seen_ts > 3.0:
@@ -231,6 +242,25 @@ class FaceRecognitionThrottle:
             return True
 
         return False
+
+    def mark_missing_except(
+        self, visible_track_ids: set[int], now: float,
+    ) -> None:
+        """Mark previously observed face tracks absent from this inference.
+
+        ByteTrack IDs describe geometric continuity, not biological identity.
+        A track that disappears and is later reused must therefore start a
+        fresh identity decision even if ByteTrack returns the same ID.
+        """
+        visible = {
+            int(track_id)
+            for track_id in visible_track_ids
+            if int(track_id) >= 0
+        }
+        for track in self._tracks.values():
+            if track.track_id not in visible and track.last_seen_ts > 0.0:
+                track.was_missing = True
+        self.cleanup_stale(now=now)
 
     def update_identity(
         self, track_id: int, identity: str, confidence: float, now: float,
@@ -262,13 +292,17 @@ class FaceRecognitionThrottle:
             track.identity_confidence = confidence
         else:
             # Not matched
+            # An unknown result is authoritative for the current face. Do
+            # not retain a previous confirmed-known label as a fallback.
+            track.identity = "unknown"
+            track.identity_confidence = 0.0
+            track.last_verified_ts = 0.0
             track.consecutive_unknown += 1
             track.consecutive_same_identity = 0
             if track.consecutive_unknown >= self._confirm_unknown:
                 track.identity_state = "confirmed_unknown"
             elif track.consecutive_unknown >= 1:
-                if track.identity_state not in ("confirmed_known", "candidate_known"):
-                    track.identity_state = "unknown_candidate"
+                track.identity_state = "unknown_candidate"
         if (
             track.identity != previous_identity
             or track.identity_state != previous_state
@@ -283,13 +317,25 @@ class FaceRecognitionThrottle:
                 track.recognition_attempts,
             )
 
-    def mark_seen(self, track_id: int, bbox_xyxy: np.ndarray, now: float) -> None:
-        """Update track last-seen timestamp and bbox."""
+    def mark_seen(self, track_id: int, bbox_xyxy: np.ndarray, now: float) -> bool:
+        """Update visibility and return whether this is a track re-entry."""
         if track_id < 0:
-            return
+            return False
         track = self._get_or_create(track_id, now)
+        reappeared = track.was_missing
+        if reappeared:
+            # Never let a reused geometric track publish its previous person's
+            # identity while the replacement face is being recognized.
+            track.identity = "unknown"
+            track.identity_confidence = 0.0
+            track.identity_state = "unverified"
+            track.last_verified_ts = 0.0
+            track.consecutive_same_identity = 0
+            track.consecutive_unknown = 0
+        track.was_missing = False
         track.last_seen_ts = now
         track.bbox_xyxy = bbox_xyxy.tolist() if hasattr(bbox_xyxy, 'tolist') else list(bbox_xyxy)
+        return reappeared
 
     def get_track_state(self, track_id: int) -> TrackState | None:
         return self._tracks.get(track_id)

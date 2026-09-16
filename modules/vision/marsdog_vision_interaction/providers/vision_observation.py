@@ -1055,6 +1055,7 @@ class VisionObservationProvider(BaseProvider):
         inference_sequence: int = 0,
     ) -> list[dict[str, Any]]:
         if self._face_detector is None:
+            self._mark_face_tracks_missing()
             return []
 
         try:
@@ -1090,6 +1091,7 @@ class VisionObservationProvider(BaseProvider):
                         np.empty((0,), dtype=np.float32),
                         inference_sequence=inference_sequence,
                     )
+                self._mark_face_tracks_missing()
                 return []
 
             # Build face list with xyxy for tracking
@@ -1121,6 +1123,7 @@ class VisionObservationProvider(BaseProvider):
                         np.empty((0,), dtype=np.float32),
                         inference_sequence=inference_sequence,
                     )
+                self._mark_face_tracks_missing()
                 return []
 
             # ── ByteTrack ──
@@ -1132,6 +1135,16 @@ class VisionObservationProvider(BaseProvider):
                     xyxy_arr,
                     scores_arr,
                     inference_sequence=inference_sequence,
+                )
+
+            if self._face_rec_throttle is not None:
+                visible_track_ids = {
+                    int(track_id)
+                    for track_id in (track_ids if track_ids is not None else [])
+                    if int(track_id) >= 0
+                }
+                self._face_rec_throttle.mark_missing_except(
+                    visible_track_ids, time.time()
                 )
 
             # ── Throttled SFace recognition ──
@@ -1151,13 +1164,16 @@ class VisionObservationProvider(BaseProvider):
                 bh = int(fd["y2"] - fd["y1"])
 
                 if self._face_rec_throttle is not None:
-                    self._face_rec_throttle.mark_seen(tid, np.array(detections_xyxy[i]), now)
+                    reappeared = self._face_rec_throttle.mark_seen(
+                        tid, np.array(detections_xyxy[i]), now
+                    )
 
                     # Check if we should recognize this face now
                     # is_active = this is the active target
                     is_active = False  # will be refined later in fusion
                     if self._face_rec_throttle.should_recognize(
                         tid, fd["confidence"], bw, bh, is_active, now,
+                        force=reappeared,
                     ):
                         identity, identity_conf = self._run_sface(
                             frame,
@@ -1191,8 +1207,14 @@ class VisionObservationProvider(BaseProvider):
             return faces
 
         except Exception as exc:
+            self._mark_face_tracks_missing()
             logger.debug("Face detection error: %s", exc)
             return []
+
+    def _mark_face_tracks_missing(self) -> None:
+        """Fail closed when a processed inference has no usable face result."""
+        if self._face_rec_throttle is not None:
+            self._face_rec_throttle.mark_missing_except(set(), time.time())
 
     def _update_face_tracker(
         self,
