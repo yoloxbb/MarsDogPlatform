@@ -49,8 +49,10 @@ def generate_launch_description():
         'subscribe_rgbd': False,
         'subscribe_stereo': True,
         'subscribe_odom_info': False,
-        'subscribe_odom': False,
+        # 明确订阅 EKF 输出，避免仅启动融合节点却仍使用未融合里程计。
+        'subscribe_odom': True,
         'odom_frame_id': 'odom',
+        'map_frame_id': 'map',
         'use_sim_time': False,
         'approx_sync': True,
         'approx_sync_max_interval': 0.1,
@@ -85,10 +87,11 @@ def generate_launch_description():
         ('right/image_rect', '/stereo/right/camera/image_rect'),
         ('left/camera_info', '/stereo/left/camera/camera_info'),
         ('right/camera_info', '/stereo/right/camera/camera_info'),
+        ('odom', '/odometry/filtered'),
     ]
 
     return LaunchDescription([
-        DeclareLaunchArgument('base_frame', default_value='base_link'),
+        DeclareLaunchArgument('base_frame', default_value='base_footprint'),
         DeclareLaunchArgument('use_viz', default_value='true'),
         DeclareLaunchArgument(
             'ekf_config',
@@ -130,7 +133,7 @@ def generate_launch_description():
             executable='static_transform_publisher',
             name='tf_base_to_camera',
             arguments=['-0.05', '0.3', '0.2', '0', '0', '0',
-                       'base_link', 'camera_link']
+                       base_frame, 'camera_link']
         ),
 
         Node(

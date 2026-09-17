@@ -83,7 +83,7 @@ openvins_stereo_odometry:
     "Odom/KeyFrameThr": "0.3"
 
     # 当当前内点数低于该绝对数量时创建视觉关键帧；0 表示每帧都是关键帧。
-    "Odom/VisKeyFrameThr": "150"
+    "Odom/VisKeyFrameThr": "100"
 
     # ===== OpenVINS config override =====
 
@@ -137,7 +137,7 @@ openvins_stereo_odometry:
     "OdomOpenVINS/UseKLT": "true"
 
     # 每个相机尝试提取并跟踪的特征点数量。
-    "OdomOpenVINS/NumPts": "500"
+    "OdomOpenVINS/NumPts": "400"
 
     # 特征点之间要求的最小像素距离。
     "OdomOpenVINS/MinPxDist": "10"
@@ -290,7 +290,7 @@ openvins_stereo_odometry:
     # ===== OpenVINS ZUPT =====
 
     # 是否尝试零速度更新（ZUPT）。
-    "OdomOpenVINS/TryZUPT": "false"
+    "OdomOpenVINS/TryZUPT": "true"
 
     # ZUPT 卡方检验阈值的倍率。
     "OdomOpenVINS/ZUPTChi2Multiplier": "0.5"
@@ -313,13 +313,13 @@ openvins_stereo_odometry:
     "OdomOpenVINS/AccelerometerNoiseDensity": "0.01025"
 
     # 加速度计偏置随机游走，单位 m/s^3/sqrt(Hz)。
-    "OdomOpenVINS/AccelerometerRandomWalk": "0.000633"
+    "OdomOpenVINS/AccelerometerRandomWalk": "0.00633"
 
     # 陀螺仪白噪声密度，单位 rad/s/sqrt(Hz)。
-    "OdomOpenVINS/GyroscopeNoiseDensity": "0.00246"
+    "OdomOpenVINS/GyroscopeNoiseDensity": "0.0246"
 
     # 陀螺仪偏置随机游走，单位 rad/s^2/sqrt(Hz)。
-    "OdomOpenVINS/GyroscopeRandomWalk": "0.0000307"
+    "OdomOpenVINS/GyroscopeRandomWalk": "0.000307"
 
     # MSCKF 特征原始像素测量的噪声标准差，单位像素。
     "OdomOpenVINS/UpMSCKFSigmaPx": "1.0"
@@ -563,7 +563,7 @@ rtabmap:
     "Vis/SSC": "false"
 
     # 提取视觉特征时是否使用深度图作为掩膜。
-    "Vis/DepthAsMask": "true"
+    "Vis/DepthAsMask": "false"
 
     # 视觉特征允许的最小深度；0 表示不限制。
     "Vis/MinDepth": "0.1"

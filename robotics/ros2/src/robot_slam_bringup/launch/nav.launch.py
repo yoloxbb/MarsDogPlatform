@@ -2,7 +2,12 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription
+from launch.actions import (
+    DeclareLaunchArgument,
+    GroupAction,
+    IncludeLaunchDescription,
+    OpaqueFunction,
+)
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
@@ -12,6 +17,30 @@ from launch.substitutions import (
 )
 from launch_ros.actions import Node
 from nav2_common.launch import ReplaceString, RewrittenYaml
+
+
+def create_robot_state_publisher(context, enabled):
+    """仅在显式启用时读取 GO2 URDF 并创建状态发布节点。"""
+    enabled_value = enabled.perform(context).strip().lower()
+    if enabled_value not in {'1', 'true', 'yes', 'on'}:
+        return []
+
+    # GO2 描述包是可选运行依赖，默认关闭时不应阻止主建图入口启动。
+    pkg_go2_description = get_package_share_directory('go2_description')
+    go2_urdf_path = os.path.join(
+        pkg_go2_description, 'urdf', 'go2_description.urdf')
+    with open(go2_urdf_path, encoding='utf-8') as urdf_file:
+        go2_robot_description = urdf_file.read()
+
+    return [
+        Node(
+            package='robot_state_publisher',
+            executable='robot_state_publisher',
+            name='robot_state_publisher',
+            output='screen',
+            parameters=[{'robot_description': go2_robot_description}],
+        )
+    ]
 
 
 def generate_launch_description():
@@ -233,13 +262,7 @@ def generate_launch_description():
     ]
 
     pkg_robot_slam_bringup = get_package_share_directory('robot_slam_bringup')
-    pkg_go2_description = get_package_share_directory('go2_description')
     pkg_nav2_bringup = get_package_share_directory('nav2_bringup')
-
-    go2_urdf_path = os.path.join(
-        pkg_go2_description, 'urdf', 'go2_description.urdf')
-    with open(go2_urdf_path, encoding='utf-8') as urdf_file:
-        go2_robot_description = urdf_file.read()
 
     nav2_launch = PathJoinSubstitution(
         [pkg_nav2_bringup, 'launch', 'navigation_launch.py'])
@@ -407,13 +430,9 @@ def generate_launch_description():
         ),
 
         # 不再启动旧的 /odom_leg 发布器，odom -> base_footprint 由 CAPO 独占发布。
-        Node(
-            condition=IfCondition(start_robot_state_publisher),
-            package='robot_state_publisher',
-            executable='robot_state_publisher',
-            name='robot_state_publisher',
-            output='screen',
-            parameters=[{'robot_description': go2_robot_description}]
+        OpaqueFunction(
+            function=create_robot_state_publisher,
+            args=[start_robot_state_publisher],
         ),
 
         Node(

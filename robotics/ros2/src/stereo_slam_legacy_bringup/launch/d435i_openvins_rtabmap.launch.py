@@ -64,8 +64,11 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'launch_viz',
-            default_value='true',
-            description='是否启动 rtabmap_viz。',
+            default_value='false',
+            description=(
+                '是否启动 rtabmap_viz。实时相机默认关闭，避免额外图像订阅者造成掉帧；'
+                '需要可视化时显式传 launch_viz:=true。'
+            ),
         ),
         DeclareLaunchArgument(
             'use_sim_time',
@@ -99,7 +102,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'imu_topic',
-            default_value='/imu/data_raw',
+            default_value='/camera/camera/imu',
             description='D435i 驱动发布的合并 IMU 话题。',
         ),
         DeclareLaunchArgument(

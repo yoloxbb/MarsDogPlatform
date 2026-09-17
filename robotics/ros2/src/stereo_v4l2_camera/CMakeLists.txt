@@ -6,7 +6,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(ament_index_cpp REQUIRED)
 find_package(OpenCV REQUIRED COMPONENTS core imgcodecs)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -16,7 +15,6 @@ add_executable(stereo_v4l2_direct_node src/stereo_v4l2_direct_node.cpp)
 target_compile_features(stereo_v4l2_direct_node PUBLIC cxx_std_17)
 ament_target_dependencies(
   stereo_v4l2_direct_node
-  ament_index_cpp
   rclcpp
   sensor_msgs
 )
@@ -29,7 +27,7 @@ install(
   DESTINATION lib/${PROJECT_NAME}
 )
 install(
-  DIRECTORY launch config
+  DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
   PATTERN "__pycache__" EXCLUDE
   PATTERN "*.pyc" EXCLUDE

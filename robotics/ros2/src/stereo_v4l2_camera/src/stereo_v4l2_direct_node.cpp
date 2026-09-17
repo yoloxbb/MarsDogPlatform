@@ -1,4 +1,3 @@
-#include <ament_index_cpp/get_package_share_directory.hpp>
 #include <fcntl.h>
 #include <linux/videodev2.h>
 #include <opencv2/core.hpp>
@@ -34,9 +33,6 @@ public:
   StereoV4l2DirectNode()
   : Node("stereo_v4l2_direct_node")
   {
-    const std::string package_share =
-      ament_index_cpp::get_package_share_directory("stereo_v4l2_camera");
-
     device_ = declare_parameter<std::string>(
       "video_device",
       "/dev/v4l/by-id/usb-USB_Camera_USB_Camera_01.00.00-video-index0");
@@ -92,9 +88,9 @@ public:
       "right_frame_id", "camera_right_frame");
     camera_time_offset_ms_ = declare_parameter<double>("camera_time_offset_ms", 0.0);
     const std::string left_info_path = declare_parameter<std::string>(
-      "left_camera_info_file", package_share + "/config/left_hb_2560.yaml");
+      "left_camera_info_file", "");
     const std::string right_info_path = declare_parameter<std::string>(
-      "right_camera_info_file", package_share + "/config/right_hb_2560.yaml");
+      "right_camera_info_file", "");
 
     ExecuteValidateParameters();
 
@@ -221,6 +217,14 @@ private:
     info.width = static_cast<uint32_t>(width_ / 2);
     info.height = static_cast<uint32_t>(height_);
     info.header.frame_id = frame_id;
+
+    // 未提供外部标定文件时发布尺寸有效、矩阵为空的未标定 CameraInfo。
+    if (yaml_path.empty()) {
+      RCLCPP_WARN(
+        get_logger(), "CameraInfo file is empty for frame %s; publishing uncalibrated info",
+        frame_id.c_str());
+      return info;
+    }
 
     try {
       const YAML::Node config = YAML::LoadFile(yaml_path);
@@ -506,7 +510,7 @@ private:
     if (auto_exposure_ == V4L2_EXPOSURE_MANUAL) {
       return ConfigureCameraControlValue(
         V4L2_CID_EXPOSURE_AUTO, auto_exposure_, "auto_exposure") &&
-        ConfigureCameraControlValue(
+             ConfigureCameraControlValue(
         V4L2_CID_EXPOSURE_ABSOLUTE,
         exposure_time_absolute_, "exposure_time_absolute");
     }
@@ -514,10 +518,10 @@ private:
     // 自动模式最后启用，确保初始曝光值不会在固件自动曝光之后覆盖其状态。
     return ConfigureCameraControlValue(
       V4L2_CID_EXPOSURE_AUTO, V4L2_EXPOSURE_MANUAL, "auto_exposure") &&
-      ConfigureCameraControlValue(
+           ConfigureCameraControlValue(
       V4L2_CID_EXPOSURE_ABSOLUTE,
       exposure_time_absolute_, "exposure_time_absolute") &&
-      ConfigureCameraControlValue(
+           ConfigureCameraControlValue(
       V4L2_CID_EXPOSURE_AUTO, auto_exposure_, "auto_exposure");
   }
 
