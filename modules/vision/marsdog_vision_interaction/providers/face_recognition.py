@@ -1,4 +1,4 @@
-"""Face recognition provider using SFace ONNX model.
+"""Face recognition provider using SFace ONNX or RKNN model.
 
 Lazy-loaded — model is only initialized on first enroll/recognize call.
 Extracts 128-dim embeddings and matches via cosine similarity.
@@ -19,15 +19,10 @@ from typing import Any
 import numpy as np
 
 from marsdog_vision_interaction.providers.base import BaseProvider
+from marsdog_vision_interaction.providers.face_backends import create_face_recognizer
 from marsdog_vision_interaction.utils.logging_utils import vision_timing_trace
 
 logger = logging.getLogger(__name__)
-
-# SFace input size
-_FACE_SIZE = (112, 112)
-# Normalization: (pixel - 127.5) / 128.0
-_FACE_SCALE = 1.0 / 128.0
-_FACE_MEAN = (127.5, 127.5, 127.5)
 
 
 def _cosine(a: np.ndarray, b: np.ndarray) -> float:
@@ -46,9 +41,9 @@ class FaceRecognitionProvider(BaseProvider):
     Lazy-loads model on first call. Thread-safe for embedding store.
 
     Attributes:
-        _model_path: Path to SFace ONNX model.
+        _model_path: Path to SFace ONNX or RKNN model.
         _match_threshold: Cosine similarity threshold for match.
-        _net: cv2.dnn.Net (SFace ONNX).
+        _recognizer: OpenCV-compatible SFace feature adapter.
         _enrolled: Dict of user_id → embedding (np.ndarray 128-dim).
         _lock: Protects _enrolled.
     """
@@ -59,7 +54,10 @@ class FaceRecognitionProvider(BaseProvider):
         self._model_path = config.get("face_recogn_model", "")
         self._match_threshold = float(config.get("match_threshold", 0.5))
 
-        self._net: Any = None  # cv2.dnn.Net
+        self._recognizer: Any = None
+        self._inference_lock = threading.RLock()
+        self._stopped = False
+        self.model_error: str | None = None
         self._loaded = False
         self._enrolled: dict[str, list[np.ndarray]] = {}
         self._lock = threading.Lock()
@@ -72,6 +70,11 @@ class FaceRecognitionProvider(BaseProvider):
     # ── Lifecycle ──────────────────────────────────────────────
 
     def start(self) -> None:
+        with self._inference_lock:
+            self._stopped = False
+            if self._loaded and self._recognizer is None:
+                self.available = False
+                return
         try:
             if not self._model_path:
                 logger.info("FaceRecognitionProvider — no model path, lazy-load disabled")
@@ -85,67 +88,74 @@ class FaceRecognitionProvider(BaseProvider):
             logger.warning("FaceRecognitionProvider start failed: %s", exc, exc_info=True)
 
     def stop(self) -> None:
-        self._net = None
-        self._loaded = False
-        self._enrolled.clear()
-        self.available = False
+        with self._inference_lock:
+            self._stopped = True
+            self.available = False
+            if self._recognizer is not None:
+                try:
+                    self._recognizer.close()
+                except Exception:
+                    logger.exception("SFace release failed")
+            self._recognizer = None
+            self._loaded = False
+            self.model_error = None
+            with self._lock:
+                self._enrolled.clear()
         logger.info("FaceRecognitionProvider stopped")
 
-    # ── Lazy model loading ─────────────────────────────────────
+    # ── Lazy model loading and embedding extraction ─────────────
 
     def _ensure_loaded(self) -> bool:
-        """Load SFace model if not already loaded. Returns True on success."""
-        if self._loaded:
-            return self._net is not None
-
-        if not self._model_path:
-            logger.warning("FaceRecognitionProvider — no model path configured")
-            self._loaded = True
+        """Called under the inference lock; never replace a failed model silently."""
+        if self._stopped:
             return False
-
+        if self._loaded:
+            return self._recognizer is not None
+        self._loaded = True
+        if not self._model_path:
+            self.model_error = "No face_recogn_model configured"
+            logger.warning(self.model_error)
+            return False
         try:
-            import cv2
-
-            self._net = cv2.dnn.readNetFromONNX(self._model_path)
-            self._loaded = True
-            logger.info("FaceRecognitionProvider — SFace model loaded: %s", self._model_path)
+            self._recognizer = create_face_recognizer(
+                self._model_path,
+                rknn_config=self.config.get("face_recogn_rknn"),
+                runtime_library=self.config.get("rknn_runtime_library", ""),
+            )
+            self.model_error = None
+            logger.info("FaceRecognitionProvider — SFace loaded: %s", self._model_path)
             return True
         except Exception as exc:
-            logger.warning("FaceRecognitionProvider — SFace load failed: %s", exc)
-            self._loaded = True
+            self.model_error = str(exc)
+            self.available = False
+            logger.error("FaceRecognitionProvider — SFace load failed: %s", exc)
             return False
 
-    # ── Embedding extraction ───────────────────────────────────
-
     def _extract_embedding(self, face_roi: np.ndarray) -> np.ndarray | None:
-        """Extract 128-dim embedding from a face ROI (BGR).
+        """Extract a 128-dimensional feature from a BGR crop.
 
-        Args:
-            face_roi: BGR face image (any size, will be resized to 112x112).
-
-        Returns:
-            128-dim float32 numpy array, or None on failure.
+        The adapter owns resize and model-specific preprocessing. In particular,
+        do not apply mean/std here: the supported SFace graph already contains
+        normalization, and observation uses this same adapter.
         """
-        if not self._ensure_loaded() or self._net is None:
-            return None
-
-        import cv2
-
-        try:
-            blob = cv2.dnn.blobFromImage(
-                face_roi,
-                scalefactor=_FACE_SCALE,
-                size=_FACE_SIZE,
-                mean=_FACE_MEAN,
-                swapRB=True,
-                crop=False,
-            )
-            self._net.setInput(blob)
-            embedding = self._net.forward()  # [1, 128]
-            return embedding.flatten().astype(np.float32)
-        except Exception as exc:
-            logger.error("Face embedding extraction error: %s", exc, exc_info=True)
-            return None
+        with self._inference_lock:
+            if not self._ensure_loaded() or self._recognizer is None:
+                return None
+            try:
+                embedding = self._recognizer.feature(face_roi)
+                return embedding.reshape(-1).astype(np.float32)
+            except Exception as exc:
+                self.model_error = str(exc)
+                fatal_error = getattr(self._recognizer, "fatal_error", None)
+                if fatal_error:
+                    self.model_error = str(fatal_error)
+                    self.available = False
+                    # The adapter has already released its runtime. Removing
+                    # it prevents every later request from retrying a dead
+                    # context while preserving the visible failure status.
+                    self._recognizer = None
+                logger.error("Face embedding extraction error: %s", exc, exc_info=True)
+                return None
 
     # ── Public API ─────────────────────────────────────────────
 
@@ -166,12 +176,14 @@ class FaceRecognitionProvider(BaseProvider):
 
         sid = user_id or f"user_{len(self._enrolled) + 1:03d}"
 
-        embedding = self._extract_embedding(face_roi)
-        if embedding is None:
-            return {"success": False, "user_id": sid}
-
-        with self._lock:
-            self._enrolled.setdefault(sid, []).append(embedding)
+        with self._inference_lock:
+            if self._stopped:
+                return {"success": False, "user_id": sid}
+            embedding = self._extract_embedding(face_roi)
+            if embedding is None:
+                return {"success": False, "user_id": sid}
+            with self._lock:
+                self._enrolled.setdefault(sid, []).append(embedding)
 
         logger.info("FaceRecognition enrolled: id=%s, total=%d", sid, len(self._enrolled))
         return {"success": True, "user_id": sid}

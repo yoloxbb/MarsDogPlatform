@@ -3,11 +3,11 @@
 Continuous detection at observation rate, caching the latest result.
 
 Models:
-  - YuNet             face detection (OpenCV ONNX, 320x320)
+  - YuNet             face detection (OpenCV ONNX or RKNN FP16)
   - MediaPipe PoseLandmarker  (33-point pose + human detection, Lite)
   - MediaPipe HandLandmarker  (21-point hand keypoints, Lite)
 
-Total per frame: ~20ms, well within 100ms budget at 10Hz.
+Model format selects the runtime; timing depends on the active models/device.
 """
 
 from __future__ import annotations
@@ -23,6 +23,10 @@ from typing import Any
 import numpy as np
 
 from marsdog_vision_interaction.providers.base import BaseProvider
+from marsdog_vision_interaction.providers.face_backends import (
+    create_face_detector,
+    create_face_recognizer,
+)
 from marsdog_vision_interaction.providers.gesture_pose_engine import (
     HandLandmarkSet,
     PoseLandmarkSet,
@@ -158,14 +162,15 @@ class VisionObservationProvider(BaseProvider):
         self.task_hand_enabled = True
 
         # Detectors
-        self._face_detector: Any = None   # cv2.FaceDetectorYN
+        self._face_detector: Any = None   # OpenCV-compatible face detector
         self._pose_landmarker: Any = None  # mediapipe PoseLandmarker
         self._hand_landmarker: Any = None  # mediapipe HandLandmarker
 
         # Face tracking + throttled recognition
         self._face_tracker: Any = None     # FaceByteTracker
         self._face_rec_throttle: Any = None  # FaceRecognitionThrottle
-        self._face_rec_model: Any = None   # cv2.FaceRecognizerSF (for alignCrop + feature)
+        self._face_rec_model: Any = None   # alignCrop + feature + close
+        self.face_model_status: dict[str, dict[str, Any]] = {}
         self._use_byte_track: bool = bool(config.get("face_tracking", {}).get("use_bytetrack", True))
 
         # One deterministic temporal GesturePose engine is retained per stable
@@ -349,32 +354,41 @@ class VisionObservationProvider(BaseProvider):
     # ── Lifecycle ──────────────────────────────────────────────
 
     def start(self) -> None:
+        if self.available:
+            return
+        if self._worker is not None and self._worker.is_alive():
+            logger.error("Cannot restart vision while the previous inference worker is stopping")
+            return
+        if self._face_detector is not None or self._face_rec_model is not None:
+            self.stop()
+        self.face_model_status = {}
         self._received_frame_count = 0
         self._inference_candidate_count = 0
         self._inferred_frame_count = 0
         self._replaced_pending_frame_count = 0
         self._reset_landmarker_metrics()
         try:
-            import cv2
-
             total = 3  # face + pose + hand
             loaded = 0
 
             # YuNet face detector
             if self._face_detect_model:
                 try:
-                    self._face_detector = cv2.FaceDetectorYN.create(
-                        model=self._face_detect_model,
-                        config="",
+                    self._face_detector = create_face_detector(
+                        self._face_detect_model,
                         input_size=_FACE_INPUT_SIZE,
                         score_threshold=self._det_threshold,
                         nms_threshold=self._nms_threshold,
                         top_k=5000,
+                        rknn_config=self.config.get("face_detect_rknn"),
+                        runtime_library=self.config.get("rknn_runtime_library", ""),
                     )
                     loaded += 1
+                    self.face_model_status["yunet"] = {"ready": True}
                     logger.info("YuNet loaded: %s", self._face_detect_model)
                 except Exception as exc:
-                    logger.warning("YuNet failed: %s", exc)
+                    self.face_model_status["yunet"] = {"ready": False, "error": str(exc)}
+                    logger.error("YuNet failed: %s", exc)
             else:
                 total -= 1
 
@@ -473,8 +487,10 @@ class VisionObservationProvider(BaseProvider):
             face_rec_cfg = self.config.get("face_recognition_throttle", {})
             if face_rec_model_path:
                 try:
-                    self._face_rec_model = cv2.FaceRecognizerSF.create(
-                        model=face_rec_model_path, config="",
+                    self._face_rec_model = create_face_recognizer(
+                        face_rec_model_path,
+                        rknn_config=self.config.get("face_recogn_rknn"),
+                        runtime_library=self.config.get("rknn_runtime_library", ""),
                     )
                     from marsdog_vision_interaction.providers.face_tracker import FaceRecognitionThrottle
                     self._face_rec_throttle = FaceRecognitionThrottle(
@@ -489,10 +505,16 @@ class VisionObservationProvider(BaseProvider):
                         confirm_unknown_count=int(face_rec_cfg.get("confirm_unknown_count", 4)),
                         sface_cosine_threshold=float(face_rec_cfg.get("sface_cosine_threshold", 0.36)),
                     )
-                    loaded += 1; total += 1
+                    loaded += 1
+                    self.face_model_status["sface"] = {"ready": True}
                     logger.info("SFace recognition throttle initialized")
                 except Exception as exc:
-                    logger.warning("SFace recognizer init failed: %s", exc)
+                    self._close_face_model(self._face_rec_model)
+                    self._face_rec_model = None
+                    self._face_rec_throttle = None
+                    self.face_model_status["sface"] = {"ready": False, "error": str(exc)}
+                    logger.error("SFace recognizer init failed: %s", exc)
+                total += 1
 
             if loaded > 0:
                 self.available = True
@@ -507,6 +529,8 @@ class VisionObservationProvider(BaseProvider):
                     self._max_num_poses,
                     self._hand_idle_inference_stride,
                 )
+                if any(not state["ready"] for state in self.face_model_status.values()):
+                    logger.error("Face models partially unavailable: %s", self.face_model_status)
             else:
                 self.available = False
                 logger.warning("VisionObservationProvider — no models, unavailable")
@@ -514,6 +538,49 @@ class VisionObservationProvider(BaseProvider):
         except Exception as exc:
             self.available = False
             logger.warning("VisionObservationProvider start failed: %s", exc, exc_info=True)
+            self.stop()
+
+    @staticmethod
+    def _close_face_model(model: Any) -> None:
+        close = getattr(model, "close", None)
+        if callable(close):
+            try:
+                close()
+            except Exception:
+                logger.exception("Face model release failed")
+
+    def _disable_fatal_face_model(self, role: str, model: Any) -> bool:
+        """Remove an adapter that released its runtime after a fatal error.
+
+        Ordinary bad frames and alignment failures keep their existing fallback
+        behavior. RKNN adapters expose ``fatal_error`` only after their runtime
+        has been released, so this transition is performed once and subsequent
+        frames skip the dead model without repeating error logs.
+        """
+
+        error = getattr(model, "fatal_error", None)
+        if not error:
+            return False
+        status = self.face_model_status.setdefault(role, {})
+        already_reported = (
+            status.get("ready") is False
+            and status.get("fatal") is True
+            and status.get("error") == str(error)
+        )
+        status.update({"ready": False, "fatal": True, "error": str(error)})
+        if role == "yunet" and self._face_detector is model:
+            self._face_detector = None
+        elif role == "sface" and self._face_rec_model is model:
+            self._face_rec_model = None
+            clear_states = getattr(
+                self._face_rec_throttle, "clear_identity_states", None
+            )
+            if callable(clear_states):
+                clear_states()
+        self._close_face_model(model)
+        if not already_reported:
+            logger.error("Face model became unavailable: role=%s error=%s", role, error)
+        return True
 
     def stop(self) -> None:
         self.available = False
@@ -524,10 +591,14 @@ class VisionObservationProvider(BaseProvider):
             )
             return
         self._action_classifier.reset()
-        self._face_detector = None
-        self._face_tracker = None
-        self._face_rec_throttle = None
-        self._face_rec_model = None
+        with self._inference_lock:
+            self._close_face_model(self._face_detector)
+            self._close_face_model(self._face_rec_model)
+            self._face_detector = None
+            self._face_tracker = None
+            self._face_rec_throttle = None
+            self._face_rec_model = None
+            self.face_model_status = {}
         if self._pose_landmarker is not None:
             try:
                 self._pose_landmarker.close()
@@ -1149,6 +1220,9 @@ class VisionObservationProvider(BaseProvider):
 
             # ── Throttled SFace recognition ──
             now = time.time()
+            sface_disabled = bool(
+                self.face_model_status.get("sface", {}).get("fatal", False)
+            )
             for i, fd in enumerate(face_data):
                 tid = int(track_ids[i]) if track_ids is not None and i < len(track_ids) else -1
                 fd["track_id"] = tid
@@ -1163,7 +1237,7 @@ class VisionObservationProvider(BaseProvider):
                 bw = int(fd["x2"] - fd["x1"])
                 bh = int(fd["y2"] - fd["y1"])
 
-                if self._face_rec_throttle is not None:
+                if self._face_rec_throttle is not None and not sface_disabled:
                     reappeared = self._face_rec_throttle.mark_seen(
                         tid, np.array(detections_xyxy[i]), now
                     )
@@ -1182,6 +1256,10 @@ class VisionObservationProvider(BaseProvider):
                         )
                         self._face_rec_throttle.update_identity(tid, identity, identity_conf, now)
 
+                        sface_disabled = bool(
+                            self.face_model_status.get("sface", {}).get("fatal", False)
+                        )
+
                 # Read current track state
                 track_state = self._face_rec_throttle.get_track_state(tid) if self._face_rec_throttle else None
                 if track_state is not None:
@@ -1194,6 +1272,16 @@ class VisionObservationProvider(BaseProvider):
                 fd["quality"] = round(quality, 4)
 
             # Remove internal pixel fields
+            if self.face_model_status.get("sface", {}).get("fatal", False):
+                clear_states = getattr(
+                    self._face_rec_throttle, "clear_identity_states", None
+                )
+                if callable(clear_states):
+                    clear_states()
+                for fd in face_data:
+                    fd["recognized_user"] = ""
+                    fd["identity_confidence"] = 0.0
+                    fd["identity_state"] = "unverified"
             for fd in face_data:
                 fd.pop("x1", None); fd.pop("y1", None); fd.pop("x2", None); fd.pop("y2", None)
                 fd.pop("_yunet_detection", None)
@@ -1207,6 +1295,9 @@ class VisionObservationProvider(BaseProvider):
             return faces
 
         except Exception as exc:
+            if self._disable_fatal_face_model("yunet", self._face_detector):
+                self._mark_face_tracks_missing()
+                return []
             self._mark_face_tracks_missing()
             logger.debug("Face detection error: %s", exc)
             return []
@@ -1328,6 +1419,10 @@ class VisionObservationProvider(BaseProvider):
             return ("unknown", round(float(best_score), 4))
 
         except Exception as exc:
+            if self._disable_fatal_face_model("sface", self._face_rec_model):
+                reason_code = "model_fatal"
+                result = "failure"
+                return ("unknown", 0.0)
             logger.debug("SFace recognition error: %s", exc)
             return ("unknown", 0.0)
         finally:
@@ -1361,6 +1456,8 @@ class VisionObservationProvider(BaseProvider):
             self._sync_enrolled_to_throttle_locked()
 
     def _sync_enrolled_to_throttle_locked(self) -> None:
+        if self._face_rec_model is None or self._face_rec_throttle is None:
+            return
         try:
             from marsdog_vision_interaction.core.face_enrollment_manager import EnrollmentManager
             import cv2
@@ -1382,6 +1479,8 @@ class VisionObservationProvider(BaseProvider):
             if enrolled:
                 logger.info("Throttle synced: %d enrolled faces", len(enrolled))
         except Exception as exc:
+            if self._disable_fatal_face_model("sface", self._face_rec_model):
+                return
             logger.debug("Throttle sync error: %s", exc)
 
     # ── MediaPipe PoseLandmarker ───────────────────────────────

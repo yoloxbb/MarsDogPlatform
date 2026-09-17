@@ -53,6 +53,10 @@ CameraInfo；相机驱动需单独启动且启用 `enable_depth` 与 `align_dept
 真实配置不会在模型、相机或 RKNN 不可用时自动伪造人体/物体；对应 Topic
 字段为空或 Service 明确返回失败。
 
+YuNet / SFace 根据模型扩展名自动选择 OpenCV（`.onnx`）或 RKNN（`.rknn`），
+无需配置 backend。当前支持已验证的 RK3588 FP16 模型；生产配置仍默认 ONNX。
+切换步骤、模型指纹和板端验证命令见 [人脸 RKNN 适配说明](docs/rknn-face-models.md)。
+
 姿态与手势使用基于 MediaPipe 关键点的时序规则引擎。每个稳定目标独立保存
 动作历史；跌倒必须经过“稳定直立、快速转变、持续躺卧”才产生事件，静态躺卧
 只属于姿态，不触发跌倒告警。生产配置使用 `inference_frame_stride: 2`，即

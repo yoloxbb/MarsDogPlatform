@@ -83,6 +83,11 @@ providers:
     type: observation
     enabled: true
     config:
+      # Model suffix selects the runtime: .onnx -> OpenCV, .rknn -> RKNN.
+      # For the verified RK3588 FP16 export, use
+      # face_detection_yunet_2023mar_fp16.rknn. No backend selector is needed.
+      # Optional RKNN settings (ignored for ONNX):
+      # face_detect_rknn: {profile: yunet_2023mar_fp16, core_mask: auto}
       face_detect_model: ${MARSDOG_VISION_MODEL_DIR}/face_detection_yunet_2023mar.onnx
       # Select lite/full at launch without editing the config:
       #   ros2 launch ... pose_model_variant:=full
@@ -103,6 +108,8 @@ providers:
       # run every inferred frame for a short hold window to preserve gestures.
       hand_idle_inference_stride: 2
       hand_active_hold_inferences: 8
+      # RKNN alternative: face_recognition_sface_2021dec_fp16.rknn
+      # face_recogn_rknn: {profile: sface_2021dec_fp16, core_mask: auto}
       face_recogn_model: ${MARSDOG_VISION_MODEL_DIR}/face_recognition_sface_2021dec.onnx
       det_threshold: 0.3
       nms_threshold: 0.45
@@ -183,5 +190,8 @@ providers:
     type: sface
     enabled: true
     config:
+      # Keep this independent recognizer in sync when switching the vision
+      # recognizer to face_recognition_sface_2021dec_fp16.rknn.
+      # face_recogn_rknn: {profile: sface_2021dec_fp16, core_mask: auto}
       face_recogn_model: ${MARSDOG_VISION_MODEL_DIR}/face_recognition_sface_2021dec.onnx
       match_threshold: 0.5

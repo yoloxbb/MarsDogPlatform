@@ -8,7 +8,6 @@ Ultralytics still executes it on the Rockchip NPU through rknn-toolkit-lite2.
 from __future__ import annotations
 
 import logging
-import os
 import time
 from pathlib import Path
 from typing import Any
@@ -157,62 +156,10 @@ class ObjectDetectorProvider(BaseProvider):
             return False
 
     def _configure_rknn_runtime(self) -> None:
-        """Allow RKNN Lite to use a user-local runtime library.
+        """Use the shared runtime selector (also used by face models)."""
+        from marsdog_vision_interaction.utils.rknn_runtime import configure_rknn_runtime
 
-        ``rknn-toolkit-lite2`` currently looks only for ``/usr/lib/librknnrt.so``
-        on an in-process RK3588 target.  That is inconvenient for the ROS
-        workspace user, which may not have permission to install system
-        libraries.  Prefer an explicit path or a copy placed next to the
-        installed ``rknnlite`` package, while retaining the official system
-        path as the final fallback.
-        """
-        configured = str(
-            self.config.get("rknn_runtime_library", "")
-        ).strip()
-        candidates: list[Path] = []
-        if configured:
-            candidates.append(Path(configured).expanduser())
-        env_path = os.environ.get("MARSDOG_RKNN_RUNTIME_LIBRARY", "").strip()
-        if env_path:
-            candidates.append(Path(env_path).expanduser())
-        try:
-            import rknnlite
-
-            package_dir = Path(rknnlite.__file__).resolve().parent
-            candidates.append(package_dir / "api" / "librknnrt.so")
-        except Exception:
-            pass
-        candidates.append(Path("/usr/lib/librknnrt.so"))
-
-        runtime_path = next(
-            (path for path in candidates if path.is_file()),
-            None,
-        )
-        if runtime_path is None:
-            return
-
-        try:
-            from rknnlite.api import rknn_lite
-            from rknnlite.api.rknn_runtime import RKNNRuntime
-        except Exception:
-            return
-
-        current_runtime = getattr(rknn_lite, "RKNNRuntime", None)
-        if (
-            current_runtime is not None
-            and getattr(current_runtime, "_marsdog_runtime_library", "")
-            == str(runtime_path)
-        ):
-            return
-
-        class LocalRKNNRuntime(RKNNRuntime):
-            _marsdog_runtime_library = str(runtime_path)
-
-            def _get_rknn_api_lib_path(self):  # type: ignore[no-untyped-def]
-                return self._marsdog_runtime_library
-
-        rknn_lite.RKNNRuntime = LocalRKNNRuntime
-        logger.info("RKNN runtime library selected: %s", runtime_path)
+        configure_rknn_runtime(str(self.config.get("rknn_runtime_library", "")))
 
     def _run_inference(
         self,

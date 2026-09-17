@@ -340,6 +340,25 @@ class FaceRecognitionThrottle:
     def get_track_state(self, track_id: int) -> TrackState | None:
         return self._tracks.get(track_id)
 
+    def clear_identity_states(self) -> None:
+        """Clear all biological identities while retaining geometric tracks.
+
+        A fatal recognizer runtime cannot reverify any visible track. Keeping a
+        prior confirmed label would expose stale identity data until the normal
+        throttle interval elapsed, so the provider uses this transition before
+        publishing the next observation.
+        """
+
+        for track in self._tracks.values():
+            track.identity = "unknown"
+            track.identity_confidence = 0.0
+            track.identity_state = "unverified"
+            track.last_verified_ts = 0.0
+            track.recognition_attempts = 0
+            track.last_recognition_ts = 0.0
+            track.consecutive_same_identity = 0
+            track.consecutive_unknown = 0
+
     def set_enrolled_embeddings(
         self, enrolled: dict[str, list[np.ndarray] | np.ndarray]
     ) -> None:
