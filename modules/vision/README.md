@@ -14,6 +14,21 @@
 - uv
 - ROS2 Humble
 
+### Fast DDS 项目配置
+
+项目使用 [config/fastdds.xml](config/fastdds.xml) 作为所有 ROS2 参与者的统一传输
+配置。本项目的 `vision.launch.py` 和 `vision_debug.launch.py` 会自动为其子进程加载
+该配置；独立启动 RealSense 或 `camera_driver` 前，先在对应终端执行：
+
+```bash
+source scripts/fastdds_env.sh
+```
+
+如果需要替换配置，可设置 `MARSDOG_FASTDDS_PROFILE` 后再 source。配置使用本机 SHM
+传输的 8MiB 单条消息上限；Humble 自带 Fast DDS 2.6.x 的 UDP 上限为 65500 bytes，
+跨主机 UDP 会使用 RTPS 分片。这里只配置传输层，不打开
+`RMW_FASTRTPS_USE_QOS_FROM_XML`。
+
 `rknn-toolkit-lite2` 只在 Linux AArch64（RK3588）环境安装；其他平台仍可安装、
 运行单元测试和 Mock 联调，但不能执行 RKNN 模型。
 

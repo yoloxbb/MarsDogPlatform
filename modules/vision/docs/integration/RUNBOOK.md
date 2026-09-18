@@ -9,6 +9,7 @@ export ROS_DOMAIN_ID=0
 export ROS2_WS="${ROS2_WS:-$HOME/ros2_ws}"
 export VISION_REPO="${VISION_REPO:-$ROS2_WS/src/MarsDogVisionInteraction}"
 export VOICE_REPO="${VOICE_REPO:-$ROS2_WS/src/MarsDogVoiceInteraction}"
+source "$VISION_REPO/scripts/fastdds_env.sh"
 ```
 
 多机部署时，各主机的 `ROS_DOMAIN_ID`、RMW 实现和网络发现策略必须一致。先用 `ros2 node list` 确认主机间可发现，再排查业务代码。
