@@ -7,6 +7,8 @@ from dataclasses import asdict, dataclass
 import math
 from typing import Any
 
+from marsdog_vision_interaction.providers.pose_backends.contract import keypoint_ids
+
 
 TOY_LABELS = frozenset({
     "dog toy ball",
@@ -473,6 +475,10 @@ def _wrist_points(
     hands: list[dict[str, Any]],
 ) -> list[tuple[str, tuple[float, float]]]:
     points: list[tuple[str, tuple[float, float]]] = []
+    try:
+        wrist_ids = keypoint_ids(target.get("keypoint_format"), "wrist")
+    except ValueError:
+        wrist_ids = ()
     for keypoint in target.get("keypoints", []):
         if not isinstance(keypoint, dict):
             continue
@@ -485,9 +491,10 @@ def _wrist_points(
             x, y = float(keypoint.get("x")), float(keypoint.get("y"))
         except (TypeError, ValueError):
             continue
-        if point_id in (15, 16) and confidence >= 0.35:
+        if point_id in wrist_ids and confidence >= 0.35:
+            left_id, right_id = wrist_ids
             points.append((
-                "pose_left_wrist" if point_id == 15 else "pose_right_wrist",
+                "pose_left_wrist" if point_id == left_id else "pose_right_wrist",
                 (x, y),
             ))
     for index, hand in enumerate(hands):

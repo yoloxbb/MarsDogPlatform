@@ -69,24 +69,38 @@ CameraInfo；相机驱动需单独启动且启用 `enable_depth` 与 `align_dept
 字段为空或 Service 明确返回失败。
 
 YuNet / SFace 根据模型扩展名自动选择 OpenCV（`.onnx`）或 RKNN（`.rknn`），
-无需配置 backend。当前支持已验证的 RK3588 FP16 模型；生产配置仍默认 ONNX。
+无需配置 backend。当前支持已验证的 RK3588 FP16 模型；生产配置使用 RKNN。
 切换步骤、模型指纹和板端验证命令见 [人脸 RKNN 适配说明](docs/rknn-face-models.md)。
 
-姿态与手势使用基于 MediaPipe 关键点的时序规则引擎。每个稳定目标独立保存
+姿态与手势使用 MediaPipe 索引的 33 槽时序规则引擎；RKNN 的 COCO 17 点在动作
+引擎入口映射到对应槽位。每个稳定目标独立保存
 动作历史；跌倒必须经过“稳定直立、快速转变、持续躺卧”才产生事件，静态躺卧
 只属于姿态，不触发跌倒告警。生产配置使用 `inference_frame_stride: 2`，即
 相机第 1、3、5…帧执行完整人脸/姿态/手部推理；30 Hz 输入时推理上限约 15 Hz，
 但相机新鲜度仍按每个原始帧更新。相机回调只替换一个最新待处理帧，完整模型
 流水线由独立单线程工作器执行；算力不足时丢弃旧候选帧而不积压延迟，10 Hz
-事件发布和 VisionTask Service 不再等待关键点推理完成。Pose 和 Hand 默认使用
-MediaPipe `VIDEO` 模式，通过严格递增的单调时间戳复用帧间跟踪。
+事件发布和 VisionTask Service 不再等待关键点推理完成。正式配置的 Pose 使用
+RKNN YOLOv8 NPU 模型，Hand 使用 RKNN 检测与关键点模型；切换到 MediaPipe `.task`
+时，`VIDEO` 模式通过严格递增的单调时间戳复用帧间跟踪。
 正式配置每帧最多请求 5 个 Pose 并输出独立 `human_candidates[]`；兼容
 `active_target` 仍只选一个人。Hand 在未发现手部时每两个关键点推理帧探测一次，
 发现手部后连续逐帧推理至少 8 次，在降低空场景负载的同时保留手势响应。
 
-### Pose Lite/Full A/B
+### Pose RKNN / Lite / Full A/B
 
-Lite 和 Full 模型统一放在共享模型目录。Full 模型可用以下命令安装：
+生产配置使用 `yolov8n-pose-fp16.rknn`，发布原生 COCO 17 点并附带
+`keypoint_format: coco_17`。需要回退到 MediaPipe CPU 链路时，可以直接切换：
+
+```bash
+ros2 launch marsdog_vision_interaction vision.launch.py pose_model_variant:=lite
+ros2 launch marsdog_vision_interaction vision.launch.py pose_model_variant:=full
+```
+
+RKNN 模型、输出契约和板端检查命令见
+[docs/rknn-pose-models.md](docs/rknn-pose-models.md)。RKNN 路径没有测量 Pose Z，
+动作引擎会跳过深度证据。
+
+MediaPipe Lite 和 Full 模型统一放在共享模型目录。Full 模型可用以下命令安装：
 
 ```bash
 export MARSDOG_VISION_MODEL_DIR="${MARSDOG_VISION_MODEL_DIR:-$PWD/models/vision}"
@@ -96,7 +110,7 @@ curl --fail --location \
   https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task
 ```
 
-不修改 YAML 即可分别启动两组实验：
+不修改 YAML 即可分别启动两组 MediaPipe 实验：
 
 ```bash
 ros2 launch marsdog_vision_interaction vision.launch.py \
@@ -107,7 +121,7 @@ ros2 launch marsdog_vision_interaction vision.launch.py \
 ```
 
 每组在相同站位、光照和动作下保持至少150个推理帧。Web Viewer 的“关键点模型
-A/B”面板显示有效推理FPS、平均/P95耗时、人体检测率、33点有效率及动作关键点
+A/B”面板显示有效推理FPS、平均/P95耗时、人体检测率、当前点数有效率及动作关键点
 有效率，并显示接收帧、推理候选、实际完成和被新帧替换的数量。画面无人时的
 检测率没有比较意义；选择 Full 前应确认有效推理频率满足实际动作时序要求。
 

@@ -14,6 +14,11 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
+from marsdog_vision_interaction.providers.pose_backends.contract import (
+    keypoint_ids,
+    normalize_keypoint_format,
+)
+
 
 @dataclass
 class ActiveVisualTarget:
@@ -32,6 +37,7 @@ class ActiveVisualTarget:
     pose_state: str = "unknown"
     pose_action: str = ""
     pose_action_label: str = ""
+    keypoint_format: str = "mediapipe_33"
     keypoints: list[dict[str, Any]] = field(default_factory=list)
     confidence: float = 0.0
     face_confidence: float = 0.0
@@ -81,6 +87,7 @@ class ActiveVisualTarget:
             "pose_state": self.pose_state,
             "pose_action": self.pose_action,
             "pose_action_label": self.pose_action_label,
+            "keypoint_format": self.keypoint_format,
             "keypoints": copy.deepcopy(self.keypoints),
             "confidence": round(self.confidence, 4),
             "detection_confidence": round(self.confidence, 4),
@@ -234,6 +241,14 @@ class VisualTargetManager:
             if not isinstance(human, dict):
                 continue
             try:
+                keypoint_format = normalize_keypoint_format(
+                    human.get("keypoint_format")
+                )
+            except ValueError:
+                # A producer that claims an unknown numbering scheme must not
+                # silently be interpreted as MediaPipe.
+                continue
+            try:
                 bbox = (
                     float(human.get("x", 0)),
                     float(human.get("y", 0)),
@@ -250,7 +265,9 @@ class VisualTargetManager:
                 "bbox": bbox,
                 "area": area,
                 "body_center": self._torso_center(
-                    human.get("keypoints", []), bbox
+                    human.get("keypoints", []),
+                    bbox,
+                    keypoint_format,
                 ),
             })
 
@@ -280,6 +297,7 @@ class VisualTargetManager:
                 "pose_state": human.get("pose_state", "unknown"),
                 "pose_action": human.get("pose_action", ""),
                 "pose_action_label": human.get("pose_action_label", ""),
+                "keypoint_format": keypoint_format,
                 "keypoints": human.get("keypoints", []),
                 "identity": identity if known else "unknown",
                 "identity_confidence": float(
@@ -478,6 +496,7 @@ class VisualTargetManager:
         track.pose_state = candidate["pose_state"]
         track.pose_action = candidate["pose_action"]
         track.pose_action_label = candidate["pose_action_label"]
+        track.keypoint_format = candidate["keypoint_format"]
         track.keypoints = copy.deepcopy(candidate["keypoints"])
         track.identity = candidate["identity"]
         track.identity_confidence = candidate["identity_confidence"]
@@ -516,9 +535,14 @@ class VisualTargetManager:
     def _torso_center(
         keypoints: Any,
         bbox: tuple[float, float, float, float],
+        keypoint_format: str = "mediapipe_33",
     ) -> tuple[float, float]:
         """Return the visible shoulder/hip centroid, or bbox centre."""
         torso: list[tuple[float, float]] = []
+        try:
+            torso_ids = keypoint_ids(keypoint_format, "torso")
+        except ValueError:
+            return (bbox[0] + bbox[2] / 2, bbox[1] + bbox[3] / 2)
         if isinstance(keypoints, list):
             for point in keypoints:
                 if not isinstance(point, dict):
@@ -531,7 +555,7 @@ class VisualTargetManager:
                 except (TypeError, ValueError):
                     continue
                 if (
-                    point_id in (11, 12, 23, 24)
+                    point_id in torso_ids
                     and confidence >= 0.3
                     and 0.0 <= x <= 1.0
                     and 0.0 <= y <= 1.0

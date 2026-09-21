@@ -206,8 +206,8 @@ ros2 launch marsdog_vision_interaction vision_debug.launch.py \
 
 ```text
 YuNet loaded: ...
-MediaPipe PoseLandmarker loaded: variant=... mode=... model=...
-MediaPipe HandLandmarker loaded: mode=... model=...
+RKNN YOLOv8 Pose loaded: model=... profile=yolov8n_pose_fp16
+Hand backend loaded: backend=rknn mode=video model=... preprocessing=rga
 ByteTrack face tracker initialized
 SFace recognition throttle initialized
 VisionObservationProvider started — <已加载>/<总数> models loaded; ...
@@ -217,7 +217,7 @@ Web dashboard: http://127.0.0.1:8765
 Viewer ready; render<=8.0 FPS scale=0.75 publish_debug_image=False; ...
 ```
 
-出现 `YuNet failed`、`MediaPipe ... failed`、`SFace recognizer init failed`、
+出现 `YuNet failed`、`RKNN pose backend failed`、`Hand backend failed`、`SFace recognizer init failed`、
 `VisionObservationProvider — no models, unavailable` 或 `Configured vision provider is
 unavailable` 时，本轮真实模型测试不得判为通过。
 
@@ -1024,7 +1024,7 @@ Lite/Full A/B 必须在相同相机、站位、光照、人物和动作下，各
 | `pipeline_avg_ms/pipeline_p95_ms` | 整条流水线平均/P95 |
 | `landmarker.pose.avg_ms/p95_ms` | Pose 耗时 |
 | `detection_rate` | 有人的固定场景下才有比较意义 |
-| `keypoint_valid_ratio/critical_keypoint_valid_ratio` | 33 点与动作关键点有效率 |
+| `keypoint_valid_ratio/critical_keypoint_valid_ratio` | 当前 `keypoint_count`（17 或 33）与动作关键点有效率 |
 | `landmarker.hand.*` | Hand 耗时、有效 FPS、空闲步长、检测率 |
 | `feature_ms/recognition_ms` | 特征提取和规则判断耗时 |
 
@@ -1048,7 +1048,7 @@ Topic/Service 原文用于证明实际接口结果。当前追踪记录包括：
 | `stage_complete` | `face_tracking/bytetrack_update` | `inference_sequence,latency_ms,detection_count,track_count` |
 | `stage_complete` | `face_recognition/sface_inference` | `inference_sequence,track_id,latency_ms,identity,confidence,reason_code` |
 | `stage_complete` | `face_recognition/sface_task_recognize` | `latency_ms,identity,confidence,reason_code,template_identity_count` |
-| `stage_complete` | `pose_landmarker/inference` | `inference_sequence,latency_ms,detection_count,model_variant` |
+| `stage_complete` | `pose_landmarker/pose_rknn/inference` | `inference_sequence,latency_ms,detection_count,model_variant,backend` |
 | `stage_complete` | `hand_landmarker/inference` | `inference_sequence,latency_ms,detection_count` |
 | `stage_complete` | `gesture_pose/feature_extraction` | `inference_sequence,track_id,latency_ms` |
 | `stage_complete` | `gesture_pose/action_recognition` | `inference_sequence,track_id,latency_ms,primary_action` |

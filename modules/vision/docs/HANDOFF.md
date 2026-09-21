@@ -206,7 +206,7 @@ uv run pytest
 
 ## 7. 模型与降级
 
-期望启动日志为 `5/5 models loaded`：YuNet、MediaPipe Pose、MediaPipe Hand、ByteTrack、SFace。缺少 `mediapipe` 或 `supervision` 时会降级，进程不一定退出；负责人必须从日志和输出字段判断能力是否完整。
+期望启动日志为 `5/5 models loaded`：YuNet、RKNN YOLOv8 Pose、RKNN Hand、ByteTrack、SFace。切换为 `.task` 后才需要 MediaPipe；缺少模型运行时或 `supervision` 时会降级，进程不一定退出；负责人必须从日志和输出字段判断能力是否完整。
 
 目标检测模型为 lazy load，第一次数据流推理或 `detect_objects` 可能明显更慢。
 动作系统必须把模型预热阶段计入搜索状态，不能在收到第一条新鲜结果前向前移动。

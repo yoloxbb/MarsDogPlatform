@@ -696,7 +696,7 @@
           ['目标置信度', fixed(active.confidence)], ['最后看见', fixed(active.last_seen_age_ms, 0) + ' ms'],
         ]);
         setKv(byId('landmarker'), [
-          ['Pose模型', `${text(landmarker.pose_model_variant)} / ${text(landmarker.pose_model_file)}`],
+          ['Pose模型', `${text(landmarker.pose_backend || landmarker.pose_model_variant)} / ${text(landmarker.pose_model_file)} (${text(landmarker.keypoint_format || 'mediapipe_33')})`],
           ['运行模式', landmarker.running_mode],
           ['统计窗口', `${text(landmarker.window_frames)} 推理帧`],
           ['接收/候选/完成', `${text(landmarker.received_frames)} / ${text(landmarker.inference_candidates)} / ${text(landmarker.inferred_frames)}`],
@@ -705,7 +705,7 @@
           ['整条流水线', `${fixed(landmarker.pipeline_avg_ms, 1)} / P95 ${fixed(landmarker.pipeline_p95_ms, 1)} ms`],
           ['Pose耗时', `${fixed(poseMetrics.avg_ms, 1)} / P95 ${fixed(poseMetrics.p95_ms, 1)} ms`],
           ['人体检测率', percent(poseMetrics.detection_rate)],
-          ['33点有效率', percent(poseMetrics.keypoint_valid_ratio)],
+          [`${text(landmarker.keypoint_count || 33)}点有效率`, percent(poseMetrics.keypoint_valid_ratio)],
           ['动作关键点有效率', percent(poseMetrics.critical_keypoint_valid_ratio)],
           ['Hand耗时', `${fixed(handMetrics.avg_ms, 1)} / P95 ${fixed(handMetrics.p95_ms, 1)} ms`],
           ['Hand频率', `${fixed(handMetrics.effective_inference_fps, 1)} FPS / 空闲步长 ${text(handMetrics.idle_inference_stride)}`],

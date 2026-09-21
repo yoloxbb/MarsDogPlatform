@@ -7,6 +7,8 @@ from typing import Any
 import cv2
 import numpy as np
 
+from marsdog_vision_interaction.providers.pose_backends.contract import normalize_keypoint_format
+
 
 _POSE_CONNECTIONS = (
     (0, 7), (0, 8), (7, 11), (8, 12),
@@ -14,6 +16,13 @@ _POSE_CONNECTIONS = (
     (11, 23), (12, 24), (23, 24),
     (23, 25), (25, 27), (27, 29), (29, 31),
     (24, 26), (26, 28), (28, 30), (30, 32),
+)
+
+_COCO_POSE_CONNECTIONS = (
+    (0, 1), (0, 2), (1, 3), (2, 4),
+    (5, 6), (5, 7), (7, 9), (6, 8), (8, 10),
+    (5, 11), (6, 12), (11, 12),
+    (11, 13), (13, 15), (12, 14), (14, 16),
 )
 
 _HAND_CONNECTIONS = (
@@ -281,13 +290,22 @@ def draw_visual_debug(
             (0, 255, 0),
             scale=osd_scale,
         )
-        _draw_landmarks(
-            output,
-            human.get("keypoints", []),
-            _POSE_CONNECTIONS,
-            (0, 255, 0),
-            scale=osd_scale,
-        )
+        try:
+            keypoint_format = normalize_keypoint_format(human.get("keypoint_format"))
+        except ValueError:
+            keypoint_format = ""
+        if keypoint_format:
+            _draw_landmarks(
+                output,
+                human.get("keypoints", []),
+                (
+                    _COCO_POSE_CONNECTIONS
+                    if keypoint_format == "coco_17"
+                    else _POSE_CONNECTIONS
+                ),
+                (0, 255, 0),
+                scale=osd_scale,
+            )
 
     for hand in event.get("hands", []):
         if not isinstance(hand, dict):

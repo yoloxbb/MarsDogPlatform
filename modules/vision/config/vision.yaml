@@ -89,12 +89,16 @@ providers:
       # Optional RKNN settings (ignored for ONNX):
       # face_detect_rknn: {profile: yunet_2023mar_fp16, core_mask: auto}
       face_detect_model: ${MARSDOG_VISION_MODEL_DIR}/face_detection_yunet_2023mar_fp16.rknn
-      # Select lite/full at launch without editing the config:
+      # Select rknn/lite/full at launch without editing the config:
       #   ros2 launch ... pose_model_variant:=full
-      pose_model_variant: lite
+      pose_model_variant: rknn
       pose_models:
+        rknn: ${MARSDOG_VISION_MODEL_DIR}/yolov8n-pose-fp16.rknn
         lite: ${MARSDOG_VISION_MODEL_DIR}/pose_landmarker_lite.task
         full: ${MARSDOG_VISION_MODEL_DIR}/pose_landmarker_full.task
+      pose_rknn:
+        profile: yolov8n_pose_fp16
+        core_mask: auto
       # VIDEO mode reuses MediaPipe tracking across inferred frames. IMAGE is
       # retained only as an explicit A/B fallback.
       landmarker_running_mode: video
@@ -111,7 +115,7 @@ providers:
         score_threshold: 0.30
         presence_threshold: 0.50
       # Publish every visible person; downstream behavior policy selects the
-      # social/wake target. Five bounds CPU while covering normal group scenes.
+      # social/wake target. Five caps decoded people while covering normal group scenes.
       max_num_poses: 5
       horizontal_fov_deg: 69.0
       # Probe hands on alternate inferred frames while idle. Once detected,

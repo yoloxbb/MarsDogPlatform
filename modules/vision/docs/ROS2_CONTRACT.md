@@ -46,7 +46,12 @@ bbox/body_center 是有限的归一化数值
 | `quality` | number / `0` | 当前实现等于人脸检测分数，不是独立清晰度模型 |
 
 `humans[]` 每项：`track_id,x,y,w,h,confidence,pose_state,pose_action,
-pose_action_label,keypoints[]`。字段语义与 `active_target` 对应字段相同。
+pose_action_label,keypoint_format,keypoints[]`。字段语义与 `active_target` 对应字段相同。
+
+`keypoint_format` 标识 `keypoints[].id` 的原生编号：`mediapipe_33` 使用
+MediaPipe Pose 的 0–32 编号，`coco_17` 使用 YOLOv8 Pose 的 COCO 0–16 编号。
+RKNN 路径只提供二维 `x/y` 与置信度，`z` 为 `null`；缺少该字段的旧记录按
+`mediapipe_33` 解释。动作引擎内部会把 COCO 点映射到自己的 33 槽规则输入。
 
 `active_target`、匹配的 `human_candidates[]/humans[]` 还包含
 `held_object`：`state,action,action_label,candidate_action,object_label,

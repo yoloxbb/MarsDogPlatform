@@ -6,6 +6,9 @@ import copy
 from typing import Any
 
 from marsdog_vision_interaction.utils.time_utils import now_stamp
+from marsdog_vision_interaction.providers.pose_backends.contract import (
+    normalize_keypoint_format,
+)
 
 
 SCHEMA_VERSION = 1
@@ -55,6 +58,7 @@ _ACTIVE_TARGET = {
     "pose_state": "unknown",
     "pose_action": "",
     "pose_action_label": "",
+    "keypoint_format": "mediapipe_33",
     "held_object": copy.deepcopy(_HELD_OBJECT),
     "keypoints": [],
     "confidence": 0.0,
@@ -103,6 +107,7 @@ _HUMAN = {
     "pose_state": "",
     "pose_action": "",
     "pose_action_label": "",
+    "keypoint_format": "mediapipe_33",
     "held_object": copy.deepcopy(_HELD_OBJECT),
     "keypoints": [],
 }
@@ -125,6 +130,7 @@ _HUMAN_CANDIDATE = {
     "pose_state": "unknown",
     "pose_action": "",
     "pose_action_label": "",
+    "keypoint_format": "mediapipe_33",
     "held_object": copy.deepcopy(_HELD_OBJECT),
     "keypoints": [],
     "confidence": 0.0,
@@ -279,6 +285,7 @@ def normalize_visual_event(data: Any) -> dict[str, Any]:
         event["sequence"] = 0
 
     event["active_target"] = _merge(_ACTIVE_TARGET, data.get("active_target"))
+    _clear_unknown_pose_format(event["active_target"])
     event["human_candidates"] = [
         _merge(_HUMAN_CANDIDATE, item)
         for item in data.get("human_candidates", [])
@@ -292,6 +299,8 @@ def normalize_visual_event(data: Any) -> dict[str, Any]:
         _merge(_HUMAN, item) for item in data.get("humans", [])
         if isinstance(item, dict)
     ]
+    for item in (*event["human_candidates"], *event["humans"]):
+        _clear_unknown_pose_format(item)
     event["hands"] = [
         _merge(_HAND, item) for item in data.get("hands", [])
         if isinstance(item, dict)
@@ -303,3 +312,13 @@ def normalize_visual_event(data: Any) -> dict[str, Any]:
     if isinstance(data.get("events"), list):
         event["events"] = [str(item) for item in data["events"] if item]
     return event
+
+
+def _clear_unknown_pose_format(value: dict[str, Any]) -> None:
+    """Drop points when a producer declares an unknown numbering scheme."""
+
+    try:
+        normalize_keypoint_format(value.get("keypoint_format"))
+    except ValueError:
+        value["keypoint_format"] = ""
+        value["keypoints"] = []

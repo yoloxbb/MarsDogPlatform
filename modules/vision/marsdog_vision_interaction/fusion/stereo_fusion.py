@@ -105,6 +105,7 @@ def fuse_stereo_observation(
             "pose_state": active.pose_state,
             "pose_action": active.pose_action,
             "pose_action_label": active.pose_action_label,
+            "keypoint_format": active.keypoint_format,
             "keypoints": active.keypoints,
             "track_id": active.track_id,
         }]

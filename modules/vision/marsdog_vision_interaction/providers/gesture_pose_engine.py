@@ -60,11 +60,13 @@ ImageArray = NDArray[np.uint8]
 
 @dataclass(frozen=True, slots=True)
 class PoseLandmark:
-    """One normalized pose landmark returned by MediaPipe."""
+    """One normalized pose landmark used by the action engine."""
 
     x: float
     y: float
-    z: float
+    # RKNN COCO pose has no measured depth.  ``None`` means unavailable and
+    # must never be treated as a zero-depth measurement.
+    z: float | None
     visibility: float
     presence: float
 
@@ -298,7 +300,7 @@ def _pose_angle_3d(
     b: PoseLandmark | None,
     c: PoseLandmark | None,
 ) -> float | None:
-    if a is None or b is None or c is None:
+    if a is None or b is None or c is None or a.z is None or b.z is None or c.z is None:
         return None
     first = (a.x - b.x, a.y - b.y, a.z - b.z)
     second = (c.x - b.x, c.y - b.y, c.z - b.z)
@@ -326,7 +328,14 @@ def _pose_depth_ratio(
     end: PoseLandmark | None,
     scale: float | None,
 ) -> float | None:
-    if start is None or end is None or scale is None or scale <= _EPSILON:
+    if (
+        start is None
+        or end is None
+        or start.z is None
+        or end.z is None
+        or scale is None
+        or scale <= _EPSILON
+    ):
         return None
     return abs(end.z - start.z) / scale
 
@@ -3222,10 +3231,17 @@ class RuleActionClassifier:
                 _classifier_high(left_elbow, 125.0, 160.0),
                 _classifier_high(right_elbow, 125.0, 160.0),
             )
-            forward_wrists = min(
-                _classifier_high((nose.z - left_wrist.z) / scale, 0.05, 0.30),
-                _classifier_high((nose.z - right_wrist.z) / scale, 0.05, 0.30),
-            )
+            if (
+                nose.z is not None
+                and left_wrist.z is not None
+                and right_wrist.z is not None
+            ):
+                forward_wrists = min(
+                    _classifier_high((nose.z - left_wrist.z) / scale, 0.05, 0.30),
+                    _classifier_high((nose.z - right_wrist.z) / scale, 0.05, 0.30),
+                )
+            else:
+                forward_wrists = 0.0
             forward_stop_escape = min(straight_elbows, forward_wrists)
             hand_score *= 1.0 - forward_stop_escape
 
@@ -3627,7 +3643,11 @@ class RuleActionClassifier:
         # requiring the fingers to be vertical relative to the wrist.
         finger_spread_allowed = _classifier_low(features.finger_spread_ratio, 1.25, 1.80)
         palm_forward = _classifier_high(features.palm_facing_score, 0.45, 0.80)
-        pose_depth_reach = _classifier_high((shoulder.z - wrist.z) / scale, 0.02, 0.30)
+        pose_depth_reach = (
+            _classifier_high((shoulder.z - wrist.z) / scale, 0.02, 0.30)
+            if shoulder.z is not None and wrist.z is not None
+            else 0.0
+        )
         arm_image_length = _classifier_distance(shoulder, wrist) / scale
         foreshortened_arm = _classifier_low(arm_image_length, 0.45, 1.20)
         foreground_hand = _classifier_high(features.palm_scale / scale, 0.25, 0.60)
@@ -4071,7 +4091,7 @@ class BehaviorEngine:
 class _LandmarkLike(Protocol):
     x: float
     y: float
-    z: float
+    z: float | None
 
 
 def pose_landmarks_from_objects(
@@ -4085,7 +4105,7 @@ def pose_landmarks_from_objects(
         PoseLandmark(
             x=float(point.x),
             y=float(point.y),
-            z=float(point.z),
+            z=(float(point.z) if point.z is not None else None),
             visibility=float(getattr(point, "visibility", 1.0)),
             presence=float(getattr(point, "presence", 1.0)),
         )

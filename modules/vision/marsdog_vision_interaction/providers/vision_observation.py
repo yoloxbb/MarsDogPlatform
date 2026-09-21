@@ -1,10 +1,11 @@
-"""Observation vision provider — face detection + MediaPipe pose + hands.
+"""Observation vision provider — face detection + selectable pose + hands.
 
 Continuous detection at observation rate, caching the latest result.
 
 Models:
   - YuNet             face detection (OpenCV ONNX or RKNN FP16)
-  - MediaPipe PoseLandmarker  (33-point pose + human detection, Lite)
+  - MediaPipe PoseLandmarker  (33-point pose + human detection, Lite/Full)
+  - YOLOv8 Pose RKNN          (17-point COCO pose + human detection)
   - MediaPipe HandLandmarker or RKNN palm + landmark graphs
 
 Model format selects the runtime; timing depends on the active models/device.
@@ -30,6 +31,7 @@ from marsdog_vision_interaction.providers.face_backends import (
 from marsdog_vision_interaction.providers.gesture_pose_engine import (
     HandLandmark,
     HandLandmarkSet,
+    PoseLandmark,
     PoseLandmarkSet,
     hand_landmarks_from_objects,
     pose_landmarks_from_objects,
@@ -41,11 +43,15 @@ from marsdog_vision_interaction.providers.hand_backends import (
     HandResult,
     create_hand_backend,
 )
+from marsdog_vision_interaction.providers.pose_backends import (
+    COCO_TO_MEDIAPIPE,
+    PoseBackendError,
+    create_pose_backend,
+)
 
 logger = logging.getLogger(__name__)
 
 _FACE_INPUT_SIZE = (320, 320)
-
 
 class VisionObservationProvider(BaseProvider):
     """Continuous vision — YuNet face + MediaPipe pose + hands.
@@ -59,20 +65,31 @@ class VisionObservationProvider(BaseProvider):
         super().__init__(config)
 
         self._face_detect_model = config.get("face_detect_model", "")
-        self._pose_model_variant = str(
-            config.get("pose_model_variant", "lite")
-        ).strip().lower()
+        self._pose_model_variant = str(config.get("pose_model_variant", "lite")).strip().lower()
         pose_models = config.get("pose_models", {})
-        configured_pose_model = config.get("mediapipe_model", "")
+        configured_pose_model = config.get("pose_model", "") or config.get("mediapipe_model", "")
         if isinstance(pose_models, dict):
-            configured_pose_model = pose_models.get(
-                self._pose_model_variant,
-                configured_pose_model,
+            configured_pose_model = config.get("pose_model", "") or pose_models.get(
+                self._pose_model_variant, configured_pose_model
             )
-        self._mediapipe_model = str(configured_pose_model or "")
-        if self._pose_model_variant not in {"lite", "full", "heavy"}:
+        self._pose_model_path = str(configured_pose_model or "")
+        # Kept as an alias for existing integrations and tests.
+        self._mediapipe_model = self._pose_model_path
+        if self._pose_model_variant not in {"lite", "full", "heavy", "rknn"}:
             self._pose_model_variant = self._infer_pose_model_variant(
-                self._mediapipe_model
+                self._pose_model_path
+            )
+        pose_suffix = Path(self._pose_model_path).suffix.lower()
+        self._pose_backend_kind = {
+            ".rknn": "rknn",
+            ".task": "mediapipe",
+        }.get(pose_suffix, "unsupported")
+        # An explicit path overrides the variant mapping; report the actual
+        # selected model instead of the launch variant left in configuration.
+        if config.get("pose_model"):
+            self._pose_model_variant = (
+                "rknn" if pose_suffix == ".rknn"
+                else self._infer_pose_model_variant(self._pose_model_path)
             )
         self._landmarker_running_mode = str(
             config.get("landmarker_running_mode", "video")
@@ -185,7 +202,9 @@ class VisionObservationProvider(BaseProvider):
 
         # Detectors
         self._face_detector: Any = None   # OpenCV-compatible face detector
-        self._pose_landmarker: Any = None  # mediapipe PoseLandmarker
+        self._pose_landmarker: Any = None  # MediaPipe PoseLandmarker
+        self._pose_backend: Any = None     # RKNN YOLOv8 Pose backend
+        self.pose_model_status: dict[str, Any] = {}
         self._hand_landmarker: Any = None  # mediapipe HandLandmarker
         self._hand_backend: Any = None
         self.hand_model_status: dict[str, Any] = {}
@@ -297,9 +316,19 @@ class VisionObservationProvider(BaseProvider):
             return round(value, 3) if value is not None else None
 
         return {
+            "pose_backend": self._pose_backend_kind,
             "pose_model_variant": self._pose_model_variant,
-            "pose_model_file": Path(self._mediapipe_model).name,
-            "running_mode": self._landmarker_running_mode,
+            "pose_model_file": Path(self._pose_model_path).name,
+            "pose_model_status": dict(self.pose_model_status),
+            "keypoint_format": (
+                "coco_17" if self._pose_backend_kind == "rknn" else "mediapipe_33"
+            ),
+            "keypoint_count": 17 if self._pose_backend_kind == "rknn" else 33,
+            "running_mode": (
+                self._landmarker_running_mode
+                if self._pose_backend_kind == "mediapipe"
+                else "image" if self._pose_backend_kind == "rknn" else "n/a"
+            ),
             "inference_frame_stride": self._inference_frame_stride,
             "received_frames": self._received_frame_count,
             "inference_candidates": self._inference_candidate_count,
@@ -378,8 +407,13 @@ class VisionObservationProvider(BaseProvider):
                 float(point.get("presence", 1.0)),
             ) >= self._pose_confidence_threshold
 
-        all_valid = [valid(keypoints.get(index)) for index in range(33)]
-        critical_indices = (0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26)
+        keypoint_count = 17 if self._pose_backend_kind == "rknn" else 33
+        all_valid = [valid(keypoints.get(index)) for index in range(keypoint_count)]
+        critical_indices = (
+            (0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
+            if self._pose_backend_kind == "rknn"
+            else (0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26)
+        )
         critical_valid = [valid(keypoints.get(index)) for index in critical_indices]
         self._pose_keypoint_valid.append(sum(all_valid) / len(all_valid))
         self._pose_critical_valid.append(
@@ -398,6 +432,7 @@ class VisionObservationProvider(BaseProvider):
             self._face_detector is not None
             or self._face_rec_model is not None
             or self._hand_backend is not None
+            or self._pose_backend is not None
         ):
             self.stop()
         self.face_model_status = {}
@@ -405,6 +440,7 @@ class VisionObservationProvider(BaseProvider):
         self._inference_candidate_count = 0
         self._inferred_frame_count = 0
         self._replaced_pending_frame_count = 0
+        self.pose_model_status = {}
         self._reset_landmarker_metrics()
         try:
             total = 3  # face + pose + hand
@@ -431,40 +467,92 @@ class VisionObservationProvider(BaseProvider):
             else:
                 total -= 1
 
-            # MediaPipe PoseLandmarker (human detection + pose in one pass)
-            if self._mediapipe_model:
-                try:
-                    import mediapipe as mp
-                    from mediapipe.tasks.python import vision
-                    from mediapipe.tasks.python.vision import RunningMode
+            # Suffix-selected human pose backend.  A failed RKNN setup remains
+            # unavailable and is never replaced by a CPU model implicitly.
+            if self._pose_model_path:
+                if self._pose_backend_kind == "rknn":
+                    try:
+                        self._pose_backend = create_pose_backend(
+                            self._pose_model_path,
+                            rknn_config=self.config.get("pose_rknn"),
+                            runtime_library=self.config.get("rknn_runtime_library", ""),
+                            score_threshold=self._det_threshold,
+                            nms_threshold=self._nms_threshold,
+                            max_num_poses=self._max_num_poses,
+                        )
+                        self.pose_model_status = {
+                            "ready": True,
+                            "backend": "rknn",
+                            "keypoint_format": "coco_17",
+                        }
+                        loaded += 1
+                        logger.info(
+                            "RKNN YOLOv8 Pose loaded: model=%s profile=%s",
+                            self._pose_model_path,
+                            getattr(self._pose_backend, "profile_name", ""),
+                        )
+                    except Exception as exc:
+                        self.pose_model_status = {
+                            "ready": False,
+                            "backend": "rknn",
+                            "keypoint_format": "coco_17",
+                            "error": str(exc),
+                        }
+                        logger.error("RKNN pose backend failed: %s", exc)
+                elif self._pose_backend_kind == "mediapipe":
+                    try:
+                        import mediapipe as mp
+                        from mediapipe.tasks.python import vision
+                        from mediapipe.tasks.python.vision import RunningMode
 
-                    running_mode = (
-                        RunningMode.VIDEO
-                        if self._landmarker_running_mode == "video"
-                        else RunningMode.IMAGE
-                    )
-                    options = vision.PoseLandmarkerOptions(
-                        base_options=mp.tasks.BaseOptions(
-                            model_asset_path=self._mediapipe_model,
+                        running_mode = (
+                            RunningMode.VIDEO
+                            if self._landmarker_running_mode == "video"
+                            else RunningMode.IMAGE
+                        )
+                        options = vision.PoseLandmarkerOptions(
+                            base_options=mp.tasks.BaseOptions(
+                                model_asset_path=self._pose_model_path,
+                            ),
+                            running_mode=running_mode,
+                            num_poses=self._max_num_poses,
+                            min_pose_detection_confidence=self._det_threshold,
+                            min_pose_presence_confidence=self._det_threshold,
+                            min_tracking_confidence=0.5,
+                        )
+                        self._pose_landmarker = vision.PoseLandmarker.create_from_options(
+                            options,
+                        )
+                        self.pose_model_status = {
+                            "ready": True,
+                            "backend": "mediapipe",
+                            "keypoint_format": "mediapipe_33",
+                        }
+                        loaded += 1
+                        logger.info(
+                            "MediaPipe PoseLandmarker loaded: variant=%s mode=%s model=%s",
+                            self._pose_model_variant,
+                            self._landmarker_running_mode,
+                            self._pose_model_path,
+                        )
+                    except Exception as exc:
+                        self.pose_model_status = {
+                            "ready": False,
+                            "backend": "mediapipe",
+                            "keypoint_format": "mediapipe_33",
+                            "error": str(exc),
+                        }
+                        logger.warning("MediaPipe PoseLandmarker failed: %s", exc)
+                else:
+                    self.pose_model_status = {
+                        "ready": False,
+                        "backend": "unsupported",
+                        "error": (
+                            f"Unsupported pose model suffix "
+                            f"{Path(self._pose_model_path).suffix!r}; expected .task or .rknn"
                         ),
-                        running_mode=running_mode,
-                        num_poses=self._max_num_poses,
-                        min_pose_detection_confidence=self._det_threshold,
-                        min_pose_presence_confidence=self._det_threshold,
-                        min_tracking_confidence=0.5,
-                    )
-                    self._pose_landmarker = vision.PoseLandmarker.create_from_options(
-                        options,
-                    )
-                    loaded += 1
-                    logger.info(
-                        "MediaPipe PoseLandmarker loaded: variant=%s mode=%s model=%s",
-                        self._pose_model_variant,
-                        self._landmarker_running_mode,
-                        self._mediapipe_model,
-                    )
-                except Exception as exc:
-                    logger.warning("MediaPipe PoseLandmarker failed: %s", exc)
+                    }
+                    logger.error("%s", self.pose_model_status["error"])
             else:
                 total -= 1
 
@@ -648,6 +736,34 @@ class VisionObservationProvider(BaseProvider):
             logger.error("Hand model became unavailable: %s", error)
         return True
 
+    def _disable_fatal_pose_model(self, model: Any) -> bool:
+        """Mark a released RKNN pose runtime unavailable exactly once."""
+
+        error = getattr(model, "fatal_error", None)
+        if not error:
+            return False
+        already_reported = (
+            self.pose_model_status.get("ready") is False
+            and self.pose_model_status.get("fatal") is True
+            and self.pose_model_status.get("error") == str(error)
+        )
+        self.pose_model_status.update({
+            "ready": False,
+            "fatal": True,
+            "backend": self._pose_backend_kind,
+            "keypoint_format": "coco_17",
+            "error": str(error),
+        })
+        if self._pose_backend is model:
+            self._pose_backend = None
+        try:
+            model.close()
+        except Exception:
+            logger.exception("Pose backend release failed")
+        if not already_reported:
+            logger.error("Pose model became unavailable: %s", error)
+        return True
+
     def stop(self) -> None:
         self.available = False
         if not self._stop_inference_worker():
@@ -672,6 +788,13 @@ class VisionObservationProvider(BaseProvider):
                     logger.exception("Hand backend release failed")
                 self._hand_backend = None
             self.hand_model_status = {}
+            if self._pose_backend is not None:
+                try:
+                    self._pose_backend.close()
+                except Exception:
+                    logger.exception("Pose backend release failed")
+                self._pose_backend = None
+            self.pose_model_status = {}
         if self._pose_landmarker is not None:
             try:
                 self._pose_landmarker.close()
@@ -907,6 +1030,7 @@ class VisionObservationProvider(BaseProvider):
                 "pose_state": active.pose_state,
                 "pose_action": pose_key,
                 "pose_action_label": pose_label,
+                "keypoint_format": active.keypoint_format,
                 "keypoints": active.keypoints,
                 "track_id": active.track_id,
             }]
@@ -1109,21 +1233,25 @@ class VisionObservationProvider(BaseProvider):
             else []
         )
         pose_started_at = time.perf_counter()
-        humans = (
-            self._detect_pose_mediapipe(frame, w, h, timestamp_ms)
-            if self.task_pose_enabled
-            else []
-        )
+        humans = []
+        if self.task_pose_enabled:
+            if self._pose_backend_kind == "rknn":
+                humans = self._detect_pose_rknn(frame, w, h)
+            elif self._pose_backend_kind == "mediapipe":
+                humans = self._detect_pose_mediapipe(frame, w, h, timestamp_ms)
         pose_ms = (time.perf_counter() - pose_started_at) * 1000.0
-        if self.task_pose_enabled and self._pose_landmarker is not None:
+        if self.task_pose_enabled and (
+            self._pose_landmarker is not None or self._pose_backend is not None
+        ):
             vision_timing_trace(
                 node="vision_observation",
-                module="pose_landmarker",
+                module=("pose_rknn" if self._pose_backend_kind == "rknn" else "pose_landmarker"),
                 stage="inference",
                 latency_ms=pose_ms,
                 inference_sequence=inference_sequence,
                 detection_count=len(humans),
                 model_variant=self._pose_model_variant,
+                backend=self._pose_backend_kind,
             )
         run_hands = (
             self.task_hand_enabled
@@ -1152,7 +1280,9 @@ class VisionObservationProvider(BaseProvider):
                 self._hand_active_remaining -= 1
         pipeline_ms = (time.perf_counter() - started_at) * 1000.0
         self._landmarker_times.append(time.monotonic())
-        if self.task_pose_enabled and self._pose_landmarker is not None:
+        if self.task_pose_enabled and (
+            self._pose_landmarker is not None or self._pose_backend is not None
+        ):
             self._pose_latency_ms.append(pose_ms)
             self._record_pose_quality(humans)
         if hand_ms is not None:
@@ -1558,6 +1688,131 @@ class VisionObservationProvider(BaseProvider):
 
     # ── MediaPipe PoseLandmarker ───────────────────────────────
 
+    @staticmethod
+    def _coco_behavior_landmarks(keypoints: list[dict[str, Any]]) -> PoseLandmarkSet:
+        """Expand native COCO points into the action engine's 33-slot tuple."""
+
+        by_id = {
+            int(point.get("id", -1)): point
+            for point in keypoints
+            if isinstance(point, dict)
+        }
+        absent = PoseLandmark(
+            x=0.0,
+            y=0.0,
+            z=None,
+            visibility=0.0,
+            presence=0.0,
+        )
+        output = [absent for _ in range(33)]
+        for coco_id, mediapipe_id in COCO_TO_MEDIAPIPE.items():
+            point = by_id.get(coco_id)
+            if point is None:
+                continue
+            try:
+                confidence = max(0.0, min(1.0, float(point.get("confidence", 0.0))))
+                presence = max(0.0, min(1.0, float(point.get("presence", confidence))))
+                z_value = point.get("z")
+                z = float(z_value) if z_value is not None else None
+                output[mediapipe_id] = PoseLandmark(
+                    x=float(point.get("x", 0.0)),
+                    y=float(point.get("y", 0.0)),
+                    z=z,
+                    visibility=confidence,
+                    presence=presence,
+                )
+            except (TypeError, ValueError):
+                continue
+        return tuple(output)
+
+    def _detect_pose_rknn(
+        self,
+        frame: np.ndarray,
+        w: int,
+        h: int,
+    ) -> list[dict[str, Any]]:
+        """Run YOLOv8 Pose on the NPU and publish native COCO IDs."""
+
+        backend = self._pose_backend
+        if backend is None:
+            return []
+        try:
+            detections = backend.process(frame)
+            humans: list[dict[str, Any]] = []
+            for detection in detections:
+                box = np.asarray(detection.box, dtype=np.float32).reshape(4)
+                points = np.asarray(detection.keypoints, dtype=np.float32).reshape(17, 3)
+                if not np.isfinite(box).all() or not np.isfinite(points).all():
+                    continue
+                raw_keypoints = [
+                    {
+                        "id": index,
+                        "x": float(point[0]),
+                        "y": float(point[1]),
+                        "z": None,
+                        "confidence": float(point[2]),
+                        "presence": float(point[2]),
+                    }
+                    for index, point in enumerate(points)
+                ]
+                keypoints = [
+                    {
+                        **point,
+                        "x": round(point["x"], 4),
+                        "y": round(point["y"], 4),
+                        "confidence": round(point["confidence"], 4),
+                        "presence": round(point["presence"], 4),
+                    }
+                    for point in raw_keypoints
+                ]
+                humans.append({
+                    "x": round(float(box[0]), 4),
+                    "y": round(float(box[1]), 4),
+                    "w": round(float(box[2]), 4),
+                    "h": round(float(box[3]), 4),
+                    "confidence": round(float(detection.score), 4),
+                    "pose_state": self._classify_pose_coco(raw_keypoints),
+                    "keypoint_format": "coco_17",
+                    "keypoints": keypoints,
+                    "_behavior_landmarks": self._coco_behavior_landmarks(raw_keypoints),
+                })
+            return humans
+        except PoseBackendError as exc:
+            self._disable_fatal_pose_model(backend)
+            logger.error("RKNN pose inference failed; CPU pose fallback disabled: %s", exc)
+            return []
+        except Exception as exc:
+            # A provider bug or malformed adapter result must not repeatedly
+            # call a potentially dead NPU context on subsequent frames.
+            self.pose_model_status.update({"ready": False, "fatal": True, "error": str(exc)})
+            try:
+                backend.close()
+            except Exception:
+                logger.exception("Pose backend release failed")
+            self._pose_backend = None
+            logger.error("RKNN pose processing failed; CPU pose fallback disabled: %s", exc)
+            return []
+
+    @staticmethod
+    def _classify_pose_coco(keypoints: list[dict[str, Any]]) -> str:
+        """Classify a coarse state from native COCO points."""
+
+        points = {int(point["id"]): point for point in keypoints}
+        try:
+            shoulder_y = (float(points[5]["y"]) + float(points[6]["y"])) / 2.0
+            hip_y = (float(points[11]["y"]) + float(points[12]["y"])) / 2.0
+            knee_y = (float(points[13]["y"]) + float(points[14]["y"])) / 2.0
+            if min(float(points[index]["confidence"]) for index in (5, 6, 11, 12)) < 0.2:
+                return "unknown"
+            torso_len = abs(hip_y - shoulder_y)
+            if torso_len < 0.02:
+                return "unknown"
+            if hip_y > shoulder_y + torso_len * 0.3:
+                return "standing" if knee_y > hip_y else "sitting"
+            return "lying"
+        except (KeyError, TypeError, ValueError, ZeroDivisionError):
+            return "unknown"
+
     def _detect_pose_mediapipe(
         self,
         frame: np.ndarray,
@@ -1638,6 +1893,7 @@ class VisionObservationProvider(BaseProvider):
                     "h": round(bh, 4),
                     "confidence": round(float(avg_vis), 4),
                     "pose_state": pose_state,
+                    "keypoint_format": "mediapipe_33",
                     "keypoints": keypoints,
                     "_behavior_landmarks": pose_landmarks_from_objects(landmarks),
                 })
