@@ -99,7 +99,17 @@ providers:
       # retained only as an explicit A/B fallback.
       landmarker_running_mode: video
       mediapipe_model: ${MARSDOG_VISION_MODEL_DIR}/pose_landmarker_lite.task
-      hand_landmark_model: ${MARSDOG_VISION_MODEL_DIR}/hand_landmarker.task
+      # RKNN FP16 hand path: NPU runs palm/landmark graphs and RGA handles
+      # resize/color preprocessing. Keep the .task path as an explicit CPU
+      # rollback when validating on a host without the Rockchip runtime.
+      hand_detect_model: ${MARSDOG_VISION_MODEL_DIR}/hand_detector_fp16.rknn
+      hand_landmark_model: ${MARSDOG_VISION_MODEL_DIR}/hand_landmarks_detector_fp16.rknn
+      hand_rknn:
+        profile: hand_fp16
+        preprocessing: rga
+        detection_interval: 5
+        score_threshold: 0.30
+        presence_threshold: 0.50
       # Publish every visible person; downstream behavior policy selects the
       # social/wake target. Five bounds CPU while covering normal group scenes.
       max_num_poses: 5

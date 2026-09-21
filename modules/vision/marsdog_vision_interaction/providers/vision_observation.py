@@ -5,7 +5,7 @@ Continuous detection at observation rate, caching the latest result.
 Models:
   - YuNet             face detection (OpenCV ONNX or RKNN FP16)
   - MediaPipe PoseLandmarker  (33-point pose + human detection, Lite)
-  - MediaPipe HandLandmarker  (21-point hand keypoints, Lite)
+  - MediaPipe HandLandmarker or RKNN palm + landmark graphs
 
 Model format selects the runtime; timing depends on the active models/device.
 """
@@ -28,6 +28,7 @@ from marsdog_vision_interaction.providers.face_backends import (
     create_face_recognizer,
 )
 from marsdog_vision_interaction.providers.gesture_pose_engine import (
+    HandLandmark,
     HandLandmarkSet,
     PoseLandmarkSet,
     hand_landmarks_from_objects,
@@ -36,6 +37,10 @@ from marsdog_vision_interaction.providers.gesture_pose_engine import (
 from marsdog_vision_interaction.providers.pose_action import PoseActionClassifier
 from marsdog_vision_interaction.utils.logging_utils import vision_timing_trace
 from marsdog_vision_interaction.utils.stereo_view import select_camera_view
+from marsdog_vision_interaction.providers.hand_backends import (
+    HandResult,
+    create_hand_backend,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +86,23 @@ class VisionObservationProvider(BaseProvider):
         self._hand_landmark_model = config.get(
             "hand_landmark_model",
             "models/vision/hand_landmarker.task",
+        )
+        self._hand_detect_model = config.get("hand_detect_model", "")
+        hand_rknn_config = config.get("hand_rknn", {})
+        if not isinstance(hand_rknn_config, dict):
+            hand_rknn_config = {}
+        self._hand_rknn_config = hand_rknn_config
+        self._hand_preprocessing = str(
+            hand_rknn_config.get("preprocessing", config.get("hand_preprocessing", "cpu"))
+        ).strip().lower()
+        self._hand_detection_interval = max(
+            1, int(hand_rknn_config.get("detection_interval", 5))
+        )
+        self._hand_score_threshold = float(
+            hand_rknn_config.get("score_threshold", config.get("hand_score_threshold", 0.30))
+        )
+        self._hand_presence_threshold = float(
+            hand_rknn_config.get("presence_threshold", config.get("hand_presence_threshold", 0.50))
         )
         self._det_threshold = float(config.get("det_threshold", 0.5))
         self._nms_threshold = float(config.get("nms_threshold", 0.45))
@@ -165,6 +187,8 @@ class VisionObservationProvider(BaseProvider):
         self._face_detector: Any = None   # OpenCV-compatible face detector
         self._pose_landmarker: Any = None  # mediapipe PoseLandmarker
         self._hand_landmarker: Any = None  # mediapipe HandLandmarker
+        self._hand_backend: Any = None
+        self.hand_model_status: dict[str, Any] = {}
 
         # Face tracking + throttled recognition
         self._face_tracker: Any = None     # FaceByteTracker
@@ -305,6 +329,17 @@ class VisionObservationProvider(BaseProvider):
                 ),
             },
             "hand": {
+                "backend": (
+                    getattr(self._hand_backend, "backend_name", "mediapipe")
+                    if self._hand_backend is not None
+                    else ("unavailable" if self.hand_model_status else "disabled")
+                ),
+                "preprocessing": (
+                    getattr(self._hand_backend, "preprocessing_mode", "cpu")
+                    if self._hand_backend is not None
+                    else None
+                ),
+                "status": dict(self.hand_model_status),
                 "idle_inference_stride": self._hand_idle_inference_stride,
                 "inference_runs": self._hand_inference_count,
                 "effective_inference_fps": round(hand_effective_fps, 3),
@@ -359,7 +394,11 @@ class VisionObservationProvider(BaseProvider):
         if self._worker is not None and self._worker.is_alive():
             logger.error("Cannot restart vision while the previous inference worker is stopping")
             return
-        if self._face_detector is not None or self._face_rec_model is not None:
+        if (
+            self._face_detector is not None
+            or self._face_rec_model is not None
+            or self._hand_backend is not None
+        ):
             self.stop()
         self.face_model_status = {}
         self._received_frame_count = 0
@@ -429,39 +468,44 @@ class VisionObservationProvider(BaseProvider):
             else:
                 total -= 1
 
-            # MediaPipe HandLandmarker (21-point hand keypoints)
+            # Format-selected hand backend (MediaPipe .task rollback or RKNN
+            # palm + landmark .rknn pair).  The suffix is intentionally the
+            # only selector; a failed RKNN setup never silently falls back to
+            # CPU inference.
             if self._hand_landmark_model:
                 try:
-                    import mediapipe as mp
-                    from mediapipe.tasks.python import vision
-                    from mediapipe.tasks.python.vision import RunningMode
-
-                    running_mode = (
-                        RunningMode.VIDEO
-                        if self._landmarker_running_mode == "video"
-                        else RunningMode.IMAGE
-                    )
-                    hand_options = vision.HandLandmarkerOptions(
-                        base_options=mp.tasks.BaseOptions(
-                            model_asset_path=self._hand_landmark_model,
+                    self._hand_backend = create_hand_backend(
+                        self._hand_landmark_model,
+                        detector_model=self._hand_detect_model or None,
+                        running_mode=self._landmarker_running_mode,
+                        rknn_config=self._hand_rknn_config,
+                        runtime_library=self.config.get("rknn_runtime_library", ""),
+                        score_threshold=(
+                            0.5 if str(self._hand_landmark_model).lower().endswith(".task")
+                            else self._hand_score_threshold
                         ),
-                        running_mode=running_mode,
-                        num_hands=2,
-                        min_hand_detection_confidence=0.5,
-                        min_hand_presence_confidence=0.5,
-                        min_tracking_confidence=0.5,
-                    )
-                    self._hand_landmarker = vision.HandLandmarker.create_from_options(
-                        hand_options,
+                        nms_threshold=float(self._hand_rknn_config.get("nms_threshold", 0.30)),
+                        presence_threshold=self._hand_presence_threshold,
+                        detection_interval=self._hand_detection_interval,
+                        preprocessing=self._hand_preprocessing,
+                        max_hands=2,
                     )
                     loaded += 1
+                    self.hand_model_status = {
+                        "ready": True,
+                        "backend": self._hand_backend.backend_name,
+                        "preprocessing": self._hand_backend.preprocessing_mode,
+                    }
                     logger.info(
-                        "MediaPipe HandLandmarker loaded: mode=%s model=%s",
+                        "Hand backend loaded: backend=%s mode=%s model=%s preprocessing=%s",
+                        self._hand_backend.backend_name,
                         self._landmarker_running_mode,
                         self._hand_landmark_model,
+                        self._hand_backend.preprocessing_mode,
                     )
                 except Exception as exc:
-                    logger.warning("MediaPipe HandLandmarker failed: %s", exc)
+                    self.hand_model_status = {"ready": False, "error": str(exc)}
+                    logger.error("Hand backend failed: %s", exc)
             else:
                 total -= 1
 
@@ -582,6 +626,28 @@ class VisionObservationProvider(BaseProvider):
             logger.error("Face model became unavailable: role=%s error=%s", role, error)
         return True
 
+    def _disable_fatal_hand_model(self, model: Any) -> bool:
+        """Mark a released RKNN hand backend unavailable exactly once."""
+
+        error = getattr(model, "fatal_error", None)
+        if not error:
+            return False
+        already_reported = (
+            self.hand_model_status.get("ready") is False
+            and self.hand_model_status.get("fatal") is True
+            and self.hand_model_status.get("error") == str(error)
+        )
+        self.hand_model_status.update({"ready": False, "fatal": True, "error": str(error)})
+        if self._hand_backend is model:
+            self._hand_backend = None
+        try:
+            model.close()
+        except Exception:
+            logger.exception("Hand backend release failed")
+        if not already_reported:
+            logger.error("Hand model became unavailable: %s", error)
+        return True
+
     def stop(self) -> None:
         self.available = False
         if not self._stop_inference_worker():
@@ -599,6 +665,13 @@ class VisionObservationProvider(BaseProvider):
             self._face_rec_throttle = None
             self._face_rec_model = None
             self.face_model_status = {}
+            if self._hand_backend is not None:
+                try:
+                    self._hand_backend.close()
+                except Exception:
+                    logger.exception("Hand backend release failed")
+                self._hand_backend = None
+            self.hand_model_status = {}
         if self._pose_landmarker is not None:
             try:
                 self._pose_landmarker.close()
@@ -1054,7 +1127,7 @@ class VisionObservationProvider(BaseProvider):
             )
         run_hands = (
             self.task_hand_enabled
-            and self._hand_landmarker is not None
+            and (self._hand_backend is not None or self._hand_landmarker is not None)
             and self._hand_inference_is_due()
         )
         hands: list[dict[str, Any]] = []
@@ -1590,6 +1663,45 @@ class VisionObservationProvider(BaseProvider):
             List of hand dicts with handedness and landmarks.
             Coordinates normalized [0-1] relative to input frame.
         """
+        if self._hand_backend is not None:
+            try:
+                results = self._hand_backend.process(
+                    frame,
+                    mode=self._landmarker_running_mode,
+                    timestamp_ms=timestamp_ms,
+                )
+                if self._hand_backend.fatal_error:
+                    self._disable_fatal_hand_model(self._hand_backend)
+                    return []
+                hands: list[dict[str, Any]] = []
+                for result in results:
+                    if not isinstance(result, HandResult):
+                        continue
+                    rows = result.as_observation()
+                    rows["landmarks"] = [
+                        {
+                            "id": int(point["id"]),
+                            "x": round(float(point["x"]), 4),
+                            "y": round(float(point["y"]), 4),
+                            "z": round(float(point["z"]), 4),
+                        }
+                        for point in rows["landmarks"]
+                    ]
+                    rows["_behavior_landmarks"] = tuple(
+                        HandLandmark(
+                            x=float(point[0]),
+                            y=float(point[1]),
+                            z=float(point[2]),
+                        )
+                        for point in result.landmarks
+                    )
+                    hands.append(rows)
+                return hands[:2]
+            except Exception as exc:
+                if self._disable_fatal_hand_model(self._hand_backend):
+                    return []
+                logger.debug("Hand backend error: %s", exc)
+                return []
         if self._hand_landmarker is None:
             return []
 
