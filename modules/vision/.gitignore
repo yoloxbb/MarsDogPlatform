@@ -21,6 +21,7 @@ log/
 # Runtime-generated biometric data (never commit real face samples)
 data/face_registry.json
 data/faces/
+data/*
 
 # Large inference models live outside this repository
 models/
