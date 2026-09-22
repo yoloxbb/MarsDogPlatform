@@ -13,6 +13,7 @@ htmlcov/
 
 # ROS 2 / Python build outputs
 build/
+build-dmabuf/
 dist/
 install/
 log/

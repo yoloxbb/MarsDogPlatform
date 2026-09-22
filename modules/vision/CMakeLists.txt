@@ -49,6 +49,41 @@ if(MARSDOG_BUILD_HAND_RGA)
   endif()
 endif()
 
+# Board-only validation target for the DMA-BUF -> RGA -> RKNN native path.
+# This is deliberately opt-in: it requires the RKNN C API header matching the
+# deployed librknnrt.so and is not installed or used by the Python provider.
+option(MARSDOG_BUILD_HAND_DMABUF_PROBE
+       "Build the opt-in Hand DMA-BUF/RGA/RKNN validation probe" OFF)
+if(MARSDOG_BUILD_HAND_DMABUF_PROBE)
+  if(NOT MARSDOG_RKNN_INCLUDE_DIR OR
+     NOT EXISTS "${MARSDOG_RKNN_INCLUDE_DIR}/rknn_api.h" OR
+     NOT MARSDOG_RKNN_LIBRARY OR
+     NOT EXISTS "${MARSDOG_RKNN_LIBRARY}")
+    message(FATAL_ERROR
+      "MARSDOG_BUILD_HAND_DMABUF_PROBE requires explicit matching paths: "
+      "-DMARSDOG_RKNN_INCLUDE_DIR=/path/to/include and "
+      "-DMARSDOG_RKNN_LIBRARY=/path/to/librknnrt.so")
+  endif()
+  if(NOT MARSDOG_RGA_INCLUDE_DIR OR NOT MARSDOG_RGA_LIBRARY)
+    message(FATAL_ERROR
+      "MARSDOG_BUILD_HAND_DMABUF_PROBE requires the librga headers and library")
+  endif()
+  find_package(OpenSSL REQUIRED COMPONENTS Crypto)
+
+  add_executable(hand_dmabuf_rga_rknn_probe
+    native/hand_dmabuf_rga_rknn_probe.cpp)
+  target_include_directories(hand_dmabuf_rga_rknn_probe PRIVATE
+    ${MARSDOG_RGA_INCLUDE_DIR}
+    ${MARSDOG_RKNN_INCLUDE_DIR})
+  target_link_libraries(hand_dmabuf_rga_rknn_probe PRIVATE
+    ${MARSDOG_RGA_LIBRARY}
+    ${MARSDOG_RKNN_LIBRARY}
+    OpenSSL::Crypto)
+  set_target_properties(hand_dmabuf_rga_rknn_probe PROPERTIES
+    BUILD_RPATH "$ORIGIN")
+  message(STATUS "Building opt-in Hand DMA-BUF/RGA/RKNN probe")
+endif()
+
 rosidl_generate_interfaces(
   ${PROJECT_NAME}
   "srv/VisionTask.srv"
