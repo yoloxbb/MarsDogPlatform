@@ -121,6 +121,34 @@ def test_debug_osd_labels_include_track_ids_and_confidence(monkeypatch) -> None:
     assert any("face id=17" in label and "conf=0.91" in label for label in labels)
 
 
+def test_human_detail_color_remains_original_green(monkeypatch) -> None:
+    colors = []
+    original_landmarks = visual_debug._draw_landmarks
+
+    def capture_landmarks(frame, landmarks, connections, color, **kwargs):
+        colors.append(color)
+        return original_landmarks(frame, landmarks, connections, color, **kwargs)
+
+    monkeypatch.setattr(visual_debug, "_draw_landmarks", capture_landmarks)
+    draw_visual_debug(
+        np.zeros((100, 160, 3), dtype=np.uint8),
+        {
+            "debug_humans": [{
+                "track_id": 3,
+                "x": 0.05,
+                "y": 0.1,
+                "w": 0.2,
+                "h": 0.3,
+                "keypoint_format": "coco_17",
+                "keypoints": [{"id": 0, "x": 0.2, "y": 0.3}],
+            }],
+        },
+        control={"mode": "object_only"},
+    )
+
+    assert colors == [(0, 255, 0)]
+
+
 def test_osd_scale_follows_final_output_resolution() -> None:
     small = _osd_scale(240, 180)
     reference = _osd_scale(640, 480)

@@ -367,7 +367,11 @@ def draw_visual_debug(
             and human_track_id > 0
             and human_track_id == active_track_id
         )
-        human_color = (0, 0, 255) if human_is_active else (0, 220, 0)
+        # Keep the original human/keypoint color for every body. The separate
+        # active-target overlay below remains red; only the non-active box
+        # line style changes in all-detection debug mode.
+        human_color = (0, 220, 0)
+        human_detail_color = (0, 255, 0)
         _draw_overlay_box(
             output,
             (x1, y1, x2, y2),
@@ -387,7 +391,7 @@ def draw_visual_debug(
             f"{action}",
             x1,
             max(label_baseline, y1 - label_gap),
-            human_color,
+            human_detail_color,
             scale=osd_scale,
         )
         try:
@@ -403,7 +407,7 @@ def draw_visual_debug(
                     if keypoint_format == "coco_17"
                     else _POSE_CONNECTIONS
                 ),
-                human_color,
+                human_detail_color,
                 scale=osd_scale,
             )
 
