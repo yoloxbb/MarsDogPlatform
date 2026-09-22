@@ -299,8 +299,27 @@ def normalize_visual_event(data: Any) -> dict[str, Any]:
         _merge(_HUMAN, item) for item in data.get("humans", [])
         if isinstance(item, dict)
     ]
+    # Debug detections are optional: omitting either field preserves the
+    # legacy event shape and tells consumers to use the corresponding normal
+    # array. When present, normalize them with the exact same overlay schema.
+    if "debug_humans" in data:
+        raw_debug_humans = data.get("debug_humans")
+        event["debug_humans"] = [
+            _merge(_HUMAN, item)
+            for item in (raw_debug_humans if isinstance(raw_debug_humans, list) else [])
+            if isinstance(item, dict)
+        ]
     for item in (*event["human_candidates"], *event["humans"]):
         _clear_unknown_pose_format(item)
+    for item in event.get("debug_humans", []):
+        _clear_unknown_pose_format(item)
+    if "debug_faces" in data:
+        raw_debug_faces = data.get("debug_faces")
+        event["debug_faces"] = [
+            _merge(_FACE, item)
+            for item in (raw_debug_faces if isinstance(raw_debug_faces, list) else [])
+            if isinstance(item, dict)
+        ]
     event["hands"] = [
         _merge(_HAND, item) for item in data.get("hands", [])
         if isinstance(item, dict)

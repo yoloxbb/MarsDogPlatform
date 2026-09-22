@@ -54,7 +54,10 @@ from marsdog_vision_interaction.messages.visual_event_types import (
     refine_stranger_vision_event,
 )
 from marsdog_vision_interaction.providers.base import BaseProvider
-from marsdog_vision_interaction.utils.config_loader import load_config
+from marsdog_vision_interaction.utils.config_loader import (
+    load_config,
+    normalize_debug_osd,
+)
 from marsdog_vision_interaction.utils.logging_utils import (
     configure_event_trace,
     get_logger,
@@ -116,6 +119,10 @@ class VisionInteractionNode(Node):
         except Exception as exc:
             logger.error("Cannot load vision config %s: %s", config_path, exc)
             self._config = {}
+        self._debug_osd = normalize_debug_osd(
+            self._config.get("debug_osd")
+        )
+        self._config["debug_osd"] = dict(self._debug_osd)
         logging_config = self._config.get("logging", {})
         if not isinstance(logging_config, dict):
             logging_config = {}
@@ -594,18 +601,29 @@ class VisionInteractionNode(Node):
         providers = self._config.get("providers", {})
         vision_config = providers.get("vision", {})
         if vision_config.get("enabled", True):
+            provider_config = vision_config.get("config", {})
+            provider_config = (
+                dict(provider_config)
+                if isinstance(provider_config, dict)
+                else {}
+            )
+            # The top-level switch is owned by the shared YAML so the viewer
+            # and interaction provider cannot silently diverge.
+            provider_config["show_all_detections"] = self._debug_osd[
+                "show_all_detections"
+            ]
             if vision_config.get("type", "observation") == "observation":
                 from marsdog_vision_interaction.providers.vision_observation import (
                     VisionObservationProvider,
                 )
                 vision: BaseProvider = VisionObservationProvider(
-                    vision_config.get("config", {})
+                    provider_config
                 )
             else:
                 from marsdog_vision_interaction.providers.mock_vision import (
                     MockVisionProvider,
                 )
-                vision = MockVisionProvider(vision_config.get("config", {}))
+                vision = MockVisionProvider(provider_config)
             vision.start()
             if not vision.is_available():
                 logger.error(

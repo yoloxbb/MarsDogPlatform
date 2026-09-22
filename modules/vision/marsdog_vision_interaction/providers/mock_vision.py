@@ -21,6 +21,9 @@ class MockVisionProvider(BaseProvider):
 
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
+        self._show_all_detections = bool(
+            config.get("show_all_detections", False)
+        )
         self._last_observation: dict[str, Any] = {}
 
     def start(self) -> None:
@@ -70,6 +73,9 @@ class MockVisionProvider(BaseProvider):
         })
         if active.track_id > 0:
             obs["humans"][0]["track_id"] = active.track_id
+        if self._show_all_detections:
+            obs["debug_humans"] = copy.deepcopy(obs["humans"])
+            obs["debug_faces"] = copy.deepcopy(obs["faces"])
         self._last_observation = obs
         return copy.deepcopy(obs)
 

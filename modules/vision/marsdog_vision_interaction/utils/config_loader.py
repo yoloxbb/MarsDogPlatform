@@ -14,6 +14,39 @@ from typing import Any
 import yaml
 
 
+DEBUG_OSD_DEFAULTS: dict[str, bool] = {
+    "enabled": True,
+    "show_all_detections": False,
+}
+
+
+def _config_bool(value: Any, default: bool) -> bool:
+    """Coerce YAML-compatible booleans without treating ``"false"`` as true."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+    return default
+
+
+def normalize_debug_osd(value: Any) -> dict[str, bool]:
+    """Return the shared debug OSD settings with compatibility defaults."""
+    raw = value if isinstance(value, dict) else {}
+    return {
+        "enabled": _config_bool(
+            raw.get("enabled"), DEBUG_OSD_DEFAULTS["enabled"]
+        ),
+        "show_all_detections": _config_bool(
+            raw.get("show_all_detections"),
+            DEBUG_OSD_DEFAULTS["show_all_detections"],
+        ),
+    }
+
+
 def _find_project_root(config_path: Path) -> Path:
     """Find a source checkout without assuming a developer-specific path."""
     candidates = (config_path.parent, *config_path.parents, Path.cwd().resolve())
@@ -97,7 +130,12 @@ def load_config(path: str | Path) -> dict[str, Any]:
             f"got {type(data).__name__}"
         )
 
-    return _expand_variables(data, _path_variables(config_path))
+    expanded = _expand_variables(data, _path_variables(config_path))
+    # Keep the compatibility defaults at the shared config boundary so the
+    # interaction node and debug viewer cannot interpret an omitted section
+    # differently.
+    expanded["debug_osd"] = normalize_debug_osd(expanded.get("debug_osd"))
+    return expanded
 
 
 def load_config_safe(

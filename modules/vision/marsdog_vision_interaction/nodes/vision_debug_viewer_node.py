@@ -23,6 +23,10 @@ from std_msgs.msg import String
 from marsdog_vision_interaction.messages.face_identity import (
     ALLOWED_FACE_IDENTITIES,
 )
+from marsdog_vision_interaction.utils.config_loader import (
+    load_config,
+    normalize_debug_osd,
+)
 from marsdog_vision_interaction.utils.visual_debug import draw_visual_debug
 from marsdog_vision_interaction.utils.stereo_view import select_camera_view
 from marsdog_vision_interaction.utils.web_debug_server import (
@@ -46,6 +50,7 @@ _WEB_OBJECT_SESSION_ID = "vision-debug-web"
 class VisionDebugViewerNode(Node):
     def __init__(self) -> None:
         super().__init__("vision_debug_viewer")
+        self.declare_parameter("config_path", "config/vision.yaml")
         self.declare_parameter(
             "camera_topic", "/camera/camera/color/image_raw"
         )
@@ -85,6 +90,20 @@ class VisionDebugViewerNode(Node):
         self.declare_parameter("object_poll_hz", 0.0)
         self.declare_parameter("object_confidence", 0.5)
         self.declare_parameter("event_history_limit", 200)
+
+        config_path = self.get_parameter("config_path").value
+        try:
+            viewer_config = load_config(str(config_path))
+        except Exception as exc:
+            self.get_logger().warning(
+                "Cannot load debug viewer config %s: %s; using OSD defaults",
+                config_path,
+                exc,
+            )
+            viewer_config = {}
+        debug_osd = normalize_debug_osd(viewer_config.get("debug_osd"))
+        self._debug_osd_enabled = debug_osd["enabled"]
+        self._show_all_detections = debug_osd["show_all_detections"]
 
         self._camera_topic = str(self.get_parameter("camera_topic").value)
         self._visual_topic = str(self.get_parameter("visual_topic").value)
@@ -285,12 +304,13 @@ class VisionDebugViewerNode(Node):
             )
             self._show_window = False
         self.get_logger().info(
-            "Viewer ready; render<=%.1f FPS scale=%.2f publish_debug_image=%s; "
-            "q/ESC closes the window, annotated topic=%s"
+            "Viewer ready; render<=%.1f FPS scale=%.2f publish_debug_image=%s "
+            "osd_enabled=%s; q/ESC closes the window, annotated topic=%s"
             % (
                 self._max_render_fps,
                 self._render_scale,
                 self._publish_enabled,
+                self._debug_osd_enabled,
                 self.get_parameter("debug_image_topic").value,
             )
         )
@@ -712,7 +732,11 @@ class VisionDebugViewerNode(Node):
             f"{self._stereo_view}" if stereo_split else "mono/full"
         )
         rendered = draw_visual_debug(
-            frame, event, control=control, cmd_vel=cmd_vel
+            frame,
+            event,
+            control=control,
+            cmd_vel=cmd_vel,
+            enabled=self._debug_osd_enabled,
         )
         if self._publish_enabled:
             output = Image()
@@ -909,6 +933,10 @@ class VisionDebugViewerNode(Node):
                 "topic": self._visual_topic,
                 "age_ms": visual_age,
                 "schema_version": event.get("schema_version"),
+            },
+            "debug_osd": {
+                "enabled": self._debug_osd_enabled,
+                "show_all_detections": self._show_all_detections,
             },
             "visual_event": event,
             "published_event_history": published_event_history,

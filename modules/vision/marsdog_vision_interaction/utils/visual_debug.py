@@ -99,6 +99,74 @@ def _pixel_box(
     )
 
 
+def _draw_dashed_line(
+    frame: np.ndarray,
+    start: tuple[int, int],
+    end: tuple[int, int],
+    color: tuple[int, int, int],
+    thickness: int,
+    dash_length: int,
+) -> None:
+    """Draw a line made of short painted segments with visible gaps."""
+    x1, y1 = start
+    x2, y2 = end
+    length = max(abs(x2 - x1), abs(y2 - y1))
+    if length <= 0:
+        return
+    period = max(2, dash_length * 2)
+    for offset in range(0, length, period):
+        segment_end = min(length, offset + dash_length)
+        start_ratio = offset / float(length)
+        end_ratio = segment_end / float(length)
+        cv2.line(
+            frame,
+            (
+                int(round(x1 + (x2 - x1) * start_ratio)),
+                int(round(y1 + (y2 - y1) * start_ratio)),
+            ),
+            (
+                int(round(x1 + (x2 - x1) * end_ratio)),
+                int(round(y1 + (y2 - y1) * end_ratio)),
+            ),
+            color,
+            thickness,
+            cv2.LINE_AA,
+        )
+
+
+def _draw_overlay_box(
+    frame: np.ndarray,
+    box: tuple[int, int, int, int],
+    color: tuple[int, int, int],
+    thickness: int,
+    *,
+    dashed: bool = False,
+    scale: float = 1.0,
+) -> None:
+    """Draw either a solid or dashed normalized-detection rectangle."""
+    x1, y1, x2, y2 = box
+    if not dashed:
+        cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness)
+        return
+    dash_length = _scaled_pixels(7, scale, minimum=3)
+    _draw_dashed_line(frame, (x1, y1), (x2, y1), color, thickness, dash_length)
+    _draw_dashed_line(frame, (x2, y1), (x2, y2), color, thickness, dash_length)
+    _draw_dashed_line(frame, (x2, y2), (x1, y2), color, thickness, dash_length)
+    _draw_dashed_line(frame, (x1, y2), (x1, y1), color, thickness, dash_length)
+
+
+def _overlay_items(
+    event: dict[str, Any],
+    debug_key: str,
+    fallback_key: str,
+) -> tuple[list[dict[str, Any]], bool]:
+    """Select an optional debug array and report whether debug mode is active."""
+    if isinstance(event.get(debug_key), list):
+        return [item for item in event[debug_key] if isinstance(item, dict)], True
+    values = event.get(fallback_key, [])
+    return [item for item in values if isinstance(item, dict)] if isinstance(values, list) else [], False
+
+
 def _text(
     frame: np.ndarray,
     value: str,
@@ -193,8 +261,11 @@ def draw_visual_debug(
     *,
     control: dict[str, Any] | None = None,
     cmd_vel: tuple[float, float] | None = None,
+    enabled: bool = True,
 ) -> np.ndarray:
     """Draw normalized detections and control state on a BGR frame."""
+    if not enabled:
+        return frame.copy()
     output = frame.copy()
     height, width = output.shape[:2]
     event = event or {}
@@ -230,6 +301,17 @@ def draw_visual_debug(
     )
     fall_baseline = gesture_baseline + line_pitch
     object_only = control.get("mode") == "object_only"
+    active = event.get("active_target", {})
+    if not isinstance(active, dict):
+        active = {}
+    try:
+        active_track_id = int(active.get("track_id", 0) or 0)
+    except (TypeError, ValueError):
+        active_track_id = 0
+    try:
+        active_face_track_id = int(active.get("face_track_id", -1) or -1)
+    except (TypeError, ValueError):
+        active_face_track_id = -1
 
     if not object_only:
         cv2.line(
@@ -273,21 +355,39 @@ def draw_visual_debug(
             scale=osd_scale,
         )
 
-    for human in event.get("humans", []):
-        if not isinstance(human, dict):
-            continue
+    humans, debug_humans = _overlay_items(event, "debug_humans", "humans")
+    for human in humans:
         x1, y1, x2, y2 = _pixel_box(human, width, height)
-        cv2.rectangle(
-            output, (x1, y1), (x2, y2), (0, 220, 0), box_thickness
+        try:
+            human_track_id = int(human.get("track_id", -1) or -1)
+        except (TypeError, ValueError):
+            human_track_id = -1
+        human_is_active = (
+            debug_humans
+            and human_track_id > 0
+            and human_track_id == active_track_id
         )
+        human_color = (0, 0, 255) if human_is_active else (0, 220, 0)
+        _draw_overlay_box(
+            output,
+            (x1, y1, x2, y2),
+            human_color,
+            box_thickness,
+            dashed=debug_humans and not human_is_active,
+            scale=osd_scale,
+        )
+        action = str(human.get("pose_action", ""))
+        if debug_humans and not human_is_active:
+            action = ""
         _text(
             output,
             f"body id={human.get('track_id', -1)} "
+            f"conf={float(human.get('confidence', 0.0)):.2f} "
             f"{human.get('pose_state', '')} "
-            f"{human.get('pose_action', '')}",
+            f"{action}",
             x1,
             max(label_baseline, y1 - label_gap),
-            (0, 255, 0),
+            human_color,
             scale=osd_scale,
         )
         try:
@@ -303,7 +403,7 @@ def draw_visual_debug(
                     if keypoint_format == "coco_17"
                     else _POSE_CONNECTIONS
                 ),
-                (0, 255, 0),
+                human_color,
                 scale=osd_scale,
             )
 
@@ -330,25 +430,38 @@ def draw_visual_debug(
                 scale=osd_scale,
             )
 
-    for face in event.get("faces", []):
-        if not isinstance(face, dict):
-            continue
+    faces, debug_faces = _overlay_items(event, "debug_faces", "faces")
+    for face in faces:
         x1, y1, x2, y2 = _pixel_box(face, width, height)
         face_color = _face_overlay_color(face)
-        cv2.rectangle(
-            output, (x1, y1), (x2, y2), face_color, box_thickness
+        try:
+            face_track_id = int(face.get("track_id", -1) or -1)
+        except (TypeError, ValueError):
+            face_track_id = -1
+        face_is_active = (
+            debug_faces
+            and face_track_id > 0
+            and face_track_id == active_face_track_id
+        )
+        _draw_overlay_box(
+            output,
+            (x1, y1, x2, y2),
+            face_color,
+            box_thickness,
+            dashed=debug_faces and not face_is_active,
+            scale=osd_scale,
         )
         name = str(face.get("recognized_user", "") or "unknown")
         _text(
             output,
-            f"face {name} {float(face.get('confidence', 0)):.2f}",
+            f"face id={face.get('track_id', -1)} {name} "
+            f"conf={float(face.get('confidence', 0)):.2f}",
             x1,
             min(height - label_gap, y2 + label_baseline),
             face_color,
             scale=osd_scale,
         )
 
-    active = event.get("active_target", {})
     if (
         isinstance(active, dict)
         and float(active.get("confidence", 0.0) or 0.0) > 0.0

@@ -123,6 +123,9 @@ class VisionObservationProvider(BaseProvider):
         )
         self._det_threshold = float(config.get("det_threshold", 0.5))
         self._nms_threshold = float(config.get("nms_threshold", 0.45))
+        self._show_all_detections = bool(
+            config.get("show_all_detections", False)
+        )
         self._pose_confidence_threshold = float(
             config.get("pose_confidence_threshold", 0.5),
         )
@@ -911,6 +914,136 @@ class VisionObservationProvider(BaseProvider):
         with self._inference_lock:
             return operation()
 
+    @staticmethod
+    def _human_candidate_matches(
+        humans: list[dict[str, Any]],
+        candidates: list[dict[str, Any]],
+    ) -> dict[int, dict[str, Any]]:
+        """Associate current raw pose boxes with distinct manager tracks."""
+        pairs: list[tuple[float, int, int]] = []
+        for human_index, human in enumerate(humans):
+            if not isinstance(human, dict):
+                continue
+            try:
+                source_bbox = tuple(
+                    float(human.get(key, 0.0))
+                    for key in ("x", "y", "w", "h")
+                )
+            except (TypeError, ValueError):
+                continue
+            for candidate_index, candidate in enumerate(candidates):
+                values = candidate.get("bbox", ())
+                if not isinstance(values, (list, tuple)) or len(values) < 4:
+                    continue
+                try:
+                    distance = sum(
+                        (first - float(second)) ** 2
+                        for first, second in zip(source_bbox, values[:4])
+                    )
+                except (TypeError, ValueError):
+                    continue
+                pairs.append((distance, human_index, candidate_index))
+
+        matches: dict[int, dict[str, Any]] = {}
+        used_candidates: set[int] = set()
+        for _distance, human_index, candidate_index in sorted(pairs):
+            if human_index in matches or candidate_index in used_candidates:
+                continue
+            matches[human_index] = candidates[candidate_index]
+            used_candidates.add(candidate_index)
+        return matches
+
+    @staticmethod
+    def _debug_human_overlays(
+        humans: list[dict[str, Any]],
+        candidates: list[dict[str, Any]],
+        active: Any,
+        pose_key: str,
+        pose_label: str,
+    ) -> list[dict[str, Any]]:
+        """Sanitize current pose detections for the optional debug contract."""
+        overlays: list[dict[str, Any]] = []
+        active_track_id = int(getattr(active, "track_id", 0) or 0)
+        matches = VisionObservationProvider._human_candidate_matches(
+            humans, candidates
+        )
+        for human_index, human in enumerate(humans):
+            if not isinstance(human, dict):
+                continue
+            candidate = matches.get(human_index)
+            try:
+                track_id = int(human.get("track_id", -1))
+            except (TypeError, ValueError):
+                track_id = -1
+            if candidate is not None:
+                try:
+                    candidate_track_id = int(candidate.get("track_id", -1))
+                except (TypeError, ValueError):
+                    candidate_track_id = -1
+                if candidate_track_id >= 0:
+                    track_id = candidate_track_id
+            is_active = track_id > 0 and track_id == active_track_id
+            overlay = {
+                "track_id": track_id,
+                "x": round(float(human.get("x", 0.0)), 4),
+                "y": round(float(human.get("y", 0.0)), 4),
+                "w": round(float(human.get("w", 0.0)), 4),
+                "h": round(float(human.get("h", 0.0)), 4),
+                "confidence": round(float(human.get("confidence", 0.0)), 4),
+                "pose_state": str(human.get("pose_state", "")),
+                "pose_action": pose_key if is_active else "",
+                "pose_action_label": pose_label if is_active else "",
+                "keypoint_format": str(
+                    human.get("keypoint_format", "mediapipe_33")
+                ),
+                "keypoints": copy.deepcopy(human.get("keypoints", [])),
+            }
+            overlays.append(overlay)
+        return overlays
+
+    @staticmethod
+    def _debug_face_overlays(
+        faces: list[dict[str, Any]],
+        active: Any,
+        target_is_current: bool,
+    ) -> list[dict[str, Any]]:
+        """Sanitize current face detections for the optional debug contract."""
+        try:
+            active_face_track_id = int(getattr(active, "face_track_id", -1))
+        except (TypeError, ValueError):
+            active_face_track_id = -1
+        overlays: list[dict[str, Any]] = []
+        for face in faces:
+            if not isinstance(face, dict):
+                continue
+            try:
+                track_id = int(face.get("track_id", -1))
+            except (TypeError, ValueError):
+                track_id = -1
+            is_active = (
+                target_is_current
+                and track_id > 0
+                and track_id == active_face_track_id
+            )
+            overlays.append({
+                "track_id": track_id,
+                "x": round(float(face.get("x", 0.0)), 4),
+                "y": round(float(face.get("y", 0.0)), 4),
+                "w": round(float(face.get("w", 0.0)), 4),
+                "h": round(float(face.get("h", 0.0)), 4),
+                "confidence": round(float(face.get("confidence", 0.0)), 4),
+                "recognized_user": str(face.get("recognized_user", "")),
+                "identity_confidence": round(
+                    float(face.get("identity_confidence", 0.0)), 4
+                ),
+                "identity_state": str(
+                    face.get("identity_state", "unverified")
+                ),
+                "quality": round(float(face.get("quality", 0.0)), 4),
+                "active": is_active,
+            })
+        return overlays
+
     def _process_frame_impl(self, frame: np.ndarray) -> dict[str, Any]:
         """Select one stereo eye and run all 2D models on that view.
 
@@ -1079,7 +1212,7 @@ class VisionObservationProvider(BaseProvider):
                 "landmarks": h.get("landmarks", []),
             })
 
-        return {
+        result = {
             "vision_epoch": target_snapshot["vision_epoch"],
             "active_target": active_dict,
             "human_candidates": human_candidates,
@@ -1089,6 +1222,20 @@ class VisionObservationProvider(BaseProvider):
             "tracked_objects": obs.get("tracked_objects", []),
             "_gesture_diagnostics": action_result,
         }
+        if self._show_all_detections:
+            result["debug_humans"] = self._debug_human_overlays(
+                obs.get("humans", []),
+                human_candidates,
+                active,
+                pose_key,
+                pose_label,
+            )
+            result["debug_faces"] = self._debug_face_overlays(
+                obs.get("faces", []),
+                active,
+                target_is_current,
+            )
+        return result
 
     @staticmethod
     def _match_active_human(

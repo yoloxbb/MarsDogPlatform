@@ -593,6 +593,11 @@
         byId('eventHistoryStatus').textContent = `清空失败：${error.message}`;
       }
     };
+    function visualArray(event, debugKey, fallbackKey) {
+      return Array.isArray(event[debugKey])
+        ? event[debugKey]
+        : (Array.isArray(event[fallbackKey]) ? event[fallbackKey] : []);
+    }
     async function refresh() {
       try {
         const response = await fetch('/api/state', {cache: 'no-store'});
@@ -661,7 +666,10 @@
           stopObjectLeaseTimer();
         }
         byId('frameInfo').textContent = `${camera.width || 0}×${camera.height || 0} · 输入 ${fixed(camera.fps, 1)} / 页面 ${fixed(camera.render_fps, 1)} FPS · ${text(camera.encoding)}`;
-        const humans = event.humans || [], faces = event.faces || [], hands = event.hands || [], objects = event.tracked_objects || [];
+        const humans = visualArray(event, 'debug_humans', 'humans');
+        const faces = visualArray(event, 'debug_faces', 'faces');
+        const hands = Array.isArray(event.hands) ? event.hands : [];
+        const objects = Array.isArray(event.tracked_objects) ? event.tracked_objects : [];
         byId('humanCount').textContent = humans.length;
         byId('faceCount').textContent = faces.length;
         byId('handCount').textContent = hands.length;

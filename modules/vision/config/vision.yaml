@@ -9,6 +9,12 @@ logging:
 storage:
   root: ${MARSDOG_VISION_DATA_DIR}
 
+# Diagnostics are enabled for the checked-in debug workflow. The interaction
+# node still keeps active-target/action semantics independent of these arrays.
+debug_osd:
+  enabled: true
+  show_all_detections: true
+
 # Sample-level face CRUD API and OpenAPI UI. Authentication is temporarily
 # disabled; bind to a trusted LAN only.
 face_api:

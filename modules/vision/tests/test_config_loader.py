@@ -47,3 +47,32 @@ def test_path_variables_default_to_checkout_directories(tmp_path, monkeypatch) -
 
     assert config["model"] == str(model_dir / "model.task")
     assert config["data"] == str(project_dir / "data" / "faces")
+
+
+def test_debug_osd_uses_compatibility_defaults_when_omitted(tmp_path) -> None:
+    config_path = tmp_path / "vision.yaml"
+    config_path.write_text("providers: {}\n", encoding="utf-8")
+
+    config = load_config(config_path)
+
+    assert config["debug_osd"] == {
+        "enabled": True,
+        "show_all_detections": False,
+    }
+
+
+def test_debug_osd_normalizes_explicit_values(tmp_path) -> None:
+    config_path = tmp_path / "vision.yaml"
+    config_path.write_text(
+        "debug_osd:\n"
+        "  enabled: false\n"
+        "  show_all_detections: true\n",
+        encoding="utf-8",
+    )
+
+    config = load_config(config_path)
+
+    assert config["debug_osd"] == {
+        "enabled": False,
+        "show_all_detections": True,
+    }

@@ -19,6 +19,7 @@ from marsdog_vision_interaction.utils.visual_debug import (
     _osd_scale,
     draw_visual_debug,
 )
+from marsdog_vision_interaction.utils import visual_debug
 from marsdog_vision_interaction.utils.web_debug_server import (
     VisionDebugWebServer,
 )
@@ -51,6 +52,73 @@ def test_draw_visual_debug_keeps_resolution_and_draws_overlay() -> None:
     )
     assert result.shape == frame.shape
     assert np.any(result != frame)
+
+
+def test_debug_detections_use_solid_active_and_dashed_non_active_boxes() -> None:
+    frame = np.zeros((100, 160, 3), dtype=np.uint8)
+    result = draw_visual_debug(
+        frame,
+        {
+            "debug_humans": [
+                {"track_id": 3, "x": 0.05, "y": 0.1, "w": 0.2, "h": 0.3},
+                {"track_id": 4, "x": 0.55, "y": 0.1, "w": 0.2, "h": 0.3},
+            ],
+            "active_target": {
+                "track_id": 3,
+                "confidence": 0.9,
+                "bbox": [0.05, 0.1, 0.2, 0.3],
+            },
+        },
+        control={"mode": "object_only"},
+    )
+
+    # The active top edge is continuous red. The non-active top edge has a
+    # deliberate gap in its green dashed pattern.
+    assert tuple(result[10, 10]) == (0, 0, 255)
+    assert np.any(result[10, 90:123] == (0, 220, 0))
+    # Anti-aliasing may tint a gap pixel, but it must remain much darker than
+    # the painted green segments.
+    assert result[10, 110, 1] < 50
+
+
+def test_disabled_osd_returns_an_unchanged_frame() -> None:
+    frame = np.full((80, 120, 3), 17, dtype=np.uint8)
+
+    result = draw_visual_debug(
+        frame,
+        {"humans": [{"x": 0.1, "y": 0.1, "w": 0.5, "h": 0.5}]},
+        enabled=False,
+    )
+
+    assert np.array_equal(result, frame)
+
+
+def test_debug_osd_labels_include_track_ids_and_confidence(monkeypatch) -> None:
+    labels = []
+    original_text = visual_debug._text
+
+    def capture_text(frame, value, *args, **kwargs):
+        labels.append(value)
+        return original_text(frame, value, *args, **kwargs)
+
+    monkeypatch.setattr(visual_debug, "_text", capture_text)
+    draw_visual_debug(
+        np.zeros((100, 160, 3), dtype=np.uint8),
+        {
+            "debug_humans": [{
+                "track_id": 3, "x": 0.05, "y": 0.1, "w": 0.2, "h": 0.3,
+                "confidence": 0.82,
+            }],
+            "debug_faces": [{
+                "track_id": 17, "x": 0.1, "y": 0.1, "w": 0.1, "h": 0.1,
+                "confidence": 0.91,
+            }],
+        },
+        control={"mode": "object_only"},
+    )
+
+    assert any("body id=3 conf=0.82" in label for label in labels)
+    assert any("face id=17" in label and "conf=0.91" in label for label in labels)
 
 
 def test_osd_scale_follows_final_output_resolution() -> None:
@@ -145,6 +213,35 @@ def test_debug_overlay_draws_pose_hand_and_object_results() -> None:
     assert np.any(result[90:101, 140:151] != 0)
 
 
+def test_provider_debug_overlays_preserve_all_current_detections() -> None:
+    active = SimpleNamespace(track_id=3, face_track_id=17)
+    humans = [
+        {"x": 0.1, "y": 0.1, "w": 0.3, "h": 0.7, "confidence": 0.9},
+        {"x": 0.11, "y": 0.1, "w": 0.3, "h": 0.7, "confidence": 0.8},
+    ]
+    candidates = [
+        {"track_id": 3, "bbox": [0.1, 0.1, 0.3, 0.7]},
+        {"track_id": 4, "bbox": [0.11, 0.1, 0.3, 0.7]},
+    ]
+
+    body_overlays = VisionObservationProvider._debug_human_overlays(
+        humans, candidates, active, "wave", "挥手"
+    )
+    face_overlays = VisionObservationProvider._debug_face_overlays(
+        [
+            {"track_id": 17, "x": 0.15, "y": 0.15, "w": 0.1, "h": 0.1, "confidence": 0.9},
+            {"track_id": 18, "x": 0.65, "y": 0.15, "w": 0.1, "h": 0.1, "confidence": 0.8},
+        ],
+        active,
+        True,
+    )
+
+    assert [item["track_id"] for item in body_overlays] == [3, 4]
+    assert body_overlays[0]["pose_action"] == "wave"
+    assert body_overlays[1]["pose_action"] == ""
+    assert [item["track_id"] for item in face_overlays] == [17, 18]
+
+
 def test_object_only_overlay_omits_follow_alignment_guides() -> None:
     frame = np.zeros((200, 200, 3), dtype=np.uint8)
     result = draw_visual_debug(
@@ -173,6 +270,8 @@ def test_web_dashboard_asset_and_jpeg_state_are_packaged() -> None:
     assert "list_face_records" in server._html.decode("utf-8")
     assert "/api/vision/task" in server._html.decode("utf-8")
     assert "Vision 已发布事件记录" in server._html.decode("utf-8")
+    assert "visualArray(event, 'debug_humans', 'humans')" in server._html.decode("utf-8")
+    assert "visualArray(event, 'debug_faces', 'faces')" in server._html.decode("utf-8")
     assert "visual-panel" in server._html.decode("utf-8")
     assert "event-history-panel" in server._html.decode("utf-8")
     assert "detectObjectsOnce" in server._html.decode("utf-8")

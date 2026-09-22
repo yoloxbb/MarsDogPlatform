@@ -5,6 +5,11 @@ logging:
   timing_trace_interval_sec: 5.0
 storage:
   root: ${MARSDOG_VISION_DATA_DIR}/mock
+
+debug_osd:
+  enabled: true
+  show_all_detections: true
+
 face_api:
   enabled: false
 topics:

@@ -75,6 +75,34 @@ def test_visual_contract_preserves_identity_and_pose() -> None:
     assert value["faces"][0]["track_id"] == 17
 
 
+def test_visual_contract_normalizes_optional_debug_detection_arrays() -> None:
+    value = normalize_visual_event({
+        "debug_humans": [{
+            "track_id": 4,
+            "x": 0.6,
+            "y": 0.1,
+            "w": 0.2,
+            "h": 0.7,
+            "confidence": 0.82,
+            "pose_action": "should_not_be_inferred",
+        }],
+        "debug_faces": [{
+            "track_id": 8,
+            "x": 0.64,
+            "y": 0.15,
+            "w": 0.1,
+            "h": 0.12,
+            "confidence": 0.91,
+        }],
+    })
+
+    assert value["debug_humans"][0]["track_id"] == 4
+    assert value["debug_humans"][0]["pose_action"] == "should_not_be_inferred"
+    assert value["debug_faces"][0]["track_id"] == 8
+    assert "debug_humans" not in normalize_visual_event({})
+    assert "debug_faces" not in normalize_visual_event({})
+
+
 def test_visual_contract_preserves_object_result_provenance() -> None:
     value = normalize_visual_event({
         "tracked_objects": [{

@@ -115,6 +115,7 @@ def generate_launch_description() -> LaunchDescription:
             name="vision_debug_viewer",
             output="screen",
             parameters=[{
+                "config_path": config_path,
                 "camera_topic": camera_topic,
                 "visual_topic": visual_topic,
                 "gesture_debug_topic": gesture_debug_topic,
