@@ -44,6 +44,9 @@ PROCESS_MARKERS: dict[str, tuple[str, ...]] = {
     "vision_debug_viewer": ("vision_debug_viewer",),
 }
 _NPU_LOAD_RE = re.compile(r"^\s*(?P<load>[0-9]+(?:\.[0-9]+)?)@(?P<freq>[0-9]+)Hz")
+_RKNPU_CORE_LOAD_RE = re.compile(
+    r"\b(?P<core>Core[0-9]+)\s*:\s*(?P<load>[0-9]+(?:\.[0-9]+)?)\s*%"
+)
 
 
 def percentile(values: Iterable[float], percent: float) -> float | None:
@@ -96,6 +99,28 @@ def parse_npu_load(raw: str) -> dict[str, float | int | None]:
     }
 
 
+def parse_rknpu_core_load(raw: str) -> dict[str, Any]:
+    """Parse ``/sys/kernel/debug/rknpu/load`` for each NPU core.
+
+    The debugfs values are percentages of an individual core.  ``load_percent``
+    is therefore the mean across cores, normalized to total three-core
+    capacity, while ``peak_core_load_percent`` exposes the hottest core.
+    """
+
+    cores = {
+        match.group("core"): float(match.group("load"))
+        for match in _RKNPU_CORE_LOAD_RE.finditer(str(raw))
+    }
+    loads = list(cores.values())
+    return {
+        "load_percent": sum(loads) / len(loads) if loads else None,
+        "core_load_percent": cores,
+        "peak_core_load_percent": max(loads) if loads else None,
+        "core_count": len(loads),
+        "frequency_hz": None,
+    }
+
+
 def _read_text(path: Path) -> str | None:
     try:
         return path.read_text(encoding="utf-8").strip()
@@ -103,16 +128,30 @@ def _read_text(path: Path) -> str | None:
         return None
 
 
-def read_npu_telemetry(sysfs_dir: str | Path) -> dict[str, float | int | None]:
-    """Read NPU load/frequency, preserving unavailable telemetry as null."""
+def read_npu_telemetry(
+    load_path: str | Path,
+    frequency_dir: str | Path | None = None,
+) -> dict[str, Any]:
+    """Read Rockchip per-core debugfs load and optional devfreq frequency."""
 
-    root = Path(sysfs_dir)
-    load = parse_npu_load(_read_text(root / "load") or "")
-    current = _read_text(root / "cur_freq")
+    source = Path(load_path)
+    if source.is_dir():
+        raw = _read_text(source / "load") or ""
+        load = parse_rknpu_core_load(raw) if "Core" in raw else parse_npu_load(raw)
+        frequency_root = source
+        source_label = str(source / "load")
+    else:
+        raw = _read_text(source) or ""
+        load = parse_rknpu_core_load(raw)
+        frequency_root = Path(frequency_dir) if frequency_dir else None
+        source_label = str(source)
+
+    current = _read_text(frequency_root / "cur_freq") if frequency_root else None
     try:
         load["current_frequency_hz"] = int(current) if current else None
     except ValueError:
         load["current_frequency_hz"] = None
+    load["telemetry_source"] = source_label
     return load
 
 
@@ -485,7 +524,10 @@ def monitor_live(args: argparse.Namespace) -> dict[str, Any]:
                     "monotonic": now,
                     "processes": sample_processes(processes),
                 })
-                npu_samples.append({"monotonic": now, **read_npu_telemetry(args.npu_sysfs)})
+                npu_samples.append({
+                    "monotonic": now,
+                    **read_npu_telemetry(args.npu_sysfs, args.npu_freq_sysfs),
+                })
                 next_sample = now + max(0.02, float(args.sample_interval))
         measurement_end = time.time()
     finally:
@@ -521,12 +563,30 @@ def monitor_live(args: argparse.Namespace) -> dict[str, Any]:
                 "load_percent": summarize(
                     item["load_percent"] for item in npu_samples if item.get("load_percent") is not None
                 ),
+                "core_load_percent": {
+                    core: summarize(
+                        item.get("core_load_percent", {}).get(core)
+                        for item in npu_samples
+                        if item.get("core_load_percent", {}).get(core) is not None
+                    )
+                    for core in sorted({
+                        core
+                        for item in npu_samples
+                        for core in item.get("core_load_percent", {})
+                    })
+                },
+                "peak_core_load_percent": summarize(
+                    item["peak_core_load_percent"]
+                    for item in npu_samples
+                    if item.get("peak_core_load_percent") is not None
+                ),
                 "frequency_hz": summarize(
                     item["current_frequency_hz"]
                     for item in npu_samples
                     if item.get("current_frequency_hz") is not None
                 ),
                 "telemetry_path": str(args.npu_sysfs),
+                "frequency_path": str(args.npu_freq_sysfs),
             },
         },
         "trace_stages": _parse_trace(Path(args.trace), measurement_epoch) if args.trace else {},
@@ -594,7 +654,16 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--sample-interval", type=float, default=0.1)
     parser.add_argument("--camera-topic", default="/camera/camera/color/image_raw")
     parser.add_argument("--visual-topic", default="/perception/visual_event")
-    parser.add_argument("--npu-sysfs", default="/sys/class/devfreq/fdab0000.npu")
+    parser.add_argument(
+        "--npu-sysfs",
+        default="/sys/kernel/debug/rknpu/load",
+        help="Rockchip per-core NPU load file (debugfs)",
+    )
+    parser.add_argument(
+        "--npu-freq-sysfs",
+        default="/sys/class/devfreq/fdab0000.npu",
+        help="Optional devfreq directory used for current NPU frequency",
+    )
     parser.add_argument("--trace", default="", help="Existing vision_trace_current.jsonl path")
     parser.add_argument("--live-camera", action="store_true", help="Explicitly document that input is live camera")
     parser.add_argument("--prepare-config", choices=("cpu", "npu"))

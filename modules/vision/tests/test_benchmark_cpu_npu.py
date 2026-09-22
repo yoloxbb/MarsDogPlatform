@@ -35,6 +35,20 @@ def test_parse_npu_load_preserves_invalid_as_unavailable():
     }
 
 
+def test_parse_rknpu_core_load_normalizes_three_core_capacity():
+    parsed = benchmark.parse_rknpu_core_load(
+        "NPU load:  Core0:  100%, Core1:  50%, Core2:  0%,"
+    )
+    assert parsed["core_load_percent"] == {
+        "Core0": 100.0,
+        "Core1": 50.0,
+        "Core2": 0.0,
+    }
+    assert parsed["load_percent"] == 50.0
+    assert parsed["peak_core_load_percent"] == 100.0
+    assert parsed["core_count"] == 3
+
+
 def test_prepare_config_does_not_modify_source(tmp_path):
     source = tmp_path / "vision.yaml"
     source.write_text(
