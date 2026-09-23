@@ -71,7 +71,7 @@ install(DIRECTORY include/
   DESTINATION include
 )
 
-install(DIRECTORY config launch
+install(DIRECTORY config docs launch
   DESTINATION share/${PROJECT_NAME}
 )
 

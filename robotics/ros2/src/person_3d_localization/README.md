@@ -4,6 +4,9 @@
 然后在 `map` 坐标系中生成保留安全距离的固定 Nav2 目标。包内不包含 YOLO、人体跟踪或
 Nav2 action client。
 
+完整的上层请求字段、响应字段、错误码和调用示例见
+[`docs/UPPER_LAYER_INTERFACE.md`](docs/UPPER_LAYER_INTERFACE.md)。
+
 ## 数据约束
 
 - bbox 必须是 YOLO 缩放和 letterbox 还原后的原图坐标。
