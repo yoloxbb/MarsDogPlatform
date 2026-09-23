@@ -107,6 +107,7 @@ Service 定义见 `srv/VisionTask.srv`。当前任务：
 |---|---|
 | `check_person` | 行为树情绪/Social 路由，返回 `present/count` |
 | `query_targets` | 返回人体/动物/物体目标；人体含原子快照 ID，查询时实时重算 age |
+| `locate_person_once` | 按完整 `target_id` 选择一个当前人体，调用一次可选 SLAM bbox 定位并返回结构化结果 |
 | `detect_objects` | 单帧同步查询，返回 `objects[]`，不启动数据流 |
 | `set_object_detection` | 动作系统按 `session_id` 开启、续租、更新或关闭检测流 |
 | `get_object_detection_state` | 查询外部 `stream` 与只读手持姿态 `automatic_stream` 的频率、目标标签和剩余租约 |
@@ -133,6 +134,15 @@ Swagger 页面为 `/docs`，接口形状与声纹样本 CRUD 对齐：POST 新�
 `query_targets.target_types` 支持 `human/person/animal/object`。`animal` 为 cat/dog，
 三类玩具属于 `object` 且 `object_kind=toy`。非人体 Track 只复用已经运行的物体检测
 结果，本查询不启动或抢占 session；其 ID 是 `epoch:object:<id>`，不是 label。
+
+`locate_person_once` 的 `params_json` 为
+`{"target_id":"<vision_epoch>:human:<track_id>","stand_off_distance":1.5}`，其中安全距离可省略（传给 SLAM 的默认值）。视觉节点只把产生该框的原始图像 Header、像素 ROI 和安全距离转发给
+`/person_3d_localization/locate_from_bbox`，等待一次有界响应后返回
+`person_point`、`navigation_goal`、`navigation_required`、状态和深度质量字段。
+它不直接调用 Nav2；调用方只在 `ok=true` 且 `navigation_required=true` 时继续导航。
+当前视觉配置为完整单目几何；实际分视图立体输入会 fail closed。SLAM 接口包是可选运行时
+依赖，启动前需 source 对应工作区，缺失时视觉节点仍可启动，任务返回
+`localization_interface_unavailable`。
 
 ## 6. 启动与验证
 

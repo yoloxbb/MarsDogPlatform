@@ -218,6 +218,26 @@ services:
         animal_labels: [cat, dog]
         toy_labels: [dog toy ball, dog frisbee toy, dog tug ring toy]
         does_not_start_object_stream: true
+      locate_person_once:
+        request_params: [target_id, stand_off_distance]
+        target_id_format: "<vision_epoch>:human:<track_id>"
+        downstream_service:
+          name: /person_3d_localization/locate_from_bbox
+          type: person_3d_localization/srv/LocateFromBbox
+          optional_runtime_interface: true
+        response_fields:
+          - ok
+          - target_id
+          - source_header
+          - navigation_required
+          - status
+          - message
+          - person_point
+          - navigation_goal
+          - valid_depth_ratio
+          - mean_depth
+          - depth_stddev
+        sends_nav2_goal: false
     object_tasks:
       detect_objects: single_frame
       set_object_detection: leased_stream_control

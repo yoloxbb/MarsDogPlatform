@@ -236,6 +236,7 @@ float64 latency_ms
 | `task_type` | 主要参数 | 主要结果 |
 |---|---|---|
 | `check_person` | `{}` | `ok`, `present`, `count` |
+| `locate_person_once` | `target_id`（完整人体 ID），可选 `stand_off_distance` | `ok`, `source_header`, `navigation_required`，SLAM 状态、人体点、导航目标和深度质量 |
 | `detect_objects` | 可选 `confidence`, `target_labels[]` | `ok`, `objects[]`，单帧查询 |
 | `set_object_detection` | `enabled`, `session_id`; 开启时可选 `rate_hz`, `confidence`, `target_labels[]`, `lease_sec` | `ok`, `stream` |
 | `get_object_detection_state` | `{}` | `ok`, `stream`, `automatic_stream`；前者仅为外部 Action/调试 session，后者仅为手持姿态自动流 |

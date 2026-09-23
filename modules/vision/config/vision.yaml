@@ -54,6 +54,14 @@ topics:
   # Latest successful periodic/Service detections are mirrored briefly.
   object_cache_timeout_sec: 2.0
 
+# Optional one-shot bridge to the SLAM person's bbox localization service.
+# Source the SLAM install overlay before starting this node to enable the
+# task; the vision node still starts when the generated interface is absent.
+slam_localization:
+  service_name: /person_3d_localization/locate_from_bbox
+  ready_timeout_sec: 0.10
+  response_timeout_sec: 1.0
+
 # Refine a current stranger-face fact using the authoritative emotion state.
 # Alert wins if alert and friend emotions are triggered simultaneously.
 stranger_emotion:

@@ -26,6 +26,13 @@ try:
 except ImportError:
     VisionTask = None  # type: ignore[assignment]
 
+try:
+    from person_3d_localization.srv import LocateFromBbox
+except ImportError:
+    # The SLAM interface is an optional runtime overlay.  Existing visual
+    # capabilities must remain usable when that workspace is not sourced.
+    LocateFromBbox = None  # type: ignore[assignment]
+
 from marsdog_vision_interaction.core.face_enrollment_manager import (
     FaceEnrollmentManager,
     set_storage_root,
@@ -37,6 +44,22 @@ from marsdog_vision_interaction.core.held_object_pose import (
 )
 from marsdog_vision_interaction.core.object_detection_session import (
     ObjectDetectionSessionManager,
+)
+from marsdog_vision_interaction.core.person_localization import (
+    LOCALIZATION_CLIENT_ERROR,
+    LOCALIZATION_INTERFACE_UNAVAILABLE,
+    LOCALIZATION_INVALID_BBOX,
+    LOCALIZATION_INVALID_REQUEST,
+    LOCALIZATION_INVALID_SOURCE,
+    LOCALIZATION_INVALID_TARGET,
+    LOCALIZATION_SERVER_UNAVAILABLE,
+    LOCALIZATION_TIMEOUT,
+    LOCALIZATION_UNSUPPORTED_GEOMETRY,
+    header_to_dict,
+    localization_error,
+    normalized_bbox_to_roi,
+    serialize_localization_response,
+    validate_source_metadata,
 )
 from marsdog_vision_interaction.core.stranger_emotion_context import (
     StrangerEmotionContext,
@@ -170,6 +193,12 @@ class VisionInteractionNode(Node):
         self._object_callback_group = MutuallyExclusiveCallbackGroup()
         self._emotion_callback_group = MutuallyExclusiveCallbackGroup()
         self._service_callback_group = MutuallyExclusiveCallbackGroup()
+        self._localization_callback_group = MutuallyExclusiveCallbackGroup()
+        self._slam_client: Any = None
+        self._slam_service_type: Any = LocateFromBbox
+        self._slam_service_name = "/person_3d_localization/locate_from_bbox"
+        self._slam_ready_timeout_sec = 0.1
+        self._slam_response_timeout_sec = 1.0
         self._object_inference_lock = threading.Lock()
         self._providers: dict[str, BaseProvider | None] = {}
         self._latest_frame: np.ndarray | None = None
@@ -487,6 +516,7 @@ class VisionInteractionNode(Node):
             1.0,
             float(vision_runtime_config.get("stereo_min_aspect_ratio", 2.2)),
         )
+        self._init_slam_localization_client()
         self._timer = self.create_timer(
             1.0 / max(rate, 0.1),
             self._publish_visual,
@@ -661,6 +691,54 @@ class VisionInteractionNode(Node):
             face.start()
             self._providers["face_recognition"] = face
 
+    def _init_slam_localization_client(self) -> None:
+        """Create the optional SLAM client without making it a startup gate."""
+        config = self._config.get("slam_localization", {})
+        if not isinstance(config, dict):
+            config = {}
+        self._slam_service_name = str(
+            config.get(
+                "service_name",
+                "/person_3d_localization/locate_from_bbox",
+            )
+        )
+        self._slam_ready_timeout_sec = max(
+            0.0, float(config.get("ready_timeout_sec", 0.1))
+        )
+        self._slam_response_timeout_sec = max(
+            0.01, float(config.get("response_timeout_sec", 1.0))
+        )
+        self._slam_client = None
+        if self._slam_service_type is None:
+            logger.info(
+                "SLAM localization disabled: optional interface %s is unavailable",
+                self._slam_service_name,
+            )
+            return
+        try:
+            self._slam_client = self.create_client(
+                self._slam_service_type,
+                self._slam_service_name,
+                callback_group=self._localization_callback_group,
+            )
+        except Exception as exc:
+            logger.warning("Cannot create optional SLAM client: %s", exc)
+            self._slam_client = None
+
+    @staticmethod
+    def _source_header(message: Any) -> dict[str, Any]:
+        header = getattr(message, "header", None)
+        stamp = getattr(header, "stamp", None)
+        try:
+            sec = int(getattr(stamp, "sec", 0))
+            nanosec = int(getattr(stamp, "nanosec", 0))
+        except (TypeError, ValueError, OverflowError):
+            sec, nanosec = 0, 0
+        return {
+            "stamp": {"sec": sec, "nanosec": nanosec},
+            "frame_id": str(getattr(header, "frame_id", "") or ""),
+        }
+
     def _on_camera(self, message: Image) -> None:
         try:
             frame = self._decode_image(message)
@@ -668,6 +746,17 @@ class VisionInteractionNode(Node):
                 raise ValueError("unsupported or malformed image")
             header = getattr(message, "header", None)
             camera_stamp = self._message_stamp(message)
+            source_header = self._source_header(message)
+            received_monotonic = time.monotonic()
+            source_metadata = {
+                "header": source_header,
+                "source_width": int(frame.shape[1]),
+                "source_height": int(frame.shape[0]),
+                "received_monotonic": received_monotonic,
+                # The observation provider replaces this with the actual
+                # selected-view geometry after inference.
+                "view_split": False,
+            }
             frame_id = str(
                 getattr(header, "frame_id", "") or "camera_link"
             )
@@ -675,13 +764,14 @@ class VisionInteractionNode(Node):
                 self._latest_frame = frame
                 self._latest_camera_frame_id = frame_id
                 self._latest_camera_stamp = camera_stamp or time.time()
-                self._latest_camera_monotonic = time.monotonic()
+                self._latest_camera_monotonic = received_monotonic
             vision = self._providers.get("vision")
             if vision is not None and hasattr(vision, "process_frame"):
                 vision.process_frame(  # type: ignore[attr-defined]
                     frame,
                     stamp=camera_stamp or time.time(),
                     frame_id=frame_id,
+                    source_metadata=source_metadata,
                 )
         except Exception as exc:
             logger.debug("Camera frame rejected: %s", exc)
@@ -2339,6 +2429,202 @@ class VisionInteractionNode(Node):
         )
         return response
 
+    def _locate_person_once(self, params: dict[str, Any]) -> dict[str, Any]:
+        """Resolve one tracked bbox and make exactly one bounded SLAM call."""
+        target_id = str(params.get("target_id", "") or "").strip()
+        if not target_id:
+            return localization_error(
+                LOCALIZATION_INVALID_TARGET,
+                "target_id is required",
+            )
+        candidate = self._target_manager.get_localization_candidate(
+            target_id,
+            current_timeout=self._target_current_timeout_sec,
+        )
+        if not isinstance(candidate, dict):
+            return localization_error(
+                LOCALIZATION_INVALID_TARGET,
+                "target is missing or no longer current",
+                target_id=target_id,
+            )
+        target = candidate.get("target", {})
+        source = candidate.get("source")
+        if not isinstance(target, dict):
+            return localization_error(
+                LOCALIZATION_INVALID_TARGET,
+                "target record is malformed",
+                target_id=target_id,
+            )
+        source_error = validate_source_metadata(
+            source,
+            max_age_sec=self._target_current_timeout_sec,
+        )
+        if source_error is not None:
+            return localization_error(
+                source_error,
+                "target source image metadata is unavailable or stale",
+                target_id=target_id,
+            )
+        source_header = header_to_dict(source.get("header"))
+        if source_header is None:
+            return localization_error(
+                LOCALIZATION_INVALID_SOURCE,
+                "target source header is invalid",
+                target_id=target_id,
+            )
+        roi = normalized_bbox_to_roi(
+            target.get("bbox"),
+            source.get("source_width", 0),
+            source.get("source_height", 0),
+            view_split=bool(source.get("view_split", False)),
+        )
+        if roi is None:
+            code = (
+                LOCALIZATION_UNSUPPORTED_GEOMETRY
+                if bool(source.get("view_split", False))
+                else LOCALIZATION_INVALID_BBOX
+            )
+            return localization_error(
+                code,
+                "target bbox cannot be mapped to the aligned-depth image",
+                target_id=target_id,
+                source_header=source_header,
+            )
+        stand_off_value = params.get("stand_off_distance", 0.0)
+        try:
+            stand_off = float(stand_off_value)
+        except (TypeError, ValueError, OverflowError):
+            stand_off = float("nan")
+        if not math.isfinite(stand_off):
+            return localization_error(
+                LOCALIZATION_INVALID_REQUEST,
+                "stand_off_distance must be finite",
+                target_id=target_id,
+                source_header=source_header,
+            )
+        if self._slam_service_type is None or self._slam_client is None:
+            return localization_error(
+                LOCALIZATION_INTERFACE_UNAVAILABLE,
+                "SLAM localization interface is unavailable",
+                target_id=target_id,
+                source_header=source_header,
+            )
+        client = self._slam_client
+        try:
+            ready = True
+            service_is_ready = getattr(client, "service_is_ready", None)
+            if callable(service_is_ready):
+                ready = bool(service_is_ready())
+            if not ready:
+                wait_for_service = getattr(client, "wait_for_service", None)
+                ready = bool(
+                    wait_for_service(timeout_sec=self._slam_ready_timeout_sec)
+                ) if callable(wait_for_service) else False
+            if not ready:
+                return localization_error(
+                    LOCALIZATION_SERVER_UNAVAILABLE,
+                    "SLAM localization service is not ready",
+                    target_id=target_id,
+                    source_header=source_header,
+                )
+        except Exception as exc:
+            return localization_error(
+                LOCALIZATION_SERVER_UNAVAILABLE,
+                f"SLAM localization service readiness failed: {exc}",
+                target_id=target_id,
+                source_header=source_header,
+            )
+
+        try:
+            request = self._slam_service_type.Request()
+            request.image_header.stamp.sec = source_header["stamp"]["sec"]
+            request.image_header.stamp.nanosec = source_header["stamp"]["nanosec"]
+            request.image_header.frame_id = source_header["frame_id"]
+            request.bbox.x_offset = roi["x_offset"]
+            request.bbox.y_offset = roi["y_offset"]
+            request.bbox.width = roi["width"]
+            request.bbox.height = roi["height"]
+            request.bbox.do_rectify = False
+            request.stand_off_distance = stand_off
+            future = client.call_async(request)
+        except Exception as exc:
+            return localization_error(
+                LOCALIZATION_CLIENT_ERROR,
+                f"SLAM localization request failed: {exc}",
+                target_id=target_id,
+                source_header=source_header,
+            )
+
+        completed = threading.Event()
+        holder: dict[str, Any] = {}
+
+        def _on_done(done_future: Any) -> None:
+            try:
+                holder["response"] = done_future.result()
+            except Exception as exc:  # pragma: no cover - future-specific
+                holder["exception"] = exc
+            finally:
+                completed.set()
+
+        try:
+            future.add_done_callback(_on_done)
+        except Exception as exc:
+            # The request has already been submitted.  If callback
+            # registration fails, remove it from rclpy's pending map and
+            # cancel the local future just as on a response timeout.
+            try:
+                remove_pending = getattr(client, "remove_pending_request", None)
+                if callable(remove_pending):
+                    remove_pending(future)
+            except Exception:
+                logger.debug(
+                    "Unable to remove SLAM request after callback failure",
+                    exc_info=True,
+                )
+            try:
+                cancel = getattr(future, "cancel", None)
+                if callable(cancel):
+                    cancel()
+            except Exception:
+                pass
+            return localization_error(
+                LOCALIZATION_CLIENT_ERROR,
+                f"SLAM response callback failed: {exc}",
+                target_id=target_id,
+                source_header=source_header,
+            )
+        if not completed.wait(timeout=self._slam_response_timeout_sec):
+            try:
+                remove_pending = getattr(client, "remove_pending_request", None)
+                if callable(remove_pending):
+                    remove_pending(future)
+            except Exception:
+                logger.debug("Unable to remove timed out SLAM request", exc_info=True)
+            try:
+                cancel = getattr(future, "cancel", None)
+                if callable(cancel):
+                    cancel()
+            except Exception:
+                pass
+            return localization_error(
+                LOCALIZATION_TIMEOUT,
+                "SLAM localization response timed out",
+                target_id=target_id,
+                source_header=source_header,
+            )
+        if "exception" in holder:
+            return localization_error(
+                LOCALIZATION_CLIENT_ERROR,
+                f"SLAM localization response failed: {holder['exception']}",
+                target_id=target_id,
+                source_header=source_header,
+            )
+        return serialize_localization_response(
+            holder.get("response"),
+            target_id=target_id,
+            source_header=source_header,
+        )
+
     def _run_task(self, task_type: str, params: dict[str, Any]) -> dict[str, Any]:
         vision = self._providers.get("vision")
         if task_type == "check_person":
@@ -2347,6 +2633,8 @@ class VisionInteractionNode(Node):
             return {"ok": True, **vision.check_person()}  # type: ignore[attr-defined]
         if task_type == "query_targets":
             return self._query_targets(params)
+        if task_type == "locate_person_once":
+            return self._locate_person_once(params)
         if task_type == "detect_objects":
             return self._run_object_detection(
                 params,

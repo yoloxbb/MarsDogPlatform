@@ -49,6 +49,10 @@ class ActiveVisualTarget:
     # this private process-local value drives all safety decisions.
     last_seen_monotonic: float = 0.0
     frame_count: int = 0
+    # Source image provenance is intentionally private.  Existing visual
+    # events keep their schema, while one-shot localization can atomically
+    # retrieve the bbox and the exact image that produced it.
+    localization_source: dict[str, Any] | None = None
 
     def tracking_state(self, current_timeout: float = 0.35) -> str:
         if not self.last_seen_at or self.confidence <= 0:
@@ -167,6 +171,7 @@ class VisualTargetManager:
         self,
         humans: list[dict[str, Any]],
         faces: list[dict[str, Any]],
+        source_metadata: dict[str, Any] | None = None,
     ) -> None:
         with self._lock:
             now = time.time()
@@ -198,7 +203,13 @@ class VisualTargetManager:
                     self._tracks[track_id] = track
                 else:
                     track = self._tracks[track_id]
-                self._apply_to_track(track, candidate, now, now_monotonic)
+                self._apply_to_track(
+                    track,
+                    candidate,
+                    now,
+                    now_monotonic,
+                    source_metadata,
+                )
                 visible_tracks.append((track, candidate))
 
             ranked = sorted(
@@ -361,6 +372,37 @@ class VisualTargetManager:
                 ],
             }
 
+    def get_localization_candidate(
+        self,
+        target_id: str,
+        *,
+        current_timeout: float = 0.35,
+    ) -> dict[str, Any] | None:
+        """Atomically copy one target and its private source provenance.
+
+        A retained tracker record carries the source metadata from the frame
+        that produced its bbox.  It is never paired with a newer publication
+        header or with another track's source record.
+        """
+        target_id = str(target_id or "")
+        if not target_id:
+            return None
+        with self._lock:
+            self._discard_expired_tracks(time.time(), time.monotonic())
+            track = next(
+                (
+                    value for value in self._tracks.values()
+                    if value.target_id == target_id
+                ),
+                None,
+            )
+            if track is None or track.tracking_state(current_timeout) != "tracking":
+                return None
+            return {
+                "target": self._candidate_dict(track),
+                "source": copy.deepcopy(track.localization_source),
+            }
+
     def _target_id(self, track_id: int) -> str:
         return f"{self._vision_epoch}:human:{track_id}"
 
@@ -489,6 +531,7 @@ class VisualTargetManager:
         candidate: dict[str, Any],
         now: float,
         now_monotonic: float | None = None,
+        source_metadata: dict[str, Any] | None = None,
     ) -> None:
         track.bbox = candidate["bbox"]
         track.body_center = candidate["body_center"]
@@ -512,6 +555,10 @@ class VisualTargetManager:
             time.monotonic() if now_monotonic is None else now_monotonic
         )
         track.frame_count += 1
+        # Every observed detection gets an explicit source update.  Invalid or
+        # absent metadata therefore clears an older valid record instead of
+        # silently reusing a timestamp from another image.
+        track.localization_source = copy.deepcopy(source_metadata)
 
     def _candidate_dict(self, track: ActiveVisualTarget) -> dict[str, Any]:
         value = track.to_dict()

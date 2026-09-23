@@ -422,8 +422,24 @@ ssh -L 8765:127.0.0.1:8765 <user>@<robot-ip>
 
 视觉任务：`check_person`、`query_targets`、`detect_objects`、`set_object_detection`、
 `get_object_detection_state`、`recognize_face`、
+`locate_person_once`、
 `start_face_enrollment`、`cancel_face_enrollment`、`upload_face`、
 `list_faces`、`list_face_records`、`list_face_samples`、`get_face_sample`、
 `replace_face_sample`、`delete_face_sample`、`delete_face`。
 
 完整字段约定见 [docs/ROS2_CONTRACT.md](docs/ROS2_CONTRACT.md)。
+
+通过现有 `VisionTask` 请求一次人体地图定位：
+
+```bash
+ros2 service call /perception/vision/task \
+  marsdog_vision_interaction/srv/VisionTask \
+  "{task_id: 'person-location-001', task_type: 'locate_person_once', \
+    params_json: '{\"target_id\":\"<vision_epoch>:human:<track_id>\",\"stand_off_distance\":1.5}'}"
+```
+
+调用方先从 `query_targets` 获得完整 `target_id`。视觉节点只调用一次
+`/person_3d_localization/locate_from_bbox` 并返回 `person_point`、`navigation_goal` 和
+`navigation_required`，不会直接调用 Nav2。SLAM 接口是可选运行时依赖；启用前 source
+其安装工作区，当前环境缺失该接口时任务会返回
+`localization_interface_unavailable`，其他视觉能力仍可启动。
