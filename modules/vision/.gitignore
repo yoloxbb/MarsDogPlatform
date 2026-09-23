@@ -46,6 +46,10 @@ rosbag2_*/
 captures/
 recordings/
 
+# Runtime logs and rolling traces generated during test runs
+/test-evidence/**/*.log*
+/test-evidence/**/vision_trace_current.jsonl*
+
 # Editor and OS metadata
 .idea/
 .vscode/
