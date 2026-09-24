@@ -175,7 +175,7 @@ public:
     emergency_reverse_config_.enabled = declare_parameter<bool>(
       "enable_emergency_reverse", true);
     emergency_reverse_config_.speed = declare_parameter<double>(
-      "emergency_reverse_speed", 0.23);
+      "emergency_reverse_speed", 0.30);
     emergency_reverse_config_.distance = declare_parameter<double>(
       "emergency_reverse_distance", 0.20);
     emergency_reverse_config_.stop_hold_sec = declare_parameter<double>(
