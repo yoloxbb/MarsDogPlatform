@@ -13,6 +13,9 @@ import uuid
 from typing import Callable, Optional
 
 from bionic_dog_bt.logger import get_logger, LogEvent
+from bionic_dog_bt.arbitration import priority_key
+
+from .lifecycle import discard_unstarted_on_voice_idle
 
 _log = get_logger("candidate_pool")
 
@@ -38,7 +41,8 @@ class CandidatePool:
             sub_priority: int = 0, dedup_key: tuple = None,
             interrupt_policy: str = "immediate", ttl_sec: float = 10.0,
             candidate_id: str = "", created_at: float | None = None,
-            allow_repeat: bool = False, emotion_priority: int = 50) -> bool:
+            allow_repeat: bool = False, emotion_priority: int = 50,
+            semantic_rank: int = 3, modality_rank: int = 3) -> bool:
         """Add a candidate. Returns True if added, False if duplicate.
 
         A behavior name is unique across both the queued and in-flight states.
@@ -63,16 +67,22 @@ class CandidatePool:
                 return False
 
             candidate_id = candidate_id or f"cand_{uuid.uuid4().hex[:12]}"
+            candidate_params = dict(params or {})
+            candidate_params.setdefault("sub_priority", sub_priority)
+            candidate_params.setdefault("semantic_rank", semantic_rank)
+            candidate_params.setdefault("modality_rank", modality_rank)
             self._seen_keys.add(key)
             self._candidates.append({
                 "behavior_name": behavior_name,
                 "priority_level": priority_level,
                 "sub_priority": sub_priority,
+                "semantic_rank": semantic_rank,
+                "modality_rank": modality_rank,
                 "value": value,
                 "confidence": confidence,
                 "need_type": need_type,
                 "source_emotion": source_emotion,
-                "params": params or {},
+                "params": candidate_params,
                 "timeout_sec": timeout_sec,
                 "cooldown_sec": cooldown_sec,
                 "interrupt_policy": interrupt_policy,
@@ -99,10 +109,12 @@ class CandidatePool:
 
         Sort order:
           1. priority_level ASC
-          2. sub_priority ASC
-          3. emotion_priority ASC (lower = higher priority, 50 default)
-          4. value DESC
-          5. created_at DESC (newest first)
+          2. semantic_rank ASC
+          3. modality_rank ASC
+          4. sub_priority/behavior_rank ASC
+          5. emotion_priority ASC (lower = higher priority, 50 default)
+          6. value DESC
+          7. created_at DESC (newest first)
 
         Expired candidates are discarded. Candidates in cooldown or rejected
         by ``can_run`` remain queued until they become runnable, are invalidated
@@ -115,8 +127,10 @@ class CandidatePool:
                 return None
 
             self._candidates.sort(key=lambda c: (
-                c["priority_level"],
-                c.get("sub_priority", 0),
+                *priority_key(
+                    c["priority_level"], c["params"],
+                    sub_priority=c.get("sub_priority", 0),
+                ),
                 c.get("emotion_priority", 50),
                 -c["value"],
                 -c["created_at"],
@@ -213,6 +227,41 @@ class CandidatePool:
             self._candidates.clear()
             self._seen_keys.clear()
             self._inflight.clear()
+
+    def discard_where(self, predicate: Callable[[dict], bool]) -> int:
+        """Discard matching queued candidates without touching other work.
+
+        In-flight reservations are lifecycle-owned and are intentionally not
+        released here; :class:`BehaviorRuntime` owns cancellation/terminal
+        cleanup for an executing goal.
+        """
+        with self._lock:
+            retained: list[dict] = []
+            removed = 0
+            for candidate in self._candidates:
+                if predicate(candidate):
+                    self._seen_keys.discard(candidate["dedup_key"])
+                    removed += 1
+                else:
+                    retained.append(candidate)
+            self._candidates = retained
+            return removed
+
+    def discard_session(self, interaction_id: str) -> int:
+        """Discard only queued work owned by one voice interaction."""
+        interaction_id = str(interaction_id).strip()
+        if not interaction_id:
+            return 0
+        def belongs_to_voice(candidate: dict) -> bool:
+            params = candidate.get("params", {})
+            return (
+                isinstance(params, dict)
+                and str(params.get("interaction_id", "")).strip()
+                == interaction_id
+                and discard_unstarted_on_voice_idle(params)
+            )
+
+        return self.discard_where(belongs_to_voice)
 
     def discard_emotion(self, emotion_name: str) -> int:
         """Discard queued candidates tied to a recovered V2 emotion.

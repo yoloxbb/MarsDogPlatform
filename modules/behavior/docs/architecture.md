@@ -51,8 +51,8 @@ flowchart LR
 | `/emotion/signal_event` | RELIABLE, depth=10 | V2：单阈值上升沿映射情绪行为 | 是 |
 | `/internal_need/state` | BEST_EFFORT, depth=5 | V2：更新完整需求状态和相关性 | 否 |
 | `/internal_need/signal_event` | RELIABLE, depth=10 | V2：同步等级变化，再映射需求行为 | 是（RECOVERED 除外） |
-| `/perception/audio_event` | RELIABLE, depth=10 | 仅处理名字唤醒和可执行语音指令白名单 | 是 |
-| `/perception/visual_event` | BEST_EFFORT, depth=5 | 缓存 humans/active_target/tracked_objects，作为视觉服务回退 | 否 |
+| `/perception/audio_event` | RELIABLE, depth=10 | schema v2；唤醒/终态与可执行具体指令精确白名单 | 是 |
+| `/perception/visual_event` | BEST_EFFORT, depth=5 | 缓存场景；STRANGER 情绪融合；FALL/STOP 视觉白名单 | 是（仅白名单） |
 
 情绪 V2 的 `state` 和 `signal_event` 分工：
 
@@ -103,10 +103,21 @@ Social 在 URGENT/OVERFLOW 时仍为 `triggered=true`。Energy 输入值是电�
 
 ### 音频与视觉链路
 
-- `EVT_VOICE_CALL_NAME` 直接开启会话级视角跟踪，不创建 Action 候选；已配置的
-  `EVT_VOICE_COMMAND_<ACTION>` 完整事件名进入行为决策。
-- PRAISE、SCOLD、HAPPY、SAD 等音频事件由情绪系统消费，行为树不重复处理。
-- visual `events` 不创建候选，避免绕过情绪/需求系统重复触发。
+- 只有 `EVT_VOICE_WAKEUP` 先创建原地声源转向候选，再由会话编排解析视觉目标；
+  `EVT_VOICE_CALL_NAME / EVT_VOICE_COMMAND_CALL_NAME` 只是社交通知，不创建会话
+  或候选；已配置的 `EVT_VOICE_COMMAND_<ACTION>` 完整事件名进入行为决策。
+- 具体指令还必须通过 `command_id`、`specific_event_type`、
+  `dispatch_role=specific_command` 和 `should_trigger_behavior_tree=true`。
+  KNOWN 摘要或其他语义事件不会修改会话执行状态。
+- `EVT_VOICE_COMMAND_TOILET/CLEAN/SLEEP` 在 Tree 内先读取相应需求状态，严格
+  满足 `Bladder > 50 / Cleanliness > 40 / Sleepiness > 50` 后复用既有需求行为。
+- Model Intent 的 `EVT_VOICE_PRAISE/SCOLD/HAPPY/SAD` 仍由情绪系统
+  消费；词库精确事件 `EVT_VOICE_COMMAND_PRAISE/SCOLD` 走
+  `audio_reaction`，生成一次性 Lv1 反应，不改写权威情绪状态。
+- visual `events[]` 直接处理 `EVT_VISION_FALL` 和
+  `EVT_VISION_STOP_GESTURE`，分别生成 `respond_person_fall` 和
+  `respond_stop_gesture`（Lv1, `sub_priority=12`）。连续 10 Hz 快照中的
+  同一事件只在出现沿创建一次候选。
 - 六类情绪 signal_event 都异步调用 `check_person`：有人时生成独立的
   `*WithHuman` Behavior，无人时生成独立的 `*Alone` Behavior，共 12 个
   语义行为；Action Client 再通过 `executor_behavior_name` 适配执行端已有
@@ -136,7 +147,9 @@ Social 在 URGENT/OVERFLOW 时仍为 `triggered=true`。Energy 输入值是电�
 - 当前行为的 `immediate / safe_point / non_interruptible` 决定能否中断。
 - Lv0 `emergency_stop` 无条件覆盖其他中断策略。
 
-抢占同一 tick 内先产生旧行为 `INTERRUPTED`，再产生新行为 `STARTED`。超时会产生明确的 `TIMEOUT` 终态，不再只停留在内部日志。
+抢占时先保留新候选并请求取消旧 Goal；旧 Goal 的真实 Action Result 到达前不会发布
+替代行为 `STARTED`。Tree 超时只记录 `timeout_requested` 并请求取消，真实 Result
+到达前不伪造 `TIMEOUT`、`CANCELED` 或“机器人已停止”。
 
 ## 4. 下游 Action 通信
 
@@ -148,9 +161,15 @@ Goal 只传递：
 - `params_json`
 - `timeout_sec`
 
-Feedback 的 `safe_to_interrupt` 参与 safe-point 抢占。Result 转换成内部 `BehaviorFeedbackEvent`。Action Server 未就绪、Goal 被拒绝或异步 future 异常时，适配器会生成 `FAILURE` 结果，避免黑板永久保持 RUNNING。
+普通抢占必须基于最新 Feedback 的 `safe_to_interrupt=true`；`DISPATCHED` 和
+`RECOVERY_REQUIRED` 不可中断。Result 转换成内部 `BehaviorFeedbackEvent`。Action
+Server 未就绪、Goal 被拒绝或异步 future 异常时，适配器会生成 `FAILURE` 结果，
+避免黑板永久保持 RUNNING。
 
-取消可能发生在 Goal 异步响应之前。适配器记录待取消 ID，并在 Goal Handle 到达后立即取消，同时忽略其迟到 feedback/result，避免被抢占行为继续执行或污染缓存。
+取消可能发生在 Goal 异步响应之前。适配器按 Goal ID 维护
+`SENDING/RUNNING/CANCEL_REQUESTED/TERMINAL`，Goal Handle 到达后补发取消；取消响应
+不会触发清理。Tree 保留 Goal Handle、Future、映射、`current_goal_id` 和执行锁，
+继续接收 feedback/result，并以真实 Result（包括取消后成功或失败）作为唯一终态。
 
 ## 5. 并发与一致性
 

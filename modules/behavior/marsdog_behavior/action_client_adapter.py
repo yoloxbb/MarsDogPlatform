@@ -19,6 +19,13 @@ import time
 import threading
 from typing import Optional
 
+from bionic_dog_bt.constants import (
+    GOAL_CANCEL_REQUESTED,
+    GOAL_RUNNING,
+    GOAL_SENDING,
+    GOAL_TERMINAL,
+)
+
 from .ros2_compat import HAS_ROS2
 
 
@@ -44,8 +51,13 @@ class ActionClientAdapter:
         self._bhv_to_goal: dict[str, str] = {}
         # goal_id → behavior_name, retained until the result is consumed
         self._behavior_names: dict[str, str] = {}
-        # Goals canceled before their asynchronous response arrives.
-        self._canceled_goal_ids: set[str] = set()
+        # goal_id → explicit client-side lifecycle.  A cancel response never
+        # advances this state to TERMINAL; only the Action result does.
+        self._goal_lifecycle: dict[str, str] = {}
+        # Keep asynchronous operations reachable until terminal cleanup.
+        self._send_futures: dict[str, object] = {}
+        self._result_futures: dict[str, object] = {}
+        self._cancel_futures: dict[str, object] = {}
 
         if HAS_ROS2:
             self._init_action_client()
@@ -84,7 +96,17 @@ class ActionClientAdapter:
 
     def send_goal(self, active) -> str:
         """Send goal via Action Client. Returns goal_id."""
+        with self._lock:
+            self._bhv_to_goal[active.behavior_id] = active.behavior_id
+            self._behavior_names[active.behavior_id] = active.behavior_name
+            self._goal_lifecycle[active.behavior_id] = GOAL_SENDING
+
         if not HAS_ROS2 or self._action_type is None:
+            self._cache_failure(
+                active.behavior_id,
+                active.behavior_name,
+                "ROS2 Action client unavailable",
+            )
             return active.behavior_id
 
         if (
@@ -100,14 +122,11 @@ class ActionClientAdapter:
 
         goal_msg = self._action_type.Goal()
         goal_msg.goal_id = active.behavior_id
+        goal_msg.behavior_id = active.behavior_id
         goal_msg.behavior_name = self._executor_behavior_name(active)
         goal_msg.priority_level = active.priority_level
         goal_msg.params_json = json.dumps(active.params)
         goal_msg.timeout_sec = active.timeout_sec
-
-        with self._lock:
-            self._bhv_to_goal[active.behavior_id] = active.behavior_id
-            self._behavior_names[active.behavior_id] = active.behavior_name
 
         send_goal_future = self._client.send_goal_async(
             goal_msg,
@@ -115,24 +134,28 @@ class ActionClientAdapter:
         )
         send_goal_future.add_done_callback(
             lambda fut: self._on_goal_response(active.behavior_id, fut))
+        with self._lock:
+            self._send_futures[active.behavior_id] = send_goal_future
 
         return active.behavior_id
 
     def cancel_goal(self, goal_id: str) -> bool:
-        """Cancel a running goal."""
+        """Request cancellation while retaining ownership until Result."""
         with self._lock:
-            handle = self._goal_handles.pop(goal_id, None)
-            known_goal = goal_id in self._bhv_to_goal
-            self._canceled_goal_ids.add(goal_id)
-            self._bhv_to_goal.pop(goal_id, None)
-            self._feedback_cache.pop(goal_id, None)
-            self._result_cache.pop(goal_id, None)
-        if handle is not None:
-            handle.cancel_goal_async()
+            lifecycle = self._goal_lifecycle.get(goal_id)
+            if lifecycle is None or lifecycle == GOAL_TERMINAL:
+                return False
+            if lifecycle == GOAL_CANCEL_REQUESTED:
+                return True
+            self._goal_lifecycle[goal_id] = GOAL_CANCEL_REQUESTED
+            handle = self._goal_handles.get(goal_id)
+
+        # If send_goal_async is still pending, _on_goal_response will issue the
+        # cancellation as soon as the server-side handle arrives.
+        if handle is None:
             return True
-        # A send_goal_async response may still be pending. Marking it canceled
-        # lets _on_goal_response cancel it as soon as a handle exists.
-        return known_goal
+        self._request_handle_cancel(goal_id, handle)
+        return True
 
     def tick(self) -> None:
         """No-op: feedback/results arrive asynchronously via ROS2 callbacks."""
@@ -176,17 +199,27 @@ class ActionClientAdapter:
     def remove_goal(self, goal_id: str) -> None:
         """Clean up a finished goal."""
         with self._lock:
+            if self._goal_lifecycle.get(goal_id) != GOAL_TERMINAL:
+                return
             self._goal_handles.pop(goal_id, None)
             self._bhv_to_goal.pop(goal_id, None)
             self._behavior_names.pop(goal_id, None)
             self._feedback_cache.pop(goal_id, None)
             self._result_cache.pop(goal_id, None)
-            self._canceled_goal_ids.discard(goal_id)
+            self._goal_lifecycle.pop(goal_id, None)
+            self._send_futures.pop(goal_id, None)
+            self._result_futures.pop(goal_id, None)
+            self._cancel_futures.pop(goal_id, None)
 
     def has_goal(self, goal_id: str) -> bool:
         """Check if a goal is still active."""
         with self._lock:
             return goal_id in self._bhv_to_goal
+
+    def get_goal_lifecycle(self, goal_id: str) -> Optional[str]:
+        """Return the explicit lifecycle for one goal."""
+        with self._lock:
+            return self._goal_lifecycle.get(goal_id)
 
     # ── ROS2 callbacks ───────────────────────────────────────────────────────
 
@@ -211,28 +244,25 @@ class ActionClientAdapter:
             return
 
         with self._lock:
-            canceled = goal_id in self._canceled_goal_ids
-            if not canceled:
-                self._goal_handles[goal_id] = goal_handle
-
-        if canceled:
-            goal_handle.cancel_goal_async()
-            result_future = goal_handle.get_result_async()
-            result_future.add_done_callback(
-                lambda fut: self._on_result(goal_id, fut)
+            cancel_requested = (
+                self._goal_lifecycle.get(goal_id) == GOAL_CANCEL_REQUESTED
             )
-            return
+            self._goal_handles[goal_id] = goal_handle
+            if not cancel_requested:
+                self._goal_lifecycle[goal_id] = GOAL_RUNNING
 
         result_future = goal_handle.get_result_async()
+        with self._lock:
+            self._result_futures[goal_id] = result_future
         result_future.add_done_callback(
             lambda fut: self._on_result(goal_id, fut))
+        if cancel_requested:
+            self._request_handle_cancel(goal_id, goal_handle)
 
     def _on_feedback(self, goal_id: str, feedback_msg):
         fb = feedback_msg.feedback
         requested_name = self._behavior_name(goal_id)
         with self._lock:
-            if goal_id in self._canceled_goal_ids:
-                return
             self._feedback_cache[goal_id] = {
                 'goal_id': fb.goal_id,
                 'behavior_name': requested_name or fb.behavior_name,
@@ -243,13 +273,6 @@ class ActionClientAdapter:
             }
 
     def _on_result(self, goal_id: str, future):
-        with self._lock:
-            if goal_id in self._canceled_goal_ids:
-                self._canceled_goal_ids.discard(goal_id)
-                self._behavior_names.pop(goal_id, None)
-                self._goal_handles.pop(goal_id, None)
-                return
-
         try:
             result = future.result().result
         except Exception as exc:
@@ -262,7 +285,9 @@ class ActionClientAdapter:
 
         with self._lock:
             self._result_cache[goal_id] = {
-                'goal_id': result.goal_id,
+                # Correlate by the client-side Goal ID captured by this
+                # callback, never by whichever Goal is currently active.
+                'goal_id': goal_id,
                 # The executor may receive a compatibility template name
                 # (e.g. inspectKnownObject), but behavior lifecycle/results
                 # remain keyed by the behavior tree's six precise names.
@@ -278,7 +303,19 @@ class ActionClientAdapter:
                     getattr(result, 'metadata_json', '{}')
                 ),
             }
-            self._goal_handles.pop(goal_id, None)
+            self._goal_lifecycle[goal_id] = GOAL_TERMINAL
+
+    def _request_handle_cancel(self, goal_id: str, goal_handle) -> None:
+        """Issue CancelGoal without treating its response as completion."""
+        try:
+            cancel_future = goal_handle.cancel_goal_async()
+        except Exception as exc:
+            self._node.get_logger().error(
+                f"Action cancel request failed: {goal_id} ({exc})"
+            )
+            return
+        with self._lock:
+            self._cancel_futures[goal_id] = cancel_future
 
     def _behavior_name(self, goal_id: str) -> str:
         with self._lock:
@@ -309,7 +346,7 @@ class ActionClientAdapter:
                 "reason": reason,
                 "reward": 0.0,
             }
-            self._goal_handles.pop(goal_id, None)
+            self._goal_lifecycle[goal_id] = GOAL_TERMINAL
         self._node.get_logger().error(
             f"Action goal failed: {goal_id} ({reason})"
         )

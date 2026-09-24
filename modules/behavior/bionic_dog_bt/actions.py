@@ -18,6 +18,10 @@ from .blackboard import Blackboard
 from .datatypes import ExecutorFeedback, BehaviorFeedbackEvent
 from .logger import get_logger, LogEvent
 from .constants import (
+    GOAL_CANCEL_REQUESTED,
+    GOAL_RUNNING,
+    GOAL_SENDING,
+    GOAL_TERMINAL,
     STATUS_RUNNING,
     STATUS_SUCCESS,
 )
@@ -43,6 +47,7 @@ class ExecutorInterface(Protocol):
     def get_result(self, goal_id: str) -> BehaviorFeedbackEvent | None: ...
     def remove_goal(self, goal_id: str) -> None: ...
     def has_goal(self, goal_id: str) -> bool: ...
+    def get_goal_lifecycle(self, goal_id: str) -> str | None: ...
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -53,12 +58,12 @@ class ExecuteActiveBehavior(Node):
     Preemption rules:
     1. No current behavior → send immediately.
     2. Same behavior name + still RUNNING → keep waiting (no duplicate).
-    3. New behavior has lower priority_level (higher priority) → try preempt.
-    4. Same level: preempt only if new.value >= current.value + 15.
-    5. New behavior has higher priority_level (lower priority) → no preempt.
+    3. Compare shared priority key (level, semantics, modality, behavior rank).
+    4. Equal key: session rank or value difference >= 15 may preempt.
+    5. Lower-priority key cannot preempt.
     6. Respect interrupt_policy: immediate / safe_point / non_interruptible.
        - non_interruptible only yields to emergency_stop (Lv0).
-    7. Timeout: cancel goal, return FAILURE.
+    7. Timeout: request cancellation and wait for the real Action Result.
     8. Cooldown: don't start if behavior is in cooldown.
     """
 
@@ -79,34 +84,23 @@ class ExecuteActiveBehavior(Node):
         # ── Tick the executor to advance simulation ──────────────────────────
         ex.tick()
 
-        # ── Check timeout on current behavior ────────────────────────────────
-        if bb.current_behavior is not None and bb.current_status == STATUS_RUNNING:
-            if bb.check_timeout():
-                timed_out = bb.current_behavior
-                bb.mark_timeout()
-                if bb.current_goal_id:
-                    ex.cancel_goal(bb.current_goal_id)
-                bb.last_feedback_event = BehaviorFeedbackEvent(
-                    behavior_id=timed_out.behavior_id,
-                    behavior_name=timed_out.behavior_name,
-                    status="TIMEOUT",
-                    result="timeout",
-                    reason=(
-                        f"Behavior exceeded timeout "
-                        f"({timed_out.timeout_sec:.1f}s)"
-                    ),
-                )
-                _log.event(LogEvent.BEHAVIOR_TIMEOUT,
-                           behavior_name=timed_out.behavior_name,
-                           timeout_sec=timed_out.timeout_sec)
-                return Status.FAILURE
-
         # ── Check result of completed goal ───────────────────────────────────
-        if bb.current_goal_id and bb.current_status == STATUS_RUNNING:
+        if bb.current_goal_id and bb.current_behavior is not None:
+            lifecycle = self._goal_lifecycle(ex, bb.current_goal_id)
+            if lifecycle is not None:
+                # Never regress a locally recorded cancellation request merely
+                # because a transport reports its earlier RUNNING state.
+                if bb.goal_lifecycle != GOAL_CANCEL_REQUESTED:
+                    bb.goal_lifecycle = lifecycle
             result = ex.get_result(bb.current_goal_id)
             if result is not None:
+                completed_goal_id = bb.current_goal_id
+                if bb.timeout_requested:
+                    result.metadata = dict(result.metadata)
+                    result.metadata["timeout_requested"] = True
                 bb.last_feedback_event = result
                 bb.current_status = result.status
+                bb.goal_lifecycle = GOAL_TERMINAL
 
                 # Set cooldown
                 if bb.current_behavior:
@@ -115,19 +109,44 @@ class ExecuteActiveBehavior(Node):
                 _log.event(LogEvent.BEHAVIOR_COMPLETE,
                            behavior_name=result.behavior_name,
                            status=result.status, reward=result.reward)
-                ex.remove_goal(bb.current_goal_id)
+                ex.remove_goal(completed_goal_id)
 
                 if result.status == STATUS_SUCCESS:
                     return Status.SUCCESS
                 else:
                     return Status.FAILURE
 
+            feedback = ex.get_feedback(bb.current_goal_id)
+            if feedback is not None:
+                bb.executor_feedback = feedback
+
+        # A cancellation acknowledgement is not execution completion.  Keep
+        # both the old Goal and any replacement candidate owned by Tree.
+        if (
+            bb.current_behavior is not None
+            and bb.goal_lifecycle == GOAL_CANCEL_REQUESTED
+        ):
+            return Status.RUNNING
+
+        # ── Check timeout on current behavior ────────────────────────────────
+        if bb.current_behavior is not None and bb.current_status == STATUS_RUNNING:
+            if bb.check_timeout():
+                timed_out = bb.current_behavior
+                reason = (
+                    f"Behavior exceeded timeout "
+                    f"({timed_out.timeout_sec:.1f}s)"
+                )
+                bb.request_cancel(reason, timeout=True)
+                if bb.current_goal_id:
+                    ex.cancel_goal(bb.current_goal_id)
+                _log.event(LogEvent.BEHAVIOR_TIMEOUT,
+                           behavior_name=timed_out.behavior_name,
+                           timeout_sec=timed_out.timeout_sec)
+                return Status.RUNNING
+
         # ── No new active behavior → keep ticking current ────────────────────
         if bb.active_behavior is None:
             if bb.current_behavior is not None and bb.current_status == STATUS_RUNNING:
-                # Update executor feedback
-                if bb.current_goal_id:
-                    bb.executor_feedback = ex.get_feedback(bb.current_goal_id)
                 return Status.RUNNING
             return Status.FAILURE
 
@@ -183,19 +202,13 @@ class ExecuteActiveBehavior(Node):
         bb.preemption_occurred = True
         bb.preemption_detail = reason
 
-        bb.last_feedback_event = BehaviorFeedbackEvent(
-            behavior_id=current.behavior_id,
-            behavior_name=current.behavior_name,
-            status="CANCELED",
-            result="canceled",
-            reason=f"Preempted by {active.behavior_name}: {reason}",
-            reward=-0.1,
-        )
+        cancel_reason = f"Preempted by {active.behavior_name}: {reason}"
+        bb.request_cancel(cancel_reason)
         if bb.current_goal_id:
             ex.cancel_goal(bb.current_goal_id)
 
-        self._send_goal(active, bb)
-        self._sent_behavior_id = active.behavior_id
+        # Keep active_behavior as the pending replacement.  It is dispatched
+        # only after the old goal's real Action Result is consumed.
         return Status.RUNNING
 
     def _send_goal(self, active, bb: Blackboard) -> None:
@@ -232,6 +245,8 @@ class ExecuteActiveBehavior(Node):
 
         goal_id = self.executor.send_goal(active)
         bb.start_behavior(active, goal_id)
+        lifecycle = self._goal_lifecycle(self.executor, goal_id)
+        bb.goal_lifecycle = lifecycle or GOAL_SENDING
         bb.executor_feedback = self.executor.get_feedback(goal_id)
         bb.active_behavior = None  # Consumed
         mode = "interactive" if active.params.get("interactive") else "solo"
@@ -250,4 +265,13 @@ class ExecuteActiveBehavior(Node):
             current.value,
             current.interrupt_policy,
             bb.executor_feedback,
+            active.params,
+            current.params,
         )
+
+    @staticmethod
+    def _goal_lifecycle(executor, goal_id: str) -> str | None:
+        getter = getattr(executor, "get_goal_lifecycle", None)
+        if getter is None:
+            return GOAL_RUNNING if executor.has_goal(goal_id) else None
+        return getter(goal_id)

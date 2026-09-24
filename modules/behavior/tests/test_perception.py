@@ -100,6 +100,19 @@ class TestVisualContext:
         assert target["species"] == "dog"
         assert target["track_id"] == 7
 
+    def test_visual_target_preserves_producer_stable_id_and_epoch(self):
+        target = select_social_animal([{
+            "label": "cat",
+            "confidence": 0.91,
+            "vision_epoch": "vision-1",
+            "target_id": "vision-1:object:11",
+            "track_id": 11,
+        }])
+
+        assert target["target_id"] == "vision-1:object:11"
+        assert target["vision_epoch"] == "vision-1"
+        assert target["track_id"] == 11
+
     @pytest.mark.parametrize(
         ("objects", "route"),
         [
@@ -186,9 +199,17 @@ class TestVoiceEvents:
     @pytest.mark.parametrize(
         ("event_type", "expected_behavior"),
         [
+            ("EVT_VOICE_COMMAND_WALK", "walk_to_random_point"),
+            ("EVT_VOICE_COMMAND_PLAY_ALONE", "play_alone"),
+            ("EVT_VOICE_COMMAND_GO_OUT", "go_out_to_play"),
+            ("EVT_VOICE_COMMAND_GO_HOME", "go_home"),
+            ("EVT_VOICE_COMMAND_APPROACH", "approach_owner"),
+            ("EVT_VOICE_COMMAND_BACK_UP", "back_up"),
             ("EVT_VOICE_COMMAND_SIT", "sit_down"),
             ("EVT_VOICE_COMMAND_LIE_DOWN", "lie_down"),
             ("EVT_VOICE_COMMAND_STAND_UP", "stand_up"),
+            ("EVT_VOICE_COMMAND_STAND_STILL", "stand_still"),
+            ("EVT_VOICE_COMMAND_HOLD_POSITION", "hold_position"),
             ("EVT_VOICE_COMMAND_WAIT", "wait_in_place"),
             ("EVT_VOICE_COMMAND_COME", "come_to_owner"),
             ("EVT_VOICE_COMMAND_FOLLOW", "follow_owner"),
@@ -198,6 +219,7 @@ class TestVoiceEvents:
             ("EVT_VOICE_COMMAND_SPIN", "spin_around"),
             ("EVT_VOICE_COMMAND_RETURN", "return_to_owner"),
             ("EVT_VOICE_COMMAND_DROP", "drop_object"),
+            ("EVT_VOICE_COMMAND_QUIET", "quiet"),
             ("EVT_VOICE_COMMAND_PLAY_DEAD", "play_dead"),
             ("EVT_VOICE_COMMAND_BRING", "bring_object"),
             ("EVT_VOICE_COMMAND_FETCH", "fetch_object"),
@@ -218,6 +240,61 @@ class TestVoiceEvents:
         root, bb, executor, provider, loader = runtime
         behavior = provider.inject_audio_event("EVT_VOICE_COMMAND_DOES_NOT_EXIST")
         assert behavior is None
+
+    @pytest.mark.parametrize(
+        ("event_type", "demand", "threshold", "expected_behavior"),
+        [
+            (
+                "EVT_VOICE_COMMAND_TOILET",
+                "Bladder",
+                50.0,
+                "barkShortAlert",
+            ),
+            (
+                "EVT_VOICE_COMMAND_CLEAN",
+                "Cleanliness",
+                40.0,
+                "lickPaws",
+            ),
+            (
+                "EVT_VOICE_COMMAND_SLEEP",
+                "Sleepiness",
+                50.0,
+                "sleepOnSide",
+            ),
+        ],
+    )
+    def test_standalone_need_gated_voice_commands(
+        self,
+        runtime,
+        event_type,
+        demand,
+        threshold,
+        expected_behavior,
+    ):
+        root, bb, executor, provider, loader = runtime
+
+        assert provider.inject_audio_event(event_type) is None
+        bb.need_module.set_need(demand, threshold)
+        assert provider.inject_audio_event(event_type) is None
+
+        bb.need_module.set_need(demand, threshold + 0.1)
+        behavior = provider.inject_audio_event(event_type)
+        assert behavior is not None
+        assert behavior.behavior_name == expected_behavior
+
+    @pytest.mark.parametrize(
+        "event_type",
+        ["EVT_VOICE_CALL_NAME", "EVT_VOICE_COMMAND_CALL_NAME"],
+    )
+    def test_standalone_nickname_social_events_are_not_actions(
+        self,
+        runtime,
+        event_type,
+    ):
+        root, bb, executor, provider, loader = runtime
+
+        assert provider.inject_audio_event(event_type) is None
 
     def test_stop_event_generates_emergency_stop(self, runtime):
         root, bb, executor, provider, loader = runtime
@@ -307,10 +384,18 @@ class TestVoiceEventMap:
 
     def test_expected_events_mapped(self):
         expected = {
-            "EVT_VOICE_CALL_NAME",
+            "EVT_VOICE_WAKEUP",
+            "EVT_VOICE_COMMAND_WALK",
+            "EVT_VOICE_COMMAND_PLAY_ALONE",
+            "EVT_VOICE_COMMAND_GO_OUT",
+            "EVT_VOICE_COMMAND_GO_HOME",
+            "EVT_VOICE_COMMAND_APPROACH",
+            "EVT_VOICE_COMMAND_BACK_UP",
             "EVT_VOICE_COMMAND_SIT",
             "EVT_VOICE_COMMAND_LIE_DOWN",
             "EVT_VOICE_COMMAND_STAND_UP",
+            "EVT_VOICE_COMMAND_STAND_STILL",
+            "EVT_VOICE_COMMAND_HOLD_POSITION",
             "EVT_VOICE_COMMAND_WAIT",
             "EVT_VOICE_COMMAND_COME",
             "EVT_VOICE_COMMAND_FOLLOW",
@@ -320,9 +405,13 @@ class TestVoiceEventMap:
             "EVT_VOICE_COMMAND_SPIN",
             "EVT_VOICE_COMMAND_RETURN",
             "EVT_VOICE_COMMAND_DROP",
+            "EVT_VOICE_COMMAND_QUIET",
             "EVT_VOICE_COMMAND_PLAY_DEAD",
             "EVT_VOICE_COMMAND_BRING",
             "EVT_VOICE_COMMAND_FETCH",
+            "EVT_VOICE_COMMAND_TOILET",
+            "EVT_VOICE_COMMAND_CLEAN",
+            "EVT_VOICE_COMMAND_SLEEP",
             "EVT_VOICE_COMMAND_STOP",
         }
         mapped = set(VOICE_EVENT_BEHAVIOR_MAP)

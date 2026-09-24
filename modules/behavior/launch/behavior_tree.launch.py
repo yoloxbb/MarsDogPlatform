@@ -18,6 +18,10 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     tick_rate = LaunchConfiguration("tick_rate", default="0.1")
+    vision_task_timeout_sec = LaunchConfiguration(
+        "vision_task_timeout_sec",
+        default="2.0",
+    )
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -25,7 +29,11 @@ def generate_launch_description():
             default_value="0.1",
             description="BT tick rate in seconds (10Hz default)",
         ),
-
+        DeclareLaunchArgument(
+            "vision_task_timeout_sec",
+            default_value="2.0",
+            description="VisionTask async response timeout in seconds",
+        ),
         Node(
             package="marsdog_behavior",
             executable="behavior_tree_node",
@@ -33,6 +41,7 @@ def generate_launch_description():
             output="screen",
             parameters=[{
                 "tick_rate": tick_rate,
+                "vision_task_timeout_sec": vision_task_timeout_sec,
             }],
         ),
     ])

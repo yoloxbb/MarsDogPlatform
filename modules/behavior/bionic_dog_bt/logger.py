@@ -65,6 +65,18 @@ class LogEvent(str, Enum):
     FEEDBACK_PUBLISH = "feedback_publish"
 
 
+# Successful checks and periodic telemetry help diagnose one decision, but
+# they are not lifecycle milestones.  Keeping them at DEBUG prevents a healthy
+# 10 Hz tree from drowning the INFO-level execution trace.
+_DEBUG_EVENTS = frozenset({
+    LogEvent.RELEVANCE_PASS,
+    LogEvent.EMOTION_STATE,
+    LogEvent.NEED_STATE,
+    LogEvent.TREE_TICK,
+    LogEvent.FEEDBACK_PUBLISH,
+})
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Logger
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -96,15 +108,23 @@ class BTLogger:
         self.logger.error(msg, *args, **kwargs)
 
     def event(self, event_type: LogEvent, **kwargs) -> None:
-        """Log a structured event as JSON at INFO level.
+        """Log a structured event as JSON at its operational level.
 
         Example:
             logger.event(LogEvent.BEHAVIOR_START,
                          behavior_name="playBow", priority_level=5, goal_id="g1")
+
+        Lifecycle changes and failures are INFO.  Successful relevance checks
+        and periodic telemetry are DEBUG because they may occur on every tick.
         """
         kwargs["event"] = event_type.value
         kwargs["timestamp"] = time.time()
-        self.logger.info(json.dumps(kwargs, ensure_ascii=False, default=str))
+        log = (
+            self.logger.debug
+            if event_type in _DEBUG_EVENTS
+            else self.logger.info
+        )
+        log(json.dumps(kwargs, ensure_ascii=False, default=str))
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

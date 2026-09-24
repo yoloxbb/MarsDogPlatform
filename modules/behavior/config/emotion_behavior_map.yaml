@@ -23,6 +23,7 @@ emotion_behavior_map:
     routes:
       human:
         behavior_name: expressCalmWithHuman
+        voice_waiting_behavior_name: expressCalmInPlaceWithHuman
         interaction_mode: interactive
       solo:
         behavior_name: expressCalmAlone
@@ -39,6 +40,7 @@ emotion_behavior_map:
     routes:
       human:
         behavior_name: expressJoyWithHuman
+        voice_waiting_behavior_name: expressJoyInPlaceWithHuman
         interaction_mode: interactive
       solo:
         behavior_name: expressJoyAlone
@@ -55,6 +57,7 @@ emotion_behavior_map:
     routes:
       human:
         behavior_name: expressExcitementWithHuman
+        voice_waiting_behavior_name: expressExcitementInPlaceWithHuman
         interaction_mode: interactive
       solo:
         behavior_name: expressExcitementAlone
@@ -71,6 +74,7 @@ emotion_behavior_map:
     routes:
       human:
         behavior_name: expressAnxietyWithHuman
+        voice_waiting_behavior_name: expressAnxietyInPlaceWithHuman
         interaction_mode: interactive
       solo:
         behavior_name: expressAnxietyAlone
@@ -87,6 +91,7 @@ emotion_behavior_map:
     routes:
       human:
         behavior_name: expressFearWithHuman
+        voice_waiting_behavior_name: expressFearInPlaceWithHuman
         interaction_mode: interactive
       solo:
         behavior_name: expressFearAlone
@@ -103,6 +108,7 @@ emotion_behavior_map:
     routes:
       human:
         behavior_name: expressCuriosityWithHuman
+        voice_waiting_behavior_name: expressCuriosityInPlaceWithHuman
         interaction_mode: interactive
       solo:
         behavior_name: expressCuriosityAlone

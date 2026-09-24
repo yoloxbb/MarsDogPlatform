@@ -1,7 +1,9 @@
 """Intent Mapper — event → category → intent → behavior_name pipeline.
 
 Loads event_intent_map.yaml, intent_action_pool.yaml, emotion_behavior_map.yaml,
-behavior_categories.yaml, and legacy_behavior_aliases.yaml.
+behavior_categories.yaml, and legacy_behavior_aliases.yaml.  Audio reactions
+are one-shot external interactions; they reuse emotion behavior templates
+without becoming state-backed emotion candidates.
 
 BehaviorCandidate: structured dataclass with sub_priority, intensity, level,
 variant, interaction_mode, and target fields.
@@ -25,10 +27,40 @@ from .config_paths import get_config_dir
 
 _log = get_logger("intent_mapper")
 
-AUDIO_EVENTS_FOR_EMOTION_ENGINE = {
-    "EVT_VOICE_MASTER_ID", "EVT_VOICE_STRANGER_ID",
+AUDIO_EVENTS_NOT_FOR_TREE = {
+    "EVT_VOICE_MASTER_ID", "EVT_VOICE_FOLK_ID",
+    "EVT_VOICE_UNMASTER_ID", "EVT_VOICE_STRANGER_ID",
+    "EVT_VOICE_CALL_NAME", "EVT_VOICE_COMMAND_CALL_NAME",
     "EVT_VOICE_PRAISE", "EVT_VOICE_SCOLD",
-    "EVT_VOICE_HAPPY", "EVT_VOICE_SAD", "EVT_VOICE_NEUTRAL",
+    "EVT_VOICE_COMFORT", "EVT_VOICE_PLAY_INTERACTION",
+    "EVT_VOICE_POSITIVE_EMOTION", "EVT_VOICE_NEGATIVE_EMOTION",
+    "EVT_VOICE_STATUS_CARE", "EVT_VOICE_COMMAND_KNOWN",
+    "EVT_VOICE_COMMAND_UNKNOWN", "EVT_VOICE_HAPPY",
+    "EVT_VOICE_SAD", "EVT_VOICE_NEUTRAL",
+}
+
+_EMOTION_NAME_TO_EVENT = {
+    name: event_type
+    for event_type, name in EMOTION_V2_EVENT_TO_NAME.items()
+}
+
+_VOICE_SLOT_KEYS = {
+    "command_key",
+    "matched_phrase",
+    "catalog_phrase",
+    "command_catalog_version",
+    "match_strategy",
+    "expansion_profile",
+    "expansion_rule",
+    "catalog_source_rows",
+    "derived_axis",
+    "model_dispatch_policy",
+    "specific_dispatch",
+    "object_name",
+    "object_mention",
+    "object_matched_alias",
+    "object_match_source",
+    "object_catalog_version",
 }
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -40,12 +72,14 @@ class BehaviorCandidate:
     """Structured behavior candidate with intent metadata."""
 
     behavior_name: str = ""
-    source: str = ""              # audio_direct / need / emotion / idle
+    source: str = ""              # audio_direct / audio_reaction / need / emotion / idle
     trigger_event: str = ""       # e.g. "EVT_VOICE_COMMAND_SIT", "EMO_JOY_TRIGGERED"
     intent: str = ""              # e.g. "command_sit", "express_joy"
 
     priority_level: int = 6
     sub_priority: int = 0
+    semantic_rank: int = 3
+    modality_rank: int = 3
 
     intensity: float | None = None
     level: str | None = None      # need level: TRIGGERED / URGENT / OVERFLOW
@@ -64,6 +98,7 @@ class BehaviorCandidate:
     # Optional end-to-end behavior timeout.  Long-running candidates such as
     # waypoint navigation must not inherit the short priority-level default.
     timeout_sec: float | None = None
+    cooldown_sec: float | None = None
     confidence: float = 0.8
     source_emotion: str = ""
     source_demand: str = ""
@@ -85,9 +120,11 @@ class BehaviorCandidate:
 
     @property
     def sort_key(self) -> tuple:
-        """Sort key: (priority_level, sub_priority, -intensity, -created_at)."""
+        """Sort key shared with queued and running priority comparison."""
         return (
             self.priority_level,
+            self.semantic_rank,
+            self.modality_rank,
             self.sub_priority,
             -(self.intensity or 0.0),
             -self.created_at,
@@ -103,6 +140,8 @@ class BehaviorCandidate:
             "behavior_name": self.behavior_name,
             "priority_level": self.priority_level,
             "sub_priority": self.sub_priority,
+            "semantic_rank": self.semantic_rank,
+            "modality_rank": self.modality_rank,
             "value": self.intensity if self.intensity is not None else 50.0,
             "confidence": self.confidence,
             "need_type": _category_to_need_type(self._category_from_level()),
@@ -128,6 +167,8 @@ class BehaviorCandidate:
                 "source_need": self.source_demand,
                 "candidate_id": self.candidate_id,
                 "sub_priority": self.sub_priority,
+                "semantic_rank": self.semantic_rank,
+                "modality_rank": self.modality_rank,
                 "result_mapping": self.result_mapping,
                 **self.params,
             },
@@ -136,7 +177,11 @@ class BehaviorCandidate:
                 if self.timeout_sec is not None
                 else _default_timeout_for_level(self.priority_level)
             ),
-            "cooldown_sec": _default_cooldown_for_level(self.priority_level),
+            "cooldown_sec": (
+                self.cooldown_sec
+                if self.cooldown_sec is not None
+                else _default_cooldown_for_level(self.priority_level)
+            ),
             "allow_repeat": self.allow_repeat,
             "emotion_priority": self.emotion_priority,
         }
@@ -188,8 +233,10 @@ class IntentMapper:
         self._legacy_need = self._legacy_aliases.get("legacy_need_behavior_aliases", {})
         self._all_aliases = {**self._legacy_emotion, **self._legacy_need}
 
-        _log.info("IntentMapper loaded: audio=%d need=%d emotion=%d aliases=%d",
+        _log.info("IntentMapper loaded: audio=%d reactions=%d visual=%d need=%d emotion=%d aliases=%d",
                   len(self._event_intent.get("audio_direct", {})),
+                  len(self._event_intent.get("audio_reaction", {})),
+                  len(self._event_intent.get("visual_direct", {})),
                   len(self._event_intent.get("need", {})),
                   len(self._emotion_map.get("emotion_behavior_map", {})),
                   len(self._all_aliases))
@@ -220,19 +267,195 @@ class IntentMapper:
         audio_map = self._event_intent.get("audio_direct", {})
         entry = audio_map.get(event_type)
         if entry is None:
-            destination = (
-                " → emotion_engine"
-                if event_type in AUDIO_EVENTS_FOR_EMOTION_ENGINE
+            contract = (
+                " (non-Tree contract)"
+                if event_type in AUDIO_EVENTS_NOT_FOR_TREE
                 else ""
             )
-            _log.debug("Audio event %s ignored%s", event_type, destination)
+            _log.debug("Audio event %s ignored%s", event_type, contract)
+            return None
+
+        voice_slots = self._validate_audio_contract(
+            event_type,
+            data,
+            intent_entry=entry,
+        )
+        if voice_slots is None:
             return None
 
         return self._build_audio_candidate(
             event_type,
             data,
             intent_entry=entry,
+            voice_slots=voice_slots,
         )
+
+    def validate_audio_reaction_event(
+        self,
+        event_type: str,
+        data: dict,
+    ) -> bool:
+        """Validate an exact one-shot vocabulary reaction contract."""
+        return self._validated_audio_reaction(event_type, data) is not None
+
+    def map_audio_reaction(
+        self,
+        event_type: str,
+        data: dict,
+        *,
+        visual_route: str = "solo",
+        target: dict | None = None,
+        active_voice_session: bool = False,
+    ) -> Optional[BehaviorCandidate]:
+        """Map PRAISE/SCOLD into one external-interaction reaction.
+
+        The selected expression reuses the emotion behavior catalog, but the
+        candidate remains ``source=audio_reaction`` at Lv1 and never mutates or
+        continues the authoritative emotion state.
+        """
+        validated = self._validated_audio_reaction(event_type, data)
+        if validated is None:
+            return None
+        entry, voice_slots = validated
+
+        reactions = entry.get("reactions", [])
+        names: list[str] = []
+        weights: list[float] = []
+        if not isinstance(reactions, list):
+            _log.error("Audio reaction %s has malformed reactions", event_type)
+            return None
+        for reaction in reactions:
+            if not isinstance(reaction, dict):
+                return None
+            emotion_name = str(reaction.get("emotion", "")).strip()
+            try:
+                weight = float(reaction.get("weight", 1.0))
+            except (TypeError, ValueError):
+                return None
+            if (
+                not emotion_name
+                or emotion_name not in _EMOTION_NAME_TO_EVENT
+                or not math.isfinite(weight)
+                or weight <= 0.0
+            ):
+                _log.error(
+                    "Audio reaction %s has invalid emotion/weight",
+                    event_type,
+                )
+                return None
+            names.append(emotion_name)
+            weights.append(weight)
+        if not names:
+            _log.error("Audio reaction %s has no reactions", event_type)
+            return None
+
+        emotion_name = random.choices(names, weights=weights, k=1)[0]
+        emotion_event = _EMOTION_NAME_TO_EVENT[emotion_name]
+        emotion_entry = self._emotion_map.get("emotion_behavior_map", {}).get(
+            emotion_event
+        )
+        if not isinstance(emotion_entry, dict):
+            _log.error(
+                "Audio reaction %s references unmapped emotion %s",
+                event_type,
+                emotion_name,
+            )
+            return None
+
+        visual_route = "human" if visual_route == "human" else "solo"
+        route_entry = emotion_entry.get("routes", {}).get(visual_route)
+        if not isinstance(route_entry, dict):
+            return None
+        in_place = active_voice_session and visual_route == "human"
+        behavior_key = (
+            "voice_waiting_behavior_name" if in_place else "behavior_name"
+        )
+        behavior_name = str(route_entry.get(behavior_key, "")).strip()
+        if not behavior_name:
+            _log.warning(
+                "Audio reaction %s has no %s route for %s",
+                event_type,
+                behavior_key,
+                visual_route,
+            )
+            return None
+        if visual_route == "human" and not isinstance(target, dict):
+            return None
+
+        interaction_id = str(data.get("interaction_id", "")).strip()
+        utterance_id = str(data.get("utterance_id", "")).strip()
+        interactive = visual_route == "human"
+        candidate = BehaviorCandidate(
+            source="audio_reaction",
+            source_emotion=emotion_name,
+            trigger_event=event_type,
+            intent=str(entry.get("intent", "")),
+            behavior_name=behavior_name,
+            priority_level=self._priority_for(str(entry["category"])),
+            sub_priority=int(entry.get("sub_priority", 1)),
+            semantic_rank=3,
+            modality_rank=1,
+            intensity=80.0,
+            variant=str(emotion_entry.get("variant", "")) or None,
+            interactive=interactive,
+            target_required=interactive,
+            target=target if interactive else None,
+            interaction_mode="interactive" if interactive else "solo",
+            ttl_sec=float(entry.get("ttl_sec", 5.0)),
+            timeout_sec=float(entry.get("timeout_sec", 8.0)),
+            cooldown_sec=float(entry.get("cooldown_sec", 2.0)),
+            confidence=0.85,
+            allow_repeat=False,
+            emotion_priority=EMOTION_PRIORITY.get(emotion_name, 50),
+            interrupt_policy=str(entry.get("interrupt_policy", "immediate")),
+            result_mapping=emotion_entry.get("result_mapping"),
+            params={
+                "emotion": emotion_name,
+                "social_trigger": event_type,
+                "interaction_id": interaction_id,
+                "utterance_id": utterance_id,
+                "audio_event_key": "%s:%s:%s" % (
+                    interaction_id,
+                    utterance_id,
+                    event_type,
+                ),
+                "session_role": "voice_social_reaction",
+                "session_preempt_rank": 0,
+                "interaction_variant": (
+                    "voice_social_reaction" if active_voice_session else ""
+                ),
+                "mobility_policy": "in_place" if in_place else "",
+                "visual_route": visual_route,
+                "visual_resolved": True,
+                "target": target if interactive else None,
+                "target_identity": (
+                    target.get("identity", target.get("target_id", "unknown"))
+                    if interactive
+                    else None
+                ),
+                "command_key": voice_slots.get("command_key", ""),
+                "command_id": str(data.get("command_id", "")),
+                "command_catalog_version": voice_slots.get(
+                    "command_catalog_version",
+                    "",
+                ),
+                "intent_source": str(data.get("intent_source", "")),
+                "dispatch_role": str(data.get("dispatch_role", "")),
+                "specific_event_type": str(
+                    data.get("specific_event_type", "")
+                ),
+                "voice_slots": dict(voice_slots),
+            },
+        )
+        _log.debug(
+            "Audio reaction: %s → %s → %s (Lv%d %s)",
+            event_type,
+            emotion_name,
+            behavior_name,
+            candidate.priority_level,
+            "in_place" if in_place else visual_route,
+        )
+        return candidate
 
     def map_need_event(self, event_type: str, data: dict) -> Optional[BehaviorCandidate]:
         """Map a need signal_event to a BehaviorCandidate via event_intent_map."""
@@ -320,7 +543,7 @@ class IntentMapper:
                 "object_category": object_category,
             },
         )
-        _log.info("Need candidate: %s → %s → %s (Lv%d sp=%d %s)",
+        _log.debug("Need candidate: %s → %s → %s (Lv%d sp=%d %s)",
                   event_type, intent, behavior_name,
                   cand.priority_level, cand.sub_priority, variant or "")
         return cand
@@ -332,6 +555,8 @@ class IntentMapper:
         interactive: bool = False,
         target: dict = None,
         visual_route: str | None = None,
+        behavior_context: str = "",
+        context_params: dict | None = None,
     ) -> Optional[BehaviorCandidate]:
         """Map an emotion signal_event to a BehaviorCandidate via emotion_behavior_map."""
         em_map = self._emotion_map.get("emotion_behavior_map", {})
@@ -359,6 +584,23 @@ class IntentMapper:
             return None
         effective_entry = {**entry, **(route_entry or {})}
 
+        behavior_name = effective_entry.get("behavior_name")
+        if behavior_context:
+            contextual_name = effective_entry.get(
+                f"{behavior_context}_behavior_name"
+            )
+            if not isinstance(contextual_name, str) or not contextual_name:
+                _log.debug(
+                    "Emotion event %s has no %s behavior for route %s",
+                    event_type,
+                    behavior_context,
+                    visual_route,
+                )
+                return None
+            behavior_name = contextual_name
+        if not isinstance(behavior_name, str) or not behavior_name:
+            return None
+
         if visual_route == "human" and not isinstance(target, dict):
             _log.debug("Emotion event %s human route has no target", event_type)
             return None
@@ -378,7 +620,7 @@ class IntentMapper:
             source_emotion=em_name,
             trigger_event=event_type,
             intent=effective_entry["intent"],
-            behavior_name=effective_entry["behavior_name"],
+            behavior_name=behavior_name,
             priority_level=effective_entry["priority_level"],
             sub_priority=effective_entry.get("sub_priority", 0),
             intensity=value,
@@ -391,11 +633,14 @@ class IntentMapper:
             ttl_sec=10.0,
             confidence=0.85,
             allow_repeat=bool(effective_entry.get("allow_repeat", False)),
+            # 情绪类行为使用 10 秒合并门控（区别于姿态/移动/声音类的执行完即触发）。
+            cooldown_sec=10.0,
             emotion_priority=EMOTION_PRIORITY.get(em_name, 50),
             interrupt_policy="immediate",
             result_mapping=effective_entry.get("result_mapping"),
             params={
                 **route_params,
+                **(context_params or {}),
                 "emotion": em_name,
                 "intensity": value,
                 "level": effective_entry.get("level"),
@@ -412,24 +657,274 @@ class IntentMapper:
                 ),
             },
         )
-        _log.info("Emotion candidate: %s → %s → %s (Lv%d %s %s)",
+        _log.debug("Emotion candidate: %s → %s → %s (Lv%d %s %s)",
                   event_type, effective_entry["intent"],
-                  effective_entry["behavior_name"], cand.priority_level,
+                  behavior_name, cand.priority_level,
                   interaction_mode, effective_entry.get("variant", ""))
         return cand
 
-    def map_visual_event(self, event_type: str, data: dict) -> None:
-        """Visual events MUST NOT generate behavior candidates."""
-        return None
+    def map_visual_event(
+        self,
+        event_type: str,
+        data: dict,
+    ) -> Optional[BehaviorCandidate]:
+        """Map whitelisted formal visual events to behavior candidates."""
+        entry = self._event_intent.get("visual_direct", {}).get(event_type)
+        if entry is None:
+            _log.debug("Visual event %s is not a direct behavior event", event_type)
+            return None
+
+        visual_events = data.get("events") if isinstance(data, dict) else None
+        if (
+            not isinstance(data, dict)
+            or type(data.get("schema_version")) is not int
+            or data["schema_version"] != 1
+            or not isinstance(visual_events, list)
+            or event_type not in visual_events
+        ):
+            _log.warning(
+                "Rejecting %s: expected matching schema-v1 visual event",
+                event_type,
+            )
+            return None
+
+        intent = str(entry.get("intent", ""))
+        behavior_name = self._select_behavior(intent)
+        if not intent or behavior_name is None:
+            _log.warning(
+                "Visual event %s has no configured intent/behavior", event_type
+            )
+            return None
+
+        active_target = data.get("active_target")
+        hands = data.get("hands")
+        faces = data.get("faces")
+        params = {
+            **entry.get("params", {}),
+            "visual_header": (
+                dict(data["header"])
+                if isinstance(data.get("header"), dict)
+                else {}
+            ),
+            "active_target": (
+                dict(active_target) if isinstance(active_target, dict) else {}
+            ),
+            "hands": (
+                [dict(item) for item in hands if isinstance(item, dict)]
+                if isinstance(hands, list)
+                else []
+            ),
+            "face_count": len(faces) if isinstance(faces, list) else 0,
+            "vision_epoch": str(data.get("vision_epoch", "")),
+            "snapshot_id": str(data.get("snapshot_id", "")),
+            "snapshot_sequence": data.get("sequence"),
+            "visual_resolved": True,
+        }
+        candidate = BehaviorCandidate(
+            source="visual_direct",
+            source_emotion="",
+            trigger_event=event_type,
+            intent=intent,
+            behavior_name=behavior_name,
+            priority_level=self._priority_for(entry["category"]),
+            sub_priority=int(entry.get("sub_priority", 12)),
+            semantic_rank=int(entry.get("semantic_rank", 3)),
+            modality_rank=2,
+            intensity=100.0,
+            confidence=1.0,
+            ttl_sec=float(entry.get("ttl_sec", 8.0)),
+            timeout_sec=(
+                float(entry["timeout_sec"])
+                if entry.get("timeout_sec") is not None
+                else None
+            ),
+            cooldown_sec=(
+                float(entry["cooldown_sec"])
+                if entry.get("cooldown_sec") is not None
+                else None
+            ),
+            interrupt_policy=str(entry.get("interrupt_policy", "immediate")),
+            interactive=False,
+            target_required=False,
+            target=None,
+            interaction_mode="solo",
+            result_mapping=None,
+            params=params,
+        )
+        _log.debug(
+            "Visual candidate: %s → %s → %s (Lv%d sp=%d)",
+            event_type,
+            intent,
+            behavior_name,
+            candidate.priority_level,
+            candidate.sub_priority,
+        )
+        return candidate
 
     def resolve_alias(self, behavior_name: str) -> str:
         """Resolve a legacy behavior name to its new semantic name."""
         return self._all_aliases.get(behavior_name, behavior_name)
 
+    def _validated_audio_reaction(
+        self,
+        event_type: str,
+        data: dict,
+    ) -> tuple[dict, dict[str, str]] | None:
+        entry = self._event_intent.get("audio_reaction", {}).get(event_type)
+        if not isinstance(entry, dict):
+            _log.debug("Audio event %s is not an audio reaction", event_type)
+            return None
+        voice_slots = self._validate_audio_contract(
+            event_type,
+            data,
+            intent_entry=entry,
+            expected_dispatch_role="social_reaction",
+        )
+        if voice_slots is None:
+            return None
+        expected_social = str(entry.get("expected_social", "")).strip()
+        if (
+            not expected_social
+            or str(data.get("social", "")).strip() != expected_social
+            or str(data.get("emotion", "")).strip() != expected_social
+            or str(data.get("intent", "")).strip() != "NONE"
+            or str(data.get("action", "")).strip() != "NONE"
+            or str(data.get("control", "")).strip() != "NONE"
+            or data.get("is_executable") is not False
+        ):
+            _log.warning(
+                "Rejecting %s: invalid social-reaction authority fields",
+                event_type,
+            )
+            return None
+        return entry, voice_slots
+
     # ── Helpers ──────────────────────────────────────────────────────────
 
+    @staticmethod
+    def _validate_audio_contract(
+        event_type: str,
+        data: dict,
+        *,
+        intent_entry: dict,
+        expected_dispatch_role: str = "specific_command",
+    ) -> dict[str, str] | None:
+        if (
+            not isinstance(data, dict)
+            or type(data.get("schema_version")) is not int
+            or data["schema_version"] != 2
+            or data.get("event_type") != event_type
+        ):
+            _log.warning(
+                "Rejecting %s: expected matching schema-v2 event",
+                event_type,
+            )
+            return None
+
+        raw_slots = data.get("slots", [])
+        if not isinstance(raw_slots, list):
+            _log.warning("Rejecting %s: slots must be an array", event_type)
+            return None
+        voice_slots: dict[str, str] = {}
+        for item in raw_slots:
+            if not isinstance(item, dict):
+                _log.warning("Rejecting %s: malformed slot", event_type)
+                return None
+            key = str(item.get("key", "")).strip()
+            value = str(item.get("value", "")).strip()
+            if not key or key not in _VOICE_SLOT_KEYS:
+                continue
+            if key in voice_slots and voice_slots[key] != value:
+                _log.warning(
+                    "Rejecting %s: conflicting slot %s",
+                    event_type,
+                    key,
+                )
+                return None
+            voice_slots[key] = value
+
+        # Hardware wake is source-distinct from Model Intent CALL and catalog
+        # nickname events.  It is a lifecycle event, not an executable command.
+        is_hardware_wake = event_type == "EVT_VOICE_WAKEUP"
+        if is_hardware_wake:
+            return voice_slots
+
+        expected_command_id = str(
+            intent_entry.get("expected_command_id", "")
+        ).strip()
+        if not expected_command_id:
+            _log.error(
+                "Audio route %s has no expected_command_id",
+                event_type,
+            )
+            return None
+        if data.get("should_trigger_behavior_tree") is not True:
+            _log.warning(
+                "Rejecting %s: should_trigger_behavior_tree is not true",
+                event_type,
+            )
+            return None
+        if data.get("dispatch_role") != expected_dispatch_role:
+            _log.warning(
+                "Rejecting %s: dispatch_role is not %s",
+                event_type,
+                expected_dispatch_role,
+            )
+            return None
+        if str(data.get("command_id", "")).strip() != expected_command_id:
+            _log.warning(
+                "Rejecting %s: command_id does not match %s",
+                event_type,
+                expected_command_id,
+            )
+            return None
+        specific_event_type = str(
+            data.get("specific_event_type", "")
+        ).strip()
+        if specific_event_type != event_type:
+            _log.warning(
+                "Rejecting %s: specific_event_type mismatch",
+                event_type,
+            )
+            return None
+        interaction_id = str(data.get("interaction_id", "")).strip()
+        utterance_id = str(data.get("utterance_id", "")).strip()
+        if not interaction_id or not utterance_id:
+            _log.warning(
+                "Rejecting %s: interaction_id and utterance_id are required",
+                event_type,
+            )
+            return None
+        for required_key in intent_entry.get("required_voice_slots", []):
+            value = voice_slots.get(str(required_key), "")
+            if not value or value == "NONE":
+                _log.warning(
+                    "Rejecting %s: required slot %s is unavailable",
+                    event_type,
+                    required_key,
+                )
+                return None
+        allowed_values = intent_entry.get("allowed_voice_slot_values", {})
+        if isinstance(allowed_values, dict):
+            for key, values in allowed_values.items():
+                value = voice_slots.get(str(key), "")
+                if (
+                    value
+                    and isinstance(values, list)
+                    and value not in values
+                ):
+                    _log.warning(
+                        "Rejecting %s: unsupported slot %s=%r",
+                        event_type,
+                        key,
+                        value,
+                    )
+                    return None
+        return voice_slots
+
     def _build_audio_candidate(self, event_type: str, data: dict,
-                               intent_entry: dict) -> Optional[BehaviorCandidate]:
+                               intent_entry: dict,
+                               voice_slots: dict[str, str]) -> Optional[BehaviorCandidate]:
         intent = intent_entry.get("intent", "")
         if not intent:
             return None
@@ -438,28 +933,91 @@ class IntentMapper:
         if behavior_name is None:
             return None
 
-        confidence = float(
-            data.get("intent_confidence", data.get("wake_confidence", 0.8))
-        )
+        try:
+            confidence = float(
+                data.get("intent_confidence", data.get("wake_confidence", 0.8))
+            )
+        except (TypeError, ValueError):
+            return None
+        if not math.isfinite(confidence):
+            return None
+        confidence = max(0.0, min(1.0, confidence))
 
-        # Target fields are metadata only; event_type determines the behavior.
+        # Voice never owns visual target selection.  Preserve an explicitly
+        # resolved target reference for compatibility, but never manufacture a
+        # stable id from speaker identity.
         target_track_id = data.get("target_track_id")
         target_identity = data.get("target_identity")
+        explicit_target_id = str(data.get("target_id", "")).strip()
         target = None
-        if target_track_id is not None or target_identity:
+        if explicit_target_id and target_track_id is not None:
             target = {
                 "target_type": "human",
-                "target_id": target_identity or "unknown",
+                "target_id": explicit_target_id,
                 "track_id": target_track_id,
+                "identity": target_identity or "unknown",
             }
 
+        need_gate = self._normalize_audio_need_gate(
+            event_type,
+            intent_entry.get("need_gate"),
+        )
+        if need_gate is None:
+            return None
+
+        interaction_id = str(data.get("interaction_id", "")).strip()
+        utterance_id = str(data.get("utterance_id", "")).strip()
+        session_role = (
+            "wake_orientation"
+            if event_type == "EVT_VOICE_WAKEUP"
+            else "voice_command"
+        )
+        session_preempt_rank = 10 if session_role == "wake_orientation" else 0
+        header = data.get("header") if isinstance(data.get("header"), dict) else {}
+
         params = {
+            "lifecycle_scope": "voice_session",
+            "completion_policy": "bounded",
+            "cancel_on_voice_idle": True,
             **intent_entry.get("params", {}),
             "asr_text": data.get("asr_text", ""),
             "intent_confidence": confidence,
+            "interaction_id": interaction_id,
+            "wake_id": str(data.get("wake_id", "")) if session_role == "wake_orientation" else "",
+            "utterance_id": utterance_id,
+            "audio_event_key": "%s:%s:%s" % (
+                interaction_id, utterance_id, event_type
+            ),
+            "wake_event_stamp": header.get("stamp"),
+            "session_role": session_role,
+            "session_preempt_rank": session_preempt_rank,
             "target_track_id": target_track_id,
             "target_identity": target_identity,
+            "command_key": voice_slots.get("command_key", ""),
+            "command_id": str(data.get("command_id", "")),
+            "command_catalog_version": voice_slots.get(
+                "command_catalog_version",
+                "",
+            ),
+            "intent_source": str(data.get("intent_source", "")),
+            "dispatch_role": str(data.get("dispatch_role", "")),
+            "specific_event_type": str(data.get("specific_event_type", "")),
+            "nlu_protocol": str(data.get("nlu_protocol", "")),
+            "raw_nlu_tag": str(data.get("raw_nlu_tag", "")),
+            "voice_slots": dict(voice_slots),
         }
+        if need_gate:
+            params["need_gate"] = need_gate
+        object_name = voice_slots.get("object_name", "")
+        if object_name and object_name != "NONE":
+            params["object_name"] = object_name
+            params["object_mention"] = voice_slots.get("object_mention", "")
+            params["object_match_source"] = voice_slots.get(
+                "object_match_source", ""
+            )
+            params["object_catalog_version"] = voice_slots.get(
+                "object_catalog_version", ""
+            )
         if params.get("use_wake_angle") is True:
             try:
                 wake_angle_deg = float(data["wake_angle"])
@@ -477,7 +1035,6 @@ class IntentMapper:
                 )
                 return None
 
-            header = data.get("header")
             wake_frame_id = (
                 str(header.get("frame_id", "")).strip()
                 if isinstance(header, dict)
@@ -502,20 +1059,138 @@ class IntentMapper:
             behavior_name=behavior_name,
             priority_level=self._priority_for(intent_entry["category"]),
             sub_priority=intent_entry.get("sub_priority", 0),
+            semantic_rank=int(intent_entry.get(
+                "semantic_rank",
+                2 if event_type == "EVT_VOICE_WAKEUP" else 1,
+            )),
+            modality_rank=1,
             intensity=min(confidence * 100, 100.0),
             confidence=confidence,
-            ttl_sec=8.0,
-            interrupt_policy="immediate",
+            ttl_sec=float(intent_entry.get("ttl_sec", 8.0)),
+            timeout_sec=(
+                float(intent_entry["timeout_sec"])
+                if intent_entry.get("timeout_sec") is not None else None
+            ),
+            cooldown_sec=(
+                float(intent_entry["cooldown_sec"])
+                if intent_entry.get("cooldown_sec") is not None else None
+            ),
+            interrupt_policy=str(
+                intent_entry.get("interrupt_policy", "immediate")
+            ),
             interactive=target is not None,
             target=target,
             interaction_mode="interactive" if target else "solo",
             result_mapping=None,
             params=params,
         )
-        _log.info("Audio candidate: %s → %s → %s (Lv%d sp=%d)",
+        _log.debug("Audio candidate: %s → %s → %s (Lv%d sp=%d)",
                   event_type, intent, behavior_name,
                   cand.priority_level, cand.sub_priority)
         return cand
+
+    @staticmethod
+    def _normalize_audio_need_gate(
+        event_type: str,
+        raw_gate: Any,
+    ) -> dict[str, Any] | None:
+        """Validate a configured authoritative internal-need gate.
+
+        An empty mapping means the route is not need-gated.  ``None`` signals
+        malformed configuration so the command fails closed.
+        """
+        if raw_gate is None:
+            return {}
+        if not isinstance(raw_gate, dict):
+            _log.error("Audio route %s has malformed need_gate", event_type)
+            return None
+        demand = str(raw_gate.get("demand", "")).strip()
+        operator = str(raw_gate.get("operator", "")).strip()
+        try:
+            threshold = float(raw_gate["threshold"])
+        except (KeyError, TypeError, ValueError):
+            threshold = float("nan")
+        if (
+            not demand
+            or operator != "gt"
+            or not math.isfinite(threshold)
+            or not 0.0 <= threshold <= 100.0
+        ):
+            _log.error(
+                "Audio route %s has invalid need_gate demand=%r "
+                "operator=%r threshold=%r",
+                event_type,
+                demand,
+                operator,
+                raw_gate.get("threshold"),
+            )
+            return None
+        return {
+            "demand": demand,
+            "operator": operator,
+            "threshold": threshold,
+        }
+
+    def build_voice_approach_candidate(
+        self,
+        *,
+        interaction_id: str,
+        target: dict[str, Any],
+        wake_id: str,
+        speaker_id: str,
+        speaker_role: str,
+        speaker_status: str,
+        stand_off_distance_m: float,
+        timeout_sec: float,
+        ttl_sec: float,
+    ) -> BehaviorCandidate:
+        """Build the internal continuation after wake-speaker resolution."""
+        behavior_name = self._select_behavior("approach_wake_speaker")
+        if behavior_name != "approach_voice_caller":
+            raise ValueError(
+                "approach_wake_speaker must map exactly to "
+                "approach_voice_caller"
+            )
+        target_ref = dict(target)
+        params = {
+            "interaction_id": interaction_id,
+            "session_role": "wake_approach",
+            "session_preempt_rank": 20,
+            "strict_target_lock": True,
+            "allow_target_switch": False,
+            "wake_id": wake_id,
+            "speaker_id": speaker_id,
+            "speaker_role": speaker_role,
+            "speaker_status": speaker_status,
+            "stand_off_distance_m": float(stand_off_distance_m),
+            "approach_timeout_sec": float(timeout_sec),
+            "target": target_ref,
+        }
+        return BehaviorCandidate(
+            source="audio_session",
+            trigger_event="INTERNAL_WAKE_SPEAKER_RESOLVED",
+            intent="approach_wake_speaker",
+            behavior_name=behavior_name,
+            priority_level=self._priority_for("external_interaction"),
+            sub_priority=2,
+            intensity=100.0,
+            confidence=float(
+                target_ref.get(
+                    "detection_confidence",
+                    target_ref.get("confidence", 0.8),
+                )
+            ),
+            ttl_sec=float(ttl_sec),
+            timeout_sec=float(timeout_sec),
+            cooldown_sec=0.0,
+            interrupt_policy="immediate",
+            interactive=True,
+            target_required=True,
+            target=target_ref,
+            interaction_mode="interactive",
+            variant="wake_speaker",
+            params=params,
+        )
 
     def _select_behavior(self, intent: str, interactive: bool = False) -> Optional[str]:
         pool = self._intent_pool.get(intent, {})

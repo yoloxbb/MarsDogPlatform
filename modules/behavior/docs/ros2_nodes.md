@@ -40,15 +40,15 @@ uv run python -m marsdog_behavior.standalone_demo
 | `/emotion/signal_event` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | V2：单阈值上升沿事件 |
 | `/internal_need/state` | `std_msgs/String` (JSON) | BEST_EFFORT, depth=5 | V2：7 种需求完整当前状态，1Hz |
 | `/internal_need/signal_event` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | V2：需求等级变化事件 |
-| `/perception/audio_event` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | 声音事件（仅白名单事件生成候选） |
-| `/perception/visual_event` | `std_msgs/String` (JSON) | BEST_EFFORT, depth=5 | 场景缓存（视觉服务不可用时回退，不直接生成候选） |
+| `/perception/audio_event` | `std_msgs/String` (JSON v2) | RELIABLE, depth=10 | 声音事件（仅精确授权白名单生成候选） |
+| `/perception/visual_event` | `std_msgs/String` (JSON v1) | BEST_EFFORT, depth=5 | 场景缓存；STRANGER 情绪融合；FALL/STOP 直接候选 |
 
 ### 发布
 
 | Topic | 类型 | QoS | 说明 |
 |-------|------|-----|------|
 | `/behavior/result_event` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | 需求行为结果（STARTED/COMPLETED/FAILED/TIMEOUT/INTERRUPTED） |
-| `/behavior/attention_tracking` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | 语音会话的人脸居中/人体跟随开关与模式 |
+| `/behavior/attention_tracking` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | 语音会话的人脸居中控制；长期 UWB 跟随由 Action Goal 持有 |
 
 ### Action Client
 
@@ -291,21 +291,66 @@ signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢�
 
 ```json
 {
+  "schema_version": 2,
   "event_type": "EVT_VOICE_COMMAND_SIT",
+  "interaction_id": "voice-001",
+  "utterance_id": "utterance-001",
+  "command_id": "CMD_SIT",
+  "specific_event_type": "EVT_VOICE_COMMAND_SIT",
+  "dispatch_role": "specific_command",
+  "should_trigger_behavior_tree": true,
   "intent_confidence": 0.95,
-  "asr_text": "坐下"
+  "asr_text": "请坐下",
+  "slots": []
 }
 ```
 
-行为树直接处理 `EVT_VOICE_CALL_NAME` 和已配置的
-`EVT_VOICE_COMMAND_<ACTION>` 完整事件名。
+行为树只接受整数 `schema_version=2`。除硬件唤醒和会话终态外，
+已配置的 `EVT_VOICE_COMMAND_<ACTION>` 还必须通过 `command_id`、
+`specific_event_type`、`dispatch_role=specific_command` 和
+`should_trigger_behavior_tree=true` 校验。
 
-- 当前 ROS2 运行时收到 `EVT_VOICE_CALL_NAME` 后开启
-  `/behavior/attention_tracking` 的 `face_body_centering`，不创建
-  `respond_owner_call` 动作候选，避免 Nav2 `/spin` 与后台闭环争用底盘。
-- `IntentMapper` 仍保留唤醒角度到 `respond_owner_call` 的兼容映射，供
-  standalone/单元测试使用；它不是当前部署链路。
-- 强指令只按 `event_type` 映射为一对一的专用 Behavior。
+- 只有 `EVT_VOICE_WAKEUP` 创建会话并生成正式 `respond_owner_call` 候选；该行为
+  只按 `microphone_array` 下的原始 `wake_angle` 原地转向，执行期间不启动后台
+  attention 底盘控制；offset/sign 只由 Action 标定。
+- 同一 `interaction_id` 的新 `wake_id` 会替换旧唤醒会话并请求取消旧 Goal；
+  调度须等待真实 Result。相同 `wake_id` 的重报只处理一次。Tree 只接收匹配当前
+  `interaction_id + wake_id` 的 `EVT_VOICE_WAKE_SPEAKER_RESULT`。
+- `EVT_VOICE_CALL_NAME` 和 `EVT_VOICE_COMMAND_CALL_NAME` 是纯社交通知，不创建
+  会话或候选，即使权限字段异常为真也不能进入命令回调。
+- `EVT_VOICE_COMMAND_PRAISE/SCOLD` 只接受
+  `dispatch_role=social_reaction`、`is_executable=false`、
+  `should_trigger_behavior_tree=true`。它们消费同一语音轮次，生成
+  Lv1 `audio_reaction`；活跃会话的人体分支固定为
+  `*InPlaceWithHuman`。
+- 转向成功后等待声纹结果最多 3 秒。只有 `owner/family + matched` 会异步调用
+  `VisionTask.query_targets`，按声源方向在前方 `±25°` 内绑定稳定人体
+  `vision_epoch + target_id` 并生成 `approach_voice_caller`。陌生人、无法判定、
+  超时和明确视觉身份冲突均原地进入 WAITING，关闭 attention 底盘转向。
+- Action 对锁定人体请求一次 `VisionTask.locate_person_once`；仅在 SLAM 成功且
+  `navigation_required=true` 时发送一次 `/navigate_to_pose`，`false` 时直接完成。
+  取消须等 Nav2 真实终态后释放运动所有权；没有 bbox 速度回退。
+- `query_targets` 超过 2 秒会作废该 generation；迟到结果不能重新触发移动。
+- 行为树用 `VoiceTask.hold_interaction` 的有限租约覆盖转向、声纹等待、视觉查询和靠近耗时，
+  到达后 `release_interaction_hold(reset_idle_timer=true)`。
+- 强指令只按审核后的完整 `event_type + command_id` 映射为专用 Behavior。
+- `unhappy`、`miss_owner`、`farewell_leave` 在入候选池前异步执行
+  `query_targets`，只接受带 `vision_epoch + target_id + identity=owner` 的当前
+  主人目标并写入 `params_json.target`。无人、陌生人或不稳定目标时不下发移动
+  Goal；新语音指令会使迟到的视觉回调失效。三者 Goal 超时统一为 25 秒，以覆盖
+  Action 最长 20 秒的视觉接近及后续表达阶段。
+- `approach_owner`、`come_to_owner`、`return_to_owner` 直接入候选池，不调用
+  `query_targets`。Action 从新鲜的视觉事件绑定当前人体轨迹，视觉身份可以为
+  `unknown`，再调用一次 `locate_person_once` 并按需导航；无人或目标失鲜则失败停车。
+- TOILET/CLEAN/SLEEP 分别要求最新内部状态严格满足 `Bladder > 50`、
+  `Cleanliness > 40`、`Sleepiness > 50`，之后复用
+  `barkShortAlert/lickPaws/sleepOnSide`；缺状态和等于阈值都不执行。
+- 19 个 `core: true` 产品指令全部开放；WALK、GO_OUT、GO_HOME、APPROACH、
+  BACK_UP、STAND_STILL、HOLD_POSITION、QUIET 分别映射为
+  `walk_to_random_point`、`go_out_to_play`、`go_home`、`approach_owner`、
+  `back_up`、`stand_still`、`hold_position`、`quiet`。
+- KNOWN 摘要、语义分类、诊断事件和 `speech` 不生成候选。
+- Model Intent FETCH 还要求 `slots.object_name` 非 `NONE`，目标证据保留到 Goal 参数。
 - `EVT_VOICE_COMMAND_DROP` 输出 Lv1 `drop_object`；
   `EVT_VOICE_COMMAND_STOP` 输出 Lv0 `emergency_stop`。
 
@@ -313,13 +358,25 @@ signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢�
 
 ```json
 {
-  "active_target": {"track_id": 1, "identity": "owner"},
-  "events": ["EVT_VISION_MASTER"]
+  "schema_version": 1,
+  "header": {"stamp": 1786417000.1, "frame_id": "camera_link"},
+  "active_target": {"track_id": 7, "pose_action": "fallen_down"},
+  "hands": [{"hand_action": "stop_gesture"}],
+  "events": ["EVT_VISION_FALL", "EVT_VISION_STOP_GESTURE"]
 }
 ```
 
 行为树缓存 `humans`、`active_target` 和 `tracked_objects`，供视觉服务不可用时
-回退；`events` 数组本身不生成行为候选。
+回退。`events[]` 只接受字符串，直接行为白名单为：
+
+| event | Behavior | priority | TTL |
+|---|---|---|---|
+| `EVT_VISION_FALL` | `respond_person_fall` | Lv1, `sub_priority=12` | 8s |
+| `EVT_VISION_STOP_GESTURE` | `respond_stop_gesture` | Lv1, `sub_priority=12` | 8s |
+
+该 Topic 是 10 Hz 状态快照。同一事件连续出现时只生成一次候选；事件先从
+`events[]` 消失、之后再出现才会重新触发。其余 `EVT_VISION_*` 仍只作为
+场景/情绪上下文，不直接生成候选。
 
 ### 4.7 `/behavior/result_event`
 
@@ -383,11 +440,11 @@ ros2 topic echo /behavior/result_event
 
 # 手动发声音事件（触发 sit_down）
 ros2 topic pub --once /perception/audio_event std_msgs/msg/String \
-  "{data: '{\"event_type\":\"EVT_VOICE_COMMAND_SIT\",\"intent_confidence\":0.95}'}"
+  "{data: '{\"schema_version\":2,\"event_type\":\"EVT_VOICE_COMMAND_SIT\",\"interaction_id\":\"manual-1\",\"utterance_id\":\"manual-u1\",\"command_id\":\"CMD_SIT\",\"specific_event_type\":\"EVT_VOICE_COMMAND_SIT\",\"dispatch_role\":\"specific_command\",\"should_trigger_behavior_tree\":true,\"intent_confidence\":0.95,\"slots\":[]}'}"
 
-# 手动发视觉事件
+# 手动发视觉跌倒事件（触发 respond_person_fall）
 ros2 topic pub --once /perception/visual_event std_msgs/msg/String \
-  "{data: '{\"events\":[\"EVT_VISION_TOY\"],\"active_target\":{\"identity\":\"owner\"}}'}"
+  "{data: '{\"schema_version\":1,\"header\":{\"stamp\":1786417000.1,\"frame_id\":\"camera_link\"},\"active_target\":{\"track_id\":7,\"pose_action\":\"fallen_down\"},\"faces\":[],\"humans\":[],\"hands\":[],\"tracked_objects\":[],\"events\":[\"EVT_VISION_FALL\"]}'}"
 
 # 手动发情绪 signal_event
 ros2 topic pub --once /emotion/signal_event std_msgs/msg/String \
@@ -444,6 +501,7 @@ ros2 topic pub --once /internal_need/signal_event std_msgs/msg/String \
 | [architecture.md](architecture.md) | 整体模块架构 |
 # 会话注视控制
 
-行为树将 `EVT_VOICE_CALL_NAME` 和同一 `interaction_id` 的会话结束事件
-转换为 `/behavior/attention_tracking`（`std_msgs/String` JSON）。动作系统据此
-启动或停止纯角速度的人脸/人体居中控制；该通道不等同于 `CMD_FOLLOW`。
+行为树只在唤醒转向/靠近结束后的 WAITING 阶段发布
+`/behavior/attention_tracking`（`std_msgs/String` JSON）。动作系统据此启动或停止
+锁定人体的居中控制；该通道不等同于 `CMD_FOLLOW`，也不会与正式 Action Goal
+同时控制底盘。

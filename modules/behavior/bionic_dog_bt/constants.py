@@ -28,6 +28,14 @@ STATUS_FAILURE = "FAILURE"
 STATUS_RUNNING = "RUNNING"
 STATUS_CANCELED = "CANCELED"
 
+# ── ExecuteBehavior Goal lifecycle ──────────────────────────────────────────
+# Cancellation acknowledgement is deliberately not a terminal state.  Tree
+# keeps ownership of the goal until the Action result is observed.
+GOAL_SENDING = "SENDING"
+GOAL_RUNNING = "RUNNING"
+GOAL_CANCEL_REQUESTED = "CANCEL_REQUESTED"
+GOAL_TERMINAL = "TERMINAL"
+
 # ── Interrupt Policies ───────────────────────────────────────────────────────
 INTERRUPT_IMMEDIATE = "immediate"
 INTERRUPT_SAFE_POINT = "safe_point"
@@ -43,21 +51,27 @@ SAME_LEVEL_PREEMPTION_DELTA = 15
 EMOTION_BEHAVIOR_MAP = {
     "expressCalm": "Calm",
     "expressCalmWithHuman": "Calm",
+    "expressCalmInPlaceWithHuman": "Calm",
     "expressCalmAlone": "Calm",
     "expressJoy": "Joy",
     "expressJoyWithHuman": "Joy",
+    "expressJoyInPlaceWithHuman": "Joy",
     "expressJoyAlone": "Joy",
     "expressExcitement": "Excite",
     "expressExcitementWithHuman": "Excite",
+    "expressExcitementInPlaceWithHuman": "Excite",
     "expressExcitementAlone": "Excite",
     "expressAnxiety": "Anxiety",
     "expressAnxietyWithHuman": "Anxiety",
+    "expressAnxietyInPlaceWithHuman": "Anxiety",
     "expressAnxietyAlone": "Anxiety",
     "expressFear": "Fear",
     "expressFearWithHuman": "Fear",
+    "expressFearInPlaceWithHuman": "Fear",
     "expressFearAlone": "Fear",
     "expressCuriosity": "Curious",
     "expressCuriosityWithHuman": "Curious",
+    "expressCuriosityInPlaceWithHuman": "Curious",
     "expressCuriosityAlone": "Curious",
 }
 
@@ -330,32 +344,26 @@ NEED_EVENT_BEHAVIOR_MAP = {
             "play_item": {
                 "behavior_name": "inspectFamiliarPlayItem",
                 "variant": "play_item",
-                "executor_behavior_name": "inspectKnownObject",
             },
             "trash_can": {
                 "behavior_name": "inspectTrashCan",
                 "variant": "trash_can",
-                "executor_behavior_name": "inspectKnownObject",
             },
             "delivery_box": {
                 "behavior_name": "inspectDeliveryBox",
                 "variant": "delivery_box",
-                "executor_behavior_name": "inspectKnownObject",
             },
             "tissue": {
                 "behavior_name": "inspectTissuePaper",
                 "variant": "tissue",
-                "executor_behavior_name": "inspectKnownObject",
             },
             "door": {
                 "behavior_name": "inspectDoor",
                 "variant": "door",
-                "executor_behavior_name": "inspectKnownObject",
             },
             "dog_food": {
                 "behavior_name": "inspectDogFood",
                 "variant": "dog_food",
-                "executor_behavior_name": "inspectKnownObject",
             },
             "unfamiliar_object": {
                 "behavior_name": "inspectObject",
@@ -378,11 +386,9 @@ EMOTION_EVENT_BEHAVIOR_MAP = {
         "routes": {
             "human": {
                 "behavior_name": "expressCalmWithHuman",
-                "executor_behavior_name": "expressCalm",
             },
             "solo": {
                 "behavior_name": "expressCalmAlone",
-                "executor_behavior_name": "expressCalm",
             },
         },
     },
@@ -393,11 +399,9 @@ EMOTION_EVENT_BEHAVIOR_MAP = {
         "routes": {
             "human": {
                 "behavior_name": "expressJoyWithHuman",
-                "executor_behavior_name": "expressJoy",
             },
             "solo": {
                 "behavior_name": "expressJoyAlone",
-                "executor_behavior_name": "expressJoy",
             },
         },
     },
@@ -408,11 +412,9 @@ EMOTION_EVENT_BEHAVIOR_MAP = {
         "routes": {
             "human": {
                 "behavior_name": "expressExcitementWithHuman",
-                "executor_behavior_name": "expressExcitement",
             },
             "solo": {
                 "behavior_name": "expressExcitementAlone",
-                "executor_behavior_name": "expressExcitement",
             },
         },
     },
@@ -423,11 +425,9 @@ EMOTION_EVENT_BEHAVIOR_MAP = {
         "routes": {
             "human": {
                 "behavior_name": "expressAnxietyWithHuman",
-                "executor_behavior_name": "expressAnxiety",
             },
             "solo": {
                 "behavior_name": "expressAnxietyAlone",
-                "executor_behavior_name": "expressAnxiety",
             },
         },
     },
@@ -438,11 +438,9 @@ EMOTION_EVENT_BEHAVIOR_MAP = {
         "routes": {
             "human": {
                 "behavior_name": "expressFearWithHuman",
-                "executor_behavior_name": "expressFear",
             },
             "solo": {
                 "behavior_name": "expressFearAlone",
-                "executor_behavior_name": "expressFear",
             },
         },
     },
@@ -453,11 +451,9 @@ EMOTION_EVENT_BEHAVIOR_MAP = {
         "routes": {
             "human": {
                 "behavior_name": "expressCuriosityWithHuman",
-                "executor_behavior_name": "expressCuriosity",
             },
             "solo": {
                 "behavior_name": "expressCuriosityAlone",
-                "executor_behavior_name": "expressCuriosity",
             },
         },
     },
@@ -465,10 +461,18 @@ EMOTION_EVENT_BEHAVIOR_MAP = {
 
 # ── Voice event → Behavior Mapping (standalone/mock only) ───────────────────
 VOICE_EVENT_BEHAVIOR_MAP = {
-    "EVT_VOICE_CALL_NAME": "respond_owner_call",
+    "EVT_VOICE_WAKEUP": "respond_owner_call",
+    "EVT_VOICE_COMMAND_WALK": "walk_to_random_point",
+    "EVT_VOICE_COMMAND_PLAY_ALONE": "play_alone",
+    "EVT_VOICE_COMMAND_GO_OUT": "go_out_to_play",
+    "EVT_VOICE_COMMAND_GO_HOME": "go_home",
+    "EVT_VOICE_COMMAND_APPROACH": "approach_owner",
+    "EVT_VOICE_COMMAND_BACK_UP": "back_up",
     "EVT_VOICE_COMMAND_SIT": "sit_down",
     "EVT_VOICE_COMMAND_LIE_DOWN": "lie_down",
     "EVT_VOICE_COMMAND_STAND_UP": "stand_up",
+    "EVT_VOICE_COMMAND_STAND_STILL": "stand_still",
+    "EVT_VOICE_COMMAND_HOLD_POSITION": "hold_position",
     "EVT_VOICE_COMMAND_WAIT": "wait_in_place",
     "EVT_VOICE_COMMAND_COME": "come_to_owner",
     "EVT_VOICE_COMMAND_FOLLOW": "follow_owner",
@@ -478,6 +482,10 @@ VOICE_EVENT_BEHAVIOR_MAP = {
     "EVT_VOICE_COMMAND_SPIN": "spin_around",
     "EVT_VOICE_COMMAND_RETURN": "return_to_owner",
     "EVT_VOICE_COMMAND_DROP": "drop_object",
+    "EVT_VOICE_COMMAND_QUIET": "quiet",
+    "EVT_VOICE_COMMAND_TOILET": "barkShortAlert",
+    "EVT_VOICE_COMMAND_CLEAN": "lickPaws",
+    "EVT_VOICE_COMMAND_SLEEP": "sleepOnSide",
     "EVT_VOICE_COMMAND_PLAY_DEAD": "play_dead",
     "EVT_VOICE_COMMAND_BRING": "bring_object",
     "EVT_VOICE_COMMAND_FETCH": "fetch_object",

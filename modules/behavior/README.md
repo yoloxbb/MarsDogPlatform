@@ -24,7 +24,7 @@
 │ marsdog_behavior — 本项目（行为树决策引擎）                      │
 │                                                              │
 │  事件 → intent → behavior 管道：                                │
-│    audio_direct: EVT_VOICE_CALL_NAME / EVT_VOICE_COMMAND_*     │
+│    audio_direct: WAKEUP / EVT_VOICE_COMMAND_*（显式白名单）     │
 │    need V2:      NEED_*_TRIGGERED / URGENT / OVERFLOW          │
 │    emotion V2:   EMO_*_TRIGGERED                               │
 │                                                              │
@@ -35,7 +35,7 @@
 │  Action Client → /execute_behavior                            │
 │  发布 → /behavior/result_event                                │
 │                                                              │
-│  visual_event: 缓存场景作为 Service 回退，不直接生成行为候选    │
+│  visual_event: FALL/STOP 直接候选；其余事件仅缓存场景 │
 │  其他 audio_event: IGNORED → 由 emotion_engine 消费            │
 │                                                              │
 │  内部模块：                                                    │
@@ -116,7 +116,7 @@ marsdog_behavior/                   # ← 仓库根目录软链接到 ~/ros2_ws/
 │   ├── behavior_categories.yaml    # 7层分类 + priority_level
 │   ├── event_intent_map.yaml       # 事件 → category → intent 映射
 │   ├── intent_action_pool.yaml     # intent → 候选 behavior_name 池（零 ACT_*）
-│   ├── emotion_behavior_map.yaml   # 6个情绪 V2 事件 → 12个视觉分支行为
+│   ├── emotion_behavior_map.yaml   # 6个情绪 V2 事件 → 18个上下文分支行为
 │   └── legacy_behavior_aliases.yaml # 65个旧→新行为名兼容映射
 ├── launch/
 │   └── behavior_tree.launch.py     # ROS2 Launch
@@ -137,7 +137,7 @@ marsdog_behavior/                   # ← 仓库根目录软链接到 ~/ros2_ws/
 | 2 | 生理紧急 | 排泄, 困倦 | `barkShortAlert`, `sleepOnSide/sleepNow` |
 | 3 | 生理常规 | 饥渴, 清洁 | `eatNormally/eatExcitedly`, `lickPaws` |
 | 4 | 心理需求 | 社交, 探索 | 人/动物互动，熟悉/陌生物品探索 |
-| 5 | 情绪表达 | 6 类情绪单阈值上升沿 | 有人 `*WithHuman` / 无人 `*Alone`，共 12 个 Behavior |
+| 5 | 情绪表达 | 6 类情绪单阈值上升沿 | 有人 `*WithHuman` / 语音等待 `*InPlaceWithHuman` / 无人 `*Alone`，共 18 个 Behavior |
 | 6 | 空闲 | 无活跃需求/情绪 | `idle_look_around`, `idle_rest` |
 
 数值越小优先级越高。Root 是 `Selector(memory=False)`。Lv.1 内部 `sub_priority`：触觉(0) > 听觉(1) > 视觉(12) > 环境变化(20)。
@@ -205,24 +205,54 @@ ros2 launch marsdog_behavior behavior_tree.launch.py
 
 | 来源 | 事件 | → intent 示例 |
 |------|------|-------------|
-| **audio_direct** | `EVT_VOICE_CALL_NAME` | 开启会话级 `face_body_centering`（不创建动作候选） |
+| **audio_direct** | `EVT_VOICE_WAKEUP` | `respond_owner_call` → 视觉解析 → 可选 `approach_voice_caller` |
 | **audio_direct** | `EVT_VOICE_COMMAND_SIT` | `command_sit` |
+| **audio_direct** | `EVT_VOICE_COMMAND_TOILET` | `Bladder > 50` 时复用 `barkShortAlert` |
+| **visual_direct** | `EVT_VISION_FALL` | `visual_fall_response` → `respond_person_fall` |
+| **visual_direct** | `EVT_VISION_STOP_GESTURE` | `visual_stop_gesture_response` → `respond_stop_gesture` |
 | **need** | `NEED_HUNGER_TRIGGERED` | `hunger_seek_food` |
-| **emotion** | `EMO_JOY_TRIGGERED` | `expressJoyWithHuman` / `expressJoyAlone` (Lv5) |
+| **emotion** | `EMO_JOY_TRIGGERED` | `expressJoyWithHuman` / `expressJoyInPlaceWithHuman` / `expressJoyAlone` (Lv5) |
 
-语音强指令遵循一对一映射原则。当前 ROS2 运行时会拦截
-`EVT_VOICE_CALL_NAME`，只开启会话级视角跟踪，不再下发会与后台控制争用底盘的
-`respond_owner_call`；`IntentMapper` 中保留该映射仅供 standalone/兼容测试。
-坐下、趴下、站立、等待、过来、跟随、握手、击掌、翻滚、转圈、返回、吐掉和
-装死分别输出专用 Behavior。
+语音消息只接受整数 `schema_version=2`。具体指令必须同时通过精确
+`event_type`、`command_id`、`dispatch_role=specific_command` 和
+`should_trigger_behavior_tree=true` 校验。词库和 Model Intent 的可执行指令均使用
+共享的 `EVT_VOICE_COMMAND_*` 具体事件；旧 `EVT_VOICE_INTENT_COMMAND_*` 不再路由。
+具体事件不额外增加“特殊/常规”布尔值：相同执行语义复用同一 Behavior，
+`command_id` 标识具体指令，`intent_source` 保留词库/KWS/模型来源；只有执行语义
+不同才新增 Behavior，纯动作风格差异使用 `variant`。
+
+语音强指令遵循一对一映射原则。只有硬件 `EVT_VOICE_WAKEUP` 会先下发只负责原地转向的
+`respond_owner_call`；成功后查询 Vision 的多人候选，锁定唤醒者，必要时下发
+`approach_voice_caller`。到达后 Action Goal 结束，行为树才在 WAITING 阶段开启
+会话级 `face_body_centering`，避免两个底盘控制源并发。
+其中 Voice 的 `wake_angle` 以 `microphone_array` 标记，行为树不改角度；安装
+offset/sign 只在 Action 朝向适配器中应用一次。
+视觉查询最多等待 2 秒，并只绑定转向后画面中心 `±25°` 内的新鲜稳定人体；
+超时、无匹配目标或缺少有效米制距离时均进入语音等待而不移动。
+Voice 目录中 19 个 `core: true` 指令均输出独立 Behavior；同一行的中文短语只归并
+到对应的同一个 `command_key`。其中 `stand_up/stand_still/hold_position/quiet`
+保持不同完成语义，位移类的 `walk_to_random_point/go_out_to_play/go_home/`
+`approach_owner/back_up` 也不使用近似行为替代。
+新增词句“自己去玩吧”：`EVT_VOICE_COMMAND_PLAY_ALONE` + `CMD_PLAY_ALONE`
+经 `command_play_alone` 输出独立长期行为 `play_alone`（Lv1，Tree 外层无超时），语义为持续自己玩，直到取消或被抢占。
+Action 目前只完成一次 UWB 随机漫游和姿态动作，尚需支持同一 Goal 内循环，详见
+[交接说明](docs/HANDOFF.md#play_alone-随机位置自己玩)。
 `EVT_VOICE_COMMAND_STOP` 单独输出 Lv0 `emergency_stop`。
+`EVT_VOICE_COMMAND_TOILET/CLEAN/SLEEP` 分别读取最新
+`Bladder/Cleanliness/Sleepiness`：只有严格大于 `50/40/50` 才生成候选，并复用
+`barkShortAlert/lickPaws/sleepOnSide`；状态缺失、等于阈值或低于阈值均不执行。
+当前已开放的 AudioEvent v2 子集和待 Action 补齐项见
+[AudioEvent v2 消费覆盖](docs/audio_event_v2_coverage.md)。
 
 ### 行为树不直接处理的事件
 
 | 来源 | 事件 | 理由 |
 |------|------|------|
+| audio | `EVT_VOICE_CALL_NAME / EVT_VOICE_COMMAND_CALL_NAME` | 昵称社交通知，不创建唤醒会话或动作候选 |
 | audio | `EVT_VOICE_PRAISE / SCOLD / HAPPY / SAD / NEUTRAL` | → emotion_engine_node |
-| visual | 全部 `EVT_VISION_*` | 不直接生成候选；场景字段仅作为视觉服务回退 |
+| audio | `EVT_VOICE_COMMAND_PRAISE / SCOLD` | 精确词库 `audio_reaction`，生成一次性 Lv1 反应 |
+| audio | `EVT_VOICE_INTENT_COMMAND_KNOWN / EVT_VOICE_INTENT_NEUTRAL / EVT_VOICE_INTENT_UNKNOWN / EVT_VOICE_INTENT_STATUS_CARE` | 语义摘要或诊断，不生成动作 |
+| visual | 除 `EVT_VISION_FALL / EVT_VISION_STOP_GESTURE` 外的 `EVT_VISION_*` | 不直接生成候选；场景字段作为视觉服务回退 |
 
 > 详见 [docs/event_behavior_table.md](docs/event_behavior_table.md) 和
 > [docs/behavior_tree_architecture.md](docs/behavior_tree_architecture.md)。
@@ -233,12 +263,17 @@ ros2 launch marsdog_behavior behavior_tree.launch.py
 
 | 条件 | 结果 |
 |------|------|
-| `new.Lv < cur.Lv` + `immediate` | 立即抢占 |
+| `new.Lv < cur.Lv` + `immediate` | 最新反馈安全时请求取消 |
 | `new.Lv < cur.Lv` + `safe_point` | 等 `safe_to_interrupt=true` |
 | `new.Lv < cur.Lv` + `non_interruptible` | 不抢占（emergency_stop 例外） |
 | `new.Lv == cur.Lv` + `Δvalue >= 15` | 抢占 |
 | `new.Lv == cur.Lv` + `Δvalue < 15` | 不抢占（防抖） |
 | `new.Lv > cur.Lv` | 不抢占 |
+
+普通抢占统一要求最新 Feedback 为 `safe_to_interrupt=true`，且状态不能是
+`DISPATCHED` 或 `RECOVERY_REQUIRED`。抢占只先进入 `CANCEL_REQUESTED`；Tree 保留
+旧 Goal 和导航锁，等 `/execute_behavior` 的真实 Result 后才下发替代 Goal。
+`emergency_stop` 可绕过安全点立即请求取消，但不能把取消受理当作执行已经停止。
 
 ### 情绪/需求相关性
 
@@ -250,9 +285,19 @@ state:        emotions["Joy"].triggered=true → 候选仍相关
 state:        emotions["Joy"].triggered=false → 情绪已恢复，跳过候选
 ```
 
-六类情绪 signal 都会先调用视觉 Service 的 `check_person`。有人时生成对应
-`*WithHuman` Behavior，无人时生成 `*Alone` Behavior；等待
-Service 期间发生恢复时，迟到的视觉结果不会创建候选。
+六类情绪 signal 会在可表达时调用视觉 Service 的 `check_person`。有人时生成
+对应 `*WithHuman` Behavior，无人时生成 `*Alone` Behavior。高等级行为或
+语音转向、靠近期间先保留情绪意图，之后重新检查情绪状态和视觉目标；恢复后
+不再创建候选，迟到的视觉结果也会作废。
+
+语音会话进入 `WAITING`，或语音指令得到真实终态后，可进一步选择
+`*InPlaceWithHuman`。候选携带当前 `interaction_id`、人物 target、
+`mobility_policy=in_place` 和 `lifecycle_scope=behavior`。该行为复用普通
+`*WithHuman` 的 expression 动作，但不会再次执行目标接近。该能力由
+`config/voice_engagement.yaml` 的 `waiting_emotion_enabled` 控制；当前已配合
+注册六个对应行为并校验不重复接近目标的 MarsDogAction 启用。表达动作仍可
+使用 Go2/Lite3 底盘动作，由 Action 前台执行锁与后台 attention 控制串行。若回退到旧 Action，
+必须先将开关设为 `false`。
 
 内部需求同样只接受 schema 2.0。signal 的等级变化事件负责创建候选；
 state 中每个需求的 `triggered` 是当前相关性的依据。Social 的
@@ -282,6 +327,11 @@ LOG_LEVEL=DEBUG uv run python -m marsdog_behavior.ros_node
 LOG_FILE=/tmp/bt.log uv run python -m marsdog_behavior.ros_node
 ```
 
+默认 `INFO` 只保留可审计的生命周期与异常：候选注入/选中、行为开始/结束、
+抢占、超时及配置错误。订阅入口、事件到行为的映射细节、成功的相关性检查和
+情绪续排内部步骤为 `DEBUG`；`/emotion/state` 和 `/internal_need/state` 仅在触发
+状态或需求等级变化时输出 `DEBUG`，不再按心跳周期重复打印。
+
 ## 正式接口
 
 ### 订阅
@@ -292,8 +342,8 @@ LOG_FILE=/tmp/bt.log uv run python -m marsdog_behavior.ros_node
 | `/emotion/signal_event` | String(JSON), schema 2.0 | RELIABLE | 单阈值上升沿 |
 | `/internal_need/state` | String(JSON), schema 2.0 | BEST_EFFORT | 1Hz |
 | `/internal_need/signal_event` | String(JSON), schema 2.0 | RELIABLE | 等级变化 |
-| `/perception/audio_event` | String(JSON) | RELIABLE | 事件驱动 |
-| `/perception/visual_event` | String(JSON) | BEST_EFFORT | 事件驱动 |
+| `/perception/audio_event` | String(JSON v2) | RELIABLE | 事件驱动 |
+| `/perception/visual_event` | String(JSON v1) | BEST_EFFORT | 10Hz 状态快照 |
 
 ### 发布
 
@@ -326,7 +376,7 @@ LOG_FILE=/tmp/bt.log uv run python -m marsdog_behavior.ros_node
 
 ### 行为树负责
 
-1. 接收 `/emotion/signal_event`、`/internal_need/signal_event`、`/perception/audio_event`（白名单）→ 通过 intent 管道生成候选
+1. 接收 `/emotion/signal_event`、`/internal_need/signal_event`、`/perception/audio_event` 与 `/perception/visual_event`（白名单）→ 通过 intent 管道生成候选
 2. 维护候选行为池（同名 queued/in-flight 唯一占位、TTL、来源记录）
 3. 按优先级、抢占规则、冷却、超时和情绪/需求 `triggered` 相关性选择行为
 4. 执行前判断 interactive / solo
@@ -337,8 +387,10 @@ LOG_FILE=/tmp/bt.log uv run python -m marsdog_behavior.ros_node
 
 ### 行为树不负责
 
-1. 直接消费 `EVT_VISION_*` 生成行为候选 → 视觉事件由 emotion_engine/internal_need 消费
-2. 直接消费 `EVT_VOICE_PRAISE/SCOLD/...` 生成行为候选 → 音频情绪事件由 emotion_engine 消费
+1. 直接消费白名单以外的 `EVT_VISION_*` 生成行为候选
+2. 直接消费 Model Intent `EVT_VOICE_PRAISE/SCOLD/...` 生成候选
+   → 这些情绪证据由 emotion_engine 消费；仅精确词库
+   `EVT_VOICE_COMMAND_PRAISE/SCOLD` 作为 `audio_reaction` 例外
 3. 具体动作序列编排 → 由 `marsdog_action_executor` 负责
 4. `ACT_POSTURE_xxx` 等底层动作 ID 的正式维护 → 由 `marsdog_action_executor` 负责
 5. 真实电机、舵机、云台、导航控制 → 由 `marsdog_action_executor` 负责

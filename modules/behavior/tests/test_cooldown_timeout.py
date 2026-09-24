@@ -96,3 +96,13 @@ class TestTimeout:
 
         # No behavior running
         assert not bb.check_timeout()
+
+    def test_zero_timeout_disables_existing_running_deadline(self, runtime):
+        root, bb, executor, provider, loader = runtime
+        bb.set_active_behavior(provider.inject_idle())
+        _tick(root, bb, 1)
+        assert bb.current_behavior is not None
+
+        bb.current_behavior.timeout_sec = 0.0
+        bb._behavior_start_time -= 1000.0
+        assert not bb.check_timeout()

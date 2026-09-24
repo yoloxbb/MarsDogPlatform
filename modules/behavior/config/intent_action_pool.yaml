@@ -12,6 +12,29 @@ orient_to_sound:
   aliases:
     respond_owner_call: respond_owner_call
 
+# Internal session continuation created only after wake orientation succeeds
+# and BehaviorTree resolves one immutable visual target.
+approach_wake_speaker:
+  candidates: [approach_voice_caller]
+
+command_walk:
+  candidates: [walk_to_random_point]
+
+command_play_alone:
+  candidates: [play_alone]
+
+command_go_out:
+  candidates: [go_out_to_play]
+
+command_go_home:
+  candidates: [go_home]
+
+command_approach:
+  candidates: [approach_owner]
+
+command_back_up:
+  candidates: [back_up]
+
 command_sit:
   candidates: [sit_down]
   aliases:
@@ -65,10 +88,211 @@ command_play_dead:
     restInPlace: play_dead
     expressCalm: play_dead
 
+command_stand_still:
+  candidates: [stand_still]
+
+command_hold_position:
+  candidates: [hold_position]
+
+command_quiet:
+  candidates: [quiet]
+
+# Voice commands gated by the current authoritative internal-need value.
+# The gate is declared in event_intent_map.yaml; after it passes these reuse
+# the existing physiological behaviors and their result-settlement semantics.
+command_toilet:
+  candidates: [barkShortAlert]
+
+command_clean:
+  candidates: [lickPaws]
+
+command_sleep:
+  candidates: [sleepOnSide]
+
 emergency_stop:
   candidates: [emergency_stop]
   aliases:
     emergency_stop: emergency_stop
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 直驱式短语 intents (direct-drive phrases)
+# ═══════════════════════════════════════════════════════════════════════════
+
+# A: 安抚关怀
+command_comfort_dont_be_afraid:
+  candidates: [comfort_soothe]
+
+command_comfort_reassure:
+  candidates: [comfort_reassure]
+
+command_ask_if_hurts:
+  candidates: [care_inquire]
+
+command_offer_head_for_pet:
+  candidates: [pet_head]
+
+command_seek_hug:
+  candidates: [hug]
+
+# B: 拒绝否定
+command_refuse:
+  candidates: [refuse]
+
+command_refuse_play:
+  candidates: [refuse_play]
+
+# C: 找人
+command_find_dad:
+  candidates: [find_dad]
+
+command_find_mom:
+  candidates: [find_mom]
+
+# D: 表演
+command_dance:
+  candidates: [dance]
+
+# E: 取物
+command_bring_to_me:
+  candidates: [bring_to_me]
+
+command_give_to_me:
+  candidates: [give_me]
+
+command_go_get_it:
+  candidates: [go_fetch]
+
+command_bring_it_back:
+  candidates: [bring_back]
+
+command_fetch_ball:
+  candidates: [fetch_ball]
+
+command_find_toy:
+  candidates: [find_toy]
+
+# F: 留守/等待
+command_stay_home_alone:
+  candidates: [stay_home]
+
+command_wait_for_owner_return:
+  candidates: [wait_return]
+
+# G: 主人出行/归来
+command_owner_going_out:
+  candidates: [farewell_leave]
+
+command_owner_returned:
+  candidates: [greet_return]
+
+command_bye_bye:
+  candidates: [farewell_bye]
+
+command_goodbye:
+  candidates: [farewell_goodbye]
+
+# H: 询问回应
+command_ask_what_doing:
+  candidates: [report_activity]
+
+command_ask_where_are_you:
+  candidates: [report_location]
+
+command_ask_whats_wrong:
+  candidates: [report_state]
+
+command_ask_what_thinking:
+  candidates: [respond_thought]
+
+command_ask_if_comfortable:
+  candidates: [respond_comfort]
+
+command_ask_if_likes:
+  candidates: [respond_like]
+
+command_ask_if_fun:
+  candidates: [respond_fun]
+
+command_ask_if_understands:
+  candidates: [respond_understand]
+
+command_ask_abilities:
+  candidates: [show_skill]
+
+command_ask_if_learned:
+  candidates: [respond_learned]
+
+# I: 主人状态/情绪表达
+command_express_miss_you:
+  candidates: [miss_owner]
+
+command_owner_tired:
+  candidates: [tired]
+
+command_owner_annoyed:
+  candidates: [annoyed]
+
+command_owner_unhappy:
+  candidates: [unhappy]
+
+command_owner_bad_day:
+  candidates: [downcast]
+
+command_owner_depressed:
+  candidates: [depressed]
+
+command_owner_stressed:
+  candidates: [stressed]
+
+command_owner_lonely:
+  candidates: [lonely]
+
+command_owner_unwell:
+  candidates: [unwell]
+
+command_owner_happy:
+  candidates: [cheerful]
+
+command_owner_very_happy:
+  candidates: [happy]
+
+command_owner_feeling_great:
+  candidates: [great_form]
+
+command_owner_feeling_excellent:
+  candidates: [great]
+
+command_owner_relaxed:
+  candidates: [relaxed]
+
+command_owner_wonderful_day:
+  candidates: [wonderful_day]
+
+command_owner_feeling_lucky:
+  candidates: [lucky]
+
+# J: 饮食直驱
+command_eat_meal:
+  candidates: [eat_meal]
+
+command_eat_snack:
+  candidates: [eat_snack]
+
+command_eat_canned_food:
+  candidates: [eat_canned_food]
+
+command_respond_food_preference_query:
+  candidates: [respond_food_preference]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# visual_direct intents
+# ═══════════════════════════════════════════════════════════════════════════
+
+visual_fall_response:
+  candidates: [respond_person_fall]
+
+visual_stop_gesture_response:
+  candidates: [respond_stop_gesture]
 
 express_joy:
   candidates: [expressJoy]

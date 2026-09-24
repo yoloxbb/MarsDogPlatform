@@ -13,6 +13,10 @@
 
   <!-- Public interfaces from marsdog_interfaces -->
   <depend>marsdog_interfaces</depend>
+  <!-- Transitional service owners until VisionTask/VoiceTask move to the
+       shared interface package. -->
+  <exec_depend>marsdog_vision_interaction</exec_depend>
+  <exec_depend>marsdog_voice_interaction</exec_depend>
 
   <!-- Runtime Python deps (managed by uv, also listed here for ROS2) -->
   <exec_depend>python3-pyyaml</exec_depend>

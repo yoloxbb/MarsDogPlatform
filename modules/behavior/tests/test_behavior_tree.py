@@ -9,6 +9,7 @@ from pathlib import Path
 from bionic_dog_bt.tree_builder import create_runtime
 from bionic_dog_bt.behavior_tree_node import Status, Selector, Sequence, Node
 from bionic_dog_bt.constants import (
+    GOAL_CANCEL_REQUESTED,
     STATUS_RUNNING,
     STATUS_SUCCESS,
     STATUS_FAILURE,
@@ -169,6 +170,9 @@ class TestPriorityLevels:
         status = _tick(root, bb, 1)
         assert status == Status.RUNNING
         assert bb.preemption_occurred
+        assert bb.goal_lifecycle == GOAL_CANCEL_REQUESTED
+        assert bb.current_behavior.behavior_name == "eatNormally"
+        _tick(root, bb, 2)
         assert bb.current_behavior.behavior_name == "respond_owner_call"
 
     def test_lv0_preempts_lv2(self, runtime):
@@ -189,6 +193,9 @@ class TestPriorityLevels:
         status = _tick(root, bb, 1)
         assert status == Status.RUNNING
         assert bb.preemption_occurred
+        assert bb.goal_lifecycle == GOAL_CANCEL_REQUESTED
+        assert bb.current_behavior.behavior_name == "respond_owner_call"
+        _tick(root, bb, 2)
         assert bb.current_behavior.behavior_name == "avoid_danger"
 
     def test_emergency_stop_preempts_all(self, runtime):
@@ -207,6 +214,9 @@ class TestPriorityLevels:
         status = _tick(root, bb, 1)
         assert status == Status.RUNNING
         assert bb.preemption_occurred
+        assert bb.goal_lifecycle == GOAL_CANCEL_REQUESTED
+        assert bb.current_behavior.behavior_name == "respond_owner_call"
+        _tick(root, bb, 2)
         assert bb.current_behavior.behavior_name == "emergency_stop"
 
     def test_lower_priority_does_not_preempt(self, runtime):
@@ -269,4 +279,7 @@ class TestSameLevelPreemption:
 
         status = _tick(root, bb, 1)
         assert bb.preemption_occurred
+        assert bb.goal_lifecycle == GOAL_CANCEL_REQUESTED
+        assert bb.current_behavior.behavior_name == "eatNormally"
+        _tick(root, bb, 2)
         assert bb.current_behavior.behavior_name == "lickPaws"

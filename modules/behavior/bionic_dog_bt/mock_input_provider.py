@@ -10,7 +10,7 @@ Each inject_* method:
   2. Creates an ActiveBehavior candidate
 
 The select() method implements candidate selection when multiple inputs are active,
-prioritizing by level then value, with cooldown awareness.
+using the same priority key as the deployed candidate pool, with cooldown awareness.
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ import uuid
 from typing import Optional
 
 from .datatypes import ActiveBehavior
+from .arbitration import priority_key
 from .blackboard import Blackboard
 from .constants import (
     PRIORITY_LEVELS,
@@ -100,11 +101,13 @@ class MockInputProvider:
     # ── Lv2 External Interaction ─────────────────────────────────────────────
 
     def inject_owner_call(self, value: float = 85.0) -> ActiveBehavior:
-        """Owner calls the dog by name."""
+        """Inject a hardware wake event that orients to the sound source."""
         params = {
             "target": "owner",
             "source": "audio_direct",
-            "trigger_event": "EVT_VOICE_CALL_NAME",
+            "trigger_event": "EVT_VOICE_WAKEUP",
+            "semantic_rank": 2,
+            "modality_rank": 1,
         }
         b = ActiveBehavior(
             behavior_id=self._gen_id(),
@@ -122,7 +125,11 @@ class MockInputProvider:
 
     def inject_touch_head(self, value: float = 70.0) -> ActiveBehavior:
         """Someone touches the dog's head."""
-        params = {"touch_zone": "head"}
+        params = {
+            "touch_zone": "head",
+            "semantic_rank": 3,
+            "modality_rank": 0,
+        }
         b = ActiveBehavior(
             behavior_id=self._gen_id(),
             behavior_name="respond_touch_head",
@@ -211,7 +218,8 @@ class MockInputProvider:
             identity = str(person.get("identity", "unknown"))
             target = {
                 "target_type": "human",
-                "target_id": identity,
+                "target_id": "mock-vision:human:1",
+                "vision_epoch": "mock-vision",
                 "identity": identity,
             }
         params = {
@@ -223,7 +231,6 @@ class MockInputProvider:
             "visual_resolved": True,
             "interactive": interactive,
             "interaction_mode": "interactive" if interactive else "solo",
-            "executor_behavior_name": route_entry["executor_behavior_name"],
             "target": target,
             "target_identity": (
                 target.get("identity") if target is not None else None
@@ -318,7 +325,8 @@ class MockInputProvider:
                 identity = str(person.get("identity", "unknown"))
                 target = {
                     "target_type": "human",
-                    "target_id": identity,
+                "target_id": "mock-vision:human:1",
+                "vision_epoch": "mock-vision",
                     "identity": identity,
                 }
             else:
@@ -484,8 +492,19 @@ class MockInputProvider:
         if behavior_name is None:
             return None
 
-        if event_type == "EVT_VOICE_CALL_NAME":
+        if event_type == "EVT_VOICE_WAKEUP":
             return self.inject_owner_call(value)
+
+        need_gate = {
+            "EVT_VOICE_COMMAND_TOILET": ("Bladder", 50.0),
+            "EVT_VOICE_COMMAND_CLEAN": ("Cleanliness", 40.0),
+            "EVT_VOICE_COMMAND_SLEEP": ("Sleepiness", 50.0),
+        }.get(event_type)
+        if need_gate is not None:
+            need_name, threshold = need_gate
+            state = self._need_module.get_need(need_name)
+            if state is None or not state.current_value > threshold:
+                return None
 
         if behavior_name == "emergency_stop":
             return self.inject_emergency_stop(value)
@@ -493,18 +512,30 @@ class MockInputProvider:
         # Strong commands have one-to-one semantic behaviors. They must not
         # collapse back to respond_owner_call/respond_touch_head.
         timeout_by_behavior = {
+            "walk_to_random_point": 50.0,
+            "play_alone": 0.0,
+            "go_out_to_play": 50.0,
+            "go_home": 60.0,
+            "approach_owner": 10.0,
+            "back_up": 6.0,
             "sit_down": 5.0,
             "lie_down": 5.0,
             "stand_up": 5.0,
+            "stand_still": 10.0,
+            "hold_position": 10.0,
             "wait_in_place": 30.0,
             "come_to_owner": 12.0,
-            "follow_owner": 30.0,
+            "follow_owner": 0.0,
             "give_paw": 5.0,
             "high_five": 5.0,
             "roll_over": 6.0,
             "spin_around": 6.0,
             "return_to_owner": 12.0,
             "drop_object": 3.0,
+            "quiet": 3.0,
+            "barkShortAlert": 60.0,
+            "lickPaws": 15.0,
+            "sleepOnSide": 120.0,
             "play_dead": 8.0,
             "bring_object": 20.0,
             "fetch_object": 30.0,
@@ -527,6 +558,13 @@ class MockInputProvider:
                 "trigger_event": event_type,
                 "source": "audio_direct",
                 "target": "owner",
+                "semantic_rank": 1,
+                "modality_rank": 1,
+                **({
+                    "lifecycle_scope": "behavior",
+                    "completion_policy": "until_preempted",
+                    "cancel_on_voice_idle": False,
+                } if behavior_name in {"follow_owner", "play_alone"} else {}),
             },
         )
         self._add_candidate(behavior)
@@ -542,8 +580,8 @@ class MockInputProvider:
         during which /emotion and /internal_need nodes have been running.
 
         Rules:
-        1. Lower priority_level wins (higher priority).
-        2. Same level: higher value wins.
+        1. Compare level, semantics, modality, then behavior rank.
+        2. Same key: higher value wins.
         3. If no candidates, return idle_look_around.
         4. Clears candidate list after selection.
         """
@@ -559,8 +597,9 @@ class MockInputProvider:
             self.inject_idle()
             self._candidates = [self._candidates[-1]]
 
-        # Sort by: priority_level ascending, then value descending
-        self._candidates.sort(key=lambda b: (b.priority_level, -b.value))
+        self._candidates.sort(key=lambda b: (
+            *priority_key(b.priority_level, b.params), -b.value,
+        ))
         best = self._candidates[0]
 
         # If best is in cooldown, try next candidates

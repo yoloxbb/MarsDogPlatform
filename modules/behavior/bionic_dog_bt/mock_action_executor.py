@@ -22,6 +22,8 @@ from .datatypes import (
     ExecutorFeedback,
 )
 from .constants import (
+    GOAL_RUNNING,
+    GOAL_TERMINAL,
     STATUS_RUNNING,
     STATUS_SUCCESS,
     STATUS_FAILURE,
@@ -163,6 +165,10 @@ class MockActionExecutor:
                     break
 
             if goal.current_step >= goal.total_steps:
+                if goal.behavior.params.get("completion_policy") == "until_preempted":
+                    # The mock cannot model UWB motion, but its Goal must keep
+                    # the same lifetime and ownership as the real Action.
+                    continue
                 goal.status = STATUS_SUCCESS
                 result_metadata = self._build_result_metadata(goal)
                 self._completed[goal.goal_id] = BehaviorFeedbackEvent(
@@ -219,6 +225,15 @@ class MockActionExecutor:
         """Check if a goal is still active."""
         return goal_id in self._goals
 
+    def get_goal_lifecycle(self, goal_id: str) -> Optional[str]:
+        """Expose the same lifecycle query as the ROS2 adapter."""
+        goal = self._goals.get(goal_id)
+        if goal is None:
+            return None
+        if goal.status == STATUS_RUNNING:
+            return GOAL_RUNNING
+        return GOAL_TERMINAL
+
     @staticmethod
     def _build_result_metadata(goal: MockGoal) -> dict:
         """Build executor-reported dynamic metadata for a completed goal.
@@ -247,21 +262,27 @@ class MockActionExecutor:
             # Emotion behaviors → old config/catalog names
             "expressCalm": "express_happy",
             "expressCalmWithHuman": "express_happy",
+            "expressCalmInPlaceWithHuman": "express_happy",
             "expressCalmAlone": "express_happy",
             "expressJoy": "express_happy",
             "expressJoyWithHuman": "express_happy",
+            "expressJoyInPlaceWithHuman": "express_happy",
             "expressJoyAlone": "express_happy",
             "expressExcitement": "express_happy",
             "expressExcitementWithHuman": "express_happy",
+            "expressExcitementInPlaceWithHuman": "express_happy",
             "expressExcitementAlone": "express_happy",
             "expressAnxiety": "express_fear",
             "expressAnxietyWithHuman": "express_fear",
+            "expressAnxietyInPlaceWithHuman": "express_fear",
             "expressAnxietyAlone": "express_fear",
             "expressFear": "express_fear",
             "expressFearWithHuman": "express_fear",
+            "expressFearInPlaceWithHuman": "express_fear",
             "expressFearAlone": "express_fear",
             "expressCuriosity": "express_curiosity",
             "expressCuriosityWithHuman": "express_curiosity",
+            "expressCuriosityInPlaceWithHuman": "express_curiosity",
             "expressCuriosityAlone": "express_curiosity",
             "spinOnce": "spinInCircle",
             # Need behaviors → old names

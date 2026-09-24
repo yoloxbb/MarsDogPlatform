@@ -362,37 +362,22 @@ BEHAVIOR_ACTION_CATALOG: dict[str, list[dict]] = {
         },
     ],
 
-    # ── Lv2: 外部交互 — 响应主人呼唤 ───────────────────────────────────────
+    # ── Lv1: 外部交互 — 仅按声源原地转向 ───────────────────────────────────
     "respond_owner_call": [
         {
-            "phase": "响应呼唤",
-            "duration": (0.5, 2.0),
+            "phase": "朝向声源",
+            "duration": (0.2, 0.4),
             "safe_to_interrupt": True,
-            "actions": [
-                "ACT_TROT_AND_LOOK_AROUND",
-                "ACT_STARE_AND_TILT_HEAD",
-                "ACT_SEARCH_FOR_PERSON",
-            ],
+            "actions": ["ACT_INTERACT_RESPOND_CALL"],
         },
+    ],
+
+    "approach_voice_caller": [
         {
-            "phase": "靠近主人",
-            "duration": (1.0, 3.0),
-            "safe_to_interrupt": False,
-            "actions": [
-                "ACT_FOLLOW_AND_CLING",
-                "ACT_RUB_AGAINST_LEG_OR_LEAN",
-                "ACT_SIT_OR_LIE_AT_FEET",
-            ],
-        },
-        {
-            "phase": "回应",
-            "duration": (0.5, 1.5),
+            "phase": "锁定唤醒者并靠近",
+            "duration": (0.2, 0.4),
             "safe_to_interrupt": True,
-            "actions": [
-                "ACT_WAG_TAIL",
-                "ACT_LICK_HAND_OR_FACE",
-                "ACT_PLAY_BOW_INVITE",
-            ],
+            "actions": ["ACT_INTERACT_APPROACH_VOICE_CALLER"],
         },
     ],
 

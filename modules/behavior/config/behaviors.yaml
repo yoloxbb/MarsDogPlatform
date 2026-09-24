@@ -80,39 +80,43 @@ behaviors:
         safe_to_interrupt: false
     style_modifiers: {}
 
-  # ── Lv2: ExternalInteraction ──────────────────────────────────────────────
+  # ── Lv1: ExternalInteraction ──────────────────────────────────────────────
   respond_owner_call:
-    priority_level: 2
+    priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
     timeout_sec: 8.0
-    cooldown_sec: 2.0
+    # Hardware retransmits are deduplicated by interaction_id.  A cooldown
+    # would instead drop a legitimate new session while its hold lease keeps
+    # renewing, so session lifecycle is the only suppression mechanism here.
+    cooldown_sec: 0.0
+    # Only orient toward the microphone bearing.  Visual target selection and
+    # chassis approach run as a separate session continuation.
     action_sequence:
       - node: head_tail_ear
-        action: look_at_target
+        action: look_at_sound_source
         duration: 0.5
-        safe_to_interrupt: true
-      - node: vocalization
-        action: happy_bark
-        duration: 0.5
-        safe_to_interrupt: true
-      - node: navigation
-        action: approach_target
-        duration: 2.0
-        safe_to_interrupt: false
-      - node: posture
-        action: sit
-        duration: 1.0
-        safe_to_interrupt: true
-      - node: head_tail_ear
-        action: wag_tail
-        duration: 1.0
         safe_to_interrupt: true
     style_modifiers:
       happy:
         tail_wag: fast
         ear_pose: raised
         voice_tone: excited
+
+  approach_voice_caller:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 160.0
+    cooldown_sec: 0.0
+    # Real execution is ACT_INTERACT_APPROACH_VOICE_CALLER in Action.  This
+    # short sequence only gives the standalone executor a lifecycle fixture.
+    action_sequence:
+      - node: navigation
+        action: approach_voice_caller
+        duration: 0.2
+        safe_to_interrupt: true
+    style_modifiers: {}
 
   respond_wakeup_word:
     priority_level: 2
@@ -413,12 +417,33 @@ behaviors:
 
   # ── Lv1: Voice Commands (语音指令对应的独立动作) ─────────────────────────────
 
+  # Direct visual events (Lv1.2: priority_level=1, sub_priority=12)
+  respond_person_fall:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 8.0
+    cooldown_sec: 1.0
+    # Physical stages belong to marsdog_action_executor.
+    action_sequence: []
+    style_modifiers: {}
+
+  respond_stop_gesture:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 8.0
+    cooldown_sec: 1.0
+    # Physical stages belong to marsdog_action_executor.
+    action_sequence: []
+    style_modifiers: {}
+
   sit_down:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
     timeout_sec: 5.0
-    cooldown_sec: 1.0
+    cooldown_sec: 0.2
     action_sequence:
       - node: posture
         action: sit
@@ -430,12 +455,67 @@ behaviors:
         safe_to_interrupt: true
     style_modifiers: {}
 
+  walk_to_random_point:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 50.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  # 自己去玩吧：一个长期 Goal 反复漫游、停稳、玩耍，直到取消。
+  play_alone:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 0.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  go_out_to_play:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 50.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  go_home:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 60.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  approach_owner:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 170.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  back_up:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 6.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
   lie_down:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
     timeout_sec: 5.0
-    cooldown_sec: 1.0
+    cooldown_sec: 0.2
     action_sequence:
       - node: posture
         action: lie_down
@@ -448,7 +528,7 @@ behaviors:
     base_priority: 80
     interrupt_policy: immediate
     timeout_sec: 5.0
-    cooldown_sec: 1.0
+    cooldown_sec: 0.2
     action_sequence:
       - node: posture
         action: stand
@@ -456,12 +536,73 @@ behaviors:
         safe_to_interrupt: true
     style_modifiers: {}
 
+  stand_still:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 10.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  hold_position:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 10.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  quiet:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 3.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  # Reused physiological behaviors for need-gated voice commands.  Physical
+  # stages remain authoritative in MarsDogAction's behavior table.
+  # 2026-09-18: 180 s, not 60.  This budget is sent as the ROS goal timeout and
+  # covers navigation *and* every stage, and 上厕所 now spends 47.1 s walking
+  # three laps around the spot (0.5 m radius at the 0.20 m/s cap) after the
+  # trip to the 卫生间.  At 60 s the executor would clamp the last lap to the
+  # leftover budget and fail the whole behavior.
+  barkShortAlert:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 180.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  lickPaws:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 15.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  sleepOnSide:
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 120.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
   wait_in_place:
     priority_level: 1
     base_priority: 75
     interrupt_policy: safe_point
     timeout_sec: 30.0
-    cooldown_sec: 1.0
+    cooldown_sec: 0.2
     action_sequence:
       - node: posture
         action: sit_still
@@ -473,8 +614,8 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 12.0
-    cooldown_sec: 1.0
+    timeout_sec: 170.0
+    cooldown_sec: 0.2
     action_sequence:
       - node: perception
         action: locate_owner
@@ -494,8 +635,8 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: safe_point
-    timeout_sec: 30.0
-    cooldown_sec: 1.0
+    timeout_sec: 0.0
+    cooldown_sec: 0.2
     action_sequence:
       - node: perception
         action: locate_owner
@@ -512,7 +653,7 @@ behaviors:
     base_priority: 75
     interrupt_policy: immediate
     timeout_sec: 5.0
-    cooldown_sec: 1.0
+    cooldown_sec: 0.2
     action_sequence:
       - node: posture
         action: lift_paw
@@ -525,7 +666,7 @@ behaviors:
     base_priority: 75
     interrupt_policy: immediate
     timeout_sec: 5.0
-    cooldown_sec: 1.0
+    cooldown_sec: 0.2
     action_sequence:
       - node: posture
         action: lift_paw_high
@@ -538,7 +679,7 @@ behaviors:
     base_priority: 70
     interrupt_policy: safe_point
     timeout_sec: 6.0
-    cooldown_sec: 1.0
+    cooldown_sec: 0.2
     action_sequence:
       - node: full_body
         action: roll_over
@@ -551,7 +692,7 @@ behaviors:
     base_priority: 70
     interrupt_policy: immediate
     timeout_sec: 6.0
-    cooldown_sec: 1.0
+    cooldown_sec: 0.2
     action_sequence:
       - node: full_body
         action: spin
@@ -564,7 +705,7 @@ behaviors:
     base_priority: 70
     interrupt_policy: immediate
     timeout_sec: 6.0
-    cooldown_sec: 1.0
+    cooldown_sec: 0.2
     action_sequence:
       - node: navigation
         action: move_backward
@@ -576,8 +717,8 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 12.0
-    cooldown_sec: 1.0
+    timeout_sec: 170.0
+    cooldown_sec: 0.2
     action_sequence:
       - node: perception
         action: locate_owner
@@ -598,7 +739,7 @@ behaviors:
     base_priority: 80
     interrupt_policy: immediate
     timeout_sec: 3.0
-    cooldown_sec: 0.5
+    cooldown_sec: 0.2
     action_sequence:
       - node: full_body
         action: drop
@@ -611,7 +752,7 @@ behaviors:
     base_priority: 70
     interrupt_policy: safe_point
     timeout_sec: 8.0
-    cooldown_sec: 1.0
+    cooldown_sec: 0.2
     action_sequence:
       - node: posture
         action: lie_side
@@ -628,7 +769,7 @@ behaviors:
     base_priority: 70
     interrupt_policy: immediate
     timeout_sec: 20.0
-    cooldown_sec: 1.0
+    cooldown_sec: 0.2
     action_sequence:
       - node: perception
         action: locate_object
@@ -657,7 +798,7 @@ behaviors:
     base_priority: 70
     interrupt_policy: immediate
     timeout_sec: 30.0
-    cooldown_sec: 2.0
+    cooldown_sec: 0.2
     action_sequence:
       - node: perception
         action: scan_for_object
@@ -679,4 +820,531 @@ behaviors:
         action: release
         duration: 1.0
         safe_to_interrupt: true
+    style_modifiers: {}
+
+  # ── Lv1: 直驱式短语（Direct-drive social/affection/emotion phrases）──────
+  # 空 action_sequence，物理动作归 marsdog_action_executor。
+
+  # A: 亲昵安抚
+  comfort_soothe:        # 不怕不怕
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  comfort_reassure:      # 没事没事
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  care_inquire:          # 疼不疼
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  pet_head:              # 摸摸头
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  hug:                   # 抱抱
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  # B: 拒绝否定
+  refuse:                # 我不要
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  refuse_play:           # 我不玩
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  # C: 找人
+  find_dad:              # 去找爸爸
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 20.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  find_mom:              # 去找妈妈
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 20.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  # D: 表演
+  dance:                 # 跳个舞
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 10.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  # E: 取物
+  bring_to_me:           # 拿给我
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 20.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  give_me:               # 给我
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 20.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  go_fetch:              # 去拿
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 20.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  bring_back:            # 叼回来
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 20.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  fetch_ball:            # 捡球
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 20.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  find_toy:              # 找玩具
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 20.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  # F: 告别/留守/归来
+  farewell_leave:        # 我要出门了
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 25.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  stay_home:             # 你自己在家
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 15.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  wait_return:           # 等我回来
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 15.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  farewell_bye:          # 拜拜
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 15.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  farewell_goodbye:      # 再见
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 15.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  greet_return:          # 我回来了
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 15.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  # G: 询问回应
+  report_activity:       # 你在干嘛
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  report_location:       # 你在哪里
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  report_state:          # 你怎么了
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  respond_thought:       # 你想什么
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  respond_comfort:       # 舒服吗
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  respond_like:          # 喜欢吗
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  respond_fun:           # 好玩吗
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  respond_understand:    # 你听得懂吗
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  show_skill:            # 你会什么
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  respond_learned:       # 你学会了吗
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  # H: 负面情绪表达
+  miss_owner:            # 我好想你
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 25.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  tired:                 # 我累了 / 好累
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 8.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  annoyed:               # 我有点烦 / 烦死了
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 8.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  unhappy:               # 今天不开心 / 不得劲
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 25.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  downcast:              # 过得不太顺利
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 8.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  depressed:             # 我要抑郁了 / 心情不好
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 8.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  stressed:              # 压力好大
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 8.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  lonely:                # 我好孤独
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 8.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  unwell:                # 我头疼 / 不舒服
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 8.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  # I: 正面情绪表达
+  cheerful:              # 我现在心情美美的
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  happy:                 # 我今天很开心 / 很高兴
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  great_form:            # 我感觉今天状态特别好
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  great:                 # 我今天感觉特别棒
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  relaxed:               # 我现在浑身都很轻松
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  wonderful_day:         # 今天真是个好日子
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  lucky:                 # 我今天太幸运了
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  # J: 饮食直驱
+  eat_meal:              # 吃饭
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 30.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  eat_snack:             # 吃零食
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 30.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  eat_canned_food:       # 吃罐罐
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 30.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  respond_food_preference:   # 你想吃什么
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  # ── 特殊处理行为（饮食查询分流 / 打断），动作归 marsdog_action_executor ──
+  respond_hungry_yes:    # 肚子饿（Hunger 高）
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  respond_hungry_no:     # 肚子不饿
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  respond_want_eat_yes:  # 想吃
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  respond_want_eat_no:   # 不想吃
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
+    style_modifiers: {}
+
+  look_at_owner_brief:   # 短暂看向主人（RESPOND_EATING_QUERY 打断后）
+    priority_level: 1
+    base_priority: 80
+    interrupt_policy: immediate
+    timeout_sec: 5.0
+    cooldown_sec: 0.2
+    action_sequence: []
     style_modifiers: {}

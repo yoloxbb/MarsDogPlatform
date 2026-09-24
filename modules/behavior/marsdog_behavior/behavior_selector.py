@@ -11,6 +11,7 @@ from typing import Optional
 from bionic_dog_bt.arbitration import (
     check_interrupt_policy as _check_interrupt_policy,
     evaluate_preemption as _evaluate_preemption,
+    priority_key,
 )
 
 
@@ -24,8 +25,10 @@ def select_best_from_pool(candidates: list[dict], blackboard) -> Optional[dict]:
         return None
 
     sorted_cands = sorted(candidates, key=lambda c: (
-        c["priority_level"],
-        c.get("sub_priority", 0),
+        *priority_key(
+            c["priority_level"], c.get("params"),
+            sub_priority=c.get("sub_priority", 0),
+        ),
         c.get("emotion_priority", 50),
         -c["value"],
     ))

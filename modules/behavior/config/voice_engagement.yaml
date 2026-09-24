@@ -1,0 +1,22 @@
+# Wake-source orientation → voice identity → visual target → SLAM → Nav2.
+voice_engagement:
+  # MarsDogAction registers all six express*InPlaceWithHuman behaviors and
+  # enforces mobility_policy=in_place before audio/controller execution.
+  # Set false to fail closed when deploying against an older Action node.
+  waiting_emotion_enabled: true
+  target_min_confidence: 0.30
+  target_max_age_ms: 300.0
+  # After the sound-source turn, do not bind an unrelated person elsewhere
+  # in the frame merely because they are the only visible candidate.
+  target_max_bearing_error_deg: 25.0
+  acquire_timeout_sec: 2.0
+  snapshot_max_age_ms: 500.0
+  wake_identity_timeout_sec: 3.0
+  stand_off_distance_m: 1.5
+  approach_timeout_sec: 160.0
+  approach_candidate_ttl_sec: 3.0
+  hold_lease_sec: 6.0
+  hold_renew_interval_sec: 2.0
+  # Production motion requires metric depth.  Enable only for a supervised,
+  # speed-limited demonstration where Action explicitly uses bbox height.
+  car_demo_allow_bbox_fallback: false

@@ -27,7 +27,11 @@ Internal delegation:
 from __future__ import annotations
 
 import json
+import math
 import time
+from collections import deque
+
+import yaml
 
 from bionic_dog_bt.blackboard import Blackboard
 from bionic_dog_bt.constants import (
@@ -46,8 +50,66 @@ from .ros2_compat import NodeBase, HAS_ROS2, is_ros2_ready
 from .config_paths import get_config_file
 from .result_event_mapper import ResultEventMapper
 from .perception_client_adapter import PerceptionClientAdapter
-from .intent_mapper import IntentMapper
+from .intent_mapper import IntentMapper, BehaviorCandidate
 from .runtime import BehaviorRuntime
+from .voice_interaction_session import (
+    ACQUIRING_TARGET,
+    APPROACHING,
+    AWAITING_IDENTITY,
+    CLOSED,
+    ORIENTING,
+    WAITING,
+    VoiceInteractionSession,
+)
+from .voice_session_client_adapter import VoiceSessionClientAdapter
+
+
+WAKE_ANGLE_FRAME_ID = "microphone_array"
+
+# ── 直驱式特殊音频事件（硬编码处理，不在 event_intent_map 白名单内）──────
+
+# 词库社交反应：非动作命令，但允许一次性行为表达。
+_AUDIO_REACTION_EVENTS = {
+    "EVT_VOICE_COMMAND_PRAISE",
+    "EVT_VOICE_COMMAND_SCOLD",
+}
+
+# 饮食查询分流 / 打断 / PLAY 绑兴奋（control=DO）
+_SPECIAL_AUDIO_EVENTS = {
+    "EVT_VOICE_COMMAND_RESPOND_HUNGRY_QUERY",
+    "EVT_VOICE_COMMAND_RESPOND_WANT_EAT_QUERY",
+    "EVT_VOICE_COMMAND_RESPOND_EATING_QUERY",
+    "EVT_VOICE_COMMAND_PLAY",
+}
+
+# 情绪名 → V2 事件类型（社交事件/PLAY 绑情绪用）
+_EMOTION_NAME_TO_EVENT = {
+    name: event for event, name in EMOTION_V2_EVENT_TO_NAME.items()
+}
+
+# 饮食查询分流阈值（Hunger > 70 视为「饿」）—— 待与产品确认
+_HUNGER_ROUTE_THRESHOLD = 70.0
+
+# 视为「进食中」的行为名
+_EATING_BEHAVIORS = {
+    "eatNormally",
+    "eatExcitedly",
+    "eat_meal",
+    "eat_snack",
+    "eat_canned_food",
+}
+
+_OWNER_TARGET_AUDIO_BEHAVIORS = frozenset({
+    "unhappy",
+    "miss_owner",
+    "farewell_leave",
+})
+
+_OWNER_NAV_AUDIO_BEHAVIORS = frozenset({
+    "approach_owner",
+    "come_to_owner",
+    "return_to_owner",
+})
 
 
 def _is_json_number(value) -> bool:
@@ -188,6 +250,7 @@ class BehaviorTreeRosNode(NodeBase):
     NEED_SIGNAL_TOPIC = "/internal_need/signal_event"
     RESULT_EVENT_TOPIC = "/behavior/result_event"
     ATTENTION_TRACKING_TOPIC = "/behavior/attention_tracking"
+    GOAL_LEASE_TOPIC = "/behavior/goal_lease"
 
     def __init__(self, node_name: str = "behavior_tree_node",
                  config_path: str = None, force_mock: bool = False):
@@ -239,9 +302,24 @@ class BehaviorTreeRosNode(NodeBase):
         self._emotion_continuation_requests: set[str] = set()
 
         # ── Perception Client Adapter ────────────────────────────────────
-        self._perception = PerceptionClientAdapter(self)
+        vision_task_timeout_sec = PerceptionClientAdapter.VISION_TASK_TIMEOUT_SEC
+        if self._ros2_ready:
+            self.declare_parameter(
+                "vision_task_timeout_sec",
+                vision_task_timeout_sec,
+            )
+            vision_task_timeout_sec = float(
+                self.get_parameter("vision_task_timeout_sec").value
+            )
+        self._perception = PerceptionClientAdapter(
+            self,
+            vision_task_timeout_sec=vision_task_timeout_sec,
+        )
         self._blackboard.perception_client = self._perception
         self._perception.set_on_audio_direct(self._on_audio_direct)
+        self._perception.set_on_visual_event(self._on_visual_direct)
+        self._voice_session_client = VoiceSessionClientAdapter(self)
+        self._voice_engagement = self._load_voice_engagement_config()
 
         # ── Transport-independent decision runtime ───────────────────────
         self._runtime = BehaviorRuntime(
@@ -256,12 +334,26 @@ class BehaviorTreeRosNode(NodeBase):
 
         # ── State tracking ───────────────────────────────────────────────
         self._running = True
-        self._emotion_heartbeat = 0
-        self._need_heartbeat = 0
+        self._last_logged_emotion_state: (
+            tuple[tuple[str, bool], ...] | None
+        ) = None
+        self._last_logged_need_state: (
+            tuple[tuple[str, str], ...] | None
+        ) = None
         self._emotion_visual_generation: dict[str, int] = {}
+        # An emotion edge may outlive a voice attention phase. Keep its intent,
+        # then resolve a fresh target once expression is safe again.
+        self._pending_emotion_edges: dict[str, str] = {}
+        self._pending_emotion_retry_at: dict[str, float] = {}
         self._need_visual_generation: dict[str, int] = {}
+        self._audio_target_generation = 0
+        self._voice_session_generation = 0
+        self._voice_session: VoiceInteractionSession | None = None
+        self._seen_audio_event_keys: set[tuple[str, str, str]] = set()
+        self._seen_audio_event_order: deque[tuple[str, str, str]] = deque()
         self._attention_interaction_id = ""
         self._attention_mode = "face_body_centering"
+        self._eating_resume: dict | None = None
 
         # ── Setup I/O ────────────────────────────────────────────────────
         if self._ros2_ready:
@@ -318,6 +410,17 @@ class BehaviorTreeRosNode(NodeBase):
         self._using_real_executor = False
         self._logger.info("Executor: MockActionExecutor (standalone/fallback mode)")
 
+    @staticmethod
+    def _load_voice_engagement_config() -> dict:
+        with open(
+            get_config_file("voice_engagement.yaml"),
+            "r",
+            encoding="utf-8",
+        ) as stream:
+            value = yaml.safe_load(stream) or {}
+        configured = value.get("voice_engagement", {})
+        return dict(configured) if isinstance(configured, dict) else {}
+
     # ── ROS2 Setup ───────────────────────────────────────────────────────
 
     def _setup_ros2(self):
@@ -352,6 +455,8 @@ class BehaviorTreeRosNode(NodeBase):
             String, self.RESULT_EVENT_TOPIC, qos_reliable)
         self._attention_pub = self.create_publisher(
             String, self.ATTENTION_TRACKING_TOPIC, qos_reliable)
+        self._goal_lease_pub = self.create_publisher(
+            String, self.GOAL_LEASE_TOPIC, qos_reliable)
 
         self.create_timer(self.TICK_RATE, self._on_tick)
 
@@ -440,17 +545,26 @@ class BehaviorTreeRosNode(NodeBase):
                     self._invalidate_emotion_visual_request(emotion_name)
                     self._candidate_pool.discard_emotion(emotion_name)
                     self._stop_emotion_continuation(emotion_name)
+                    self._pending_emotion_edges.pop(emotion_name, None)
+                    self._pending_emotion_retry_at.pop(emotion_name, None)
 
-            self._emotion_heartbeat += 1
-            if self._emotion_heartbeat % 30 == 1:
-                states = ', '.join(
-                    f"{name}={'on' if self._blackboard.emotion_module.is_triggered(name) else 'off'}"
-                    for name in (
-                        "Joy", "Excite", "Anxiety",
-                        "Fear", "Curious", "Calm",
-                    )
+            emotion_names = (
+                "Joy", "Excite", "Anxiety", "Fear", "Curious", "Calm",
+            )
+            log_state = tuple(
+                (
+                    name,
+                    self._blackboard.emotion_module.is_triggered(name),
                 )
-                self._logger.debug(f"/emotion/state heartbeat: [{states}]")
+                for name in emotion_names
+            )
+            if log_state != self._last_logged_emotion_state:
+                states = ", ".join(
+                    f"{name}={'on' if triggered else 'off'}"
+                    for name, triggered in log_state
+                )
+                self._logger.debug(f"/emotion/state changed: [{states}]")
+                self._last_logged_emotion_state = log_state
         except Exception as e:
             self._logger.error(f"Failed to parse /emotion/state: {e}")
 
@@ -501,7 +615,9 @@ class BehaviorTreeRosNode(NodeBase):
             ):
                 raise ValueError("emotion signal triggerOperator must be a string")
 
-            self._logger.info(f"/emotion/signal_event: {event_type}")
+            # candidate_inject/select/start are the INFO-level audit trail. The
+            # raw ingress record remains available at DEBUG for contract checks.
+            self._logger.debug(f"/emotion/signal_event: {event_type}")
 
             # Bridge the gap before the next 1Hz state snapshot. Recovery is
             # still authoritative from /emotion/state.triggered=false.
@@ -517,7 +633,6 @@ class BehaviorTreeRosNode(NodeBase):
             self._request_contextual_emotion_candidate(
                 emotion_name,
                 trigger_event=event_type,
-                signal_value=float(signal_value),
             )
         except Exception as e:
             self._logger.error(f"Failed to parse /emotion/signal_event: {e}")
@@ -656,13 +771,25 @@ class BehaviorTreeRosNode(NodeBase):
                     update["level_event"],
                 )
 
-            self._need_heartbeat += 1
-            if self._need_heartbeat % 30 == 1:
-                ev = ', '.join(
-                    f"{n}={self._blackboard.need_module.level_events.get(n, '?')}"
-                    for n in ["Hunger", "Bladder", "Sleepiness", "Cleanliness",
-                              "Energy", "Social", "Exploration"])
-                self._logger.debug(f"/internal_need/state heartbeat: [{ev}]")
+            need_names = (
+                "Hunger", "Bladder", "Sleepiness", "Cleanliness",
+                "Energy", "Social", "Exploration",
+            )
+            log_state = tuple(
+                (
+                    name,
+                    self._blackboard.need_module.level_events.get(name, "?"),
+                )
+                for name in need_names
+            )
+            if log_state != self._last_logged_need_state:
+                events = ", ".join(
+                    f"{name}={event}" for name, event in log_state
+                )
+                self._logger.debug(
+                    f"/internal_need/state changed: [{events}]"
+                )
+                self._last_logged_need_state = log_state
         except Exception as e:
             self._logger.error(f"Failed to parse /internal_need/state: {e}")
 
@@ -745,7 +872,7 @@ class BehaviorTreeRosNode(NodeBase):
                     f"for value {value!r}"
                 )
 
-            self._logger.info(
+            self._logger.debug(
                 f"/internal_need/signal_event: {event_type} demand={demand} level={level}")
 
             triggered = level != NEED_LEVEL_NORMAL
@@ -794,58 +921,514 @@ class BehaviorTreeRosNode(NodeBase):
 
     # ── Audio Direct Handler ──────────────────────────────────────────────
 
+    def _on_visual_direct(self, event_type: str, data: dict) -> None:
+        """Map a whitelisted visual event into the candidate pipeline."""
+        candidate = self._intent_mapper.map_visual_event(event_type, data)
+        if candidate is not None:
+            self._add_candidate(candidate)
+        else:
+            self._logger.debug(
+                "Visual event %s → no candidate (unmapped event_type)",
+                event_type,
+            )
+
     def _on_audio_direct(self, event_type: str, data: dict) -> None:
         """Handle event-type-driven audio events via the intent pipeline.
 
         Pipeline: event_type → category → intent → action_pool → behavior_name
         """
-        if event_type == "EVT_VOICE_CALL_NAME":
+        if event_type == "EVT_VOICE_WAKE_SPEAKER_RESULT":
+            if (not isinstance(data, dict)
+                    or type(data.get("schema_version")) is not int
+                    or data["schema_version"] != 2
+                    or data.get("event_type") != event_type):
+                return
+            session = self._voice_session
             interaction_id = str(data.get("interaction_id", "")).strip()
-            if not interaction_id:
-                interaction_id = "legacy-%d" % int(time.time() * 1000)
-            self._attention_interaction_id = interaction_id
+            wake_id = str(data.get("wake_id", "")).strip()
+            if (session is None or not session.matches(interaction_id)
+                    or not wake_id or wake_id != session.metadata.get("wake_id")):
+                return
+            role = str(data.get("speaker_role", ""))
+            status = str(data.get("speaker_status", ""))
+            speaker_id = str(data.get("speaker_id", "unknown"))
+            valid = (
+                (role == "owner" and status == "matched" and speaker_id == "owner")
+                or (role == "family" and status == "matched"
+                    and speaker_id in {"family_member_1", "family_member_2",
+                                       "family_member_3", "family_member_4"})
+                or (role == "stranger" and status == "no_match"
+                    and speaker_id == "unknown")
+                or (role == "undetermined" and status in {
+                    "ambiguous", "insufficient_audio", "unavailable"
+                } and speaker_id == "unknown")
+            )
+            if not valid:
+                return
+            session.metadata["wake_speaker_role"] = role
+            session.metadata["wake_speaker_status"] = status
+            session.metadata["wake_speaker_id"] = speaker_id
+            if session.phase == AWAITING_IDENTITY and not session.command_received:
+                self._continue_wake_after_identity(session)
+            return
+
+        if event_type == "EVT_VOICE_WAKEUP":
+            wake = self._validate_wake_event(data)
+            if wake is None:
+                return
+            interaction_id = wake["interaction_id"]
+            wake_id = wake["wake_id"]
+            event_key = (interaction_id, wake_id, event_type)
+
+            session = self._voice_session
+            if self._audio_event_seen(event_key):
+                return
+            if session is not None and session.matches(interaction_id) and (
+                not wake_id or wake_id == session.metadata.get("wake_id", "")
+            ):
+                self._remember_audio_event(event_key)
+                return
+
+            if session is not None and session.active:
+                self._close_voice_session(
+                    session.interaction_id,
+                    reason="replaced_by_new_wake",
+                )
+
+            self._voice_session_generation += 1
+            session = VoiceInteractionSession(
+                interaction_id=interaction_id,
+                generation=self._voice_session_generation,
+                phase=ORIENTING,
+                wake_event_stamp=wake["wake_event_stamp"],
+                wake_angle_deg=wake["wake_angle_deg"],
+                wake_frame_id=wake["wake_frame_id"],
+                wake_confidence=wake["wake_confidence"],
+                hold_token="wake-engagement:%s" % interaction_id,
+            )
+            self._voice_session = session
+            if wake_id:
+                session.metadata["wake_id"] = wake_id
+                session.metadata["wake_speaker_role"] = "undetermined"
+                session.metadata["wake_speaker_status"] = "pending"
+                session.metadata["wake_speaker_id"] = "unknown"
+            self._remember_audio_event(event_key)
+            self._attention_interaction_id = ""
             self._attention_mode = "face_body_centering"
-            self._publish_attention_control(True, data)
+            self._request_voice_hold(session)
+
+            candidate = self._intent_mapper.map_audio_event(event_type, data)
+            if candidate is not None:
+                if not self._add_candidate(candidate):
+                    # A new wake can replace a still-running sound turn.  Its
+                    # replacement is queued only after that Goal's real Result.
+                    session.metadata["pending_wake_candidate"] = candidate
             return
 
         if event_type == "EVT_STATE_CHANGED":
-            event_interaction_id = str(data.get("interaction_id", "")).strip()
             if (
-                data.get("state") == "idle"
-                and self._attention_interaction_id
-                and (
-                    not event_interaction_id
-                    or event_interaction_id == self._attention_interaction_id
-                )
+                not isinstance(data, dict)
+                or type(data.get("schema_version")) is not int
+                or data["schema_version"] != 2
+                or data.get("event_type") != event_type
             ):
-                self._publish_attention_control(False, data)
-                self._attention_interaction_id = ""
-                self._attention_mode = "face_body_centering"
+                self._logger.warn(
+                    "Voice state event rejected: invalid schema/event_type"
+                )
+                return
+            event_interaction_id = str(data.get("interaction_id", "")).strip()
+            if data.get("state") == "idle":
+                session = self._voice_session
+                if (
+                    session is not None
+                    and session.matches(event_interaction_id)
+                ):
+                    self._close_voice_session(
+                        event_interaction_id,
+                        reason=str(data.get("state_reason", "voice_idle")),
+                    )
             return
 
-        if event_type == "EVT_VOICE_COMMAND_FOLLOW":
-            # Follow is a session-scoped closed-loop mode.  The formal
-            # follow_owner behavior remains an acknowledgement/contract goal;
-            # it must not be translated into a fixed Twist choreography.
-            interaction_id = str(data.get("interaction_id", "")).strip()
-            if interaction_id and not self._attention_interaction_id:
-                self._attention_interaction_id = interaction_id
-            self._attention_mode = "follow_owner"
-            self._publish_attention_control(True, data)
+        # ── 直驱式特殊音频事件（硬编码，不走 intent 白名单）─────────────
+        if event_type in _AUDIO_REACTION_EVENTS:
+            self._on_audio_reaction(event_type, data)
+            return
 
+        if event_type in _SPECIAL_AUDIO_EVENTS:
+            self._on_special_audio_event(event_type, data)
+            return
+
+        # Exact mapping and the v2 execution-authority fields are validated
+        # before this event may mutate the active voice session.
         candidate = self._intent_mapper.map_audio_event(event_type, data)
-        if candidate is not None:
-            self._add_candidate(candidate)
-        else:
+        if candidate is None:
             self._logger.debug(
-                "Audio event %s → no candidate (unmapped event_type)", event_type)
+                "Audio event %s → rejected or unmapped", event_type
+            )
+            return
+        if not self._audio_need_gate_allows(candidate):
+            return
+
+        interaction_id = str(data.get("interaction_id", "")).strip()
+        utterance_id = str(data.get("utterance_id", "")).strip()
+        event_key = (interaction_id, utterance_id, event_type)
+        if interaction_id and self._audio_event_seen(event_key):
+            return
+
+        session = self._voice_session
+        if (
+            session is not None
+            and session.active
+            and not session.matches(interaction_id)
+        ):
+            # A late command from an older Voice session must never drive the
+            # current interaction.  Voice owns the interaction ID; BT only
+            # accepts an exact match while a wake session is active.
+            if interaction_id:
+                self._remember_audio_event(event_key)
+            self._logger.warn(
+                "Voice command ignored: stale/missing interaction_id=%r "
+                "current=%r" % (interaction_id, session.interaction_id)
+            )
+            return
+        if (
+            session is not None
+            and session.matches(interaction_id)
+        ):
+            self._consume_voice_session_turn(session, "command")
+        if interaction_id:
+            self._remember_audio_event(event_key)
+
+        # Every newer accepted command invalidates an older asynchronous owner
+        # lookup.  A late Vision response must not enqueue movement after the
+        # user has already issued another command.
+        self._audio_target_generation = (
+            getattr(self, "_audio_target_generation", 0) + 1
+        )
+        audio_target_generation = self._audio_target_generation
+
+        behavior_name = (
+            candidate.get("behavior_name", "")
+            if isinstance(candidate, dict)
+            else str(getattr(candidate, "behavior_name", ""))
+        )
+        if behavior_name == "follow_owner":
+            # The long-running follow Goal owns UWB and the chassis.  End any
+            # voice-only attention control before dispatching that Goal.
+            self._attention_mode = "face_body_centering"
+            self._publish_attention_control(False, data)
+            self._attention_interaction_id = ""
+
+        if behavior_name in _OWNER_TARGET_AUDIO_BEHAVIORS:
+            self._request_owner_target_audio_candidate(
+                candidate,
+                interaction_id=interaction_id,
+                generation=audio_target_generation,
+            )
+            return
+
+        if behavior_name in _OWNER_NAV_AUDIO_BEHAVIORS:
+            # Action binds a fresh human track from /perception/visual_event
+            # immediately before its one-shot Vision/SLAM localization.
+            # Visual face recognition is not required for these commands.
+            candidate.target = None
+            candidate.target_required = False
+            candidate.interactive = False
+            candidate.interaction_mode = "solo"
+            candidate.params.pop("target_track_id", None)
+            candidate.params.pop("target_identity", None)
+            candidate.params.update({
+                "target_resolution": "action_visual_event",
+                "strict_target_lock": True,
+                "allow_target_switch": False,
+                "stand_off_distance_m": 1.5,
+                "lifecycle_scope": "behavior",
+                "cancel_on_voice_idle": False,
+            })
+
+        self._add_candidate(candidate)
+
+    def _request_owner_target_audio_candidate(
+        self,
+        candidate: BehaviorCandidate,
+        *,
+        interaction_id: str,
+        generation: int,
+    ) -> None:
+        """Bind an owner-only Vision target for social response behaviors."""
+        event_type = candidate.trigger_event
+
+        def _resolved(target: dict | None) -> None:
+            if generation != self._audio_target_generation:
+                self._logger.debug(
+                    "Ignoring stale owner target for %s/%s",
+                    event_type,
+                    interaction_id,
+                )
+                return
+            current = self._voice_session
+            if (
+                current is not None
+                and current.active
+                and not current.matches(interaction_id)
+            ):
+                self._logger.debug(
+                    "Ignoring owner target from old voice session %s/%s",
+                    event_type,
+                    interaction_id,
+                )
+                return
+
+            identity = (
+                str(target.get("identity", "")).strip().lower()
+                if isinstance(target, dict)
+                else ""
+            )
+            target_id = (
+                str(target.get("target_id", "")).strip()
+                if isinstance(target, dict)
+                else ""
+            )
+            vision_epoch = (
+                str(target.get("vision_epoch", "")).strip()
+                if isinstance(target, dict)
+                else ""
+            )
+            if (
+                identity != "owner"
+                or target.get("identity_state") != "confirmed_known"
+                or target.get("tracking_state") != "tracking"
+                or not target_id
+                or not vision_epoch
+            ):
+                self._logger.warn(
+                    "Voice behavior %s not queued: current owner visual "
+                    "target unavailable (%s)",
+                    candidate.behavior_name,
+                    event_type,
+                )
+                return
+
+            bound_target = dict(target)
+            bound_target.update({
+                "target_type": "human",
+                "identity": "owner",
+            })
+            candidate.target = bound_target
+            candidate.target_required = True
+            candidate.interactive = True
+            candidate.interaction_mode = "interactive"
+            candidate.params.update({
+                "visual_route": "human",
+                "target_identity": "owner",
+                "target_track_id": bound_target.get("track_id"),
+                "target_resolution": "vision_query_targets",
+            })
+            self._add_candidate(candidate)
+
+        self._perception.request_owner_target(_resolved)
+
+    def _on_audio_reaction(self, event_type: str, data: dict) -> None:
+        """Consume one voice turn and enqueue a bounded PRAISE/SCOLD reaction."""
+        if not self._intent_mapper.validate_audio_reaction_event(
+            event_type,
+            data,
+        ):
+            return
+
+        interaction_id = str(data.get("interaction_id", "")).strip()
+        utterance_id = str(data.get("utterance_id", "")).strip()
+        event_key = (interaction_id, utterance_id, event_type)
+        if self._audio_event_seen(event_key):
+            return
+
+        session = self._voice_session
+        if (
+            session is not None
+            and session.active
+            and not session.matches(interaction_id)
+        ):
+            self._remember_audio_event(event_key)
+            self._logger.warn(
+                "Voice reaction ignored: stale interaction_id=%r current=%r"
+                % (interaction_id, session.interaction_id)
+            )
+            return
+
+        active_voice_session = bool(
+            session is not None and session.matches(interaction_id)
+        )
+        if active_voice_session:
+            self._consume_voice_session_turn(session, "social_reaction")
+        self._remember_audio_event(event_key)
+
+        def _resolved(context: dict) -> None:
+            current = self._voice_session
+            if (
+                current is not None
+                and current.active
+                and not current.matches(interaction_id)
+            ):
+                self._logger.debug(
+                    "Ignoring stale visual result for audio reaction %s/%s",
+                    event_type,
+                    interaction_id,
+                )
+                return
+            candidate = self._intent_mapper.map_audio_reaction(
+                event_type,
+                data,
+                visual_route=str(context.get("route", "solo")),
+                target=context.get("target"),
+                active_voice_session=active_voice_session,
+            )
+            if candidate is not None:
+                self._add_candidate(candidate)
+
+        self._perception.request_emotion_context(_resolved)
+
+    def _consume_voice_session_turn(self, session, kind: str) -> None:
+        """Give one accepted command/reaction ownership of the voice turn."""
+        session.consume_turn(kind)
+        session.metadata["command_goal_terminal"] = False
+        session.generation += 1
+        self._voice_session_generation = max(
+            self._voice_session_generation,
+            session.generation,
+        )
+        interaction_id = session.interaction_id
+        self._defer_queued_voice_emotions(interaction_id)
+        self._candidate_pool.discard_where(
+            lambda queued: (
+                queued.get("params", {}).get("interaction_id")
+                == interaction_id
+                and queued.get("params", {}).get("session_role") in {
+                    "wake_approach",
+                    "voice_waiting_emotion",
+                }
+            )
+        )
+        self._release_voice_hold(session, reset_idle_timer=False)
+
+    def _emit_social_emotion(self, emotion_name: str, trigger_event: str) -> None:
+        """按视觉路由生成情绪候选（不污染情绪 state）。"""
+        emo_event = _EMOTION_NAME_TO_EVENT.get(emotion_name)
+        if emo_event is None:
+            return
+
+        def _resolved(context: dict) -> None:
+            route = str(context.get("route", "solo"))
+            target = context.get("target")
+            candidate = self._intent_mapper.map_emotion_event(
+                emo_event,
+                {"value": 80.0, "visual_route": route},
+                interactive=route == "human",
+                target=target,
+                visual_route=route,
+            )
+            if candidate is not None:
+                candidate.params["social_trigger"] = trigger_event
+                self._add_candidate(candidate)
+
+        self._perception.request_emotion_context(_resolved)
+
+    def _on_special_audio_event(self, event_type: str, data: dict) -> None:
+        """直驱式特殊事件：饮食查询分流 / 打断 / PLAY 绑兴奋。"""
+        if event_type == "EVT_VOICE_COMMAND_PLAY":
+            # PLAY 绑定兴奋
+            self._emit_social_emotion("Excite", event_type)
+            return
+        if event_type in (
+            "EVT_VOICE_COMMAND_RESPOND_HUNGRY_QUERY",
+            "EVT_VOICE_COMMAND_RESPOND_WANT_EAT_QUERY",
+        ):
+            self._route_hunger_query(event_type)
+            return
+        if event_type == "EVT_VOICE_COMMAND_RESPOND_EATING_QUERY":
+            self._route_eating_query(event_type)
+            return
+
+    def _route_hunger_query(self, event_type: str) -> None:
+        """按饥饿状态分流：饿→表示饿/想吃，不饿→表示不饿/不想吃。
+
+        阈值 _HUNGER_ROUTE_THRESHOLD 为建议值，待与产品确认。
+        """
+        hunger = self._blackboard.need_module.get_need("Hunger")
+        value = (
+            float(hunger.current_value)
+            if hunger is not None
+            else float("nan")
+        )
+        hungry = math.isfinite(value) and value > _HUNGER_ROUTE_THRESHOLD
+        if event_type == "EVT_VOICE_COMMAND_RESPOND_HUNGRY_QUERY":
+            behavior_name = (
+                "respond_hungry_yes" if hungry else "respond_hungry_no"
+            )
+        else:
+            behavior_name = (
+                "respond_want_eat_yes" if hungry else "respond_want_eat_no"
+            )
+        self._add_direct_behavior(behavior_name, event_type, timeout_sec=5.0)
+
+    def _route_eating_query(self, event_type: str) -> None:
+        """判定是否在执行进食行为：有则打断（记录恢复），再看主人。
+
+        look_at_owner_brief 为 Lv1，会抢占 Lv3 进食；完成后由 _on_tick
+        根据 self._eating_resume 重新入池被中断的进食行为。
+        """
+        current = self._blackboard.current_behavior
+        eating = (
+            current is not None
+            and self._blackboard.current_status == STATUS_RUNNING
+            and current.behavior_name in _EATING_BEHAVIORS
+        )
+        if eating:
+            self._eating_resume = {"behavior_name": current.behavior_name}
+        else:
+            self._eating_resume = None
+        self._add_direct_behavior("look_at_owner_brief", event_type, timeout_sec=5.0)
+
+    def _add_direct_behavior(
+        self,
+        behavior_name: str,
+        trigger_event: str,
+        timeout_sec: float = 5.0,
+    ) -> None:
+        """直接构造一个 Lv1 直驱候选并入池（不经过 intent 白名单）。"""
+        candidate = BehaviorCandidate(
+            behavior_name=behavior_name,
+            source="audio_direct",
+            trigger_event=trigger_event,
+            intent="",
+            priority_level=1,
+            sub_priority=1,
+            intensity=80.0,
+            confidence=0.9,
+            ttl_sec=8.0,
+            timeout_sec=timeout_sec,
+            cooldown_sec=1.0,
+            interrupt_policy="immediate",
+            params={
+                "source": "audio_direct",
+                "trigger_event": trigger_event,
+                "intent": "",
+            },
+        )
+        self._add_candidate(candidate)
 
     def _publish_attention_control(self, enabled: bool, data: dict) -> None:
+        session = self._voice_session
+        session_id = (
+            session.interaction_id
+            if session is not None and session.active
+            else ""
+        )
         payload = {
             "schema_version": 1,
             "header": {"stamp": time.time(), "frame_id": "base_link"},
             "interaction_id": (
                 self._attention_interaction_id
+                or session_id
                 or str(data.get("interaction_id", ""))
             ),
             "enabled": bool(enabled),
@@ -855,6 +1438,13 @@ class BehaviorTreeRosNode(NodeBase):
                 data.get("wake_confidence", 0.0) or 0.0
             ),
             "reason": str(data.get("state_reason", "")),
+            "phase": session.phase if session is not None else CLOSED,
+            "target_ref": (
+                dict(session.selected_target)
+                if session is not None
+                and isinstance(session.selected_target, dict)
+                else None
+            ),
         }
         encoded = json.dumps(payload, ensure_ascii=False)
         if self._ros2_ready and hasattr(self, "_attention_pub"):
@@ -868,17 +1458,587 @@ class BehaviorTreeRosNode(NodeBase):
             )
 
     def _candidate_allowed_during_interaction(self, candidate: dict) -> bool:
-        """Reserve the decision channel for human interaction until it ends.
+        """Protect active voice motion while permitting safe emotion expression.
 
         Attention tracking is session state rather than an Action goal, so it
         does not otherwise participate in normal BT priority arbitration.
-        Treat an active voice session as a virtual Lv1 behavior: safety and
-        explicit/external interaction work may run, while lower-priority work
-        remains queued until the matching idle event closes the session.
+        Treat the motion-bearing voice phases as a virtual Lv1 behavior.  Once
+        the session is WAITING, a visually resolved InPlaceWithHuman emotion
+        may run so a silent wake/pose interaction does not leave the robot
+        inert.
+        Commands and safety work still win through normal priority. A command
+        does not make the rest of its voice session an emotion embargo.
         """
-        if not self._attention_interaction_id:
+        session = self._voice_session
+        if not (
+            (session is not None and session.active)
+            or self._attention_interaction_id
+        ):
             return True
-        return int(candidate.get("priority_level", 6)) <= 1
+
+        if int(candidate.get("priority_level", 6)) <= 1:
+            return True
+
+        params = candidate.get("params", {})
+        return bool(
+            self._voice_engagement.get("waiting_emotion_enabled", False)
+            and session is not None
+            and session.active
+            and (
+                not session.command_received
+                or session.metadata.get("command_goal_terminal", False)
+            )
+            and (
+                session.phase == WAITING
+                or (
+                    session.command_received
+                    and session.metadata.get("command_goal_terminal", False)
+                )
+            )
+            and self._attention_mode != "follow_owner"
+            and isinstance(params, dict)
+            and params.get("source") == "emotion"
+            and params.get("interaction_mode") == "interactive"
+            and params.get("interaction_variant") == "voice_waiting"
+            and params.get("session_role") == "voice_waiting_emotion"
+            and params.get("mobility_policy") == "in_place"
+            and params.get("interaction_id") == session.interaction_id
+            and params.get("visual_route") == "human"
+            and isinstance(params.get("target"), dict)
+            and str(candidate.get("behavior_name", "")).endswith(
+                "InPlaceWithHuman"
+            )
+        )
+
+    def _validate_wake_event(self, data: dict) -> dict | None:
+        """Validate the formal audio wake contract before any side effect."""
+        if not isinstance(data, dict):
+            return None
+        schema_version = data.get("schema_version")
+        if (
+            type(schema_version) is not int
+            or schema_version != 2
+            or data.get("event_type") != "EVT_VOICE_WAKEUP"
+        ):
+            self._logger.warn(
+                "Wake event rejected: expected schema_version=2 and "
+                "EVT_VOICE_WAKEUP"
+            )
+            return None
+        interaction_id = str(data.get("interaction_id", "")).strip()
+        header = data.get("header")
+        wake_frame_id = (
+            str(header.get("frame_id", "")).strip()
+            if isinstance(header, dict) else ""
+        )
+        try:
+            wake_angle = float(data["wake_angle"])
+            wake_confidence = float(data.get("wake_confidence", 0.0))
+            wake_stamp = float(
+                header.get("stamp", time.time())
+                if isinstance(header, dict) else time.time()
+            )
+        except (KeyError, TypeError, ValueError):
+            self._logger.warn("Wake event rejected: malformed numeric fields")
+            return None
+        if (
+            not interaction_id
+            or wake_frame_id != WAKE_ANGLE_FRAME_ID
+            or not all(math.isfinite(value) for value in (
+                wake_angle, wake_confidence, wake_stamp
+            ))
+        ):
+            self._logger.warn(
+                "Wake event rejected: missing id, invalid frame "
+                "(expected %s), or non-finite value"
+                % WAKE_ANGLE_FRAME_ID
+            )
+            return None
+        return {
+            "interaction_id": interaction_id,
+            "wake_id": str(data.get("wake_id", "")).strip(),
+            "wake_angle_deg": wake_angle,
+            "wake_confidence": max(0.0, min(1.0, wake_confidence)),
+            "wake_frame_id": wake_frame_id,
+            "wake_event_stamp": wake_stamp,
+        }
+
+    def _audio_need_gate_allows(self, candidate) -> bool:
+        """Apply a configured strict internal-need gate before side effects."""
+        params = getattr(candidate, "params", None)
+        if not isinstance(params, dict):
+            return True
+        gate = params.get("need_gate")
+        if gate is None:
+            return True
+        if not isinstance(gate, dict):
+            self._logger.error(
+                "Voice command rejected: malformed need_gate for %s",
+                getattr(candidate, "trigger_event", ""),
+            )
+            return False
+
+        demand = str(gate.get("demand", "")).strip()
+        operator = str(gate.get("operator", "")).strip()
+        try:
+            threshold = float(gate["threshold"])
+        except (KeyError, TypeError, ValueError):
+            threshold = float("nan")
+        if (
+            not demand
+            or operator != "gt"
+            or not math.isfinite(threshold)
+            or not 0.0 <= threshold <= 100.0
+        ):
+            self._logger.error(
+                "Voice command rejected: invalid need_gate for %s",
+                getattr(candidate, "trigger_event", ""),
+            )
+            return False
+
+        state = self._blackboard.need_module.get_need(demand)
+        if state is None:
+            self._logger.warn(
+                "Voice command rejected: need %s is not initialized (%s)",
+                demand,
+                getattr(candidate, "trigger_event", ""),
+            )
+            return False
+        value = float(state.current_value)
+        if not math.isfinite(value) or not value > threshold:
+            self._logger.info(
+                "Voice command gated: %s=%.1f must be > %.1f (%s)",
+                demand,
+                value,
+                threshold,
+                getattr(candidate, "trigger_event", ""),
+            )
+            return False
+
+        gate.update({
+            "observed_value": value,
+            "observed_level": str(state.level),
+            "observed_at": float(state.last_update),
+            "passed": True,
+        })
+        self._logger.info(
+            "Voice command need gate passed: %s=%.1f > %.1f (%s)",
+            demand,
+            value,
+            threshold,
+            getattr(candidate, "trigger_event", ""),
+        )
+        return True
+
+    def _audio_event_seen(self, key: tuple[str, str, str]) -> bool:
+        return key in self._seen_audio_event_keys
+
+    def _remember_audio_event(self, key: tuple[str, str, str]) -> None:
+        if key in self._seen_audio_event_keys:
+            return
+        while len(self._seen_audio_event_order) >= 256:
+            expired = self._seen_audio_event_order.popleft()
+            self._seen_audio_event_keys.discard(expired)
+        self._seen_audio_event_order.append(key)
+        self._seen_audio_event_keys.add(key)
+
+    def _request_voice_hold(self, session: VoiceInteractionSession) -> None:
+        # An empty token is the local tombstone written by
+        # _release_voice_hold().  Once an explicit voice command supersedes
+        # wake engagement, that released lease must never be recreated.
+        if (
+            self._voice_session is not session
+            or not session.active
+            or session.hold_request_pending
+            or session.command_received
+            or session.phase not in (
+                ORIENTING, AWAITING_IDENTITY, ACQUIRING_TARGET, APPROACHING
+            )
+            or not str(session.hold_token).strip()
+        ):
+            return
+        lease_sec = float(self._voice_engagement.get("hold_lease_sec", 6.0))
+        generation = session.generation
+        interaction_id = session.interaction_id
+        hold_token = str(session.hold_token).strip()
+        session.hold_request_pending = True
+        session.last_hold_attempted_at = time.monotonic()
+
+        def _held(result: dict | None) -> None:
+            current = self._voice_session
+            hold_succeeded = bool(
+                isinstance(result, dict) and result.get("ok", True)
+            )
+            request_is_current = bool(
+                current is session
+                and current.matches(interaction_id, generation)
+                and not current.command_received
+                and current.hold_request_pending
+                and str(current.hold_token).strip() == hold_token
+                and current.phase in (
+                    ORIENTING, ACQUIRING_TARGET, APPROACHING
+                )
+            )
+            if not request_is_current:
+                # The release that ended wake engagement may have reached
+                # Voice before this older hold request.  If the older request
+                # then succeeds, release the captured token once more so a
+                # stale lease cannot delay the session's idle transition.
+                if hold_succeeded:
+                    reset_idle_timer = bool(
+                        current is session
+                        and current.phase == WAITING
+                        and not current.command_received
+                    )
+                    if not self._voice_session_client.release(
+                        interaction_id,
+                        hold_token,
+                        reset_idle_timer=reset_idle_timer,
+                    ):
+                        self._logger.warn(
+                            "Late Voice hold cleanup unavailable: "
+                            "interaction_id=%s" % interaction_id
+                        )
+                return
+            current.hold_request_pending = False
+            current.hold_active = hold_succeeded
+            if current.hold_active:
+                current.last_hold_renewed_at = time.monotonic()
+            else:
+                self._logger.warn(
+                    "Voice hold rejected: interaction_id=%s"
+                    % current.interaction_id
+                )
+
+        scheduled = self._voice_session_client.hold(
+            interaction_id,
+            hold_token,
+            lease_sec=lease_sec,
+            callback=_held,
+        )
+        if not scheduled:
+            session.hold_request_pending = False
+            session.hold_active = False
+            self._logger.warn(
+                "Voice hold unavailable: interaction_id=%s"
+                % session.interaction_id
+            )
+
+    def _renew_voice_hold_if_due(self) -> None:
+        session = self._voice_session
+        if (
+            session is None
+            or not session.active
+            or session.command_received
+            or not str(session.hold_token).strip()
+            or session.phase not in (
+                ORIENTING, ACQUIRING_TARGET, APPROACHING
+            )
+        ):
+            return
+        interval = float(
+            self._voice_engagement.get("hold_renew_interval_sec", 2.0)
+        )
+        last_attempt_or_success = max(
+            session.last_hold_attempted_at,
+            session.last_hold_renewed_at,
+        )
+        if (
+            not session.hold_request_pending
+            and time.monotonic() - last_attempt_or_success >= interval
+        ):
+            self._request_voice_hold(session)
+
+    def _expire_wake_target_query_if_due(self) -> None:
+        """Fail a hung visual query closed and resume the voice idle timer."""
+        session = self._voice_session
+        if session is None or session.phase != ACQUIRING_TARGET:
+            return
+        started_at = session.metadata.get("target_query_started_at")
+        if not isinstance(started_at, (int, float)):
+            return
+        timeout_sec = max(
+            0.1,
+            float(self._voice_engagement.get("acquire_timeout_sec", 2.0)),
+        )
+        if time.monotonic() - float(started_at) < timeout_sec:
+            return
+
+        # Invalidate the captured service callback before changing phase.  A
+        # late Vision response must not enqueue motion after we started
+        # waiting for speech.
+        session.generation += 1
+        self._voice_session_generation = max(
+            self._voice_session_generation,
+            session.generation,
+        )
+        session.metadata.pop("target_query_started_at", None)
+        self._enter_voice_waiting(session, reason="visual_query_timeout")
+
+    def _expire_wake_identity_if_due(self) -> None:
+        session = self._voice_session
+        if session is None or session.phase != AWAITING_IDENTITY:
+            return
+        started_at = session.metadata.get("identity_wait_started_at")
+        if not isinstance(started_at, (int, float)):
+            return
+        timeout_sec = max(0.1, float(
+            self._voice_engagement.get("wake_identity_timeout_sec", 3.0)
+        ))
+        if time.monotonic() - float(started_at) >= timeout_sec:
+            self._enter_voice_waiting(session, reason="wake_identity_timeout")
+
+    def _continue_wake_after_identity(self, session: VoiceInteractionSession) -> None:
+        if session.phase != AWAITING_IDENTITY or session.command_received:
+            return
+        role = session.metadata.get("wake_speaker_role")
+        status = session.metadata.get("wake_speaker_status")
+        if role in ("owner", "family") and status == "matched":
+            self._request_wake_speaker(session)
+        elif status != "pending":
+            self._enter_voice_waiting(session, reason="wake_identity_%s" % status)
+
+    def _release_voice_hold(
+        self,
+        session: VoiceInteractionSession,
+        *,
+        reset_idle_timer: bool,
+    ) -> None:
+        if not session.hold_token:
+            return
+        hold_token = session.hold_token
+        session.hold_token = ""
+        session.hold_active = False
+        session.hold_request_pending = False
+        if not self._voice_session_client.release(
+            session.interaction_id,
+            hold_token,
+            reset_idle_timer=reset_idle_timer,
+        ):
+            self._logger.warn(
+                "Voice hold release unavailable: interaction_id=%s"
+                % session.interaction_id
+            )
+
+    def _close_voice_session(self, interaction_id: str, *, reason: str) -> None:
+        session = self._voice_session
+        if session is None or not session.matches(interaction_id):
+            return
+        session.phase = CLOSED
+        session.generation += 1
+        self._voice_session_generation = max(
+            self._voice_session_generation, session.generation
+        )
+        self._release_voice_hold(session, reset_idle_timer=False)
+        self._defer_queued_voice_emotions(interaction_id)
+        removed = self._candidate_pool.discard_session(interaction_id)
+        self._runtime.discard_pending_interaction(interaction_id)
+        canceled = self._runtime.cancel_current_interaction(
+            interaction_id,
+            reason="voice_session_closed:%s" % reason,
+        )
+        self._publish_attention_control(False, {
+            "interaction_id": interaction_id,
+            "state_reason": reason,
+        })
+        self._attention_interaction_id = ""
+        self._attention_mode = "face_body_centering"
+        self._pending_emotion_retry_at.clear()
+        self._flush_pending_emotions()
+        self._logger.info(
+            "Voice session closed: id=%s reason=%s queued_removed=%d running=%s"
+            % (interaction_id, reason, removed, bool(canceled))
+        )
+
+    def _enter_voice_waiting(
+        self,
+        session: VoiceInteractionSession,
+        *,
+        reason: str,
+    ) -> None:
+        current = self._voice_session
+        if current is None or not current.matches(
+            session.interaction_id, session.generation
+        ):
+            return
+        current.phase = WAITING
+        # Unknown and stranger wakes remain stationary after the sound turn.
+        approach_finished = reason == "arrived"
+        self._attention_interaction_id = (
+            current.interaction_id if approach_finished else ""
+        )
+        self._attention_mode = "face_body_centering"
+        self._publish_attention_control(approach_finished, {
+            "interaction_id": current.interaction_id,
+            # respond_owner_call already consumed the microphone bearing.  A
+            # second fallback turn here would rotate the chassis twice.
+            "wake_angle": 0.0,
+            "wake_confidence": current.wake_confidence,
+            "state_reason": reason,
+        })
+        self._release_voice_hold(current, reset_idle_timer=True)
+        self._pending_emotion_retry_at.clear()
+        self._flush_pending_emotions()
+        self._logger.info(
+            "Voice session waiting: id=%s reason=%s target=%s"
+            % (
+                current.interaction_id,
+                reason,
+                (
+                    current.selected_target.get("target_id")
+                    if isinstance(current.selected_target, dict) else "none"
+                ),
+            )
+        )
+
+    def _request_wake_speaker(
+        self,
+        session: VoiceInteractionSession,
+    ) -> None:
+        session.phase = ACQUIRING_TARGET
+        session.metadata["target_query_started_at"] = time.monotonic()
+        generation = session.generation
+        self._perception.request_wake_speaker(
+            lambda target: self._on_wake_speaker_resolved(
+                session.interaction_id,
+                generation,
+                target,
+            ),
+            # respond_owner_call already turned the camera toward the source.
+            reference_bearing_deg=0.0,
+            min_confidence=float(
+                self._voice_engagement.get("target_min_confidence", 0.3)
+            ),
+            max_age_ms=float(
+                self._voice_engagement.get("target_max_age_ms", 300.0)
+            ),
+            max_bearing_error_deg=float(
+                self._voice_engagement.get(
+                    "target_max_bearing_error_deg", 25.0
+                )
+            ),
+            max_snapshot_age_ms=float(
+                self._voice_engagement.get(
+                    "snapshot_max_age_ms", 500.0
+                )
+            ),
+        )
+
+    def _on_wake_speaker_resolved(
+        self,
+        interaction_id: str,
+        generation: int,
+        target: dict | None,
+    ) -> None:
+        session = self._voice_session
+        if (
+            session is None
+            or not session.matches(interaction_id, generation)
+            or session.phase != ACQUIRING_TARGET
+            or session.command_received
+        ):
+            return
+        session.metadata.pop("target_query_started_at", None)
+        if not isinstance(target, dict):
+            self._enter_voice_waiting(session, reason="no_visual_target")
+            return
+
+        session.selected_target = dict(target)
+        target_id = str(target.get("target_id", ""))
+        if (target.get("target_type") != "human"
+                or not str(target.get("vision_epoch", ""))
+                or not target_id.startswith(str(target["vision_epoch"]) + ":human:")):
+            self._enter_voice_waiting(session, reason="invalid_visual_target")
+            return
+        # Existing Vision identity can veto a definite contradiction.  An
+        # unknown face remains eligible because Vision confirmation is optional.
+        if target.get("identity_state") == "confirmed_known":
+            visual_identity = str(target.get("identity", ""))
+            if visual_identity != session.metadata.get("wake_speaker_id"):
+                self._enter_voice_waiting(session, reason="identity_conflict")
+                return
+
+        candidate = self._intent_mapper.build_voice_approach_candidate(
+            interaction_id=interaction_id,
+            target=target,
+            wake_id=str(session.metadata.get("wake_id", "")),
+            speaker_id=str(session.metadata.get("wake_speaker_id", "")),
+            speaker_role=str(session.metadata.get("wake_speaker_role", "")),
+            speaker_status=str(session.metadata.get("wake_speaker_status", "")),
+            stand_off_distance_m=float(
+                self._voice_engagement.get("stand_off_distance_m", 1.5)
+            ),
+            timeout_sec=float(
+                self._voice_engagement.get("approach_timeout_sec", 160.0)
+            ),
+            ttl_sec=float(
+                self._voice_engagement.get(
+                    "approach_candidate_ttl_sec", 3.0
+                )
+            ),
+        )
+        if self._add_candidate(candidate):
+            session.phase = APPROACHING
+        else:
+            self._enter_voice_waiting(
+                session, reason="approach_candidate_suppressed"
+            )
+
+    def _handle_voice_behavior_terminal(
+        self,
+        active,
+        completed,
+    ) -> None:
+        session = self._voice_session
+        if session is None or not session.active:
+            return
+        interaction_id = str(active.params.get("interaction_id", "")).strip()
+        active_wake_id = str(active.params.get("wake_id", ""))
+        current_wake_id = str(session.metadata.get("wake_id", ""))
+        if (active.behavior_name == "respond_owner_call"
+                and (interaction_id != session.interaction_id
+                     or active_wake_id != current_wake_id)):
+            replacement = session.metadata.pop("pending_wake_candidate", None)
+            if replacement is not None and session.phase == ORIENTING:
+                self._add_candidate(replacement)
+            return
+        if not session.matches(interaction_id):
+            return
+        if (active.behavior_name in ("respond_owner_call", "approach_voice_caller")
+                and active_wake_id != current_wake_id):
+            return
+        if active.params.get("session_role") in {
+            "voice_command", "voice_social_reaction",
+        }:
+            session.metadata["command_goal_terminal"] = True
+            self._pending_emotion_retry_at.clear()
+            self._flush_pending_emotions()
+        status = str(getattr(completed, "status", "")).upper()
+        if active.behavior_name == "respond_owner_call":
+            if session.command_received:
+                return
+            if status in ("SUCCESS", "COMPLETED"):
+                session.phase = AWAITING_IDENTITY
+                session.metadata["identity_wait_started_at"] = time.monotonic()
+                self._continue_wake_after_identity(session)
+            else:
+                self._enter_voice_waiting(
+                    session, reason="wake_orientation_%s" % status.lower()
+                )
+        elif active.behavior_name == "approach_voice_caller":
+            if session.command_received:
+                return
+            reason = str(getattr(completed, "reason", "")).strip()
+            self._enter_voice_waiting(
+                session,
+                reason=(
+                    "arrived" if status in ("SUCCESS", "COMPLETED")
+                    else "approach_%s%s" % (
+                        status.lower(),
+                        ":%s" % reason if reason else "",
+                    )
+                ),
+            )
 
     # ── Candidate Generation (via intent_mapper) ──────────────────────────
 
@@ -887,14 +2047,105 @@ class BehaviorTreeRosNode(NodeBase):
         self._emotion_visual_generation[emotion_name] = generation
         return generation
 
+    def _voice_emotion_can_resolve(self) -> bool:
+        """Whether a fresh emotion target may be resolved for this voice phase."""
+        current = self._blackboard.current_behavior
+        if (
+            current is not None
+            and self._blackboard.current_status == STATUS_RUNNING
+            and current.priority_level < 5
+        ):
+            return False
+        if any(
+            item["priority_level"] < 5
+            and self._candidate_allowed_during_interaction(item)
+            for item in self._candidate_pool.candidates
+        ):
+            return False
+        session = getattr(self, "_voice_session", None)
+        if session is None or not session.active:
+            return True
+        if (
+            (
+                session.command_received
+                and not session.metadata.get("command_goal_terminal", False)
+            )
+            or not (
+                session.phase == WAITING
+                or (
+                    session.command_received
+                    and session.metadata.get("command_goal_terminal", False)
+                )
+            )
+            or self._attention_mode == "follow_owner"
+            or not self._voice_engagement.get("waiting_emotion_enabled", False)
+        ):
+            return False
+        return True
+
+    def _defer_queued_voice_emotions(self, interaction_id: str) -> None:
+        """Keep state-backed emotions before queued or reserved work is cleared."""
+        pending = getattr(self, "_pending_emotion_edges", None)
+        if pending is None:
+            return
+        for candidate in getattr(self._candidate_pool, "candidates", ()):
+            params = candidate.get("params", {})
+            if (
+                params.get("interaction_id") != interaction_id
+                or params.get("session_role") != "voice_waiting_emotion"
+            ):
+                continue
+            emotion_name = str(params.get("source_emotion", ""))
+            if self._blackboard.emotion_module.is_triggered(emotion_name):
+                pending[emotion_name] = str(params.get("trigger_event", ""))
+
+        # A selected replacement can wait behind another Goal's real cancel
+        # Result. It is no longer in CandidatePool, but has not been sent yet.
+        blackboard = getattr(self, "_blackboard", None)
+        reserved = getattr(blackboard, "active_behavior", None)
+        if reserved is None:
+            return
+        params = reserved.params
+        if (
+            params.get("interaction_id") != interaction_id
+            or params.get("session_role") != "voice_waiting_emotion"
+        ):
+            return
+        emotion_name = str(params.get("source_emotion", ""))
+        if blackboard.emotion_module.is_triggered(emotion_name):
+            pending[emotion_name] = str(params.get("trigger_event", ""))
+        blackboard.active_behavior = None
+        self._candidate_pool.release_inflight(
+            reserved.behavior_name, reserved.behavior_id,
+        )
+
+    def _flush_pending_emotions(self) -> None:
+        """Recheck authoritative state and resolve fresh context after a hold."""
+        pending = getattr(self, "_pending_emotion_edges", None)
+        if not pending or not self._voice_emotion_can_resolve():
+            return
+        now = time.monotonic()
+        for emotion_name, trigger_event in list(pending.items()):
+            if now < self._pending_emotion_retry_at.get(emotion_name, 0.0):
+                continue
+            pending.pop(emotion_name, None)
+            self._pending_emotion_retry_at.pop(emotion_name, None)
+            if self._blackboard.emotion_module.is_triggered(emotion_name):
+                self._request_contextual_emotion_candidate(
+                    emotion_name,
+                    trigger_event=trigger_event,
+                )
+
     def _request_contextual_emotion_candidate(
         self,
         emotion_name: str,
         *,
         trigger_event: str,
-        signal_value: float,
     ) -> None:
         """Resolve person presence before creating an emotion candidate."""
+        if not self._voice_emotion_can_resolve():
+            self._pending_emotion_edges[emotion_name] = trigger_event
+            return
         generation = self._emotion_visual_generation.get(emotion_name, 0)
 
         def _resolved(context: dict) -> None:
@@ -912,10 +2163,26 @@ class BehaviorTreeRosNode(NodeBase):
                 )
                 return
 
+            session = getattr(self, "_voice_session", None)
+            if session is not None and session.active and (
+                not self._voice_emotion_can_resolve()
+                or context.get("route") != "human"
+                or not isinstance(context.get("target"), dict)
+            ):
+                self._pending_emotion_edges[emotion_name] = trigger_event
+                self._pending_emotion_retry_at[emotion_name] = (
+                    time.monotonic() + 2.0
+                )
+                return
+
+            self._pending_emotion_edges.pop(emotion_name, None)
+            self._pending_emotion_retry_at.pop(emotion_name, None)
             self._generate_emotion_candidate(
                 emotion_name,
                 trigger_event=trigger_event,
-                signal_value=signal_value,
+                signal_value=self._blackboard.emotion_module.get_value(
+                    emotion_name
+                ),
                 visual_route=str(context["route"]),
                 target=context.get("target"),
             )
@@ -947,12 +2214,46 @@ class BehaviorTreeRosNode(NodeBase):
                 return
             em_val = em_state.current_value
 
+        behavior_context = ""
+        context_params: dict = {}
+        session = getattr(self, "_voice_session", None)
+        voice_engagement = getattr(self, "_voice_engagement", {})
+        if session is not None and session.active:
+            if (
+                not voice_engagement.get("waiting_emotion_enabled", False)
+                or (
+                    session.command_received
+                    and not session.metadata.get("command_goal_terminal", False)
+                )
+                or not (
+                    session.phase == WAITING
+                    or (
+                        session.command_received
+                        and session.metadata.get("command_goal_terminal", False)
+                    )
+                )
+                or self._attention_mode == "follow_owner"
+                or visual_route != "human"
+                or not isinstance(target, dict)
+            ):
+                return
+            behavior_context = "voice_waiting"
+            context_params = {
+                "interaction_variant": "voice_waiting",
+                "interaction_id": session.interaction_id,
+                "session_role": "voice_waiting_emotion",
+                "mobility_policy": "in_place",
+                "lifecycle_scope": "behavior",
+            }
+
         candidate = self._intent_mapper.map_emotion_event(
             trigger_event,
             {"value": em_val, "visual_route": visual_route},
             interactive=visual_route == "human",
             target=target,
             visual_route=visual_route,
+            behavior_context=behavior_context,
+            context_params=context_params,
         )
 
         if candidate is not None:
@@ -1046,7 +2347,7 @@ class BehaviorTreeRosNode(NodeBase):
                 trigger_event,
             )
 
-    def _add_candidate(self, candidate) -> None:
+    def _add_candidate(self, candidate) -> bool:
         """Add a candidate unless its behavior is queued or in-flight."""
         dedup_key = candidate.dedup_key
         bhv_name = candidate.behavior_name
@@ -1055,14 +2356,16 @@ class BehaviorTreeRosNode(NodeBase):
                 "Candidate suppressed: %s already queued/in-flight",
                 bhv_name,
             )
-            return
+            return False
         pool_dict = candidate.to_pool_dict()
         pool_dict.setdefault("dedup_key", dedup_key)
-        if not self._candidate_pool.add(**pool_dict):
+        added = self._candidate_pool.add(**pool_dict)
+        if not added:
             self._logger.debug(
                 "Candidate suppressed: %s already queued/in-flight",
                 bhv_name,
             )
+        return added
 
     def _is_duplicate_or_running(self, behavior_name: str,
                                   dedup_key: tuple = None) -> bool:
@@ -1079,7 +2382,12 @@ class BehaviorTreeRosNode(NodeBase):
 
     def _on_tick(self):
         """Run one transport-independent decision cycle."""
+        self._renew_action_goal_lease()
+        self._expire_wake_identity_if_due()
+        self._expire_wake_target_query_if_due()
+        self._renew_voice_hold_if_due()
         self._dispatch_due_emotion_continuation()
+        self._flush_pending_emotions()
         current_before = self._blackboard.current_behavior
         outcome = self._runtime.tick()
 
@@ -1093,10 +2401,30 @@ class BehaviorTreeRosNode(NodeBase):
 
         if outcome.completed_event is not None and current_before is not None:
             if current_before.behavior_id == outcome.completed_event.behavior_id:
+                self._handle_voice_behavior_terminal(
+                    current_before,
+                    outcome.completed_event,
+                )
                 self._schedule_emotion_continuation(
                     str(current_before.params.get("source_emotion", "")),
                     str(outcome.completed_event.status),
                 )
+            self._flush_pending_emotions()
+
+        # RESPOND_EATING_QUERY 打断进食后，看向主人完成时恢复进食。
+        if (
+            outcome.completed_event is not None
+            and current_before is not None
+            and current_before.behavior_name == "look_at_owner_brief"
+            and self._eating_resume
+        ):
+            resume = self._eating_resume
+            self._eating_resume = None
+            self._add_direct_behavior(
+                resume["behavior_name"],
+                "EVT_VOICE_COMMAND_RESPOND_EATING_QUERY",
+                timeout_sec=30.0,
+            )
 
         # A preemption can produce an INTERRUPTED result and a new STARTED
         # event in the same tick. Publish the old terminal event first.
@@ -1109,6 +2437,22 @@ class BehaviorTreeRosNode(NodeBase):
 
         if outcome.started_behavior is not None:
             self._publish_started(outcome.started_behavior.behavior_name)
+
+    def _renew_action_goal_lease(self):
+        """Renew the active long Goal using its independent behavior ID."""
+        active = self._blackboard.current_behavior
+        if (not self._ros2_ready or not hasattr(self, "_goal_lease_pub")
+                or active is None
+                or active.behavior_name not in ("follow_owner", "play_alone")):
+            return
+        from std_msgs.msg import String
+        message = String()
+        message.data = json.dumps({
+            "schema_version": 1,
+            "goal_id": active.behavior_id,
+            "behavior_id": active.behavior_id,
+        })
+        self._goal_lease_pub.publish(message)
 
     def _start_emotion_continuation(self, emotion_name: str) -> None:
         """Open a bounded continuation session for a new emotion edge."""
@@ -1165,7 +2509,7 @@ class BehaviorTreeRosNode(NodeBase):
             self._stop_emotion_continuation(emotion_name)
             return
         session["next_at"] = now + self._emotion_continuation_interval_sec
-        self._logger.info(
+        self._logger.debug(
             "Emotion continuation scheduled: %s cycle=%d/%d delay=%.1fs",
             emotion_name,
             cycles + 1,
@@ -1211,7 +2555,7 @@ class BehaviorTreeRosNode(NodeBase):
         session = self._emotion_continuations[emotion_name]
         session["next_at"] = float("inf")
         self._emotion_continuation_requests.add(emotion_name)
-        self._logger.info(
+        self._logger.debug(
             "Emotion continuation resolving context: %s value=%.1f",
             emotion_name,
             self._blackboard.emotion_module.get_value(emotion_name),
@@ -1308,6 +2652,13 @@ class BehaviorTreeRosNode(NodeBase):
 
     def destroy_node(self):
         self._running = False
+        session = getattr(self, "_voice_session", None)
+        if session is not None and session.active:
+            self._close_voice_session(
+                session.interaction_id,
+                reason="behavior_tree_shutdown",
+            )
+        self._runtime.cancel_current_for_shutdown()
         tick_thread = getattr(self, "_tick_thread", None)
         if tick_thread is not None and tick_thread.is_alive():
             import threading

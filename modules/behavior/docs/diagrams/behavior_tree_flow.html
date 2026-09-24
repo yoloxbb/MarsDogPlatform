@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarsDog 行为树 · 上下游流转架构</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Serif:ital@0;1&family=Noto+Sans+SC:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-paper-2: #ececec;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-soft:    #7a8399;
+      --color-accent:  #eb6c36;
+      --color-link:    #2e5aa8;
+      --font-sans:  'Geist', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+      --font-serif: 'Instrument Serif', 'Noto Serif', serif;
+      --font-mono:  'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      padding: 4rem 2rem 5rem;
+      line-height: 1.6;
+    }
+
+    .frame { max-width: 1320px; margin: 0 auto; }
+
+    /* ---------- page header ---------- */
+    .page-head { margin-bottom: 4rem; max-width: 62ch; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(2rem, 3.4vw + 0.75rem, 3rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+
+    .lede {
+      font-size: 1rem;
+      color: var(--color-muted);
+      max-width: 58ch;
+    }
+
+    /* ---------- sections ---------- */
+    section { margin-bottom: 5rem; }
+
+    h2 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.4rem, 1.6vw + 0.75rem, 1.9rem);
+      font-weight: 400;
+      letter-spacing: -0.015em;
+      line-height: 1.2;
+      margin-bottom: 0.4rem;
+    }
+
+    .section-note {
+      font-size: 0.9rem;
+      color: var(--color-muted);
+      max-width: 70ch;
+      margin-bottom: 2rem;
+    }
+
+    svg { width: 100%; min-width: 900px; display: block; }
+
+    .fig { overflow-x: auto; }
+
+    /* NB: set on <svg>, not `svg text` — a CSS rule beats a presentation attribute,
+       which would clobber every font-family="'Geist Mono'…" sublabel. Inherited
+       values lose to the element's own attribute, so mono labels survive. */
+    svg { font-family: var(--font-sans); }
+
+    /* ---------- summary cards ---------- */
+    .cards {
+      display: grid;
+      gap: 1.25rem;
+      margin-top: 2.5rem;
+    }
+    .cards.w3 { grid-template-columns: 1.15fr 1fr 0.85fr; }
+    .cards.w2 { grid-template-columns: 1.3fr 1fr; }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid rgba(45, 49, 66, 0.12);
+      border-radius: 6px;
+      padding: 1.25rem 1.35rem 1.35rem;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .card-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex: none;
+    }
+    .card-dot.coral { background: var(--color-accent); }
+    .card-dot.ink   { background: var(--color-ink); }
+    .card-dot.muted { background: var(--color-muted); }
+    .card-dot.soft  { background: var(--color-soft); }
+
+    .card h3 {
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+    }
+
+    .card .eyebrow { margin-bottom: 0.35rem; font-size: 0.62rem; }
+
+    .card ul { list-style: none; }
+
+    .card li {
+      font-size: 0.82rem;
+      color: var(--color-muted);
+      padding-left: 0.9rem;
+      position: relative;
+      margin-bottom: 0.35rem;
+      line-height: 1.55;
+    }
+
+    .card li::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0.55em;
+      width: 4px; height: 1px;
+      background: var(--color-soft);
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.92em;
+      color: var(--color-ink);
+      background: rgba(45, 49, 66, 0.05);
+      padding: 0.05em 0.3em;
+      border-radius: 3px;
+    }
+
+    /* ---------- footer ---------- */
+    footer {
+      border-top: 1px solid rgba(45, 49, 66, 0.12);
+      padding-top: 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
+      color: var(--color-soft);
+    }
+
+    @media (max-width: 900px) {
+      .cards.w3, .cards.w2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="frame">
+
+  <header class="page-head">
+    <p class="eyebrow">MarsDog Behavior · 决策内核</p>
+    <h1>行为树与上下游的流转架构</h1>
+    <p class="lede">六个上游话题、四类事件、一条 100&nbsp;ms tick 流水线、七级仲裁与一次完整的语音会话生命周期。四张图分别回答：谁把什么送进来、每个 tick 怎么决策、会话怎么推进、事件怎么变成候选。</p>
+  </header>
+
+  <!-- ==================================================================== -->
+  <!-- 01 · ARCHITECTURE                                                     -->
+  <!-- ==================================================================== -->
+  <section>
+    <p class="eyebrow">01 · 总览</p>
+    <h2>上下游总览架构</h2>
+    <p class="section-note">三个上游引擎通过六个话题进入 <code>behavior_tree_node</code>；节点内部是一条四段流水线；唯一的下游是 <code>/execute_behavior</code> Action Server。终态结果经 <code>/behavior/result_event</code> 回流。</p>
+
+    <div class="fig">
+    <svg viewBox="0 0 1280 720" role="img" aria-labelledby="ov-title ov-desc" xmlns="http://www.w3.org/2000/svg">
+      <title id="ov-title">MarsDog 行为树上下游总览架构</title>
+      <desc id="ov-desc">三个上游引擎通过六个 ROS 话题把周期状态与边沿事件送入行为树节点，节点内部依次经过意图映射、候选池、七级仲裁与动作适配，向动作执行器发送 Goal 并接收反馈，终态结果再经话题回流给上游消费者。</desc>
+      <defs>
+        <marker id="ov-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="ov-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- zones (drawn before arrows and nodes) -->
+      <rect x="32" y="128" width="232" height="344" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="108" y="132" width="80" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="148" y="141" fill="rgba(45,49,66,0.40)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">UPSTREAM</text>
+
+      <rect x="304" y="232" width="648" height="136" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="576" y="236" width="104" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="628" y="245" fill="rgba(45,49,66,0.40)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">DECISION CORE</text>
+
+      <!-- connectors -->
+      <path d="M248,196 H288 Q296,196 296,204 V274 Q296,282 304,282 H320" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#ov-arrow)"/>
+      <path d="M248,300 H320" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#ov-arrow)"/>
+      <path d="M248,404 H304 Q312,404 312,396 V326 Q312,318 320,318" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#ov-arrow)"/>
+      <path d="M448,300 H472" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#ov-arrow)"/>
+      <path d="M584,300 H608" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#ov-arrow)"/>
+      <path d="M768,300 H792" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#ov-arrow)"/>
+      <path d="M936,288 H1016" fill="none" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#ov-arrow-accent)"/>
+      <path d="M1016,312 H936" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#ov-arrow)"/>
+      <path d="M1116,336 V412 Q1116,420 1108,420 H656 Q648,420 648,412 V336" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#ov-arrow)"/>
+      <path d="M728,336 V412 a8,8 0 0,0 0,16 V472" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#ov-arrow)"/>
+
+      <!-- arrow labels (opaque masks, 6px clear of the stroke) -->
+      <rect x="944" y="268" width="60" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="974" y="277" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">GOAL/CANCEL</text>
+      <rect x="740" y="440" width="116" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="798" y="449" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">/behavior/result_event</text>
+
+      <!-- upstream nodes -->
+      <g>
+        <rect x="48" y="160" width="200" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="48" y="160" width="200" height="72" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+        <text x="148" y="188" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">情绪引擎</text>
+        <text x="148" y="204" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">emotion_engine_node</text>
+        <text x="148" y="218" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">/emotion/state + signal</text>
+      </g>
+      <g>
+        <rect x="48" y="264" width="200" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="48" y="264" width="200" height="72" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+        <text x="148" y="292" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">需求引擎</text>
+        <text x="148" y="308" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">internal_need_node</text>
+        <text x="148" y="322" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">/internal_need/state + signal</text>
+      </g>
+      <g>
+        <rect x="48" y="368" width="200" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="48" y="368" width="200" height="72" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+        <text x="148" y="396" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">感知桥接</text>
+        <text x="148" y="412" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">perception_bridge</text>
+        <text x="148" y="426" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">/perception/audio + visual</text>
+      </g>
+
+      <!-- decision-core nodes -->
+      <g>
+        <rect x="320" y="264" width="128" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="320" y="264" width="128" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="384" y="292" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">意图映射</text>
+        <text x="384" y="308" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">IntentMapper</text>
+        <text x="384" y="322" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">event → candidate</text>
+      </g>
+      <g>
+        <rect x="472" y="264" width="112" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="472" y="264" width="112" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="528" y="292" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">候选池</text>
+        <text x="528" y="308" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">CandidatePool</text>
+        <text x="528" y="322" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">dedup · TTL</text>
+      </g>
+      <g>
+        <rect x="608" y="264" width="160" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="608" y="264" width="160" height="72" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+        <rect x="616" y="272" width="40" height="12" rx="2" fill="transparent" stroke="rgba(235,108,54,0.50)" stroke-width="0.8"/>
+        <text x="636" y="281" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">LV 0-6</text>
+        <text x="688" y="296" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">行为树仲裁</text>
+        <text x="688" y="314" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">bionic_dog_bt</text>
+      </g>
+      <g>
+        <rect x="792" y="264" width="144" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="792" y="264" width="144" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="864" y="292" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">动作适配</text>
+        <text x="864" y="308" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">ActionClientAdapter</text>
+        <text x="864" y="322" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Goal / Cancel</text>
+      </g>
+
+      <!-- downstream nodes -->
+      <g>
+        <rect x="1016" y="264" width="200" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="1016" y="264" width="200" height="72" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+        <text x="1116" y="292" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">动作执行器</text>
+        <text x="1116" y="308" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">marsdog_action_executor</text>
+        <text x="1116" y="322" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">/execute_behavior</text>
+      </g>
+      <g>
+        <rect x="628" y="472" width="200" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="628" y="472" width="200" height="72" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+        <text x="728" y="500" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">结果消费者</text>
+        <text x="728" y="516" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">emotion / internal_need</text>
+        <text x="728" y="530" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">STARTED · TERMINAL</text>
+      </g>
+
+      <!-- legend -->
+      <line x1="32" y1="612" x2="1248" y2="612" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="32" y="630" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+
+      <rect x="32" y="648" width="14" height="10" rx="2" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="54" y="660" fill="#4f5d75" font-size="12" font-weight="500">焦点：仲裁核心</text>
+
+      <rect x="200" y="648" width="14" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="222" y="660" fill="#4f5d75" font-size="12" font-weight="500">决策内核组件</text>
+
+      <rect x="388" y="648" width="14" height="10" rx="2" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <text x="412" y="660" fill="#4f5d75" font-size="12" font-weight="500">上游输入</text>
+
+      <rect x="548" y="648" width="14" height="10" rx="2" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <text x="572" y="660" fill="#4f5d75" font-size="12" font-weight="500">下游执行器</text>
+
+      <line x1="750" y1="653" x2="778" y2="653" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#ov-arrow)"/>
+      <text x="788" y="660" fill="#4f5d75" font-size="12" font-weight="500">反馈 / 结果回流</text>
+
+      <line x1="980" y1="653" x2="1008" y2="653" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#ov-arrow-accent)"/>
+      <text x="1018" y="660" fill="#4f5d75" font-size="12" font-weight="500">主链路</text>
+    </svg>
+    </div>
+
+    <div class="cards w3">
+      <div class="card">
+        <p class="eyebrow">Upstream · 6 topics</p>
+        <div class="card-header"><span class="card-dot soft"></span><h3>两类输入不能互相替代</h3></div>
+        <ul>
+          <li><code>state</code>（1&nbsp;Hz，BEST_EFFORT）是<strong>当前事实</strong>：情绪/需求的 <code>triggered</code>、数值、等级，用于执行前的相关性校验。</li>
+          <li><code>signal_event</code>（RELIABLE）是<strong>边沿事件</strong>：只在阈值上升沿到达一次，负责创建候选。</li>
+          <li>感知桥接另走 <code>audio_event</code>（RELIABLE）与 <code>visual_event</code>（BEST_EFFORT，10&nbsp;Hz 快照）。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Core · 4 stages</p>
+        <div class="card-header"><span class="card-dot ink"></span><h3>内核四段各管一件事</h3></div>
+        <ul>
+          <li><code>IntentMapper</code> 只做语义映射：事件 + 视觉路由 → 带等级的候选，不碰 ROS2 消息。</li>
+          <li><code>CandidatePool</code> 只做队列：TTL、复合去重键、冷却等待、in-flight 保留。</li>
+          <li><code>bionic_dog_bt</code> 只做仲裁：七级树、抢占、超时、执行状态机，无 ROS2 依赖。</li>
+          <li><code>ActionClientAdapter</code> 只做通信：Goal / Feedback / Result / Cancel 的异步适配。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Closed loop</p>
+        <div class="card-header"><span class="card-dot coral"></span><h3>终态只有一个来源</h3></div>
+        <ul>
+          <li>Tree 超时或抢占只发 <code>request_cancel</code> + <code>cancel_goal</code>，<strong>不伪造</strong> <code>TIMEOUT</code> / <code>CANCELED</code>。</li>
+          <li>唯一终态是真 Action Result；只有它才释放 in-flight 保留、写冷却、发 <code>result_event</code>。</li>
+          <li>Goal 生命周期：<code>SENDING → RUNNING → CANCEL_REQUESTED → TERMINAL</code>。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================================== -->
+  <!-- 02 · TICK FLOWCHART                                                   -->
+  <!-- ==================================================================== -->
+  <section>
+    <p class="eyebrow">02 · 每 100 ms</p>
+    <h2>候选池 → 仲裁 → 执行的一次 tick</h2>
+    <p class="section-note">上游回调只负责入池；决策全部发生在 tick 里。前四段各做一件事，第五段 <code>ExecuteActiveBehavior</code> 决定这一次 tick 走向三个结果中的哪一个。</p>
+
+    <div class="fig">
+    <svg viewBox="0 0 1280 720" role="img" aria-labelledby="tk-title tk-desc" xmlns="http://www.w3.org/2000/svg">
+      <title id="tk-title">一次 100 ms tick 的候选池、仲裁与执行流程</title>
+      <desc id="tk-desc">tick 依次执行候选入池、排序选出、转换为活动行为、行为树从 Lv0 重评估四段，随后进入执行状态机，并收敛到继续运行、启动或抢占、终结清算三种结果之一。</desc>
+      <defs>
+        <marker id="tk-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="tk-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- connectors -->
+      <path d="M388,124 H428" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#tk-arrow)"/>
+      <path d="M620,124 H660" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#tk-arrow)"/>
+      <path d="M852,124 H892" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#tk-arrow)"/>
+      <path d="M988,160 V192 Q988,200 980,200 H648 Q640,200 640,208 V240" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#tk-arrow)"/>
+      <path d="M544,328 V376 Q544,384 536,384 H360 Q352,384 352,392 V424" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#tk-arrow)"/>
+      <path d="M640,328 V424" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#tk-arrow)"/>
+      <path d="M736,328 V376 Q736,384 744,384 H920 Q928,384 928,392 V424" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#tk-arrow)"/>
+
+      <!-- arrow labels -->
+      <rect x="792" y="180" width="44" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="814" y="189" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">EACH TICK</text>
+      <rect x="428" y="364" width="44" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="450" y="373" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">CONTINUE</text>
+      <rect x="648" y="364" width="44" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="648" y="373" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">DISPATCH</text>
+      <rect x="808" y="364" width="44" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="830" y="373" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">TERMINAL</text>
+
+      <!-- row 1: pipeline stages -->
+      <g>
+        <rect x="196" y="88" width="192" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="196" y="88" width="192" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="292" y="116" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">候选入池</text>
+        <text x="292" y="132" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">CandidatePool.add()</text>
+        <text x="292" y="146" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">dedup_key · TTL</text>
+      </g>
+      <g>
+        <rect x="428" y="88" width="192" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="428" y="88" width="192" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="524" y="116" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">选出最优</text>
+        <text x="524" y="132" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">select_best()</text>
+        <text x="524" y="146" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">level · sub · value</text>
+      </g>
+      <g>
+        <rect x="660" y="88" width="192" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="660" y="88" width="192" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="756" y="116" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">转为执行项</text>
+        <text x="756" y="132" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">ActiveBehavior</text>
+        <text x="756" y="146" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">set_active_behavior</text>
+      </g>
+      <g>
+        <rect x="892" y="88" width="192" height="72" rx="6" fill="#f5f5f5"/>
+        <rect x="892" y="88" width="192" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="988" y="116" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">树重评估</text>
+        <text x="988" y="132" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">tree.reset()</text>
+        <text x="988" y="146" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Lv0 → Lv6</text>
+      </g>
+
+      <!-- row 2: execution state machine (focal) -->
+      <g>
+        <rect x="496" y="240" width="288" height="88" rx="6" fill="#f5f5f5"/>
+        <rect x="496" y="240" width="288" height="88" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+        <rect x="504" y="248" width="52" height="12" rx="2" fill="transparent" stroke="rgba(235,108,54,0.50)" stroke-width="0.8"/>
+        <text x="530" y="257" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STATE MACHINE</text>
+        <text x="640" y="284" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">执行状态机</text>
+        <text x="640" y="302" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">ExecuteActiveBehavior.update()</text>
+        <text x="640" y="316" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">result · cancel · timeout · preempt</text>
+      </g>
+
+      <!-- row 3: three outcomes -->
+      <g>
+        <rect x="224" y="424" width="256" height="88" rx="6" fill="#f5f5f5"/>
+        <rect x="224" y="424" width="256" height="88" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+        <text x="352" y="460" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">继续运行</text>
+        <text x="352" y="478" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">cancel pending · timeout</text>
+        <text x="352" y="492" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">no faked terminal state</text>
+      </g>
+      <g>
+        <rect x="512" y="424" width="256" height="88" rx="6" fill="#f5f5f5"/>
+        <rect x="512" y="424" width="256" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="640" y="460" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">启动 / 抢占</text>
+        <text x="640" y="478" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">send_goal / request_cancel</text>
+        <text x="640" y="492" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">pending replacement kept</text>
+      </g>
+      <g>
+        <rect x="800" y="424" width="256" height="88" rx="6" fill="#f5f5f5"/>
+        <rect x="800" y="424" width="256" height="88" rx="6" fill="rgba(45,49,66,0.04)" stroke="#4f5d75" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <text x="928" y="460" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">终结清算</text>
+        <text x="928" y="478" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">set_cooldown · release_inflight</text>
+        <text x="928" y="492" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">→ /behavior/result_event</text>
+      </g>
+
+      <!-- legend -->
+      <line x1="32" y1="580" x2="1248" y2="580" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="32" y="598" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+
+      <rect x="32" y="616" width="14" height="10" rx="2" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="54" y="628" fill="#4f5d75" font-size="12" font-weight="500">焦点：执行状态机</text>
+
+      <rect x="216" y="616" width="14" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="236" y="628" fill="#4f5d75" font-size="12" font-weight="500">tick 阶段</text>
+
+      <rect x="348" y="616" width="14" height="10" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <text x="370" y="628" fill="#4f5d75" font-size="12" font-weight="500">保持运行</text>
+
+      <rect x="480" y="616" width="14" height="10" rx="2" fill="rgba(45,49,66,0.04)" stroke="#4f5d75" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <text x="500" y="628" fill="#4f5d75" font-size="12" font-weight="500">终结清算</text>
+
+      <line x1="608" y1="621" x2="636" y2="621" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#tk-arrow)"/>
+      <text x="646" y="628" fill="#4f5d75" font-size="12" font-weight="500">顺序推进</text>
+    </svg>
+    </div>
+
+    <div class="cards w2">
+      <div class="card">
+        <p class="eyebrow">CandidatePool</p>
+        <div class="card-header"><span class="card-dot muted"></span><h3>排序、保留与 in-flight 保留</h3></div>
+        <ul>
+          <li>排序键：<code>priority_level ASC → sub_priority ASC → emotion_priority ASC → value DESC → created_at DESC</code>。</li>
+          <li>未选中的候选<strong>留在池里</strong>；冷却中的候选等待冷却结束，或等到 TTL 到期被删除。</li>
+          <li>入池即拒绝：同名已 queued、同名已在 in-flight、去重键重复——去重键是 <code>(source, trigger_event, behavior_name, variant, interaction_mode)</code>。</li>
+          <li>选中时按 <code>behavior_name + candidate_id</code> 建立 in-flight 保留；被丢弃或未真正派发时立刻释放。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Arbitration</p>
+        <div class="card-header"><span class="card-dot coral"></span><h3>抢占要同时过三道门</h3></div>
+        <ul>
+          <li><strong>等级门</strong>：数字越小越优先，低等级直接进入中断策略判定。</li>
+          <li><strong>同级门</strong>：强度差必须 ≥&nbsp;<code>15</code>；若属同一 <code>interaction_id</code>，先比 <code>session_preempt_rank</code>（命令 0 &lt; 唤醒定向 10 &lt; 唤醒接近 20）。</li>
+          <li><strong>中断策略门</strong>：<code>immediate</code> / <code>safe_point</code> 放行；<code>non_interruptible</code>、反馈缺失、<code>DISPATCHED</code>、<code>RECOVERY_REQUIRED</code>、<code>safe_to_interrupt=false</code> 一律拒绝。Lv0 <code>emergency_stop</code> 无条件覆盖全部策略。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================================== -->
+  <!-- 03 · VOICE SESSION LIFECYCLE                                          -->
+  <!-- ==================================================================== -->
+  <section>
+    <p class="eyebrow">03 · 语音会话</p>
+    <h2>一次唤醒的会话生命周期</h2>
+    <p class="section-note">从 <code>EVT_VOICE_WAKEUP</code> 到 <code>CLOSED</code>，会话在四个主阶段之间推进，等待态由两个超时守卫支撑。任一阶段收到新的唤醒事件，旧会话立即作废。</p>
+
+    <div class="fig">
+    <svg viewBox="0 0 1280 720" role="img" aria-labelledby="vc-title vc-desc" xmlns="http://www.w3.org/2000/svg">
+      <title id="vc-title">语音交互会话的生命周期阶段</title>
+      <desc id="vc-desc">会话从唤醒定向开始，经解析视觉目标、靠近目标，到达原地等待指令四个主阶段，期间受视觉查询窗口和目标丢失守卫两个超时约束，最终进入会话关闭终态。</desc>
+      <defs>
+        <marker id="vc-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="vc-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- bands -->
+      <rect x="32" y="64" width="1216" height="136" rx="8" fill="rgba(79,93,117,0.035)" stroke="rgba(45,49,66,0.12)"/>
+      <text x="48" y="84" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">WAIT / RECOVERY</text>
+
+      <text x="48" y="244" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">PRIMARY PHASES</text>
+
+      <rect x="32" y="456" width="1216" height="136" rx="8" fill="rgba(45,49,66,0.035)" stroke="rgba(45,49,66,0.12)"/>
+      <text x="48" y="472" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">TERMINAL</text>
+
+      <!-- connectors -->
+      <path d="M72,312 H120" fill="none" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#vc-arrow-accent)"/>
+      <path d="M328,312 H384" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vc-arrow)"/>
+      <path d="M592,312 H648" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vc-arrow)"/>
+      <path d="M856,312 H912" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vc-arrow)"/>
+      <path d="M488,264 V176" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#vc-arrow)"/>
+      <path d="M752,264 V176" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#vc-arrow)"/>
+      <path d="M1016,360 V488" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vc-arrow)"/>
+
+      <!-- transition labels -->
+      <rect x="84" y="292" width="24" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="96" y="301" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">WAKE</text>
+      <rect x="336" y="292" width="40" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="356" y="301" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SUCCESS</text>
+      <rect x="604" y="292" width="32" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="620" y="301" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">FOUND</text>
+      <rect x="864" y="292" width="40" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="884" y="301" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ARRIVED</text>
+      <rect x="496" y="212" width="32" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="496" y="221" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">2.0 s</text>
+      <rect x="760" y="212" width="32" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="760" y="221" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">1.0 s</text>
+      <rect x="1024" y="408" width="88" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="1024" y="417" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">EVT_STATE_CHANGED</text>
+
+      <!-- start pseudo-state -->
+      <circle cx="64" cy="312" r="6" fill="#2d3142"/>
+
+      <!-- primary rail -->
+      <g>
+        <rect x="120" y="264" width="208" height="96" rx="8" fill="#f5f5f5"/>
+        <rect x="120" y="264" width="208" height="96" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="224" y="302" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">唤醒定向</text>
+        <text x="224" y="322" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">ORIENTING</text>
+        <text x="224" y="338" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">respond_owner_call</text>
+      </g>
+      <g>
+        <rect x="384" y="264" width="208" height="96" rx="8" fill="#f5f5f5"/>
+        <rect x="384" y="264" width="208" height="96" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="488" y="302" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">解析视觉目标</text>
+        <text x="488" y="322" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">ACQUIRING_TARGET</text>
+        <text x="488" y="338" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">query_targets</text>
+      </g>
+      <g>
+        <rect x="648" y="264" width="208" height="96" rx="8" fill="#f5f5f5"/>
+        <rect x="648" y="264" width="208" height="96" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="752" y="302" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">靠近目标</text>
+        <text x="752" y="322" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">APPROACHING</text>
+        <text x="752" y="338" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">approach_voice_caller</text>
+      </g>
+      <g>
+        <rect x="912" y="264" width="208" height="96" rx="8" fill="#f5f5f5"/>
+        <rect x="912" y="264" width="208" height="96" rx="8" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+        <rect x="920" y="272" width="36" height="12" rx="2" fill="transparent" stroke="rgba(235,108,54,0.50)" stroke-width="0.8"/>
+        <text x="938" y="281" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">HOLD</text>
+        <text x="1016" y="302" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">原地等待指令</text>
+        <text x="1016" y="322" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">WAITING</text>
+        <text x="1016" y="338" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">InPlaceWithHuman · hold</text>
+      </g>
+
+      <!-- supporting wait states -->
+      <g>
+        <rect x="384" y="104" width="208" height="72" rx="8" fill="#f5f5f5"/>
+        <rect x="384" y="104" width="208" height="72" rx="8" fill="#f5f5f5" stroke="#4f5d75" stroke-dasharray="5,4"/>
+        <rect x="392" y="112" width="36" height="12" rx="2" fill="none" stroke="rgba(79,93,117,0.45)"/>
+        <text x="410" y="121" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">WAIT</text>
+        <text x="488" y="146" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">视觉查询窗口</text>
+        <text x="488" y="163" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">expire → WAITING</text>
+      </g>
+      <g>
+        <rect x="648" y="104" width="208" height="72" rx="8" fill="#f5f5f5"/>
+        <rect x="648" y="104" width="208" height="72" rx="8" fill="#f5f5f5" stroke="#4f5d75" stroke-dasharray="5,4"/>
+        <rect x="656" y="112" width="60" height="12" rx="2" fill="none" stroke="rgba(79,93,117,0.45)"/>
+        <text x="686" y="121" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">RECOVERY</text>
+        <text x="752" y="146" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">目标丢失守卫</text>
+        <text x="752" y="163" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">lost → WAITING</text>
+      </g>
+
+      <!-- terminal state -->
+      <g>
+        <rect x="856" y="488" width="320" height="88" rx="8" fill="#f5f5f5"/>
+        <rect x="856" y="488" width="320" height="88" rx="8" fill="rgba(45,49,66,0.04)" stroke="#4f5d75" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <rect x="864" y="496" width="56" height="12" rx="2" fill="none" stroke="rgba(79,93,117,0.45)"/>
+        <text x="892" y="505" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">TERMINAL</text>
+        <text x="1016" y="528" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">会话关闭</text>
+        <text x="1016" y="548" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">CLOSED · hold released · goal canceled</text>
+        <text x="1016" y="562" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">discard_session · attention off</text>
+      </g>
+
+      <!-- legend -->
+      <line x1="32" y1="628" x2="1248" y2="628" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="32" y="646" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+
+      <rect x="32" y="660" width="14" height="10" rx="2" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="54" y="672" fill="#4f5d75" font-size="12" font-weight="500">焦点：等待指令</text>
+
+      <rect x="216" y="660" width="14" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="236" y="672" fill="#4f5d75" font-size="12" font-weight="500">主阶段</text>
+
+      <rect x="332" y="660" width="14" height="10" rx="2" fill="#f5f5f5" stroke="#4f5d75" stroke-dasharray="5,4"/>
+      <text x="352" y="672" fill="#4f5d75" font-size="12" font-weight="500">等待 / 恢复态</text>
+
+      <rect x="492" y="660" width="14" height="10" rx="2" fill="rgba(45,49,66,0.04)" stroke="#4f5d75" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <text x="512" y="672" fill="#4f5d75" font-size="12" font-weight="500">终态</text>
+
+      <line x1="596" y1="665" x2="624" y2="665" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vc-arrow)"/>
+      <text x="634" y="672" fill="#4f5d75" font-size="12" font-weight="500">阶段推进</text>
+    </svg>
+    </div>
+
+    <div class="cards w3">
+      <div class="card">
+        <p class="eyebrow">Entry &amp; gating</p>
+        <div class="card-header"><span class="card-dot coral"></span><h3>会话开着时谁能插队</h3></div>
+        <ul>
+          <li>会话活跃期间，Lv0/Lv1 保持正常仲裁；需求和空闲候选等待。情绪阈值事件会保留，待动作资源允许时重新检查状态和目标。</li>
+          <li>安静的 <code>WAITING</code> 阶段，或具体指令得到真实终态后，可以选择 <code>InPlaceWithHuman</code> 情绪表达；它跳过重复靠近人物，表达动作仍可能使用底盘，Action 前台执行锁会暂停后台 attention 控制。后台跟随与运行中的高等级行为仍会阻止执行。</li>
+          <li>收到具体指令时执行 <code>consume_turn</code>：暂撤本会话排队的原地情绪；若情绪仍有效，在指令终态后重新解析。运行中的行为范围情绪 Goal 不因语音 idle 被取消。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Fallback</p>
+        <div class="card-header"><span class="card-dot muted"></span><h3>四条兜底都落到 WAITING</h3></div>
+        <ul>
+          <li><code>respond_owner_call</code> 失败 → 直接等待，不再走靠近。</li>
+          <li>视觉无目标 / 已在一米二内 / 无米制距离（且未开 bbox 兜底）→ 原地等待。</li>
+          <li>2.0&nbsp;s 视觉查询窗口超时 → <code>visual_query_timeout</code>。</li>
+          <li><code>approach_voice_caller</code> 任何终态（含 20&nbsp;s 超时）→ 回到等待。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Lease</p>
+        <div class="card-header"><span class="card-dot ink"></span><h3>hold 租约与 generation 失效</h3></div>
+        <ul>
+          <li>唤醒即取 hold（<code>lease 6.0 s</code>，每 <code>2.0 s</code> 续约），保证上游不关闭麦克风。</li>
+          <li>每次<strong>阶段跃迁或回合消费</strong>都 <code>generation++</code>；迟到的异步结果靠 <code>matches(interaction_id, generation)</code> 被丢弃。</li>
+          <li><code>EVT_STATE_CHANGED(state=idle)</code> → <code>generation++</code>、释放 hold、<code>discard_session</code>、<code>cancel_current_interaction</code>、关闭 attention。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================================== -->
+  <!-- 04 · EVENT → CANDIDATE MAPPING                                        -->
+  <!-- ==================================================================== -->
+  <section>
+    <p class="eyebrow">04 · 四类事件</p>
+    <h2>事件 → 候选的四条映射链</h2>
+    <p class="section-note">四条来源各有自己的校验与路由规则，但最终都收敛到同一个候选结构。校验是 fail-closed 的：任何字段不匹配就整条事件丢弃，不降级。</p>
+
+    <div class="fig">
+    <svg viewBox="0 0 1280 720" role="img" aria-labelledby="mp-title mp-desc" xmlns="http://www.w3.org/2000/svg">
+      <title id="mp-title">音频、视觉、需求、情绪四类事件到行为候选的映射链</title>
+      <desc id="mp-desc">四类事件各自经过契约校验、视觉路由与意图映射，生成不同优先级等级的候选，并全部收敛到同一个带去重键的行为候选结构。</desc>
+      <defs>
+        <marker id="mp-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- connectors: source → mapping chain -->
+      <path d="M296,156 H392" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#mp-arrow)"/>
+      <path d="M296,276 H392" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#mp-arrow)"/>
+      <path d="M296,396 H392" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#mp-arrow)"/>
+      <path d="M296,516 H392" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#mp-arrow)"/>
+
+      <!-- connectors: mapping chain → candidate (fan-in) -->
+      <path d="M760,156 H856" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#mp-arrow)"/>
+      <path d="M760,276 H856" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#mp-arrow)"/>
+      <path d="M760,396 H856" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#mp-arrow)"/>
+      <path d="M760,516 H856" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#mp-arrow)"/>
+
+      <!-- arrow labels on the fan-in -->
+      <rect x="780" y="136" width="60" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="810" y="145" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">Lv1 · sp 1</text>
+      <rect x="780" y="256" width="60" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="810" y="265" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">Lv1 · sp 12</text>
+      <rect x="780" y="376" width="60" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="810" y="385" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">Lv2 – Lv4</text>
+      <rect x="780" y="496" width="60" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="810" y="505" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">Lv5</text>
+
+      <!-- column 1: event sources -->
+      <g>
+        <rect x="72" y="112" width="224" height="88" rx="6" fill="#f5f5f5"/>
+        <rect x="72" y="112" width="224" height="88" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+        <text x="184" y="146" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">音频事件</text>
+        <text x="184" y="164" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">/perception/audio_event</text>
+        <text x="184" y="180" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">schema v2 · whitelist</text>
+      </g>
+      <g>
+        <rect x="72" y="232" width="224" height="88" rx="6" fill="#f5f5f5"/>
+        <rect x="72" y="232" width="224" height="88" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+        <text x="184" y="266" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">视觉事件</text>
+        <text x="184" y="284" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">/perception/visual_event</text>
+        <text x="184" y="300" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">schema v1 · 10 Hz</text>
+      </g>
+      <g>
+        <rect x="72" y="352" width="224" height="88" rx="6" fill="#f5f5f5"/>
+        <rect x="72" y="352" width="224" height="88" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+        <text x="184" y="386" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">需求事件</text>
+        <text x="184" y="404" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">/internal_need/signal_event</text>
+        <text x="184" y="420" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">schema 2.0 · level</text>
+      </g>
+      <g>
+        <rect x="72" y="472" width="224" height="88" rx="6" fill="#f5f5f5"/>
+        <rect x="72" y="472" width="224" height="88" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+        <text x="184" y="506" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">情绪事件</text>
+        <text x="184" y="524" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">/emotion/signal_event</text>
+        <text x="184" y="540" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">schema 2.0 · emotion</text>
+      </g>
+
+      <!-- column 2: mapping chains -->
+      <g>
+        <rect x="392" y="112" width="368" height="88" rx="6" fill="#f5f5f5"/>
+        <rect x="392" y="112" width="368" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="576" y="146" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">语音映射链</text>
+        <text x="576" y="164" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">_validate_audio_contract → need_gate</text>
+        <text x="576" y="180" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">intent → intent_action_pool</text>
+      </g>
+      <g>
+        <rect x="392" y="232" width="368" height="88" rx="6" fill="#f5f5f5"/>
+        <rect x="392" y="232" width="368" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="576" y="266" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">视觉映射链</text>
+        <text x="576" y="284" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">whitelist → edge dedup → cache</text>
+        <text x="576" y="300" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">EVT_VISION_FALL · STOP_GESTURE</text>
+      </g>
+      <g>
+        <rect x="392" y="352" width="368" height="88" rx="6" fill="#f5f5f5"/>
+        <rect x="392" y="352" width="368" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="576" y="386" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">需求映射链</text>
+        <text x="576" y="404" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">level check → visual route → routes</text>
+        <text x="576" y="420" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Hunger · Social · Exploration</text>
+      </g>
+      <g>
+        <rect x="392" y="472" width="368" height="88" rx="6" fill="#f5f5f5"/>
+        <rect x="392" y="472" width="368" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <text x="576" y="506" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">情绪映射链</text>
+        <text x="576" y="524" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">event check → check_person</text>
+        <text x="576" y="540" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">human | voice_waiting | solo</text>
+      </g>
+
+      <!-- column 3: the converged candidate (focal) -->
+      <g>
+        <rect x="856" y="112" width="352" height="448" rx="6" fill="#f5f5f5"/>
+        <rect x="856" y="112" width="352" height="448" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+        <rect x="864" y="120" width="40" height="12" rx="2" fill="transparent" stroke="rgba(235,108,54,0.50)" stroke-width="0.8"/>
+        <text x="884" y="129" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CANDS</text>
+        <text x="1032" y="168" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">行为候选</text>
+        <line x1="880" y1="188" x2="1184" y2="188" stroke="rgba(235,108,54,0.30)" stroke-width="0.8"/>
+        <text x="880" y="210" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.14em">FIELDS</text>
+        <text x="880" y="232" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">behavior_name · priority_level</text>
+        <text x="880" y="260" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">sub_priority · value · confidence</text>
+        <text x="880" y="288" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">source · trigger_event · variant</text>
+        <text x="880" y="316" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">interaction_mode · session_role</text>
+        <text x="880" y="344" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">need_type · interrupt_policy</text>
+        <text x="880" y="372" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">timeout_sec · cooldown_sec · ttl_sec</text>
+        <text x="880" y="400" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">params { ... }</text>
+        <line x1="880" y1="428" x2="1184" y2="428" stroke="rgba(235,108,54,0.30)" stroke-width="0.8"/>
+        <text x="880" y="450" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.14em">DEDUP KEY</text>
+        <text x="880" y="472" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">(source, trigger_event,</text>
+        <text x="880" y="492" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace"> behavior_name, variant, mode)</text>
+        <text x="880" y="524" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">resolved via executor_behavior_name</text>
+      </g>
+
+      <!-- legend -->
+      <line x1="32" y1="620" x2="1248" y2="620" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="32" y="638" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+
+      <rect x="32" y="652" width="14" height="10" rx="2" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <text x="54" y="664" fill="#4f5d75" font-size="12" font-weight="500">事件源</text>
+
+      <rect x="152" y="652" width="14" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="172" y="664" fill="#4f5d75" font-size="12" font-weight="500">映射链</text>
+
+      <rect x="268" y="652" width="14" height="10" rx="2" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="290" y="664" fill="#4f5d75" font-size="12" font-weight="500">焦点：统一候选结构</text>
+
+      <line x1="468" y1="657" x2="496" y2="657" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#mp-arrow)"/>
+      <text x="506" y="664" fill="#4f5d75" font-size="12" font-weight="500">映射与收敛</text>
+    </svg>
+    </div>
+
+    <div class="cards w3">
+      <div class="card">
+        <p class="eyebrow">Audio · fail-closed</p>
+        <div class="card-header"><span class="card-dot ink"></span><h3>具体指令要同时满足六个字段</h3></div>
+        <ul>
+          <li><code>schema_version=2</code>、<code>event_type</code> 在配置白名单内、<code>should_trigger_behavior_tree=true</code>。</li>
+          <li><code>dispatch_role=specific_command</code>、<code>command_id</code> 等于配置的 <code>expected_command_id</code>、<code>specific_event_type == event_type</code>。</li>
+          <li><code>interaction_id</code> / <code>utterance_id</code> 非空，<code>required_voice_slots</code> 存在且取值在 <code>allowed_voice_slot_values</code> 内。</li>
+          <li><code>TOILET / CLEAN / SLEEP</code> 另需需求闸门：<code>Bladder &gt; 50</code>、<code>Cleanliness &gt; 40</code>、<code>Sleepiness &gt; 50</code>。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Vision routing</p>
+        <div class="card-header"><span class="card-dot muted"></span><h3>三条链各自看什么</h3></div>
+        <ul>
+          <li><strong>需求</strong>：只有 Hunger / Social / Exploration 先走视觉路由；其余按 <code>event_type</code> 直接查 <code>event_intent_map</code>。</li>
+          <li><strong>情绪</strong>：<code>check_person</code> 决定 <code>human</code> / <code>solo</code>；语音等待期再分出 <code>voice_waiting</code>，共 18 个语义行为。</li>
+          <li><strong>视觉</strong>：只有 <code>FALL</code> 与 <code>STOP_GESTURE</code> 直接生成候选，且 10&nbsp;Hz 快照里只在<strong>出现沿</strong>创建一次。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Level mapping</p>
+        <div class="card-header"><span class="card-dot coral"></span><h3>等级决定默认节奏</h3></div>
+        <ul>
+          <li><code>priority_level</code> 由 <code>behavior_categories.yaml</code> 给出：安全 0、外部交互 1、紧急生理 2、常规生理 3、心理需求 4、情绪表达 5、空闲 6。</li>
+          <li>默认超时：Lv0&nbsp;5&nbsp;s、Lv1&nbsp;8&nbsp;s、Lv2&nbsp;60&nbsp;s、Lv3/Lv4/Lv5/Lv6&nbsp;25–30&nbsp;s；默认冷却：Lv1/Lv5&nbsp;1&nbsp;s、Lv3/Lv4&nbsp;5&nbsp;s，其余 0。</li>
+          <li>需求行为例外：Hunger <code>180 s</code>、Energy <code>330 s</code>，且 Energy 归入 <code>safety</code> 类别。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Source · docs/behavior_tree_architecture.md · docs/architecture.md · config/*.yaml &nbsp;|&nbsp; Diagram Design · 1280×720 (doc-wide)
+  </footer>
+
+</div>
+</body>
+</html>

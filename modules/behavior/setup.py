@@ -26,6 +26,7 @@ setup(
             "config/intent_action_pool.yaml",
             "config/emotion_behavior_map.yaml",
             "config/legacy_behavior_aliases.yaml",
+            "config/voice_engagement.yaml",
         ]),
         ("share/ament_index/resource_index/packages",
          ["resource/marsdog_behavior"]),

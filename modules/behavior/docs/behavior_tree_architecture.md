@@ -107,7 +107,7 @@
 | 3 | `/internal_need/state` | `std_msgs/String` (JSON) | BEST_EFFORT, depth=5 | V2 完整需求状态 + 相关性 | **否** |
 | 4 | `/internal_need/signal_event` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | V2 等级变化 → 需求行为候选 | **是**（RECOVERED 除外） |
 | 5 | `/perception/audio_event` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | 音频指令 → 外部交互候选 | **是**（白名单） |
-| 6 | `/perception/visual_event` | `std_msgs/String` (JSON) | BEST_EFFORT, depth=5 | 场景缓存，作为视觉服务回退 | **否** |
+| 6 | `/perception/visual_event` | `std_msgs/String` (JSON v1) | BEST_EFFORT, depth=5 | 场景缓存 + STRANGER 融合 + FALL/STOP 白名单 | **是**（仅白名单） |
 
 ### 2.2 `state` vs `signal_event` 的分工
 
@@ -285,30 +285,43 @@ perception_bridge
     └── /perception/audio_event (EVENT, RELIABLE)
         ┌─────────────────────────────────────────────────────────┐
         │ {                                                       │
+        │   "schema_version": 2,                                  │
         │   "event_type": "EVT_VOICE_COMMAND_SIT",                │
+        │   "command_id": "CMD_SIT",                              │
+        │   "dispatch_role": "specific_command",                  │
+        │   "should_trigger_behavior_tree": true,                  │
         │   "intent_confidence": 0.95,                            │
         │   "asr_text": "坐下"                                     │
         │ }                                                       │
         └─────────────────────────────────────────────────────────┘
 
         白名单 (PerceptionClientAdapter):
-          ✅ EVT_VOICE_CALL_NAME      → 名字唤醒 → 会话级 face_body_centering
-          ✅ EVT_VOICE_COMMAND_<ACTION> → 强指令 → 专用 Behavior
+          ✅ EVT_VOICE_WAKEUP         → respond_owner_call → 视觉解析 → 可选靠近
+          ✅ 已审核的 EVT_VOICE_COMMAND_<ACTION>
+             → 授权字段校验 → 专用 Behavior
+          ✅ EVT_VOICE_COMMAND_PRAISE / SCOLD
+             → social_reaction 授权 → Lv1 一次性原地社交反应
+          ❌ EVT_VOICE_CALL_NAME / EVT_VOICE_COMMAND_CALL_NAME
+             → 昵称社交语义，不创建会话或候选
           ❌ EVT_VOICE_PRAISE / SCOLD / HAPPY / SAD / NEUTRAL
              → 忽略，由 emotion_engine_node 消费
-          ❌ EVT_VOICE_MASTER_ID / STRANGER_ID
+          ❌ EVT_VOICE_MASTER_ID / FOLK_ID / UNMASTER_ID / STRANGER_ID
              → 忽略，由 emotion_engine_node 消费
 
         处理流程:
           1. PerceptionClientAdapter._on_audio_ros2()
-          2. 白名单过滤 → 回调 ros_node._on_audio_direct()
-          3. CALL_NAME 在 ros_node 中更新 attention 后结束；命令事件继续进入
-             IntentMapper.map_audio_event(event_type, data)
+          2. schema v2 + 授权字段过滤 → 回调 ros_node._on_audio_direct()
+          3. WAKEUP 创建 VoiceInteractionSession 并经 IntentMapper 生成
+             respond_owner_call；命令事件也进入同一精确映射
           4. 查 config/event_intent_map.yaml → audio_direct section:
                EVT_VOICE_COMMAND_SIT:
                  category: external_interaction
                  intent: command_sit
+                 expected_command_id: CMD_SIT
                  sub_priority: 1
+             PRAISE/SCOLD 改查 audio_reaction section，不经 intent_action_pool；
+             复用 emotion_behavior_map 中的行为名，但候选 source 仍为
+             audio_reaction，不是 emotion。
           5. 查 config/intent_action_pool.yaml → command_sit:
                candidates: [sit_down]
           6. 生成 BehaviorCandidate:
@@ -323,10 +336,16 @@ perception_bridge
                            "sit_down", "", "solo")
 ```
 
-**强指令约束**：当前 ROS2 部署的 CALL_NAME 只开启会话视角控制；
-`respond_owner_call` 只保留在 IntentMapper 的 standalone/兼容映射中。坐下、
+**强指令约束**：WAKEUP 的 `respond_owner_call` 只负责原地转向，随后由
+`wake_speaker_result → query_targets → approach_voice_caller → WAITING` 完成已识别
+主人或家人的唤醒者接近；陌生人和未判定者原地等待。靠近由 Action 经
+`locate_person_once → NavigateToPose` 执行一次固定导航目标。坐下、
 趴下、站立、等待、过来、跟随、握手、击掌、翻滚、转圈、返回、吐掉和装死
 都映射各自的专用 Behavior。
+
+TOILET、CLEAN、SLEEP 是条件指令：在任何候选入池或会话修改之前分别要求
+`Bladder > 50`、`Cleanliness > 40`、`Sleepiness > 50`，通过后复用
+`barkShortAlert`、`lickPaws`、`sleepOnSide`。状态未初始化或等于阈值均不执行。
 
 ### 3.4 视觉链路
 
@@ -363,10 +382,12 @@ perception_bridge
                 ├── 陌生物品 → inspectObject
                 └── 空场景   → exploreRoom
 
-/perception/visual_event (EVENT, BEST_EFFORT)
+/perception/visual_event (10 Hz STATE SNAPSHOT, BEST_EFFORT)
     ├── 缓存 humans / active_target / tracked_objects
     ├── 视觉 Service 不可用时作为上述路由的回退
-    └── events 数组不直接创建行为候选
+    ├── EVT_VISION_FALL → respond_person_fall (Lv1, sp=12)
+    ├── EVT_VISION_STOP_GESTURE → respond_stop_gesture (Lv1, sp=12)
+    └── 其余 events 不直接创建行为候选
 ```
 
 服务类型优先使用 `marsdog_vision_interaction/srv/VisionTask`，接口名为
@@ -601,15 +622,22 @@ else:
 update() 每次 tick 的执行流程:
 
 1. executor.tick()           ← 推进模拟/异步通信
-2. 检查超时                   ← 超时→cancel_goal + FAILURE + TIMEOUT 反馈
-3. 检查结果                   ← 结果到达→cooldown + SUCCESS/FAILURE 反馈
-4. 无 active_behavior       ← 继续等当前行为
-5. 检查冷却                   ← 冷却中→丢弃候选
-6. 无当前行为                  → send_goal
-7. 同行为名+运行中            → 丢弃重复候选
-8. 抢占评估                   → 见 6.6 节
-9. 执行抢占                   → cancel 旧 + send 新
+2. 检查真实 Result            ← Result 到达后才进入 TERMINAL 并释放执行权
+3. CANCEL_REQUESTED         ← 保留旧 Goal/锁/映射/待替代候选，继续等待 Result
+4. 检查超时                   ← 记录 timeout_requested + 请求取消，不伪造终态
+5. 无 active_behavior       ← 继续等当前行为
+6. 检查冷却                   ← 冷却中→丢弃候选
+7. 无当前行为                  → send_goal
+8. 同行为名+运行中            → 丢弃重复候选
+9. 抢占评估                   → 见 6.6 节
+10. 执行抢占                  → 请求取消旧 Goal，真实终态后再 send 新 Goal
 ```
+
+Goal 生命周期为 `SENDING → RUNNING → CANCEL_REQUESTED → TERMINAL`。
+`cancel_goal_async()` 返回或取消请求被受理只表示 `CANCEL_REQUESTED`；只有
+`/execute_behavior` 的真实 Result 可以进入 `TERMINAL`。因此取消期间不会清除
+`current_goal_id`、Goal Handle、Future、in-flight reservation，也不会生成本地
+`CANCELED`/`TIMEOUT` 结果。
 
 **check_person（情绪视觉分流）**:
 - 收到六类 `EMO_*_TRIGGERED` 后，由 ROS2 入口异步调用视觉 Service
@@ -646,9 +674,12 @@ def evaluate_preemption(active_priority, active_value, active_name,
 
 | 策略 | 行为 | emergency_stop 可覆盖 |
 |------|------|----------------------|
-| `immediate` | 立即中断 | 是 |
-| `safe_point` | 等 Feedback.safe_to_interrupt == True | 是 |
+| `immediate` | 最新 Feedback 必须 `safe_to_interrupt=true` 才请求取消 | 是 |
+| `safe_point` | 最新 Feedback 必须 `safe_to_interrupt=true` 才请求取消 | 是 |
 | `non_interruptible` | 不中断 | **是**（唯一例外） |
+
+`DISPATCHED` 和 `RECOVERY_REQUIRED` 一律视为不可中断。`emergency_stop` 可立即
+发出取消请求，但同样必须等旧 Goal 的真实 Result 后才能释放导航锁并发送自身 Goal。
 
 ### 6.7 优先级常量
 
@@ -661,7 +692,7 @@ def evaluate_preemption(active_priority, active_value, active_name,
 | 2 | PHYSIO_URGENT | 紧急生理 | barkShortAlert, sleepOnSide, sleepNow |
 | 3 | PHYSIO_NORMAL | 常规生理 | 进食/找食物、清洁 |
 | 4 | PSYCHOLOGICAL | 心理需求 | 人/动物社交、熟悉/陌生物品检查、空间探索 |
-| 5 | EMOTION_EXPRESSION | 情绪表达 | 6 个 V2 事件按有人/无人分成 12 个语义 Behavior |
+| 5 | EMOTION_EXPRESSION | 情绪表达 | 6 个 V2 事件按有人/语音等待原地/无人分成 18 个语义 Behavior |
 | 6 | IDLE | 空闲 | idle_look_around, idle_rest |
 
 ---
@@ -861,13 +892,14 @@ action_executor Result
 │     │   ├── BehaviorRelevanceCondition → 情绪/需求仍相关?             │
 │     │   └── ExecuteActiveBehavior.update():                         │
 │     │       ├── executor.tick()                                     │
-│     │       ├── check_timeout → 超时则 cancel + FAILURE              │
-│     │       ├── check_result → 完成则 cooldown + SUCCESS/FAILURE     │
+│     │       ├── check_result → 真实终态后 cooldown + 释放执行权       │
+│     │       ├── check_timeout → timeout_requested + 请求 cancel      │
 │     │       ├── no active_behavior → 更新 feedback, return RUNNING   │
 │     │       ├── is_in_cooldown → 丢弃候选                              │
 │     │       ├── no current → send_goal + RUNNING                    │
 │     │       ├── same name running → 丢弃重复                           │
-│     │       ├── can_preempt? → cancel 旧 + send 新                   │
+│     │       ├── can_preempt? → cancel 旧，等待真实 Result             │
+│     │       ├── old TERMINAL → 再 send 保留的新候选                    │
 │     │       └── can't preempt → 丢弃候选, 继续当前                     │
 │     │                                                               │
 │     └── 如果 Lv0 FAILURE → Selector 尝试 Lv1 → Lv2 → ... → Lv6     │
@@ -927,7 +959,7 @@ action_executor Result
 |------|-------|--------|------|
 | `ttl_sec` | **10.0s** | BehaviorCandidate | 候选在池中的存活时间，过期后释放去重键 |
 | `cooldown_sec` | 0.0 ~ 5.0s | 每个行为 (behaviors.yaml) | 行为执行完成后禁止重新执行的冷却时间 |
-| `timeout_sec` | 5.0 ~ 120.0s | 每个行为 (behaviors.yaml) | 行为执行的最大允许时间 |
+| `timeout_sec` | `0` 或有限秒数 | 每个行为 (behaviors.yaml) | `0` 表示 Tree 外层无截止时间；长期 Goal 仍要求 Action 内部步骤有有限超时 |
 | `tick_rate` | **100ms** | BehaviorTreeRosNode | BT 评估频率 |
 | `SAME_LEVEL_PREEMPTION_DELTA` | **15** | 常量 | 同级抢占所需的最小强度差值 |
 | `/emotion/state` | **1Hz** | 上游 | 情绪状态发布频率 |
@@ -1010,7 +1042,7 @@ ros2 topic echo /internal_need/signal_event  # 需求事件
 
 # 手动注入测试事件
 ros2 topic pub --once /perception/audio_event std_msgs/msg/String \
-  "{data: '{\"event_type\":\"EVT_VOICE_COMMAND_SIT\",\"intent_confidence\":0.95}'}"
+  "{data: '{\"schema_version\":2,\"event_type\":\"EVT_VOICE_COMMAND_SIT\",\"interaction_id\":\"manual-1\",\"utterance_id\":\"manual-u1\",\"command_id\":\"CMD_SIT\",\"specific_event_type\":\"EVT_VOICE_COMMAND_SIT\",\"dispatch_role\":\"specific_command\",\"should_trigger_behavior_tree\":true,\"intent_confidence\":0.95,\"slots\":[]}'}"
 
 ros2 topic pub --once /emotion/signal_event std_msgs/msg/String \
   "{data: '{\"schema_version\":\"2.0\",\"event_type\":\"EMO_JOY_TRIGGERED\",\"emotion\":\"Joy\",\"value\":30,\"triggerThreshold\":30,\"triggerOperator\":\"gte\"}'}"

@@ -6,6 +6,7 @@ Exploration make identical routing decisions from object-detection results.
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 
@@ -76,16 +77,130 @@ def _best(items: list[dict]) -> dict | None:
     return max(items, key=_confidence, default=None)
 
 
+def _finite_float(value: Any) -> float | None:
+    """Return a finite float, or ``None`` for malformed perception data."""
+    try:
+        result = float(value)
+    except (TypeError, ValueError):
+        return None
+    return result if math.isfinite(result) else None
+
+
+def select_wake_speaker(
+    candidates: list[dict],
+    *,
+    reference_bearing_deg: float = 0.0,
+    min_confidence: float = 0.3,
+    max_age_ms: float = 300.0,
+    max_bearing_error_deg: float = 25.0,
+) -> dict | None:
+    """Select the human most consistent with the wake-source direction.
+
+    This policy deliberately differs from social targeting.  A registered
+    person elsewhere in the image must not displace the person who actually
+    called the robot.  Angular agreement is therefore the primary key;
+    speaking/detection/identity evidence only breaks progressively closer
+    ties.  The returned dictionary is a copy suitable for an immutable
+    Action ``target`` reference.
+    """
+    reference = _finite_float(reference_bearing_deg)
+    if reference is None:
+        return None
+
+    eligible: list[tuple[tuple, dict]] = []
+    for raw in candidates:
+        if not isinstance(raw, dict):
+            continue
+        target_type = str(raw.get("target_type", "human")).strip().lower()
+        if target_type not in ("human", "person"):
+            continue
+        if str(raw.get("tracking_state", "tracking")).lower() != "tracking":
+            continue
+
+        target_id = str(raw.get("target_id", "")).strip()
+        vision_epoch = str(raw.get("vision_epoch", "")).strip()
+        if not target_id or not vision_epoch:
+            continue
+
+        age_ms = _finite_float(raw.get("last_seen_age_ms", 0.0))
+        confidence = _finite_float(
+            raw.get("detection_confidence", raw.get("confidence", 0.0))
+        )
+        if (
+            age_ms is None
+            or not 0.0 <= age_ms <= float(max_age_ms)
+            or confidence is None
+            or confidence < float(min_confidence)
+        ):
+            continue
+
+        bearing = _finite_float(raw.get("bearing_deg"))
+        if bearing is None:
+            center_x = _finite_float(raw.get("center_x"))
+            if center_x is None:
+                center = raw.get("center")
+                if isinstance(center, (list, tuple)) and center:
+                    center_x = _finite_float(center[0])
+            if center_x is None or not 0.0 <= center_x <= 1.0:
+                continue
+            # Only a ranking proxy when calibrated intrinsics are unavailable.
+            bearing = (center_x - 0.5) * 90.0
+
+        identity_confidence = _finite_float(
+            raw.get("identity_confidence", 0.0)
+        ) or 0.0
+        speaking_confidence = _finite_float(
+            raw.get("speaking_confidence", 1.0 if raw.get("is_speaking") else 0.0)
+        ) or 0.0
+        angular_error = abs((bearing - reference + 180.0) % 360.0 - 180.0)
+        if angular_error > float(max_bearing_error_deg):
+            continue
+        selected = dict(raw)
+        selected["target_type"] = "human"
+        selected["target_id"] = target_id
+        selected["vision_epoch"] = vision_epoch
+        selected["detection_confidence"] = confidence
+        selected["selection_reason"] = "wake_bearing_first"
+        selected["wake_bearing_error_deg"] = angular_error
+        eligible.append((
+            (
+                angular_error,
+                -speaking_confidence,
+                -confidence,
+                -identity_confidence,
+                target_id,
+            ),
+            selected,
+        ))
+
+    return min(eligible, key=lambda item: item[0])[1] if eligible else None
+
+
 def target_from_detection(item: dict, target_type: str) -> dict:
     """Convert one detector item into executor-friendly target metadata."""
     label = normalize_label(item.get("label"))
+    stable_target_id = (
+        item.get("target_id")
+        or item.get("track_id")
+        or label
+        or "unknown"
+    )
     target = {
         "target_type": target_type,
-        "target_id": str(item.get("track_id", label or "unknown")),
+        "target_id": str(stable_target_id),
         "label": label,
         "confidence": _confidence(item),
     }
-    for key in ("track_id", "x", "y", "w", "h", "center_x", "center_y"):
+    for key in (
+        "vision_epoch",
+        "track_id",
+        "x",
+        "y",
+        "w",
+        "h",
+        "center_x",
+        "center_y",
+    ):
         if key in item:
             target[key] = item[key]
     if target_type == "animal":

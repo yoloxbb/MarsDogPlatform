@@ -11,7 +11,13 @@ import time
 from typing import Optional
 
 from .datatypes import ActiveBehavior, ExecutorFeedback, BehaviorFeedbackEvent
-from .constants import STATUS_RUNNING, STATUS_SUCCESS, STATUS_FAILURE
+from .constants import (
+    GOAL_CANCEL_REQUESTED,
+    GOAL_SENDING,
+    GOAL_TERMINAL,
+    STATUS_RUNNING,
+    STATUS_SUCCESS,
+)
 from .emotion_module import EmotionModule
 from .need_module import NeedModule
 from .mock_perception_client import MockPerceptionClient
@@ -29,6 +35,8 @@ class Blackboard:
         self.current_behavior: Optional[ActiveBehavior] = None  # Currently executing behavior
         self.current_status: str = STATUS_SUCCESS  # Last known status of current behavior
         self.current_goal_id: Optional[str] = None  # Executor goal ID for current behavior
+        self.goal_lifecycle: str = GOAL_TERMINAL
+        self.cancel_reason: str = ""
 
         # ── Executor Feedback ────────────────────────────────────────────────
         self.executor_feedback: Optional[ExecutorFeedback] = None
@@ -50,6 +58,7 @@ class Blackboard:
 
         # ── Timeout Tracking ─────────────────────────────────────────────────
         self.timeout_occurred: bool = False
+        self.timeout_requested: bool = False
         self._behavior_start_time: float = 0.0
         self._behavior_timeout: float = 0.0
 
@@ -82,6 +91,10 @@ class Blackboard:
         self.current_behavior = behavior
         self.current_goal_id = goal_id
         self.current_status = STATUS_RUNNING
+        self.goal_lifecycle = GOAL_SENDING
+        self.cancel_reason = ""
+        self.timeout_occurred = False
+        self.timeout_requested = False
         self._behavior_start_time = time.time()
         self._behavior_timeout = behavior.timeout_sec
 
@@ -90,6 +103,9 @@ class Blackboard:
         self.current_behavior = None
         self.current_goal_id = None
         self.current_status = STATUS_SUCCESS
+        self.goal_lifecycle = GOAL_TERMINAL
+        self.cancel_reason = ""
+        self.timeout_requested = False
         self.executor_feedback = None
 
     def is_in_cooldown(self, behavior_name: str) -> bool:
@@ -113,17 +129,27 @@ class Blackboard:
             return False
         # Prefer dynamic timeout from current_behavior (allows runtime overrides)
         timeout = self._behavior_timeout
-        if self.current_behavior is not None and self.current_behavior.timeout_sec > 0:
+        if self.current_behavior is not None:
             timeout = self.current_behavior.timeout_sec
         if timeout <= 0:
             return False
         elapsed = time.time() - self._behavior_start_time
         return elapsed >= timeout
 
+    def request_cancel(self, reason: str, *, timeout: bool = False) -> None:
+        """Record a cancel request without pretending the goal is terminal."""
+        self.goal_lifecycle = GOAL_CANCEL_REQUESTED
+        self.cancel_reason = str(reason)
+        if timeout:
+            self.timeout_occurred = True
+            self.timeout_requested = True
+
     def mark_timeout(self) -> None:
-        """Mark that a timeout has occurred."""
+        """Compatibility wrapper: timeout now requests cancellation only."""
         self.timeout_occurred = True
-        self.current_status = STATUS_FAILURE
+        self.timeout_requested = True
+        self.goal_lifecycle = GOAL_CANCEL_REQUESTED
+        self.cancel_reason = "timeout_requested"
         _log.warning("Timeout: %s elapsed=%.1fs timeout=%.1fs",
                      self.current_behavior.behavior_name if self.current_behavior else "?",
                      __import__('time').time() - self._behavior_start_time,

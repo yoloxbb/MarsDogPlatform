@@ -4,14 +4,14 @@ Connects the behavior tree to the perception subsystem:
 
 Subscriptions:
   /perception/audio_event  (RELIABLE, depth=10)
-    → Whitelist: EVT_VOICE_CALL_NAME and exact EVT_VOICE_COMMAND_<ACTION> events
-    → Other audio events (PRAISE, SCOLD, HAPPY, SAD, etc.) are IGNORED —
-      they should be consumed by emotion_engine_node, not behavior_tree_node.
+    → Whitelist: wake/lifecycle, audited commands, and exact social reactions
+    → Model-Intent emotion/classification evidence is ignored here and remains
+      owned by emotion_engine_node or internal_need_node.
 
   /perception/visual_event  (BEST_EFFORT, depth=5)
     → Caches humans, active_target, and tracked_objects as service fallback.
-    → visual_event.events MUST NOT be mapped to behavior candidates.
-    → Visual events go through emotion_engine → /emotion/signal_event.
+    → Forwards STRANGER, FALL, and STOP_GESTURE appearance edges.
+    → Repeated state snapshots are collapsed to one callback per appearance.
 
 Service Client:
   /perception/vision/task
@@ -33,32 +33,61 @@ from bionic_dog_bt.visual_context import (
     select_exploration_context,
     select_hunger_context,
     select_social_animal,
+    select_wake_speaker,
 )
 
 from .ros2_compat import NodeBase, HAS_ROS2, is_ros2_ready
 
 # ── Direct event types processed by behavior_tree_node ─────────────────
 _ALLOWED_AUDIO_EVENTS = {
-    "EVT_VOICE_CALL_NAME",
+    "EVT_VOICE_WAKEUP",
+    "EVT_VOICE_WAKE_SPEAKER_RESULT",
 }
 
 # ── Prefix for per-command events (EVT_VOICE_COMMAND_SIT, etc.) ────────
-_COMMAND_EVENT_PREFIX = "EVT_VOICE_COMMAND_"
+_COMMAND_EVENT_PREFIXES = (
+    "EVT_VOICE_COMMAND_",
+)
 
-# ── Audio events that should go to emotion_engine, NOT behavior_tree ────
-_AUDIO_FOR_EMOTION_ENGINE = {
+# ── Social/state evidence that must not directly enter the Tree ───────
+_AUDIO_NON_TREE_EVENTS = {
     "EVT_VOICE_MASTER_ID",
+    "EVT_VOICE_FOLK_ID",
+    "EVT_VOICE_UNMASTER_ID",
     "EVT_VOICE_STRANGER_ID",
+    "EVT_VOICE_CALL_NAME",
+    "EVT_VOICE_COMMAND_CALL_NAME",
     "EVT_VOICE_PRAISE",
     "EVT_VOICE_SCOLD",
+    "EVT_VOICE_COMFORT",
+    "EVT_VOICE_PLAY_INTERACTION",
+    "EVT_VOICE_POSITIVE_EMOTION",
+    "EVT_VOICE_NEGATIVE_EMOTION",
+    "EVT_VOICE_STATUS_CARE",
+    "EVT_VOICE_COMMAND_KNOWN",
+    "EVT_VOICE_COMMAND_UNKNOWN",
     "EVT_VOICE_HAPPY",
     "EVT_VOICE_SAD",
     "EVT_VOICE_NEUTRAL",
+    "speech",
+}
+
+# ── Explicit one-shot vocabulary reactions ─────────────────────────
+# PRAISE/SCOLD stay non-executable events while explicitly authorizing one
+# bounded behavior-tree reaction.
+_AUDIO_REACTION_EVENTS = {
+    "EVT_VOICE_COMMAND_PRAISE",
+    "EVT_VOICE_COMMAND_SCOLD",
 }
 
 # ── Audio lifecycle events consumed by behavior_tree ───────────────────
 _AUDIO_STATE_EVENTS = {
     "EVT_STATE_CHANGED",
+}
+
+_DIRECT_VISUAL_EVENTS = {
+    "EVT_VISION_FALL",
+    "EVT_VISION_STOP_GESTURE",
 }
 
 
@@ -71,15 +100,15 @@ def _as_bool(value) -> bool:
 class PerceptionClientAdapter:
     """Adapts ROS2 perception topics/services for the behavior tree.
 
-    Audio events: event-type-only (CALL_NAME or EVT_VOICE_COMMAND_<ACTION>).
-    Visual events: scene cache only, NO direct behavior candidate generation.
+    Audio events: schema-v2 wake/lifecycle and explicitly authorized commands.
+    Visual events: scene cache plus direct STRANGER/FALL/STOP callbacks.
     Hunger/Social/Exploration need events query the visual service and use this
     cache only when that service is unavailable.
 
     Usage:
         adapter = PerceptionClientAdapter(node)
         adapter.set_on_audio_direct(lambda event_type, data: ...)
-        adapter.set_on_visual_event(lambda evt, data: ...)  # optional, for logging
+        adapter.set_on_visual_event(lambda event_type, data: ...)
 
         person = adapter.check_person()
         objects = adapter.detect_objects()
@@ -93,8 +122,14 @@ class PerceptionClientAdapter:
     # updates are enough to consider the scene cache offline/stale.
     VISUAL_CACHE_TIMEOUT_SEC = 0.5
     VISUAL_TARGET_MAX_AGE_MS = 500.0
+    VISION_TASK_TIMEOUT_SEC = 2.0
 
-    def __init__(self, node: NodeBase):
+    def __init__(
+        self,
+        node: NodeBase,
+        *,
+        vision_task_timeout_sec: float = VISION_TASK_TIMEOUT_SEC,
+    ):
         self._node = node
         self._logger = node.get_logger()
         self._ros2_ready = (
@@ -106,17 +141,24 @@ class PerceptionClientAdapter:
         # Callbacks
         self._on_audio_direct: Optional[Callable] = None  # (event_type, data_dict)
         self._on_visual_event: Optional[Callable] = None
+        self._active_direct_visual_events: set[str] = set()
 
         # Cached state from visual_event (service fallback / interaction resolver)
         self._person_present: bool = False
         self._active_identity: str = "unknown"
         self._cached_humans: list[dict] = []
+        self._cached_human_candidates: list[dict] = []
         self._cached_objects: list[dict] = []
+        self._cached_vision_epoch: str = ""
+        self._cached_visual_header: dict = {}
         self._visual_cache_updated_at: float = 0.0
         self._lock = threading.Lock()
         self._vision_client = None
         self._vision_service_type = None
         self._vision_service_name = ""
+        self._vision_task_timeout_sec = max(
+            0.05, float(vision_task_timeout_sec)
+        )
 
         if self._ros2_ready:
             self._setup_ros2()
@@ -206,8 +248,8 @@ class PerceptionClientAdapter:
         """Handle /perception/audio_event messages with whitelist filtering.
 
         Supported events:
-          EVT_VOICE_CALL_NAME
-          EVT_VOICE_COMMAND_<ACTION>  (e.g. EVT_VOICE_COMMAND_SIT)
+          EVT_VOICE_WAKEUP / EVT_STATE_CHANGED
+          EVT_VOICE_COMMAND_<ACTION>
 
         All other audio events are IGNORED — they belong to emotion_engine_node.
         IntentMapper performs the final exact-event lookup.
@@ -216,17 +258,65 @@ class PerceptionClientAdapter:
             data = json.loads(msg.data if hasattr(msg, 'data') else str(msg))
         except (json.JSONDecodeError, TypeError):
             return
-
+        if (
+            not isinstance(data, dict)
+            or type(data.get("schema_version")) is not int
+            or data["schema_version"] != 2
+        ):
+            self._logger.debug(
+                "audio_event rejected: expected object with schema_version=2"
+            )
+            return
         event_type = data.get("event_type", "")
+        if not isinstance(event_type, str) or not event_type:
+            self._logger.debug(
+                "audio_event rejected: event_type must be a non-empty string"
+            )
+            return
 
-        # ── Name-call event ─────────────────────────────────────────────
+        # ── Hardware wake and correlated wake-speaker result ─────────────
         if event_type in _ALLOWED_AUDIO_EVENTS:
             if self._on_audio_direct:
                 self._on_audio_direct(event_type, data)
             return
 
+        # ── Social/classification/identity evidence (never direct action) ─
+        # Check this before the generic command prefix so catalog CALL/PRAISE/
+        # SCOLD stay non-executable even if an upstream permission bit drifts.
+        if event_type in _AUDIO_NON_TREE_EVENTS:
+            self._logger.debug(
+                f"Audio event {event_type} ignored_by_behavior_tree "
+                f"(owned by social/emotion/need consumers)")
+            return
+
+        # ── Social events bound to emotion behaviors ─────────────────────
+        # Non-executable social events need explicit Tree reaction authority.
+        if event_type in _AUDIO_REACTION_EVENTS:
+            if (
+                data.get("should_trigger_behavior_tree") is True
+                and data.get("dispatch_role") == "social_reaction"
+                and data.get("is_executable") is False
+                and self._on_audio_direct
+            ):
+                self._on_audio_direct(event_type, data)
+            else:
+                self._logger.debug(
+                    "audio reaction ignored: event_type=%s has invalid "
+                    "authority fields" % event_type
+                )
+            return
+
         # ── Per-command events (EVT_VOICE_COMMAND_<ACTION>) ─────────────
-        if event_type.startswith(_COMMAND_EVENT_PREFIX):
+        if event_type.startswith(_COMMAND_EVENT_PREFIXES):
+            if (
+                data.get("should_trigger_behavior_tree") is not True
+                or data.get("dispatch_role") != "specific_command"
+            ):
+                self._logger.debug(
+                    "audio_event ignored: event_type=%s is not an authorized "
+                    "specific command" % event_type
+                )
+                return
             if self._on_audio_direct:
                 self._on_audio_direct(event_type, data)
             return
@@ -237,13 +327,6 @@ class PerceptionClientAdapter:
                 self._on_audio_direct(event_type, data)
             return
 
-        # ── Audio events for emotion_engine (NOT behavior_tree) ──
-        if event_type in _AUDIO_FOR_EMOTION_ENGINE:
-            self._logger.debug(
-                f"Audio event {event_type} ignored_by_behavior_tree "
-                f"(→ emotion_engine_node / internal_need_node)")
-            return
-
         # ── Unknown audio events ─────────────────────────────────────
         self._logger.debug(f"Audio event {event_type} ignored (not in whitelist)")
 
@@ -251,22 +334,102 @@ class PerceptionClientAdapter:
         """Handle /perception/visual_event messages.
 
         Caches humans, active_target, and tracked_objects as a visual-service
-        fallback.
-        visual_event.events are NOT mapped to behavior candidates —
-        they go through emotion_engine_node or internal_need_node.
+        fallback. STRANGER, FALL, and STOP_GESTURE are forwarded once on their
+        appearance edge; the 10 Hz visual state stream may repeat them across
+        snapshots.
         """
         try:
             data = json.loads(msg.data if hasattr(msg, 'data') else str(msg))
         except (json.JSONDecodeError, TypeError):
             return
+        if (
+            not isinstance(data, dict)
+            or type(data.get("schema_version")) is not int
+            or data["schema_version"] != 1
+        ):
+            self._logger.debug(
+                "visual_event ignored: expected object with schema_version=1"
+            )
+            return
+        events = data.get("events")
+        if (
+            not isinstance(events, list)
+            or any(not isinstance(item, str) for item in events)
+        ):
+            self._logger.debug(
+                "visual_event ignored: events must be a string array"
+            )
+            return
 
+        dispatch_events: list[str] = []
         with self._lock:
-            self._visual_cache_updated_at = time.monotonic()
+            received_at = time.monotonic()
+            previous_received_at = self._visual_cache_updated_at
+            self._visual_cache_updated_at = received_at
             self._cached_humans = [
                 dict(item)
                 for item in data.get("humans", [])
                 if isinstance(item, dict)
             ]
+            self._cached_vision_epoch = str(data.get("vision_epoch", "")).strip()
+            self._cached_visual_header = (
+                dict(data.get("header", {}))
+                if isinstance(data.get("header"), dict)
+                else {}
+            )
+            raw_candidates = data.get("human_candidates", [])
+            self._cached_human_candidates = [
+                dict(item)
+                for item in raw_candidates
+                if isinstance(item, dict)
+            ] if isinstance(raw_candidates, list) else []
+            snapshot_id = str(data.get("snapshot_id", "")).strip()
+            snapshot_sequence = data.get("sequence")
+            for candidate in self._cached_human_candidates:
+                if self._cached_vision_epoch:
+                    candidate.setdefault(
+                        "vision_epoch", self._cached_vision_epoch
+                    )
+                if snapshot_id:
+                    candidate.setdefault("snapshot_id", snapshot_id)
+                if isinstance(snapshot_sequence, int) and not isinstance(
+                    snapshot_sequence, bool
+                ):
+                    candidate.setdefault(
+                        "snapshot_sequence", snapshot_sequence
+                    )
+                candidate.setdefault(
+                    "source_stamp", self._cached_visual_header.get("stamp")
+                )
+                candidate.setdefault(
+                    "frame_id", self._cached_visual_header.get("frame_id")
+                )
+
+            # Compatibility with a visual-event producer that has not yet
+            # gained ``human_candidates``.  Only construct a strict target
+            # reference when the producer already supplies an epoch and a
+            # positive track id; identity is never used as the target id.
+            if not self._cached_human_candidates:
+                active_candidate = data.get("active_target")
+                if isinstance(active_candidate, dict):
+                    try:
+                        active_track_id = int(active_candidate.get("track_id", 0))
+                    except (TypeError, ValueError):
+                        active_track_id = 0
+                    if self._cached_vision_epoch and active_track_id > 0:
+                        candidate = dict(active_candidate)
+                        candidate.setdefault("target_type", "human")
+                        candidate.setdefault("vision_epoch", self._cached_vision_epoch)
+                        candidate.setdefault(
+                            "target_id",
+                            "%s:human:%d"
+                            % (self._cached_vision_epoch, active_track_id),
+                        )
+                        candidate.setdefault(
+                            "detection_confidence",
+                            candidate.get("confidence", 0.0),
+                        )
+                        self._cached_human_candidates = [candidate]
             self._cached_objects = [
                 dict(item)
                 for item in data.get("tracked_objects", [])
@@ -322,17 +485,40 @@ class PerceptionClientAdapter:
                 self._person_present = bool(self._cached_humans)
                 self._active_identity = "unknown"
 
-            # ── Log events but DO NOT generate behavior candidates ────────
-            events = data.get("events", [])
-            if events:
-                event_types = [e if isinstance(e, str) else e.get("event_type", "?")
-                             for e in events]
+            event_types = []
+            for item in events:
+                event_type = item.strip()
+                if event_type and event_type not in event_types:
+                    event_types.append(event_type)
+
+            current_direct_events = set(event_types) & _DIRECT_VISUAL_EVENTS
+            previous_direct_events = getattr(
+                self, "_active_direct_visual_events", set()
+            )
+            if (
+                previous_received_at > 0.0
+                and received_at - previous_received_at
+                > self.VISUAL_CACHE_TIMEOUT_SEC
+            ):
+                previous_direct_events = set()
+            dispatch_events = [
+                event_type
+                for event_type in event_types
+                if event_type in current_direct_events
+                and event_type not in previous_direct_events
+            ]
+            self._active_direct_visual_events = current_direct_events
+
+            if event_types:
                 self._logger.debug(
-                    f"visual_event received for scene cache only, "
-                    f"not behavior candidate generation. events={event_types}")
-                if self._on_visual_event:
-                    for evt in events:
-                        self._on_visual_event(evt, data)
+                    "visual_event received: events=%s direct_rising=%s"
+                    % (event_types, dispatch_events)
+                )
+
+        # Do not invoke consumers while holding the scene-cache lock.
+        if self._on_visual_event:
+            for event_type in dispatch_events:
+                self._on_visual_event(event_type, data)
 
     # ── Callback Registration ────────────────────────────────────────────────
 
@@ -340,16 +526,12 @@ class PerceptionClientAdapter:
         """Register callback for event-type-driven audio events.
 
         callback(event_type: str, data: dict)
-        Called for: EVT_VOICE_CALL_NAME and EVT_VOICE_COMMAND_<ACTION>.
+        Called for: EVT_VOICE_WAKEUP and EVT_VOICE_COMMAND_<ACTION>.
         """
         self._on_audio_direct = callback
 
     def set_on_visual_event(self, callback: Callable) -> None:
-        """Register callback for visual events (logging/debug only).
-
-        Visual events do NOT generate behavior candidates.
-        Their scene fields are cached as a visual-service fallback.
-        """
+        """Register callback for direct visual-event appearance edges."""
         self._on_visual_event = callback
 
     # ── Service Methods ──────────────────────────────────────────────────────
@@ -431,6 +613,133 @@ class PerceptionClientAdapter:
         if not scheduled:
             callback(self._emotion_context_from_person(self.check_person()))
 
+    def request_owner_target(
+        self,
+        callback: Callable[[dict | None], None],
+        *,
+        min_confidence: float = 0.5,
+        max_age_ms: float = 500.0,
+    ) -> None:
+        """Resolve one immutable owner target without choosing another human."""
+        if not self._ros2_ready:
+            person = self._mock_client.check_person()
+            identity = str(person.get("identity", "")).strip().lower()
+            if not _as_bool(person.get("present")) or identity != "owner":
+                callback(None)
+                return
+            callback({
+                "target_type": "human",
+                "vision_epoch": "mock-vision",
+                "target_id": "mock-vision:human:1",
+                "track_id": 1,
+                "identity": "owner",
+                "identity_state": "confirmed_known",
+                "identity_confidence": 1.0,
+                "detection_confidence": 1.0,
+                "tracking_state": "tracking",
+                "last_seen_age_ms": 0.0,
+            })
+            return
+
+        def _select(result: dict | None) -> None:
+            candidates = self._human_targets_from_result(result)
+            if candidates is None:
+                candidates = self._wake_candidates_from_cache()
+            callback(self._select_owner_target(candidates))
+
+        scheduled = self._call_vision_task_async(
+            "query_targets",
+            {
+                "target_types": ["human"],
+                "min_confidence": float(min_confidence),
+                "max_age_ms": float(max_age_ms),
+            },
+            _select,
+        )
+        if not scheduled:
+            _select(None)
+
+    def request_wake_speaker(
+        self,
+        callback: Callable[[dict | None], None],
+        *,
+        reference_bearing_deg: float = 0.0,
+        min_confidence: float = 0.3,
+        max_age_ms: float = 300.0,
+        max_bearing_error_deg: float = 25.0,
+        max_snapshot_age_ms: float = 500.0,
+    ) -> None:
+        """Resolve the human aligned with a completed wake-source turn.
+
+        The service response and visual-event fallback use the same pure
+        selection function.  This keeps audio/vision fusion in the behavior
+        layer while Vision remains a fact provider.
+        """
+        def _select(result: dict | None) -> None:
+            if isinstance(result, dict):
+                try:
+                    snapshot_age_ms = float(
+                        result.get("snapshot_age_ms", 0.0)
+                    )
+                except (TypeError, ValueError):
+                    snapshot_age_ms = float("inf")
+                if (
+                    snapshot_age_ms < 0.0
+                    or snapshot_age_ms > float(max_snapshot_age_ms)
+                ):
+                    result = None
+            candidates = self._human_targets_from_result(result)
+            if candidates is None:
+                candidates = self._wake_candidates_from_cache()
+            callback(select_wake_speaker(
+                candidates,
+                reference_bearing_deg=reference_bearing_deg,
+                min_confidence=min_confidence,
+                max_age_ms=max_age_ms,
+                max_bearing_error_deg=max_bearing_error_deg,
+            ))
+
+        if not self._ros2_ready:
+            person = self._mock_client.check_person()
+            if not person.get("present"):
+                callback(None)
+                return
+            identity = str(person.get("identity", "unknown"))
+            callback({
+                "vision_epoch": "mock-vision",
+                "target_id": "mock-vision:human:1",
+                "track_id": 1,
+                "target_type": "human",
+                "identity": identity,
+                "identity_state": (
+                    "confirmed_known" if identity not in ("", "unknown")
+                    else "unknown"
+                ),
+                "identity_confidence": 1.0 if identity != "unknown" else 0.0,
+                "detection_confidence": 1.0,
+                "tracking_state": "tracking",
+                "last_seen_age_ms": 0.0,
+                "center_x": 0.5,
+                "center_y": 0.5,
+                "bearing_deg": 0.0,
+                "range_valid": False,
+                "distance_m": None,
+                "selection_reason": "mock_wake_speaker",
+            })
+            return
+
+        scheduled = self._call_vision_task_async(
+            "query_targets",
+            {
+                "target_types": ["human"],
+                "min_confidence": float(min_confidence),
+                "max_age_ms": float(max_age_ms),
+            },
+            _select,
+        )
+        if not scheduled:
+            _select(None)
+
     def _emotion_context_from_person(self, person: dict) -> dict:
         if _as_bool(person.get("present")):
             identity = str(
@@ -438,18 +747,43 @@ class PerceptionClientAdapter:
                 or self.get_active_identity()
                 or "unknown"
             )
+            candidates = self._human_targets_from_result(person)
+            if candidates is None and getattr(self, "_ros2_ready", False):
+                candidates = self._wake_candidates_from_cache()
+            elif candidates is None:
+                # Standalone perception has no persistent vision stream; keep
+                # an explicit mock epoch so the same immutable-target contract
+                # is still visible at the Action boundary.
+                candidates = [{
+                    "vision_epoch": "mock-vision",
+                    "target_id": identity,
+                }]
+            selected = next(
+                (
+                    dict(candidate)
+                    for candidate in candidates
+                    if str(candidate.get("vision_epoch", "")).strip()
+                    and str(candidate.get("target_id", "")).strip()
+                ),
+                None,
+            )
+            if selected is None:
+                # Presence without an immutable visual target is not safe for
+                # a WithHuman mobility behavior.  Route solo instead of
+                # dispatching a target that Action must reject.
+                return {"route": "solo", "target": None}
             try:
                 count = int(person.get("count", 1))
             except (TypeError, ValueError):
                 count = 1
+            selected.update({
+                "target_type": "human",
+                "identity": identity,
+                "count": count,
+            })
             return {
                 "route": "human",
-                "target": {
-                    "target_type": "human",
-                    "target_id": identity,
-                    "identity": identity,
-                    "count": count,
-                },
+                "target": selected,
             }
         return {"route": "solo", "target": None}
 
@@ -616,6 +950,69 @@ class PerceptionClientAdapter:
             if isinstance(item, dict)
         ]
 
+    @staticmethod
+    def _human_targets_from_result(
+        result: dict | None,
+    ) -> list[dict] | None:
+        if result is None:
+            return None
+        targets = result.get("targets", result.get("human_candidates"))
+        if not isinstance(targets, list):
+            return None
+        vision_epoch = str(result.get("vision_epoch", "")).strip()
+        snapshot_id = str(result.get("snapshot_id", "")).strip()
+        snapshot_sequence = result.get("sequence")
+        header = result.get("header")
+        normalized: list[dict] = []
+        for item in targets:
+            if not isinstance(item, dict):
+                continue
+            candidate = dict(item)
+            if vision_epoch:
+                candidate.setdefault("vision_epoch", vision_epoch)
+            if snapshot_id:
+                candidate.setdefault("snapshot_id", snapshot_id)
+            if isinstance(snapshot_sequence, int) and not isinstance(
+                snapshot_sequence, bool
+            ):
+                candidate.setdefault("snapshot_sequence", snapshot_sequence)
+            if isinstance(header, dict):
+                candidate.setdefault("source_stamp", header.get("stamp"))
+                candidate.setdefault("frame_id", header.get("frame_id"))
+            normalized.append(candidate)
+        return normalized
+
+    @staticmethod
+    def _select_owner_target(candidates: list[dict]) -> dict | None:
+        """Select only a stable Vision target explicitly identified as owner."""
+        for item in candidates:
+            if not isinstance(item, dict):
+                continue
+            identity = str(item.get("identity", "")).strip().lower()
+            vision_epoch = str(item.get("vision_epoch", "")).strip()
+            target_id = str(item.get("target_id", "")).strip()
+            if (
+                identity != "owner"
+                or item.get("identity_state") != "confirmed_known"
+                or item.get("tracking_state") != "tracking"
+                or not vision_epoch
+                or not target_id
+            ):
+                continue
+            selected = dict(item)
+            selected.update({
+                "target_type": "human",
+                "identity": "owner",
+            })
+            return selected
+        return None
+
+    def _wake_candidates_from_cache(self) -> list[dict]:
+        with self._lock:
+            if not self._visual_cache_is_fresh_locked():
+                return []
+            return [dict(item) for item in self._cached_human_candidates]
+
     def is_person_present(self) -> bool:
         """Quick cached check — is a person currently visible?"""
         if self._ros2_ready:
@@ -677,6 +1074,30 @@ class PerceptionClientAdapter:
             self._logger.error(f"Vision service call failed: {exc}")
             return False
 
+        completion_lock = threading.Lock()
+        completion = {"finished": False, "timer": None}
+
+        def _finish_once(result: dict | None) -> bool:
+            timer = None
+            with completion_lock:
+                if completion["finished"]:
+                    return False
+                completion["finished"] = True
+                timer = completion["timer"]
+            if timer is not None:
+                try:
+                    timer.cancel()
+                except Exception:
+                    pass
+                destroy_timer = getattr(self._node, "destroy_timer", None)
+                if callable(destroy_timer):
+                    try:
+                        destroy_timer(timer)
+                    except Exception:
+                        pass
+            callback(result)
+            return True
+
         def _done(completed) -> None:
             try:
                 response = completed.result()
@@ -686,10 +1107,10 @@ class PerceptionClientAdapter:
                         if response is not None
                         else "empty response"
                     )
-                    self._logger.error(
-                        f"Vision task {task_type} failed: {error}"
-                    )
-                    callback(None)
+                    if _finish_once(None):
+                        self._logger.error(
+                            f"Vision task {task_type} failed: {error}"
+                        )
                     return
                 result = json.loads(response.result_json or "{}")
                 if isinstance(result, list):
@@ -697,12 +1118,35 @@ class PerceptionClientAdapter:
                         str(item.get("key", "")): item.get("value")
                         for item in result if isinstance(item, dict)
                     }
-                callback(result if isinstance(result, dict) else None)
+                _finish_once(result if isinstance(result, dict) else None)
             except Exception as exc:
-                self._logger.error(
-                    f"Vision task {task_type} response failed: {exc}"
+                if _finish_once(None):
+                    self._logger.error(
+                        f"Vision task {task_type} response failed: {exc}"
+                    )
+
+        def _timed_out() -> None:
+            if _finish_once(None):
+                self._logger.warn(
+                    "Vision task %s timed out after %.2fs: task_id=%s; "
+                    "using visual-event cache"
+                    % (task_type, self._vision_task_timeout_sec, task_id)
                 )
-                callback(None)
+
+        try:
+            timer = self._node.create_timer(
+                self._vision_task_timeout_sec,
+                _timed_out,
+            )
+        except Exception as exc:
+            self._logger.error(
+                "Vision task %s timeout timer failed: %s"
+                % (task_type, exc)
+            )
+            _finish_once(None)
+            return True
+        with completion_lock:
+            completion["timer"] = timer
 
         future.add_done_callback(_done)
         self._logger.debug(

@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarsDog 生命系统 · 事件级参考手册</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Serif:ital@0;1&family=Noto+Sans+SC:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+
+    h2 + .section-note { margin-top: 0; }
+    h3 {
+      font-family: var(--font-sans);
+      font-size: 0.98rem;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      margin: 3rem 0 0.9rem;
+    }
+    h3 code { background: none; padding: 0; }
+    .section-note h2 { margin-bottom: 0.4rem; }
+
+    .tw {
+      overflow-x: auto;
+      border: 1px solid rgba(45, 49, 66, 0.12);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+    table.rt {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.78rem;
+      line-height: 1.5;
+    }
+    table.rt thead th {
+      position: sticky; top: 0;
+      background: var(--color-paper-2);
+      text-align: left;
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      padding: 0.55rem 0.7rem;
+      white-space: nowrap;
+      border-bottom: 1px solid rgba(45, 49, 66, 0.14);
+    }
+    table.rt td {
+      padding: 0.45rem 0.7rem;
+      border-bottom: 1px solid rgba(45, 49, 66, 0.06);
+      color: var(--color-ink);
+      vertical-align: top;
+    }
+    table.rt tbody tr:last-child td { border-bottom: none; }
+    table.rt tbody tr:hover { background: rgba(235, 108, 54, 0.035); }
+    table.rt code {
+      font-family: var(--font-mono);
+      font-size: 0.88em;
+      background: rgba(45, 49, 66, 0.05);
+      padding: 0.05em 0.28em;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+    table.rt td:nth-child(n+5) { white-space: nowrap; }
+    .nil { color: var(--color-soft); }
+    .dim { color: var(--color-soft); font-size: 0.88em; }
+
+    .callout {
+      margin-top: 2rem;
+      padding: 1.05rem 1.25rem;
+      background: rgba(235, 108, 54, 0.045);
+      border-left: 2px solid var(--color-accent);
+      border-radius: 0 4px 4px 0;
+    }
+    .callout p {
+      font-size: 0.85rem;
+      color: var(--color-muted);
+      line-height: 1.65;
+      max-width: 92ch;
+    }
+    footer p + p { margin-top: 0.4rem; }
+  </style>
+</head>
+
+<body>
+<div class="frame">
+
+  <header class="page-head">
+    <p class="eyebrow">MarsDog Life System · 开发参考手册</p>
+    <h1>从感知事件到行为落地</h1>
+    <p class="lede">5 张事件级图 + 19 张全量表，覆盖 7 个包、6 条 ROS 2 接口、4 类事件源、80 条语音指令、105 个行为定义与 7 级仲裁。每张图回答一层的问题，图下的表给出该层可以直接照抄进代码的数值。</p>
+  </header>
+
+  <section id="s0">
+    <p class="eyebrow">00 · 阅读指引</p>
+    <h2>这份手册怎么用</h2>
+    <p class="section-note">整条流水线的职责链是固定的五段：<code>event_type</code> → <code>command_id</code> → <code>intent</code> → <code>behavior_name</code> → <code>Action stages</code> → <code>ACT_*</code>。任何一处「为什么狗做了这个动作」都能沿这条链反查。查不到时按来源定位：语音问题查表 4–6，视觉问题查表 7–8，情绪数值查表 9 与表 13，需求变化查表 10–11，行为动作查表 14–16，动作没生效查表 3 与表 17。</p>
+    <div class="cards w3">
+      <div class="card">
+        <div class="card-header"><span class="card-dot coral"></span><h3>四类事件源</h3></div>
+        <ul>
+          <li><code>audio_direct</code> 80 条：语音指令直驱外部交互候选</li>
+          <li><code>need</code> 12 条：需求等级变化，按 route 分派</li>
+          <li><code>emotion</code> 6 条：情绪阈值上升沿，human / solo 双路由</li>
+          <li><code>visual_direct</code> 2 条：跌倒与停止手势的白名单短路</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-dot ink"></span><h3>七级仲裁</h3></div>
+        <ul>
+          <li>Lv0 safety · Lv1 external · Lv2 urgent · Lv3 normal</li>
+          <li>Lv4 psychological · Lv5 emotion · Lv6 idle</li>
+          <li>抢占三道门：等级门、同级门（强度差 ≥15）、中断策略门</li>
+          <li>Lv0 <code>emergency_stop</code> 无条件覆盖</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-dot muted"></span><h3>两类上行输入</h3></div>
+        <ul>
+          <li><code>state</code>：1 Hz 周期快照，是「现在是什么」的权威</li>
+          <li><code>signal_event</code>：边沿，触发一次候选生成</li>
+          <li>signal 回调立即置 <code>triggered=true</code>，不等下一次 state</li>
+          <li>恢复只由后续 <code>state.triggered=false</code> 表示</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+<section id="s1">
+  <p class="eyebrow">01 · 全系统拓扑</p>
+  <h2>七层包裹：谁在说话，谁在听</h2>
+  <p class="section-note">感知层四个节点产出三类 <code>perception_event</code>；引擎层四个节点把它们与虚拟时间、性格基线合成为周期 <code>state</code> 与边沿 <code>signal_event</code>；决策层的行为树把事件变成候选、仲裁成 Goal，交给执行器。<code>behavior_tree_node</code> 另外直接订阅两个感知话题，让跌倒与停止手势走白名单短路，不经引擎。</p>
+  <div class="fig"><svg viewBox="0 0 1280 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sys-t sys-d">
+<title id="sys-t">全系统拓扑：感知层、状态引擎、决策与执行</title>
+<desc id="sys-d">全系统拓扑：感知层 / 状态引擎 / 决策与执行三层，以及它们之间的 perception_event、state 与 result_event 流向。</desc>
+<defs><marker id="sys-ar" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker><marker id="sys-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker><marker id="sys-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker></defs>
+<rect width="1280" height="760" fill="#f5f5f5"/>
+<rect x="32" y="56" width="1216" height="160" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="48" y="60" width="52" height="12" rx="2" fill="#f5f5f5"/><text x="74" y="69" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">SENSING</text>
+<rect x="32" y="296" width="1216" height="160" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="48" y="300" width="80" height="12" rx="2" fill="#f5f5f5"/><text x="88" y="309" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">STATE ENGINES</text>
+<rect x="32" y="536" width="1216" height="160" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="48" y="540" width="116" height="12" rx="2" fill="#f5f5f5"/><text x="106" y="549" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">DECISION · EXECUTION</text>
+<path d="M 336,140 H 376" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#sys-ar)"/>
+<path d="M 512,176 V 248 H 768 V 344" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#sys-ar)"/>
+<path d="M 824,176 V 272 H 1056 V 344" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#sys-ar)"/>
+<path d="M 1136,176 V 288 H 1104 V 344" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#sys-ar)"/>
+<path d="M 768,416 V 496 H 400 V 584" fill="none" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#sys-accent)"/>
+<path d="M 1056,416 V 520 H 320 V 584" fill="none" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#sys-accent)"/>
+<path d="M 456,620 H 504" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#sys-ar)"/>
+<path d="M 776,620 H 824" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#sys-ar)"/>
+<path d="M 1232,620 H 1264 V 392 H 1184" fill="none" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#sys-ar)"/>
+<rect x="64" y="104" width="272" height="72" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+<text x="200" y="136" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">camera_driver_node</text>
+<text x="200" y="152" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">D435i · color + aligned depth</text>
+<rect x="376" y="104" width="272" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="512" y="136" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">vision_interaction_node</text>
+<text x="512" y="152" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">→ /perception/visual_event</text>
+<rect x="688" y="104" width="272" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="824" y="136" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">voice_interaction_node</text>
+<text x="824" y="152" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">→ /perception/audio_event</text>
+<rect x="1000" y="104" width="272" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="1136" y="136" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">one1000_tactile_node</text>
+<text x="1136" y="152" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">→ /perception/tactile_event</text>
+<rect x="64" y="344" width="256" height="72" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="192" y="376" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">personality_node</text>
+<text x="192" y="392" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">→ /personality/state</text>
+<rect x="352" y="344" width="256" height="72" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="480" y="376" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">time_controller_node</text>
+<text x="480" y="392" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">→ /simulation/time_state</text>
+<rect x="640" y="344" width="256" height="72" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="768" y="376" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">emotion_engine_node</text>
+<text x="768" y="392" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">→ /emotion/state · signal</text>
+<rect x="928" y="344" width="256" height="72" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="1056" y="376" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">internal_need_node</text>
+<text x="1056" y="392" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">→ /internal_need/state · signal</text>
+<rect x="64" y="584" width="392" height="72" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+<text x="260" y="616" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">behavior_tree_node</text>
+<text x="260" y="632" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">candidate pool · arbiter · 10 Hz tick</text>
+<rect x="504" y="584" width="272" height="72" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="640" y="616" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">/execute_behavior</text>
+<text x="640" y="632" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">marsdog_interfaces · Action</text>
+<rect x="824" y="584" width="408" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="1028" y="616" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">action_executor_node</text>
+<text x="1028" y="632" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">stage sequencer · ACT_* dispatch</text>
+<rect x="608" y="224" width="64" height="16" rx="2" fill="#f5f5f5"/>
+<text x="640" y="236" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="500" text-anchor="middle">感知事件</text>
+<rect x="816" y="472" width="96" height="16" rx="2" fill="#f5f5f5"/>
+<text x="864" y="486" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="500" text-anchor="middle">状态 · 上升沿</text>
+<rect x="1192" y="372" width="72" height="12" rx="2" fill="#f5f5f5"/>
+<text x="1228" y="380" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">result_event</text>
+<text x="64" y="736" fill="#7a8399" font-size="12" font-weight="400" font-family="'Geist', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="start">behavior_tree_node 另直接订阅 /perception/audio_event 与 /perception/visual_event：visual_direct（跌倒 / 停止手势）不经引擎，直接生成候选。见「表 1 接口总表」。</text>
+</svg></div>
+  <h3>表 1 · 接口总表</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>接口</th><th>类型</th><th>QoS / 形态</th><th>生产者</th><th>消费者（行为树侧）</th><th>用途 / 生成候选</th></tr></thead>
+<tbody>
+<tr><td><code>/emotion/state</code></td><td>String (JSON)</td><td>BEST_EFFORT · depth 5</td><td><code>emotion_engine_node</code></td><td>行为树 · 情绪引擎消费者</td><td>V2 数值 + <code>triggered</code> 布尔</td><td>否</td></tr>
+<tr><td><code>/emotion/signal_event</code></td><td>String (JSON)</td><td>RELIABLE · depth 10</td><td><code>emotion_engine_node</code></td><td>行为树</td><td>V2 单阈值上升沿</td><td><b>是</b></td></tr>
+<tr><td><code>/internal_need/state</code></td><td>String (JSON)</td><td>BEST_EFFORT · depth 5</td><td><code>internal_need_node</code></td><td>行为树</td><td>V2 完整需求状态 + 相关性</td><td>否</td></tr>
+<tr><td><code>/internal_need/signal_event</code></td><td>String (JSON)</td><td>RELIABLE · depth 10</td><td><code>internal_need_node</code></td><td>行为树</td><td>V2 等级变化</td><td><b>是</b>（RECOVERED 除外）</td></tr>
+<tr><td><code>/perception/audio_event</code></td><td>String (JSON)</td><td>RELIABLE · depth 10</td><td><code>voice_interaction_node</code></td><td>行为树</td><td>语音指令 / 反应</td><td><b>是</b>（白名单）</td></tr>
+<tr><td><code>/perception/visual_event</code></td><td>String (JSON v1)</td><td>BEST_EFFORT · depth 5</td><td><code>vision_interaction_node</code></td><td>行为树 · 情绪引擎</td><td>10 Hz 场景快照 + 边沿事件</td><td><b>是</b>（仅 FALL / STOP_GESTURE）</td></tr>
+<tr><td><code>/perception/tactile_event</code></td><td>String (JSON)</td><td>RELIABLE · depth 10</td><td><code>one1000_tactile_node</code></td><td>情绪引擎 · 需求引擎</td><td>触摸事件（20 种）</td><td>否</td></tr>
+<tr><td><code>/behavior/result_event</code></td><td>String (JSON)</td><td>RELIABLE · depth 10</td><td><code>behavior_tree_node</code></td><td>情绪引擎 · 需求引擎</td><td>行为结果 → 需求/情绪结算</td><td>否（不参与去重）</td></tr>
+<tr><td><code>/execute_behavior</code></td><td>ExecuteBehavior.action</td><td>Action</td><td>服务端 <code>action_executor_node</code></td><td>客户端 <code>behavior_tree_node</code></td><td>Goal / Feedback / Result 三段</td><td>—</td></tr>
+<tr><td><code>/perception/vision/task</code></td><td>PerceptionTask (srv)</td><td>Service</td><td>服务端 <code>vision_interaction_node</code></td><td>客户端 <code>action_executor_node</code></td><td>16 种 task_type 租用</td><td>—</td></tr>
+<tr><td><code>/perception/vision/object_detections</code></td><td>String (JSON)</td><td>RELIABLE · depth 10</td><td><code>vision_interaction_node</code></td><td>Action 侧</td><td>YOLOE 检测结果</td><td>否</td></tr>
+<tr><td><code>/perception/vision/enrollment_event</code></td><td>String (JSON)</td><td>RELIABLE · depth 10</td><td><code>vision_interaction_node</code></td><td>人机界面</td><td>人脸录入进度</td><td>否</td></tr>
+<tr><td><code>/personality/state</code></td><td>String (JSON)</td><td>RELIABLE · TRANSIENT_LOCAL · depth 1</td><td><code>personality_node</code></td><td>情绪引擎 · 需求引擎</td><td>性格基线（latched）</td><td>否</td></tr>
+<tr><td><code>/simulation/time_state</code></td><td>String (JSON)</td><td>RELIABLE · TRANSIENT_LOCAL · depth 1000</td><td><code>time_controller_node</code></td><td>情绪引擎 · 需求引擎</td><td>虚拟时间 · scale 1–100（latched）</td><td>否</td></tr>
+<tr><td><code>/camera/camera/color/image_raw</code></td><td>sensor_msgs/Image</td><td>BEST_EFFORT · depth 1</td><td><code>camera_driver_node</code></td><td>视觉节点</td><td>D435i 彩色帧（30 Hz）</td><td>—</td></tr>
+<tr><td><code>/one1000/status</code></td><td>String (JSON)</td><td>RELIABLE · depth 10</td><td><code>one1000_tactile_node</code></td><td>—</td><td>ONE1000 雷达状态</td><td>否</td></tr>
+<tr><td><code>/simulation/midnight_test_result</code></td><td>String (JSON)</td><td>RELIABLE · depth 10</td><td><code>midnight_test_node</code></td><td>—</td><td>午夜加速测试结果</td><td>否</td></tr>
+</tbody>
+</table></div>
+  <h3>表 2 · 事件源分类</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>事件源段</th><th>配置文件</th><th>条目数</th><th>进入决策的方式</th></tr></thead>
+<tbody>
+<tr><td><code>audio_direct</code></td><td><code>config/event_intent_map.yaml</code></td><td>80</td><td>语音指令直驱 → 外部交互候选</td></tr>
+<tr><td><code>audio_reaction</code></td><td><code>config/event_intent_map.yaml</code></td><td>2</td><td>表扬 / 批评 → 情绪反应，不生成动作候选</td></tr>
+<tr><td><code>visual_direct</code></td><td><code>config/event_intent_map.yaml</code></td><td>2</td><td>跌倒 / 停止手势 → Lv1 白名单直达</td></tr>
+<tr><td><code>need</code></td><td><code>config/event_intent_map.yaml</code></td><td>12</td><td>需求等级变化 → 按 route 分派（含 visual_required 门控）</td></tr>
+<tr><td><code>emotion</code></td><td><code>config/emotion_behavior_map.yaml</code></td><td>6</td><td>情绪阈值上升沿 → human / solo 双路由</td></tr>
+<tr><td><code>tactile</code></td><td><code>Marsdog configs/emotions.yaml</code></td><td>16</td><td>触摸事件只进情绪引擎，不生成行为候选</td></tr>
+<tr><td><code>vision_emotion</code></td><td><code>Marsdog configs/emotions.yaml</code></td><td>17</td><td>视觉情绪事件只进情绪引擎，不生成行为候选</td></tr>
+</tbody>
+</table></div>
+  <h3>表 3 · <code>/execute_behavior</code> 三段契约</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>段</th><th>字段</th><th>类型</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>Goal</td><td><code>goal_id</code></td><td>string</td><td>客户端生成的 UUID</td></tr>
+<tr><td>Goal</td><td><code>behavior_id</code></td><td>string</td><td>原始信号 ID（用于回溯触发源）</td></tr>
+<tr><td>Goal</td><td><code>behavior_name</code></td><td>string</td><td>要执行的行为名，见「表 11 行为总表」</td></tr>
+<tr><td>Goal</td><td><code>priority_level</code></td><td>int32</td><td>0–6，数字越小优先级越高</td></tr>
+<tr><td>Goal</td><td><code>params_json</code></td><td>string</td><td>JSON 编码的附加参数（如 <code>object_name</code>）</td></tr>
+<tr><td>Goal</td><td><code>timeout_sec</code></td><td>float64</td><td>最大执行时长，超时由执行器返回 TIMEOUT</td></tr>
+<tr><td>Feedback</td><td><code>goal_id</code> · <code>behavior_id</code> · <code>behavior_name</code></td><td>string</td><td>与 Goal 对应</td></tr>
+<tr><td>Feedback</td><td><code>status</code></td><td>string</td><td>恒为 <code>RUNNING</code></td></tr>
+<tr><td>Feedback</td><td><code>progress</code></td><td>float64</td><td>0.0 – 1.0</td></tr>
+<tr><td>Feedback</td><td><code>safe_to_interrupt</code></td><td>bool</td><td><b>抢占第三道门的输入</b>：false 时行为树拒绝同级抢占</td></tr>
+<tr><td>Feedback</td><td><code>current_action</code></td><td>string</td><td>当前动作 ID，如 <code>ACT_TAIL_WAG_FAST</code></td></tr>
+<tr><td>Feedback</td><td><code>message</code></td><td>string</td><td>人类可读描述</td></tr>
+<tr><td>Result</td><td><code>status</code></td><td>string</td><td>SUCCESS / FAILURE / CANCELED / TIMEOUT</td></tr>
+<tr><td>Result</td><td><code>result</code></td><td>string</td><td>completed / canceled / timeout</td></tr>
+<tr><td>Result</td><td><code>reason</code></td><td>string</td><td>失败或取消原因</td></tr>
+<tr><td>Result</td><td><code>reward</code></td><td>float64</td><td>行为奖励值，供需求引擎结算</td></tr>
+<tr><td>Result</td><td><code>emotion_delta_json</code></td><td>string</td><td>情绪增量（可空）</td></tr>
+<tr><td>Result</td><td><code>need_delta_json</code></td><td>string</td><td>需求增量（可空）</td></tr>
+<tr><td>Result</td><td><code>metadata_json</code></td><td>string</td><td>动态元数据，如 <code>{&quot;energyValue&quot;:88}</code></td></tr>
+</tbody>
+</table></div>
+  <div class="callout">
+    <p><b>与旧文档不一致的两处。</b>其一，<code>docs/behavior_tree_architecture.md</code> 与 <code>docs/ros2_nodes.md</code> 记 <code>/perception/audio_event</code> 与 <code>/perception/visual_event</code> 由 <code>perception_bridge</code> 发布；实际两包的 <code>config/voice.yaml</code> 与 <code>config/vision.yaml</code> 各自把 <code>topics.audio_event</code> / <code>topics.visual_event</code> 指向这两个话题，即当代的生产者是 Voice 与 Vision 节点自身。其二，<code>marsdog_perception</code> 是 Rust 包（<code>perception_bridge</code> / <code>camera_driver</code> / <code>target_tracker</code> / <code>task_http_server</code>），其源码不在本机，<code>~/ros2_ws/src/</code> 也不含它的符号链接，install 树中 72 个符号链接全部悬空。</p>
+  </div>
+</section>
+
+<section id="s2">
+  <p class="eyebrow">02 · 语音链</p>
+  <h2>从串口唤醒到一条 <code>audio_event</code></h2>
+  <p class="section-note">唤醒走欣飞云串口，音频走 16 kHz 连续采集与 Silero VAD 切句。切出的每一句同时喂给三条路：SenseVoice ASR 出文本、zipformer KWS 出候选关键词、CAM++ 出声纹身份。词表做精确匹配与拼音同音兜底，意图由规则优先、RKLLM 兜底。最后 <code>_select_kws_candidate</code> 做一次排他仲裁——一次发声只允许一个结果来源被发布。</p>
+  <div class="fig"><svg viewBox="0 0 1280 752" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="voice-t voice-d">
+<title id="voice-t">语音识别链：唤醒、VAD、ASR/KWS/声纹、词表、意图、仲裁</title>
+<desc id="voice-d">语音识别链：串口唤醒、16 kHz 采集与 VAD 切句，ASR / KWS / 声纹三路并行识别，词表与意图映射，最后排他仲裁并发布。</desc>
+<defs><marker id="voice-ar" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker><marker id="voice-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker><marker id="voice-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker></defs>
+<rect width="1280" height="752" fill="#f5f5f5"/>
+<rect x="32" y="56" width="1216" height="192" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="48" y="60" width="52" height="12" rx="2" fill="#f5f5f5"/><text x="74" y="69" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">CAPTURE</text>
+<rect x="32" y="280" width="1216" height="192" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="48" y="284" width="72" height="12" rx="2" fill="#f5f5f5"/><text x="84" y="293" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">RECOGNITION</text>
+<rect x="32" y="504" width="1216" height="184" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="48" y="508" width="120" height="12" rx="2" fill="#f5f5f5"/><text x="108" y="517" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">ROUTING · ARBITRATION</text>
+<path d="M 432,148 H 456" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#voice-ar)"/>
+<path d="M 824,148 H 848" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#voice-ar)"/>
+<path d="M 968,192 V 240 H 248 V 328" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#voice-ar)"/>
+<path d="M 1000,192 V 264 H 640 V 328" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#voice-ar)"/>
+<path d="M 1032,192 V 328" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#voice-ar)"/>
+<path d="M 248,416 V 488 H 200 V 552" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#voice-ar)"/>
+<path d="M 640,416 V 520 H 760 V 552" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#voice-ar)"/>
+<path d="M 1032,416 V 536 H 856 V 552" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#voice-ar)"/>
+<path d="M 336,596 H 360" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#voice-ar)"/>
+<path d="M 632,596 H 656" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#voice-ar)"/>
+<path d="M 928,596 H 952" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#voice-ar)"/>
+<rect x="64" y="104" width="368" height="88" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+<text x="248" y="144" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">audio_capture</text>
+<text x="248" y="160" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">16 kHz · sounddevice / arecord</text>
+<rect x="456" y="104" width="368" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="640" y="144" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">wakeup_xfyun_serial</text>
+<text x="640" y="160" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">/dev/marsdog_voice · 115200</text>
+<rect x="848" y="104" width="368" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="1032" y="144" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">audio_sherpa · VAD</text>
+<text x="1032" y="160" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">silero_vad.onnx · thr 0.5 · pre-roll 0.3s</text>
+<rect x="64" y="328" width="368" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="248" y="368" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">asr_sherpa</text>
+<text x="248" y="384" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">SenseVoice · language=zh · use_itn</text>
+<rect x="456" y="328" width="368" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="640" y="368" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">kws_sherpa</text>
+<text x="640" y="384" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">zipformer · thr 0.4 · publish=deferred</text>
+<rect x="848" y="328" width="368" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="1032" y="368" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">speaker_sherpa</text>
+<text x="1032" y="384" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">CAM++ · thr 0.5 · margin 0.05</text>
+<rect x="64" y="552" width="272" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="200" y="592" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">command_lexicon</text>
+<text x="200" y="608" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">exact + fuzzy pinyin fallback</text>
+<rect x="360" y="552" width="272" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="496" y="592" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">intent_rule | intent_llm</text>
+<text x="496" y="608" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">SOCIAL|INTENT|CONTROL</text>
+<rect x="656" y="552" width="272" height="88" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+<text x="792" y="592" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">_select_kws_candidate</text>
+<text x="792" y="608" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">exclusive arbitration</text>
+<rect x="952" y="552" width="272" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="1088" y="592" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">_publish</text>
+<text x="1088" y="608" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">→ /perception/audio_event</text>
+<text x="64" y="724" fill="#7a8399" font-size="12" font-weight="400" font-family="'Geist', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="start">KWS 只生成候选：deferred 发布 + exclusive 仲裁，VAD 结束后与完整 ASR 结果比对，一次发声只发布一个结果来源。</text>
+</svg></div>
+  <h3>表 4 · 词库 81 条命令（<code>command_catalog.yaml</code>）</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>command_key</th><th>command_id</th><th>event_type</th><th>control</th><th>core</th><th>profile</th><th>phrases（标准词）</th><th>behavior</th><th>action_name</th></tr></thead>
+<tbody>
+<tr><td><code>WALK</code></td><td><code>CMD_WALK</code></td><td><code>EVT_VOICE_COMMAND_WALK</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>走 / 去</code></td><td><code>走开到随机点位</code></td><td><code>ACT_WALK</code></td></tr>
+<tr><td><code>COME</code></td><td><code>CMD_COME_HERE</code></td><td><code>EVT_VOICE_COMMAND_COME</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>过来 / 来 / 回来 / 来这 / 到我这儿来</code></td><td><code>从当前位置移动到主人身边</code></td><td><code>ACT_COME</code></td></tr>
+<tr><td><code>FOLLOW</code></td><td><code>CMD_FOLLOW</code></td><td><code>EVT_VOICE_COMMAND_FOLLOW</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>跟着我 / 跟我走</code></td><td><code>原地旋转一圈后开启主人跟随</code></td><td><code>ACT_FOLLOW</code></td></tr>
+<tr><td><code>GO_OUT</code></td><td><code>CMD_GO_OUT</code></td><td><code>EVT_VOICE_COMMAND_GO_OUT</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>出去玩 / 出去溜溜</code></td><td><span class="nil">—</span></td><td><code>ACT_GO_OUT_TO_PLAY</code></td></tr>
+<tr><td><code>GO_HOME</code></td><td><code>CMD_GO_HOME</code></td><td><code>EVT_VOICE_COMMAND_GO_HOME</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>回家</code></td><td><span class="nil">—</span></td><td><code>ACT_GO_HOME</code></td></tr>
+<tr><td><code>APPROACH</code></td><td><code>CMD_APPROACH</code></td><td><code>EVT_VOICE_COMMAND_APPROACH</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>靠近点</code></td><td><code>贴近主人</code></td><td><code>ACT_COME_CLOSER</code></td></tr>
+<tr><td><code>BACK_UP</code></td><td><code>CMD_BACK_UP</code></td><td><code>EVT_VOICE_COMMAND_BACK_UP</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>退后</code></td><td><code>从当前位置往后退两步</code></td><td><code>ACT_BACK_UP</code></td></tr>
+<tr><td><code>SIT</code></td><td><code>CMD_SIT</code></td><td><code>EVT_VOICE_COMMAND_SIT</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>坐 / 坐下 / 蹲下</code></td><td><code>原地坐下</code></td><td><code>ACT_SIT</code></td></tr>
+<tr><td><code>LIE_DOWN</code></td><td><code>CMD_LIE_DOWN</code></td><td><code>EVT_VOICE_COMMAND_LIE_DOWN</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>趴下 / 躺下</code></td><td><code>原地趴下</code></td><td><code>ACT_LIE_DOWN</code></td></tr>
+<tr><td><code>PLAY_DEAD</code></td><td><code>CMD_DEAD</code></td><td><code>EVT_VOICE_COMMAND_PLAY_DEAD</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>biu / 装死</code></td><td><code>原地躺地下闭眼装死</code></td><td><code>ACT_PLAY_DEAD</code></td></tr>
+<tr><td><code>STAND_UP</code></td><td><code>CMD_STAND_UP</code></td><td><code>EVT_VOICE_COMMAND_STAND_UP</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>起来 / 站起来</code></td><td><code>从趴下到站起来</code></td><td><code>ACT_STAND_UP</code></td></tr>
+<tr><td><code>STAND_STILL</code></td><td><code>CMD_STAND_STILL</code></td><td><code>EVT_VOICE_COMMAND_STAND_STILL</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>站好 / 站着</code></td><td><code>站立保持不动</code></td><td><code>ACT_STAND_STILL</code></td></tr>
+<tr><td><code>SHAKE_HAND</code></td><td><code>CMD_HAND</code></td><td><code>EVT_VOICE_COMMAND_SHAKE_HAND</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>握手 / 握个手 / 抬手</code></td><td><code>抬任意前肢进行握手</code></td><td><code>ACT_SHAKE_HAND</code></td></tr>
+<tr><td><code>HIGH_FIVE</code></td><td><code>CMD_FIVE</code></td><td><code>EVT_VOICE_COMMAND_HIGH_FIVE</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>击掌 / 击个掌 / 拍手</code></td><td><code>抬起任意前肢拍掌</code></td><td><code>ACT_HIGH_FIVE</code></td></tr>
+<tr><td><code>SPIN</code></td><td><code>CMD_SPIN</code></td><td><code>EVT_VOICE_COMMAND_SPIN</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>转圈</code></td><td><code>原地转圈</code></td><td><code>ACT_SPIN</code></td></tr>
+<tr><td><code>ROLL_OVER</code></td><td><code>CMD_ROLL</code></td><td><code>EVT_VOICE_COMMAND_ROLL_OVER</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>翻滚</code></td><td><code>原地躺地上翻滚</code></td><td><code>ACT_ROLL_OVER</code></td></tr>
+<tr><td><code>HOLD_POSITION</code></td><td><code>CMD_HOLD_POSITION</code></td><td><code>EVT_VOICE_COMMAND_HOLD_POSITION</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>别动 / 等着 / 停 / 不准动 / 不许动 / 老实点 / 等等</code></td><td><code>当前姿态保持不动</code></td><td><code>ACT_HOLD_POSITION</code></td></tr>
+<tr><td><code>DROP</code></td><td><code>CMD_SPIT</code></td><td><code>EVT_VOICE_COMMAND_DROP</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>放下 / 松开 / 松口 / 张嘴</code></td><td><code>原地嘴巴张开</code></td><td><code>ACT_DROP</code></td></tr>
+<tr><td><code>QUIET</code></td><td><code>CMD_QUIET</code></td><td><code>EVT_VOICE_COMMAND_QUIET</code></td><td><code>DO</code></td><td>true</td><td><code>command</code></td><td><code>安静 / 闭嘴 / 别叫 / 不许叫</code></td><td><code>当前姿态停止叫声</code></td><td><code>ACT_QUIET</code></td></tr>
+<tr><td><code>CALL_NAME</code></td><td><code>CMD_CALL_NAME</code></td><td><code>EVT_VOICE_COMMAND_CALL_NAME</code></td><td><code>NONE</code></td><td>false</td><td><code>vocative</code></td><td><code>小狗 / 小跟屁虫 / 小宝贝 / 乖狗狗 / 小坏蛋</code></td><td><code>昵称呼叫社交语义；不直接授权行为树执行</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>PRAISE</code></td><td><code>CMD_PRAISE</code></td><td><code>EVT_VOICE_COMMAND_PRAISE</code></td><td><code>NONE</code></td><td>false</td><td><code>social</code></td><td><code>真棒 / 好狗 / 真乖 / 真聪明 / 可爱 / 厉害 / 太棒了 / 好样的 / 我爱你 / 我喜欢你 / 你真有趣 / 真有意思</code></td><td><code>一次性社交反应：愉悦、兴奋行为随机选1；非动作命令但授权行为树处理</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>SCOLD</code></td><td><code>CMD_SCOLD</code></td><td><code>EVT_VOICE_COMMAND_SCOLD</code></td><td><code>NONE</code></td><td>false</td><td><code>social</code></td><td><code>不可以咬 / 你怎么不听话 / 我要惩罚你咯 / 罚你站着 / 不准吃饭 / 321 / 我不跟你玩咯 / 我不理你咯 / 坏狗狗 / 笨狗 / 傻狗 / 我要生气咯 / 臭狗 / 我讨厌你</code></td><td><code>一次性社交反应：焦虑、好奇、恐惧行为随机选1；非动作命令但授权行为树处理</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>COMFORT_DONT_BE_AFRAID</code></td><td><code>CMD_COMFORT_DONT_BE_AFRAID</code></td><td><code>EVT_VOICE_COMMAND_COMFORT_DONT_BE_AFRAID</code></td><td><code>DO</code></td><td>false</td><td><code>social</code></td><td><code>不怕不怕</code></td><td><code>停止退缩或警戒，抬头看向主人，身体逐渐放松并缓慢靠近主人</code></td><td><code>ACT_COMFORT_DONT_BE_AFRAID</code></td></tr>
+<tr><td><code>ASK_IF_HURTS</code></td><td><code>CMD_ASK_IF_HURTS</code></td><td><code>EVT_VOICE_COMMAND_ASK_IF_HURTS</code></td><td><code>DO</code></td><td>false</td><td><code>query</code></td><td><code>疼不疼</code></td><td><code>短暂检查自身状态；正常时保持放松，存在异常时降低活动幅度并表现保护性姿态</code></td><td><code>ACT_ASK_IF_HURTS</code></td></tr>
+<tr><td><code>COMFORT_REASSURE</code></td><td><code>CMD_COMFORT_REASSURE</code></td><td><code>EVT_VOICE_COMMAND_COMFORT_REASSURE</code></td><td><code>DO</code></td><td>false</td><td><code>social</code></td><td><code>没事没事</code></td><td><code>看向主人，耳朵恢复自然状态，身体放松，轻微摇尾</code></td><td><code>ACT_COMFORT_REASSURE</code></td></tr>
+<tr><td><code>OFFER_HEAD_FOR_PET</code></td><td><code>CMD_OFFER_HEAD_FOR_PET</code></td><td><code>EVT_VOICE_COMMAND_OFFER_HEAD_FOR_PET</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>摸摸头</code></td><td><code>主动靠近主人，将头部伸向主人并轻微低头，保持等待抚摸姿态</code></td><td><code>ACT_OFFER_HEAD_FOR_PET</code></td></tr>
+<tr><td><code>SEEK_HUG</code></td><td><code>CMD_SEEK_HUG</code></td><td><code>EVT_VOICE_COMMAND_SEEK_HUG</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>抱抱</code></td><td><code>主动靠近主人，身体贴近主人一侧，保持短暂依偎姿态</code></td><td><code>ACT_SEEK_HUG</code></td></tr>
+<tr><td><code>EAT_MEAL</code></td><td><code>CMD_EAT_MEAL</code></td><td><code>EVT_VOICE_COMMAND_EAT_MEAL</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>吃饭</code></td><td><code>去指定地点进食</code></td><td><code>ACT_EAT_MEAL</code></td></tr>
+<tr><td><code>EAT_SNACK</code></td><td><code>CMD_EAT_SNACK</code></td><td><code>EVT_VOICE_COMMAND_EAT_SNACK</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>吃零食</code></td><td><code>去指定地点进食</code></td><td><code>ACT_EAT_SNACK</code></td></tr>
+<tr><td><code>EAT_CANNED_FOOD</code></td><td><code>CMD_EAT_CANNED_FOOD</code></td><td><code>EVT_VOICE_COMMAND_EAT_CANNED_FOOD</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>吃罐罐</code></td><td><code>去指定地点进食</code></td><td><code>ACT_EAT_CANNED_FOOD</code></td></tr>
+<tr><td><code>RESPOND_HUNGRY_QUERY</code></td><td><code>CMD_RESPOND_HUNGRY_QUERY</code></td><td><code>EVT_VOICE_COMMAND_RESPOND_HUNGRY_QUERY</code></td><td><code>DO</code></td><td>false</td><td><code>query</code></td><td><code>肚子饿不饿</code></td><td><code>抬头看向主人并判断当前饥饿状态；饥饿时表现期待并靠近主人/食盆，不饿时保持放松</code></td><td><code>ACT_RESPOND_HUNGRY_QUERY</code></td></tr>
+<tr><td><code>RESPOND_WANT_EAT_QUERY</code></td><td><code>CMD_RESPOND_WANT_EAT_QUERY</code></td><td><code>EVT_VOICE_COMMAND_RESPOND_WANT_EAT_QUERY</code></td><td><code>DO</code></td><td>false</td><td><code>query</code></td><td><code>想不想吃</code></td><td><code>看向主人；有进食需求时靠近并轻摇尾巴表现期待，无需求时短暂观察后保持原状态</code></td><td><code>ACT_RESPOND_WANT_EAT_QUERY</code></td></tr>
+<tr><td><code>RESPOND_EATING_QUERY</code></td><td><code>CMD_RESPOND_EATING_QUERY</code></td><td><code>EVT_VOICE_COMMAND_RESPOND_EATING_QUERY</code></td><td><code>DO</code></td><td>false</td><td><code>query</code></td><td><code>你在吃啥</code></td><td><code>若正在进食，短暂抬头看向主人后继续进食；未进食时看向主人并保持观察</code></td><td><code>ACT_RESPOND_EATING_QUERY</code></td></tr>
+<tr><td><code>RESPOND_FOOD_PREFERENCE_QUERY</code></td><td><code>CMD_RESPOND_FOOD_PREFERENCE_QUERY</code></td><td><code>EVT_VOICE_COMMAND_RESPOND_FOOD_PREFERENCE_QUERY</code></td><td><code>DO</code></td><td>false</td><td><code>query</code></td><td><code>你想吃什么</code></td><td><code>抬头看向主人并表现期待，随后看向或靠近熟悉的进食区域/食物来源</code></td><td><code>ACT_RESPOND_FOOD_PREFERENCE_QUERY</code></td></tr>
+<tr><td><code>TOILET</code></td><td><code>CMD_TOILET</code></td><td><code>EVT_VOICE_COMMAND_TOILET</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>去尿尿 / 去便便</code></td><td><code>触发排泄行为</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>CLEAN</code></td><td><code>CMD_CLEAN</code></td><td><code>EVT_VOICE_COMMAND_CLEAN</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>擦一擦手 / 擦一擦脚</code></td><td><code>触发清洁行为</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>SLEEP</code></td><td><code>CMD_SLEEP</code></td><td><code>EVT_VOICE_COMMAND_SLEEP</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>睡觉 / 睡吧 / 去睡 / 休息</code></td><td><code>触发困倦行为</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>PLAY</code></td><td><code>CMD_PLAY</code></td><td><code>EVT_VOICE_COMMAND_PLAY</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>来玩 / 开始咯 / 抓小狗游戏 / 拔河比赛 / 谁要玩游戏 / 玩不玩 / 一起玩</code></td><td><code>执行兴奋-互动式随机行为</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>REFUSE</code></td><td><code>CMD_REFUSE</code></td><td><code>EVT_VOICE_COMMAND_REFUSE</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我不要</code></td><td><code>去随机位置自己玩</code></td><td><code>ACT_REFUSE</code></td></tr>
+<tr><td><code>REFUSE_PLAY</code></td><td><code>CMD_REFUSE_PLAY</code></td><td><code>EVT_VOICE_COMMAND_REFUSE_PLAY</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我不玩</code></td><td><code>去随机位置自己玩</code></td><td><code>ACT_REFUSE_PLAY</code></td></tr>
+<tr><td><code>FIND_DAD</code></td><td><code>CMD_FIND_DAD</code></td><td><code>EVT_VOICE_COMMAND_FIND_DAD</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>去找爸爸</code></td><td><code>视觉定位男主人并去到其身旁，否则不执行</code></td><td><code>ACT_FIND_DAD</code></td></tr>
+<tr><td><code>FIND_MOM</code></td><td><code>CMD_FIND_MOM</code></td><td><code>EVT_VOICE_COMMAND_FIND_MOM</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>去找妈妈</code></td><td><code>视觉定位女主人并去到其身旁，否则不执行</code></td><td><code>ACT_FIND_MOM</code></td></tr>
+<tr><td><code>DANCE</code></td><td><code>CMD_DANCE</code></td><td><code>EVT_VOICE_COMMAND_DANCE</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>跳个舞</code></td><td><code>原地小跳并转圈</code></td><td><code>ACT_DANCE</code></td></tr>
+<tr><td><code>BRING_TO_ME</code></td><td><code>CMD_BRING_TO_ME</code></td><td><code>EVT_VOICE_COMMAND_BRING_TO_ME</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>拿给我</code></td><td><code>结合视觉，若主人没说明所拿物品名称，则将所设置特定物品拿到主人身旁，若没见到特定物品，则不执行
+（若出现多个特定物品，拿置信度较高的）</code></td><td><code>ACT_BRING_TO_ME</code></td></tr>
+<tr><td><code>GIVE_TO_ME</code></td><td><code>CMD_GIVE_TO_ME</code></td><td><code>EVT_VOICE_COMMAND_GIVE_TO_ME</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>给我</code></td><td><span class="nil">—</span></td><td><code>ACT_GIVE_TO_ME</code></td></tr>
+<tr><td><code>GO_GET_IT</code></td><td><code>CMD_GO_GET_IT</code></td><td><code>EVT_VOICE_COMMAND_GO_GET_IT</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>去拿</code></td><td><span class="nil">—</span></td><td><code>ACT_GO_GET_IT</code></td></tr>
+<tr><td><code>BRING_IT_BACK</code></td><td><code>CMD_BRING_IT_BACK</code></td><td><code>EVT_VOICE_COMMAND_BRING_IT_BACK</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>叼回来</code></td><td><span class="nil">—</span></td><td><code>ACT_BRING_IT_BACK</code></td></tr>
+<tr><td><code>FETCH_BALL</code></td><td><code>CMD_FETCH_BALL</code></td><td><code>EVT_VOICE_COMMAND_FETCH_BALL</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>捡球</code></td><td><span class="nil">—</span></td><td><code>ACT_FETCH_BALL</code></td></tr>
+<tr><td><code>FIND_TOY</code></td><td><code>CMD_FIND_TOY</code></td><td><code>EVT_VOICE_COMMAND_FIND_TOY</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>找玩具</code></td><td><span class="nil">—</span></td><td><code>ACT_FIND_TOY</code></td></tr>
+<tr><td><code>OWNER_GOING_OUT</code></td><td><code>CMD_OWNER_GOING_OUT</code></td><td><code>EVT_VOICE_COMMAND_OWNER_GOING_OUT</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我要出门了</code></td><td><code>立即关注主人，抬头注视并靠近主人，短暂跟随主人移动</code></td><td><code>ACT_OWNER_GOING_OUT</code></td></tr>
+<tr><td><code>STAY_HOME_ALONE</code></td><td><code>CMD_STAY_HOME_ALONE</code></td><td><code>EVT_VOICE_COMMAND_STAY_HOME_ALONE</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>你自己在家</code></td><td><code>停止持续跟随，目送主人，随后在原地或休息区域保持等待状态</code></td><td><code>ACT_STAY_HOME_ALONE</code></td></tr>
+<tr><td><code>WAIT_FOR_OWNER_RETURN</code></td><td><code>CMD_WAIT_FOR_OWNER_RETURN</code></td><td><code>EVT_VOICE_COMMAND_WAIT_FOR_OWNER_RETURN</code></td><td><code>DO</code></td><td>false</td><td><code>command</code></td><td><code>等我回来</code></td><td><code>注视主人并轻摇尾巴，主人离开后逐渐进入安静等待状态</code></td><td><code>ACT_WAIT_FOR_OWNER_RETURN</code></td></tr>
+<tr><td><code>BYE_BYE</code></td><td><code>CMD_BYE_BYE</code></td><td><code>EVT_VOICE_COMMAND_BYE_BYE</code></td><td><code>DO</code></td><td>false</td><td><code>social</code></td><td><code>拜拜</code></td><td><code>看向主人，轻微摇尾，并短暂跟随或向前靠近后停止</code></td><td><code>ACT_BYE_BYE</code></td></tr>
+<tr><td><code>GOODBYE</code></td><td><code>CMD_GOODBYE</code></td><td><code>EVT_VOICE_COMMAND_GOODBYE</code></td><td><code>DO</code></td><td>false</td><td><code>social</code></td><td><code>再见</code></td><td><code>注视主人离开的方向，轻摇尾巴，随后停止跟随并保持等待</code></td><td><code>ACT_GOODBYE</code></td></tr>
+<tr><td><code>OWNER_RETURNED</code></td><td><code>CMD_OWNER_RETURNED</code></td><td><code>EVT_VOICE_COMMAND_OWNER_RETURNED</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我回来了</code></td><td><code>快速转向声音来源并主动靠近主人，快速摇尾，可伴随小范围兴奋转圈或跳跃</code></td><td><code>ACT_OWNER_RETURNED</code></td></tr>
+<tr><td><code>ASK_WHAT_DOING</code></td><td><code>CMD_ASK_WHAT_DOING</code></td><td><code>EVT_VOICE_COMMAND_ASK_WHAT_DOING</code></td><td><code>DO</code></td><td>false</td><td><code>query</code></td><td><code>你在干嘛</code></td><td><code>停止或短暂暂停当前行为，转头看向主人；随后根据当前任务决定继续原行为或靠近主人</code></td><td><code>ACT_ASK_WHAT_DOING</code></td></tr>
+<tr><td><code>ASK_WHERE_ARE_YOU</code></td><td><code>CMD_ASK_WHERE_ARE_YOU</code></td><td><code>EVT_VOICE_COMMAND_ASK_WHERE_ARE_YOU</code></td><td><code>DO</code></td><td>false</td><td><code>query</code></td><td><code>你在哪里</code></td><td><code>转向声音来源并做出回应；距离主人较远时主动向主人方向靠近</code></td><td><code>ACT_ASK_WHERE_ARE_YOU</code></td></tr>
+<tr><td><code>ASK_WHATS_WRONG</code></td><td><code>CMD_ASK_WHATS_WRONG</code></td><td><code>EVT_VOICE_COMMAND_ASK_WHATS_WRONG</code></td><td><code>DO</code></td><td>false</td><td><code>query</code></td><td><code>你怎么了</code></td><td><code>看向主人，根据当前情绪/状态呈现对应姿态；异常状态时保持当前异常表现供主人观察</code></td><td><code>ACT_ASK_WHATS_WRONG</code></td></tr>
+<tr><td><code>ASK_WHAT_THINKING</code></td><td><code>CMD_ASK_WHAT_THINKING</code></td><td><code>EVT_VOICE_COMMAND_ASK_WHAT_THINKING</code></td><td><code>DO</code></td><td>false</td><td><code>query</code></td><td><code>你想什么</code></td><td><code>抬头看向主人，轻微歪头并短暂保持注视，表现疑惑或思考感</code></td><td><code>ACT_ASK_WHAT_THINKING</code></td></tr>
+<tr><td><code>ASK_IF_COMFORTABLE</code></td><td><code>CMD_ASK_IF_COMFORTABLE</code></td><td><code>EVT_VOICE_COMMAND_ASK_IF_COMFORTABLE</code></td><td><code>DO</code></td><td>false</td><td><code>query</code></td><td><code>舒服吗</code></td><td><code>正常状态下身体放松、轻摇尾巴；存在不适时调整姿态或轻微后退</code></td><td><code>ACT_ASK_IF_COMFORTABLE</code></td></tr>
+<tr><td><code>ASK_IF_LIKES</code></td><td><code>CMD_ASK_IF_LIKES</code></td><td><code>EVT_VOICE_COMMAND_ASK_IF_LIKES</code></td><td><code>DO</code></td><td>false</td><td><code>query</code></td><td><code>喜欢吗</code></td><td><code>愉悦时主动靠近、轻摇或快速摇尾；兴趣较低时短暂观察后恢复原状态</code></td><td><code>ACT_ASK_IF_LIKES</code></td></tr>
+<tr><td><code>ASK_IF_FUN</code></td><td><code>CMD_ASK_IF_FUN</code></td><td><code>EVT_VOICE_COMMAND_ASK_IF_FUN</code></td><td><code>DO</code></td><td>false</td><td><code>query</code></td><td><code>好玩吗</code></td><td><code>兴奋较高时进入邀请玩耍姿态，可轻跳、转圈或前低后高；兴奋时仅注视主人</code></td><td><code>ACT_ASK_IF_FUN</code></td></tr>
+<tr><td><code>ASK_IF_UNDERSTANDS</code></td><td><code>CMD_ASK_IF_UNDERSTANDS</code></td><td><code>EVT_VOICE_COMMAND_ASK_IF_UNDERSTANDS</code></td><td><code>DO</code></td><td>false</td><td><code>query</code></td><td><code>你听得懂吗</code></td><td><code>抬头注视主人并轻微歪头，保持短暂注意状态</code></td><td><code>ACT_ASK_IF_UNDERSTANDS</code></td></tr>
+<tr><td><code>ASK_ABILITIES</code></td><td><code>CMD_ASK_ABILITIES</code></td><td><code>EVT_VOICE_COMMAND_ASK_ABILITIES</code></td><td><code>DO</code></td><td>false</td><td><code>query</code></td><td><code>你会什么</code></td><td><code>看向主人，进入等待指令状态，可通过轻微歪头表现期待</code></td><td><code>ACT_ASK_ABILITIES</code></td></tr>
+<tr><td><code>ASK_IF_LEARNED</code></td><td><code>CMD_ASK_IF_LEARNED</code></td><td><code>EVT_VOICE_COMMAND_ASK_IF_LEARNED</code></td><td><code>DO</code></td><td>false</td><td><code>query</code></td><td><code>你学会了吗</code></td><td><code>抬头看主人并进入等待执行状态；若存在对应已学习技能，可准备执行对应技能</code></td><td><code>ACT_ASK_IF_LEARNED</code></td></tr>
+<tr><td><code>EXPRESS_MISS_YOU</code></td><td><code>CMD_EXPRESS_MISS_YOU</code></td><td><code>EVT_VOICE_COMMAND_EXPRESS_MISS_YOU</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我好想你</code></td><td><code>主动靠近主人，快速摇尾并贴近主人，可伴随轻微蹭靠或兴奋转圈</code></td><td><code>ACT_EXPRESS_MISS_YOU</code></td></tr>
+<tr><td><code>OWNER_TIRED</code></td><td><code>CMD_OWNER_TIRED</code></td><td><code>EVT_VOICE_COMMAND_OWNER_TIRED</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我累了 / 好累</code></td><td><code>缓慢靠近主人，在主人附近坐下或趴下，保持安静陪伴并轻微摇尾</code></td><td><code>ACT_OWNER_TIRED</code></td></tr>
+<tr><td><code>OWNER_ANNOYED</code></td><td><code>CMD_OWNER_ANNOYED</code></td><td><code>EVT_VOICE_COMMAND_OWNER_ANNOYED</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我有点烦 / 烦死了</code></td><td><code>减少兴奋动作，缓慢靠近主人并保持一定距离坐下，安静注视主人</code></td><td><code>ACT_OWNER_ANNOYED</code></td></tr>
+<tr><td><code>OWNER_UNHAPPY</code></td><td><code>CMD_OWNER_UNHAPPY</code></td><td><code>EVT_VOICE_COMMAND_OWNER_UNHAPPY</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>今天不开心 / 不得劲</code></td><td><code>缓慢靠近主人，轻微低头并贴近主人，在旁边保持安静陪伴</code></td><td><code>ACT_OWNER_UNHAPPY</code></td></tr>
+<tr><td><code>OWNER_BAD_DAY</code></td><td><code>CMD_OWNER_BAD_DAY</code></td><td><code>EVT_VOICE_COMMAND_OWNER_BAD_DAY</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>过得不太顺利</code></td><td><code>主动靠近主人，轻微歪头观察，随后在主人身边坐下或趴下陪伴</code></td><td><code>ACT_OWNER_BAD_DAY</code></td></tr>
+<tr><td><code>OWNER_DEPRESSED</code></td><td><code>CMD_OWNER_DEPRESSED</code></td><td><code>EVT_VOICE_COMMAND_OWNER_DEPRESSED</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我要抑郁了 / 心情不好</code></td><td><code>缓慢靠近并贴近主人，降低自身动作幅度，保持较长时间安静陪伴</code></td><td><code>ACT_OWNER_DEPRESSED</code></td></tr>
+<tr><td><code>OWNER_STRESSED</code></td><td><code>CMD_OWNER_STRESSED</code></td><td><code>EVT_VOICE_COMMAND_OWNER_STRESSED</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>压力好大</code></td><td><code>缓慢接近主人后保持安静，不主动进行高强度玩耍，通过趴卧/坐姿陪伴主人</code></td><td><code>ACT_OWNER_STRESSED</code></td></tr>
+<tr><td><code>OWNER_LONELY</code></td><td><code>CMD_OWNER_LONELY</code></td><td><code>EVT_VOICE_COMMAND_OWNER_LONELY</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我好孤独</code></td><td><code>主动靠近并明显缩短与主人距离，贴靠主人，轻摇尾巴并持续陪伴</code></td><td><code>ACT_OWNER_LONELY</code></td></tr>
+<tr><td><code>OWNER_UNWELL</code></td><td><code>CMD_OWNER_UNWELL</code></td><td><code>EVT_VOICE_COMMAND_OWNER_UNWELL</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我头疼 / 不舒服</code></td><td><code>降低自身活动和声音输出，缓慢靠近主人并安静坐下或趴下，避免主动发起剧烈互动</code></td><td><code>ACT_OWNER_UNWELL</code></td></tr>
+<tr><td><code>OWNER_HAPPY</code></td><td><code>CMD_OWNER_HAPPY</code></td><td><code>EVT_VOICE_COMMAND_OWNER_HAPPY</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我现在心情美美的</code></td><td><code>立即看向主人，主动靠近，快速摇尾，并在主人附近轻快移动表达开心回应</code></td><td><code>ACT_OWNER_HAPPY</code></td></tr>
+<tr><td><code>OWNER_VERY_HAPPY</code></td><td><code>CMD_OWNER_VERY_HAPPY</code></td><td><code>EVT_VOICE_COMMAND_OWNER_VERY_HAPPY</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我今天很开心 / 很高兴</code></td><td><code>明显提高互动积极性，快速摇尾，主动靠近主人，可进行小范围转圈或邀请玩耍</code></td><td><code>ACT_OWNER_VERY_HAPPY</code></td></tr>
+<tr><td><code>OWNER_FEELING_GREAT</code></td><td><code>CMD_OWNER_FEELING_GREAT</code></td><td><code>EVT_VOICE_COMMAND_OWNER_FEELING_GREAT</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我感觉今天状态特别好</code></td><td><code>抬头看向主人，身体姿态舒展，轻快靠近主人并进行短暂邀请互动姿态</code></td><td><code>ACT_OWNER_FEELING_GREAT</code></td></tr>
+<tr><td><code>OWNER_FEELING_EXCELLENT</code></td><td><code>CMD_OWNER_FEELING_EXCELLENT</code></td><td><code>EVT_VOICE_COMMAND_OWNER_FEELING_EXCELLENT</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我今天感觉特别棒</code></td><td><code>兴奋地靠近主人，快速摇尾，身体轻微上下跃动或绕主人小范围移动</code></td><td><code>ACT_OWNER_FEELING_EXCELLENT</code></td></tr>
+<tr><td><code>OWNER_RELAXED</code></td><td><code>CMD_OWNER_RELAXED</code></td><td><code>EVT_VOICE_COMMAND_OWNER_RELAXED</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我现在浑身都很轻松</code></td><td><code>缓慢靠近主人，在主人附近坐下或趴下，身体保持放松，轻柔摇尾并安静陪伴</code></td><td><code>ACT_OWNER_RELAXED</code></td></tr>
+<tr><td><code>OWNER_WONDERFUL_DAY</code></td><td><code>CMD_OWNER_WONDERFUL_DAY</code></td><td><code>EVT_VOICE_COMMAND_OWNER_WONDERFUL_DAY</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>今天真是个好日子</code></td><td><code>抬头注视主人后快速摇尾，主动靠近，并通过轻快走动、短暂转圈表达共享愉悦</code></td><td><code>ACT_OWNER_WONDERFUL_DAY</code></td></tr>
+<tr><td><code>OWNER_FEELING_LUCKY</code></td><td><code>CMD_OWNER_FEELING_LUCKY</code></td><td><code>EVT_VOICE_COMMAND_OWNER_FEELING_LUCKY</code></td><td><code>DO</code></td><td>false</td><td><code>statement</code></td><td><code>我今天太幸运了</code></td><td><code>快速看向主人并主动靠近，快速摇尾，可进行一次短暂兴奋转圈或轻跳，随后保持期待互动状态</code></td><td><code>ACT_OWNER_FEELING_LUCKY</code></td></tr>
+</tbody>
+</table></div>
+  <h3>表 5 · <code>audio_direct</code> 全量事件目录（80 条）</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>event_type</th><th>category</th><th>intent</th><th>expected_command_id</th><th>sub_pri</th><th>timeout_s</th><th>ttl_s</th><th>interrupt_policy</th><th>need_gate</th></tr></thead>
+<tbody>
+<tr><td><code>EVT_VOICE_WAKEUP</code></td><td>external_interaction</td><td><code>orient_to_sound</code></td><td><span class="nil">—</span></td><td>1</td><td>8</td><td>2</td><td>immediate</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_WALK</code></td><td>external_interaction</td><td><code>command_walk</code></td><td><code>CMD_WALK</code></td><td>1</td><td>50</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_GO_OUT</code></td><td>external_interaction</td><td><code>command_go_out</code></td><td><code>CMD_GO_OUT</code></td><td>1</td><td>50</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_GO_HOME</code></td><td>external_interaction</td><td><code>command_go_home</code></td><td><code>CMD_GO_HOME</code></td><td>1</td><td>60</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_APPROACH</code></td><td>external_interaction</td><td><code>command_approach</code></td><td><code>CMD_APPROACH</code></td><td>1</td><td>10</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_BACK_UP</code></td><td>external_interaction</td><td><code>command_back_up</code></td><td><code>CMD_BACK_UP</code></td><td>1</td><td>6</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_SIT</code></td><td>external_interaction</td><td><code>command_sit</code></td><td><code>CMD_SIT</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_LIE_DOWN</code></td><td>external_interaction</td><td><code>command_lie_down</code></td><td><code>CMD_LIE_DOWN</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_STAND_UP</code></td><td>external_interaction</td><td><code>command_stand_up</code></td><td><code>CMD_STAND_UP</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_STAND_STILL</code></td><td>external_interaction</td><td><code>command_stand_still</code></td><td><code>CMD_STAND_STILL</code></td><td>1</td><td>10</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_HOLD_POSITION</code></td><td>external_interaction</td><td><code>command_hold_position</code></td><td><code>CMD_HOLD_POSITION</code></td><td>1</td><td>10</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_WAIT</code></td><td>external_interaction</td><td><code>command_wait</code></td><td><code>CMD_WAIT</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_COME</code></td><td>external_interaction</td><td><code>command_come_here</code></td><td><code>CMD_COME_HERE</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_SHAKE_HAND</code></td><td>external_interaction</td><td><code>command_handshake</code></td><td><code>CMD_HAND</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_HIGH_FIVE</code></td><td>external_interaction</td><td><code>command_high_five</code></td><td><code>CMD_FIVE</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_FOLLOW</code></td><td>external_interaction</td><td><code>command_follow</code></td><td><code>CMD_FOLLOW</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_ROLL_OVER</code></td><td>external_interaction</td><td><code>command_roll</code></td><td><code>CMD_ROLL</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_SPIN</code></td><td>external_interaction</td><td><code>command_spin</code></td><td><code>CMD_SPIN</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_RETURN</code></td><td>external_interaction</td><td><code>command_retrieve</code></td><td><code>CMD_BACK</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_DROP</code></td><td>external_interaction</td><td><code>command_spit_out</code></td><td><code>CMD_SPIT</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_QUIET</code></td><td>external_interaction</td><td><code>command_quiet</code></td><td><code>CMD_QUIET</code></td><td>1</td><td>3</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_TOILET</code></td><td>external_interaction</td><td><code>command_toilet</code></td><td><code>CMD_TOILET</code></td><td>1</td><td>60</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td>Bladder gt 50.0</td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_CLEAN</code></td><td>external_interaction</td><td><code>command_clean</code></td><td><code>CMD_CLEAN</code></td><td>1</td><td>15</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td>Cleanliness gt 40.0</td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_SLEEP</code></td><td>external_interaction</td><td><code>command_sleep</code></td><td><code>CMD_SLEEP</code></td><td>1</td><td>120</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td>Sleepiness gt 50.0</td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_PLAY_DEAD</code></td><td>external_interaction</td><td><code>command_play_dead</code></td><td><code>CMD_DEAD</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_BRING</code></td><td>external_interaction</td><td><code>command_bring</code></td><td><code>CMD_BRING_OBJECT</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_FETCH</code></td><td>external_interaction</td><td><code>command_fetch</code></td><td><code>CMD_FETCH_OBJECT</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_STOP</code></td><td>safety</td><td><code>emergency_stop</code></td><td><code>CMD_STOP</code></td><td>1</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_COMFORT_DONT_BE_AFRAID</code></td><td>external_interaction</td><td><code>command_comfort_dont_be_afraid</code></td><td><code>CMD_COMFORT_DONT_BE_AFRAID</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_COMFORT_REASSURE</code></td><td>external_interaction</td><td><code>command_comfort_reassure</code></td><td><code>CMD_COMFORT_REASSURE</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_ASK_IF_HURTS</code></td><td>external_interaction</td><td><code>command_ask_if_hurts</code></td><td><code>CMD_ASK_IF_HURTS</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OFFER_HEAD_FOR_PET</code></td><td>external_interaction</td><td><code>command_offer_head_for_pet</code></td><td><code>CMD_OFFER_HEAD_FOR_PET</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_SEEK_HUG</code></td><td>external_interaction</td><td><code>command_seek_hug</code></td><td><code>CMD_SEEK_HUG</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_REFUSE</code></td><td>external_interaction</td><td><code>command_refuse</code></td><td><code>CMD_REFUSE</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_REFUSE_PLAY</code></td><td>external_interaction</td><td><code>command_refuse_play</code></td><td><code>CMD_REFUSE_PLAY</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_FIND_DAD</code></td><td>external_interaction</td><td><code>command_find_dad</code></td><td><code>CMD_FIND_DAD</code></td><td>1</td><td>20</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_FIND_MOM</code></td><td>external_interaction</td><td><code>command_find_mom</code></td><td><code>CMD_FIND_MOM</code></td><td>1</td><td>20</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_DANCE</code></td><td>external_interaction</td><td><code>command_dance</code></td><td><code>CMD_DANCE</code></td><td>1</td><td>10</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_BRING_TO_ME</code></td><td>external_interaction</td><td><code>command_bring_to_me</code></td><td><code>CMD_BRING_TO_ME</code></td><td>1</td><td>20</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_GIVE_TO_ME</code></td><td>external_interaction</td><td><code>command_give_to_me</code></td><td><code>CMD_GIVE_TO_ME</code></td><td>1</td><td>20</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_GO_GET_IT</code></td><td>external_interaction</td><td><code>command_go_get_it</code></td><td><code>CMD_GO_GET_IT</code></td><td>1</td><td>20</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_BRING_IT_BACK</code></td><td>external_interaction</td><td><code>command_bring_it_back</code></td><td><code>CMD_BRING_IT_BACK</code></td><td>1</td><td>20</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_FETCH_BALL</code></td><td>external_interaction</td><td><code>command_fetch_ball</code></td><td><code>CMD_FETCH_BALL</code></td><td>1</td><td>20</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_FIND_TOY</code></td><td>external_interaction</td><td><code>command_find_toy</code></td><td><code>CMD_FIND_TOY</code></td><td>1</td><td>20</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_STAY_HOME_ALONE</code></td><td>external_interaction</td><td><code>command_stay_home_alone</code></td><td><code>CMD_STAY_HOME_ALONE</code></td><td>1</td><td>15</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_WAIT_FOR_OWNER_RETURN</code></td><td>external_interaction</td><td><code>command_wait_for_owner_return</code></td><td><code>CMD_WAIT_FOR_OWNER_RETURN</code></td><td>1</td><td>15</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_GOING_OUT</code></td><td>external_interaction</td><td><code>command_owner_going_out</code></td><td><code>CMD_OWNER_GOING_OUT</code></td><td>1</td><td>25</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_RETURNED</code></td><td>external_interaction</td><td><code>command_owner_returned</code></td><td><code>CMD_OWNER_RETURNED</code></td><td>1</td><td>15</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_BYE_BYE</code></td><td>external_interaction</td><td><code>command_bye_bye</code></td><td><code>CMD_BYE_BYE</code></td><td>1</td><td>15</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_GOODBYE</code></td><td>external_interaction</td><td><code>command_goodbye</code></td><td><code>CMD_GOODBYE</code></td><td>1</td><td>15</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_ASK_WHAT_DOING</code></td><td>external_interaction</td><td><code>command_ask_what_doing</code></td><td><code>CMD_ASK_WHAT_DOING</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_ASK_WHERE_ARE_YOU</code></td><td>external_interaction</td><td><code>command_ask_where_are_you</code></td><td><code>CMD_ASK_WHERE_ARE_YOU</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_ASK_WHATS_WRONG</code></td><td>external_interaction</td><td><code>command_ask_whats_wrong</code></td><td><code>CMD_ASK_WHATS_WRONG</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_ASK_WHAT_THINKING</code></td><td>external_interaction</td><td><code>command_ask_what_thinking</code></td><td><code>CMD_ASK_WHAT_THINKING</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_ASK_IF_COMFORTABLE</code></td><td>external_interaction</td><td><code>command_ask_if_comfortable</code></td><td><code>CMD_ASK_IF_COMFORTABLE</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_ASK_IF_LIKES</code></td><td>external_interaction</td><td><code>command_ask_if_likes</code></td><td><code>CMD_ASK_IF_LIKES</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_ASK_IF_FUN</code></td><td>external_interaction</td><td><code>command_ask_if_fun</code></td><td><code>CMD_ASK_IF_FUN</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_ASK_IF_UNDERSTANDS</code></td><td>external_interaction</td><td><code>command_ask_if_understands</code></td><td><code>CMD_ASK_IF_UNDERSTANDS</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_ASK_ABILITIES</code></td><td>external_interaction</td><td><code>command_ask_abilities</code></td><td><code>CMD_ASK_ABILITIES</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_ASK_IF_LEARNED</code></td><td>external_interaction</td><td><code>command_ask_if_learned</code></td><td><code>CMD_ASK_IF_LEARNED</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_EXPRESS_MISS_YOU</code></td><td>external_interaction</td><td><code>command_express_miss_you</code></td><td><code>CMD_EXPRESS_MISS_YOU</code></td><td>1</td><td>25</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_TIRED</code></td><td>external_interaction</td><td><code>command_owner_tired</code></td><td><code>CMD_OWNER_TIRED</code></td><td>1</td><td>8</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_ANNOYED</code></td><td>external_interaction</td><td><code>command_owner_annoyed</code></td><td><code>CMD_OWNER_ANNOYED</code></td><td>1</td><td>8</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_UNHAPPY</code></td><td>external_interaction</td><td><code>command_owner_unhappy</code></td><td><code>CMD_OWNER_UNHAPPY</code></td><td>1</td><td>25</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_BAD_DAY</code></td><td>external_interaction</td><td><code>command_owner_bad_day</code></td><td><code>CMD_OWNER_BAD_DAY</code></td><td>1</td><td>8</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_DEPRESSED</code></td><td>external_interaction</td><td><code>command_owner_depressed</code></td><td><code>CMD_OWNER_DEPRESSED</code></td><td>1</td><td>8</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_STRESSED</code></td><td>external_interaction</td><td><code>command_owner_stressed</code></td><td><code>CMD_OWNER_STRESSED</code></td><td>1</td><td>8</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_LONELY</code></td><td>external_interaction</td><td><code>command_owner_lonely</code></td><td><code>CMD_OWNER_LONELY</code></td><td>1</td><td>8</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_UNWELL</code></td><td>external_interaction</td><td><code>command_owner_unwell</code></td><td><code>CMD_OWNER_UNWELL</code></td><td>1</td><td>8</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_HAPPY</code></td><td>external_interaction</td><td><code>command_owner_happy</code></td><td><code>CMD_OWNER_HAPPY</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_VERY_HAPPY</code></td><td>external_interaction</td><td><code>command_owner_very_happy</code></td><td><code>CMD_OWNER_VERY_HAPPY</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_FEELING_GREAT</code></td><td>external_interaction</td><td><code>command_owner_feeling_great</code></td><td><code>CMD_OWNER_FEELING_GREAT</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_FEELING_EXCELLENT</code></td><td>external_interaction</td><td><code>command_owner_feeling_excellent</code></td><td><code>CMD_OWNER_FEELING_EXCELLENT</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_RELAXED</code></td><td>external_interaction</td><td><code>command_owner_relaxed</code></td><td><code>CMD_OWNER_RELAXED</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_WONDERFUL_DAY</code></td><td>external_interaction</td><td><code>command_owner_wonderful_day</code></td><td><code>CMD_OWNER_WONDERFUL_DAY</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_OWNER_FEELING_LUCKY</code></td><td>external_interaction</td><td><code>command_owner_feeling_lucky</code></td><td><code>CMD_OWNER_FEELING_LUCKY</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_EAT_MEAL</code></td><td>external_interaction</td><td><code>command_eat_meal</code></td><td><code>CMD_EAT_MEAL</code></td><td>1</td><td>30</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_EAT_SNACK</code></td><td>external_interaction</td><td><code>command_eat_snack</code></td><td><code>CMD_EAT_SNACK</code></td><td>1</td><td>30</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_EAT_CANNED_FOOD</code></td><td>external_interaction</td><td><code>command_eat_canned_food</code></td><td><code>CMD_EAT_CANNED_FOOD</code></td><td>1</td><td>30</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_RESPOND_FOOD_PREFERENCE_QUERY</code></td><td>external_interaction</td><td><code>command_respond_food_preference_query</code></td><td><code>CMD_RESPOND_FOOD_PREFERENCE_QUERY</code></td><td>1</td><td>5</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+</tbody>
+</table></div>
+  <h3>表 6 · <code>audio_reaction</code> 反应事件（2 条）</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>event_type</th><th>intent</th><th>expected_command_id</th><th>expected_social</th><th>ttl_s</th><th>timeout_s</th><th>cooldown_s</th><th>interrupt_policy</th><th>reactions</th></tr></thead>
+<tbody>
+<tr><td><code>EVT_VOICE_COMMAND_PRAISE</code></td><td><code>audio_react_praise</code></td><td><code>CMD_PRAISE</code></td><td>PRAISE</td><td>5</td><td>8</td><td>2</td><td>immediate</td><td>Joy(w=1)  ·  Excite(w=1)</td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_SCOLD</code></td><td><code>audio_react_scold</code></td><td><code>CMD_SCOLD</code></td><td>SCOLD</td><td>5</td><td>8</td><td>2</td><td>immediate</td><td>Anxiety(w=1)  ·  Curious(w=1)  ·  Fear(w=1)</td></tr>
+</tbody>
+</table></div>
+  <div class="callout">
+    <p><b>PRAISE / SCOLD 是特例。</b>二者在词库中标记为 <code>control: NONE</code>、<code>core: false</code>，不映射任何动作，而是授权行为树处理——它们的 <code>reactions</code> 字段把表扬转为 Joy/Excite 加成、把批评转为 Anxiety/Curious/Fear 加成，本身不产生动作候选。</p>
+  </div>
+</section>
+
+<section id="s3">
+  <p class="eyebrow">03 · 视觉链</p>
+  <h2>四路推理、一次深度融合、十六种服务调用</h2>
+  <p class="section-note">YuNet 出人脸框、MediaPipe 出姿态与手部关键点、YOLOE 出物体分割。人脸框经 ByteTrack 维持轨迹、SFace 判定身份；深度只在 RealSense 对齐流上融合一次，供所有消费者复用。YOLOE 默认不跑——它由 <code>/perception/vision/task</code> 的 <code>set_object_detection</code> 按需租用，<code>lease</code> 到期自动降回 0 Hz。</p>
+  <div class="fig"><svg viewBox="0 0 1280 864" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="vis-t vis-d">
+<title id="vis-t">视觉识别链：四路推理、轨迹与身份融合、事件派生、VisionTask</title>
+<desc id="vis-d">视觉识别链：相机与对齐深度、四路推理（人脸 / 姿态 / 手部 / 物体）、轨迹与身份融合、事件派生，以及 VisionTask 服务。</desc>
+<defs><marker id="vis-ar" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker><marker id="vis-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker><marker id="vis-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker></defs>
+<rect width="1280" height="864" fill="#f5f5f5"/>
+<rect x="32" y="56" width="1216" height="176" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="48" y="60" width="52" height="12" rx="2" fill="#f5f5f5"/><text x="74" y="69" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">CAPTURE</text>
+<rect x="32" y="280" width="1216" height="192" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="48" y="284" width="60" height="12" rx="2" fill="#f5f5f5"/><text x="78" y="293" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">INFERENCE</text>
+<rect x="32" y="504" width="1216" height="296" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="48" y="508" width="120" height="12" rx="2" fill="#f5f5f5"/><text x="108" y="517" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">FUSION · EVENT · TASK</text>
+<path d="M 600,148 H 648" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vis-ar)"/>
+<path d="M 280,192 V 248 H 200 V 328" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vis-ar)"/>
+<path d="M 332,192 V 272 H 496 V 328" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vis-ar)"/>
+<path d="M 384,192 V 296 H 792 V 328" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vis-ar)"/>
+<path d="M 924,192 V 240 H 1088 V 328" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vis-ar)"/>
+<path d="M 200,416 V 552" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vis-ar)"/>
+<path d="M 336,596 H 360" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vis-ar)"/>
+<path d="M 496,416 V 480 H 760 V 552" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vis-ar)"/>
+<path d="M 792,416 V 496 H 856 V 552" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vis-ar)"/>
+<path d="M 928,596 H 952" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vis-ar)"/>
+<path d="M 1088,640 V 664 H 332 V 688" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#vis-ar)"/>
+<path d="M 1200,724 H 1264 V 392 H 1224" fill="none" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#vis-ar)"/>
+<rect x="64" y="104" width="536" height="88" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+<text x="332" y="144" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">camera_driver_node</text>
+<text x="332" y="160" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">D435i · /camera/camera/color/image_raw</text>
+<rect x="648" y="104" width="552" height="88" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="924" y="144" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">depth_fusion</text>
+<text x="924" y="160" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">aligned depth · max_sync_delta 0.10s · history 1.5s / 30f</text>
+<rect x="64" y="328" width="272" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="200" y="368" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">yunet_face</text>
+<text x="200" y="384" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">det 0.3 · nms 0.45 · stride 2</text>
+<rect x="360" y="328" width="272" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="496" y="368" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">mediapipe_pose</text>
+<text x="496" y="384" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">pose lite/full · max_num_poses 5</text>
+<rect x="656" y="328" width="272" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="792" y="368" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">hand_landmarker</text>
+<text x="792" y="384" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">idle stride 2 · active hold 8</text>
+<rect x="952" y="328" width="272" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="1088" y="368" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">yoloe_26s_seg</text>
+<text x="1088" y="384" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">640² · on_demand 2.0 Hz · lease 3.0s</text>
+<rect x="64" y="552" width="272" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="200" y="592" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">face_tracking · bytetrack</text>
+<text x="200" y="608" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">identity_hold 1.0s · switch 3f</text>
+<rect x="360" y="552" width="272" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="496" y="592" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">face_recognition · sface</text>
+<text x="496" y="608" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">cosine 0.36 · confirm 2 / 4</text>
+<rect x="656" y="552" width="272" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="792" y="592" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">pose_action_classifier</text>
+<text x="792" y="608" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">window 30f · track_timeout 1.5s</text>
+<rect x="952" y="552" width="272" height="88" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+<text x="1088" y="592" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">_derive_events</text>
+<text x="1088" y="608" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">identity → vision_event</text>
+<rect x="64" y="688" width="536" height="72" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="332" y="720" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">/perception/visual_event</text>
+<text x="332" y="736" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">BEST_EFFORT depth 5 · 10 Hz snapshot</text>
+<rect x="648" y="688" width="552" height="72" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="924" y="720" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">/perception/vision/task</text>
+<text x="924" y="736" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">srv · 16 task_type · check_person / detect_objects</text>
+<text x="64" y="836" fill="#7a8399" font-size="12" font-weight="400" font-family="'Geist', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="start">/perception/vision/task 由 Action 侧按需租用：set_object_detection 打开 YOLOE 通道，lease 到期自动降回 0 Hz；查询类 task 同步返回结果。</text>
+</svg></div>
+  <h3>表 7 · <code>visual_direct</code> 白名单（2 条）</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>event_type</th><th>category</th><th>intent</th><th>sub_pri</th><th>ttl_s</th><th>interrupt_policy</th></tr></thead>
+<tbody>
+<tr><td><code>EVT_VISION_FALL</code></td><td>external_interaction</td><td><code>visual_fall_response</code></td><td>12</td><td>8</td><td>immediate</td></tr>
+<tr><td><code>EVT_VISION_STOP_GESTURE</code></td><td>external_interaction</td><td><code>visual_stop_gesture_response</code></td><td>12</td><td>8</td><td>immediate</td></tr>
+</tbody>
+</table></div>
+  <h3>表 8 · <code>VisionTask</code> 十六种 <code>task_type</code></h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>task_type</th><th>类别</th><th>关键 params</th><th>返回</th><th>备注</th></tr></thead>
+<tbody>
+<tr><td><code>check_person</code></td><td>查询</td><td>—</td><td>{"ok": true, "person_present": bool}</td><td>行为树在情绪交互前调用；返回前若 <code>triggered</code> 已恢复则放弃候选</td></tr>
+<tr><td><code>query_targets</code></td><td>查询</td><td><code>include_hands</code> · <code>include_objects</code></td><td>目标列表（含深度、方位角）</td><td>供 Action 侧选择运动目标</td></tr>
+<tr><td><code>detect_objects</code></td><td>查询</td><td><code>labels</code> · <code>wait_for_slot</code></td><td>检测结果列表</td><td>走 <code>source=service</code>，等待推理槽位</td></tr>
+<tr><td><code>set_object_detection</code></td><td>控制</td><td><code>enabled</code> · <code>lease_sec</code></td><td>开关状态</td><td><b>按需租用</b>：开启后 YOLOE 以 <code>on_demand 2.0 Hz</code> 运行</td></tr>
+<tr><td><code>get_object_detection_state</code></td><td>控制</td><td>—</td><td>当前租约与频率</td><td>—</td></tr>
+<tr><td><code>recognize_face</code></td><td>人脸</td><td><code>track_id</code></td><td>身份 + 相似度</td><td>—</td></tr>
+<tr><td><code>start_face_enrollment</code></td><td>人脸</td><td><code>name</code> · <code>samples</code></td><td>会话 ID</td><td>启动录入会话，进度经 enrollment_event 发布</td></tr>
+<tr><td><code>cancel_face_enrollment</code></td><td>人脸</td><td><code>session_id</code></td><td>—</td><td>—</td></tr>
+<tr><td><code>upload_face</code></td><td>人脸</td><td><code>name</code> · <code>image</code></td><td>记录 ID</td><td>—</td></tr>
+<tr><td><code>list_face_records</code></td><td>人脸</td><td>—</td><td>记录列表</td><td>—</td></tr>
+<tr><td><code>list_face_samples</code></td><td>人脸</td><td><code>record_id</code></td><td>样本列表</td><td>—</td></tr>
+<tr><td><code>get_face_sample</code></td><td>人脸</td><td><code>sample_id</code></td><td>样本图（base64）</td><td>—</td></tr>
+<tr><td><code>replace_face_sample</code></td><td>人脸</td><td><code>sample_id</code> · <code>image</code></td><td>—</td><td>—</td></tr>
+<tr><td><code>delete_face_sample</code></td><td>人脸</td><td><code>sample_id</code></td><td>—</td><td>—</td></tr>
+<tr><td><code>list_faces</code></td><td>人脸</td><td>—</td><td>已录入人脸列表</td><td>—</td></tr>
+<tr><td><code>delete_face</code></td><td>人脸</td><td><code>name</code></td><td>—</td><td>—</td></tr>
+</tbody>
+</table></div>
+</section>
+
+<section id="s4">
+  <p class="eyebrow">04 · 状态引擎</p>
+  <h2>情绪与需求：同一份输入，两条独立的结算规则</h2>
+  <p class="section-note">两个引擎订阅同一批事件，但结算方式完全不同。情绪的衰减是<b>真实时钟 1 Hz</b>，且只有 Joy / Excite / Fear / Curious 会衰减，Anxiety 与 Calm 不衰减；需求按 <code>virtualDateTime</code> 的时段增长、每日 0 点重置，并受 <code>lockWindow</code>（0–6 时）与中断惩罚约束。事件的去重窗口是 <code>eventDeduplicationWindowSeconds=10</code>，但需求节点不使用这套情绪去重状态。</p>
+  <div class="fig"><svg viewBox="0 0 1280 664" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="eng-t eng-d">
+<title id="eng-t">情绪引擎与需求引擎内部：规则、去重、衰减与阈值</title>
+<desc id="eng-d">情绪引擎与需求引擎内部：事件进入、规则与去重、衰减或时段增长、阈值判定与状态发布。</desc>
+<defs><marker id="eng-ar" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker><marker id="eng-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker><marker id="eng-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker></defs>
+<rect width="1280" height="664" fill="#f5f5f5"/>
+<rect x="32" y="56" width="592" height="552" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="48" y="60" width="64" height="12" rx="2" fill="#f5f5f5"/><text x="80" y="69" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">EMOTION V2</text>
+<rect x="656" y="56" width="592" height="552" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="672" y="60" width="52" height="12" rx="2" fill="#f5f5f5"/><text x="698" y="69" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">NEED V2</text>
+<path d="M 328,200 V 240" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#eng-ar)"/>
+<path d="M 952,200 V 240" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#eng-ar)"/>
+<path d="M 328,328 V 368" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#eng-ar)"/>
+<path d="M 952,328 V 368" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#eng-ar)"/>
+<path d="M 328,456 V 496" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#eng-ar)"/>
+<path d="M 952,456 V 496" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#eng-ar)"/>
+<rect x="64" y="112" width="528" height="88" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="328" y="152" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">event ingress</text>
+<text x="328" y="168" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">audio · visual · tactile · result_event</text>
+<rect x="64" y="240" width="528" height="88" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="328" y="280" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">eventRules + dedup</text>
+<text x="328" y="296" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">~50 rules · window 10 s · multiplier</text>
+<rect x="64" y="368" width="528" height="88" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="328" y="408" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">decay · 1 Hz wall clock</text>
+<text x="328" y="424" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Joy 2.0 · Excite 3.0 · Fear 4.0 · Curious 2.0</text>
+<rect x="64" y="496" width="528" height="88" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="328" y="536" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">/emotion/state · signal_event</text>
+<text x="328" y="552" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">thresholds  Joy30 Excite40 Fear30 Calm</text>
+<rect x="688" y="112" width="528" height="88" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="952" y="152" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">event ingress + time</text>
+<text x="952" y="168" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">virtualDateTime drives every window</text>
+<rect x="688" y="240" width="528" height="88" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="952" y="280" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">growthRules + lockWindow</text>
+<text x="952" y="296" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">hour window delta · 0-6 h locked · -20</text>
+<rect x="688" y="368" width="528" height="88" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="952" y="408" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">morning init + overflow</text>
+<text x="952" y="424" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">morningInitialValue · overflowThreshold</text>
+<rect x="688" y="496" width="528" height="88" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+<text x="952" y="536" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">/internal_need/state · signal_event</text>
+<text x="952" y="552" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">1 Hz RELIABLE · daily reset at 0 h</text>
+<text x="64" y="636" fill="#7a8399" font-size="12" font-weight="400" font-family="'Geist', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="start">两个引擎共享输入：/perception/*_event、/simulation/time_state、/personality/state、/behavior/result_event。情绪实值 0-100，需求按 virtualDateTime 每日 0 点重置。</text>
+</svg></div>
+  <h3>表 9 · 情绪 Δ 规则（<code>emotions.yaml · eventRules</code>，50 条）</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>event_type</th><th>deltas</th><th>metadataMultipliers</th></tr></thead>
+<tbody>
+<tr><td><code>EVT_AUDIO_LOUD</code></td><td>Fear +40  ·  Anxiety +20  ·  Excite -10</td><td>loudnessDb gt 80×1.5  ·  loudness_db gt 80×1.5</td></tr>
+<tr><td><code>EVT_AUDIO_WITH_HUMAN</code></td><td>Calm +10  ·  Joy +5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_PRAISE</code></td><td>Joy +30  ·  Excite +20  ·  Calm +5</td><td>masterId truthy ×1.2  ·  master_id truthy ×1.2  ·  speakerIsMaster truthy ×1.2</td></tr>
+<tr><td><code>EVT_VOICE_SCOLD</code></td><td>Anxiety +25  ·  Fear +15  ·  Joy -10</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMFORT</code></td><td>Anxiety -25  ·  Fear -15  ·  Calm +20</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_KNOWN</code></td><td>Curious +15  ·  Calm +10</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_COMMAND_UNKNOWN</code></td><td>Anxiety +15  ·  Curious +10</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_HAPPY</code></td><td>Joy +25  ·  Excite +15  ·  Calm +5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_SAD</code></td><td>Anxiety +15  ·  Calm -5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_NEUTRAL</code></td><td>Calm +5  ·  Curious +5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_CALL_NAME</code></td><td>Joy +20  ·  Excite +10</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_PLAY_INTERACTION</code></td><td>Excite +15  ·  Joy +10</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_STATUS_CARE</code></td><td>Joy +5  ·  Calm +10</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_POSITIVE_EMOTION</code></td><td>Joy +15  ·  Excite +5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_NEGATIVE_EMOTION</code></td><td>Calm +15  ·  Curious +5  ·  Excite -15  ·  Joy -5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_MASTER_ID</code></td><td>Calm +15</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VOICE_STRANGER_ID</code></td><td>Fear +15  ·  Curious +10</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_HEAD_PET</code></td><td>Joy +25  ·  Calm +15  ·  Excite +5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_NOSE_TOUCH</code></td><td>Curious +10  ·  Calm +5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_EAR_TOUCH</code></td><td>Joy +20  ·  Calm +10</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_CHIN_RUB</code></td><td>Joy +30  ·  Calm +10  ·  Excite +5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_FACE_TOUCH</code></td><td>Joy +15  ·  Anxiety +10</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_MUZZLE_GRAB</code></td><td>Fear +35  ·  Anxiety +20</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_PUT_IN_MOUTH</code></td><td>Fear +40  ·  Anxiety +15</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_BODY_STROKE</code></td><td>Joy +20  ·  Calm +15</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_BELLY_TRUST</code></td><td>Joy +35  ·  Calm +15</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_BELLY_TENSE</code></td><td>Fear +20  ·  Anxiety +15</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_PAW_HOLD</code></td><td>Curious +10  ·  Calm +5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_PAW_PAD_SLEEP</code></td><td>Calm +10</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_PAW_PAD_WAKE</code></td><td>Fear +25  ·  Anxiety +15</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_HIP_ACCEPT</code></td><td>Joy +15</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_HIP_RESIST</code></td><td>Fear +20  ·  Anxiety +15</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_TACTILE_TAIL_GRAB</code></td><td>Fear +30  ·  Anxiety +20</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_MASTER_HAPPY</code></td><td>Joy +30  ·  Excite +15  ·  Calm +5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_MASTER_SAD</code></td><td>Anxiety +15  ·  Calm -5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_MASTER_NEUTRAL</code></td><td>Calm +5  ·  Curious +5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_MASTER</code></td><td>Joy +25  ·  Excite +15  ·  Calm +10</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_STRANGER</code></td><td>Fear +15  ·  Curious +20</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_STRANGER_ALERT</code></td><td>Fear +15  ·  Curious +20</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_STRANGER_FRIEND</code></td><td>Excite +10  ·  Curious +20</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_FOOD</code></td><td>Excite +35  ·  Joy +20  ·  Curious +10</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_TOY</code></td><td>Excite +30  ·  Curious +20  ·  Joy +15</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_FALL</code></td><td>Anxiety +20  ·  Curious +10</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_STOP_GESTURE</code></td><td>Calm +10  ·  Curious +15</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_HAND_TO_NOSE</code></td><td>Curious +15  ·  Calm +5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_HAND_TO_NOSE_FEAR</code></td><td>Fear +15  ·  Anxiety +10</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_ANIMAL_CALM</code></td><td>Calm +10  ·  Curious +5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_ANIMAL_GREET</code></td><td>Excite +15  ·  Joy +10</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_ANIMAL_PLAY</code></td><td>Excite +30  ·  Joy +20</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>EVT_VISION_ANIMAL_BOUNDARY</code></td><td>Fear +10  ·  Curious +15</td><td><span class="nil">—</span></td></tr>
+</tbody>
+</table></div>
+  <h3>表 10 · 需求阈值与增长（<code>demands.yaml</code>）</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>demand</th><th>中文名</th><th>trigger</th><th>overflow</th><th>morningInitial</th><th>morningRandomRange</th><th>growthRules（时段 Δ）</th><th>interruptedDelta</th></tr></thead>
+<tbody>
+<tr><td><code>Hunger</code></td><td><code>饥渴值</code></td><td>70 <code>gt</code></td><td>90</td><td>65</td><td>60 70</td><td>白天 6-21 +1  ·  其他时间 21-6 +0</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>Bladder</code></td><td><code>排泄值</code></td><td>75 <code>gt</code></td><td><span class="nil">—</span></td><td>30</td><td>20 30</td><td>白天 6-21 +3  ·  其他时间 21-6 +0</td><td>-40</td></tr>
+<tr><td><code>Sleepiness</code></td><td><code>困倦值</code></td><td>65 <code>gt</code></td><td>90</td><td>15</td><td>10 15</td><td>白天 6-21 +4  ·  夜晚 21-0 +5</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>Cleanliness</code></td><td><code>清洁值</code></td><td>70 <code>gt</code></td><td><span class="nil">—</span></td><td>10</td><td>5 15</td><td>白天 6-21 +2  ·  其他时间 21-6 +0</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>Energy</code></td><td><code>充电需求值</code></td><td>80 <code>gt</code></td><td>90</td><td>0</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>Social</code></td><td><code>社交值</code></td><td>60 <code>gt</code></td><td>85</td><td>20</td><td>20 30</td><td>白天 6-18 +2  ·  傍晚 18-21 +3  ·  夜间 21-6 +0</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>Exploration</code></td><td><code>探索值</code></td><td>60 <code>gt</code></td><td><span class="nil">—</span></td><td>10</td><td>10 20</td><td>白天且电量充足 6-21 +5  ·  其他时间 21-6 +0</td><td><span class="nil">—</span></td></tr>
+</tbody>
+</table></div>
+  <h3>表 11 · <code>need</code> 事件路由（12 个事件 / 含 route 展开）</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>event_type</th><th>category</th><th>visual_required</th><th>route</th><th>intent</th><th>behavior_name</th><th>variant</th><th>timeout_s</th><th>executor_behavior_name</th></tr></thead>
+<tbody>
+<tr><td><code>NEED_HUNGER_TRIGGERED</code></td><td>normal_physiology</td><td><code>hunger_food_context</code></td><td><code>dog_food</code></td><td><code>eat_normal</code></td><td><code>eatNormally</code></td><td><code>food_visible</code></td><td>180</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_HUNGER_TRIGGERED</code></td><td>normal_physiology</td><td><code>hunger_food_context</code></td><td><code>no_dog_food</code></td><td><code>seek_food</code></td><td><code>seekFood</code></td><td><code>food_search</code></td><td>180</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_HUNGER_OVERFLOW</code></td><td>normal_physiology</td><td><code>hunger_food_context</code></td><td><code>dog_food</code></td><td><code>eat_excited</code></td><td><code>eatExcitedly</code></td><td><code>food_visible_urgent</code></td><td>180</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_HUNGER_OVERFLOW</code></td><td>normal_physiology</td><td><code>hunger_food_context</code></td><td><code>no_dog_food</code></td><td><code>seek_food_urgent</code></td><td><code>seekFoodUrgently</code></td><td><code>food_search_urgent</code></td><td>180</td><td><code>seekFood</code></td></tr>
+<tr><td><code>NEED_BLADDER_TRIGGERED</code></td><td>urgent_physiology</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><code>request_elimination</code></td><td><code>barkShortAlert</code></td><td><code>request</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_SLEEPINESS_TRIGGERED</code></td><td>urgent_physiology</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><code>settle_to_sleep</code></td><td><code>sleepOnSide</code></td><td><code>light</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_SLEEPINESS_OVERFLOW</code></td><td>urgent_physiology</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><code>sleep_deep</code></td><td><code>sleepNow</code></td><td><code>deep</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_CLEANLINESS_TRIGGERED</code></td><td>normal_physiology</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><code>groom_light</code></td><td><code>lickPaws</code></td><td><code>light</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_ENERGY_TRIGGERED</code></td><td>safety</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><code>recover_energy</code></td><td><code>restInPlace</code></td><td><code>low_energy</code></td><td>330</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_ENERGY_OVERFLOW</code></td><td>safety</td><td><span class="nil">—</span></td><td><span class="nil">—</span></td><td><code>recharge_critical</code></td><td><code>recharge</code></td><td><code>critical</code></td><td>330</td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_SOCIAL_TRIGGERED</code></td><td>psychological_need</td><td><code>social_target</code></td><td><code>human</code></td><td><code>human_attention_interaction</code></td><td><code>seekHumanInteraction</code></td><td><code>human_seek</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_SOCIAL_TRIGGERED</code></td><td>psychological_need</td><td><code>social_target</code></td><td><code>animal</code></td><td><code>animal_boundary_test</code></td><td><code>testAnimalBoundary</code></td><td><code>animal_boundary</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_SOCIAL_URGENT</code></td><td>psychological_need</td><td><code>social_target</code></td><td><code>human</code></td><td><code>social_engage</code></td><td><code>seekInteraction</code></td><td><code>human_engage</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_SOCIAL_URGENT</code></td><td>psychological_need</td><td><code>social_target</code></td><td><code>animal</code></td><td><code>animal_social_greet</code></td><td><code>greetAnimal</code></td><td><code>animal_greet</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_SOCIAL_OVERFLOW</code></td><td>psychological_need</td><td><code>social_target</code></td><td><code>human</code></td><td><code>human_play_invite</code></td><td><code>inviteHumanToPlay</code></td><td><code>human_play</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_SOCIAL_OVERFLOW</code></td><td>psychological_need</td><td><code>social_target</code></td><td><code>animal</code></td><td><code>animal_play_invite</code></td><td><code>inviteAnimalToPlay</code></td><td><code>animal_play</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_EXPLORATION_TRIGGERED</code></td><td>psychological_need</td><td><code>exploration_context</code></td><td><code>play_item</code></td><td><code>inspect_familiar_play_item</code></td><td><code>inspectFamiliarPlayItem</code></td><td><code>play_item</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_EXPLORATION_TRIGGERED</code></td><td>psychological_need</td><td><code>exploration_context</code></td><td><code>trash_can</code></td><td><code>inspect_trash_can</code></td><td><code>inspectTrashCan</code></td><td><code>trash_can</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_EXPLORATION_TRIGGERED</code></td><td>psychological_need</td><td><code>exploration_context</code></td><td><code>delivery_box</code></td><td><code>inspect_delivery_box</code></td><td><code>inspectDeliveryBox</code></td><td><code>delivery_box</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_EXPLORATION_TRIGGERED</code></td><td>psychological_need</td><td><code>exploration_context</code></td><td><code>tissue</code></td><td><code>inspect_tissue</code></td><td><code>inspectTissuePaper</code></td><td><code>tissue</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_EXPLORATION_TRIGGERED</code></td><td>psychological_need</td><td><code>exploration_context</code></td><td><code>door</code></td><td><code>inspect_door</code></td><td><code>inspectDoor</code></td><td><code>door</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_EXPLORATION_TRIGGERED</code></td><td>psychological_need</td><td><code>exploration_context</code></td><td><code>dog_food</code></td><td><code>inspect_dog_food</code></td><td><code>inspectDogFood</code></td><td><code>dog_food</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_EXPLORATION_TRIGGERED</code></td><td>psychological_need</td><td><code>exploration_context</code></td><td><code>unfamiliar_object</code></td><td><code>inspect_generic_object</code></td><td><code>inspectObject</code></td><td><code>unfamiliar</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>NEED_EXPLORATION_TRIGGERED</code></td><td>psychological_need</td><td><code>exploration_context</code></td><td><code>empty</code></td><td><code>explore_space</code></td><td><code>exploreRoom</code></td><td><code>room</code></td><td><span class="nil">—</span></td><td><span class="nil">—</span></td></tr>
+</tbody>
+</table></div>
+  <h3>表 12 · <code>emotion</code> 事件 → 行为（6 条）</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>event_type</th><th>intent</th><th>Lv</th><th>sub_pri</th><th>level</th><th>variant</th><th>allow_repeat</th><th>visual_required</th><th>human → behavior_name</th><th>human(voice WAITING)</th><th>solo → behavior_name</th></tr></thead>
+<tbody>
+<tr><td><code>EMO_CALM_TRIGGERED</code></td><td><code>express_calm</code></td><td>5</td><td>0</td><td><code>LOW</code></td><td><code>calm</code></td><td>true</td><td><code>person_presence</code></td><td><code>expressCalmWithHuman</code></td><td><code>expressCalmInPlaceWithHuman</code></td><td><code>expressCalmAlone</code></td></tr>
+<tr><td><code>EMO_JOY_TRIGGERED</code></td><td><code>express_joy</code></td><td>5</td><td>0</td><td><code>LOW</code></td><td><code>joy</code></td><td><span class="nil">—</span></td><td><code>person_presence</code></td><td><code>expressJoyWithHuman</code></td><td><code>expressJoyInPlaceWithHuman</code></td><td><code>expressJoyAlone</code></td></tr>
+<tr><td><code>EMO_EXCITE_TRIGGERED</code></td><td><code>express_excitement</code></td><td>5</td><td>0</td><td><code>LOW</code></td><td><code>excitement</code></td><td><span class="nil">—</span></td><td><code>person_presence</code></td><td><code>expressExcitementWithHuman</code></td><td><code>expressExcitementInPlaceWithHuman</code></td><td><code>expressExcitementAlone</code></td></tr>
+<tr><td><code>EMO_ANXIETY_TRIGGERED</code></td><td><code>express_anxiety</code></td><td>5</td><td>0</td><td><code>LOW</code></td><td><code>anxiety</code></td><td><span class="nil">—</span></td><td><code>person_presence</code></td><td><code>expressAnxietyWithHuman</code></td><td><code>expressAnxietyInPlaceWithHuman</code></td><td><code>expressAnxietyAlone</code></td></tr>
+<tr><td><code>EMO_FEAR_TRIGGERED</code></td><td><code>express_fear</code></td><td>5</td><td>0</td><td><code>LOW</code></td><td><code>fear</code></td><td><span class="nil">—</span></td><td><code>person_presence</code></td><td><code>expressFearWithHuman</code></td><td><code>expressFearInPlaceWithHuman</code></td><td><code>expressFearAlone</code></td></tr>
+<tr><td><code>EMO_CURIOUS_TRIGGERED</code></td><td><code>express_curiosity</code></td><td>5</td><td>0</td><td><code>LOW</code></td><td><code>curiosity</code></td><td><span class="nil">—</span></td><td><code>person_presence</code></td><td><code>expressCuriosityWithHuman</code></td><td><code>expressCuriosityInPlaceWithHuman</code></td><td><code>expressCuriosityAlone</code></td></tr>
+</tbody>
+</table></div>
+  <h3>表 13 · 情绪阈值与衰减</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>情绪</th><th>触发阈值</th><th>触发算子</th><th>衰减速率 / 秒</th><th>备注</th></tr></thead>
+<tbody>
+<tr><td>Joy</td><td>30</td><td>gte</td><td>2.0</td><td>—</td></tr>
+<tr><td>Excite</td><td>40</td><td>gte</td><td>3.0</td><td>—</td></tr>
+<tr><td>Anxiety</td><td>25</td><td>gte</td><td>—</td><td><b>不衰减</b></td></tr>
+<tr><td>Fear</td><td>30</td><td>gte</td><td>4.0</td><td>另有 freezeThreshold 60</td></tr>
+<tr><td>Curious</td><td>20</td><td>gte</td><td>2.0</td><td>—</td></tr>
+<tr><td>Calm</td><td>0</td><td>gte</td><td>—</td><td><b>不衰减</b>；其他情绪均未触发时才在平静期以 1 Hz 发布</td></tr>
+</tbody>
+</table></div>
+</section>
+
+<section id="s5">
+  <p class="eyebrow">05 · 决策内核</p>
+  <h2>事件 → 候选 → 七级仲裁 → Goal</h2>
+  <p class="section-note">每个 tick（默认 10 Hz）先把事件按配置映射成候选，候选以五元组去重、按 <code>level → sub_priority → emotion_priority → value → created_at</code> 排序。根节点是带记忆的 Selector，下面七级各一个 Sequence：等级条件、相关性条件、执行行为。抢占要同时过三道门，Goal 走完 <code>SENDING → RUNNING → CANCEL_REQUESTED → TERMINAL</code> 才终结，取消确认永不作为终态。</p>
+  <div class="fig"><svg viewBox="0 0 1280 632" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="dec-t dec-d">
+<title id="dec-t">决策内核：候选生成、候选池排序、七级仲裁、Goal 生命周期</title>
+<desc id="dec-d">决策内核：事件到候选的映射、五元组去重、候选池排序、七级 Sequence 仲裁、抢占三道门与 Goal 生命周期。</desc>
+<defs><marker id="dec-ar" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker><marker id="dec-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker><marker id="dec-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker></defs>
+<rect width="1280" height="632" fill="#f5f5f5"/>
+<rect x="32" y="56" width="488" height="520" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="48" y="60" width="60" height="12" rx="2" fill="#f5f5f5"/><text x="78" y="69" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">CANDIDATE</text>
+<rect x="552" y="56" width="696" height="520" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="568" y="60" width="52" height="12" rx="2" fill="#f5f5f5"/><text x="594" y="69" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">ARBITER</text>
+<path d="M 488,156 H 584" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#dec-ar)"/>
+<path d="M 488,276 H 584" fill="none" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#dec-accent)"/>
+<path d="M 488,396 H 584" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#dec-ar)"/>
+<path d="M 488,516 H 584" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#dec-ar)"/>
+<rect x="64" y="112" width="424" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="276" y="152" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">event → intent</text>
+<text x="276" y="168" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">config/event_intent_map.yaml</text>
+<rect x="64" y="232" width="424" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="276" y="272" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">intent → behavior_name</text>
+<text x="276" y="288" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">config/intent_action_pool.yaml</text>
+<rect x="64" y="352" width="424" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="276" y="392" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">BehaviorCandidate</text>
+<text x="276" y="408" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">source · trigger_event · behavior · variant · mode</text>
+<rect x="64" y="472" width="424" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="276" y="512" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">dedup · ttl · cooldown</text>
+<text x="276" y="528" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">composite key · candidate_ttl · cooldown</text>
+<rect x="584" y="112" width="632" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="900" y="152" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">CandidatePool</text>
+<text x="900" y="168" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">sort: Lv ↑ · sub_pri ↑ · emotion_pri ↑ · value ↓ · age ↓</text>
+<rect x="584" y="232" width="632" height="88" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+<text x="900" y="272" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">Lv0..Lv6 Sequence</text>
+<text x="900" y="288" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">ActiveLevel ∧ BehaviorRelevance → ExecuteActiveBehavior</text>
+<rect x="584" y="352" width="632" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="900" y="392" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">preemption gate</text>
+<text x="900" y="408" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">level gate · same-Lv delta ≥ 15 · policy gate</text>
+<rect x="584" y="472" width="632" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="900" y="512" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">Goal lifecycle</text>
+<text x="900" y="528" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">SENDING → RUNNING → CANCEL_REQUESTED → TERMINAL</text>
+<text x="64" y="604" fill="#7a8399" font-size="12" font-weight="400" font-family="'Geist', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="start">候选去重键为 (source, trigger_event, behavior_name, variant, interaction_mode)：同键重复事件只刷新 value 与 ttl。Lv0 emergency_stop 无条件覆盖；CANCEL_REQUESTED 永不作为终态。</text>
+</svg></div>
+  <h3>表 14 · <code>behaviors.yaml</code> 全量行为定义（105 条）</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>behavior_name</th><th>Lv</th><th>base_pri</th><th>interrupt_policy</th><th>timeout_s</th><th>cooldown_s</th><th>action_sequence（action(dur, safe)）</th><th>style_modifiers</th></tr></thead>
+<tbody>
+<tr><td><code>emergency_stop</code></td><td>0</td><td>100</td><td><code>immediate</code></td><td>5</td><td>0</td><td>emergency_stop<span class="dim">(0.5s</span><span class="dim">,T)</span> → sit_still<span class="dim">(1.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>avoid_danger</code></td><td>0</td><td>100</td><td><code>immediate</code></td><td>5</td><td>1</td><td>locate_danger<span class="dim">(0.3s</span><span class="dim">,T)</span> → evade<span class="dim">(1.5s</span><span class="dim">,F)</span> → alert_stand<span class="dim">(0.5s</span><span class="dim">,T)</span></td><td>alert</td></tr>
+<tr><td><code>excretion_request</code></td><td>1</td><td>95</td><td><code>safe_point</code></td><td>60</td><td>0</td><td>find_spot<span class="dim">(3.0s</span><span class="dim">,T)</span> → excrete<span class="dim">(5.0s</span><span class="dim">,F)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>sleep_request</code></td><td>1</td><td>90</td><td><code>safe_point</code></td><td>120</td><td>0</td><td>go_to_bed<span class="dim">(3.0s</span><span class="dim">,T)</span> → lie_down<span class="dim">(2.0s</span><span class="dim">,T)</span> → sleep<span class="dim">(60.0s</span><span class="dim">,F)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_owner_call</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>8</td><td>0</td><td>look_at_sound_source<span class="dim">(0.5s</span><span class="dim">,T)</span></td><td>happy</td></tr>
+<tr><td><code>approach_voice_caller</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>20</td><td>0</td><td>approach_voice_caller<span class="dim">(0.2s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_wakeup_word</code></td><td>2</td><td>80</td><td><code>immediate</code></td><td>6</td><td>1</td><td>look_at_source<span class="dim">(0.5s</span><span class="dim">,T)</span> → acknowledge<span class="dim">(0.3s</span><span class="dim">,T)</span> → attentive_sit<span class="dim">(1.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_touch_head</code></td><td>2</td><td>75</td><td><code>immediate</code></td><td>5</td><td>1</td><td>lean_into_touch<span class="dim">(1.0s</span><span class="dim">,T)</span> → wag_tail<span class="dim">(1.5s</span><span class="dim">,T)</span> → pleased_sound<span class="dim">(0.5s</span><span class="dim">,T)</span></td><td>happy</td></tr>
+<tr><td><code>look_at_sound_source</code></td><td>2</td><td>65</td><td><code>immediate</code></td><td>3</td><td>0.5</td><td>turn_head<span class="dim">(0.5s</span><span class="dim">,T)</span> → observe<span class="dim">(1.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>inspect_environment_change</code></td><td>2</td><td>60</td><td><code>immediate</code></td><td>5</td><td>1</td><td>scan<span class="dim">(1.0s</span><span class="dim">,T)</span> → approach<span class="dim">(1.5s</span><span class="dim">,F)</span> → sniff<span class="dim">(1.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>seek_food_or_water</code></td><td>3</td><td>70</td><td><code>safe_point</code></td><td>30</td><td>5</td><td>locate_resource<span class="dim">(2.0s</span><span class="dim">,T)</span> → approach_resource<span class="dim">(3.0s</span><span class="dim">,F)</span> → consume<span class="dim">(4.0s</span><span class="dim">,F)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>clean_self</code></td><td>3</td><td>60</td><td><code>safe_point</code></td><td>15</td><td>3</td><td>sit<span class="dim">(0.5s</span><span class="dim">,T)</span> → lick_paw<span class="dim">(3.0s</span><span class="dim">,T)</span> → groom<span class="dim">(3.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>seek_social_interaction</code></td><td>4</td><td>60</td><td><code>immediate</code></td><td>20</td><td>5</td><td>locate_human<span class="dim">(1.0s</span><span class="dim">,T)</span> → approach_human<span class="dim">(2.0s</span><span class="dim">,F)</span> → nudge<span class="dim">(1.0s</span><span class="dim">,T)</span> → friendly_sound<span class="dim">(0.5s</span><span class="dim">,T)</span></td><td>happy</td></tr>
+<tr><td><code>explore_environment</code></td><td>4</td><td>50</td><td><code>immediate</code></td><td>25</td><td>3</td><td>scan_surroundings<span class="dim">(1.0s</span><span class="dim">,T)</span> → wander<span class="dim">(5.0s</span><span class="dim">,F)</span> → investigate<span class="dim">(1.5s</span><span class="dim">,T)</span></td><td>curious</td></tr>
+<tr><td><code>express_happy</code></td><td>5</td><td>50</td><td><code>immediate</code></td><td>5</td><td>1</td><td>wag_tail<span class="dim">(1.5s</span><span class="dim">,T)</span> → play_bow<span class="dim">(1.0s</span><span class="dim">,T)</span> → happy_bark<span class="dim">(0.5s</span><span class="dim">,T)</span></td><td>happy</td></tr>
+<tr><td><code>express_fear</code></td><td>5</td><td>50</td><td><code>safe_point</code></td><td>8</td><td>2</td><td>cower<span class="dim">(1.0s</span><span class="dim">,T)</span> → ears_back<span class="dim">(1.0s</span><span class="dim">,T)</span> → whimper<span class="dim">(1.5s</span><span class="dim">,T)</span></td><td>fear</td></tr>
+<tr><td><code>express_curiosity</code></td><td>5</td><td>45</td><td><code>immediate</code></td><td>4</td><td>1</td><td>head_tilt<span class="dim">(0.8s</span><span class="dim">,T)</span> → stare<span class="dim">(1.0s</span><span class="dim">,T)</span> → ears_forward<span class="dim">(0.5s</span><span class="dim">,T)</span></td><td>curious</td></tr>
+<tr><td><code>idle_look_around</code></td><td>6</td><td>30</td><td><code>immediate</code></td><td>10</td><td>0</td><td>turn_head_left<span class="dim">(1.5s</span><span class="dim">,T)</span> → observe<span class="dim">(1.0s</span><span class="dim">,T)</span> → turn_head_right<span class="dim">(1.5s</span><span class="dim">,T)</span> → observe<span class="dim">(1.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>idle_rest</code></td><td>6</td><td>25</td><td><code>immediate</code></td><td>30</td><td>0</td><td>lie_down<span class="dim">(1.0s</span><span class="dim">,T)</span> → rest<span class="dim">(10.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_person_fall</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>8</td><td>1</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_stop_gesture</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>8</td><td>1</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>sit_down</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td>sit<span class="dim">(2.0s</span><span class="dim">,T)</span> → look_at_target<span class="dim">(0.5s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>walk_to_random_point</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>50</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>go_out_to_play</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>50</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>go_home</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>60</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>approach_owner</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>10</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>back_up</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>6</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>lie_down</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td>lie_down<span class="dim">(2.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>stand_up</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td>stand<span class="dim">(1.5s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>stand_still</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>10</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>hold_position</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>10</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>quiet</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>3</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>barkShortAlert</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>180</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>lickPaws</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>15</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>sleepOnSide</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>120</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>wait_in_place</code></td><td>1</td><td>75</td><td><code>safe_point</code></td><td>30</td><td>0.2</td><td>sit_still<span class="dim">(10.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>come_to_owner</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>12</td><td>0.2</td><td>locate_owner<span class="dim">(0.5s</span><span class="dim">,T)</span> → approach_target<span class="dim">(2.0s</span><span class="dim">,F)</span> → sit<span class="dim">(1.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>follow_owner</code></td><td>1</td><td>80</td><td><code>safe_point</code></td><td>30</td><td>0.2</td><td>locate_owner<span class="dim">(0.5s</span><span class="dim">,T)</span> → follow_target<span class="dim">(15.0s</span><span class="dim">,F)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>give_paw</code></td><td>1</td><td>75</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td>lift_paw<span class="dim">(2.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>high_five</code></td><td>1</td><td>75</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td>lift_paw_high<span class="dim">(2.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>roll_over</code></td><td>1</td><td>70</td><td><code>safe_point</code></td><td>6</td><td>0.2</td><td>roll_over<span class="dim">(3.0s</span><span class="dim">,F)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>spin_around</code></td><td>1</td><td>70</td><td><code>immediate</code></td><td>6</td><td>0.2</td><td>spin<span class="dim">(2.0s</span><span class="dim">,F)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>go_back</code></td><td>1</td><td>70</td><td><code>immediate</code></td><td>6</td><td>0.2</td><td>move_backward<span class="dim">(2.0s</span><span class="dim">,F)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>return_to_owner</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>12</td><td>0.2</td><td>locate_owner<span class="dim">(0.5s</span><span class="dim">,T)</span> → return_to_owner<span class="dim">(3.0s</span><span class="dim">,F)</span> → sit<span class="dim">(1.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>drop_object</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>3</td><td>0.2</td><td>drop<span class="dim">(1.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>play_dead</code></td><td>1</td><td>70</td><td><code>safe_point</code></td><td>8</td><td>0.2</td><td>lie_side<span class="dim">(1.0s</span><span class="dim">,T)</span> → stay_still<span class="dim">(4.0s</span><span class="dim">,F)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>bring_object</code></td><td>1</td><td>70</td><td><code>immediate</code></td><td>20</td><td>0.2</td><td>locate_object<span class="dim">(1.0s</span><span class="dim">,T)</span> → approach_object<span class="dim">(2.0s</span><span class="dim">,F)</span> → grab<span class="dim">(1.0s</span><span class="dim">,T)</span> → return_to_owner<span class="dim">(3.0s</span><span class="dim">,F)</span> → release<span class="dim">(1.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>fetch_object</code></td><td>1</td><td>70</td><td><code>immediate</code></td><td>30</td><td>0.2</td><td>scan_for_object<span class="dim">(1.5s</span><span class="dim">,T)</span> → approach_object<span class="dim">(3.0s</span><span class="dim">,F)</span> → grab<span class="dim">(1.0s</span><span class="dim">,T)</span> → return_to_owner<span class="dim">(3.0s</span><span class="dim">,F)</span> → release<span class="dim">(1.0s</span><span class="dim">,T)</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>comfort_soothe</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>comfort_reassure</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>care_inquire</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>pet_head</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>hug</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>refuse</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>refuse_play</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>find_dad</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>20</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>find_mom</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>20</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>dance</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>10</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>bring_to_me</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>20</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>give_me</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>20</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>go_fetch</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>20</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>bring_back</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>20</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>fetch_ball</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>20</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>find_toy</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>20</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>farewell_leave</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>25</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>stay_home</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>15</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>wait_return</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>15</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>farewell_bye</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>15</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>farewell_goodbye</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>15</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>greet_return</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>15</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>report_activity</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>report_location</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>report_state</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_thought</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_comfort</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_like</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_fun</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_understand</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>show_skill</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_learned</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>miss_owner</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>25</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>tired</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>8</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>annoyed</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>8</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>unhappy</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>25</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>downcast</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>8</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>depressed</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>8</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>stressed</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>8</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>lonely</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>8</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>unwell</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>8</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>cheerful</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>happy</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>great_form</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>great</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>relaxed</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>wonderful_day</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>lucky</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>eat_meal</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>30</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>eat_snack</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>30</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>eat_canned_food</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>30</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_food_preference</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_hungry_yes</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_hungry_no</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_want_eat_yes</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>respond_want_eat_no</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>look_at_owner_brief</code></td><td>1</td><td>80</td><td><code>immediate</code></td><td>5</td><td>0.2</td><td><span class="dim">executor-owned</span></td><td><span class="nil">—</span></td></tr>
+</tbody>
+</table></div>
+  <h3>表 15 · <code>intent</code> → 候选行为池与跨类别名</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>intent</th><th>candidates</th><th>aliases</th></tr></thead>
+<tbody>
+<tr><td><code>orient_to_sound</code></td><td><code>respond_owner_call</code></td><td><code>respond_owner_call→respond_owner_call</code></td></tr>
+<tr><td><code>approach_wake_speaker</code></td><td><code>approach_voice_caller</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_walk</code></td><td><code>walk_to_random_point</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_go_out</code></td><td><code>go_out_to_play</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_go_home</code></td><td><code>go_home</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_approach</code></td><td><code>approach_owner</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_back_up</code></td><td><code>back_up</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_sit</code></td><td><code>sit_down</code></td><td><code>respond_owner_call→sit_down</code></td></tr>
+<tr><td><code>command_come_here</code></td><td><code>come_to_owner</code></td><td><code>respond_owner_call→come_to_owner</code></td></tr>
+<tr><td><code>command_follow</code></td><td><code>follow_owner</code></td><td><code>respond_owner_call→follow_owner</code></td></tr>
+<tr><td><code>command_handshake</code></td><td><code>give_paw</code></td><td><code>respond_touch_head→give_paw</code></td></tr>
+<tr><td><code>command_high_five</code></td><td><code>high_five</code></td><td><code>respond_touch_head→high_five</code></td></tr>
+<tr><td><code>command_roll</code></td><td><code>roll_over</code></td><td><code>rollOverShowBelly→roll_over  ·  expressJoy→roll_over</code></td></tr>
+<tr><td><code>command_spin</code></td><td><code>spin_around</code></td><td><code>spinInCircle→spin_around  ·  expressJoy→spin_around</code></td></tr>
+<tr><td><code>command_retrieve</code></td><td><code>return_to_owner</code></td><td><code>respond_owner_call→return_to_owner</code></td></tr>
+<tr><td><code>command_spit_out</code></td><td><code>drop_object</code></td><td><code>emergency_stop→drop_object</code></td></tr>
+<tr><td><code>command_play_dead</code></td><td><code>play_dead</code></td><td><code>restInPlace→play_dead  ·  expressCalm→play_dead</code></td></tr>
+<tr><td><code>command_stand_still</code></td><td><code>stand_still</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_hold_position</code></td><td><code>hold_position</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_quiet</code></td><td><code>quiet</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_toilet</code></td><td><code>barkShortAlert</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_clean</code></td><td><code>lickPaws</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_sleep</code></td><td><code>sleepOnSide</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>emergency_stop</code></td><td><code>emergency_stop</code></td><td><code>emergency_stop→emergency_stop</code></td></tr>
+<tr><td><code>command_comfort_dont_be_afraid</code></td><td><code>comfort_soothe</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_comfort_reassure</code></td><td><code>comfort_reassure</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_ask_if_hurts</code></td><td><code>care_inquire</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_offer_head_for_pet</code></td><td><code>pet_head</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_seek_hug</code></td><td><code>hug</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_refuse</code></td><td><code>refuse</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_refuse_play</code></td><td><code>refuse_play</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_find_dad</code></td><td><code>find_dad</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_find_mom</code></td><td><code>find_mom</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_dance</code></td><td><code>dance</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_bring_to_me</code></td><td><code>bring_to_me</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_give_to_me</code></td><td><code>give_me</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_go_get_it</code></td><td><code>go_fetch</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_bring_it_back</code></td><td><code>bring_back</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_fetch_ball</code></td><td><code>fetch_ball</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_find_toy</code></td><td><code>find_toy</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_stay_home_alone</code></td><td><code>stay_home</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_wait_for_owner_return</code></td><td><code>wait_return</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_going_out</code></td><td><code>farewell_leave</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_returned</code></td><td><code>greet_return</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_bye_bye</code></td><td><code>farewell_bye</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_goodbye</code></td><td><code>farewell_goodbye</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_ask_what_doing</code></td><td><code>report_activity</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_ask_where_are_you</code></td><td><code>report_location</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_ask_whats_wrong</code></td><td><code>report_state</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_ask_what_thinking</code></td><td><code>respond_thought</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_ask_if_comfortable</code></td><td><code>respond_comfort</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_ask_if_likes</code></td><td><code>respond_like</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_ask_if_fun</code></td><td><code>respond_fun</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_ask_if_understands</code></td><td><code>respond_understand</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_ask_abilities</code></td><td><code>show_skill</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_ask_if_learned</code></td><td><code>respond_learned</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_express_miss_you</code></td><td><code>miss_owner</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_tired</code></td><td><code>tired</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_annoyed</code></td><td><code>annoyed</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_unhappy</code></td><td><code>unhappy</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_bad_day</code></td><td><code>downcast</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_depressed</code></td><td><code>depressed</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_stressed</code></td><td><code>stressed</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_lonely</code></td><td><code>lonely</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_unwell</code></td><td><code>unwell</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_happy</code></td><td><code>cheerful</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_very_happy</code></td><td><code>happy</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_feeling_great</code></td><td><code>great_form</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_feeling_excellent</code></td><td><code>great</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_relaxed</code></td><td><code>relaxed</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_wonderful_day</code></td><td><code>wonderful_day</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_owner_feeling_lucky</code></td><td><code>lucky</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_eat_meal</code></td><td><code>eat_meal</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_eat_snack</code></td><td><code>eat_snack</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_eat_canned_food</code></td><td><code>eat_canned_food</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>command_respond_food_preference_query</code></td><td><code>respond_food_preference</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>visual_fall_response</code></td><td><code>respond_person_fall</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>visual_stop_gesture_response</code></td><td><code>respond_stop_gesture</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>express_joy</code></td><td><code>expressJoy</code></td><td><code>express_happy→expressJoy</code></td></tr>
+<tr><td><code>comfort_owner</code></td><td><code>expressJoy / expressCalm</code></td><td><code>express_happy→expressJoy</code></td></tr>
+<tr><td><code>confused_response</code></td><td><code>expressCuriosity / expressAnxiety</code></td><td><code>headTilt→expressCuriosity  ·  stareIntently→expressAnxiety</code></td></tr>
+<tr><td><code>command_lie_down</code></td><td><code>lie_down</code></td><td><code>respond_owner_call→lie_down</code></td></tr>
+<tr><td><code>command_stand_up</code></td><td><code>stand_up</code></td><td><code>respond_owner_call→stand_up</code></td></tr>
+<tr><td><code>command_wait</code></td><td><code>wait_in_place</code></td><td><code>respond_owner_call→wait_in_place</code></td></tr>
+<tr><td><code>command_bring</code></td><td><code>bring_object</code></td><td><code>respond_owner_call→bring_object</code></td></tr>
+<tr><td><code>command_fetch</code></td><td><code>fetch_object</code></td><td><code>respond_owner_call→fetch_object</code></td></tr>
+<tr><td><code>eat_normal</code></td><td><code>eatNormally</code></td><td><code>seek_food_or_water→eatNormally</code></td></tr>
+<tr><td><code>eat_excited</code></td><td><code>eatExcitedly</code></td><td><code>seek_food_or_water→eatExcitedly</code></td></tr>
+<tr><td><code>seek_food</code></td><td><code>seekFood</code></td><td><code>seek_food_or_water→seekFood</code></td></tr>
+<tr><td><code>seek_food_urgent</code></td><td><code>seekFoodUrgently</code></td><td><code>seek_food_or_water→seekFoodUrgently</code></td></tr>
+<tr><td><code>request_elimination</code></td><td><code>barkShortAlert</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>eliminate_now</code></td><td><code>defecate</code></td><td><code>excretion_request→defecate</code></td></tr>
+<tr><td><code>settle_to_sleep</code></td><td><code>sleepOnSide</code></td><td><code>sleep_request→sleepOnSide</code></td></tr>
+<tr><td><code>sleep_deep</code></td><td><code>sleepNow</code></td><td><code>sleep_request→sleepNow</code></td></tr>
+<tr><td><code>groom_light</code></td><td><code>lickPaws</code></td><td><code>clean_self→lickPaws</code></td></tr>
+<tr><td><code>groom_thorough</code></td><td><code>cleanSelf</code></td><td><code>clean_self→cleanSelf</code></td></tr>
+<tr><td><code>recover_energy</code></td><td><code>restInPlace</code></td><td><code>sleep_request→restInPlace</code></td></tr>
+<tr><td><code>recharge_critical</code></td><td><code>recharge</code></td><td><code>sleep_request→recharge</code></td></tr>
+<tr><td><code>social_seek</code></td><td><code>seekHumanInteraction</code></td><td><code>seek_social_interaction→seekHumanInteraction</code></td></tr>
+<tr><td><code>social_engage</code></td><td><code>seekInteraction</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>animal_boundary_test</code></td><td><code>testAnimalBoundary</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>animal_social_greet</code></td><td><code>greetAnimal</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>animal_play_invite</code></td><td><code>inviteAnimalToPlay</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>human_resource_interaction</code></td><td><code>requestResourceFromHuman</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>human_attention_interaction</code></td><td><code>seekHumanInteraction</code></td><td><code>seek_social_interaction→seekHumanInteraction</code></td></tr>
+<tr><td><code>human_play_invite</code></td><td><code>inviteHumanToPlay</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>explore_space</code></td><td><code>exploreRoom</code></td><td><code>explore_environment→exploreRoom</code></td></tr>
+<tr><td><code>explore_focused</code></td><td><code>inspectObject</code></td><td><code>explore_environment→inspectObject</code></td></tr>
+<tr><td><code>inspect_generic_object</code></td><td><code>inspectObject</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>inspect_familiar_play_item</code></td><td><code>inspectFamiliarPlayItem</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>inspect_trash_can</code></td><td><code>inspectTrashCan</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>inspect_delivery_box</code></td><td><code>inspectDeliveryBox</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>inspect_tissue</code></td><td><code>inspectTissuePaper</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>inspect_door</code></td><td><code>inspectDoor</code></td><td><span class="nil">—</span></td></tr>
+<tr><td><code>inspect_dog_food</code></td><td><code>inspectDogFood</code></td><td><span class="nil">—</span></td></tr>
+</tbody>
+</table></div>
+  <h3>表 16 · 优先级常量与默认冷却 / 超时</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>priority_level</th><th>语义</th><th>默认 cooldown_sec</th><th>默认 timeout_sec</th><th>该级行为数</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>safety 安全</td><td>0.0</td><td>5.0</td><td>2</td></tr>
+<tr><td>1</td><td>external_interaction 外部交互</td><td>1.0</td><td>8.0</td><td>多</td></tr>
+<tr><td>2</td><td>urgent_physiology 紧急生理</td><td>0.0</td><td>60.0</td><td>多</td></tr>
+<tr><td>3</td><td>normal_physiology 常规生理</td><td>5.0</td><td>30.0</td><td>多</td></tr>
+<tr><td>4</td><td>psychological_need 心理需求</td><td>5.0</td><td>25.0</td><td>多</td></tr>
+<tr><td>5</td><td>emotion_expression 情绪表达</td><td>1.0</td><td>8.0</td><td>6+</td></tr>
+<tr><td>6</td><td>idle 空闲</td><td>0.0</td><td>30.0</td><td>2</td></tr>
+</tbody>
+</table></div>
+</section>
+
+<section id="s6">
+  <p class="eyebrow">06 · 结果回传</p>
+  <h2>一封回信，闭环一次需求结算</h2>
+  <p class="section-note">行为终态后 <code>result_event_mapper</code> 查 <code>BEHAVIOR_ACTION_MAP</code>：命中才发布 <code>/behavior/result_event</code>，未命中（纯情绪表达）静默丢弃。这条回信是需求与情绪结算的唯一入口，也是 <code>ActionInterrupted</code> 惩罚的来源。</p>
+  <h3>表 17 · <code>BEHAVIOR_ACTION_MAP</code>（24 条）</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>behavior_name</th><th>action_type</th><th>demand_type</th></tr></thead>
+<tbody>
+<tr><td><code>eatNormally</code></td><td><code>ACTION_EAT</code></td><td>Hunger</td></tr>
+<tr><td><code>eatExcitedly</code></td><td><code>ACTION_EAT</code></td><td>Hunger</td></tr>
+<tr><td><code>seekFood</code></td><td><code>ACTION_FOOD_SEEK</code></td><td>Hunger</td></tr>
+<tr><td><code>seekFoodUrgently</code></td><td><code>ACTION_FOOD_SEEK</code></td><td>Hunger</td></tr>
+<tr><td><code>barkShortAlert</code></td><td><code>ACTION_DEFECATE</code></td><td>Bladder</td></tr>
+<tr><td><code>sleepOnSide</code></td><td><code>ACTION_SLEEP</code></td><td>Sleepiness</td></tr>
+<tr><td><code>sleepNow</code></td><td><code>ACTION_SLEEP</code></td><td>Sleepiness</td></tr>
+<tr><td><code>lickPaws</code></td><td><code>ACTION_GROOM</code></td><td>Cleanliness</td></tr>
+<tr><td><code>restInPlace</code></td><td><code>ACTION_RECHARGE</code></td><td>Energy</td></tr>
+<tr><td><code>recharge</code></td><td><code>ACTION_RECHARGE</code></td><td>Energy</td></tr>
+<tr><td><code>seekHumanInteraction</code></td><td><code>ACTION_ATTENTION_SEEK</code></td><td>Social</td></tr>
+<tr><td><code>testAnimalBoundary</code></td><td><code>ACTION_BOUNDARY_TEST</code></td><td>Social</td></tr>
+<tr><td><code>seekInteraction</code></td><td><code>ACTION_ATTENTION_SEEK</code></td><td>Social</td></tr>
+<tr><td><code>greetAnimal</code></td><td><code>ACTION_SOCIAL_GREET</code></td><td>Social</td></tr>
+<tr><td><code>inviteHumanToPlay</code></td><td><code>ACTION_PLAY_INVITE</code></td><td>Social</td></tr>
+<tr><td><code>inviteAnimalToPlay</code></td><td><code>ACTION_PLAY_INVITE</code></td><td>Social</td></tr>
+<tr><td><code>inspectFamiliarPlayItem</code></td><td><code>ACTION_OBJECT_EXPLORE</code></td><td>Exploration</td></tr>
+<tr><td><code>inspectTrashCan</code></td><td><code>ACTION_OBJECT_EXPLORE</code></td><td>Exploration</td></tr>
+<tr><td><code>inspectDeliveryBox</code></td><td><code>ACTION_OBJECT_EXPLORE</code></td><td>Exploration</td></tr>
+<tr><td><code>inspectTissuePaper</code></td><td><code>ACTION_OBJECT_EXPLORE</code></td><td>Exploration</td></tr>
+<tr><td><code>inspectDoor</code></td><td><code>ACTION_OBJECT_EXPLORE</code></td><td>Exploration</td></tr>
+<tr><td><code>inspectDogFood</code></td><td><code>ACTION_OBJECT_EXPLORE</code></td><td>Exploration</td></tr>
+<tr><td><code>inspectObject</code></td><td><code>ACTION_OBJECT_EXPLORE</code></td><td>Exploration</td></tr>
+<tr><td><code>exploreRoom</code></td><td><code>ACTION_SPACE_EXPLORE</code></td><td>Exploration</td></tr>
+</tbody>
+</table></div>
+  <div class="callout">
+    <p><b>纯情绪表达不在表内。</b><code>expressJoyWithHuman</code>、<code>expressFearAlone</code> 之类行为 <code>result_mapping</code> 为 null，执行完不发布结果事件——它们的情绪效果已由 <code>emotions.yaml</code> 的 <code>ActionInterrupted</code> / 事件规则在别处结算。</p>
+  </div>
+</section>
+
+<section id="s7">
+  <p class="eyebrow">07 · 字段字典</p>
+  <h2>照着字段名查</h2>
+  <h3>表 18 · <code>BehaviorCandidate</code></h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>字段</th><th>类型</th><th>说明</th><th>典型值</th></tr></thead>
+<tbody>
+<tr><td><code>behavior_name</code></td><td>str</td><td>语义行为名</td><td><code>expressJoyWithHuman</code></td></tr>
+<tr><td><code>source</code></td><td>str</td><td>来源类型</td><td>audio_direct / need / emotion / idle</td></tr>
+<tr><td><code>trigger_event</code></td><td>str</td><td>触发事件字符串</td><td><code>EMO_JOY_TRIGGERED</code></td></tr>
+<tr><td><code>intent</code></td><td>str</td><td>语义意图</td><td><code>express_joy</code></td></tr>
+<tr><td><code>priority_level</code></td><td>int</td><td>优先级 0–6（越小越高）</td><td>0 – 6</td></tr>
+<tr><td><code>sub_priority</code></td><td>int</td><td>同级二级优先级</td><td>0 – 12</td></tr>
+<tr><td><code>intensity</code></td><td>float</td><td>0–100，同级抢占判定用</td><td>—</td></tr>
+<tr><td><code>level</code></td><td>str</td><td>需求等级；情绪恒为 LOW（选执行器动作池）</td><td>LOW / MID / HIGH</td></tr>
+<tr><td><code>variant</code></td><td>str</td><td>变体，参与去重键</td><td><code>joy</code> / <code>light</code></td></tr>
+<tr><td><code>interaction_mode</code></td><td>str</td><td>交互模式，参与去重键</td><td><code>solo</code> / <code>interactive</code></td></tr>
+<tr><td><code>ttl_sec</code></td><td>float</td><td>候选存活时间</td><td>默认 10.0 s</td></tr>
+<tr><td><code>cooldown_sec</code></td><td>float</td><td>执行后冷却</td><td>按 priority_level 默认</td></tr>
+<tr><td><code>timeout_sec</code></td><td>float</td><td>执行超时</td><td>按 priority_level 默认</td></tr>
+<tr><td><code>interrupt_policy</code></td><td>str</td><td>抢占策略</td><td>immediate / safe_point / non_interruptible</td></tr>
+<tr><td><code>result_mapping</code></td><td>dict</td><td>需求行为结果映射</td><td>见「表 4 结果映射」</td></tr>
+</tbody>
+</table></div>
+  <h3>表 19 · 上游事件 JSON 关键字段</h3>
+  <div class="tw"><table class="rt">
+<thead><tr><th>事件源</th><th>字段</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>audio_event</td><td><code>event_type</code></td><td><code>EVT_VOICE_COMMAND_SIT</code> 等，共 80 条</td></tr>
+<tr><td>audio_event</td><td><code>utterance_id</code></td><td>一次发声的关联 ID（KWS/ASR 仲裁也用它）</td></tr>
+<tr><td>audio_event</td><td><code>speaker_id</code> · <code>speaker_confidence</code></td><td>声纹结果；驱动 <code>EVT_VOICE_OWNER_*</code> / <code>EVT_VOICE_STRANGER_*</code></td></tr>
+<tr><td>audio_event</td><td><code>asr_text</code> · <code>language</code></td><td>ASR 文本与语种（zh）</td></tr>
+<tr><td>audio_event</td><td><code>intent</code> · <code>expected_command_id</code></td><td>意图标签与期望命令 ID，行为树据此校验</td></tr>
+<tr><td>audio_event</td><td><code>latency_ms</code></td><td>端到端延迟，调试用</td></tr>
+<tr><td>visual_event</td><td><code>event_type</code></td><td><code>EVT_VISION_FALL</code> / <code>EVT_VISION_STOP_GESTURE</code> 等</td></tr>
+<tr><td>visual_event</td><td><code>identity</code></td><td>master / stranger / unknown，来自 ByteTrack + SFace</td></tr>
+<tr><td>visual_event</td><td><code>track_id</code></td><td>人脸轨迹 ID，多脸时以 active track 为准</td></tr>
+<tr><td>visual_event</td><td><code>pose_action</code> · <code>hand_action</code></td><td>姿态 / 手部动作分类结果</td></tr>
+<tr><td>visual_event</td><td><code>depth_m</code> · <code>angle_deg</code></td><td>融合深度与方位角</td></tr>
+<tr><td>emotion state</td><td>emotions.&lt;name&gt;.value / .triggered</td><td>六种情绪：Joy Excite Anxiety Fear Curious Calm</td></tr>
+<tr><td>need state</td><td>demands.&lt;name&gt;.value / .level / .relevant</td><td>七种需求：Hunger Bladder Sleepiness Cleanliness Energy Social Exploration</td></tr>
+<tr><td>共享</td><td><code>timeContext</code></td><td>mode / scale / virtualDateTime / virtualTimestamp 等</td></tr>
+</tbody>
+</table></div>
+</section>
+
+  <footer>
+    <p>MarsDog 生命系统 · 事件级参考手册 — 由 20260702_MarsDogTree / MarsDogVoiceInteraction / MarsDogVisionInteraction / Marsdog / marsdog_interfaces / marsdog_action_executor 六处配置与源码生成。</p>
+    <p>数值全部取自权威 YAML：<code>config/*.yaml</code>、<code>MarsDogVoiceInteraction/config/*.yaml</code>、<code>MarsDogVisionInteraction/config/vision.yaml</code>、<code>Marsdog/configs/*.yaml</code>。空值统一记为 «—»。图中 ROS 图查询不可用的条目以配置文件为准。</p>
+  </footer>
+
+</div>
+</body>
+</html>

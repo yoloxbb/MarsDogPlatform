@@ -9,6 +9,7 @@ from pathlib import Path
 from bionic_dog_bt.tree_builder import create_runtime
 from bionic_dog_bt.behavior_tree_node import Status
 from bionic_dog_bt.constants import (
+    GOAL_CANCEL_REQUESTED,
     STATUS_RUNNING,
     STATUS_SUCCESS,
     STATUS_FAILURE,
@@ -92,6 +93,9 @@ class TestSafePoint:
 
             _tick(root, bb, 1)
             assert bb.preemption_occurred
+            assert bb.goal_lifecycle == GOAL_CANCEL_REQUESTED
+            assert bb.current_behavior.behavior_name == "eatNormally"
+            _tick(root, bb, 2)
             assert bb.current_behavior.behavior_name == "respond_owner_call"
         else:
             pytest.skip("Already in non-safe step, can't test safe path")
@@ -142,4 +146,7 @@ class TestNonInterruptible:
 
         _tick(root, bb, 1)
         assert bb.preemption_occurred
+        assert bb.goal_lifecycle == GOAL_CANCEL_REQUESTED
+        assert bb.current_behavior.behavior_name == "idle_look_around"
+        _tick(root, bb, 2)
         assert bb.current_behavior.behavior_name == "emergency_stop"
