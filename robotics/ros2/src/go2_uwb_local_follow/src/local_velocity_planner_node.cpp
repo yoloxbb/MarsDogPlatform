@@ -126,7 +126,7 @@ public:
     motion_limits_.max_linear_speed = declare_parameter<double>(
       "max_linear_speed", 0.80);
     motion_limits_.max_reverse_speed = declare_parameter<double>(
-      "max_reverse_speed", 0.23);
+      "max_reverse_speed", 0.30);
     motion_limits_.min_angular_speed = declare_parameter<double>(
       "min_follow_angular_speed", 0.0);
     motion_limits_.max_angular_speed = declare_parameter<double>(
