@@ -121,7 +121,14 @@ class VisionObservationProvider(BaseProvider):
         self._hand_presence_threshold = float(
             hand_rknn_config.get("presence_threshold", config.get("hand_presence_threshold", 0.50))
         )
-        self._det_threshold = float(config.get("det_threshold", 0.5))
+        # Face and pose scores come from different models and need independent
+        # thresholds.
+        self._face_detection_threshold = float(
+            config.get("face_detection_threshold", 0.5)
+        )
+        self._pose_detection_threshold = float(
+            config.get("pose_detection_threshold", 0.5)
+        )
         self._nms_threshold = float(config.get("nms_threshold", 0.45))
         self._show_all_detections = bool(
             config.get("show_all_detections", False)
@@ -456,7 +463,7 @@ class VisionObservationProvider(BaseProvider):
                     self._face_detector = create_face_detector(
                         self._face_detect_model,
                         input_size=_FACE_INPUT_SIZE,
-                        score_threshold=self._det_threshold,
+                        score_threshold=self._face_detection_threshold,
                         nms_threshold=self._nms_threshold,
                         top_k=5000,
                         rknn_config=self.config.get("face_detect_rknn"),
@@ -480,7 +487,7 @@ class VisionObservationProvider(BaseProvider):
                             self._pose_model_path,
                             rknn_config=self.config.get("pose_rknn"),
                             runtime_library=self.config.get("rknn_runtime_library", ""),
-                            score_threshold=self._det_threshold,
+                            score_threshold=self._pose_detection_threshold,
                             nms_threshold=self._nms_threshold,
                             max_num_poses=self._max_num_poses,
                         )
@@ -520,8 +527,8 @@ class VisionObservationProvider(BaseProvider):
                             ),
                             running_mode=running_mode,
                             num_poses=self._max_num_poses,
-                            min_pose_detection_confidence=self._det_threshold,
-                            min_pose_presence_confidence=self._det_threshold,
+                            min_pose_detection_confidence=self._pose_detection_threshold,
+                            min_pose_presence_confidence=self._pose_detection_threshold,
                             min_tracking_confidence=0.5,
                         )
                         self._pose_landmarker = vision.PoseLandmarker.create_from_options(
@@ -1557,7 +1564,7 @@ class VisionObservationProvider(BaseProvider):
                 # FaceDetectorYN layout is bbox(4), five landmarks(10),
                 # confidence(1). det[4] is a landmark coordinate, not score.
                 conf = float(det[-1])
-                if conf < self._det_threshold:
+                if conf < self._face_detection_threshold:
                     continue
                 x1, y1, x2, y2 = fx, fy, fx + fw, fy + fh
                 detections_xyxy.append([x1, y1, x2, y2])

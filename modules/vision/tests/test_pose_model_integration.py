@@ -54,6 +54,45 @@ def test_provider_routes_rknn_model_and_publishes_native_coco(monkeypatch) -> No
     assert behavior[15].z is None
 
 
+def test_face_and_pose_detection_thresholds_are_independent(monkeypatch) -> None:
+    class _FakeFaceDetector:
+        def close(self) -> None:
+            pass
+
+    face_detector = _FakeFaceDetector()
+    pose_backend = _FakePoseBackend()
+    received: dict[str, float] = {}
+
+    def create_face(_path: str, **kwargs):
+        received["face"] = kwargs["score_threshold"]
+        return face_detector
+
+    def create_pose(_path: str, **kwargs):
+        received["pose"] = kwargs["score_threshold"]
+        return pose_backend
+
+    monkeypatch.setattr(module, "create_face_detector", create_face)
+    monkeypatch.setattr(module, "create_pose_backend", create_pose)
+    provider = VisionObservationProvider({
+        "face_detect_model": "detector.onnx",
+        "pose_model": "/tmp/pose.rknn",
+        "hand_landmark_model": "",
+        "face_detection_threshold": 0.31,
+        "pose_detection_threshold": 0.78,
+        # The former shared key is deliberately ignored.
+        "det_threshold": 0.99,
+    })
+    try:
+        provider.start()
+        assert received == {"face": 0.31, "pose": 0.78}
+    finally:
+        provider.stop()
+
+    legacy_only = VisionObservationProvider({"det_threshold": 0.99})
+    assert legacy_only._face_detection_threshold == 0.5
+    assert legacy_only._pose_detection_threshold == 0.5
+
+
 def test_provider_rejects_unknown_pose_model_suffix() -> None:
     provider = VisionObservationProvider({"pose_model": "/tmp/pose.onnx"})
     assert provider._pose_backend_kind == "unsupported"

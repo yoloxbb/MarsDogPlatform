@@ -153,7 +153,7 @@ def test_provider_reidentifies_same_face_track_after_empty_inference() -> None:
         [[10, 10, 80, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.95]],
         dtype=np.float32,
     )
-    provider = VisionObservationProvider({"det_threshold": 0.3})
+    provider = VisionObservationProvider({"face_detection_threshold": 0.3})
     provider._face_detector = _Detector(iter((face, face, None, face)))
     provider._face_tracker = _Tracker()
     provider._face_rec_throttle = _throttle(
