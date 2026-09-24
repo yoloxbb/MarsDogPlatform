@@ -15,22 +15,29 @@ from launch.substitutions import (
     NotEqualsSubstitution,
     PathJoinSubstitution,
 )
-from launch_ros.actions import Node
+from launch_ros.actions import Node, SetRemap
 from nav2_common.launch import ReplaceString, RewrittenYaml
 
 
-def create_robot_state_publisher(context, enabled):
-    """仅在显式启用时读取 GO2 URDF 并创建状态发布节点。"""
+def create_robot_state_publisher(
+        context, enabled, description_package, description_file):
+    """仅在显式启用时读取指定 URDF 并创建状态发布节点。"""
     enabled_value = enabled.perform(context).strip().lower()
     if enabled_value not in {'1', 'true', 'yes', 'on'}:
         return []
 
-    # GO2 描述包是可选运行依赖，默认关闭时不应阻止主建图入口启动。
-    pkg_go2_description = get_package_share_directory('go2_description')
-    go2_urdf_path = os.path.join(
-        pkg_go2_description, 'urdf', 'go2_description.urdf')
-    with open(go2_urdf_path, encoding='utf-8') as urdf_file:
-        go2_robot_description = urdf_file.read()
+    package_name = description_package.perform(context).strip()
+    relative_file = description_file.perform(context).strip()
+    if not package_name or not relative_file:
+        raise ValueError(
+            '启用 robot_state_publisher 时必须指定 description_package 和 '
+            'description_file')
+
+    # 描述包保持可选，只有显式启用时才解析对应机器人的 URDF。
+    package_share = get_package_share_directory(package_name)
+    urdf_path = os.path.join(package_share, relative_file)
+    with open(urdf_path, encoding='utf-8') as urdf_file:
+        robot_description = urdf_file.read()
 
     return [
         Node(
@@ -38,7 +45,7 @@ def create_robot_state_publisher(context, enabled):
             executable='robot_state_publisher',
             name='robot_state_publisher',
             output='screen',
-            parameters=[{'robot_description': go2_robot_description}],
+            parameters=[{'robot_description': robot_description}],
         )
     ]
 
@@ -51,6 +58,8 @@ def generate_launch_description():
     map_frame = LaunchConfiguration('map_frame')
     sensor_frame = LaunchConfiguration('sensor_frame')
     odom_topic = LaunchConfiguration('odom_topic')
+    cmd_vel_topic = LaunchConfiguration('cmd_vel_topic')
+    stereo_odom_topic = LaunchConfiguration('stereo_odom_topic')
     use_viz = LaunchConfiguration('use_viz')
     localization = LaunchConfiguration('localization')
     use_nav2 = LaunchConfiguration('use_nav2')
@@ -64,6 +73,8 @@ def generate_launch_description():
     right_camera_info = LaunchConfiguration('right_camera_info')
     start_robot_state_publisher = LaunchConfiguration(
         'start_robot_state_publisher')
+    description_package = LaunchConfiguration('description_package')
+    description_file = LaunchConfiguration('description_file')
     use_stereo_odometry = LaunchConfiguration('use_stereo_odometry')
 
     rtabmap_odom_params = {
@@ -251,7 +262,7 @@ def generate_launch_description():
         ('right/image_rect', right_image),
         ('left/camera_info', left_camera_info),
         ('right/camera_info', right_camera_info),
-        ('odom', '/vo'),
+        ('odom', stereo_odom_topic),
     ]
 
     slam_remaps = [
@@ -377,6 +388,16 @@ def generate_launch_description():
             description='底盘发布的 nav_msgs/msg/Odometry 话题'
         ),
         DeclareLaunchArgument(
+            'cmd_vel_topic',
+            default_value='/cmd_vel',
+            description='Nav2 和恢复行为最终发布的底盘速度话题'
+        ),
+        DeclareLaunchArgument(
+            'stereo_odom_topic',
+            default_value='/vo',
+            description='可选 RTAB-Map 双目视觉里程计输出话题'
+        ),
+        DeclareLaunchArgument(
             'use_viz',
             default_value='false',
             description='是否启动 RTAB-Map 可视化界面'
@@ -384,7 +405,17 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'start_robot_state_publisher',
             default_value='false',
-            description='是否发布 GO2 URDF 坐标变换树'
+            description='是否从指定描述包发布机器人 URDF 坐标变换树'
+        ),
+        DeclareLaunchArgument(
+            'description_package',
+            default_value='go2_description',
+            description='启用 robot_state_publisher 时使用的机器人描述包'
+        ),
+        DeclareLaunchArgument(
+            'description_file',
+            default_value='urdf/go2_description.urdf',
+            description='描述包内的 URDF 相对路径'
         ),
         DeclareLaunchArgument(
             'use_stereo_odometry',
@@ -443,7 +474,11 @@ def generate_launch_description():
         # 不再启动旧的 /odom_leg 发布器，odom -> base TF 由底盘里程计独占发布。
         OpaqueFunction(
             function=create_robot_state_publisher,
-            args=[start_robot_state_publisher],
+            args=[
+                start_robot_state_publisher,
+                description_package,
+                description_file,
+            ],
         ),
 
         Node(
@@ -497,6 +532,15 @@ def generate_launch_description():
         GroupAction(
             condition=IfCondition(use_nav2),
             actions=[
+                # 仅重映射最终输出节点，保留 controller 到 smoother 的内部速度链。
+                SetRemap(
+                    src='behavior_server:cmd_vel',
+                    dst=cmd_vel_topic,
+                ),
+                SetRemap(
+                    src='velocity_smoother:cmd_vel_smoothed',
+                    dst=cmd_vel_topic,
+                ),
                 IncludeLaunchDescription(
                     PythonLaunchDescriptionSource([nav2_launch]),
                     launch_arguments=[

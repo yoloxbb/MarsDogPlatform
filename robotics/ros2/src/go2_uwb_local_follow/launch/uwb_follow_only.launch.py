@@ -31,7 +31,7 @@ def generate_launch_description() -> LaunchDescription:
     params_file = LaunchConfiguration("params_file")
     raw_topic = LaunchConfiguration("raw_topic")
     target_topic = LaunchConfiguration("target_topic")
-    target_frame = LaunchConfiguration("target_frame")
+    base_frame = LaunchConfiguration("base_frame")
     odom_topic = LaunchConfiguration("odom_topic")
     cmd_vel_topic = LaunchConfiguration("cmd_vel_topic")
     enable_motion = LaunchConfiguration("enable_motion")
@@ -46,7 +46,7 @@ def generate_launch_description() -> LaunchDescription:
             {
                 "raw_topic": raw_topic,
                 "target_topic": target_topic,
-                "target_frame": target_frame,
+                "target_frame": base_frame,
             },
         ],
     )
@@ -59,6 +59,7 @@ def generate_launch_description() -> LaunchDescription:
         parameters=[
             params_file,
             {
+                "base_frame": base_frame,
                 "target_topic": target_topic,
                 "odom_topic": odom_topic,
                 "cmd_vel_topic": cmd_vel_topic,
@@ -74,7 +75,7 @@ def generate_launch_description() -> LaunchDescription:
                 "raw_topic", default_value="/libAoa_robot_publisher"
             ),
             DeclareLaunchArgument("target_topic", default_value="/uwb/target_point"),
-            DeclareLaunchArgument("target_frame", default_value="base_footprint"),
+            DeclareLaunchArgument("base_frame", default_value="base_footprint"),
             DeclareLaunchArgument("odom_topic", default_value="/leg_odom2"),
             DeclareLaunchArgument("cmd_vel_topic", default_value="/cmd_vel"),
             DeclareLaunchArgument("enable_motion", default_value="true"),

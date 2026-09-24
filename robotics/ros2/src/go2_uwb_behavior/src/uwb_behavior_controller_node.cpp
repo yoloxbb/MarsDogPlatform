@@ -272,6 +272,7 @@ private:
   {
     base_frame_ = declare_parameter<std::string>("base_frame", "base_footprint");
     odom_frame_ = declare_parameter<std::string>("odom_frame", "odom");
+    hardware_id_ = declare_parameter<std::string>("hardware_id", "robot_base");
     target_topic_ = declare_parameter<std::string>("target_topic", "/uwb/target_point");
     // RK 上使用带 pose 和 twist 的 Lite3 里程计，/leg_odom 的消息类型不满足控制需求。
     odom_topic_ = declare_parameter<std::string>("odom_topic", "/leg_odom2");
@@ -425,7 +426,8 @@ private:
       throw std::invalid_argument(reason);
     }
     const std::vector<std::string> required_strings = {
-      base_frame_, odom_frame_, target_topic_, odom_topic_, obstacle_topic_, nominal_cmd_topic_,
+      base_frame_, odom_frame_, hardware_id_, target_topic_, odom_topic_, obstacle_topic_,
+      nominal_cmd_topic_,
       planner_cmd_topic_, cmd_vel_topic_, compute_enable_topic_, behavior_service_name_,
       follow_action_name_, roam_action_name_};
     if (std::any_of(
@@ -1757,7 +1759,7 @@ private:
     status.level = healthy ? diagnostic_msgs::msg::DiagnosticStatus::OK :
       diagnostic_msgs::msg::DiagnosticStatus::WARN;
     status.name = get_fully_qualified_name() + std::string(": UWB behavior controller");
-    status.hardware_id = "go2_uwb_behavior";
+    status.hardware_id = hardware_id_;
     status.message = state_;
     const std::pair<std::string, std::string> entries[] = {
       {"mode", modeName(current_mode_)},
@@ -1800,7 +1802,7 @@ private:
     status.level = current_mode_ == Mode::FOLLOW && targetFresh(current) && odomFresh(current) ?
       diagnostic_msgs::msg::DiagnosticStatus::OK : diagnostic_msgs::msg::DiagnosticStatus::WARN;
     status.name = get_fully_qualified_name() + std::string(": UWB follow compatibility");
-    status.hardware_id = "lite3_base";
+    status.hardware_id = hardware_id_;
     status.message = state_;
     const std::pair<std::string, std::string> entries[] = {
       {"target_age_sec",
@@ -1862,6 +1864,7 @@ private:
   double input_recovery_timeout_sec_{3.0};
   std::string base_frame_;
   std::string odom_frame_;
+  std::string hardware_id_;
   std::string target_topic_;
   std::string odom_topic_;
   std::string obstacle_topic_;

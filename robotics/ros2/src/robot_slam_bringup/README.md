@@ -50,20 +50,23 @@ ros2 launch robot_slam_bringup nav.launch.py use_nav2:=true
 ros2 launch robot_slam_bringup nav.launch.py \
   use_nav2:=true \
   odom_topic:=/robot/odom \
+  cmd_vel_topic:=/robot/cmd_vel \
   base_frame:=base_link \
   odom_frame:=odom \
   map_frame:=map \
   sensor_frame:=camera_depth_optical_frame
 ```
 
-这些参数会同时作用于 RTAB-Map 和 Nav2；`sensor_frame` 用于局部代价地图的
-点云清除射线。未传入时仍使用当前 GO2/CAPO 配置作为默认值。
+这些参数会同时作用于 RTAB-Map 和 Nav2；`cmd_vel_topic` 同时覆盖速度平滑器和
+恢复行为的最终输出，`sensor_frame` 用于局部代价地图的点云清除射线。未传入时
+仍使用当前分支对应机器人的配置作为默认值。
 
 只使用双目视觉里程计时，应同时把 RTAB-Map 的里程计输入切到 `/vo`：
 
 ```bash
 ros2 launch robot_slam_bringup nav.launch.py \
   use_stereo_odometry:=true \
+  stereo_odom_topic:=/vo \
   odom_topic:=/vo
 ```
 

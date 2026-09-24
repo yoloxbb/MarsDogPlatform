@@ -70,6 +70,7 @@ def generate_launch_description() -> LaunchDescription:
             params_file,
             {
                 "base_frame": base_frame,
+                "odom_frame": odom_frame,
                 "odom_child_frame": base_frame,
                 "nominal_cmd_topic": nominal_cmd_topic,
                 "obstacle_topic": rolling_obstacle_topic,

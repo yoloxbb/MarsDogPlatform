@@ -145,6 +145,7 @@ def generate_launch_description() -> LaunchDescription:
             planner_params_file,
             {
                 "base_frame": base_frame,
+                "odom_frame": odom_frame,
                 "odom_child_frame": base_frame,
                 "nominal_cmd_topic": "/go2_uwb_local_follow/nominal_cmd",
                 "obstacle_topic": rolling_obstacle_topic,

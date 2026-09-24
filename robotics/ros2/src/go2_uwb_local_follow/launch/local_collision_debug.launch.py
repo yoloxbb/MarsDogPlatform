@@ -32,6 +32,7 @@ def generate_launch_description() -> LaunchDescription:
     params_file = LaunchConfiguration("params_file")
     nominal_cmd_topic = LaunchConfiguration("nominal_cmd_topic")
     obstacle_topic = LaunchConfiguration("obstacle_topic")
+    base_frame = LaunchConfiguration("base_frame")
     cmd_vel_topic = LaunchConfiguration("cmd_vel_topic")
     enable_motion = LaunchConfiguration("enable_motion")
 
@@ -43,6 +44,7 @@ def generate_launch_description() -> LaunchDescription:
         parameters=[
             params_file,
             {
+                "base_frame": base_frame,
                 "nominal_cmd_topic": nominal_cmd_topic,
                 "obstacle_topic": obstacle_topic,
                 "cmd_vel_topic": cmd_vel_topic,
@@ -61,6 +63,7 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument(
                 "obstacle_topic", default_value="/local_grid_obstacle"
             ),
+            DeclareLaunchArgument("base_frame", default_value="base_footprint"),
             DeclareLaunchArgument(
                 "cmd_vel_topic", default_value="/cmd_vel_avoidance"
             ),

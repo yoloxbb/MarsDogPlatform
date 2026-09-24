@@ -3,7 +3,7 @@
 该包包含两个配套组件：
 
 1. `nav2_behaviors/BackUpTwzFree`：`nav2_core::Behavior` 插件，从配置的局部或全局 costmap 中寻找自由栅格方向并执行移动。
-2. `follow_path_recovery_bt_node`：订阅路径并执行 `RecoveryNode(FollowPath, BackUp)` 的行为树。控制失败后调用标准 `/backup` action，恢复成功后重试最新路径。
+2. `follow_path_recovery_bt_node`：订阅路径并执行 `RecoveryNode(FollowPath, BackUp)` 的行为树。控制失败后调用标准 `backup` action，恢复成功后重试最新路径。路径、状态及 action 名均为可配置的相对名称，可随 ROS namespace 自动解析。
 
 行为树文件：`behavior_trees/follow_path_with_free_space_recovery.xml`。
 

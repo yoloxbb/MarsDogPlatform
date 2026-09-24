@@ -75,14 +75,14 @@ private:
   // 声明路径输入、动作名称以及脱困距离等运行参数。
   void declareParameters()
   {
-    declare_parameter<std::string>("path_topic", "/follow_path");
-    declare_parameter<std::string>("status_topic", "/follow/recovery_status");
+    declare_parameter<std::string>("path_topic", "follow_path");
+    declare_parameter<std::string>("status_topic", "follow/recovery_status");
     declare_parameter<std::string>("path_valid_topic", "");
     declare_parameter<std::string>("bt_xml", "");
     declare_parameter<std::string>("controller_id", "FollowPath");
     declare_parameter<std::string>("goal_checker_id", "general_goal_checker");
-    declare_parameter<std::string>("follow_path_action", "/follow_path");
-    declare_parameter<std::string>("backup_action", "/backup");
+    declare_parameter<std::string>("follow_path_action", "follow_path");
+    declare_parameter<std::string>("backup_action", "backup");
     declare_parameter<int>("tick_period_ms", 50);
     declare_parameter<int>("server_timeout_ms", 20);
     declare_parameter<int>("wait_for_service_timeout_ms", 1000);

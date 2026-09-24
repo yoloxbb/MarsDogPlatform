@@ -40,6 +40,7 @@ def generate_launch_description() -> LaunchDescription:
     odom_topic = LaunchConfiguration("odom_topic")
     base_frame = LaunchConfiguration("base_frame")
     odom_frame = LaunchConfiguration("odom_frame")
+    hardware_id = LaunchConfiguration("hardware_id")
     obstacle_topic = LaunchConfiguration("obstacle_topic")
     depth_observation_topic = LaunchConfiguration("depth_observation_topic")
     rolling_obstacle_topic = LaunchConfiguration("rolling_obstacle_topic")
@@ -114,6 +115,7 @@ def generate_launch_description() -> LaunchDescription:
             {
                 "base_frame": base_frame,
                 "odom_frame": odom_frame,
+                "hardware_id": hardware_id,
                 "target_topic": target_topic,
                 "odom_topic": odom_topic,
                 "obstacle_topic": rolling_obstacle_topic,
@@ -154,6 +156,7 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument("odom_topic", default_value="/leg_odom2"),
             DeclareLaunchArgument("base_frame", default_value="base_footprint"),
             DeclareLaunchArgument("odom_frame", default_value="odom"),
+            DeclareLaunchArgument("hardware_id", default_value="robot_base"),
             DeclareLaunchArgument("obstacle_topic", default_value="/local_grid_obstacle"),
             DeclareLaunchArgument(
                 "depth_observation_topic", default_value="/local_depth_observation"
