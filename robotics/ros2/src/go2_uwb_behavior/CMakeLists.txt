@@ -27,6 +27,7 @@ find_package(tf2_ros REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "action/FollowUwb.action"
+  "action/OrbitUwbOnce.action"
   "action/RandomRoam.action"
   "srv/SetBehavior.srv"
   DEPENDENCIES builtin_interfaces geometry_msgs

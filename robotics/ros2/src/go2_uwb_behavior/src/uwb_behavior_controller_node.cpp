@@ -46,6 +46,7 @@
 #include "tf2_ros/transform_listener.h"
 
 #include "go2_uwb_behavior/action/follow_uwb.hpp"
+#include "go2_uwb_behavior/action/orbit_uwb_once.hpp"
 #include "go2_uwb_behavior/action/random_roam.hpp"
 #include "go2_uwb_behavior/behavior_core.hpp"
 #include "go2_uwb_behavior/srv/set_behavior.hpp"
@@ -62,6 +63,8 @@ using FollowUwb = go2_uwb_behavior::action::FollowUwb;
 using GoalHandleFollowUwb = rclcpp_action::ServerGoalHandle<FollowUwb>;
 using RandomRoam = go2_uwb_behavior::action::RandomRoam;
 using GoalHandleRandomRoam = rclcpp_action::ServerGoalHandle<RandomRoam>;
+using OrbitUwbOnce = go2_uwb_behavior::action::OrbitUwbOnce;
+using GoalHandleOrbit = rclcpp_action::ServerGoalHandle<OrbitUwbOnce>;
 using SetBehavior = go2_uwb_behavior::srv::SetBehavior;
 using FollowResult = go2_uwb_local_follow::FollowResult;
 using FollowConfig = go2_uwb_local_follow::FollowConfig;
@@ -89,12 +92,18 @@ Velocity2D fromFollowVelocity(const go2_uwb_local_follow::Velocity2D & velocity)
   return Velocity2D{velocity.linear_x, velocity.angular_z};
 }
 
+// 将角度差折叠到 [-pi, pi]，用于可靠累计环绕进度。
+double normalizeAngle(double angle)
+{
+  return std::atan2(std::sin(angle), std::cos(angle));
+}
+
 }  // namespace
 
 class UwbBehaviorControllerNode : public rclcpp::Node
 {
 public:
-  // 初始化统一跟随、随机漫游、Action 接口与最终速度安全门控。
+  // 初始化跟随、单次环绕、随机漫游 Action 及最终速度安全门控。
   explicit UwbBehaviorControllerNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
   : Node("uwb_behavior_controller_node", options),
     tf_buffer_(get_clock()),
@@ -171,6 +180,25 @@ public:
       std::bind(
         &UwbBehaviorControllerNode::handleFollowAccepted, this,
         std::placeholders::_1));
+    orbit_action_server_ = rclcpp_action::create_server<OrbitUwbOnce>(
+      this,
+      orbit_action_name_,
+      std::bind(
+        &UwbBehaviorControllerNode::handleOrbitGoal, this,
+        std::placeholders::_1, std::placeholders::_2),
+      std::bind(
+        &UwbBehaviorControllerNode::handleOrbitCancel, this,
+        std::placeholders::_1),
+      std::bind(
+        &UwbBehaviorControllerNode::handleOrbitAccepted, this,
+        std::placeholders::_1));
+      this,
+      std::bind(
+        std::placeholders::_1, std::placeholders::_2),
+      std::bind(
+        std::placeholders::_1),
+      std::bind(
+        std::placeholders::_1));
 
     const auto control_period = std::chrono::duration<double>(1.0 / control_frequency_);
     control_timer_ = create_wall_timer(
@@ -208,7 +236,7 @@ private:
     IDLE = SetBehavior::Request::IDLE,
     FOLLOW = SetBehavior::Request::FOLLOW,
     STOP = SetBehavior::Request::STOP,
-    ROAM = SetBehavior::Request::ROAM
+    ROAM = SetBehavior::Request::ROAM,
   };
 
   enum class RoamPhase
@@ -221,6 +249,15 @@ private:
     ARRIVAL_STOP,
     RETRY_STOP,
     INPUT_PAUSE,
+    FINAL_STOP
+  };
+
+  enum class OrbitPhase
+  {
+    STARTING,
+    APPROACHING,
+    ORBITING,
+    INPUT_PAUSED,
     FINAL_STOP
   };
 
@@ -301,6 +338,8 @@ private:
       "behavior_service_name", "/go2/set_behavior");
     follow_action_name_ = declare_parameter<std::string>(
       "follow_action_name", "/go2/follow_uwb");
+    orbit_action_name_ = declare_parameter<std::string>(
+      "orbit_action_name", "/go2/orbit_uwb_once");
     roam_action_name_ = declare_parameter<std::string>(
       "roam_action_name", "/go2/random_roam");
     default_mode_ = declare_parameter<std::string>("default_mode", "IDLE");
@@ -321,6 +360,18 @@ private:
     input_recovery_timeout_sec_ = declare_parameter<double>("input_recovery_timeout_sec", 3.0);
     maximum_follow_timeout_sec_ = declare_parameter<double>(
       "maximum_follow_timeout_sec", 3600.0);
+    default_orbit_timeout_sec_ = declare_parameter<double>(
+      "default_orbit_timeout_sec", 60.0);
+    maximum_orbit_timeout_sec_ = declare_parameter<double>(
+      "maximum_orbit_timeout_sec", 180.0);
+    default_orbit_radius_ = declare_parameter<double>("default_orbit_radius", 1.0);
+    minimum_orbit_radius_ = declare_parameter<double>("minimum_orbit_radius", 0.5);
+    maximum_orbit_radius_ = declare_parameter<double>("maximum_orbit_radius", 2.0);
+    orbit_capture_tolerance_ = declare_parameter<double>("orbit_capture_tolerance", 0.05);
+    orbit_lead_angle_ = declare_parameter<double>("orbit_lead_angle", 0.35);
+    orbit_goal_tolerance_ = declare_parameter<double>("orbit_goal_tolerance", 0.03);
+    orbit_max_linear_speed_ = declare_parameter<double>("orbit_max_linear_speed", 0.35);
+    orbit_max_angular_speed_ = declare_parameter<double>("orbit_max_angular_speed", 1.0);
 
     follow_config_.follow_distance = declare_parameter<double>("follow_distance", 1.0);
     follow_config_.distance_deadband = declare_parameter<double>("distance_deadband", 0.08);
@@ -360,6 +411,15 @@ private:
     roam_control_config_.max_angular_speed = declare_parameter<double>(
       "roam_max_angular_speed", 1.0);
     roam_control_config_.blind_rotation_max_speed = roam_control_config_.max_angular_speed;
+
+    orbit_control_config_ = roam_control_config_;
+    orbit_control_config_.follow_distance = 0.0;
+    orbit_control_config_.distance_deadband = orbit_goal_tolerance_;
+    orbit_control_config_.max_linear_speed = orbit_max_linear_speed_;
+    orbit_control_config_.min_linear_speed = std::min(
+      orbit_control_config_.min_linear_speed, orbit_max_linear_speed_);
+    orbit_control_config_.max_angular_speed = orbit_max_angular_speed_;
+    orbit_control_config_.blind_rotation_max_speed = orbit_max_angular_speed_;
 
     owner_filter_config_.median_window = static_cast<std::size_t>(
       declare_parameter<int>("uwb_median_window", 5));
@@ -415,7 +475,7 @@ private:
     robot_clearance_radius_ = declare_parameter<double>("robot_clearance_radius", 0.40);
   }
 
-  // 校验全部参数及现有跟随核心的配置约束。
+  // 校验全部参数及跟随、环绕控制核心的配置约束。
   void validateParameters()
   {
     std::string reason;
@@ -423,7 +483,8 @@ private:
       !validateRoamSamplingConfig(sampling_config_, &reason) ||
       !validateGeofenceConfig(geofence_config_, &reason) ||
       !go2_uwb_local_follow::validateFollowConfig(follow_config_, &reason) ||
-      !go2_uwb_local_follow::validateFollowConfig(roam_control_config_, &reason))
+      !go2_uwb_local_follow::validateFollowConfig(roam_control_config_, &reason) ||
+      !go2_uwb_local_follow::validateFollowConfig(orbit_control_config_, &reason))
     {
       throw std::invalid_argument(reason);
     }
@@ -431,7 +492,7 @@ private:
       base_frame_, odom_frame_, hardware_id_, target_topic_, odom_topic_, obstacle_topic_,
       nominal_cmd_topic_,
       planner_cmd_topic_, cmd_vel_topic_, compute_enable_topic_, behavior_service_name_,
-      follow_action_name_, roam_action_name_};
+      follow_action_name_, orbit_action_name_, roam_action_name_,
     if (std::any_of(
         required_strings.begin(), required_strings.end(),
         [](const std::string & value) {return value.empty();}))
@@ -449,7 +510,11 @@ private:
       required_progress_, progress_window_sec_, planner_blocked_timeout_sec_,
       stop_linear_threshold_, stop_angular_threshold_, stop_confirm_sec_,
       stop_position_epsilon_, stop_yaw_epsilon_,
-      stop_confirmation_timeout_sec_, robot_clearance_radius_, input_recovery_timeout_sec_};
+      stop_confirmation_timeout_sec_, robot_clearance_radius_, input_recovery_timeout_sec_,
+      default_orbit_timeout_sec_, maximum_orbit_timeout_sec_, default_orbit_radius_,
+      minimum_orbit_radius_, maximum_orbit_radius_, orbit_capture_tolerance_,
+      orbit_lead_angle_, orbit_goal_tolerance_, orbit_max_linear_speed_,
+      orbit_max_angular_speed_};
     if (std::any_of(
         std::begin(positive_values), std::end(positive_values),
         [](double value) {return !std::isfinite(value) || value <= 0.0;}))
@@ -458,6 +523,14 @@ private:
     }
     if (!std::isfinite(maximum_follow_timeout_sec_) || maximum_follow_timeout_sec_ <= 0.0) {
       throw std::invalid_argument("maximum_follow_timeout_sec must be positive");
+    }
+    if (default_orbit_timeout_sec_ > maximum_orbit_timeout_sec_ ||
+      default_orbit_radius_ < minimum_orbit_radius_ ||
+      default_orbit_radius_ > maximum_orbit_radius_ ||
+      orbit_capture_tolerance_ >= minimum_orbit_radius_ ||
+      orbit_lead_angle_ >= 1.57079632679)
+    {
+      throw std::invalid_argument("orbit radius, timeout or lead angle bounds are invalid");
     }
     if (minimum_owner_samples_ == 0U ||
       minimum_owner_samples_ > owner_filter_config_.median_window || max_retries_ < 0 ||
@@ -552,6 +625,11 @@ private:
           FollowUwb::Result::INPUT_TIMEOUT, "里程计坐标系跳变，跟随任务已停止",
           CompletionDisposition::ABORT, Mode::IDLE);
       }
+      if (orbit_goal_handle_) {
+        beginOrbitFinalStop(
+          OrbitUwbOnce::Result::INPUT_TIMEOUT, "里程计坐标系跳变，环绕进度已失效",
+          CompletionDisposition::ABORT);
+      }
     }
     odom_snapshot_.stamp_ns = stamp_ns;
     odom_snapshot_.pose = Pose2D{pose.x, pose.y, pose.yaw};
@@ -639,7 +717,8 @@ private:
     }
   }
 
-  // 保留 IDLE/STOP 服务作为兼容与急停接口；跟随和玩耍任务必须通过 Action 启动。
+
+  // 保留 IDLE/STOP 服务作为兼容与急停接口；运动任务必须通过 Action 启动。
   void behaviorServiceCallback(
     const std::shared_ptr<SetBehavior::Request> request,
     std::shared_ptr<SetBehavior::Response> response)
@@ -650,7 +729,7 @@ private:
     {
       response->accepted = false;
       response->current_mode = modeValue(current_mode_);
-      response->message = "FOLLOW 和 ROAM 必须通过对应 Action 启动";
+      response->message = "跟随、环绕、漫游必须通过对应 Action 启动";
       return;
     }
 
@@ -673,6 +752,15 @@ private:
       response->message = "已接受，正在停车并切换模式";
       return;
     }
+    if (orbit_goal_handle_) {
+      beginOrbitFinalStop(
+        OrbitUwbOnce::Result::PREEMPTED_BY_MODE, "环绕被行为模式请求抢占",
+        CompletionDisposition::ABORT, requested);
+      response->accepted = true;
+      response->current_mode = modeValue(current_mode_);
+      response->message = "已接受，正在停车并切换模式";
+      return;
+    }
 
     setMode(requested);
     response->accepted = true;
@@ -685,7 +773,9 @@ private:
     const rclcpp_action::GoalUUID &,
     std::shared_ptr<const FollowUwb::Goal> goal)
   {
-    if (current_mode_ == Mode::STOP || follow_goal_handle_ || roam_goal_handle_) {
+    if (current_mode_ == Mode::STOP || follow_goal_handle_ || orbit_goal_handle_ ||
+      roam_goal_handle_)
+    {
       return rclcpp_action::GoalResponse::REJECT;
     }
     if (!std::isfinite(goal->timeout_sec) || goal->timeout_sec < 0.0 ||
@@ -729,12 +819,86 @@ private:
     state_ = "FOLLOW_STARTING";
   }
 
+  // 校验单次环绕 Action 的超时、半径、方向及当前底盘所有权。
+  rclcpp_action::GoalResponse handleOrbitGoal(
+    const rclcpp_action::GoalUUID &,
+    std::shared_ptr<const OrbitUwbOnce::Goal> goal)
+  {
+    if (current_mode_ == Mode::STOP || follow_goal_handle_ || orbit_goal_handle_ ||
+      roam_goal_handle_)
+    {
+      return rclcpp_action::GoalResponse::REJECT;
+    }
+    if (!std::isfinite(goal->timeout_sec) || goal->timeout_sec < 0.0 ||
+      goal->timeout_sec > maximum_orbit_timeout_sec_ ||
+      (goal->timeout_sec > 0.0 && goal->timeout_sec < 5.0))
+    {
+      return rclcpp_action::GoalResponse::REJECT;
+    }
+    if (!std::isfinite(goal->orbit_radius) ||
+      (goal->orbit_radius != 0.0 &&
+      (goal->orbit_radius < minimum_orbit_radius_ ||
+      goal->orbit_radius > maximum_orbit_radius_)) ||
+      (goal->direction != -1 && goal->direction != 0 && goal->direction != 1))
+    {
+      return rclcpp_action::GoalResponse::REJECT;
+    }
+    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+  }
+
+  // 将上层取消请求转换为停车确认后返回 CANCELED。
+  rclcpp_action::CancelResponse handleOrbitCancel(
+    const std::shared_ptr<GoalHandleOrbit> goal_handle)
+  {
+    if (!orbit_goal_handle_ || goal_handle != orbit_goal_handle_) {
+      return rclcpp_action::CancelResponse::REJECT;
+    }
+    beginOrbitFinalStop(
+      OrbitUwbOnce::Result::CANCELED, "上层取消 UWB 环绕任务",
+      CompletionDisposition::CANCEL);
+    return rclcpp_action::CancelResponse::ACCEPT;
+  }
+
+  // 初始化一次环绕任务，清空旧的规划输入并启用同一局部避障链路。
+  void handleOrbitAccepted(const std::shared_ptr<GoalHandleOrbit> goal_handle)
+  {
+    orbit_goal_handle_ = goal_handle;
+    const auto goal = goal_handle->get_goal();
+    active_orbit_timeout_sec_ = goal->timeout_sec > 0.0 ?
+      goal->timeout_sec : default_orbit_timeout_sec_;
+    active_orbit_radius_ = goal->orbit_radius > 0.0 ?
+      goal->orbit_radius : default_orbit_radius_;
+    active_orbit_direction_ = goal->direction == 0 ? 1 : goal->direction;
+    orbit_started_time_ = std::chrono::steady_clock::now();
+    orbit_unhealthy_since_ = orbit_started_time_;
+    orbit_ready_ = false;
+    orbit_input_paused_ = false;
+    orbit_stopping_ = false;
+    orbit_phase_ = OrbitPhase::STARTING;
+    orbit_angle_progress_ = 0.0;
+    orbit_last_angle_ = 0.0;
+    orbit_have_last_angle_ = false;
+    orbit_turn_direction_ = 0;
+    orbit_brake_latched_ = false;
+    blocked_elapsed_sec_ = 0.0;
+    geofence_reject_elapsed_sec_ = 0.0;
+    obstacle_snapshot_.valid = false;
+    planner_command_snapshot_.valid = false;
+    follow_result_valid_ = false;
+    have_feedback_time_ = false;
+    setMode(Mode::FOLLOW);
+    setComputeEnabled(true);
+    state_ = "ORBIT_STARTING";
+  }
+
   // 校验漫游 Goal 的超时范围、STOP 锁存和单任务互斥条件。
   rclcpp_action::GoalResponse handleRoamGoal(
     const rclcpp_action::GoalUUID &,
     std::shared_ptr<const RandomRoam::Goal> goal)
   {
-    if (current_mode_ == Mode::STOP || roam_goal_handle_ || follow_goal_handle_) {
+    if (current_mode_ == Mode::STOP || roam_goal_handle_ || follow_goal_handle_ ||
+      orbit_goal_handle_)
+    {
       return rclcpp_action::GoalResponse::REJECT;
     }
     if (!std::isfinite(goal->timeout_sec) || goal->timeout_sec < 0.0 ||
@@ -806,6 +970,10 @@ private:
     state_ = "ROAM_PREPARING";
   }
 
+
+  // 接收取消请求后先停车，最终返回 CANCELED。
+
+
   // 固定频率执行当前模式、发布唯一名义速度并门控规划器最终速度。
   void controlTick()
   {
@@ -818,7 +986,9 @@ private:
     updateOwnerFilter(current);
     Velocity2D nominal;
     nominal_allows_motion_ = false;
-    if (current_mode_ == Mode::FOLLOW && follow_goal_handle_) {
+    if (current_mode_ == Mode::FOLLOW && orbit_goal_handle_) {
+      nominal = processOrbit(current, dt);
+    } else if (current_mode_ == Mode::FOLLOW && follow_goal_handle_) {
       nominal = processFollow(current, dt);
     } else if (current_mode_ == Mode::ROAM && roam_goal_handle_) {
       nominal = processRoam(current, dt);
@@ -884,6 +1054,143 @@ private:
     }
     return computeFollowNominal(current);
   }
+
+  // 执行单次环绕：先按 UWB 距离靠近，再以局部避障规划器跟随圆周虚拟点。
+  Velocity2D processOrbit(const SteadyTime & current, double dt)
+  {
+    if (orbit_stopping_) {
+      orbit_phase_ = OrbitPhase::FINAL_STOP;
+      state_ = "ORBIT_STOPPING";
+      processOrbitFinalStop(current, dt);
+      return Velocity2D{};
+    }
+    if (elapsedSince(orbit_started_time_, current) > active_orbit_timeout_sec_) {
+      beginOrbitFinalStop(
+        OrbitUwbOnce::Result::TIMEOUT, "UWB 环绕超过调用方指定时限",
+        CompletionDisposition::ABORT);
+      return Velocity2D{};
+    }
+    if (!orbit_ready_) {
+      orbit_phase_ = OrbitPhase::STARTING;
+      state_ = "ORBIT_STARTING";
+      if (orbitInputsHealthy(current)) {
+        orbit_ready_ = true;
+        planner_command_after_ = current;
+      } else if (elapsedSince(orbit_started_time_, current) > readiness_timeout_sec_) {
+        beginOrbitFinalStop(
+          OrbitUwbOnce::Result::NOT_READY, "UWB、里程计、障碍或规划器未在时限内就绪",
+          CompletionDisposition::ABORT);
+      }
+      return Velocity2D{};
+    }
+
+    if (!orbitInputsHealthy(current)) {
+      if (!orbit_input_paused_) {
+        orbit_input_paused_ = true;
+        orbit_unhealthy_since_ = current;
+        orbit_phase_before_pause_ = orbit_phase_;
+      } else if (elapsedSince(orbit_unhealthy_since_, current) > input_recovery_timeout_sec_) {
+        beginOrbitFinalStop(
+          OrbitUwbOnce::Result::INPUT_TIMEOUT, "环绕关键输入在恢复窗口内未恢复",
+          CompletionDisposition::ABORT);
+      }
+      orbit_phase_ = OrbitPhase::INPUT_PAUSED;
+      state_ = "ORBIT_INPUT_PAUSED";
+      nominal_allows_motion_ = false;
+      return Velocity2D{};
+    }
+    if (orbit_input_paused_) {
+      orbit_input_paused_ = false;
+      orbit_phase_ = orbit_phase_before_pause_;
+      // 暂停期间不把目标或机器人移动计入本次转圈进度。
+      orbit_last_angle_ = currentOrbitAngle();
+      orbit_have_last_angle_ = true;
+      planner_command_after_ = current;
+    }
+
+    if (updateBlockedState(current, dt)) {
+      beginOrbitFinalStop(
+        OrbitUwbOnce::Result::BLOCKED, "局部规划器持续受阻，环绕任务停止",
+        CompletionDisposition::ABORT);
+      return Velocity2D{};
+    }
+
+    const double target_distance = std::hypot(
+      target_snapshot_.point_base.x, target_snapshot_.point_base.y);
+    if (orbit_phase_ == OrbitPhase::APPROACHING || orbit_phase_ == OrbitPhase::STARTING) {
+      if (target_distance <= active_orbit_radius_ + orbit_capture_tolerance_) {
+        orbit_phase_ = OrbitPhase::ORBITING;
+        orbit_angle_progress_ = 0.0;
+        orbit_last_angle_ = currentOrbitAngle();
+        orbit_have_last_angle_ = true;
+        orbit_turn_direction_ = 0;
+        orbit_brake_latched_ = false;
+      } else {
+        FollowConfig approach_config = follow_config_;
+        approach_config.follow_distance = active_orbit_radius_;
+        approach_config.distance_deadband = orbit_capture_tolerance_;
+        last_follow_result_ = computeControlledTarget(
+          target_snapshot_.point_base, approach_config,
+          orbit_turn_direction_, orbit_brake_latched_);
+        last_follow_result_.distance = target_distance;
+        follow_result_valid_ = true;
+        nominal_allows_motion_ = true;
+        orbit_phase_ = OrbitPhase::APPROACHING;
+        state_ = "ORBIT_APPROACHING";
+        return fromFollowVelocity(last_follow_result_.target_velocity);
+      }
+    }
+
+    if (orbit_phase_ != OrbitPhase::ORBITING) {
+      return Velocity2D{};
+    }
+
+    // 用机器人相对实时 UWB 中心的 odom 方位增量计圈，不把机身原地转向算作进度。
+    const double angle = currentOrbitAngle();
+    if (orbit_have_last_angle_) {
+      const double delta = normalizeAngle(angle - orbit_last_angle_);
+      orbit_angle_progress_ = std::max(
+        0.0, orbit_angle_progress_ + active_orbit_direction_ * delta);
+    }
+    orbit_last_angle_ = angle;
+    orbit_have_last_angle_ = true;
+    if (orbit_angle_progress_ >= 2.0 * 3.14159265358979323846) {
+      beginOrbitFinalStop(
+        OrbitUwbOnce::Result::SUCCESS, "已绕 UWB 目标完成一周",
+        CompletionDisposition::SUCCEED);
+      return Velocity2D{};
+    }
+    // 把 UWB 相对向量旋转成圆周前置点；该虚拟目标始终落在指定半径上。
+    const Point2D target = target_snapshot_.point_base;
+    const double radial_angle = std::atan2(-target.y, -target.x);
+    const double goal_angle = radial_angle +
+      active_orbit_direction_ * orbit_lead_angle_;
+    const Point2D orbit_waypoint{
+      target.x + active_orbit_radius_ * std::cos(goal_angle),
+      target.y + active_orbit_radius_ * std::sin(goal_angle)};
+    last_follow_result_ = computeControlledTarget(
+      orbit_waypoint, orbit_control_config_, orbit_turn_direction_, orbit_brake_latched_);
+    last_follow_result_.distance = target_distance;
+    follow_result_valid_ = true;
+    nominal_allows_motion_ = true;
+    state_ = "ORBITING";
+    return fromFollowVelocity(last_follow_result_.target_velocity);
+  }
+
+  // 判断环绕所需的 UWB、里程计、障碍、规划器和目标位置滤波输入是否新鲜。
+  bool orbitInputsHealthy(const SteadyTime & current) const
+  {
+    return followInputsHealthy(current) && owner_filter_ && owner_filter_->valid();
+  }
+
+  // 返回里程计坐标系中机器人相对滤波 UWB 目标的极角。
+  double currentOrbitAngle() const
+  {
+    const Point2D & owner = owner_filter_->filteredOwner();
+    return std::atan2(
+      odom_snapshot_.pose.y - owner.y, odom_snapshot_.pose.x - owner.x);
+  }
+
 
   // 用每个新 UWB 样本采集时刻的 odom 位姿更新主人位置，避免转动时滤波中心漂移。
   void updateOwnerFilter(const SteadyTime & current)
@@ -1297,6 +1604,81 @@ private:
     setComputeEnabled(false);
   }
 
+  // 进入环绕最终停车阶段，撤销名义运动并关闭双目重计算门控。
+  void beginOrbitFinalStop(
+    std::uint8_t result_code,
+    const std::string & result_message,
+    CompletionDisposition disposition,
+    Mode next_mode = Mode::IDLE)
+  {
+    if (!orbit_goal_handle_ || orbit_stopping_) {
+      return;
+    }
+    orbit_pending_result_code_ = result_code;
+    orbit_pending_result_message_ = result_message;
+    orbit_completion_disposition_ = disposition;
+    orbit_pending_mode_ = next_mode;
+    orbit_stopping_ = true;
+    orbit_phase_ = OrbitPhase::FINAL_STOP;
+    orbit_stop_started_time_ = std::chrono::steady_clock::now();
+    stop_stable_elapsed_sec_ = 0.0;
+    nominal_allows_motion_ = false;
+    setComputeEnabled(false);
+  }
+
+  // 等待里程计确认环绕任务停车，超时则把成功结果转为停车未确认。
+  void processOrbitFinalStop(const SteadyTime & current, double dt)
+  {
+    if (updateStopped(dt, current)) {
+      finishOrbitAction();
+      return;
+    }
+    if (elapsedSince(orbit_stop_started_time_, current) > stop_confirmation_timeout_sec_) {
+      if (orbit_completion_disposition_ == CompletionDisposition::SUCCEED) {
+        orbit_pending_result_code_ = OrbitUwbOnce::Result::STOP_UNCONFIRMED;
+        orbit_pending_result_message_ = "已完成一周，但未能从里程计确认底盘停稳";
+        orbit_completion_disposition_ = CompletionDisposition::ABORT;
+      }
+      finishOrbitAction();
+    }
+  }
+
+  // 返回单次环绕结果，并将底盘控制权交还给 IDLE 或调用方指定模式。
+  void finishOrbitAction()
+  {
+    if (!orbit_goal_handle_) {
+      return;
+    }
+    auto result = std::make_shared<OrbitUwbOnce::Result>();
+    result->code = orbit_pending_result_code_;
+    result->message = orbit_pending_result_message_;
+    result->elapsed_sec = elapsedSince(
+      orbit_started_time_, std::chrono::steady_clock::now());
+    result->final_distance = currentOwnerDistance();
+    result->completed_angle = orbit_angle_progress_;
+    if (orbit_completion_disposition_ == CompletionDisposition::SUCCEED) {
+      orbit_goal_handle_->succeed(result);
+    } else if (orbit_completion_disposition_ == CompletionDisposition::CANCEL) {
+      orbit_goal_handle_->canceled(result);
+    } else {
+      orbit_goal_handle_->abort(result);
+    }
+    orbit_goal_handle_.reset();
+    orbit_ready_ = false;
+    orbit_input_paused_ = false;
+    orbit_stopping_ = false;
+    orbit_completion_disposition_ = CompletionDisposition::NONE;
+    orbit_phase_ = OrbitPhase::STARTING;
+    setMode(orbit_pending_mode_);
+    setComputeEnabled(false);
+  }
+
+  // 局部导航进入最终停车，立即禁止规划器非零速度穿过行为门控。
+
+  // 等待实测停车确认，成功任务若无法确认停车则改报失败。
+
+  // 返回一次性局部导航结果，并释放速度控制权给空闲模式。
+
   // 输入中断时先停车保留当前任务，恢复窗口内重新就绪后自动继续原目标。
   void beginInputTimeoutStop(const std::string & message)
   {
@@ -1554,7 +1936,7 @@ private:
 
   // 发布最终底盘速度并将所有未使用自由度保持为零。
   //
-  // 有活跃 Action（FOLLOW/ROAM 且 goal 未结束）时本节点是底盘唯一速度源，
+  // 有活跃 Action（FOLLOW/环绕/ROAM/局部导航）时本节点是底盘唯一速度源，
   // 维持每个控制周期发布，行为与以前完全一致。
   //
   // 待机（IDLE/STOP）时是否继续以控制频率发零由 ``publish_idle_velocity``
@@ -1567,6 +1949,7 @@ private:
   {
     const bool active_action =
       (current_mode_ == Mode::FOLLOW && follow_goal_handle_) ||
+      (current_mode_ == Mode::FOLLOW && orbit_goal_handle_) ||
       (current_mode_ == Mode::ROAM && roam_goal_handle_);
     const bool nonzero = velocity.linear_x != 0.0 || velocity.angular_z != 0.0;
     if (!active_action && !nonzero && !cmd_vel_last_nonzero_ &&
@@ -1697,6 +2080,36 @@ private:
     follow_goal_handle_->publish_feedback(feedback);
   }
 
+  // 向上层报告环绕当前阶段、UWB 距离、累计角度和任务耗时。
+  void publishOrbitFeedback(const SteadyTime & current)
+  {
+    if (!orbit_goal_handle_ ||
+      (have_feedback_time_ && current - last_feedback_time_ < feedback_period_))
+    {
+      return;
+    }
+    have_feedback_time_ = true;
+    last_feedback_time_ = current;
+    auto feedback = std::make_shared<OrbitUwbOnce::Feedback>();
+    if (orbit_stopping_) {
+      feedback->state = OrbitUwbOnce::Feedback::STOPPING;
+    } else if (!orbit_ready_) {
+      feedback->state = OrbitUwbOnce::Feedback::STARTING;
+    } else if (orbit_input_paused_) {
+      feedback->state = OrbitUwbOnce::Feedback::INPUT_PAUSED;
+    } else if (orbit_phase_ == OrbitPhase::ORBITING) {
+      feedback->state = OrbitUwbOnce::Feedback::ORBITING;
+    } else {
+      feedback->state = OrbitUwbOnce::Feedback::APPROACHING;
+    }
+    feedback->distance = targetFresh(current) ? std::hypot(
+      target_snapshot_.point_base.x, target_snapshot_.point_base.y) :
+      std::numeric_limits<double>::quiet_NaN();
+    feedback->orbit_angle = orbit_angle_progress_;
+    feedback->elapsed_sec = elapsedSince(orbit_started_time_, current);
+    orbit_goal_handle_->publish_feedback(feedback);
+  }
+
   // 按限制频率向当前 Action 客户端发布状态、目标和剩余距离。
   void publishRoamFeedback(const SteadyTime & current)
   {
@@ -1721,6 +2134,7 @@ private:
     feedback->elapsed_sec = elapsedSince(roam_started_time_, current);
     roam_goal_handle_->publish_feedback(feedback);
   }
+
 
   // 将内部漫游子状态转换为 Action Feedback 公共状态值。
   std::uint8_t feedbackState() const
@@ -1882,6 +2296,7 @@ private:
   std::string compute_enable_topic_;
   std::string behavior_service_name_;
   std::string follow_action_name_;
+  std::string orbit_action_name_;
   std::string roam_action_name_;
   std::string default_mode_;
   bool enable_motion_{true};
@@ -1901,9 +2316,20 @@ private:
   double transform_timeout_sec_{0.10};
   double readiness_timeout_sec_{2.0};
   double maximum_follow_timeout_sec_{3600.0};
+  double default_orbit_timeout_sec_{60.0};
+  double maximum_orbit_timeout_sec_{180.0};
+  double default_orbit_radius_{1.0};
+  double minimum_orbit_radius_{0.5};
+  double maximum_orbit_radius_{2.0};
+  double orbit_capture_tolerance_{0.05};
+  double orbit_lead_angle_{0.35};
+  double orbit_goal_tolerance_{0.03};
+  double orbit_max_linear_speed_{0.35};
+  double orbit_max_angular_speed_{1.0};
 
   FollowConfig follow_config_;
   FollowConfig roam_control_config_;
+  FollowConfig orbit_control_config_;
   OwnerFilterConfig owner_filter_config_;
   RoamSamplingConfig sampling_config_;
   GeofenceConfig geofence_config_;
@@ -1976,6 +2402,27 @@ private:
   SteadyTime follow_unhealthy_since_{};
   SteadyTime follow_stop_started_time_{};
 
+  double active_orbit_timeout_sec_{60.0};
+  double active_orbit_radius_{1.0};
+  int active_orbit_direction_{1};
+  bool orbit_ready_{false};
+  bool orbit_input_paused_{false};
+  bool orbit_stopping_{false};
+  OrbitPhase orbit_phase_{OrbitPhase::STARTING};
+  OrbitPhase orbit_phase_before_pause_{OrbitPhase::APPROACHING};
+  std::uint8_t orbit_pending_result_code_{OrbitUwbOnce::Result::SUCCESS};
+  std::string orbit_pending_result_message_;
+  Mode orbit_pending_mode_{Mode::IDLE};
+  CompletionDisposition orbit_completion_disposition_{CompletionDisposition::NONE};
+  double orbit_angle_progress_{0.0};
+  double orbit_last_angle_{0.0};
+  bool orbit_have_last_angle_{false};
+  int orbit_turn_direction_{0};
+  bool orbit_brake_latched_{false};
+  SteadyTime orbit_started_time_{};
+  SteadyTime orbit_unhealthy_since_{};
+  SteadyTime orbit_stop_started_time_{};
+
   int follow_turn_direction_{0};
   bool follow_brake_latched_{false};
   int roam_turn_direction_{0};
@@ -2005,8 +2452,10 @@ private:
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr compute_enable_pub_;
   rclcpp::Service<SetBehavior>::SharedPtr behavior_service_;
   rclcpp_action::Server<FollowUwb>::SharedPtr follow_action_server_;
+  rclcpp_action::Server<OrbitUwbOnce>::SharedPtr orbit_action_server_;
   rclcpp_action::Server<RandomRoam>::SharedPtr roam_action_server_;
   std::shared_ptr<GoalHandleFollowUwb> follow_goal_handle_;
+  std::shared_ptr<GoalHandleOrbit> orbit_goal_handle_;
   std::shared_ptr<GoalHandleRandomRoam> roam_goal_handle_;
   rclcpp::TimerBase::SharedPtr control_timer_;
 
