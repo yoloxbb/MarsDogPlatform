@@ -41,6 +41,7 @@ def generate_launch_description() -> LaunchDescription:
     base_frame = LaunchConfiguration("base_frame")
     odom_frame = LaunchConfiguration("odom_frame")
     hardware_id = LaunchConfiguration("hardware_id")
+    planner_hardware_id = LaunchConfiguration("planner_hardware_id")
     obstacle_topic = LaunchConfiguration("obstacle_topic")
     depth_observation_topic = LaunchConfiguration("depth_observation_topic")
     rolling_obstacle_topic = LaunchConfiguration("rolling_obstacle_topic")
@@ -96,6 +97,7 @@ def generate_launch_description() -> LaunchDescription:
                     "rolling_obstacle_topic": rolling_obstacle_topic,
                     "odom_topic": odom_topic,
                     "base_frame": base_frame,
+                    "hardware_id": planner_hardware_id,
                     "odom_frame": odom_frame,
                     # 规划器只向内部话题发布，行为节点负责最终模式和围栏门控。
                     "cmd_vel_topic": planner_cmd_topic,
@@ -116,6 +118,7 @@ def generate_launch_description() -> LaunchDescription:
                 "base_frame": base_frame,
                 "odom_frame": odom_frame,
                 "hardware_id": hardware_id,
+                "planner_hardware_id": planner_hardware_id,
                 "target_topic": target_topic,
                 "odom_topic": odom_topic,
                 "obstacle_topic": rolling_obstacle_topic,
@@ -156,7 +159,10 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument("odom_topic", default_value="/leg_odom2"),
             DeclareLaunchArgument("base_frame", default_value="base_footprint"),
             DeclareLaunchArgument("odom_frame", default_value="odom"),
-            DeclareLaunchArgument("hardware_id", default_value="robot_base"),
+            DeclareLaunchArgument("hardware_id", default_value="lite3_base"),
+            DeclareLaunchArgument(
+                "planner_hardware_id", default_value="lite3_stereo_local_planner"
+            ),
             DeclareLaunchArgument("obstacle_topic", default_value="/local_grid_obstacle"),
             DeclareLaunchArgument(
                 "depth_observation_topic", default_value="/local_depth_observation"

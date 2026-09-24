@@ -384,7 +384,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'odom_topic',
-            default_value='/SMX/Odom_2D',
+            default_value='/leg_odom2',
             description='底盘发布的 nav_msgs/msg/Odometry 话题'
         ),
         DeclareLaunchArgument(
@@ -409,12 +409,12 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'description_package',
-            default_value='go2_description',
+            default_value='',
             description='启用 robot_state_publisher 时使用的机器人描述包'
         ),
         DeclareLaunchArgument(
             'description_file',
-            default_value='urdf/go2_description.urdf',
+            default_value='',
             description='描述包内的 URDF 相对路径'
         ),
         DeclareLaunchArgument(
@@ -453,14 +453,14 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'database_path',
-            default_value='~/.ros/rtabmap_go2_leg_d435i.db',
+            default_value='~/.ros/rtabmap_lite3_leg_d435i.db',
             description='RTAB-Map 数据库路径，重定位模式必须指向已有数据库'
         ),
         DeclareLaunchArgument(
             'nav2_params',
             default_value=os.path.join(
                 pkg_robot_slam_bringup, 'config', 'nav.yaml'),
-            description='CAPO + RTAB-Map 使用的 Nav2 参数文件'
+            description='外部里程计 + RTAB-Map 使用的 Nav2 参数文件'
         ),
         DeclareLaunchArgument(
             'keepout_mask',

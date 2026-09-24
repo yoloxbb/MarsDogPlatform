@@ -32,6 +32,7 @@ def generate_launch_description() -> LaunchDescription:
     raw_topic = LaunchConfiguration("raw_topic")
     target_topic = LaunchConfiguration("target_topic")
     base_frame = LaunchConfiguration("base_frame")
+    hardware_id = LaunchConfiguration("hardware_id")
     odom_topic = LaunchConfiguration("odom_topic")
     cmd_vel_topic = LaunchConfiguration("cmd_vel_topic")
     enable_motion = LaunchConfiguration("enable_motion")
@@ -60,6 +61,7 @@ def generate_launch_description() -> LaunchDescription:
             params_file,
             {
                 "base_frame": base_frame,
+                "hardware_id": hardware_id,
                 "target_topic": target_topic,
                 "odom_topic": odom_topic,
                 "cmd_vel_topic": cmd_vel_topic,
@@ -76,6 +78,7 @@ def generate_launch_description() -> LaunchDescription:
             ),
             DeclareLaunchArgument("target_topic", default_value="/uwb/target_point"),
             DeclareLaunchArgument("base_frame", default_value="base_footprint"),
+            DeclareLaunchArgument("hardware_id", default_value="lite3_base"),
             DeclareLaunchArgument("odom_topic", default_value="/leg_odom2"),
             DeclareLaunchArgument("cmd_vel_topic", default_value="/cmd_vel"),
             DeclareLaunchArgument("enable_motion", default_value="true"),

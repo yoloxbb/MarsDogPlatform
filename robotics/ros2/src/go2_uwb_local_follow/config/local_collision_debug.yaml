@@ -1,6 +1,7 @@
 local_collision_monitor_node:
   ros__parameters:
     base_frame: base_footprint
+    hardware_id: lite3_stereo_local_planner
     nominal_cmd_topic: /go2_uwb_local_follow/nominal_cmd
     obstacle_topic: /local_grid_obstacle
     planned_cmd_topic: /go2_uwb_local_follow/collision_checked_cmd
@@ -21,9 +22,9 @@ local_collision_monitor_node:
     simulation_dt: 0.05
 
     # Lite3 采用保守矩形足迹；安全边界在长宽两侧分别膨胀 0.08 m。
-    # 长取产品手册外包络 680 mm(站立 610、趴地 680)；宽 0.40 已覆盖 Lite3 的 370 mm。
+    # 长取产品手册外包络 680 mm(站立 610、趴地 680)；宽取保守外包络 380 mm。
     robot_length: 0.68
-    robot_width: 0.40
+    robot_width: 0.38
     safety_margin: 0.08
     emergency_front_distance: 0.25
     emergency_half_width: 0.30

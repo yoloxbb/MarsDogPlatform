@@ -50,8 +50,8 @@ struct TrajectoryConfig
 
 struct FootprintConfig
 {
-  double robot_length{0.70};
-  double robot_width{0.40};
+  double robot_length{0.68};
+  double robot_width{0.38};
   double safety_margin{0.08};
 };
 
@@ -64,7 +64,7 @@ struct CollisionResult
 
 struct MotionLimits
 {
-  double min_linear_speed{0.23};
+  double min_linear_speed{0.25};
   double max_linear_speed{0.80};
   // 仅供显式恢复行为使用；普通跟随和避障候选仍只允许非负线速度。
   double max_reverse_speed{0.23};
@@ -251,7 +251,7 @@ EmergencyReverseProgress evaluateEmergencyReverseProgress(
   const EmergencyReverseConfig & reverse_config,
   double reverse_elapsed_sec);
 
-// 将候选速度限制到运动范围，并跨过 Go2 无法执行的最小非零速度区间。
+// 将候选速度限制到运动范围，并跨过 Lite3 无法执行的最小非零速度区间。
 PlannerVelocity2D makeEffectiveVelocity(
   const PlannerVelocity2D & velocity,
   const MotionLimits & limits);

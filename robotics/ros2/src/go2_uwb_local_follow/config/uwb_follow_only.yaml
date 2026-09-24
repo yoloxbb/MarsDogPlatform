@@ -13,6 +13,7 @@ uwb_target_adapter_node:
 uwb_follow_controller_node:
   ros__parameters:
     base_frame: base_footprint
+    hardware_id: lite3_base
     target_topic: /uwb/target_point
     odom_topic: /leg_odom2
     # Lite3 的 /cmd_vel 会先过 lite3_twist_bridge(10Hz 补流 + 自动切 Vision/Joystick 模式)

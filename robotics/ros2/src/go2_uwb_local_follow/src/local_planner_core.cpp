@@ -506,7 +506,7 @@ EmergencyReverseProgress evaluateEmergencyReverseProgress(
   return progress;
 }
 
-// 将候选速度限制到运动范围，并跨过 Go2 无法执行的最小非零速度区间。
+// 将候选速度限制到运动范围，并跨过 Lite3 无法执行的最小非零速度区间。
 PlannerVelocity2D makeEffectiveVelocity(
   const PlannerVelocity2D & velocity,
   const MotionLimits & limits)

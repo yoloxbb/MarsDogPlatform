@@ -75,6 +75,8 @@ public:
   {
     odom_frame_ = declare_parameter<std::string>("odom_frame", "odom");
     base_frame_ = declare_parameter<std::string>("base_frame", "base_footprint");
+    hardware_id_ = declare_parameter<std::string>(
+      "hardware_id", "lite3_stereo_local_planner");
     odom_child_frame_ = declare_parameter<std::string>(
       "odom_child_frame", "base_footprint");
     nominal_cmd_topic_ = declare_parameter<std::string>(
@@ -115,12 +117,12 @@ public:
 
     trajectory_config_.prediction_time = declare_parameter<double>("prediction_time", 1.20);
     trajectory_config_.simulation_dt = declare_parameter<double>("simulation_dt", 0.05);
-    footprint_config_.robot_length = declare_parameter<double>("robot_length", 0.70);
-    footprint_config_.robot_width = declare_parameter<double>("robot_width", 0.40);
+    footprint_config_.robot_length = declare_parameter<double>("robot_length", 0.68);
+    footprint_config_.robot_width = declare_parameter<double>("robot_width", 0.38);
     footprint_config_.safety_margin = declare_parameter<double>("safety_margin", 0.08);
 
     motion_limits_.min_linear_speed = declare_parameter<double>(
-      "min_linear_speed", 0.23);
+      "min_linear_speed", 0.25);
     motion_limits_.max_linear_speed = declare_parameter<double>(
       "max_linear_speed", 0.80);
     motion_limits_.max_reverse_speed = declare_parameter<double>(
@@ -730,7 +732,7 @@ private:
       status.avoidance_active = true;
       status.planned = reverse_plan.selected_velocity;
       status.final_command = reverse_plan.selected_velocity;
-      // 已经过停稳门槛，恢复阶段直接跨过 Go2 执行死区，且禁止边退边转。
+      // 已经过停稳门槛，恢复阶段直接跨过 Lite3 执行死区，且禁止边退边转。
       status.final_command.angular_z = 0.0;
       publishDecision(status, "EMERGENCY_REVERSING", reverse_plan.selected_trajectory);
       return true;
@@ -1092,7 +1094,7 @@ private:
       diagnostic_msgs::msg::DiagnosticStatus::OK :
       diagnostic_msgs::msg::DiagnosticStatus::WARN;
     diagnostic.name = get_fully_qualified_name() + std::string(": local velocity planner");
-    diagnostic.hardware_id = "go2_stereo_local_planner";
+    diagnostic.hardware_id = hardware_id_;
     diagnostic.message = status.state;
     const std::pair<std::string, std::string> entries[] = {
       {"enable_motion", enable_motion_ ? "true" : "false"},
@@ -1157,6 +1159,7 @@ private:
   SourceStampTracker obstacle_stamp_tracker_;
   std::string odom_frame_;
   std::string base_frame_;
+  std::string hardware_id_;
   std::string odom_child_frame_;
   std::string nominal_cmd_topic_;
   std::string obstacle_topic_;

@@ -71,6 +71,8 @@ public:
   : Node("local_collision_monitor_node", options)
   {
     base_frame_ = declare_parameter<std::string>("base_frame", "base_footprint");
+    hardware_id_ = declare_parameter<std::string>(
+      "hardware_id", "lite3_stereo_local_planner");
     nominal_cmd_topic_ = declare_parameter<std::string>(
       "nominal_cmd_topic", "/go2_uwb_local_follow/nominal_cmd");
     obstacle_topic_ = declare_parameter<std::string>(
@@ -94,8 +96,8 @@ public:
 
     trajectory_config_.prediction_time = declare_parameter<double>("prediction_time", 1.20);
     trajectory_config_.simulation_dt = declare_parameter<double>("simulation_dt", 0.05);
-    footprint_config_.robot_length = declare_parameter<double>("robot_length", 0.70);
-    footprint_config_.robot_width = declare_parameter<double>("robot_width", 0.40);
+    footprint_config_.robot_length = declare_parameter<double>("robot_length", 0.68);
+    footprint_config_.robot_width = declare_parameter<double>("robot_width", 0.38);
     footprint_config_.safety_margin = declare_parameter<double>("safety_margin", 0.08);
     emergency_front_distance_ = declare_parameter<double>(
       "emergency_front_distance", 0.25);
@@ -430,7 +432,7 @@ private:
       diagnostic_msgs::msg::DiagnosticStatus::OK :
       diagnostic_msgs::msg::DiagnosticStatus::WARN;
     diagnostic.name = get_fully_qualified_name() + std::string(": local collision monitor");
-    diagnostic.hardware_id = "go2_stereo_local_planner";
+    diagnostic.hardware_id = hardware_id_;
     diagnostic.message = status.state;
     const std::pair<std::string, std::string> entries[] = {
       {"enable_motion", enable_motion_ ? "true" : "false"},
@@ -455,6 +457,7 @@ private:
   }
 
   std::string base_frame_;
+  std::string hardware_id_;
   std::string nominal_cmd_topic_;
   std::string obstacle_topic_;
   std::string planned_cmd_topic_;

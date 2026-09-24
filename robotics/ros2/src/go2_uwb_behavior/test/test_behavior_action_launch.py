@@ -48,6 +48,7 @@ def generate_test_description():
             {
                 "default_mode": "IDLE",
                 "enable_motion": False,
+                "odom_topic": "/behavior_test/odom",
                 "uwb_median_window": 3,
                 "minimum_owner_samples": 3,
                 "owner_keepout_radius": 0.20,
@@ -90,7 +91,9 @@ class TestBehaviorAction(unittest.TestCase):
         self.target_pub = self.node.create_publisher(
             PointStamped, "/uwb/target_point", 10
         )
-        self.odom_pub = self.node.create_publisher(Odometry, "/leg_odom2", 10)
+        self.odom_pub = self.node.create_publisher(
+            Odometry, "/behavior_test/odom", 10
+        )
         self.obstacle_pub = self.node.create_publisher(
             PointCloud2, "/local_rolling_obstacle", 10
         )

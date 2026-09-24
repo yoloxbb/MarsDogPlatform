@@ -32,7 +32,7 @@ struct FollowConfig
   double angular_reverse_speed_threshold{0.15};
   double linear_kp{0.6};
   double angular_kp{1.0};
-  double min_linear_speed{0.23};
+  double min_linear_speed{0.25};
   double max_linear_speed{0.80};
   double max_angular_speed{2.00};
   double heading_slowdown_start{0.50};

@@ -67,6 +67,7 @@ public:
     tf_listener_(tf_buffer_)
   {
     base_frame_ = declare_parameter<std::string>("base_frame", "base_footprint");
+    hardware_id_ = declare_parameter<std::string>("hardware_id", "lite3_base");
     target_topic_ = declare_parameter<std::string>("target_topic", "/uwb/target_point");
     // Lite3 上必须用 /leg_odom2：它是 nav_msgs/Odometry 且带 twist。
     odom_topic_ = declare_parameter<std::string>("odom_topic", "/leg_odom2");
@@ -94,7 +95,7 @@ public:
       "angular_reverse_speed_threshold", 0.15);
     config_.linear_kp = declare_parameter<double>("linear_kp", 0.6);
     config_.angular_kp = declare_parameter<double>("angular_kp", 1.0);
-    config_.min_linear_speed = declare_parameter<double>("min_linear_speed", 0.23);
+    config_.min_linear_speed = declare_parameter<double>("min_linear_speed", 0.25);
     config_.max_linear_speed = declare_parameter<double>("max_linear_speed", 0.80);
     config_.max_angular_speed = declare_parameter<double>("max_angular_speed", 2.00);
     config_.heading_slowdown_start = declare_parameter<double>(
@@ -423,7 +424,7 @@ private:
       diagnostic_msgs::msg::DiagnosticStatus::OK :
       diagnostic_msgs::msg::DiagnosticStatus::WARN;
     status.name = get_fully_qualified_name() + std::string(": UWB follow controller");
-    status.hardware_id = "go2_base";
+    status.hardware_id = hardware_id_;
     status.message = state;
     const std::pair<std::string, std::string> entries[] = {
       {"target_age_sec", formatDouble(target_age)},
@@ -453,6 +454,7 @@ private:
   }
 
   std::string base_frame_;
+  std::string hardware_id_;
   std::string target_topic_;
   std::string odom_topic_;
   std::string cmd_vel_topic_;

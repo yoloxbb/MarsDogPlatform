@@ -2,6 +2,7 @@ local_velocity_planner_node:
   ros__parameters:
     odom_frame: odom  # 里程计位姿缓存用于把障碍补偿到当前控制时刻
     base_frame: base_footprint  # 规划坐标系；应与障碍点云和机器人足迹坐标系一致
+    hardware_id: lite3_stereo_local_planner  # 诊断消息标识，launch 可覆盖
     odom_child_frame: base_footprint  # 里程计表示的机身坐标系，同时校验 pose 与 twist
     nominal_cmd_topic: /go2_uwb_local_follow/nominal_cmd  # UWB 名义速度输入话题
     obstacle_topic: /local_rolling_obstacle  # 里程计补偿和时间衰减后的滚动局部障碍点云

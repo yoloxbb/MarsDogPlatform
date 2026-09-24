@@ -8,7 +8,7 @@ bt_navigator:
     use_sim_time: False  # 使用系统时间
     global_frame: map  # 导航全局坐标系，launch 可覆盖
     robot_base_frame: base_footprint  # 机器人基座坐标系
-    odom_topic: /SMX/Odom_2D  # 里程计话题
+    odom_topic: /leg_odom2  # Lite3 里程计话题，launch 可覆盖
     bt_loop_duration: 20          # BT 循环周期，单位 ms
     default_server_timeout: 20    # 下游响应超时，单位 ms
     wait_for_service_timeout: 10000  # 等待服务上线，单位 ms
@@ -75,7 +75,7 @@ controller_server:
   ros__parameters:
     use_sim_time: False  # 使用系统时间
     controller_frequency: 20.0  # 必须与 MPPI model_dt=0.05 s 对应
-    odom_topic: /SMX/Odom_2D  # 控制器里程计话题
+    odom_topic: /leg_odom2  # Lite3 控制器里程计话题，launch 可覆盖
     min_x_velocity_threshold: 0.001  # 过滤足式里程计的低速抖动
     min_y_velocity_threshold: 0.001  # 横向速度零值阈值，单位 m/s
     min_theta_velocity_threshold: 0.001  # 角速度零值阈值，单位 rad/s
@@ -215,8 +215,8 @@ local_costmap:
       width: 6       # 单位 m
       height: 6      # 单位 m
       resolution: 0.05  # 单位 m/格
-      # GO2 机身轮廓：0.76 m × 0.32 m。
-      footprint: "[[0.38, 0.16], [0.38, -0.16], [-0.38, -0.16], [-0.38, 0.16]]"  # 机身碰撞轮廓
+      # Lite3 最大外包络：0.68 m × 0.38 m。
+      footprint: "[[0.34, 0.19], [0.34, -0.19], [-0.34, -0.19], [-0.34, 0.19]]"  # 机身碰撞轮廓
       # 图层顺序：STVL 时空体素、孤立点去噪、障碍膨胀。
       plugins: ["stvl_layer", "denoise_layer", "inflation_layer"]  # 局部代价地图图层
       # KeepoutFilter 叠加独立掩码；随后复用本层普通障碍物的膨胀参数，
@@ -274,7 +274,7 @@ local_costmap:
           marking: true  # 使用点云标记障碍
           clearing: false  # 标记源不参与清除
           obstacle_range: 3.0  # 与 Grid/RangeMax 及 MPPI 预测范围匹配，单位 m
-          min_obstacle_height: 0.15  # 避开地面与 GO2 摆腿，单位 m
+          min_obstacle_height: 0.15  # 避开地面与 Lite3 摆腿，单位 m
           max_obstacle_height: 0.45  # 图层有效障碍高度上限，单位 m
           expected_update_rate: 0.0  # 不启用更新率超时检查
           observation_persistence: 0.0  # 只使用最新观测，单位 s
@@ -327,7 +327,7 @@ global_costmap:
       robot_base_frame: base_footprint  # 机器人基座坐标系
       use_sim_time: False  # 使用系统时间
       transform_tolerance: 0.2  # TF 允许延迟，单位 s
-      footprint: "[[0.38, 0.16], [0.38, -0.16], [-0.38, -0.16], [-0.38, 0.16]]"  # 机身碰撞轮廓
+      footprint: "[[0.34, 0.19], [0.34, -0.19], [-0.34, -0.19], [-0.34, 0.19]]"  # Lite3 机身碰撞轮廓
       resolution: 0.05  # 单位 m/格
       track_unknown_space: true  # 保留未知区域状态
       # 静态地图永久保留；STVL 仅管理实时点云障碍；膨胀层最后处理两类障碍。
@@ -488,7 +488,7 @@ behavior_server:
     rotational_acc_lim: 1.6   # 单位 rad/s²
 
     # BackUpTwzFree 参数：使用全局图中的低代价可通行栅格选择脱困方向。
-    robot_radius: 0.42  # GO2 机身轮廓外接圆半径约 0.412 m，向上取整留安全余量
+    robot_radius: 0.40  # Lite3 外包络外接圆约 0.389 m，向上取整留安全余量
     max_radius: 2.0  # 在机器人周围 2 m 内搜索自由空间
     min_recovery_distance: 0.15  # 对称地图或搜索失败时的最小直退距离，单位 m
     max_recovery_distance: 1.0  # 单次恢复最大移动距离，避免长距离盲走，单位 m
@@ -518,7 +518,7 @@ velocity_smoother:
     smoothing_frequency: 20.0  # 速度平滑输出频率，单位 Hz
     scale_velocities: False  # 各速度轴独立限幅
     feedback: "OPEN_LOOP"  # 避免足式里程计速度噪声影响平滑
-    odom_topic: "/SMX/Odom_2D"  # 保留 CAPO 里程计数据话题
+    odom_topic: "/leg_odom2"  # Lite3 里程计话题，launch 可覆盖
     max_velocity: [0.5, 0.0, 1.2]     # [vx, vy, wz]
     min_velocity: [-0.5, 0.0, -1.2]   # [vx, vy, wz]
     max_accel: [1.5, 0.0, 2.8]        # [ax, ay, aw]

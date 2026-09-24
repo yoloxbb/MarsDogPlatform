@@ -39,6 +39,7 @@ def generate_launch_description() -> LaunchDescription:
     rolling_obstacle_topic = LaunchConfiguration("rolling_obstacle_topic")
     odom_topic = LaunchConfiguration("odom_topic")
     base_frame = LaunchConfiguration("base_frame")
+    hardware_id = LaunchConfiguration("hardware_id")
     odom_frame = LaunchConfiguration("odom_frame")
     cmd_vel_topic = LaunchConfiguration("cmd_vel_topic")
     enable_motion = LaunchConfiguration("enable_motion")
@@ -70,6 +71,7 @@ def generate_launch_description() -> LaunchDescription:
             params_file,
             {
                 "base_frame": base_frame,
+                "hardware_id": hardware_id,
                 "odom_frame": odom_frame,
                 "odom_child_frame": base_frame,
                 "nominal_cmd_topic": nominal_cmd_topic,
@@ -99,6 +101,9 @@ def generate_launch_description() -> LaunchDescription:
             ),
             DeclareLaunchArgument("odom_topic", default_value="/leg_odom2"),
             DeclareLaunchArgument("base_frame", default_value="base_footprint"),
+            DeclareLaunchArgument(
+                "hardware_id", default_value="lite3_stereo_local_planner"
+            ),
             DeclareLaunchArgument("odom_frame", default_value="odom"),
             DeclareLaunchArgument(
                 "cmd_vel_topic", default_value="/cmd_vel"

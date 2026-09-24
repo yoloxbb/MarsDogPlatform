@@ -3,7 +3,7 @@
 <package format="3">
   <name>go2_uwb_local_follow</name>
   <version>1.0.0</version>
-  <description>UWB following and stereo local obstacle avoidance for Unitree Go2.</description>
+  <description>UWB following and stereo local obstacle avoidance for DEEP Robotics Lite3.</description>
   <maintainer email="maintainer@example.com">maintainer</maintainer>
   <license>Apache-2.0</license>
 

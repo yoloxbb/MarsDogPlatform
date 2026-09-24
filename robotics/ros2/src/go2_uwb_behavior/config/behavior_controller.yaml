@@ -2,7 +2,8 @@ uwb_behavior_controller_node:
   ros__parameters:
     base_frame: base_footprint  # 机器人机身坐标系，用于目标、障碍及控制计算
     odom_frame: odom  # 里程计局部连续坐标系，用于记录主人位置和漫游目标
-    hardware_id: robot_base  # 诊断消息中的底盘标识，launch 可按机器人覆盖
+    hardware_id: lite3_base  # 诊断消息中的底盘标识，launch 可按机器人覆盖
+    planner_hardware_id: lite3_stereo_local_planner  # 用于筛选局部规划器诊断状态
     target_topic: /uwb/target_point  # 转换到机器人坐标系的 UWB 目标点话题
     odom_topic: /leg_odom2  # RK/Lite3 实际位姿与速度；/leg_odom 类型不兼容
     obstacle_topic: /local_rolling_obstacle  # 局部障碍点云输入话题

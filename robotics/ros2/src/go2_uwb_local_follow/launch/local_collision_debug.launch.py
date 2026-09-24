@@ -33,6 +33,7 @@ def generate_launch_description() -> LaunchDescription:
     nominal_cmd_topic = LaunchConfiguration("nominal_cmd_topic")
     obstacle_topic = LaunchConfiguration("obstacle_topic")
     base_frame = LaunchConfiguration("base_frame")
+    hardware_id = LaunchConfiguration("hardware_id")
     cmd_vel_topic = LaunchConfiguration("cmd_vel_topic")
     enable_motion = LaunchConfiguration("enable_motion")
 
@@ -45,6 +46,7 @@ def generate_launch_description() -> LaunchDescription:
             params_file,
             {
                 "base_frame": base_frame,
+                "hardware_id": hardware_id,
                 "nominal_cmd_topic": nominal_cmd_topic,
                 "obstacle_topic": obstacle_topic,
                 "cmd_vel_topic": cmd_vel_topic,
@@ -64,6 +66,9 @@ def generate_launch_description() -> LaunchDescription:
                 "obstacle_topic", default_value="/local_grid_obstacle"
             ),
             DeclareLaunchArgument("base_frame", default_value="base_footprint"),
+            DeclareLaunchArgument(
+                "hardware_id", default_value="lite3_stereo_local_planner"
+            ),
             DeclareLaunchArgument(
                 "cmd_vel_topic", default_value="/cmd_vel_avoidance"
             ),

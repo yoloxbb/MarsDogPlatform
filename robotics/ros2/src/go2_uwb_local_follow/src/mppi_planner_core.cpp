@@ -96,7 +96,7 @@ void integrateVelocityStep(
   pose.yaw += average_angular * dt;
 }
 
-// 把 MPPI 控制限制到普通前进范围，并在展开前显式建模 Go2 线速度死区。
+// 把 MPPI 控制限制到普通前进范围，并在展开前显式建模 Lite3 线速度死区。
 PlannerVelocity2D applyControlPolicy(
   PlannerVelocity2D control,
   double maximum_forward_speed,

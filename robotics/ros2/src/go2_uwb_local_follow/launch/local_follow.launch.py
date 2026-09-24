@@ -44,6 +44,8 @@ def generate_launch_description() -> LaunchDescription:
     raw_uwb_topic = LaunchConfiguration("raw_uwb_topic")
     target_topic = LaunchConfiguration("target_topic")
     base_frame = LaunchConfiguration("base_frame")
+    hardware_id = LaunchConfiguration("hardware_id")
+    planner_hardware_id = LaunchConfiguration("planner_hardware_id")
     odom_frame = LaunchConfiguration("odom_frame")
     odom_topic = LaunchConfiguration("odom_topic")
     cmd_vel_topic = LaunchConfiguration("cmd_vel_topic")
@@ -109,6 +111,7 @@ def generate_launch_description() -> LaunchDescription:
             follow_params_file,
             {
                 "base_frame": base_frame,
+                "hardware_id": hardware_id,
                 "target_topic": target_topic,
                 "odom_topic": odom_topic,
                 "cmd_vel_topic": "/cmd_vel_follow",
@@ -145,6 +148,7 @@ def generate_launch_description() -> LaunchDescription:
             planner_params_file,
             {
                 "base_frame": base_frame,
+                "hardware_id": planner_hardware_id,
                 "odom_frame": odom_frame,
                 "odom_child_frame": base_frame,
                 "nominal_cmd_topic": "/go2_uwb_local_follow/nominal_cmd",
@@ -207,6 +211,10 @@ def generate_launch_description() -> LaunchDescription:
             ),
             DeclareLaunchArgument("target_topic", default_value="/uwb/target_point"),
             DeclareLaunchArgument("base_frame", default_value="base_footprint"),
+            DeclareLaunchArgument("hardware_id", default_value="lite3_base"),
+            DeclareLaunchArgument(
+                "planner_hardware_id", default_value="lite3_stereo_local_planner"
+            ),
             DeclareLaunchArgument("odom_frame", default_value="odom"),
             DeclareLaunchArgument("odom_topic", default_value="/leg_odom2"),
             DeclareLaunchArgument("cmd_vel_topic", default_value="/cmd_vel"),

@@ -272,7 +272,9 @@ private:
   {
     base_frame_ = declare_parameter<std::string>("base_frame", "base_footprint");
     odom_frame_ = declare_parameter<std::string>("odom_frame", "odom");
-    hardware_id_ = declare_parameter<std::string>("hardware_id", "robot_base");
+    hardware_id_ = declare_parameter<std::string>("hardware_id", "lite3_base");
+    planner_hardware_id_ = declare_parameter<std::string>(
+      "planner_hardware_id", "lite3_stereo_local_planner");
     target_topic_ = declare_parameter<std::string>("target_topic", "/uwb/target_point");
     // RK 上使用带 pose 和 twist 的 Lite3 里程计，/leg_odom 的消息类型不满足控制需求。
     odom_topic_ = declare_parameter<std::string>("odom_topic", "/leg_odom2");
@@ -333,7 +335,7 @@ private:
       "angular_reverse_speed_threshold", 0.15);
     follow_config_.linear_kp = declare_parameter<double>("linear_kp", 0.60);
     follow_config_.angular_kp = declare_parameter<double>("angular_kp", 1.0);
-    follow_config_.min_linear_speed = declare_parameter<double>("min_linear_speed", 0.23);
+    follow_config_.min_linear_speed = declare_parameter<double>("min_linear_speed", 0.25);
     follow_config_.max_linear_speed = declare_parameter<double>("max_linear_speed", 0.80);
     follow_config_.max_angular_speed = declare_parameter<double>("max_angular_speed", 2.0);
     follow_config_.heading_slowdown_start = declare_parameter<double>(
@@ -628,7 +630,7 @@ private:
     const diagnostic_msgs::msg::DiagnosticArray::SharedPtr message)
   {
     for (const auto & status : message->status) {
-      if (status.hardware_id == "go2_stereo_local_planner") {
+      if (status.hardware_id == planner_hardware_id_) {
         planner_state_ = status.message;
         planner_diagnostics_time_ = std::chrono::steady_clock::now();
         planner_diagnostics_valid_ = true;
@@ -1865,6 +1867,7 @@ private:
   std::string base_frame_;
   std::string odom_frame_;
   std::string hardware_id_;
+  std::string planner_hardware_id_;
   std::string target_topic_;
   std::string odom_topic_;
   std::string obstacle_topic_;
