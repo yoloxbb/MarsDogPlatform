@@ -1,0 +1,86 @@
+local_velocity_planner_node:
+  ros__parameters:
+    odom_frame: odom  # 里程计位姿缓存用于把障碍补偿到当前控制时刻
+    base_frame: base_footprint  # 规划坐标系；应与障碍点云和机器人足迹坐标系一致
+    odom_child_frame: base_footprint  # 里程计表示的机身坐标系，同时校验 pose 与 twist
+    nominal_cmd_topic: /go2_uwb_local_follow/nominal_cmd  # UWB 名义速度输入话题
+    obstacle_topic: /local_rolling_obstacle  # 里程计补偿和时间衰减后的滚动局部障碍点云
+    odom_topic: /leg_odom2  # 实际初始速度输入话题。⚠️ 必须用 /leg_odom2：它是 nav_msgs/Odometry
+                            # 且带 twist；/leg_odom 是 PoseWithCovarianceStamped，类型对不上订不了
+    planned_cmd_topic: /go2_uwb_local_follow/planned_cmd  # MPPI 最优序列的首个目标速度
+    final_cmd_topic: /go2_uwb_local_follow/final_cmd  # 加速度限幅后的最终速度
+    cmd_vel_topic: /cmd_vel_planned  # 实机验收时由 launch 覆盖为 /cmd_vel
+    selected_path_topic: /go2_uwb_local_follow/selected_path  # 选中轨迹可视化话题
+    diagnostics_topic: /go2_uwb_local_follow/planner_diagnostics  # 规划诊断话题
+
+    enable_motion: false  # true 发布运动速度，false 只计算并向底盘发布零速度
+    control_frequency: 20.0  # ↑响应快/CPU 高；↓响应慢/CPU 低；BM 点云同频可减少控制排队；步长 5 Hz
+    diagnostic_frequency: 2.0  # ↑诊断更密/通信多；↓诊断更稀；步长 1 Heffectivez
+    nominal_timeout_sec: 0.20  # ↑容忍 UWB 抖动/丢失停车晚；↓停车快/易误停；步长 0.05 s
+    obstacle_timeout_sec: 0.70  # 略大于滚动地图原始点云超时，禁止历史重发布掩盖感知断流
+    odom_timeout_sec: 0.10  # ↑容忍里程计断流/故障响应晚；↓更敏感/易误停；步长 0.02 s
+    obstacle_slowdown_after_sec: 0.30  # 点云短暂缺帧后逐渐降速，到 obstacle_timeout_sec 下发零速
+    odom_linear_deadband: 0.02  # ↑过滤更多线速度噪声/忽略微动；↓更灵敏/易抖；步长 0.01 m/s
+    odom_angular_deadband: 0.05  # ↑过滤更多角速度噪声/忽略微转；↓更灵敏/易抖；步长 0.01 rad/s
+    angular_velocity_tracking_kp: 1.5  # 角速度误差 P 反馈；若实机仍难启动转向，再测试 1.5
+    angular_command_deadband: 0.08  # ↑更容易提前停止转向/朝向精度低；↓纠偏更积极/易摆头；步长 0.02 rad/s
+    angular_reverse_speed_threshold: 0.15  # ↑更早允许反向/响应快；↓必须更接近停稳/更少左右切换；步长 0.05 rad/s
+    avoidance_direction_hold_sec: 0.0  # ↑更不易左右换向/绕行改变慢；↓更灵活/易摆头；步长 0.25 s
+
+    prediction_time: 1.5  # ↑预测远、更保守/计算多；↓更灵活/晚发现碰撞；步长 0.10 s
+    simulation_dt: 0.05  # 与 20 Hz 控制周期一致，MPPI 每周期将最优序列前移一个时间步
+
+    robot_length: 0.68  # Lite3 外包络长(产品手册:站立 610、趴地 680 mm)；↑前后硬碰撞足迹更大、更保守；↓更贴近障碍；步长 0.02 m
+    robot_width: 0.38  # ↑左右硬碰撞足迹更大、更保守；↓侧向通过性高；步长 0.02 m
+    safety_margin: 0.02  # ↑四周安全余量更大；↓通过性高但风险增大；步长 0.01 m
+
+    min_linear_speed: 0.25  # 实机确认低速只调整重心不迈步，所有非零 x 指令至少使用 0.25 m/s
+    max_linear_speed: 0.80  # ↑跟随快/制动距离长；↓更稳/可能跟不上；步长 0.05 m/s
+    max_reverse_speed: 0.30  # 仅供急停恢复倒退使用，普通跟随和主动避障仍禁止负线速度
+
+
+    min_follow_angular_speed: 0.0  # UWB 跟随不强制抬升非零角速度，由实测角速度 P 反馈修正
+    max_angular_speed: 1.50  # UWB 跟随最大角速度；无障碍时规划器保留该上限
+    max_linear_accel: 0.50  # ↑提速快/顿挫强；↓提速平滑/响应慢；步长 0.10 m/s²
+    max_linear_decel: 0.70  # ↑停车快/前倾顿挫强；↓停车柔和/制动距离长；步长 0.10 m/s²
+    max_angular_accel: 1.50  # ↑转向响应快/易摆头；↓转向平滑/响应慢；步长 0.10 rad/s²
+
+    mppi_batch_size: 48  # 每轮随机控制序列数量；5000 点压力测试为 20 Hz 留出抖动余量
+    mppi_iteration_count: 2  # 每周期 MPPI 加权更新次数；↑收敛充分/计算量线性增加
+    mppi_temperature: 0.05  # 匹配当前平均代价尺度；↓更集中选择低代价序列
+    mppi_linear_noise_std: 0.18  # 线速度序列高斯扰动标准差，普通规划仍禁止负速度
+    mppi_angular_noise_std: 0.45  # 角速度序列高斯扰动标准差
+    mppi_noise_correlation: 0.85  # 相邻时刻噪声相关性，避免控制序列高频左右抖动
+    mppi_random_seed: 7  # 固定种子保证回归与影子测试可复现
+    min_avoidance_angular_speed: 0.50  # 确定性左右转弯种子的最小角速度
+    max_avoidance_angular_speed: 1.50  # MPPI 普通规划角速度上限；紧急恢复仍只直退
+    obstacle_influence_distance: 0.55  # ↑更早软减速、更保守；↓更敢靠近障碍；步长 0.05 m
+    minimum_safe_clearance: 0.05  # 候选相对膨胀足迹的基础软净空；低于该值视为勉强不碰撞
+    minimum_ttc: 0.30  # 按足迹边界速度换算所需净空；↑高速更早降层，↓更偏向保持速度；步长 0.05 s
+    weight_follow_linear: 4.0  # ↑更服从 UWB 线速度；↓更允许避障减速；步长 0.5
+    weight_follow_angular: 4.0  # ↑更服从 UWB 角速度，名义为零时更直；↓更易主动绕行；步长 0.5
+    weight_smooth_linear: 6.0  # ↑线速度更连续/响应慢；↓响应快/易忽快忽慢；步长 0.5
+    weight_smooth_angular: 5.0  # ↑少换向/响应慢；↓更灵活/易左右摆头；步长 0.5
+    weight_obstacle: 2.0  # ↑更早减速、净空大；↓不易被远点拖慢、净空小；步长 0.5
+    weight_progress: 1.0  # ↑不愿低于 UWB 名义速度；↓更容易为安全减速；步长 0.10
+
+    emergency_front_distance: 0.15  # ↑更早急停；↓更靠近才急停；步长 0.05 m
+    emergency_half_width: 0.30  # ↑急停通道更宽；↓只关注更窄正前方；步长 0.05 m
+    # 紧急区连续命中该帧数才停车，连续清空同样帧数才解除；严格按新点云帧计数。
+    emergency_confirm_frames: 3  # ↑更耐单帧伪点/确认更慢；↓响应更快/易误停；步长 1 帧
+    # 急停确认后立即发零速，确认底盘停稳后直退，直到触发障碍离开急停区域。
+    enable_emergency_reverse: true
+    emergency_reverse_speed: 0.30  # 倒退速度，必须位于底盘线速度死区与 max_reverse_speed 之间
+    emergency_reverse_distance: 0.40  # 急停区域未清空时的最大命令距离，避免感知异常导致无限后退
+    emergency_reverse_stop_hold_sec: 0.0  # 不增加固定等待，但仍须满足下方实测停稳门槛
+    emergency_reverse_start_linear_speed: 0.04  # 实测线速度低于该值才允许由前进切到倒退
+    emergency_reverse_start_angular_speed: 0.10  # 实测角速度低于该值才允许直线倒退
+    emergency_reverse_extra_margin: 0.05  # 倒退碰撞检查在原膨胀足迹外增加的安全边界
+    obstacle_x_min: -0.75  # 保留更长的侧后方历史障碍，覆盖急停倒退的完整扫掠足迹
+    obstacle_x_max: 3.00  # ↑保留更远障碍/计算多；↓只看近处/计算少；步长 0.20 m
+    obstacle_y_abs_max: 3.00  # ↑保留更宽侧向区域/计算多；↓视野更窄/可能漏侧障；步长 0.20 m
+    enable_self_filter: false  # 原始点云已完成环境过滤，禁止删除进入当前足迹的历史真实障碍
+    self_filter_x_min: -0.35  # 仅在 enable_self_filter=true 时生效
+    self_filter_x_max: 0.35  # ↑向前扩大机身过滤/可能删近障；↓保留更多前点；步长 0.02 m
+    self_filter_y_abs: 0.20  # ↑横向机身过滤更宽/可能删近障；↓机身伪点可能增多；步长 0.02 m
+    max_obstacle_points: 5000  # ↑保留点多/规划慢；↓计算快/稠密场景信息少；步长 500

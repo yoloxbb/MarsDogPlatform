@@ -1,0 +1,57 @@
+uwb_target_adapter_node:
+  ros__parameters:
+    raw_topic: /libAoa_robot_publisher
+    target_topic: /uwb/target_point
+    target_frame: base_footprint
+    # 厂家 x 向前、y 向左；安装原点偏差确认后在这里标定。
+    sensor_offset_x: 0.0
+    sensor_offset_y: 0.0
+    sensor_yaw: 0.0
+    diagnostics_topic: /uwb/target_adapter_diagnostics
+    diagnostic_frequency: 2.0
+
+uwb_follow_controller_node:
+  ros__parameters:
+    base_frame: base_footprint
+    target_topic: /uwb/target_point
+    odom_topic: /leg_odom2
+    # Lite3 的 /cmd_vel 会先过 lite3_twist_bridge(10Hz 补流 + 自动切 Vision/Joystick 模式)
+    # 再经 jetson2motion 到狗，所以这里直接发 /cmd_vel。
+    cmd_vel_topic: /cmd_vel
+    nominal_cmd_topic: /go2_uwb_local_follow/nominal_cmd
+    diagnostics_topic: /go2_uwb_local_follow/follow_diagnostics
+    enable_motion: true
+    control_frequency: 20.0
+    diagnostic_frequency: 2.0
+    target_timeout_sec: 0.50
+    odom_timeout_sec: 0.20
+    transform_timeout_sec: 0.10
+
+    follow_distance: 1.0
+    distance_deadband: 0.08
+    # 进入 0.08 rad（约 4.6°）停止转向；超过 0.15 rad（约 8.6°）立即重新纠偏。
+    # 调小可提高朝向精度但更易受 UWB 噪声影响；两者保留约 4° 滞回以抑制左右摆头。
+    angle_deadband: 0.08
+    angle_reengage: 0.15
+    # 实测角速度越高，按控制链路延迟和制动距离提前撤销 UWB 名义角速度。
+    turn_response_delay: 0.6
+    angular_braking_accel: 1.0
+    # 动态刹车触发后保持零名义角速度，直到 |actual_wz| 降到该值以下。
+    angular_brake_release_speed: 0.06
+    angular_reverse_speed_threshold: 0.15
+    linear_kp: 0.6
+    angular_kp: 1.0
+    # MCF 跟随速度范围；最小非零速度避免低速前倾但无法迈步。
+    min_linear_speed: 0.25
+    max_linear_speed: 0.80
+    # UWB 方位误差越大角速度越高，最大限制为 2.0 rad/s。
+    max_angular_speed: 2.0
+    # 约 17.2° 后开始按方位误差降低线速度，约 88.8° 后停止前进并优先转向。
+    heading_slowdown_start: 0.30
+    heading_stop_angle: 1.55
+    # 目标进入侧后方时停止前进，盲转角速度同样限制为 2.0 rad/s。
+    blind_rotation_max_speed: 2.0
+    # 最大加速度 0.8 m/s² 时，从静止到 0.8 m/s 理论约需 1 秒。
+    max_linear_accel: 0.80
+    max_linear_decel: 0.80
+    max_angular_accel: 1.0

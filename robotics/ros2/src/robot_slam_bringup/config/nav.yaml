@@ -1,11 +1,12 @@
 
-# GO2 Nav2 参数：使用 VoxelLayer + DenoiseLayer，地图由 RTAB-Map 发布。
-# GO2_MAP_FRAME、GO2_ODOM_FRAME 和 SLAM_WS_SHARE 由 launch 自动替换。
+# Nav2 参数：使用 VoxelLayer + DenoiseLayer，地图由 RTAB-Map 发布。
+# 坐标系、里程计话题和传感器 frame 由 nav.launch.py 根据启动参数统一覆盖。
+# SLAM_WS_SHARE 由 launch 自动替换为本包安装路径。
 
 bt_navigator:
   ros__parameters:
     use_sim_time: False  # 使用系统时间
-    global_frame: GO2_MAP_FRAME  # 导航全局坐标系
+    global_frame: map  # 导航全局坐标系，launch 可覆盖
     robot_base_frame: base_footprint  # 机器人基座坐标系
     odom_topic: /SMX/Odom_2D  # 里程计话题
     bt_loop_duration: 20          # BT 循环周期，单位 ms
@@ -206,7 +207,7 @@ local_costmap:
     ros__parameters:
       update_frequency: 12.0  # 兼顾动态避障时效与 CPU 占用
       publish_frequency: 5.0  # 代价地图发布频率，单位 Hz
-      global_frame: GO2_ODOM_FRAME  # 局部代价地图坐标系
+      global_frame: odom  # 局部代价地图坐标系，launch 可覆盖
       robot_base_frame: base_footprint  # 机器人基座坐标系
       use_sim_time: False  # 使用系统时间
       transform_tolerance: 0.2  # TF 允许延迟，单位 s
@@ -322,7 +323,7 @@ global_costmap:
     ros__parameters:
       update_frequency: 0.5  # 全局代价地图更新频率，单位 Hz
       publish_frequency: 0.5  # 全局代价地图发布频率，单位 Hz
-      global_frame: GO2_MAP_FRAME  # 全局代价地图坐标系
+      global_frame: map  # 全局代价地图坐标系，launch 可覆盖
       robot_base_frame: base_footprint  # 机器人基座坐标系
       use_sim_time: False  # 使用系统时间
       transform_tolerance: 0.2  # TF 允许延迟，单位 s
@@ -477,7 +478,7 @@ behavior_server:
       plugin: "nav2_behaviors/Wait"  # 等待行为插件
     assisted_teleop:  # 辅助遥控行为配置
       plugin: "nav2_behaviors/AssistedTeleop"  # 碰撞检测遥控插件
-    global_frame: GO2_ODOM_FRAME  # 恢复行为固定坐标系
+    global_frame: odom  # 恢复行为固定坐标系，launch 可覆盖
     robot_base_frame: base_footprint  # 机器人基座坐标系
     transform_tolerance: 0.2  # TF 允许延迟，单位 s
     use_sim_time: False  # 使用系统时间

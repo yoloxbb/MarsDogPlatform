@@ -44,11 +44,12 @@ def create_robot_state_publisher(context, enabled):
 
 
 def generate_launch_description():
-    """使用 CAPO 2D 里程计和 TF 链启动 RTAB-Map/Nav2。"""
+    """使用外部 2D 里程计和可配置 TF 链启动 RTAB-Map/Nav2。"""
 
     base_frame = LaunchConfiguration('base_frame')
     odom_frame = LaunchConfiguration('odom_frame')
     map_frame = LaunchConfiguration('map_frame')
+    sensor_frame = LaunchConfiguration('sensor_frame')
     odom_topic = LaunchConfiguration('odom_topic')
     use_viz = LaunchConfiguration('use_viz')
     localization = LaunchConfiguration('localization')
@@ -266,12 +267,10 @@ def generate_launch_description():
 
     nav2_launch = PathJoinSubstitution(
         [pkg_nav2_bringup, 'launch', 'navigation_launch.py'])
-    # 将启动参数和安装后的包路径同步写入 Nav2，避免源码路径或坐标系被写死。
+    # 先替换非 ROS 参数占位符，再按参数路径覆盖不同节点使用的坐标系。
     replaced_nav2_params_file = ReplaceString(
         source_file=nav2_params_file,
         replacements={
-            'GO2_MAP_FRAME': map_frame,
-            'GO2_ODOM_FRAME': odom_frame,
             'SLAM_WS_SHARE': pkg_robot_slam_bringup,
             'KEEPOUT_ZONE_ENABLED': keepout_enabled,
         },
@@ -279,8 +278,15 @@ def generate_launch_description():
     configured_nav2_params_file = RewrittenYaml(
         source_file=replaced_nav2_params_file,
         param_rewrites={
+            'bt_navigator.ros__parameters.global_frame': map_frame,
+            'local_costmap.local_costmap.ros__parameters.global_frame':
+                odom_frame,
+            'global_costmap.global_costmap.ros__parameters.global_frame':
+                map_frame,
+            'behavior_server.ros__parameters.global_frame': odom_frame,
             'robot_base_frame': base_frame,
             'odom_topic': odom_topic,
+            'sensor_frame': sensor_frame,
         },
         convert_types=True,
     )
@@ -348,22 +354,27 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'base_frame',
             default_value='base_footprint',
-            description='RTAB-Map 与 Nav2 使用的机器人基座坐标系'
+            description='RTAB-Map 与 Nav2 使用的机器人基座 frame_id'
         ),
         DeclareLaunchArgument(
             'odom_frame',
             default_value='odom',
-            description='CAPO 2D 里程计的父坐标系'
+            description='底盘里程计和 Nav2 局部规划使用的 frame_id'
         ),
         DeclareLaunchArgument(
             'map_frame',
             default_value='map',
-            description='RTAB-Map 与 Nav2 使用的全局坐标系'
+            description='RTAB-Map 与 Nav2 全局规划使用的 frame_id'
+        ),
+        DeclareLaunchArgument(
+            'sensor_frame',
+            default_value='camera_infra1_optical_frame',
+            description='Nav2 障碍物清除射线使用的传感器 frame_id'
         ),
         DeclareLaunchArgument(
             'odom_topic',
             default_value='/SMX/Odom_2D',
-            description='CAPO 发布的 2D 里程计话题'
+            description='底盘发布的 nav_msgs/msg/Odometry 话题'
         ),
         DeclareLaunchArgument(
             'use_viz',
@@ -429,7 +440,7 @@ def generate_launch_description():
             ),
         ),
 
-        # 不再启动旧的 /odom_leg 发布器，odom -> base_footprint 由 CAPO 独占发布。
+        # 不再启动旧的 /odom_leg 发布器，odom -> base TF 由底盘里程计独占发布。
         OpaqueFunction(
             function=create_robot_state_publisher,
             args=[start_robot_state_publisher],

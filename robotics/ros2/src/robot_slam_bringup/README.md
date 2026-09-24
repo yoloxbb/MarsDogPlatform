@@ -43,6 +43,22 @@ ros2 launch robot_slam_bringup nav.launch.py
 ros2 launch robot_slam_bringup nav.launch.py use_nav2:=true
 ```
 
+更换机器人时，可直接从命令行传入底盘里程计话题和 TF frame，无需修改
+`config/nav.yaml`。例如：
+
+```bash
+ros2 launch robot_slam_bringup nav.launch.py \
+  use_nav2:=true \
+  odom_topic:=/robot/odom \
+  base_frame:=base_link \
+  odom_frame:=odom \
+  map_frame:=map \
+  sensor_frame:=camera_depth_optical_frame
+```
+
+这些参数会同时作用于 RTAB-Map 和 Nav2；`sensor_frame` 用于局部代价地图的
+点云清除射线。未传入时仍使用当前 GO2/CAPO 配置作为默认值。
+
 只使用双目视觉里程计时，应同时把 RTAB-Map 的里程计输入切到 `/vo`：
 
 ```bash
