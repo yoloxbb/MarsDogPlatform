@@ -50,8 +50,8 @@ struct TrajectoryConfig
 
 struct FootprintConfig
 {
-  double robot_length{0.68};
-  double robot_width{0.38};
+  double robot_length{0.70};
+  double robot_width{0.40};
   double safety_margin{0.08};
 };
 
@@ -64,7 +64,7 @@ struct CollisionResult
 
 struct MotionLimits
 {
-  double min_linear_speed{0.25};
+  double min_linear_speed{0.23};
   double max_linear_speed{0.80};
   // 仅供显式恢复行为使用；普通跟随和避障候选仍只允许非负线速度。
   double max_reverse_speed{0.23};
