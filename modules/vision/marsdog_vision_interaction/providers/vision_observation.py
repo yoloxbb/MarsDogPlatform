@@ -240,7 +240,6 @@ class VisionObservationProvider(BaseProvider):
         self._pending_frame: np.ndarray | None = None
         self._pending_frame_stamp: float = 0.0
         self._pending_frame_id: str = "camera_link"
-        self._pending_source_metadata: dict[str, Any] | None = None
         self._cached_observation: dict[str, Any] = {}
         self._inference_lock = threading.RLock()
         self._worker_stop = False
@@ -821,7 +820,6 @@ class VisionObservationProvider(BaseProvider):
         with self._lock:
             self._latest_frame = None
             self._pending_frame = None
-            self._pending_source_metadata = None
             self._cached_observation = {}
         self._received_frame_count = 0
         self._inference_candidate_count = 0
@@ -838,7 +836,6 @@ class VisionObservationProvider(BaseProvider):
         *,
         stamp: float = 0.0,
         frame_id: str = "camera_link",
-        source_metadata: dict[str, Any] | None = None,
     ) -> None:
         """Queue only the newest eligible frame for the inference worker.
 
@@ -858,7 +855,6 @@ class VisionObservationProvider(BaseProvider):
             self._pending_frame = frame
             self._pending_frame_stamp = float(stamp or time.time())
             self._pending_frame_id = str(frame_id or "camera_link")
-            self._pending_source_metadata = copy.deepcopy(source_metadata)
             self._frame_condition.notify()
 
     def _start_inference_worker(self) -> None:
@@ -869,7 +865,6 @@ class VisionObservationProvider(BaseProvider):
             self._pending_frame = None
             self._pending_frame_stamp = 0.0
             self._pending_frame_id = "camera_link"
-            self._pending_source_metadata = None
             self._worker = threading.Thread(
                 target=self._inference_worker_loop,
                 name="vision-latest-frame-inference",
@@ -882,7 +877,6 @@ class VisionObservationProvider(BaseProvider):
             self._worker_stop = True
             self._pending_frame = None
             self._pending_frame_stamp = 0.0
-            self._pending_source_metadata = None
             self._frame_condition.notify_all()
             worker = self._worker
         if worker is not None:
@@ -904,23 +898,13 @@ class VisionObservationProvider(BaseProvider):
                 frame = self._pending_frame
                 frame_stamp = self._pending_frame_stamp
                 frame_id = self._pending_frame_id
-                source_metadata = copy.deepcopy(self._pending_source_metadata)
                 self._pending_frame = None
                 self._pending_frame_stamp = 0.0
-                self._pending_source_metadata = None
             if frame is None:
                 continue
             try:
                 with self._inference_lock:
-                    if source_metadata is None:
-                        # Preserve the lightweight test/provider override
-                        # contract used by legacy callers.
-                        obs = self._process_frame_impl(frame)
-                    else:
-                        obs = self._process_frame_impl(
-                            frame,
-                            source_metadata=source_metadata,
-                        )
+                    obs = self._process_frame_impl(frame)
                 obs["header"] = {
                     "stamp": float(frame_stamp or time.time()),
                     "frame_id": str(frame_id or "camera_link"),
@@ -1070,8 +1054,6 @@ class VisionObservationProvider(BaseProvider):
     def _process_frame_impl(
         self,
         frame: np.ndarray,
-        *,
-        source_metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Select one stereo eye and run all 2D models on that view.
 
@@ -1114,19 +1096,9 @@ class VisionObservationProvider(BaseProvider):
         from marsdog_vision_interaction.fusion.stereo_fusion import get_target_manager
 
         mgr = get_target_manager()
-        localization_source = copy.deepcopy(source_metadata)
-        if localization_source is not None:
-            localization_source.update({
-                "source_width": int(frame.shape[1]),
-                "source_height": int(frame.shape[0]),
-                "view_width": int(selected_frame.shape[1]),
-                "view_height": int(selected_frame.shape[0]),
-                "view_split": bool(stereo_split),
-            })
         mgr.update_vision(
             humans=obs.get("humans", []),
             faces=obs.get("faces", []),
-            source_metadata=localization_source,
         )
         target_snapshot = mgr.get_snapshot()
         active = target_snapshot["active_target"]

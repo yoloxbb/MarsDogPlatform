@@ -424,7 +424,7 @@ float64 latency_ms
 |---|---|---|---|
 | `check_person` | `{}` | `ok,present,count` | 读取最近视觉观察 |
 | `query_targets` | 可选 `target_types,min_confidence,max_age_ms` | `ok,header,vision_epoch,sequence,snapshot_id,snapshot_age_ms,targets[],human_candidates[],animal_candidates[],object_candidates[],active_target` | 只读目标事实；查询时实时重算年龄，不启动物体流 |
-| `locate_person_once` | `target_id`（完整人体 ID），可选 `stand_off_distance` | `ok,target_id,source_header,navigation_required,status,message,person_point,navigation_goal,valid_depth_ratio,mean_depth,depth_stddev` | 绑定同一检测源 Header 调用一次 SLAM；不发送 Nav2；失败时不返回可用导航几何 |
+| `locate_person_once` | `target_id`（完整人体 ID） | `ok,target_id,target` | 返回指定且仍处于 tracking 状态的人体视觉候选；不调用 SLAM |
 | `detect_objects` | 可选 `confidence,target_labels[]` | `ok,objects[]` | 同步单帧推理，并发布 `source=service`；不启动持续流 |
 | `set_object_detection` | `enabled,session_id`；开启时可选 `rate_hz,confidence,target_labels[],lease_sec` | `ok,stream`；关闭时还含 `stopped_session_id` | 开启、续租、更新或关闭唯一物体流 |
 | `get_object_detection_state` | `{}` | `ok,stream,automatic_stream` | `stream` 只表示 Action/调试页持有的外部 session；`automatic_stream` 只读人出现后用于手持姿态的自动 2 Hz session，不能据此判定外部 session 被占用 |
@@ -440,12 +440,11 @@ float64 latency_ms
 | `delete_face_sample` | `name,sample_id` | `ok,name,shots,deleted_sample_id,remaining_sample_ids,face_removed` | 只删除一张；最后一张删除后释放身份槽位 |
 | `delete_face` | `name` | `ok,name` | 删除本地人脸样本并同步内存库 |
 
-`locate_person_once` 使用当前 `human_candidates[].target_id`，调用方不得省略目标或由
-视觉节点自动挑选人物。视觉节点保存检测源图像的精确 `sec/nanosec`、`frame_id` 和原图
-尺寸，将归一化 bbox 转为对齐彩色深度坐标的像素 ROI，并以有界等待调用
-`/person_3d_localization/locate_from_bbox`。分视图立体输入、零时间戳、缺少 frame、过期
-目标或无效 ROI 会在发请求前失败关闭。成功且 `navigation_required=false` 时调用方不应
-发送 `navigation_goal`；视觉节点自身不拥有 Nav2 客户端。
+`locate_person_once` 使用当前 `human_candidates[].target_id`，调用方必须提供完整目标 ID；
+视觉节点只返回匹配的人体视觉候选记录 `target`，包含归一化 bbox、身份/置信度、姿态动作、
+跟踪状态和新鲜度。目标缺失、过期或不处于 tracking 状态时返回
+`ok=false,error_code=person_target_not_found`。该任务不调用 SLAM，不返回地图坐标、导航目标
+或深度质量。
 
 不支持的 `task_type` 返回：
 
@@ -656,7 +655,7 @@ float64 latency_ms
 |---|---|---|---|
 | `check_person` | `{}` | `ok,present,count` | 读取最近视觉观察 |
 | `query_targets` | 可选 `target_types,min_confidence,max_age_ms` | `ok,header,vision_epoch,sequence,snapshot_id,snapshot_age_ms,targets[],human_candidates[],animal_candidates[],object_candidates[],active_target` | 只读目标事实；查询时实时重算年龄，不启动物体流 |
-| `locate_person_once` | `target_id`（完整人体 ID），可选 `stand_off_distance` | `ok,target_id,source_header,navigation_required,status,message,person_point,navigation_goal,valid_depth_ratio,mean_depth,depth_stddev` | 绑定同一检测源 Header 调用一次 SLAM；不发送 Nav2；失败时不返回可用导航几何 |
+| `locate_person_once` | `target_id`（完整人体 ID） | `ok,target_id,target` | 返回指定且仍处于 tracking 状态的人体视觉候选；不调用 SLAM |
 | `detect_objects` | 可选 `confidence,target_labels[]` | `ok,objects[]` | 同步单帧推理，并发布 `source=service`；不启动持续流 |
 | `set_object_detection` | `enabled,session_id`；开启时可选 `rate_hz,confidence,target_labels[],lease_sec` | `ok,stream`；关闭时还含 `stopped_session_id` | 开启、续租、更新或关闭唯一物体流 |
 | `get_object_detection_state` | `{}` | `ok,stream,automatic_stream` | `stream` 只表示 Action/调试页持有的外部 session；`automatic_stream` 只读人出现后用于手持姿态的自动 2 Hz session，不能据此判定外部 session 被占用 |
