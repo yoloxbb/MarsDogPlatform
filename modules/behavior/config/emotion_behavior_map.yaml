@@ -1,0 +1,116 @@
+# emotion_behavior_map.yaml
+# 情绪 V2 单阈值事件 → 语义 Behavior
+# 所有 ACT_* 动作选择由 marsdog_action_executor 负责
+
+# 非平静情绪在一次上升沿触发后，可在当前状态仍为 triggered 时续排。
+# 通过次数和总时长双重限制，避免底盘无限执行情绪动作。
+emotion_continuation:
+  enabled: true
+  interval_sec: 0.8
+  max_cycles: 4
+  max_duration_sec: 15.0
+  emotions: [Fear, Anxiety, Excite, Joy, Curious]
+
+emotion_behavior_map:
+  EMO_CALM_TRIGGERED:
+    intent: express_calm
+    priority_level: 5
+    sub_priority: 0
+    level: LOW
+    variant: calm
+    allow_repeat: true
+    visual_required: person_presence
+    routes:
+      human:
+        behavior_name: expressCalmWithHuman
+        voice_waiting_behavior_name: expressCalmInPlaceWithHuman
+        interaction_mode: interactive
+      solo:
+        behavior_name: expressCalmAlone
+        interaction_mode: solo
+    result_mapping: null
+
+  EMO_JOY_TRIGGERED:
+    intent: express_joy
+    priority_level: 5
+    sub_priority: 0
+    level: LOW
+    variant: joy
+    visual_required: person_presence
+    routes:
+      human:
+        behavior_name: expressJoyWithHuman
+        voice_waiting_behavior_name: expressJoyInPlaceWithHuman
+        interaction_mode: interactive
+      solo:
+        behavior_name: expressJoyAlone
+        interaction_mode: solo
+    result_mapping: null
+
+  EMO_EXCITE_TRIGGERED:
+    intent: express_excitement
+    priority_level: 5
+    sub_priority: 0
+    level: LOW
+    variant: excitement
+    visual_required: person_presence
+    routes:
+      human:
+        behavior_name: expressExcitementWithHuman
+        voice_waiting_behavior_name: expressExcitementInPlaceWithHuman
+        interaction_mode: interactive
+      solo:
+        behavior_name: expressExcitementAlone
+        interaction_mode: solo
+    result_mapping: null
+
+  EMO_ANXIETY_TRIGGERED:
+    intent: express_anxiety
+    priority_level: 5
+    sub_priority: 0
+    level: LOW
+    variant: anxiety
+    visual_required: person_presence
+    routes:
+      human:
+        behavior_name: expressAnxietyWithHuman
+        voice_waiting_behavior_name: expressAnxietyInPlaceWithHuman
+        interaction_mode: interactive
+      solo:
+        behavior_name: expressAnxietyAlone
+        interaction_mode: solo
+    result_mapping: null
+
+  EMO_FEAR_TRIGGERED:
+    intent: express_fear
+    priority_level: 5
+    sub_priority: 0
+    level: LOW
+    variant: fear
+    visual_required: person_presence
+    routes:
+      human:
+        behavior_name: expressFearWithHuman
+        voice_waiting_behavior_name: expressFearInPlaceWithHuman
+        interaction_mode: interactive
+      solo:
+        behavior_name: expressFearAlone
+        interaction_mode: solo
+    result_mapping: null
+
+  EMO_CURIOUS_TRIGGERED:
+    intent: express_curiosity
+    priority_level: 5
+    sub_priority: 0
+    level: LOW
+    variant: curiosity
+    visual_required: person_presence
+    routes:
+      human:
+        behavior_name: expressCuriosityWithHuman
+        voice_waiting_behavior_name: expressCuriosityInPlaceWithHuman
+        interaction_mode: interactive
+      solo:
+        behavior_name: expressCuriosityAlone
+        interaction_mode: solo
+    result_mapping: null

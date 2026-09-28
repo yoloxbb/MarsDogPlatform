@@ -1,0 +1,856 @@
+# event_intent_map.yaml — 事件 → category → intent 映射
+#
+# 五类来源：audio_direct / audio_reaction / visual_direct / need / emotion
+
+# ═══════════════════════════════════════════════════════════════════════════
+# audio_direct — 白名单事件
+# ═══════════════════════════════════════════════════════════════════════════
+
+audio_direct:
+  EVT_VOICE_WAKEUP:
+    category: external_interaction
+    intent: orient_to_sound
+    sub_priority: 1    # 听觉
+    ttl_sec: 2.0
+    timeout_sec: 8.0
+    cooldown_sec: 0.0
+    interrupt_policy: immediate
+    params:
+      use_wake_angle: true
+
+  # ── Exact event_type mappings (EVT_VOICE_COMMAND_<ACTION>) ───────────
+  EVT_VOICE_COMMAND_WALK:
+    category: external_interaction
+    intent: command_walk
+    expected_command_id: CMD_WALK
+    sub_priority: 1
+    timeout_sec: 50.0
+
+  EVT_VOICE_COMMAND_PLAY_ALONE:
+    category: external_interaction
+    intent: command_play_alone
+    expected_command_id: CMD_PLAY_ALONE
+    sub_priority: 1
+    timeout_sec: 0.0
+    params:
+      lifecycle_scope: behavior
+      completion_policy: until_preempted
+      cancel_on_voice_idle: false
+
+  EVT_VOICE_COMMAND_GO_OUT:
+    category: external_interaction
+    intent: command_go_out
+    expected_command_id: CMD_GO_OUT
+    sub_priority: 1
+    timeout_sec: 50.0
+
+  EVT_VOICE_COMMAND_GO_HOME:
+    category: external_interaction
+    intent: command_go_home
+    expected_command_id: CMD_GO_HOME
+    sub_priority: 1
+    timeout_sec: 60.0
+
+  EVT_VOICE_COMMAND_APPROACH:
+    category: external_interaction
+    intent: command_approach
+    expected_command_id: CMD_APPROACH
+    sub_priority: 1
+    timeout_sec: 170.0
+
+  EVT_VOICE_COMMAND_BACK_UP:
+    category: external_interaction
+    intent: command_back_up
+    expected_command_id: CMD_BACK_UP
+    sub_priority: 1
+    timeout_sec: 6.0
+
+  EVT_VOICE_COMMAND_SIT:
+    category: external_interaction
+    intent: command_sit
+    expected_command_id: CMD_SIT
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_LIE_DOWN:
+    category: external_interaction
+    intent: command_lie_down
+    expected_command_id: CMD_LIE_DOWN
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_STAND_UP:
+    category: external_interaction
+    intent: command_stand_up
+    expected_command_id: CMD_STAND_UP
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_STAND_STILL:
+    category: external_interaction
+    intent: command_stand_still
+    expected_command_id: CMD_STAND_STILL
+    sub_priority: 1
+    timeout_sec: 10.0
+
+  EVT_VOICE_COMMAND_HOLD_POSITION:
+    category: external_interaction
+    intent: command_hold_position
+    expected_command_id: CMD_HOLD_POSITION
+    sub_priority: 1
+    timeout_sec: 10.0
+
+  EVT_VOICE_COMMAND_WAIT:
+    category: external_interaction
+    intent: command_wait
+    expected_command_id: CMD_WAIT
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_COME:
+    category: external_interaction
+    intent: command_come_here
+    expected_command_id: CMD_COME_HERE
+    sub_priority: 1
+    timeout_sec: 170.0
+
+  EVT_VOICE_COMMAND_SHAKE_HAND:
+    category: external_interaction
+    intent: command_handshake
+    expected_command_id: CMD_HAND
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_HIGH_FIVE:
+    category: external_interaction
+    intent: command_high_five
+    expected_command_id: CMD_FIVE
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_FOLLOW:
+    category: external_interaction
+    intent: command_follow
+    expected_command_id: CMD_FOLLOW
+    sub_priority: 1
+    timeout_sec: 0.0
+    params:
+      lifecycle_scope: behavior
+      completion_policy: until_preempted
+      cancel_on_voice_idle: false
+
+  EVT_VOICE_COMMAND_ROLL_OVER:
+    category: external_interaction
+    intent: command_roll
+    expected_command_id: CMD_ROLL
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_SPIN:
+    category: external_interaction
+    intent: command_spin
+    expected_command_id: CMD_SPIN
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_RETURN:
+    category: external_interaction
+    intent: command_retrieve
+    expected_command_id: CMD_BACK
+    sub_priority: 1
+    timeout_sec: 170.0
+
+  EVT_VOICE_COMMAND_DROP:
+    category: external_interaction
+    intent: command_spit_out
+    expected_command_id: CMD_SPIT
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_QUIET:
+    category: external_interaction
+    intent: command_quiet
+    expected_command_id: CMD_QUIET
+    sub_priority: 1
+    timeout_sec: 3.0
+
+  # These voice commands are executable only when the authoritative internal
+  # need value is strictly above the product threshold.  They reuse the
+  # existing need behaviors after the gate passes.
+  EVT_VOICE_COMMAND_TOILET:
+    category: external_interaction
+    intent: command_toilet
+    expected_command_id: CMD_TOILET
+    sub_priority: 1
+    timeout_sec: 60.0
+    need_gate:
+      demand: Bladder
+      operator: gt
+      threshold: 50.0
+
+  EVT_VOICE_COMMAND_CLEAN:
+    category: external_interaction
+    intent: command_clean
+    expected_command_id: CMD_CLEAN
+    sub_priority: 1
+    timeout_sec: 15.0
+    need_gate:
+      demand: Cleanliness
+      operator: gt
+      threshold: 40.0
+
+  EVT_VOICE_COMMAND_SLEEP:
+    category: external_interaction
+    intent: command_sleep
+    expected_command_id: CMD_SLEEP
+    sub_priority: 1
+    timeout_sec: 120.0
+    need_gate:
+      demand: Sleepiness
+      operator: gt
+      threshold: 50.0
+
+  EVT_VOICE_COMMAND_PLAY_DEAD:
+    category: external_interaction
+    intent: command_play_dead
+    expected_command_id: CMD_DEAD
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_BRING:
+    category: external_interaction
+    intent: command_bring
+    expected_command_id: CMD_BRING_OBJECT
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_FETCH:
+    category: external_interaction
+    intent: command_fetch
+    expected_command_id: CMD_FETCH_OBJECT
+    required_voice_slots: [object_name]
+    allowed_voice_slot_values:
+      object_name:
+        - dog toy ball
+        - dog frisbee toy
+        - dog tug ring toy
+        - dog collar
+        - dog bowl
+        - dog leash
+        - dog treat bag
+        - dog food can
+        - dog bed
+        - trash can
+        - cardboard shipping box
+        - sock
+        - slipper
+        - tissue paper
+        - door
+        - stairs
+        - cat
+        - dog
+    sub_priority: 1
+
+  EVT_VOICE_COMMAND_STOP:
+    category: safety
+    intent: emergency_stop
+    expected_command_id: CMD_STOP
+    sub_priority: 1
+
+  # ── 直驱式短语 (direct-drive phrases) ─────────────────────────────────
+  # 社交/亲昵/情绪口语短语直驱确定性动作（source=audio_direct，走候选池+仲裁）。
+  # event_type/command_id 采用 Voice 词库权威命名；behavior_name 为描述性短名。
+  # PRAISE/SCOLD 走下方 audio_reaction；饮食查询分流、打断和
+  # PLAY 绑兴奋仍由 ros_node 的有界特殊处理分支负责。
+
+  # A: 安抚关怀
+  EVT_VOICE_COMMAND_COMFORT_DONT_BE_AFRAID:
+    category: external_interaction
+    intent: command_comfort_dont_be_afraid
+    expected_command_id: CMD_COMFORT_DONT_BE_AFRAID
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_COMFORT_REASSURE:
+    category: external_interaction
+    intent: command_comfort_reassure
+    expected_command_id: CMD_COMFORT_REASSURE
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_ASK_IF_HURTS:
+    category: external_interaction
+    intent: command_ask_if_hurts
+    expected_command_id: CMD_ASK_IF_HURTS
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_OFFER_HEAD_FOR_PET:
+    category: external_interaction
+    intent: command_offer_head_for_pet
+    expected_command_id: CMD_OFFER_HEAD_FOR_PET
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_SEEK_HUG:
+    category: external_interaction
+    intent: command_seek_hug
+    expected_command_id: CMD_SEEK_HUG
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  # B: 拒绝否定
+  EVT_VOICE_COMMAND_REFUSE:
+    category: external_interaction
+    intent: command_refuse
+    expected_command_id: CMD_REFUSE
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_REFUSE_PLAY:
+    category: external_interaction
+    intent: command_refuse_play
+    expected_command_id: CMD_REFUSE_PLAY
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  # C: 找人
+  EVT_VOICE_COMMAND_FIND_DAD:
+    category: external_interaction
+    intent: command_find_dad
+    expected_command_id: CMD_FIND_DAD
+    sub_priority: 1
+    timeout_sec: 20.0
+
+  EVT_VOICE_COMMAND_FIND_MOM:
+    category: external_interaction
+    intent: command_find_mom
+    expected_command_id: CMD_FIND_MOM
+    sub_priority: 1
+    timeout_sec: 20.0
+
+  # D: 表演
+  EVT_VOICE_COMMAND_DANCE:
+    category: external_interaction
+    intent: command_dance
+    expected_command_id: CMD_DANCE
+    sub_priority: 1
+    timeout_sec: 10.0
+
+  # E: 取物
+  EVT_VOICE_COMMAND_BRING_TO_ME:
+    category: external_interaction
+    intent: command_bring_to_me
+    expected_command_id: CMD_BRING_TO_ME
+    sub_priority: 1
+    timeout_sec: 20.0
+
+  EVT_VOICE_COMMAND_GIVE_TO_ME:
+    category: external_interaction
+    intent: command_give_to_me
+    expected_command_id: CMD_GIVE_TO_ME
+    sub_priority: 1
+    timeout_sec: 20.0
+
+  EVT_VOICE_COMMAND_GO_GET_IT:
+    category: external_interaction
+    intent: command_go_get_it
+    expected_command_id: CMD_GO_GET_IT
+    sub_priority: 1
+    timeout_sec: 20.0
+
+  EVT_VOICE_COMMAND_BRING_IT_BACK:
+    category: external_interaction
+    intent: command_bring_it_back
+    expected_command_id: CMD_BRING_IT_BACK
+    sub_priority: 1
+    timeout_sec: 20.0
+
+  EVT_VOICE_COMMAND_FETCH_BALL:
+    category: external_interaction
+    intent: command_fetch_ball
+    expected_command_id: CMD_FETCH_BALL
+    sub_priority: 1
+    timeout_sec: 20.0
+
+  EVT_VOICE_COMMAND_FIND_TOY:
+    category: external_interaction
+    intent: command_find_toy
+    expected_command_id: CMD_FIND_TOY
+    sub_priority: 1
+    timeout_sec: 20.0
+
+  # F: 留守/等待
+  EVT_VOICE_COMMAND_STAY_HOME_ALONE:
+    category: external_interaction
+    intent: command_stay_home_alone
+    expected_command_id: CMD_STAY_HOME_ALONE
+    sub_priority: 1
+    timeout_sec: 15.0
+
+  EVT_VOICE_COMMAND_WAIT_FOR_OWNER_RETURN:
+    category: external_interaction
+    intent: command_wait_for_owner_return
+    expected_command_id: CMD_WAIT_FOR_OWNER_RETURN
+    sub_priority: 1
+    timeout_sec: 15.0
+
+  # G: 主人出行/归来
+  EVT_VOICE_COMMAND_OWNER_GOING_OUT:
+    category: external_interaction
+    intent: command_owner_going_out
+    expected_command_id: CMD_OWNER_GOING_OUT
+    sub_priority: 1
+    timeout_sec: 25.0
+
+  EVT_VOICE_COMMAND_OWNER_RETURNED:
+    category: external_interaction
+    intent: command_owner_returned
+    expected_command_id: CMD_OWNER_RETURNED
+    sub_priority: 1
+    timeout_sec: 15.0
+
+  EVT_VOICE_COMMAND_BYE_BYE:
+    category: external_interaction
+    intent: command_bye_bye
+    expected_command_id: CMD_BYE_BYE
+    sub_priority: 1
+    timeout_sec: 15.0
+
+  EVT_VOICE_COMMAND_GOODBYE:
+    category: external_interaction
+    intent: command_goodbye
+    expected_command_id: CMD_GOODBYE
+    sub_priority: 1
+    timeout_sec: 15.0
+
+  # H: 询问回应
+  EVT_VOICE_COMMAND_ASK_WHAT_DOING:
+    category: external_interaction
+    intent: command_ask_what_doing
+    expected_command_id: CMD_ASK_WHAT_DOING
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_ASK_WHERE_ARE_YOU:
+    category: external_interaction
+    intent: command_ask_where_are_you
+    expected_command_id: CMD_ASK_WHERE_ARE_YOU
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_ASK_WHATS_WRONG:
+    category: external_interaction
+    intent: command_ask_whats_wrong
+    expected_command_id: CMD_ASK_WHATS_WRONG
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_ASK_WHAT_THINKING:
+    category: external_interaction
+    intent: command_ask_what_thinking
+    expected_command_id: CMD_ASK_WHAT_THINKING
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_ASK_IF_COMFORTABLE:
+    category: external_interaction
+    intent: command_ask_if_comfortable
+    expected_command_id: CMD_ASK_IF_COMFORTABLE
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_ASK_IF_LIKES:
+    category: external_interaction
+    intent: command_ask_if_likes
+    expected_command_id: CMD_ASK_IF_LIKES
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_ASK_IF_FUN:
+    category: external_interaction
+    intent: command_ask_if_fun
+    expected_command_id: CMD_ASK_IF_FUN
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_ASK_IF_UNDERSTANDS:
+    category: external_interaction
+    intent: command_ask_if_understands
+    expected_command_id: CMD_ASK_IF_UNDERSTANDS
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_ASK_ABILITIES:
+    category: external_interaction
+    intent: command_ask_abilities
+    expected_command_id: CMD_ASK_ABILITIES
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_ASK_IF_LEARNED:
+    category: external_interaction
+    intent: command_ask_if_learned
+    expected_command_id: CMD_ASK_IF_LEARNED
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  # I: 主人状态/情绪表达
+  EVT_VOICE_COMMAND_EXPRESS_MISS_YOU:
+    category: external_interaction
+    intent: command_express_miss_you
+    expected_command_id: CMD_EXPRESS_MISS_YOU
+    sub_priority: 1
+    timeout_sec: 25.0
+
+  EVT_VOICE_COMMAND_OWNER_TIRED:
+    category: external_interaction
+    intent: command_owner_tired
+    expected_command_id: CMD_OWNER_TIRED
+    sub_priority: 1
+    timeout_sec: 8.0
+
+  EVT_VOICE_COMMAND_OWNER_ANNOYED:
+    category: external_interaction
+    intent: command_owner_annoyed
+    expected_command_id: CMD_OWNER_ANNOYED
+    sub_priority: 1
+    timeout_sec: 8.0
+
+  EVT_VOICE_COMMAND_OWNER_UNHAPPY:
+    category: external_interaction
+    intent: command_owner_unhappy
+    expected_command_id: CMD_OWNER_UNHAPPY
+    sub_priority: 1
+    timeout_sec: 25.0
+
+  EVT_VOICE_COMMAND_OWNER_BAD_DAY:
+    category: external_interaction
+    intent: command_owner_bad_day
+    expected_command_id: CMD_OWNER_BAD_DAY
+    sub_priority: 1
+    timeout_sec: 8.0
+
+  EVT_VOICE_COMMAND_OWNER_DEPRESSED:
+    category: external_interaction
+    intent: command_owner_depressed
+    expected_command_id: CMD_OWNER_DEPRESSED
+    sub_priority: 1
+    timeout_sec: 8.0
+
+  EVT_VOICE_COMMAND_OWNER_STRESSED:
+    category: external_interaction
+    intent: command_owner_stressed
+    expected_command_id: CMD_OWNER_STRESSED
+    sub_priority: 1
+    timeout_sec: 8.0
+
+  EVT_VOICE_COMMAND_OWNER_LONELY:
+    category: external_interaction
+    intent: command_owner_lonely
+    expected_command_id: CMD_OWNER_LONELY
+    sub_priority: 1
+    timeout_sec: 8.0
+
+  EVT_VOICE_COMMAND_OWNER_UNWELL:
+    category: external_interaction
+    intent: command_owner_unwell
+    expected_command_id: CMD_OWNER_UNWELL
+    sub_priority: 1
+    timeout_sec: 8.0
+
+  EVT_VOICE_COMMAND_OWNER_HAPPY:
+    category: external_interaction
+    intent: command_owner_happy
+    expected_command_id: CMD_OWNER_HAPPY
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_OWNER_VERY_HAPPY:
+    category: external_interaction
+    intent: command_owner_very_happy
+    expected_command_id: CMD_OWNER_VERY_HAPPY
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_OWNER_FEELING_GREAT:
+    category: external_interaction
+    intent: command_owner_feeling_great
+    expected_command_id: CMD_OWNER_FEELING_GREAT
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_OWNER_FEELING_EXCELLENT:
+    category: external_interaction
+    intent: command_owner_feeling_excellent
+    expected_command_id: CMD_OWNER_FEELING_EXCELLENT
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_OWNER_RELAXED:
+    category: external_interaction
+    intent: command_owner_relaxed
+    expected_command_id: CMD_OWNER_RELAXED
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_OWNER_WONDERFUL_DAY:
+    category: external_interaction
+    intent: command_owner_wonderful_day
+    expected_command_id: CMD_OWNER_WONDERFUL_DAY
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  EVT_VOICE_COMMAND_OWNER_FEELING_LUCKY:
+    category: external_interaction
+    intent: command_owner_feeling_lucky
+    expected_command_id: CMD_OWNER_FEELING_LUCKY
+    sub_priority: 1
+    timeout_sec: 5.0
+
+  # J: 饮食直驱
+  EVT_VOICE_COMMAND_EAT_MEAL:
+    category: external_interaction
+    intent: command_eat_meal
+    expected_command_id: CMD_EAT_MEAL
+    sub_priority: 1
+    timeout_sec: 30.0
+
+  EVT_VOICE_COMMAND_EAT_SNACK:
+    category: external_interaction
+    intent: command_eat_snack
+    expected_command_id: CMD_EAT_SNACK
+    sub_priority: 1
+    timeout_sec: 30.0
+
+  EVT_VOICE_COMMAND_EAT_CANNED_FOOD:
+    category: external_interaction
+    intent: command_eat_canned_food
+    expected_command_id: CMD_EAT_CANNED_FOOD
+    sub_priority: 1
+    timeout_sec: 30.0
+
+  EVT_VOICE_COMMAND_RESPOND_FOOD_PREFERENCE_QUERY:
+    category: external_interaction
+    intent: command_respond_food_preference_query
+    expected_command_id: CMD_RESPOND_FOOD_PREFERENCE_QUERY
+    sub_priority: 1
+    timeout_sec: 5.0
+
+# ═══════════════════════════════════════════════════════════════════════════
+# audio_reaction — 词库社交反应
+# 非动作命令，但允许 Tree 执行一次性表达。
+audio_reaction:
+  EVT_VOICE_COMMAND_PRAISE:
+    category: external_interaction
+    intent: audio_react_praise
+    expected_command_id: CMD_PRAISE
+    expected_social: PRAISE
+    sub_priority: 1
+    ttl_sec: 5.0
+    timeout_sec: 8.0
+    cooldown_sec: 2.0
+    interrupt_policy: immediate
+    reactions:
+      - {emotion: Joy, weight: 1.0}
+      - {emotion: Excite, weight: 1.0}
+
+  EVT_VOICE_COMMAND_SCOLD:
+    category: external_interaction
+    intent: audio_react_scold
+    expected_command_id: CMD_SCOLD
+    expected_social: SCOLD
+    sub_priority: 1
+    ttl_sec: 5.0
+    timeout_sec: 8.0
+    cooldown_sec: 2.0
+    interrupt_policy: immediate
+    reactions:
+      - {emotion: Anxiety, weight: 1.0}
+      - {emotion: Curious, weight: 1.0}
+      - {emotion: Fear, weight: 1.0}
+
+# visual_direct — /perception/visual_event events[] 白名单
+# ═══════════════════════════════════════════════════════════════════════════
+
+# 直接视觉安全事件均为 Lv1，sub_priority=12。
+visual_direct:
+  EVT_VISION_FALL:
+    category: external_interaction
+    intent: visual_fall_response
+    semantic_rank: 0  # confirmed safety event
+    sub_priority: 12
+    ttl_sec: 8.0
+    interrupt_policy: immediate
+
+  EVT_VISION_STOP_GESTURE:
+    category: external_interaction
+    intent: visual_stop_gesture_response
+    semantic_rank: 0  # confirmed safety/control event
+    sub_priority: 12
+    ttl_sec: 8.0
+    interrupt_policy: immediate
+
+# need — 需求等级变化事件 → category + intent
+need:
+  NEED_HUNGER_TRIGGERED:
+    category: normal_physiology
+    visual_required: hunger_food_context
+    # 2026-09-18: 到达点位后的进食仪式 (低头→抬头→趴下→站立→再低头→左右扭腰)
+    # 在导航之后还要跑约 20 s，默认 30 s (level 3) 不够，且同一预算同时覆盖导航。
+    timeout_sec: 180.0
+    routes:
+      dog_food:
+        intent: eat_normal
+        behavior_name: eatNormally
+        variant: food_visible
+      no_dog_food:
+        intent: seek_food
+        behavior_name: seekFood
+        variant: food_search
+
+  NEED_HUNGER_OVERFLOW:
+    category: normal_physiology
+    visual_required: hunger_food_context
+    # 2026-09-18: 到达点位后的进食仪式 (低头→抬头→趴下→站立→再低头→左右扭腰)
+    # 在导航之后还要跑约 20 s，默认 30 s (level 3) 不够，且同一预算同时覆盖导航。
+    timeout_sec: 180.0
+    routes:
+      dog_food:
+        intent: eat_excited
+        behavior_name: eatExcitedly
+        variant: food_visible_urgent
+      no_dog_food:
+        intent: seek_food_urgent
+        behavior_name: seekFoodUrgently
+        variant: food_search_urgent
+        params:
+          executor_behavior_name: seekFood
+
+  NEED_BLADDER_TRIGGERED:
+    category: urgent_physiology
+    intent: request_elimination
+    behavior_name: barkShortAlert
+    variant: request
+
+  NEED_SLEEPINESS_TRIGGERED:
+    category: urgent_physiology
+    intent: settle_to_sleep
+    behavior_name: sleepOnSide
+    variant: light
+
+  NEED_SLEEPINESS_OVERFLOW:
+    category: urgent_physiology
+    intent: sleep_deep
+    behavior_name: sleepNow
+    variant: deep
+
+  NEED_CLEANLINESS_TRIGGERED:
+    category: normal_physiology
+    intent: groom_light
+    behavior_name: lickPaws
+    variant: light
+
+  NEED_ENERGY_TRIGGERED:
+    category: safety
+    intent: recover_energy
+    behavior_name: restInPlace
+    variant: low_energy
+    # restInPlace is also routed through Nav2 to charging waypoint B.
+    # Keep its tree-side deadline above Nav2's default 300 s timeout.
+    timeout_sec: 330.0
+
+  NEED_ENERGY_OVERFLOW:
+    category: safety
+    intent: recharge_critical
+    behavior_name: recharge
+    variant: critical
+    # Covers Nav2's default 300 s route timeout plus the recharge stage.
+    timeout_sec: 330.0
+
+  NEED_SOCIAL_TRIGGERED:
+    category: psychological_need
+    visual_required: social_target
+    sub_priority: 2
+    routes:
+      human:
+        intent: human_attention_interaction
+        behavior_name: seekHumanInteraction
+        variant: human_seek
+      animal:
+        intent: animal_boundary_test
+        behavior_name: testAnimalBoundary
+        variant: animal_boundary
+
+  NEED_SOCIAL_URGENT:
+    category: psychological_need
+    visual_required: social_target
+    sub_priority: 1
+    routes:
+      human:
+        intent: social_engage
+        behavior_name: seekInteraction
+        variant: human_engage
+      animal:
+        intent: animal_social_greet
+        behavior_name: greetAnimal
+        variant: animal_greet
+
+  NEED_SOCIAL_OVERFLOW:
+    category: psychological_need
+    visual_required: social_target
+    sub_priority: 0
+    routes:
+      human:
+        intent: human_play_invite
+        behavior_name: inviteHumanToPlay
+        variant: human_play
+      animal:
+        intent: animal_play_invite
+        behavior_name: inviteAnimalToPlay
+        variant: animal_play
+
+  NEED_EXPLORATION_TRIGGERED:
+    category: psychological_need
+    visual_required: exploration_context
+    routes:
+      play_item:
+        intent: inspect_familiar_play_item
+        behavior_name: inspectFamiliarPlayItem
+        variant: play_item
+      trash_can:
+        intent: inspect_trash_can
+        behavior_name: inspectTrashCan
+        variant: trash_can
+      delivery_box:
+        intent: inspect_delivery_box
+        behavior_name: inspectDeliveryBox
+        variant: delivery_box
+      tissue:
+        intent: inspect_tissue
+        behavior_name: inspectTissuePaper
+        variant: tissue
+      door:
+        intent: inspect_door
+        behavior_name: inspectDoor
+        variant: door
+      dog_food:
+        intent: inspect_dog_food
+        behavior_name: inspectDogFood
+        variant: dog_food
+      unfamiliar_object:
+        intent: inspect_generic_object
+        behavior_name: inspectObject
+        variant: unfamiliar
+      empty:
+        intent: explore_space
+        behavior_name: exploreRoom
+        variant: room
+
+# ═══════════════════════════════════════════════════════════════════════════
+# emotion — 情绪 V2 单阈值上升沿事件
+# 由 config/emotion_behavior_map.yaml 提供完整映射
+# ═══════════════════════════════════════════════════════════════════════════
+
+emotion:
+  EMO_JOY_TRIGGERED:
+    category: emotion_expression
+  EMO_EXCITE_TRIGGERED:
+    category: emotion_expression
+  EMO_ANXIETY_TRIGGERED:
+    category: emotion_expression
+  EMO_FEAR_TRIGGERED:
+    category: emotion_expression
+  EMO_CURIOUS_TRIGGERED:
+    category: emotion_expression
+  EMO_CALM_TRIGGERED:
+    category: emotion_expression

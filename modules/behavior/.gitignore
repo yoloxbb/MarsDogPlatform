@@ -1,0 +1,32 @@
+# ROS 2 / colcon-generated files
+/build/
+/install/
+/log/
+
+# Python-generated files
+__pycache__/
+*.py[cod]
+*$py.class
+dist/
+wheels/
+*.egg-info/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Editor and operating-system files
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store

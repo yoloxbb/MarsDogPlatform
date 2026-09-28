@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>marsdog_behavior</name>
+  <version>0.2.0</version>
+  <description>MarsDog Behavior Tree — priority-based behavior selection engine with candidate pool, preemption, cooldown, and relevance checking</description>
+  <maintainer email="dev@marsdog.local">MarsDog Team</maintainer>
+  <license>Apache-2.0</license>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>builtin_interfaces</depend>
+
+  <!-- Public interfaces from marsdog_interfaces -->
+  <depend>marsdog_interfaces</depend>
+  <!-- Transitional service owners until VisionTask/VoiceTask move to the
+       shared interface package. -->
+  <exec_depend>marsdog_vision_interaction</exec_depend>
+  <exec_depend>marsdog_voice_interaction</exec_depend>
+
+  <!-- Runtime Python deps (managed by uv, also listed here for ROS2) -->
+  <exec_depend>python3-pyyaml</exec_depend>
+
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

@@ -1,0 +1,40 @@
+# behavior_categories.yaml — 行为分类定义
+#
+# 7 层行为树优先级分类，与 bionic_dog_bt/constants.py → PRIORITY_LEVELS 对应。
+# category 只用于映射 priority_level 和 branch，不会为每个 behavior 新增 BT 分支。
+
+categories:
+  safety:
+    priority_level: 0
+    branch: SafetyBranch
+    description: "系统级安全：精力、特殊生存避险（触觉/视觉/嗅觉应激）、立即停止"
+
+  external_interaction:
+    priority_level: 1
+    branch: ExternalInteractionBranch
+    description: "外部交互：触觉、听觉（语音唤醒/识别/声纹/声源定位/异响/复合情绪）、视觉、环境变化事件"
+
+  urgent_physiology:
+    priority_level: 2
+    branch: UrgentPhysiologyBranch
+    description: "生理紧急：排泄、困倦"
+
+  normal_physiology:
+    priority_level: 3
+    branch: NormalPhysiologyBranch
+    description: "生理常规：饥渴、清洁"
+
+  psychological_need:
+    priority_level: 4
+    branch: PsychologicalNeedBranch
+    description: "心理需求：社交、探索"
+
+  emotion_expression:
+    priority_level: 5
+    branch: EmotionExpressionBranch
+    description: "情绪表达：愉悦/兴奋、焦虑/恐惧、好奇"
+
+  idle:
+    priority_level: 6
+    branch: IdleBranch
+    description: "空闲：无活跃需求/情绪"
