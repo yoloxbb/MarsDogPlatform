@@ -1,0 +1,34 @@
+{
+  "status": "FAIL",
+  "error": "Exit 2; see /home/elephant/MarsDog/marsdog-platform/out/robotics-original/commands.log",
+  "commands": [
+    [
+      "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/colcon",
+      "--log-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/robotics-original/log",
+      "build",
+      "--base-paths",
+      "/home/elephant/MarsDog/migration/work/history-robot/source/sensor_ws/src/stereo_v4l2_camera",
+      "/home/elephant/MarsDog/migration/work/history-robot/source/sensor_ws/src/wit_imu",
+      "/home/elephant/MarsDog/migration/work/history-robot/source/slam_ws/src/person_3d_localization",
+      "/home/elephant/MarsDog/migration/work/history-robot/source/slam_ws/src/robot_slam_bringup",
+      "/home/elephant/MarsDog/migration/work/history-robot/source/slam_ws/src/stereo_slam_legacy_bringup",
+      "/home/elephant/MarsDog/migration/work/history-robot/source/go2_follow_ws/src/go2_uwb_local_follow",
+      "/home/elephant/MarsDog/migration/work/history-robot/source/go2_follow_ws/src/go2_uwb_behavior",
+      "/home/elephant/MarsDog/migration/work/history-robot/source/go2_follow_ws/src/uwb",
+      "--build-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/robotics-original/build",
+      "--install-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/robotics-original/install",
+      "--executor",
+      "sequential",
+      "--event-handlers",
+      "console_direct+",
+      "--cmake-args",
+      "-DBUILD_TESTING=ON",
+      "-DBUILD_UWB_VENDOR_DRIVER=OFF",
+      "-DPython3_EXECUTABLE=/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+      "-DPYTHON_EXECUTABLE=/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python"
+    ]
+  ]
+}

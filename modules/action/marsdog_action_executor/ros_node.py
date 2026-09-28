@@ -375,7 +375,9 @@ if HAS_ROS2:
             )
 
             # ── Load configuration ──────────────────────────────────────
-            config_dir = self._resolve_config_dir()
+            self.declare_parameter("config_dir", "")
+            explicit_config = str(self.get_parameter("config_dir").value)
+            config_dir = Path(explicit_config) if explicit_config else self._resolve_config_dir()
             self.get_logger().info(f"Loading configs from: {config_dir}")
             self._config = ConfigLoader(config_dir)
             self._config.load_all()
@@ -403,6 +405,7 @@ if HAS_ROS2:
             lite3_limits = lite3_config.get("limits", {})
             self.declare_parameter("recharge_result_energy_value", 100.0)
             self.declare_parameter("chassis_type", "go2")
+            self.declare_parameter("lite3_simulated_io", False)
             self.declare_parameter(
                 "go2_enabled", bool(go2_config.get("enabled", False))
             )
@@ -549,11 +552,16 @@ if HAS_ROS2:
                 chassis_type == "lite3"
                 and bool(self.get_parameter("lite3_enabled").value)
             ):
+                simulated_io = bool(self.get_parameter("lite3_simulated_io").value)
+                backend_factory = make_ros2_lite3_backend
+                if simulated_io:
+                    from .adapters.simulated_lite3 import make_simulated_lite3_backend
+                    backend_factory = make_simulated_lite3_backend
                 (
                     self._chassis_backend,
                     self._lite3_command_publisher,
                     _lite3_twist_publisher,
-                ) = make_ros2_lite3_backend(
+                ) = backend_factory(
                     self,
                     simple_cmd_topic=str(
                         self.get_parameter("lite3_simple_cmd_topic").value
@@ -618,11 +626,13 @@ if HAS_ROS2:
                     ),
                     should_stop=lambda: self._interrupt.cancel_requested,
                 )
-                self._lite3_status_subscriber = Ros2Lite3StatusSubscriber(
-                    self,
-                    self._chassis_backend.update_status,
-                    str(self.get_parameter("lite3_status_topic").value),
-                )
+                self._lite3_status_subscriber = None
+                if not simulated_io:
+                    self._lite3_status_subscriber = Ros2Lite3StatusSubscriber(
+                        self,
+                        self._chassis_backend.update_status,
+                        str(self.get_parameter("lite3_status_topic").value),
+                    )
                 self._twist_publisher = self._chassis_backend.twist_publisher
                 controller_adapters["lite3"] = self._chassis_backend
                 self.get_logger().info(

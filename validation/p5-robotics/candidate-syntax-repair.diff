@@ -1,0 +1,25 @@
+--- original/go2_follow_ws/src/go2_uwb_behavior/src/uwb_behavior_controller_node.cpp
++++ candidate/go2_follow_ws/src/go2_uwb_behavior/src/uwb_behavior_controller_node.cpp
+@@ -192,13 +192,6 @@
+       std::bind(
+         &UwbBehaviorControllerNode::handleOrbitAccepted, this,
+         std::placeholders::_1));
+-      this,
+-      std::bind(
+-        std::placeholders::_1, std::placeholders::_2),
+-      std::bind(
+-        std::placeholders::_1),
+-      std::bind(
+-        std::placeholders::_1));
+ 
+     const auto control_period = std::chrono::duration<double>(1.0 / control_frequency_);
+     control_timer_ = create_wall_timer(
+@@ -492,7 +485,7 @@
+       base_frame_, odom_frame_, hardware_id_, target_topic_, odom_topic_, obstacle_topic_,
+       nominal_cmd_topic_,
+       planner_cmd_topic_, cmd_vel_topic_, compute_enable_topic_, behavior_service_name_,
+-      follow_action_name_, orbit_action_name_, roam_action_name_,
++      follow_action_name_, orbit_action_name_, roam_action_name_};
+     if (std::any_of(
+         required_strings.begin(), required_strings.end(),
+         [](const std::string & value) {return value.empty();}))

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "scope": "Ubuntu 22.04 amd64 Humble local development; extract only, never apt install",
+  "packages": [
+    {
+      "package": "ros-humble-nav2-msgs",
+      "version": "1.1.20-1jammy.20260907.223327",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-msgs/ros-humble-nav2-msgs_1.1.20-1jammy.20260907.223327_amd64.deb",
+      "sha256": "7ea288dd8e6718cb46658616eceb667bfda53c0d2b08596e3bc8a70061dc3487",
+      "depends": "libc6 (>= 2.4), libgcc-s1 (>= 3.3.1), libpython3.10 (>= 3.10.0), libstdc++6 (>= 5.2), ros-humble-fastcdr, ros-humble-action-msgs, ros-humble-builtin-interfaces, ros-humble-geometry-msgs, ros-humble-nav-msgs, ros-humble-rclcpp, ros-humble-rosidl-default-generators, ros-humble-std-msgs, ros-humble-ros-workspace"
+    },
+    {
+      "package": "ros-humble-rmw-cyclonedds-cpp",
+      "version": "1.3.5-1jammy.20260907.205235",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-rmw-cyclonedds-cpp/ros-humble-rmw-cyclonedds-cpp_1.3.5-1jammy.20260907.205235_amd64.deb",
+      "sha256": "ae2ff11a00949188d711e2e7efbcd2b212d38a467a099cf939461a67c99710c9",
+      "depends": "libc6 (>= 2.32), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 11), ros-humble-cyclonedds, ros-humble-iceoryx-binding-c, ros-humble-rcpputils, ros-humble-rcutils, ros-humble-rmw, ros-humble-rmw-dds-common, ros-humble-rosidl-runtime-c, ros-humble-rosidl-typesupport-introspection-c, ros-humble-rosidl-typesupport-introspection-cpp, ros-humble-tracetools, ros-humble-ros-workspace"
+    },
+    {
+      "package": "ros-humble-cyclonedds",
+      "version": "0.10.5-2jammy.20260226.013234",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-cyclonedds/ros-humble-cyclonedds_0.10.5-2jammy.20260226.013234_amd64.deb",
+      "sha256": "67fc80cb92cd24f791d37059debaf80dd69d2268cc503bfce0f192d87eb8860b",
+      "depends": "libc6 (>= 2.34), libssl3 (>= 3.0.0~~alpha1), openssl, ros-humble-iceoryx-binding-c, ros-humble-iceoryx-hoofs, ros-humble-iceoryx-posh, ros-humble-ros-workspace"
+    },
+    {
+      "package": "ros-humble-iceoryx-binding-c",
+      "version": "2.0.5-1jammy.20260226.012512",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-iceoryx-binding-c/ros-humble-iceoryx-binding-c_2.0.5-1jammy.20260226.012512_amd64.deb",
+      "sha256": "4846326e189194045b5ba646082ae41a4d4dddd08735c327d3b1fc99763425f7",
+      "depends": "libc6 (>= 2.4), libstdc++6 (>= 5.2), ros-humble-ros-workspace"
+    },
+    {
+      "package": "ros-humble-iceoryx-posh",
+      "version": "2.0.5-1jammy.20260226.011738",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-iceoryx-posh/ros-humble-iceoryx-posh_2.0.5-1jammy.20260226.011738_amd64.deb",
+      "sha256": "594190c3e29bf9ee6a9728230ddef1aff88489dce0678134bc945b85d1ad1f45",
+      "depends": "libc6 (>= 2.34), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 11), ros-humble-iceoryx-hoofs, ros-humble-ros-workspace"
+    },
+    {
+      "package": "ros-humble-iceoryx-hoofs",
+      "version": "2.0.5-1jammy.20260226.011054",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-iceoryx-hoofs/ros-humble-iceoryx-hoofs_2.0.5-1jammy.20260226.011054_amd64.deb",
+      "sha256": "e42fb25192b3d04342096fb54144beb1d8245273aa628c900fa32509d17fcf4a",
+      "depends": "libacl1 (>= 2.2.23), libc6 (>= 2.34), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 6), acl, libacl1-dev, libatomic1, ros-humble-ros-workspace"
+    }
+  ]
+}

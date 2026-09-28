@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "openvins": {
+      "source_repository": "robot",
+      "commit": "7dd357fdfe1664775c051195a3c0562af6892d84",
+      "subtree": "openvins_ws/src/open_vins",
+      "tree": "071202ba6c14635a046f6b9f8852ad7f1e87a3c6",
+      "archive": "robot-7dd357f-all-refs.bundle",
+      "archive_sha256": "d5a015faf17eb558ab365fa925a8c8029011085793d3bdfa867799693793caf8",
+      "destination": ".external/openvins",
+      "provenance": "Robot README snapshot 69488123ed9362dd44b6f28e7f4680abbff1442b; exact upstream delta UNKNOWN"
+    },
+    "vins-fusion": {
+      "source_repository": "robot",
+      "commit": "7dd357fdfe1664775c051195a3c0562af6892d84",
+      "subtree": "VINS-Fusion-ROS2-humble-arm",
+      "tree": "c1cd5180030db2dbcb94ab90bf4aed82827ccb77",
+      "archive": "robot-7dd357f-all-refs.bundle",
+      "archive_sha256": "d5a015faf17eb558ab365fa925a8c8029011085793d3bdfa867799693793caf8",
+      "destination": ".external/vins-fusion",
+      "provenance": "Robot README snapshot ee54c07d3e33ea5ac02816f373fbd322e11b8fa4; exact upstream delta UNKNOWN"
+    },
+    "uwb": {
+      "source_repository": "robot",
+      "commit": "7dd357fdfe1664775c051195a3c0562af6892d84",
+      "subtree": "go2_follow_ws/src/uwb",
+      "tree": "33de52cf1309d16cacdac1ff0d73a7c2fe749c8f",
+      "archive": "robot-7dd357f-all-refs.bundle",
+      "archive_sha256": "d5a015faf17eb558ab365fa925a8c8029011085793d3bdfa867799693793caf8",
+      "destination": ".external/uwb",
+      "provenance": "Ubitraq package with local serial recovery changes; ARM64 archive provenance UNKNOWN"
+    },
+    "rtabmap": {
+      "source_repository": "rtabmap",
+      "commit": "91faa212039c9274f67aa30c147eeb4dfbfc63f2",
+      "subtree": "",
+      "tree": "8629857b041ff1b750a702457fdcbdaaf3877050",
+      "archive": "rtabmap-91faa21-all-refs.bundle",
+      "archive_sha256": "88b65a50e1aae713637a832283f802f111dafb7c0228fbb5fe98b8003eddcbf3",
+      "destination": ".external/rtabmap",
+      "provenance": "UPSTREAM_VERSIONS.md: core e321999b; wrapper 2eef2b32. Initial snapshot may contain edits; full upstream delta UNKNOWN"
+    }
+  }
+}

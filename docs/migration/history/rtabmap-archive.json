@@ -1,0 +1,17 @@
+{
+  "original_head": "91faa212039c9274f67aa30c147eeb4dfbfc63f2",
+  "original_refs": [
+    "refs/heads/feature/openvins-leg-velocity-aiding 91faa212039c9274f67aa30c147eeb4dfbfc63f2",
+    "refs/remotes/origin/HEAD a3473d1f3140110ca824efdcff3b2804872fa229",
+    "refs/remotes/origin/feature/openvins-leg-velocity-aiding 91faa212039c9274f67aa30c147eeb4dfbfc63f2",
+    "refs/remotes/origin/main a3473d1f3140110ca824efdcff3b2804872fa229"
+  ],
+  "original_commit_count": 4,
+  "archive": "/home/elephant/MarsDog/migration/archives/rtabmap-91faa21-all-refs.bundle",
+  "archive_sha256": "88b65a50e1aae713637a832283f802f111dafb7c0228fbb5fe98b8003eddcbf3",
+  "restore_fsck": "PASS",
+  "restored_refs_equal": true,
+  "source_snapshot": "/home/elephant/MarsDog/migration/work/history-rtabmap/source",
+  "tracked_files": 1738,
+  "baseline_equal": true
+}
