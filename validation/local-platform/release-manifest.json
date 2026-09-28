@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "status": "ACCEPTED_LOCAL_SOFTWARE_ONLY",
+  "source_commit": "b1b987f357a15dddf81a45342b95d1c9c8db63bc",
+  "profile": "config/profiles/lite3-local-cpu.json",
+  "build_source_sha256": "aebe42a686218bdfbe971157e2e985e6617b583bf8103dd95da129d92bdefdfb",
+  "runtime_status": "PASS",
+  "reports_sha256": {
+    "validation/local-platform/architecture.json": "d04cad4dc8e3c1796fe0cd91dfc0130df84ec282a17afbd220b00400843a88bb",
+    "validation/local-platform/behavior.xml": "e9d49aaf7ab5f2952874dbad0455888db9691e611566c7c75a6c5911d6fa7d16",
+    "validation/local-platform/build-receipt.json": "7c8d909cd0352bbc4c0406ee13709d29b8bb4c39b31231fd7b7fc11d23e01927",
+    "validation/local-platform/contracts.xml": "f18455e223ddc1a0e8ae4e107c021e34fec0b741bbcf05749fefa52791b69461",
+    "validation/local-platform/doctor.json": "43c5e0953b2a34dcd29dc579742259e286175a2b74905f4fe31d88e7e223ba94",
+    "validation/local-platform/emotion.xml": "cbde5f3a63ef8d861bdf3bd36b9cedfb3c2937eb017fe4fc95b4fe9c9a7fb7a2",
+    "validation/local-platform/lifecycle.json": "dff48b8effb469758ea67bf878b37d08811efa692307bc3df978ed8098d87f4c",
+    "validation/local-platform/original-sources.json": "09be4af24ec2b3be0d0adfb7a8abaac1a278bc4a8f7a210075a2d1146d67fac4",
+    "validation/local-platform/python-environments.json": "b5c1aa38be2de6c866f6bef36e3b7ee7aea83338c214f064ecf480b779dacfff",
+    "validation/local-platform/runtime.json": "45c41e049aa88960118b1528f964a3de02ea253ea71d832850bf32a1aada6fbe",
+    "validation/local-platform/smoke.json": "456de34878c4489cd4e02303cbbdd05bc93ea3ecf58de79497aba9393fb6cf64",
+    "validation/local-platform/voice-tests.json": "2ae114eb1a52cb80d3536cbf58db3ea9dd43997f2aa56ec3327b4bb8c4ecc6ba",
+    "validation/local-platform/voice.xml": "be5aeb512c435c9a09514dc4a037df96d5eba7fa76e332058035e3bd5441c46c",
+    "validation/p5-robotics/migrated.json": "ddfee1dae04dca333960f02fe8253cd4b0a6abf97a11e536ad33aea5e10cda57",
+    "validation/p5-robotics/action-local-simulation-tests.xml": "c23dcd1598d9f0f7aa1cbc09628a808763a9248198787aa5616558171f5fc5e5",
+    "validation/navigation-recovery/navigation.xml": "6718bfbe14934c95868c768871b3aeca2d2ad8c574e578214a2709bfd0b46854"
+  },
+  "scope": [
+    "Independent module environments and installed ROS entrypoints",
+    "Public-interface-correlated Voice to BT to Action to waypoint to simulated Nav2 success",
+    "Vision events / perception services / Needs and Emotion state",
+    "Clean shutdown, duplicate launch refusal and child-crash propagation",
+    "Original source repositories preserved"
+  ],
+  "not_accepted": [
+    "Real camera/microphone and model inference",
+    "Lite3 hardware motion, safety, BMS, docking and charging",
+    "Complete Nav2 plugin and RTAB/OpenVINS production build/runtime",
+    "Hosted CI, remote release, real CODEOWNERS accounts and vendor redistribution licensing"
+  ],
+  "archives": {
+    "rtabmap-archive.json": {
+      "original_head": "91faa212039c9274f67aa30c147eeb4dfbfc63f2",
+      "archive": "/home/elephant/MarsDog/migration/archives/rtabmap-91faa21-all-refs.bundle",
+      "archive_sha256": "88b65a50e1aae713637a832283f802f111dafb7c0228fbb5fe98b8003eddcbf3"
+    },
+    "robot-archive.json": {
+      "original_head": "7dd357fdfe1664775c051195a3c0562af6892d84",
+      "archive": "/home/elephant/MarsDog/migration/archives/robot-7dd357f-all-refs.bundle",
+      "archive_sha256": "d5a015faf17eb558ab365fa925a8c8029011085793d3bdfa867799693793caf8"
+    }
+  }
+}
