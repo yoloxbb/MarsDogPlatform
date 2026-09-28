@@ -1,0 +1,61 @@
+{
+  "status": "PASS",
+  "source": "/home/elephant/MarsDog/migration/work/p1-20260928/sources/voice",
+  "wheel_sha256": "7c510d595306a45bd1fedb7f77343608f54154c4e4a2412db0409ffb0d158082",
+  "lock_sha256": "9ef671e7dbbce78379c08d0f824b34ed567fa9b25cf857ae706608cbddd98368",
+  "scope": "Locked Python wheel; exact config/static bytes; HTTP schema only, no sockets; no ROS/node/hardware/models",
+  "limits": [
+    "ROS service generated separately by colcon",
+    "ARM64 RKLLM library is retained by ROS install, not this pure Python wheel",
+    "Production entry point metadata checked; main intentionally not invoked"
+  ],
+  "observation": {
+    "module_file": "/home/elephant/MarsDog/marsdog-platform/out/voice-original-install/check-b3djo0pu/runtime/.venv/lib/python3.10/site-packages/marsdog_voice_interaction",
+    "asset_hashes": {
+      "config/voice.pipeline.mock.yaml": "12b8c474f4c5ca64d0b8b7319bcb14401d161b8d4167fdb42e2940957e5d2451",
+      "config/command_catalog.yaml": "52b98c604d1d98617ce4369f96d9f4a0fe7ef5ad5815fd26b279d65675343326",
+      "config/object_targets.yaml": "abdc24c56a7a36b6a53576de92a3bf65df9468ffac07c84c96a6276690c4197b",
+      "config/kws_keywords_raw.txt": "382173ffb2d22893d1658647f24f249fc882e2103f120a579ad1bb546b8ef264",
+      "config/voice.yaml": "2874bf13cec1a667e092eb1fc2d23206b8d48686b43dd5bf817253b9d8ec789a",
+      "config/kws_keywords.txt": "25a2c14abc1be818e11c40482070ead7086a9a6bcf47136e9a9dd1044fac28da",
+      "config/voice.mock.yaml": "f19f78a89400ccd28ff8bacff5ea44eb39feeba722ebc68ed77b446d02c5b36f",
+      "launch/voice.launch.py": "fba5630e093817223ab8379d29dca04e3cd5c0781a166e5cb26f8aeccc2266ff",
+      "package.xml": "0b22b3474e9ba920df884568d42559c3c5972428882fd103ffbc2bbe013643cc"
+    },
+    "static_hashes": {
+      "app.js": "545c76c3015218ccbfb0b92694f2618314eeeb6976b03dd8331e8955cb807ea3",
+      "index.html": "270e4f72629512735d1e1554ec5cc48ee2cd2125fe23499493127333912b73a9",
+      "style.css": "fbc06dcdd730bfe4c756acb90a496ffda0698f4a9bc6c0ce63a629777640533e"
+    },
+    "scripts": {
+      "marsdog-voice-interaction": "marsdog_voice_interaction.main:main"
+    },
+    "catalog_command_count": 82,
+    "catalog_phrase_count": 156,
+    "api_paths": [
+      "/api/v1/recordings/vad",
+      "/api/v1/speakers",
+      "/api/v1/speakers/{name}/samples",
+      "/api/v1/speakers/{name}/samples/batch",
+      "/api/v1/speakers/{name}/samples/{sample_id}",
+      "/api/v1/speakers/{name}/samples/{sample_id}/audio",
+      "/health"
+    ],
+    "api_schema_sha256": "992772f451d8455910920a21a8f4759c9c7e907d1a68cb7d7190875425b14976",
+    "topics": {
+      "audio_event": "/perception/audio_event",
+      "enrollment_event": "/perception/voice/enrollment_event",
+      "voice_task": "/perception/voice/task"
+    },
+    "rclpy_installed": false,
+    "native_library_in_wheel": false,
+    "versions": {
+      "numpy": "1.26.4",
+      "scipy": "1.15.3",
+      "sherpa-onnx": "1.13.3",
+      "sherpa-onnx-core": "1.13.3",
+      "fastapi": "0.141.1",
+      "pydantic": "2.13.4"
+    }
+  }
+}

@@ -18,7 +18,7 @@ def run(args, **kwargs):
 def main():
     parser = argparse.ArgumentParser()
     # Extend only after a module-specific migration gate has been assessed.
-    parser.add_argument("module", choices=["behavior", "action"])
+    parser.add_argument("module", choices=["behavior", "action", "voice"])
     parser.add_argument("--resume-prepared", action="store_true",
                         help="Reverify an already prepared archive/copy before importing")
     args = parser.parse_args()
@@ -29,6 +29,14 @@ def main():
     target = WORKSPACE / "marsdog-platform"
     assert not git(target, "status", "--porcelain=v1", "--untracked-files=all"), "Target must be clean"
     assert not (target / "modules" / module).exists(), "Module already imported"
+    if module == "voice":
+        gate = json.loads((target / "validation/p4-voice/original-gate.json").read_text())
+        assert gate["status"] == "PASS" and gate["original_head"] == baseline["head"]
+        assert gate["lock_sha256"] == hashlib.sha256((source / "uv.lock").read_bytes()).hexdigest()
+        assert all(v["tests"] > 0 and not any(v[k] for k in ("failures", "errors", "skipped"))
+                   for v in gate["tests"].values())
+        for name in ("wheel", "ros"):
+            assert json.loads((target / "validation/p4-voice" / gate[name]["report"]).read_text())["status"] == "PASS"
     target_before = git(target, "rev-parse", "HEAD").strip()
     refs = git(source, "for-each-ref", "--format=%(refname) %(objectname)").splitlines()
     branch = git(source, "symbolic-ref", "--short", "HEAD").strip()

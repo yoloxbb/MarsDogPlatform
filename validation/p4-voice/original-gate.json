@@ -1,0 +1,32 @@
+{
+  "status": "PASS",
+  "scope": "Voice original software gate; no model/device acceptance",
+  "original_head": "df85e30509b9561d782c1963e3ff362d39cbfa14",
+  "lock_sha256": "9ef671e7dbbce78379c08d0f824b34ed567fa9b25cf857ae706608cbddd98368",
+  "tests": {
+    "pure": {
+      "tests": 165,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "humble_unit": {
+      "tests": 328,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "wheel": {
+    "status": "PASS",
+    "report": "original-wheel.json"
+  },
+  "ros": {
+    "status": "PASS",
+    "report": "original-ros.json"
+  },
+  "source_verification": {
+    "status": "PASS",
+    "failures": []
+  }
+}
