@@ -56,8 +56,8 @@ def main():
     commit_map = dict(line.split() for line in
                       (transformed / "filter-repo/commit-map").read_text().splitlines()[1:])
     assert commit_map[baseline["head"]] == incoming
-    original_tree = git(source, "ls-tree", "-r", "HEAD").splitlines()
-    imported_tree = git(transformed, "ls-tree", "-r", incoming).splitlines()
+    original_tree = git(source, "ls-tree", "-r", "-z", "HEAD").rstrip("\0").split("\0")
+    imported_tree = git(transformed, "ls-tree", "-r", "-z", incoming).rstrip("\0").split("\0")
     expected_tree = [metadata + "\tmodules/" + module + "/" + path
                      for metadata, path in (line.split("\t", 1) for line in original_tree)]
     assert imported_tree == expected_tree, "Prefix import tree mismatch"
@@ -69,7 +69,7 @@ def main():
     differences = compare_files(target / "modules" / module, baseline["files"])
     assert not differences, differences
     # Exact path set, not only a comparison of original paths that still exist.
-    staged = git(target, "ls-files", "modules/" + module).splitlines()
+    staged = git(target, "ls-files", "-z", "modules/" + module).rstrip("\0").split("\0")
     assert {p.removeprefix("modules/" + module + "/") for p in staged} == set(baseline["files"])
     assert verify_sources()["status"] == "PASS", "Original changed during import"
     run(["git", "-C", str(target), "-c", "user.name=MarsDog Migration",
