@@ -18,7 +18,7 @@ def run(args, **kwargs):
 def main():
     parser = argparse.ArgumentParser()
     # Extend only after a module-specific migration gate has been assessed.
-    parser.add_argument("module", choices=["behavior"])
+    parser.add_argument("module", choices=["behavior", "action"])
     parser.add_argument("--resume-prepared", action="store_true",
                         help="Reverify an already prepared archive/copy before importing")
     args = parser.parse_args()
