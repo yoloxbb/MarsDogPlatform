@@ -1,0 +1,24 @@
+{
+  "source_id": "emotion",
+  "source_path": "/home/elephant/MarsDog/MarsDogEmotion",
+  "original_head": "cd1e0476df7ab20873d048a8508e67301e7231c1",
+  "imported_head": "a4ded4ad6c36d76a1dab6648aa1cbeb6c756b3a4",
+  "original_refs": [
+    "refs/heads/my-changes cd1e0476df7ab20873d048a8508e67301e7231c1",
+    "refs/remotes/origin/HEAD ad09093863001b9c76051702f2d40d77b5f3aca3",
+    "refs/remotes/origin/main ad09093863001b9c76051702f2d40d77b5f3aca3",
+    "refs/remotes/origin/my-changes cd1e0476df7ab20873d048a8508e67301e7231c1"
+  ],
+  "original_commit_count": 19,
+  "archive": "/home/elephant/MarsDog/migration/archives/emotion-cd1e047-all-refs.bundle",
+  "archive_sha256": "ae423e0f5bc894eb55908c6788c84a2123a353b3ed6c294f3d1268caea32fbb6",
+  "archive_verification": "The bundle contains these 5 refs:\ncd1e0476df7ab20873d048a8508e67301e7231c1 refs/heads/my-changes\nad09093863001b9c76051702f2d40d77b5f3aca3 refs/remotes/origin/HEAD\nad09093863001b9c76051702f2d40d77b5f3aca3 refs/remotes/origin/main\ncd1e0476df7ab20873d048a8508e67301e7231c1 refs/remotes/origin/my-changes\ncd1e0476df7ab20873d048a8508e67301e7231c1 HEAD\nThe bundle records a complete history.\n",
+  "restore_fsck": "PASS",
+  "restored_refs_equal": true,
+  "tracked_file_content_and_modes_equal": true,
+  "transform": "git-filter-repo 2.47.0 --to-subdirectory-filter modules/emotion (copy only)",
+  "original_sources": {
+    "status": "PASS",
+    "failures": []
+  }
+}
