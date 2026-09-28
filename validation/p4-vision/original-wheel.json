@@ -1,0 +1,54 @@
+{
+  "status": "KNOWN_PACKAGING_GAP",
+  "missing_resources": [
+    "config/fastdds.xml",
+    "fastdds_env.sh"
+  ],
+  "source": "/home/elephant/MarsDog/migration/work/p1-20260928/sources/vision",
+  "scope": "Original locked CPU runtime and wheel resources; no model/device inference",
+  "lock_sha256": "74ce8d455705bab42e56221d6630fdcaa9e1250b93ccd4d54b1b78522617b944",
+  "observation": {
+    "module_file": "/home/elephant/MarsDog/marsdog-platform/out/vision-original-install/check-y8blsxsn/runtime/.venv/lib/python3.10/site-packages/marsdog_vision_interaction",
+    "scripts": {
+      "marsdog-camera-driver": "marsdog_vision_interaction.nodes.camera_driver_node:main",
+      "marsdog-vision-interaction": "marsdog_vision_interaction.main:main",
+      "marsdog-vision-viewer": "marsdog_vision_interaction.nodes.vision_debug_viewer_node:main"
+    },
+    "assets": {
+      "config/vision.mock.yaml": "44132247464e155bf6b5cb3fb8869e687ea217b6c09e02e5adf23edddc9562b9",
+      "config/vision.object-only.yaml": "6f5e163355b86843feab43a30ea39c4f3fdd5e99578afa361c48ed46ae8f45bd",
+      "config/camera_params.yaml": "4d2625f8cff25d4d5a62718f11a3e9d564a6ca7e8ab8bd4173dbe9456f89434c",
+      "config/vision.yaml": "e7a40ab62ccb25d761d639d11361e8e210799f6ca5e462c1bd524f8502a1915b",
+      "launch/vision.launch.py": "8a2b9520de0c3dd7746dfbec890da7aea89a5ef98d5e5ac991876d6f875d95ca",
+      "launch/vision_debug.launch.py": "1f4e0e41142db3814d450a6244167fd85892bcb8347f62010350599a7aafdbef",
+      "package.xml": "8cd896e0b16272652a644ba30fba04bae7916a2009a8e8c7d3300c0a7cbff3c6"
+    },
+    "web": {
+      "dashboard.html": "9247e1cdd783baddab6fe44555fa8c354438c0f9c2f63b9b338e657b4a65dcc5"
+    },
+    "topics": {
+      "camera_image": "/camera/camera/color/image_raw",
+      "visual_event": "/perception/visual_event",
+      "object_detections": "/perception/vision/object_detections",
+      "gesture_debug": "/perception/vision/gesture_debug",
+      "enrollment_event": "/perception/vision/enrollment_event",
+      "emotion_state": "/emotion/state",
+      "vision_task": "/perception/vision/task",
+      "observation_rate_hz": 10.0,
+      "camera_stale_timeout_sec": 0.5,
+      "object_cache_timeout_sec": 2.0
+    },
+    "cpu_math": true,
+    "cv2_version": "4.11.0",
+    "cv2_contrib_face_namespace": true,
+    "versions": {
+      "numpy": "1.26.4",
+      "opencv-python": "4.11.0.86",
+      "opencv-contrib-python": "4.11.0.86",
+      "torch": "2.13.0",
+      "mediapipe": "0.10.18",
+      "protobuf": "4.25.9",
+      "pydantic": "2.13.5"
+    }
+  }
+}

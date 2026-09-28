@@ -1,0 +1,38 @@
+{
+  "status": "PASS_WITH_EXPLICIT_LIMITS",
+  "original_head": "a05dbf4b9cf3cde9707f05c4360d39e5a52968df",
+  "lock_sha256": "74ce8d455705bab42e56221d6630fdcaa9e1250b93ccd4d54b1b78522617b944",
+  "counts": {
+    "tests": 283,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 3
+  },
+  "skips": [
+    {
+      "case": "test_rga_image_parity_when_helper_is_explicitly_requested[shape0-False]",
+      "reason": "set MARSDOG_HAND_RGA_TEST_LIBRARY for an RGA parity smoke"
+    },
+    {
+      "case": "test_rga_image_parity_when_helper_is_explicitly_requested[shape1-True]",
+      "reason": "set MARSDOG_HAND_RGA_TEST_LIBRARY for an RGA parity smoke"
+    },
+    {
+      "case": "test_rga_image_parity_when_helper_is_explicitly_requested[shape2-True]",
+      "reason": "set MARSDOG_HAND_RGA_TEST_LIBRARY for an RGA parity smoke"
+    }
+  ],
+  "scope": "CPU software migration baseline; no NPU/device inference",
+  "original_wheel_known_gap": [
+    "config/fastdds.xml",
+    "fastdds_env.sh"
+  ],
+  "packaging_fix_file": "setup.py",
+  "packaging_fix_sha256": "37ac4997b62852bafc523ea46c3b9af2e10872aeb39701c7c765f2bb4256b087",
+  "candidate_wheel": "PASS",
+  "original_ros": "PASS",
+  "original_sources": {
+    "status": "PASS",
+    "failures": []
+  }
+}

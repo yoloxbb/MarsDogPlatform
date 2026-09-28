@@ -18,7 +18,7 @@ def run(args, **kwargs):
 def main():
     parser = argparse.ArgumentParser()
     # Extend only after a module-specific migration gate has been assessed.
-    parser.add_argument("module", choices=["behavior", "action", "voice"])
+    parser.add_argument("module", choices=["behavior", "action", "voice", "vision"])
     parser.add_argument("--resume-prepared", action="store_true",
                         help="Reverify an already prepared archive/copy before importing")
     args = parser.parse_args()
@@ -37,6 +37,15 @@ def main():
                    for v in gate["tests"].values())
         for name in ("wheel", "ros"):
             assert json.loads((target / "validation/p4-voice" / gate[name]["report"]).read_text())["status"] == "PASS"
+    if module == "vision":
+        directory = target / "validation/p4-vision"
+        gate = json.loads((directory / "original-gate.json").read_text())
+        assert gate["status"] == "PASS_WITH_EXPLICIT_LIMITS" and gate["original_head"] == baseline["head"]
+        assert gate["lock_sha256"] == hashlib.sha256((source / "uv.lock").read_bytes()).hexdigest()
+        assert gate["counts"] == {"tests": 283, "failures": 0, "errors": 0, "skipped": 3}
+        assert all(s["reason"] == "set MARSDOG_HAND_RGA_TEST_LIBRARY for an RGA parity smoke" for s in gate["skips"])
+        for report in ("original-ros.json", "candidate-wheel.json"):
+            assert json.loads((directory / report).read_text())["status"] == "PASS"
     target_before = git(target, "rev-parse", "HEAD").strip()
     refs = git(source, "for-each-ref", "--format=%(refname) %(objectname)").splitlines()
     branch = git(source, "symbolic-ref", "--short", "HEAD").strip()
