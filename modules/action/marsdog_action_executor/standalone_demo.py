@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 
 from .behavior_resolver import BehaviorResolver
-from .config_loader import ConfigLoader
+from .config_loader import ConfigLoader, installed_config_dir
 from .eligibility_checker import EligibilityChecker
 from .goal_parser import GoalParser
 from .interrupt_manager import InterruptManager
@@ -42,6 +42,8 @@ def main() -> None:
 
     # ── Load configs ─────────────────────────────────────────────────────
     config_dir = Path(__file__).resolve().parent.parent / "config"
+    if not config_dir.exists() and installed_config_dir().is_dir():
+        config_dir = installed_config_dir()
     loader = ConfigLoader(config_dir)
     loader.load_all()
 

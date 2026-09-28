@@ -1,7 +1,7 @@
 # MarsDog Platform
 
-Incremental migration in progress. Emotion/Needs and BehaviorTree have been imported here.
-Vision, Voice, Action and Robotics remain in their original repositories.
+Incremental migration in progress. Emotion/Needs, BehaviorTree and Action have been imported here.
+Vision, Voice and Robotics remain in their original repositories.
 This repository is not yet a complete robot release.
 
 ## Current module
@@ -16,6 +16,7 @@ The first import preserved 19 reachable commits through a prefix-only transforma
 of a disposable clone. The original repository and a verified all-ref bundle remain
 untouched. Imported SHAs differ; see the commit map.
 The BehaviorTree import additionally preserved 7 commits and verified all 90 files.
+The Action import preserved 5 commits and verified all 131 files, including media.
 
 ## Local Python verification
 
@@ -69,3 +70,17 @@ if the original repositories move to a different aggregate directory.
 
 No root Python workspace combines module environments. No production launch has
 been switched. This repository currently has no remote and no hosted CI history.
+
+## Action verification
+
+~~~bash
+uv sync --project modules/action --locked --no-editable --python /usr/bin/python3.10
+(cd modules/action && .venv/bin/python -B -m pytest tests -q -p no:cacheprovider)
+python3 -B tools/check_action_install.py --uv uv
+~~~
+
+Action retains its NumPy 2.2.6 lock in a separate environment. `--no-editable` verifies
+wheel installation without adding an editable-build dependency. ROS callbacks were
+also checked with this module runtime; the Humble build toolchain remains separate.
+Read docs/migration/P3_ACTION.md before running ROS tests. Do not launch robot defaults
+on a development host or mistake fake-server transport checks for hardware acceptance.

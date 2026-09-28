@@ -1,0 +1,82 @@
+{
+  "combinations": {
+    "action-baseline-bt-baseline": {
+      "status": "PASS",
+      "domain": "84",
+      "transport": "loopback_udp",
+      "type_prefix": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-baseline/install",
+      "result": {
+        "status": "PASS",
+        "module_file": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-behavior-humble59/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/action_client_adapter.py",
+        "config_dir": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-behavior-humble59/install/marsdog_behavior/share/marsdog_behavior/config",
+        "type": "marsdog_action_executor/action/ExecuteBehavior",
+        "scope": "Real installed BT adapter and generated original IDL; fake Action server; no hardware",
+        "success_metadata": {
+          "energyValue": 88
+        },
+        "terminal_delay_after_cancel_ack_sec": 0.362,
+        "ownership_retained_until_terminal": true
+      }
+    },
+    "action-baseline-bt-migrated": {
+      "status": "PASS",
+      "domain": "84",
+      "transport": "loopback_udp",
+      "type_prefix": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-baseline/install",
+      "result": {
+        "status": "PASS",
+        "module_file": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-behavior/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/action_client_adapter.py",
+        "config_dir": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-behavior/install/marsdog_behavior/share/marsdog_behavior/config",
+        "type": "marsdog_action_executor/action/ExecuteBehavior",
+        "scope": "Real installed BT adapter and generated original IDL; fake Action server; no hardware",
+        "success_metadata": {
+          "energyValue": 88
+        },
+        "terminal_delay_after_cancel_ack_sec": 0.362,
+        "ownership_retained_until_terminal": true
+      }
+    },
+    "action-migrated-bt-baseline": {
+      "status": "PASS",
+      "domain": "98",
+      "transport": "loopback_udp",
+      "type_prefix": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-migrated/install",
+      "result": {
+        "status": "PASS",
+        "module_file": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-behavior-humble59/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/action_client_adapter.py",
+        "config_dir": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-behavior-humble59/install/marsdog_behavior/share/marsdog_behavior/config",
+        "type": "marsdog_action_executor/action/ExecuteBehavior",
+        "scope": "Real installed BT adapter and generated original IDL; fake Action server; no hardware",
+        "success_metadata": {
+          "energyValue": 88
+        },
+        "terminal_delay_after_cancel_ack_sec": 0.361,
+        "ownership_retained_until_terminal": true
+      }
+    },
+    "action-migrated-bt-migrated": {
+      "status": "PASS",
+      "domain": "87",
+      "transport": "loopback_udp",
+      "type_prefix": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-migrated/install",
+      "result": {
+        "status": "PASS",
+        "module_file": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-behavior/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/action_client_adapter.py",
+        "config_dir": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-behavior/install/marsdog_behavior/share/marsdog_behavior/config",
+        "type": "marsdog_action_executor/action/ExecuteBehavior",
+        "scope": "Real installed BT adapter and generated original IDL; fake Action server; no hardware",
+        "success_metadata": {
+          "energyValue": 88
+        },
+        "terminal_delay_after_cancel_ack_sec": 0.361,
+        "ownership_retained_until_terminal": true
+      }
+    }
+  },
+  "scope": "Real BT adapters and full-build Action IDL; fake server; no production execution",
+  "original_sources": {
+    "status": "PASS",
+    "failures": []
+  },
+  "status": "PASS"
+}

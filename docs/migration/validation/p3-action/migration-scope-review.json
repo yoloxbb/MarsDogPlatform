@@ -1,0 +1,33 @@
+{
+  "emotion": {
+    "status": "PASS",
+    "changed_original_files": [
+      "marsdog_core/config_loader.py",
+      "pyproject.toml"
+    ],
+    "other_original_file_bytes_and_modes": "unchanged"
+  },
+  "behavior": {
+    "status": "PASS",
+    "changed_original_files": [
+      "marsdog_behavior/config_paths.py",
+      "pyproject.toml"
+    ],
+    "other_original_file_bytes_and_modes": "unchanged"
+  },
+  "action": {
+    "status": "PASS",
+    "changed_original_files": [
+      "marsdog_action_executor/config_loader.py",
+      "marsdog_action_executor/emotion_display.py",
+      "marsdog_action_executor/ros_node.py",
+      "marsdog_action_executor/standalone_demo.py",
+      "pyproject.toml"
+    ],
+    "other_original_file_bytes_and_modes": "unchanged"
+  },
+  "original_sources": {
+    "status": "PASS",
+    "failures": []
+  }
+}

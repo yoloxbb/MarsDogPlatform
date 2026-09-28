@@ -13,9 +13,10 @@ Ubuntu 22.04/Humble setuptools 59.6 toolchain. Modern wheel packaging lost conso
 scripts, and default pure-Python config lookup failed after installation. These
 are the narrowly scoped packaging fixes in this slice, not changes to demand logic.
 
-Global gates still open: full Action ROS build lacks nav2_msgs and external chassis
-interfaces; Behavior/Action Python packaging needs separate fixes; models, production
-profiles, waypoint service and hardware acceptance remain outside this slice.
+At this checkpoint, Action lacked nav2_msgs and Behavior/Action packaging needed
+separate fixes. Subsequent P3 records document those software fixes and the full
+Action build. External chassis interfaces, models, production profiles, waypoint
+service and hardware acceptance remain outside this slice; see STATUS.md.
 
 The gate was refined from an all-modules barrier to a per-module barrier: independently
 verified Emotion can migrate while unrelated Action deployment prerequisites remain

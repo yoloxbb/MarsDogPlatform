@@ -1,0 +1,7 @@
+Using CPython 3.10.12 interpreter at: /usr/bin/python3.10
+Creating virtual environment at: migration/work/p1-20260928/sources/vision/.venv
+Resolved 97 packages in 1ms
+error: Failed to download `torch==2.13.0`
+  cause: Network connectivity is disabled, but the requested data wasn't found in the cache for: `https://files.pythonhosted.org/packages/50/c0/68a84105e1fcb8970144b388ff3d3e5dc15a3be28c1e247841f7d7247e41/torch-2.13.0-cp310-cp310-manylinux_2_28_x86_64.whl`
+
+hint: `torch` (v2.13.0) was included because `marsdog-vision-interaction` (v0.1.1) depends on `ultralytics` (v8.4.118) which depends on `torch`

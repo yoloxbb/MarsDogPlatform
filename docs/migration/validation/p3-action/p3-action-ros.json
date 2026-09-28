@@ -1,0 +1,122 @@
+{
+  "builds": {
+    "baseline": {
+      "status": "PASS",
+      "exit_code": 0,
+      "duration_sec": 1.17,
+      "command": [
+        "/home/elephant/MarsDog/migration/ros-tools/.venv/bin/colcon",
+        "--log-base",
+        "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-baseline/log",
+        "build",
+        "--base-paths",
+        "/home/elephant/MarsDog/migration/work/p1-20260928/sources/action",
+        "--build-base",
+        "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-baseline/build",
+        "--install-base",
+        "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-baseline/install",
+        "--executor",
+        "sequential",
+        "--event-handlers",
+        "console_direct+",
+        "--cmake-args",
+        "-DBUILD_TESTING=OFF",
+        "-DPython3_EXECUTABLE=/home/elephant/MarsDog/migration/ros-tools/.venv/bin/python",
+        "-DPYTHON_EXECUTABLE=/home/elephant/MarsDog/migration/ros-tools/.venv/bin/python"
+      ],
+      "log": "/home/elephant/MarsDog/migration/reports/p1-20260928/ros-p3-action-baseline-build.log",
+      "install": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-baseline/install"
+    },
+    "migrated": {
+      "status": "PASS",
+      "exit_code": 0,
+      "duration_sec": 0.969,
+      "command": [
+        "/home/elephant/MarsDog/migration/ros-tools/.venv/bin/colcon",
+        "--log-base",
+        "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-migrated/log",
+        "build",
+        "--base-paths",
+        "/home/elephant/MarsDog/marsdog-platform/modules/action",
+        "--build-base",
+        "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-migrated/build",
+        "--install-base",
+        "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-migrated/install",
+        "--executor",
+        "sequential",
+        "--event-handlers",
+        "console_direct+",
+        "--cmake-args",
+        "-DBUILD_TESTING=OFF",
+        "-DPython3_EXECUTABLE=/home/elephant/MarsDog/migration/ros-tools/.venv/bin/python",
+        "-DPYTHON_EXECUTABLE=/home/elephant/MarsDog/migration/ros-tools/.venv/bin/python"
+      ],
+      "log": "/home/elephant/MarsDog/migration/reports/p1-20260928/ros-p3-action-migrated-build.log",
+      "install": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-migrated/install"
+    }
+  },
+  "callbacks": {
+    "baseline": {
+      "status": "PASS",
+      "command": [
+        "/home/elephant/MarsDog/migration/work/p1-20260928/sources/action/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "--import-mode=importlib",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--junitxml=/home/elephant/MarsDog/migration/reports/p1-20260928/p3-action-baseline-ros-callbacks-junit.xml",
+        "/home/elephant/MarsDog/migration/work/p1-20260928/sources/action/tests/test_long_goal_arbitration.py",
+        "/home/elephant/MarsDog/migration/work/p1-20260928/sources/action/tests/test_long_goal_runtime.py",
+        "/home/elephant/MarsDog/migration/work/p1-20260928/sources/action/tests/test_ros_goal_params_boundary.py",
+        "/home/elephant/MarsDog/migration/work/p1-20260928/sources/action/tests/test_ros_shutdown_boundary.py"
+      ],
+      "installed_import": {
+        "module": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-baseline/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/ros_node.py",
+        "config": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-baseline/install/marsdog_action_executor/share/marsdog_action_executor/config",
+        "numpy_version": "2.2.6"
+      },
+      "scope": "Actual installed Action callbacks with existing fake collaborators; production node not constructed"
+    },
+    "migrated": {
+      "status": "PASS",
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/action/.venv/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "--import-mode=importlib",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--junitxml=/home/elephant/MarsDog/migration/reports/p1-20260928/p3-action-migrated-ros-callbacks-junit.xml",
+        "/home/elephant/MarsDog/marsdog-platform/modules/action/tests/test_long_goal_arbitration.py",
+        "/home/elephant/MarsDog/marsdog-platform/modules/action/tests/test_long_goal_runtime.py",
+        "/home/elephant/MarsDog/marsdog-platform/modules/action/tests/test_ros_goal_params_boundary.py",
+        "/home/elephant/MarsDog/marsdog-platform/modules/action/tests/test_ros_shutdown_boundary.py"
+      ],
+      "installed_import": {
+        "module": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-migrated/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/ros_node.py",
+        "config": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-action-migrated/install/marsdog_action_executor/share/marsdog_action_executor/config",
+        "numpy_version": "2.2.6"
+      },
+      "scope": "Actual installed Action callbacks with existing fake collaborators; production node not constructed"
+    }
+  },
+  "nav2_provenance": {
+    "package": "ros-humble-nav2-msgs",
+    "version": "1.1.20-1jammy.20260907.223327",
+    "architecture": "amd64",
+    "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-msgs/ros-humble-nav2-msgs_1.1.20-1jammy.20260907.223327_amd64.deb",
+    "sha256": "7ea288dd8e6718cb46658616eceb667bfda53c0d2b08596e3bc8a70061dc3487",
+    "method": "apt metadata verified download; dpkg-deb extract only; system unchanged",
+    "prefix": "/home/elephant/MarsDog/migration/work/nav2-msgs-1.1.20/extracted/opt/ros/humble"
+  },
+  "original_sources": {
+    "status": "PASS",
+    "failures": []
+  },
+  "status": "PASS"
+}

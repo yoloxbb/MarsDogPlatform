@@ -1,0 +1,25 @@
+{
+  "source_id": "action",
+  "source_path": "/home/elephant/MarsDog/20260707_MarsDogAction",
+  "original_head": "f00c3fdf2945c7a09d5f49ffc3d0df39c37ca2a8",
+  "original_refs": [
+    "refs/heads/master f00c3fdf2945c7a09d5f49ffc3d0df39c37ca2a8",
+    "refs/remotes/origin/HEAD f00c3fdf2945c7a09d5f49ffc3d0df39c37ca2a8",
+    "refs/remotes/origin/master f00c3fdf2945c7a09d5f49ffc3d0df39c37ca2a8"
+  ],
+  "original_commit_count": 5,
+  "target_before": "ecd94cabc1c1590e130835a4bf84ad10114e455e",
+  "imported_head": "43240200c062c745442066ba2a7dd0b331099806",
+  "merge_commit": "22e38c1884da2ddc1797e47fcbd59b5bf4caf7e3",
+  "archive": "/home/elephant/MarsDog/migration/archives/action-f00c3fd-all-refs.bundle",
+  "archive_sha256": "2f8471f68f108e43630a76bd6430b0a88597569ca445a3e07a25648f0b36b4af",
+  "restore_fsck": "PASS",
+  "restored_refs_equal": true,
+  "tracked_file_content_and_modes_equal": true,
+  "tracked_files": 131,
+  "transform": "git-filter-repo 2.47.0 --to-subdirectory-filter modules/action (copy only)",
+  "original_sources": {
+    "status": "PASS",
+    "failures": []
+  }
+}

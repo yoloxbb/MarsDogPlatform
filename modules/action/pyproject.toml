@@ -12,10 +12,21 @@ dependencies = [
 
 [project.scripts]
 marsdog-action-demo = "marsdog_action_executor.standalone_demo:main"
+action_executor_node = "marsdog_action_executor.ros_node:main"
+emotion_display = "marsdog_action_executor.emotion_display:main"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling==1.32.4"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["marsdog_action_executor"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"config" = "share/marsdog_action_executor/config"
+"launch" = "share/marsdog_action_executor/launch"
+"action" = "share/marsdog_action_executor/action"
+"package.xml" = "share/marsdog_action_executor/package.xml"
 
 [[tool.uv.index]]
 url = "https://pypi.org/simple"

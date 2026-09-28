@@ -1,6 +1,7 @@
 # P3a: BehaviorTree software migration
 
-Status: independently verified on 2026-09-28. P3b Action is still pending.
+Status: independently verified on 2026-09-28. See P3_ACTION.md for the subsequent
+Action slice and the controlled transport matrix / remaining environment gates.
 
 The source is 20260702_MarsDogTree at 9f2eb0dee84f84bb84a4e497aba4e3effe4d10da.
 All 7 reachable commits and original refs were restored from a verified bundle.

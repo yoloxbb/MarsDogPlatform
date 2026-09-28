@@ -14,10 +14,16 @@ from __future__ import annotations
 
 import logging
 import math
+import sys
 from pathlib import Path
 from typing import Any, Mapping
 
 logger = logging.getLogger(__name__)
+
+
+def installed_config_dir() -> Path:
+    """Ordinary wheel data location; existing caller/ROS/source paths take priority."""
+    return Path(sys.prefix) / "share" / "marsdog_action_executor" / "config"
 
 # ── Valid enum values ─────────────────────────────────────────────────────────
 
@@ -59,7 +65,11 @@ class ConfigLoader:
         catalog = loader.action_catalog
     """
 
-    def __init__(self, config_dir: str | Path = "config") -> None:
+    def __init__(self, config_dir: str | Path | None = None) -> None:
+        if config_dir is None:
+            local = Path("config")
+            installed = installed_config_dir()
+            config_dir = local if local.exists() or not installed.is_dir() else installed
         self._dir = Path(config_dir)
         self.behavior_tree_templates: dict[str, Any] = {}
         self.action_catalog: dict[str, Any] = {}

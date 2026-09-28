@@ -12,7 +12,7 @@ def main() -> None:
     parser.add_argument("--endpoint", required=True)
     args = parser.parse_args()
     import rclpy
-    from rclpy.action import ActionClient, ActionServer, CancelResponse
+    from rclpy.action import ActionClient, ActionServer, CancelResponse, GoalResponse
     from rclpy.callback_groups import ReentrantCallbackGroup
     from rclpy.executors import MultiThreadedExecutor
     from action_msgs.msg import GoalStatus
@@ -21,7 +21,12 @@ def main() -> None:
     rclpy.init()
     node = rclpy.create_node("migration_probe_" + args.role)
     if args.role == "server":
+        def accept(request):
+            print(json.dumps({"phase": "goal_received", "goal_id": request.goal_id}), flush=True)
+            return GoalResponse.ACCEPT
+
         def execute(goal_handle):
+            print(json.dumps({"phase": "execute", "goal_id": goal_handle.request.goal_id}), flush=True)
             feedback = ExecuteBehavior.Feedback()
             feedback.goal_id = goal_handle.request.goal_id
             feedback.behavior_id = goal_handle.request.behavior_id
@@ -55,15 +60,18 @@ def main() -> None:
             result.metadata_json = goal_handle.request.params_json
             result.emotion_delta_json = "{}"
             result.need_delta_json = "{}"
+            print(json.dumps({"phase": "result", "status": result.status}), flush=True)
             return result
 
         server = ActionServer(
             node, ExecuteBehavior, args.endpoint, execute_callback=execute,
+            goal_callback=accept,
             cancel_callback=lambda _: CancelResponse.ACCEPT,
             callback_group=ReentrantCallbackGroup(),
         )
         executor = MultiThreadedExecutor(num_threads=3)
         executor.add_node(node)
+        print(json.dumps({"phase": "ready", "endpoint": args.endpoint}), flush=True)
         try:
             executor.spin()
         except KeyboardInterrupt:

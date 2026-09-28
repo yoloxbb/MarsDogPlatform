@@ -1,0 +1,7 @@
+Using CPython 3.10.12 interpreter at: /usr/bin/python3.10
+Creating virtual environment at: migration/work/p1-20260928/sources/voice/.venv
+Resolved 37 packages in 1ms
+error: Failed to download `sherpa-onnx-core==1.13.3`
+  cause: Network connectivity is disabled, but the requested data wasn't found in the cache for: `https://files.pythonhosted.org/packages/bc/81/df59066fa1c4d979b6465742980038e674a44df11d03395d278d7ca5eaec/sherpa_onnx_core-1.13.3-py3-none-manylinux2014_x86_64.whl`
+
+hint: `sherpa-onnx-core` (v1.13.3) was included because `marsdog-voice-interaction` (v0.1.0) depends on `sherpa-onnx-core`

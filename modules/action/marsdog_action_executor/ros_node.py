@@ -79,7 +79,7 @@ from .adapters.uwb_follow_adapter import UwbFollowAdapter
 from .adapters.uwb_follow_action_adapter import UwbFollowActionAdapter
 from .adapters.uwb_roam_adapter import UwbRoamAdapter
 from .behavior_resolver import BehaviorResolver
-from .config_loader import ConfigLoader
+from .config_loader import ConfigLoader, installed_config_dir
 from .debug_publishers import DebugPublishers
 from .eligibility_checker import EligibilityChecker
 from .execution_context import ExecutionContext, parse_params_json_object
@@ -1772,6 +1772,8 @@ if HAS_ROS2:
             local = Path(__file__).resolve().parent.parent / "config"
             if local.exists():
                 return local
+            if not Path("config").exists() and installed_config_dir().is_dir():
+                return installed_config_dir()
             return Path("config")
 
         # ── Action Server callbacks ─────────────────────────────────────

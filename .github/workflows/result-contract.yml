@@ -1,0 +1,33 @@
+name: Action BT Needs result contract
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      MARSDOG_ACTION_SOURCE: ${{ github.workspace }}/modules/action
+      MARSDOG_BEHAVIOR_SOURCE: ${{ github.workspace }}/modules/behavior
+      MARSDOG_EMOTION_SOURCE: ${{ github.workspace }}/modules/emotion
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - run: python3 -B tools/bootstrap_uv.py
+      - name: Three independent environments
+        run: |
+          .tools/uv sync --project modules/action --locked --no-editable --python /usr/bin/python3.10
+          .tools/uv sync --project modules/behavior --locked --python /usr/bin/python3.10
+          .tools/uv sync --project modules/emotion --locked --python /usr/bin/python3.10
+      - name: Real implementations in separate processes
+        run: modules/emotion/.venv/bin/python -B -m pytest integration/migration/tests -q -p no:cacheprovider

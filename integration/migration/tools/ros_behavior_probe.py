@@ -33,7 +33,12 @@ def main():
             end = time.monotonic() + seconds
             while not predicate() and time.monotonic() < end:
                 rclpy.spin_once(node, timeout_sec=0.01)
-            assert predicate(), "Timed out waiting for real adapter callback"
+            assert predicate(), str({
+                "error": "Timed out waiting for real adapter callback",
+                "lifecycle": adapter._goal_lifecycle,
+                "send_done": {k: v.done() for k, v in adapter._send_futures.items()},
+                "result_done": {k: v.done() for k, v in adapter._result_futures.items()},
+            })
 
         active = ActiveBehavior("p3-success", "recharge", 1, 1.0, 1.0, "Energy",
                                 params={"energyValue": 88})

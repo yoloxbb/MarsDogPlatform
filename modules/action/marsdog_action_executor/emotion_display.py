@@ -52,6 +52,7 @@ except ImportError:
     QWidget = object
 
 from .ros2_compat import HAS_ROS2
+from .config_loader import installed_config_dir
 
 if HAS_ROS2:
     import rclpy
@@ -74,6 +75,7 @@ def _resolve_image_dirs() -> tuple[Path, ...]:
     candidates.extend((
         Path(__file__).resolve().parent.parent / "config" / "emotion_images",
         Path("config") / "emotion_images",
+        installed_config_dir() / "emotion_images",
     ))
 
     unique: list[Path] = []
