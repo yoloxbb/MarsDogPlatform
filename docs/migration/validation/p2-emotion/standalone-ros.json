@@ -1,0 +1,81 @@
+{
+  "status": "PASS",
+  "scope": "Emotion only; real remapped ROS node; no hardware",
+  "ros_domain_id": "188",
+  "commands": [
+    [
+      "/home/elephant/MarsDog/migration/.tools/uv",
+      "sync",
+      "--project",
+      "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools",
+      "--locked",
+      "--python",
+      "/usr/bin/python3.10"
+    ],
+    [
+      "bash",
+      "--noprofile",
+      "--norc",
+      "-c",
+      "set -e\nsource /opt/ros/humble/setup.bash\n/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python -B -c 'import os,json;print(json.dumps(dict(os.environ)))'"
+    ],
+    [
+      "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/colcon",
+      "--log-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/emotion-ros/log",
+      "build",
+      "--base-paths",
+      "/home/elephant/MarsDog/marsdog-platform/modules/emotion",
+      "--build-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/emotion-ros/build",
+      "--install-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/emotion-ros/install",
+      "--executor",
+      "sequential",
+      "--event-handlers",
+      "console_direct+",
+      "--cmake-args",
+      "-DBUILD_TESTING=OFF",
+      "-DPython3_EXECUTABLE=/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+      "-DPYTHON_EXECUTABLE=/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python"
+    ],
+    [
+      "bash",
+      "--noprofile",
+      "--norc",
+      "-c",
+      "set -e\nsource /opt/ros/humble/setup.bash\nsource /home/elephant/MarsDog/marsdog-platform/out/emotion-ros/install/local_setup.bash\n/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python -B -c 'import os,json;print(json.dumps(dict(os.environ)))'"
+    ],
+    [
+      "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+      "-B",
+      "/home/elephant/MarsDog/marsdog-platform/tools/ros_emotion_probe.py",
+      "--install",
+      "/home/elephant/MarsDog/marsdog-platform/out/emotion-ros/install",
+      "--output",
+      "/home/elephant/MarsDog/marsdog-platform/out/emotion-ros/probe.json"
+    ]
+  ],
+  "probe": {
+    "status": "PASS",
+    "module_file": "/home/elephant/MarsDog/marsdog-platform/out/emotion-ros/install/marsdog_need_emotion/lib/python3.10/site-packages/marsdog_ros2/internal_need_node.py",
+    "initial_energy_need": 0,
+    "settled_energy_need": 12,
+    "duplicate_energy_need_samples": [
+      12,
+      12
+    ],
+    "endpoint_prefix": "/migration_emotion_af9d91439bdb4c7d8a1f64301503c5a1",
+    "remapped_endpoints": [
+      "/internal_need/state",
+      "/internal_need/signal_event",
+      "/perception/visual_event",
+      "/perception/audio_event",
+      "/perception/tactile_event",
+      "/behavior/result_event",
+      "/personality/state",
+      "/simulation/time_state"
+    ],
+    "scope": "Real installed InternalNeedNode and ROS pub/sub; synthetic result; no hardware"
+  }
+}

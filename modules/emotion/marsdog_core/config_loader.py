@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -53,8 +54,19 @@ def _GetDefaultConfigDir() -> Path:
     try:
         from ament_index_python.packages import get_package_share_directory
     except ModuleNotFoundError:
-        return DEFAULT_CONFIG_DIR
-    return Path(get_package_share_directory("marsdog_need_emotion")) / "configs"
+        pass
+    else:
+        try:
+            return Path(get_package_share_directory("marsdog_need_emotion")) / "configs"
+        except LookupError:
+            # A wheel may be installed without registering its prefix in ROS.
+            pass
+    # setuptools data_files are installed under the active Python prefix.
+    # Keep source and ROS share precedence unchanged; support ordinary wheel use.
+    installedConfigDir = Path(sys.prefix) / "share" / "marsdog_need_emotion" / "configs"
+    if installedConfigDir.is_dir():
+        return installedConfigDir
+    return DEFAULT_CONFIG_DIR
 
 
 def _LoadYamlCompatibleText(text: str) -> dict[str, Any]:

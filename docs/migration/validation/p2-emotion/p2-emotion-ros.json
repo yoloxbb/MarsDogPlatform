@@ -1,0 +1,122 @@
+{
+  "scope": "P2 Emotion software verification, not full robot acceptance",
+  "build": {
+    "status": "PASS",
+    "exit_code": 0,
+    "duration_sec": 2.381,
+    "command": [
+      "/home/elephant/MarsDog/migration/ros-tools/.venv/bin/colcon",
+      "--log-base",
+      "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p2-emotion/log",
+      "build",
+      "--base-paths",
+      "/home/elephant/MarsDog/marsdog-platform/modules/emotion",
+      "--build-base",
+      "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p2-emotion/build",
+      "--install-base",
+      "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p2-emotion/install",
+      "--executor",
+      "sequential",
+      "--event-handlers",
+      "console_direct+",
+      "--cmake-args",
+      "-DBUILD_TESTING=OFF",
+      "-DPython3_EXECUTABLE=/home/elephant/MarsDog/migration/ros-tools/.venv/bin/python",
+      "-DPYTHON_EXECUTABLE=/home/elephant/MarsDog/migration/ros-tools/.venv/bin/python"
+    ],
+    "log": "/home/elephant/MarsDog/migration/reports/p1-20260928/ros-p2-emotion-build.log",
+    "install": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p2-emotion/install"
+  },
+  "probes": {
+    "baseline": {
+      "status": "PASS",
+      "exit_code": 0,
+      "command": [
+        "/home/elephant/MarsDog/migration/ros-tools/.venv/bin/python",
+        "-B",
+        "/home/elephant/MarsDog/migration/tools/ros_emotion_probe.py",
+        "--install",
+        "/home/elephant/MarsDog/migration/work/p1-20260928/ros-emotion-humble59/install",
+        "--output",
+        "/home/elephant/MarsDog/migration/reports/p1-20260928/p2-emotion-baseline-ros-probe.json"
+      ],
+      "ros_domain_id": "202",
+      "localhost_only": true,
+      "result": {
+        "status": "PASS",
+        "module_file": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-emotion-humble59/install/marsdog_need_emotion/lib/python3.10/site-packages/marsdog_ros2/internal_need_node.py",
+        "initial_energy_need": 0,
+        "settled_energy_need": 12,
+        "duplicate_energy_need_samples": [
+          12,
+          12
+        ],
+        "endpoint_prefix": "/migration_emotion_e95c6b2b4ea94cff96aacf663a2b41ad",
+        "remapped_endpoints": [
+          "/internal_need/state",
+          "/internal_need/signal_event",
+          "/perception/visual_event",
+          "/perception/audio_event",
+          "/perception/tactile_event",
+          "/behavior/result_event",
+          "/personality/state",
+          "/simulation/time_state"
+        ],
+        "scope": "Real installed InternalNeedNode and ROS pub/sub; synthetic result; no hardware"
+      }
+    },
+    "migrated": {
+      "status": "PASS",
+      "exit_code": 0,
+      "command": [
+        "/home/elephant/MarsDog/migration/ros-tools/.venv/bin/python",
+        "-B",
+        "/home/elephant/MarsDog/migration/tools/ros_emotion_probe.py",
+        "--install",
+        "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p2-emotion/install",
+        "--output",
+        "/home/elephant/MarsDog/migration/reports/p1-20260928/p2-emotion-migrated-ros-probe.json"
+      ],
+      "ros_domain_id": "183",
+      "localhost_only": true,
+      "result": {
+        "status": "PASS",
+        "module_file": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p2-emotion/install/marsdog_need_emotion/lib/python3.10/site-packages/marsdog_ros2/internal_need_node.py",
+        "initial_energy_need": 0,
+        "settled_energy_need": 12,
+        "duplicate_energy_need_samples": [
+          12,
+          12
+        ],
+        "endpoint_prefix": "/migration_emotion_a7f8287712764648980f7595df4eb0d6",
+        "remapped_endpoints": [
+          "/internal_need/state",
+          "/internal_need/signal_event",
+          "/perception/visual_event",
+          "/perception/audio_event",
+          "/perception/tactile_event",
+          "/behavior/result_event",
+          "/personality/state",
+          "/simulation/time_state"
+        ],
+        "scope": "Real installed InternalNeedNode and ROS pub/sub; synthetic result; no hardware"
+      }
+    }
+  },
+  "executables": {
+    "status": "PASS",
+    "actual": [
+      "emotion_engine_node",
+      "internal_need_node",
+      "midnight_test_node",
+      "one1000_tactile_node",
+      "personality_node",
+      "time_controller_node"
+    ]
+  },
+  "original_sources": {
+    "status": "PASS",
+    "failures": []
+  },
+  "status": "PASS"
+}

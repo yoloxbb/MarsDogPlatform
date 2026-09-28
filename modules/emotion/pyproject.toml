@@ -1,8 +1,25 @@
+[build-system]
+requires = ["setuptools==79.0.1", "wheel==0.48.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "marsdog-need-emotion"
 version = "0.1.0"
 description = "Marsdog internal need, emotion, personality and virtual time ROS2 nodes."
 requires-python = ">=3.10"
+dependencies = ["setuptools"]
+license = "Apache-2.0"
+
+[project.scripts]
+time_controller_node = "marsdog_ros2.time_controller_node:main"
+midnight_test_node = "marsdog_ros2.midnight_test_node:main"
+internal_need_node = "marsdog_ros2.internal_need_node:main"
+emotion_engine_node = "marsdog_ros2.emotion_engine_node:main"
+personality_node = "marsdog_ros2.personality_node:main"
+one1000_tactile_node = "marsdog_ros2.one1000_tactile_node:main"
+
+[dependency-groups]
+dev = ["pytest==9.1.1", "pyyaml==6.0.3"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

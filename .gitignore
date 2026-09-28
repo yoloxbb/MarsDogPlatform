@@ -5,3 +5,5 @@
 out/
 .external/
 *.pyc
+.tools/
+.cache/
