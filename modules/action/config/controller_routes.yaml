@@ -1,0 +1,14 @@
+routes:
+  _default: unsupported
+  ACT_INTERACT_FOLLOW_OWNER: uwb_follow
+  ACT_INTERACT_RESPOND_CALL: wake_orientation
+  ACT_INTERACT_APPROACH_VOICE_CALLER: person_nav_approach
+  ACT_APPROACH_VISUAL_TARGET: visual_target_approach
+  ACT_OBJECT_BRING: perception_navigation_manipulation
+  ACT_OBJECT_FETCH: perception_navigation_manipulation
+  ACT_OBJECT_DROP: perception_navigation_manipulation
+  ACT_CONTROL_QUIET: mock
+  ACT_NAV_WALK_RANDOM: behavior_mobility
+  ACT_NAV_GO_OUT_TO_PLAY: behavior_mobility
+  ACT_NAV_GO_HOME: behavior_mobility
+  ACT_UWB_RANDOM_ROAM: uwb_roam
