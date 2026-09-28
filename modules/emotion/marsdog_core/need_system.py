@@ -11,6 +11,7 @@ from .behavior_result import (
     MarkBehaviorResultEventHandledValue,
     NormalizeBehaviorResultEventValue,
 )
+from .battery_observation import battery_percentage
 from .bladder_behavior import BladderBehaviorAPI
 from .cleanliness_behavior import CleanlinessBehaviorAPI
 from .config_loader import LoadAllConfigs
@@ -108,6 +109,9 @@ class MarsdogNeedSystem(
         metadata = payload["metadata"]
         if result == "STARTED" and action == ActionType.ACTION_SLEEP.value:
             return self.ExecuteSleep()
+        if action == ActionType.ACTION_RECHARGE.value and result in INTERRUPTED_RESULTS:
+            # Cancellation/timeouts do not manufacture battery recovery.
+            return self._ApplyRechargeCompleted(metadata)
         if result in INTERRUPTED_RESULTS:
             return self._ApplyInterruptedBehaviorResult(action, payload)
         if result != "COMPLETED":
@@ -187,14 +191,10 @@ class MarsdogNeedSystem(
 
     def _ApplyRechargeCompleted(self, metadata: dict[str, Any]) -> bool:
         """把充电完成后的电量百分比转换为 Energy 需求值。"""
-        value = metadata.get("energyValue", metadata.get("energy_value", metadata.get("batteryValue")))
+        value = battery_percentage(metadata, self._GetTimestamp(None))
         if value is None:
-            value = self.configs.get("demands", {}).get(DemandType.ENERGY.value, {}).get("rechargeTarget", 100)
-        try:
-            energyValue = int(value)
-        except (TypeError, ValueError):
             return False
-        return self.SetEnergyBatteryValue(energyValue)
+        return self.SetEnergyBatteryValue(value)
 
     def _ApplySocialCompleted(self, metadata: dict[str, Any]) -> bool:
         """根据社交结果结算 Social。"""

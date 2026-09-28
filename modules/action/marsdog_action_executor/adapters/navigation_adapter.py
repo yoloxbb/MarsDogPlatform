@@ -376,6 +376,14 @@ class BehaviorMobilityAdapter:
                 unit_id,
             )
             return False
+        if (
+            behavior_name == "go_home"
+            and stage_id == "navigation"
+            and unit_id == "ACT_NAV_GO_HOME"
+        ):
+            # The Action node already confirmed arrival before entering stages.
+            # This unit completes the arrival; it must not start another motion.
+            return self.hold_position(duration)
         return bool(self._motion_adapter.execute_step(unit_config, ctx, duration))
 
     def hold_position(self, duration_sec: float | None = None) -> bool:

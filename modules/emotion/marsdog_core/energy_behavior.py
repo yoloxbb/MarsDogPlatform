@@ -5,6 +5,7 @@ from __future__ import annotations
 from math import floor, isfinite
 from typing import Any
 
+from .battery_observation import battery_percentage
 from .rules import IsConditionMatched
 from .types import ActionResultType, ClampValue, DemandType
 
@@ -89,18 +90,19 @@ class EnergyBehaviorAPI:
             self.state.energyDrainRemainder = 0.0
         return newValue
 
-    def ExecuteRecharge(self) -> bool:
-        """执行充电行为并把目标电量转换为 Energy 需求值。"""
-        energyConfig = self._GetEnergyConfig()
-        targetBatteryValue = int(energyConfig.get("rechargeTarget", 100))
+    def ExecuteRecharge(self, metadata: dict[str, Any] | None = None) -> bool:
+        """Apply measured battery state; a command alone cannot refill Energy."""
+        targetBatteryValue = battery_percentage(metadata or {}, self._GetTimestamp(None))
+        if targetBatteryValue is None:
+            return False
         oldValue = self.GetDemandValue(DemandType.ENERGY)
         self.SetEnergyBatteryValue(targetBatteryValue)
         self._ApplyRechargeResultEmotion(oldValue, self.GetDemandValue(DemandType.ENERGY))
         return True
 
-    def Recharge(self) -> bool:
-        """APP 业务接口：充电。"""
-        return self.ExecuteRecharge()
+    def Recharge(self, metadata: dict[str, Any] | None = None) -> bool:
+        """APP entry point; requires the same battery evidence as results."""
+        return self.ExecuteRecharge(metadata)
 
     def _GetEnergyConfig(self) -> dict[str, Any]:
         """获取 Energy 充电需求配置。"""

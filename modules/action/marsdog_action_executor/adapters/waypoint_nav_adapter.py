@@ -34,6 +34,7 @@ _STATUS_CODES = {
         "NAV2_UNKNOWN",
     },
     "INTERRUPTED": {
+        "RECOVERY_RELEASED",  # Explicit operator release; not Nav2 stop confirmation.
         "CLIENT_CANCELLED",
         "PREEMPTED",
         "NAV2_CANCELED",

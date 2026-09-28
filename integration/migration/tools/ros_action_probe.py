@@ -10,13 +10,15 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("role", choices=["server", "client"])
     parser.add_argument("--endpoint", required=True)
+    parser.add_argument("--interface-package", choices=["marsdog_action_executor", "marsdog_interfaces"], default="marsdog_action_executor")
     args = parser.parse_args()
     import rclpy
     from rclpy.action import ActionClient, ActionServer, CancelResponse, GoalResponse
     from rclpy.callback_groups import ReentrantCallbackGroup
     from rclpy.executors import MultiThreadedExecutor
     from action_msgs.msg import GoalStatus
-    from marsdog_action_executor.action import ExecuteBehavior
+    from importlib import import_module
+    ExecuteBehavior = import_module(args.interface_package + ".action").ExecuteBehavior
 
     rclpy.init()
     node = rclpy.create_node("migration_probe_" + args.role)

@@ -2622,18 +2622,9 @@ if HAS_ROS2:
                 behavior_result.success
                 and canonical in ("restInPlace", "recharge")
             ):
-                battery_level = self._read_battery_level()
-                metadata["energyValue"] = battery_level
-                if canonical == "recharge" and isinstance(
-                    lite3_action_metadata, dict
-                ):
-                    metadata["charging_completed"] = (
-                        lite3_action_metadata.get("semantic_effect")
-                        != "simulated"
-                    )
-                self.get_logger().info(
-                    f"[{gid}] metadata: energyValue={battery_level}"
-                )
+                # No verified battery producer is connected. Completion of a
+                # proxy/action is not a measurement or charging confirmation.
+                metadata["energy_settlement"] = "observation_unavailable"
             metadata_json = json.dumps(metadata) if metadata else "{}"
 
             exec_result = ExecutionResult(
@@ -2914,16 +2905,13 @@ if HAS_ROS2:
 
         # ── Helpers ────────────────────────────────────────────────────
 
-        def _read_battery_level(self) -> int:
-            """Return the configured/BMS-backed actual battery percentage.
+        def _read_battery_level(self) -> None:
+            """No verified telemetry source is connected; never synthesize SOC.
 
-            Until a BMS subscriber is connected, the explicit launch
-            parameter implements the agreed contract default of 100%.
+            recharge_result_energy_value remains declared for launch compatibility
+            but is not a measurement and is deliberately not consumed here.
             """
-            value = float(
-                self.get_parameter("recharge_result_energy_value").value
-            )
-            return int(min(100.0, max(0.0, value)))
+            return None
 
         def _publish_feedback(
             self, goal_handle, gid: str, behavior_id: str,

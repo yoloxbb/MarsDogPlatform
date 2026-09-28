@@ -1,7 +1,9 @@
 # MarsDog Platform
 
 Incremental migration in progress. Emotion/Needs, BehaviorTree and Action have been imported here.
-Vision, Voice and Robotics remain in their original repositories.
+Vision, Voice and the existing robot_ws/rtabmap_ws remain in their original repositories.
+The newly supplied interface and waypoint navigation packages are copied into
+interfaces/ros2 and robotics/ros2/src; see docs/migration/P5_NAVIGATION_RECOVERY.md.
 This repository is not yet a complete robot release.
 
 ## Current module
@@ -84,3 +86,18 @@ wheel installation without adding an editable-build dependency. ROS callbacks we
 also checked with this module runtime; the Humble build toolchain remains separate.
 Read docs/migration/P3_ACTION.md before running ROS tests. Do not launch robot defaults
 on a development host or mistake fake-server transport checks for hardware acceptance.
+
+
+## Approved battery evidence policy
+
+Behavior-result energy settlement now requires a fresh, non-simulated observation;
+legacy scalar values and action completion alone do not refill Energy. No battery
+producer is connected. See interfaces/application/BATTERY_OBSERVATION.md and
+docs/migration/ENERGY_SETTLEMENT_DECISION.md before changing the result contract.
+For migrated-source contract tests, additionally set:
+
+```bash
+export MARSDOG_RESULT_FIXTURE="$PWD/integration/migration/fixtures/behavior-result/energy-evidence-cases.json"
+```
+
+The retained historical cases.json is for the original source snapshots only.

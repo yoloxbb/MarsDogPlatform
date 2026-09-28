@@ -1,0 +1,269 @@
+{
+  "scope": "Current behavior characterization, not acceptance of energy truth",
+  "cases": [
+    {
+      "name": "missing",
+      "input_metadata": {},
+      "mapped_event": {
+        "event_id": "result-000000",
+        "timestamp": 1790610469.2772093,
+        "action_type": "ACTION_RECHARGE",
+        "demand_type": "Energy",
+        "result_type": "COMPLETED",
+        "metadata": {
+          "recoveryMode": "charging"
+        }
+      },
+      "needs": {
+        "before": {
+          "Hunger": 65,
+          "Bladder": 0,
+          "Sleepiness": 15,
+          "Cleanliness": 10,
+          "Energy": 90,
+          "Social": 20,
+          "Exploration": 10
+        },
+        "after": {
+          "Hunger": 65,
+          "Bladder": 0,
+          "Sleepiness": 15,
+          "Cleanliness": 10,
+          "Energy": 90,
+          "Social": 20,
+          "Exploration": 10
+        },
+        "accepted": [
+          false,
+          false
+        ],
+        "sleeping": false,
+        "provenance": {
+          "stage": "emotion",
+          "pid": 29900,
+          "python": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+          "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv",
+          "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/marsdog_core/need_system.py",
+          "foreign_business_modules": []
+        }
+      },
+      "behavior_provenance": {
+        "stage": "behavior",
+        "pid": 29899,
+        "python": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+        "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv",
+        "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/marsdog_behavior/result_event_mapper.py",
+        "foreign_business_modules": []
+      }
+    },
+    {
+      "name": "invalid",
+      "input_metadata": {
+        "energyValue": "bad"
+      },
+      "mapped_event": {
+        "event_id": "result-000000",
+        "timestamp": 1790610469.3939052,
+        "action_type": "ACTION_RECHARGE",
+        "demand_type": "Energy",
+        "result_type": "COMPLETED",
+        "metadata": {
+          "recoveryMode": "charging",
+          "energyValue": "bad"
+        }
+      },
+      "needs": {
+        "before": {
+          "Hunger": 65,
+          "Bladder": 0,
+          "Sleepiness": 15,
+          "Cleanliness": 10,
+          "Energy": 90,
+          "Social": 20,
+          "Exploration": 10
+        },
+        "after": {
+          "Hunger": 65,
+          "Bladder": 0,
+          "Sleepiness": 15,
+          "Cleanliness": 10,
+          "Energy": 90,
+          "Social": 20,
+          "Exploration": 10
+        },
+        "accepted": [
+          false,
+          false
+        ],
+        "sleeping": false,
+        "provenance": {
+          "stage": "emotion",
+          "pid": 29902,
+          "python": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+          "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv",
+          "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/marsdog_core/need_system.py",
+          "foreign_business_modules": []
+        }
+      },
+      "behavior_provenance": {
+        "stage": "behavior",
+        "pid": 29901,
+        "python": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+        "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv",
+        "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/marsdog_behavior/result_event_mapper.py",
+        "foreign_business_modules": []
+      }
+    },
+    {
+      "name": "explicit_incomplete",
+      "input_metadata": {
+        "energyValue": 100,
+        "charging_completed": false
+      },
+      "mapped_event": {
+        "event_id": "result-000000",
+        "timestamp": 1790610469.5088809,
+        "action_type": "ACTION_RECHARGE",
+        "demand_type": "Energy",
+        "result_type": "COMPLETED",
+        "metadata": {
+          "recoveryMode": "charging",
+          "energyValue": 100,
+          "charging_completed": false
+        }
+      },
+      "needs": {
+        "before": {
+          "Hunger": 65,
+          "Bladder": 0,
+          "Sleepiness": 15,
+          "Cleanliness": 10,
+          "Energy": 90,
+          "Social": 20,
+          "Exploration": 10
+        },
+        "after": {
+          "Hunger": 65,
+          "Bladder": 0,
+          "Sleepiness": 15,
+          "Cleanliness": 10,
+          "Energy": 90,
+          "Social": 20,
+          "Exploration": 10
+        },
+        "accepted": [
+          false,
+          false
+        ],
+        "sleeping": false,
+        "provenance": {
+          "stage": "emotion",
+          "pid": 29904,
+          "python": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+          "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv",
+          "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/marsdog_core/need_system.py",
+          "foreign_business_modules": []
+        }
+      },
+      "behavior_provenance": {
+        "stage": "behavior",
+        "pid": 29903,
+        "python": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+        "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv",
+        "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/marsdog_behavior/result_event_mapper.py",
+        "foreign_business_modules": []
+      }
+    },
+    {
+      "name": "numeric_88_no_provenance",
+      "input_metadata": {
+        "energyValue": 88
+      },
+      "mapped_event": {
+        "event_id": "result-000000",
+        "timestamp": 1790610469.6226728,
+        "action_type": "ACTION_RECHARGE",
+        "demand_type": "Energy",
+        "result_type": "COMPLETED",
+        "metadata": {
+          "recoveryMode": "charging",
+          "energyValue": 88
+        }
+      },
+      "needs": {
+        "before": {
+          "Hunger": 65,
+          "Bladder": 0,
+          "Sleepiness": 15,
+          "Cleanliness": 10,
+          "Energy": 90,
+          "Social": 20,
+          "Exploration": 10
+        },
+        "after": {
+          "Hunger": 65,
+          "Bladder": 0,
+          "Sleepiness": 15,
+          "Cleanliness": 10,
+          "Energy": 90,
+          "Social": 20,
+          "Exploration": 10
+        },
+        "accepted": [
+          false,
+          false
+        ],
+        "sleeping": false,
+        "provenance": {
+          "stage": "emotion",
+          "pid": 29906,
+          "python": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+          "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv",
+          "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/marsdog_core/need_system.py",
+          "foreign_business_modules": []
+        }
+      },
+      "behavior_provenance": {
+        "stage": "behavior",
+        "pid": 29905,
+        "python": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+        "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv",
+        "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/marsdog_behavior/result_event_mapper.py",
+        "foreign_business_modules": []
+      }
+    }
+  ],
+  "direct_missing_metadata": {
+    "before": {
+      "Hunger": 65,
+      "Bladder": 0,
+      "Sleepiness": 15,
+      "Cleanliness": 10,
+      "Energy": 90,
+      "Social": 20,
+      "Exploration": 10
+    },
+    "after": {
+      "Hunger": 65,
+      "Bladder": 0,
+      "Sleepiness": 15,
+      "Cleanliness": 10,
+      "Energy": 90,
+      "Social": 20,
+      "Exploration": 10
+    },
+    "accepted": [
+      false,
+      false
+    ],
+    "sleeping": false,
+    "provenance": {
+      "stage": "emotion",
+      "pid": 29907,
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+      "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv",
+      "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/marsdog_core/need_system.py",
+      "foreign_business_modules": []
+    }
+  }
+}

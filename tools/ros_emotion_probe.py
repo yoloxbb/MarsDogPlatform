@@ -59,7 +59,9 @@ def main() -> None:
             "event_id": suffix, "timestamp": time.time(),
             "action_type": "ACTION_RECHARGE", "demand_type": "Energy",
             "result_type": "COMPLETED",
-            "metadata": {"recoveryMode": "charging", "energyValue": 88},
+            "metadata": {"recoveryMode": "charging", "energyValue": 88,
+                         "battery_observation": {"schema_version": 1, "percentage": 88,
+                             "observed_at": time.time(), "source": "isolated_test_meter", "simulated": False}},
         }
         states.clear()
         publisher.publish(String(data=json.dumps(event)))
@@ -67,6 +69,7 @@ def main() -> None:
         settled = states[-1]["demands"]["Energy"]["value"]
         states.clear()
         event["metadata"]["energyValue"] = 42  # Same ID must not settle a second time.
+        event["metadata"]["battery_observation"].update(percentage=42, observed_at=time.time())
         publisher.publish(String(data=json.dumps(event)))
         end = time.monotonic() + 2.5
         while time.monotonic() < end:
@@ -74,7 +77,16 @@ def main() -> None:
         assert len(states) >= 2, "Expected periodic state publications after duplicate"
         duplicate_values = [state["demands"]["Energy"]["value"] for state in states]
         assert set(duplicate_values) == {12}, duplicate_values
+        states.clear()
+        event["event_id"] += "-legacy"
+        event["metadata"] = {"energyValue": 100}
+        publisher.publish(String(data=json.dumps(event)))
+        end = time.monotonic() + 1.5
+        while time.monotonic() < end:
+            executor.spin_once(timeout_sec=0.1)
+        assert states and all(state["demands"]["Energy"]["value"] == 12 for state in states)
         result = {
+            "legacy_scalar_rejected": True,
             "status": "PASS", "module_file": str(module_path),
             "initial_energy_need": initial, "settled_energy_need": settled,
             "duplicate_energy_need_samples": duplicate_values,

@@ -107,22 +107,22 @@ def test_recharge_success_emits_exact_internal_need_contract() -> None:
     assert payload["metadata"]["energyValue"] == 88
 
 
-def test_recharge_success_without_meter_defaults_to_full_battery() -> None:
+def test_recharge_success_without_meter_does_not_invent_battery() -> None:
     mapper = ResultEventMapper()
     payload = json.loads(mapper.build_result_event("recharge", "SUCCEEDED", {}))
     assert payload["result_type"] == "COMPLETED"
-    assert payload["metadata"]["energyValue"] == 100
+    assert "energyValue" not in payload["metadata"]
 
 
-def test_recharge_energy_alias_is_canonical_and_clamped() -> None:
+def test_recharge_energy_alias_is_forwarded_without_repair() -> None:
     mapper = ResultEventMapper()
     payload = json.loads(
         mapper.build_result_event(
             "recharge", "COMPLETED", {"batteryValue": 120}
         )
     )
-    assert payload["metadata"]["energyValue"] == 100
-    assert "batteryValue" not in payload["metadata"]
+    assert "energyValue" not in payload["metadata"]
+    assert payload["metadata"]["batteryValue"] == 120
 
 
 def test_terminal_recharge_is_removed_from_current_behavior() -> None:
@@ -264,3 +264,12 @@ def test_hunger_waits_for_recharge_then_runs_from_delayed_queue() -> None:
     assert hunger_started.started_behavior is not None
     assert hunger_started.started_behavior.behavior_name == "eatNormally"
     assert runtime.candidate_pool.size() == 0
+
+
+def test_battery_observation_is_forwarded_without_repair():
+    evidence = {"schema_version": 1, "percentage": 88, "source": "fixture",
+                "observed_at": 999, "simulated": False}
+    payload = json.loads(ResultEventMapper().build_result_event(
+        "recharge", "SUCCESS", {"battery_observation": evidence}))
+    assert payload["metadata"]["battery_observation"] == evidence
+    assert "energyValue" not in payload["metadata"]

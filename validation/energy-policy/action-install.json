@@ -1,0 +1,52 @@
+{
+  "status": "PASS",
+  "scope": "clean locked Action wheel; no ROS/hardware; original config/media bytes",
+  "observation": {
+    "module_file": "/home/elephant/MarsDog/marsdog-platform/out/action-install/check-w6g9a9_k/venv/lib/python3.10/site-packages/marsdog_action_executor/config_loader.py",
+    "config_dir": "/home/elephant/MarsDog/marsdog-platform/out/action-install/check-w6g9a9_k/venv/share/marsdog_action_executor/config",
+    "asset_hashes": {
+      "safety_policies.yaml": "c50fae6e2c4b53af3d8699d37791e7ea029863eb124e24cd2f464c410e689fae",
+      "visual_target_approach.yaml": "4e427211d9281b953bf9582120ac0b365af9968500ef6e361f92fae588065ba1",
+      "action_catalog.yaml": "57bb56d2bedc9329cdd5411f5dd885ac57f49363033f5196554b9ebbc38eca5a",
+      "attention_tracking.yaml": "a813f10000e5d58733874a08f98bcb58f9146c8dd07467e79302808ef93d1cb3",
+      "wake_orientation.yaml": "1d0255314d3754339ac329d99145ab9301032a5a03b111e0708b77e86b34d548",
+      "uwb_follow.yaml": "8e13635f70fa44534403cf6694995ddd3052e72536c778d40dc196209bb16036",
+      "navigation_waypoints.yaml": "835cf3c35ce9146be392811ae74c2ddac3efef5291356d40a31c62926144ac5e",
+      "go2_sport.yaml": "8b07c070adf818075b322da16061398caa86689e4517d5d2e5d2a6996673459e",
+      "behavior_tree_actions.yaml": "cb860de5b575f936e906a79bf1f304ba36af829c193f5811fc95a86f64db2893",
+      "sound_config.yaml": "78cd5258f28fd239a5b5fadba20a534debf740fe449b5550039e8fb56a57d93d",
+      "controller_routes.yaml": "a057e45e717dd0a1df95628fdbf25d58d49027164e4cd99e2c08b8dc3d4d7625",
+      "lite3_actions.yaml": "88978db965027f14b35f450a3d98b7866c852030be9507c0eb6f5375628f34da",
+      "sounds/\u7761\u89c9\u547c\u565c.mp3": "e7f13a0c6e8f6d2eaee6cedf0a27626b88a2d0ddb151b33e3c611cd079b7746e",
+      "sounds/\u7126\u8651.wav": "b6d69b3377c8c585e7294551bde0405106680e7504f714fe7dbdd32127ac26d9",
+      "sounds/\u5174\u594b\u6109\u60a6.wav": "070ccf564796ae1fdb17d6091892fea58bba3bc34ed80f04506d85722688c4dd",
+      "sounds/\u6050\u60e7.wav": "af19681e2cf78abcc293e9d6999e2eb7d50953845d2c0a97bd5431f5a2f9674c",
+      "sounds/\u8fdb\u98df.mp3": "fec9c9d434f7a003b10ad640913136672123dedf2235f760037f14aac5bca8a9",
+      "sounds/\u597d\u5947.mp3": "0a4816fcc6c575184c8ef60a537dac9585db1850a39d120d1bdd42aa5f76ef01",
+      "emotion_images/\u597d\u5947.png": "ffd5629560fdddab35e51fc092d4e1d94c6c23460bdc7d716d4ab95f232297fe",
+      "emotion_images/\u6050\u60e7.png": "05bc9af4aa44a1a7a7144d1a93429954d8d7e1e97766ee8ed0b47d5a775b8e63",
+      "emotion_images/\u793e\u4ea4.png": "6cb0607444b96afe611ccac6afe7ded4a16b5b1c49e12d266a2228202c4e789a",
+      "emotion_images/\u6e05\u6d01.png": "cfa6acd102a9ac0408532b5aa3cc3e97fcb32405d15c945df8d25cb274386e2a",
+      "emotion_images/\u7126\u8651.png": "a26b7e0757ac02b71b74f924edffbdcc51c0cd63b8aee63530a78fefeb741f3c",
+      "emotion_images/\u6307\u4ee4.png": "d99e34014a0c97f6c472125b73638a5fe4b5c2bc901f57d2a43791c901368818",
+      "emotion_images/\u6025\u505c.png": "2b26d3b0d8c739de5e90665c710298236ea9a267a00d63c728fd9b4b6a2c4206",
+      "emotion_images/\u7761\u89c9.png": "d2f806f268bd5a2587b72109864439df79a7566cae9e94590bd73a94486affe4",
+      "emotion_images/\u5c31\u7eea.png": "702eae7d132f354c9fa212c8c206d5e26b08a19ba2ab869497fdbde604f90893",
+      "emotion_images/\u63a2\u7d22.png": "b1948210000281bee444a822537bd70f47d78566b6ed9a3d57080a8d687e3929",
+      "emotion_images/\u5e73\u9759.png": "f1949330beab7b70f77335b518d5ce915a270a2c79e61019856163a7370df65e",
+      "emotion_images/\u6392\u6cc4.png": "76b120aafef32c61b7aff0c6d028a29bbc52e817ae84ac2622a18354802e5a65",
+      "emotion_images/\u6109\u60a6.png": "54a5774d331aca13080881684e4cfc9c2add64ab783bc3f500c2e46e9d226615",
+      "emotion_images/\u5145\u7535.png": "836e139dcb5bc708ece8802f1788acd72cf008041a6e4e8640b88ecf3fd38b67",
+      "emotion_images/\u5174\u594b.png": "4204326a8f8399e7196bdd27849042d1b18c70d8951c0aba18d2edaa0991c5b9",
+      "emotion_images/\u8fdb\u98df.png": "6278e542ae933342b1ec06d00a7ab67dd27dcc96e2af8f9f4751c97f8989c0b4"
+    },
+    "scripts": {
+      "action_executor_node": "marsdog_action_executor.ros_node:main",
+      "emotion_display": "marsdog_action_executor.emotion_display:main",
+      "marsdog-action-demo": "marsdog_action_executor.standalone_demo:main"
+    },
+    "behavior_count": 74,
+    "rclpy_installed": false,
+    "numpy_version": "2.2.6"
+  }
+}

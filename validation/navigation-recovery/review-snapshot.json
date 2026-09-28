@@ -1,0 +1,21 @@
+{
+  "id": "navigation-arrival-and-needs-20260928",
+  "base_head": "d98a3fa04b76fb5139bb503151c0fe6bd68e0e43",
+  "status": "local reviewed working tree; not deployed or tagged",
+  "results": {
+    "navigation_tests": 31,
+    "subtests": 2,
+    "action_passed": 420,
+    "action_skipped": 29,
+    "independent_contracts": 20
+  },
+  "sha256": {
+    "modules/action/marsdog_action_executor/adapters/navigation_adapter.py": "b73a14876fbbf52aa791afbfe735b0c071d6c0167823f88e27ddebf80d2c3ab9",
+    "modules/action/tests/test_navigation_adapter.py": "d971e1f06accee612dc082661612fbdeff65587c1ace4e8e9484e3383213b49b",
+    "integration/ros/tests/test_behavior_navigation_chain.py": "af30886c6194c8163ce723d31bf27cf80d374707f4537e6e1d39f00d2620736b",
+    "tools/check_navigation_slice.sh": "2a112f1323b43f5ae6243d62a996e6953747b31e368fd59a51789fa9e769053e",
+    "docs/migration/P5_NAVIGATION_RECOVERY.md": "1e7b125f6b198adb13bac6bc4e47b6843d6cfc8fc7c98828cbdbb1b7c11ef300",
+    "validation/navigation-recovery/navigation.xml": "b99771b75bd503ada2451f449acacadb40dfa592ba8c47f88581767ec39ff0fc",
+    "validation/navigation-recovery/public-interface.json": "e985c2e01e5889244e8e63a3dddd81162d33cbf0d68f9ae067b493f983a54b56"
+  }
+}

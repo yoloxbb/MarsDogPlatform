@@ -1,0 +1,225 @@
+{
+  "schema_version": 1,
+  "scope": "Approved energy evidence policy; historical cases.json remains unchanged",
+  "initial": {
+    "Hunger": 80,
+    "Bladder": 0,
+    "Sleepiness": 30,
+    "Cleanliness": 10,
+    "Energy": 80,
+    "Social": 30,
+    "Exploration": 30
+  },
+  "cases": [
+    {
+      "id": "recharge_metadata",
+      "behavior_name": "recharge",
+      "status": "SUCCESS",
+      "metadata": {
+        "energyValue": 88
+      },
+      "result_type": "COMPLETED",
+      "after": {},
+      "accepted": [
+        false
+      ]
+    },
+    {
+      "id": "legacy_battery_alias_clamped",
+      "behavior_name": "recharge",
+      "status": "COMPLETED",
+      "metadata": {
+        "batteryValue": 120
+      },
+      "result_type": "COMPLETED",
+      "after": {},
+      "accepted": [
+        false
+      ]
+    },
+    {
+      "id": "legacy_energy_alias",
+      "behavior_name": "recharge",
+      "status": "SUCCEEDED",
+      "metadata": {
+        "energy_value": 42
+      },
+      "result_type": "COMPLETED",
+      "after": {},
+      "accepted": [
+        false
+      ]
+    },
+    {
+      "id": "zero_battery",
+      "behavior_name": "recharge",
+      "status": "SUCCESS",
+      "metadata": {
+        "energyValue": 0
+      },
+      "result_type": "COMPLETED",
+      "after": {},
+      "accepted": [
+        false
+      ]
+    },
+    {
+      "id": "missing_battery_preserves_legacy_default",
+      "behavior_name": "recharge",
+      "status": "SUCCESS",
+      "metadata": {},
+      "result_type": "COMPLETED",
+      "after": {},
+      "accepted": [
+        false
+      ]
+    },
+    {
+      "id": "invalid_battery_preserves_legacy_default",
+      "behavior_name": "recharge",
+      "status": "SUCCESS",
+      "metadata": {
+        "energyValue": "invalid"
+      },
+      "result_type": "COMPLETED",
+      "after": {},
+      "accepted": [
+        false
+      ]
+    },
+    {
+      "id": "failed_recharge_does_not_settle",
+      "behavior_name": "recharge",
+      "status": "FAILURE",
+      "metadata": {
+        "energyValue": 88
+      },
+      "result_type": "FAILED",
+      "after": {},
+      "accepted": [
+        false
+      ]
+    },
+    {
+      "id": "timeout_preserves_interrupted_settlement",
+      "behavior_name": "recharge",
+      "status": "TIMEOUT",
+      "metadata": {},
+      "result_type": "TIMEOUT",
+      "after": {},
+      "accepted": [
+        false
+      ]
+    },
+    {
+      "id": "cancel_eating_preserves_interrupted_settlement",
+      "behavior_name": "eatNormally",
+      "status": "CANCELED",
+      "metadata": {},
+      "result_type": "INTERRUPTED",
+      "after": {
+        "Hunger": 60
+      },
+      "accepted": [
+        true
+      ]
+    },
+    {
+      "id": "successful_eating_linked_needs",
+      "behavior_name": "eatNormally",
+      "status": "SUCCESS",
+      "metadata": {},
+      "initial": {
+        "Hunger": 95
+      },
+      "result_type": "COMPLETED",
+      "after": {
+        "Hunger": 75,
+        "Bladder": 25,
+        "Cleanliness": 30
+      },
+      "accepted": [
+        true
+      ]
+    },
+    {
+      "id": "duplicate_result_settles_once",
+      "behavior_name": "recharge",
+      "status": "SUCCESS",
+      "metadata": {
+        "energyValue": 88
+      },
+      "repeat": 2,
+      "result_type": "COMPLETED",
+      "after": {},
+      "accepted": [
+        false,
+        false
+      ]
+    },
+    {
+      "id": "unknown_status_maps_failed",
+      "behavior_name": "recharge",
+      "status": "UNRECOGNIZED",
+      "metadata": {},
+      "result_type": "FAILED",
+      "after": {},
+      "accepted": [
+        false
+      ]
+    },
+    {
+      "id": "idle_not_a_demand_result",
+      "behavior_name": "idle",
+      "status": "SUCCESS",
+      "metadata": {},
+      "result_type": null,
+      "after": {},
+      "accepted": []
+    },
+    {
+      "id": "measured",
+      "behavior_name": "recharge",
+      "status": "SUCCESS",
+      "metadata": {
+        "battery_observation": {
+          "schema_version": 1,
+          "percentage": 88,
+          "source": "fixture",
+          "observed_at": 999,
+          "simulated": false
+        }
+      },
+      "repeat": 2,
+      "result_type": "COMPLETED",
+      "after": {
+        "Energy": 12
+      },
+      "accepted": [
+        true,
+        false
+      ]
+    },
+    {
+      "id": "simulated",
+      "behavior_name": "recharge",
+      "status": "SUCCESS",
+      "metadata": {
+        "battery_observation": {
+          "schema_version": 1,
+          "percentage": 88,
+          "source": "fixture",
+          "observed_at": 999,
+          "simulated": true
+        }
+      },
+      "repeat": 2,
+      "result_type": "COMPLETED",
+      "after": {},
+      "accepted": [
+        false,
+        false
+      ]
+    }
+  ]
+}

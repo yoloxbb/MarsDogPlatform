@@ -720,3 +720,21 @@ def test_cancel_race_uses_real_waypoint_terminal(
 def test_cancel_before_waypoint_dispatch_is_still_canceled() -> None:
     assert _navigation_cancel_won(True, None)
     assert not _navigation_cancel_won(False, None)
+
+
+def test_operator_release_is_interruption_not_navigation_success():
+    status = parse_waypoint_status(
+        _status(state="INTERRUPTED", code="RECOVERY_RELEASED",
+                safe_to_interrupt=False),
+        expected_task_id="action:g-1:waypoint",
+    )
+    assert status.terminal
+    assert status.state == "INTERRUPTED"
+    assert status.code == "RECOVERY_RELEASED"
+    assert not status.safe_to_interrupt
+    with pytest.raises(WaypointNavProtocolError, match="safe_to_interrupt"):
+        parse_waypoint_status(
+            _status(state="INTERRUPTED", code="RECOVERY_RELEASED",
+                    safe_to_interrupt=True),
+            expected_task_id="action:g-1:waypoint",
+        )

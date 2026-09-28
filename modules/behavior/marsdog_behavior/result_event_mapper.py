@@ -83,15 +83,8 @@ class ResultEventMapper:
         if metadata:
             merged_metadata.update(metadata)
 
-        # The internal-need contract treats energyValue as actual battery
-        # percentage.  Older executors may omit it or use one of the legacy
-        # aliases.  Canonicalise it here so every successful recharge emits
-        # one deterministic settlement event.
-        if action_type == "ACTION_RECHARGE" and result_type == "COMPLETED":
-            energy_value = _energy_value_from(merged_metadata)
-            merged_metadata.pop("energy_value", None)
-            merged_metadata.pop("batteryValue", None)
-            merged_metadata["energyValue"] = energy_value
+        # Battery metadata is opaque evidence. Do not create, clamp or repair
+        # measurements; Needs validates the observation at consumption time.
 
         event_id = f"result-{self._seq:06d}"
         self._seq += 1
@@ -117,17 +110,3 @@ class ResultEventMapper:
 def should_publish_result(behavior_name: str) -> bool:
     """Check if a behavior should generate /behavior/result_event messages."""
     return behavior_name in BEHAVIOR_ACTION_MAP
-
-
-def _energy_value_from(metadata: dict) -> float | int:
-    """Return a clamped actual battery percentage; default is fully charged."""
-    value = metadata.get(
-        "energyValue",
-        metadata.get("energy_value", metadata.get("batteryValue", 100)),
-    )
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        number = 100.0
-    number = min(100.0, max(0.0, number))
-    return int(number) if number.is_integer() else number

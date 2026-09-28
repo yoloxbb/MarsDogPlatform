@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "module_file": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-behavior/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/action_client_adapter.py",
+  "config_dir": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-behavior/install/marsdog_behavior/share/marsdog_behavior/config",
+  "type": "marsdog_interfaces/action/ExecuteBehavior",
+  "scope": "Real installed BT adapter and generated original IDL; fake Action server; no hardware",
+  "success_metadata": {
+    "energyValue": 88
+  },
+  "terminal_delay_after_cancel_ack_sec": 0.361,
+  "ownership_retained_until_terminal": true
+}

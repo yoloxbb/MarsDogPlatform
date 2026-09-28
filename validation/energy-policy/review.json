@@ -1,0 +1,36 @@
+{
+  "status": "verified local working tree; not deployed",
+  "hardware_producer": "not connected",
+  "source_sha256": {
+    "modules/action/marsdog_action_executor/ros_node.py": "60cfd0088b08762d9e90bcb496252919b29396d2532efbfd38212935afa41b79",
+    "modules/behavior/marsdog_behavior/result_event_mapper.py": "63141daa6136d1c190d5ac3b7df19a9ad02f31bc30495c1f8c40e6efe8e29412",
+    "modules/emotion/marsdog_core/need_system.py": "e51e2582ad52692ee91bbb5f946acfa421d3482b42dbb208b85cb6411d8e3b2b",
+    "modules/emotion/marsdog_core/energy_behavior.py": "a2d0bfc5fd063b074252bb00c736419cf084b9b2560fc84d4744de501cb5c988",
+    "modules/emotion/marsdog_core/battery_observation.py": "0ffd75ec6154c0ac36cb6f4f9996fbc6ffc462ddaa52af1e5cd1c2115ed1732b",
+    "interfaces/application/BATTERY_OBSERVATION.md": "0ac29db84c611ee5b89c375d3bd2a334104f4788dee406b946bbb31beacd4b22"
+  },
+  "validation": {
+    "action_full": {
+      "passed": 420,
+      "skipped": 29
+    },
+    "behavior_full_before_one_added_test": {
+      "passed": 532
+    },
+    "behavior_energy_focused_final": {
+      "passed": 8
+    },
+    "energy_validator_final": {
+      "passed": 24
+    },
+    "independent_contracts": 22,
+    "navigation": 31,
+    "navigation_subtests": 2,
+    "three_clean_wheels": "PASS",
+    "installed_needs_ros": "PASS",
+    "emotion_full_final": {
+      "passed": 218,
+      "subtests": 156
+    }
+  }
+}

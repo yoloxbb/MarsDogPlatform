@@ -16,6 +16,7 @@ jobs:
     env:
       PYTHONDONTWRITEBYTECODE: "1"
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      MARSDOG_RESULT_FIXTURE: ${{ github.workspace }}/integration/migration/fixtures/behavior-result/energy-evidence-cases.json
       MARSDOG_ACTION_SOURCE: ${{ github.workspace }}/modules/action
       MARSDOG_BEHAVIOR_SOURCE: ${{ github.workspace }}/modules/behavior
       MARSDOG_EMOTION_SOURCE: ${{ github.workspace }}/modules/emotion

@@ -520,3 +520,27 @@ def test_empty_random_navigation_fixed_pool_passes_validation(tmp_path) -> None:
     assert (
         _load_navigation_errors(tmp_path, random_navigation_fixed_pool=[]) == []
     )
+
+
+def test_go_home_arrival_holds_position_without_new_platform_action():
+    class HoldingMotion(RecordingMotionAdapter):
+        def __init__(self):
+            super().__init__()
+            self.holds = []
+            self.hold_ok = True
+
+        def hold_position(self, duration):
+            self.holds.append(duration)
+            return self.hold_ok
+
+    motion = HoldingMotion()
+    adapter = _mobility(RecordingNavigator(), motion)
+    ctx = ExecutionContext.from_goal("go_home", {})
+    ctx.resolved_behavior_name = "go_home"
+    ctx.current_stage = "navigation"
+    assert adapter.execute_step({"unit_id": "ACT_NAV_GO_HOME"}, ctx, 1.0)
+    assert motion.holds == [1.0]
+    assert motion.actions == []
+    motion.hold_ok = False
+    assert not adapter.execute_step({"unit_id": "ACT_NAV_GO_HOME"}, ctx, 1.0)
+    assert motion.actions == []

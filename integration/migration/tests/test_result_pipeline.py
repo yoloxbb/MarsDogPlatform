@@ -11,7 +11,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 ROOT = Path(os.environ.get("MARSDOG_MIGRATION_WORKSPACE", CODE_ROOT)).resolve()
 RUN_ID = os.environ.get("MARSDOG_P1_RUN_ID", "p1-20260928")
 SOURCES = ROOT / "work" / RUN_ID / "sources"
-DOCUMENT = json.loads((CODE_ROOT / "fixtures/behavior-result/cases.json").read_text())
+DOCUMENT = json.loads(Path(os.environ.get("MARSDOG_RESULT_FIXTURE", CODE_ROOT / "fixtures/behavior-result/cases.json")).read_text())
 
 
 def stage(name: str, payload: dict) -> dict:

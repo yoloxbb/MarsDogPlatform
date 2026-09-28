@@ -92,15 +92,15 @@ class EnergyBehaviorTest(unittest.TestCase):
         self.assertEqual(system.GetBatteryValue(), 0)
         self.assertEqual(system.GetDemandValue("Energy"), 100)
 
-    def test_recharge_completed_uses_default_target(self):
-        """充电完成没有 metadata 时恢复到目标电量并清空需求。"""
+    def test_recharge_completed_without_observation_preserves_energy(self):
+        """缺失电量观测不能结算。"""
         system = MarsdogNeedSystem()
         system.SetEnergyBatteryValue(5)
 
-        self.assertTrue(system.OnBehaviorResultEvent({"action_type": "ACTION_RECHARGE", "result_type": "COMPLETED"}))
+        self.assertFalse(system.OnBehaviorResultEvent({"action_type": "ACTION_RECHARGE", "result_type": "COMPLETED"}))
 
-        self.assertEqual(system.GetDemandValue("Energy"), 0)
-        self.assertEqual(system.GetBatteryValue(), 100)
+        self.assertEqual(system.GetDemandValue("Energy"), 95)
+        self.assertEqual(system.GetBatteryValue(), 5)
 
     def test_recharge_completed_honors_battery_metadata_aliases(self):
         """充电完成应转换三个兼容字段中的回传电量。"""
@@ -113,7 +113,7 @@ class EnergyBehaviorTest(unittest.TestCase):
                     {
                         "action_type": "ACTION_RECHARGE",
                         "result_type": "COMPLETED",
-                        "metadata": {metadataKey: 88},
+                        "metadata": {metadataKey: 88, "battery_observation": {"schema_version": 1, "percentage": 88, "source": "test_meter", "observed_at": system._GetTimestamp(None), "simulated": False}},
                     }
                 )
             )
@@ -131,7 +131,11 @@ class EnergyBehaviorTest(unittest.TestCase):
         )
 
         self.assertTrue(system.IsDemandUrgent("Energy"))
-        self.assertTrue(system.ExecuteRecharge())
+        self.assertFalse(system.ExecuteRecharge())
+        self.assertTrue(system.IsDemandUrgent("Energy"))
+        self.assertTrue(system.ExecuteRecharge({"battery_observation": {
+            "schema_version": 1, "percentage": 100, "source": "test_meter",
+            "observed_at": system._GetTimestamp(None), "simulated": False}}))
 
         self.assertEqual(system.GetDemandValue("Energy"), 0)
         self.assertFalse(system.IsDemandUrgent("Energy"))
@@ -140,14 +144,14 @@ class EnergyBehaviorTest(unittest.TestCase):
             [ActionResultType.DEMAND_SATISFIED],
         )
 
-    def test_recharge_interrupted_reduces_energy_once(self):
-        """充电被打断应按全局规则单次 -20。"""
+    def test_recharge_interrupted_without_observation_preserves_energy(self):
+        """充电取消不代表电池恢复。"""
         system = MarsdogNeedSystem()
         system.SetDemandValue("Energy", 50)
 
-        self.assertTrue(system.OnBehaviorResultEvent({"action_type": "ACTION_RECHARGE", "result_type": "INTERRUPTED"}))
+        self.assertFalse(system.OnBehaviorResultEvent({"action_type": "ACTION_RECHARGE", "result_type": "INTERRUPTED"}))
 
-        self.assertEqual(system.GetDemandValue("Energy"), 30)
+        self.assertEqual(system.GetDemandValue("Energy"), 50)
 
 
 if __name__ == "__main__":

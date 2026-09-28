@@ -1,0 +1,6 @@
+{
+  "passed": 420,
+  "skipped": 29,
+  "scope": "Action pure regression including go_home arrival hold",
+  "command": ".venv/bin/python -B -m pytest tests -q -p no:cacheprovider"
+}

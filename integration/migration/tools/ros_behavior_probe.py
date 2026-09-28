@@ -12,6 +12,7 @@ def main():
     parser.add_argument("--install", type=Path, required=True)
     parser.add_argument("--endpoint", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--interface-package", choices=["marsdog_action_executor", "marsdog_interfaces"], default="marsdog_action_executor")
     args = parser.parse_args()
     import rclpy
     import marsdog_behavior.action_client_adapter as implementation
@@ -26,7 +27,7 @@ def main():
     node = rclpy.create_node("migration_behavior_adapter_probe")
     adapter = implementation.ActionClientAdapter(node, args.endpoint)
     try:
-        assert adapter._action_type.__module__.startswith("marsdog_action_executor.action")
+        assert adapter._action_type.__module__.startswith(args.interface_package + ".action")
         assert adapter._client.wait_for_server(timeout_sec=15)
 
         def until(predicate, seconds=10.0):
@@ -72,7 +73,7 @@ def main():
         assert not adapter.has_goal(goal)
         report = {
             "status": "PASS", "module_file": str(path), "config_dir": str(get_config_dir()),
-            "type": "marsdog_action_executor/action/ExecuteBehavior",
+            "type": args.interface_package + "/action/ExecuteBehavior",
             "scope": "Real installed BT adapter and generated original IDL; fake Action server; no hardware",
             "success_metadata": {"energyValue": 88}, "terminal_delay_after_cancel_ack_sec": round(delay, 3),
             "ownership_retained_until_terminal": True,
