@@ -1,0 +1,226 @@
+{
+  "status": "PASS",
+  "source": "/home/elephant/MarsDog/marsdog-platform/modules/voice",
+  "commands": [
+    [
+      "/home/elephant/MarsDog/migration/.tools/uv",
+      "sync",
+      "--project",
+      "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools",
+      "--locked",
+      "--python",
+      "/usr/bin/python3.10"
+    ],
+    [
+      "bash",
+      "--noprofile",
+      "--norc",
+      "-c",
+      "set -e\nsource /opt/ros/humble/setup.bash\n/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python -B -c 'import os,json;print(json.dumps(dict(os.environ)))'"
+    ],
+    [
+      "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/colcon",
+      "--log-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/voice-ros/log",
+      "build",
+      "--base-paths",
+      "/home/elephant/MarsDog/marsdog-platform/modules/voice",
+      "--build-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/voice-ros/build",
+      "--install-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/voice-ros/install",
+      "--executor",
+      "sequential",
+      "--event-handlers",
+      "console_direct+",
+      "--cmake-args",
+      "-DBUILD_TESTING=OFF",
+      "-DPython3_EXECUTABLE=/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+      "-DPYTHON_EXECUTABLE=/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python"
+    ],
+    [
+      "bash",
+      "--noprofile",
+      "--norc",
+      "-c",
+      "set -e\nsource /opt/ros/humble/setup.bash\nsource /home/elephant/MarsDog/marsdog-platform/out/voice-ros/install/local_setup.bash\n/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python -B -c 'import os,json;print(json.dumps(dict(os.environ)))'"
+    ],
+    [
+      "/home/elephant/MarsDog/marsdog-platform/modules/voice/.venv/bin/python",
+      "-B",
+      "/home/elephant/MarsDog/marsdog-platform/tools/ros_voice_probe.py",
+      "--install",
+      "/home/elephant/MarsDog/marsdog-platform/out/voice-ros/install",
+      "--source",
+      "/home/elephant/MarsDog/marsdog-platform/modules/voice",
+      "--output",
+      "/home/elephant/MarsDog/marsdog-platform/out/voice-ros/probe.json"
+    ]
+  ],
+  "scope": "Humble build and installed Voice mock transport, no hardware",
+  "probe": {
+    "status": "PASS",
+    "module_file": "/home/elephant/MarsDog/marsdog-platform/out/voice-ros/install/marsdog_voice_interaction/lib/python3.10/site-packages/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "share": "/home/elephant/MarsDog/marsdog-platform/out/voice-ros/install/marsdog_voice_interaction/share/marsdog_voice_interaction",
+    "scope": "Real installed Voice node and DDS pub/sub/service; original mock provider; no models/audio/HTTP server",
+    "endpoint_prefix": "/migration_voice_3ebe581f69c24a7a8525941a6e8bd9d8",
+    "service_fields": {
+      "request": {
+        "task_id": "string",
+        "task_type": "string",
+        "params_json": "string"
+      },
+      "response": {
+        "success": "boolean",
+        "task_id": "string",
+        "task_type": "string",
+        "result_json": "string",
+        "error_message": "string",
+        "latency_ms": "double"
+      }
+    },
+    "asset_hashes": {
+      "config/voice.pipeline.mock.yaml": "12b8c474f4c5ca64d0b8b7319bcb14401d161b8d4167fdb42e2940957e5d2451",
+      "config/command_catalog.yaml": "52b98c604d1d98617ce4369f96d9f4a0fe7ef5ad5815fd26b279d65675343326",
+      "config/object_targets.yaml": "abdc24c56a7a36b6a53576de92a3bf65df9468ffac07c84c96a6276690c4197b",
+      "config/kws_keywords_raw.txt": "382173ffb2d22893d1658647f24f249fc882e2103f120a579ad1bb546b8ef264",
+      "config/voice.yaml": "2874bf13cec1a667e092eb1fc2d23206b8d48686b43dd5bf817253b9d8ec789a",
+      "config/kws_keywords.txt": "25a2c14abc1be818e11c40482070ead7086a9a6bcf47136e9a9dd1044fac28da",
+      "config/voice.mock.yaml": "f19f78a89400ccd28ff8bacff5ea44eb39feeba722ebc68ed77b446d02c5b36f",
+      "launch/voice.launch.py": "fba5630e093817223ab8379d29dca04e3cd5c0781a166e5cb26f8aeccc2266ff",
+      "lib/librkllmrt.so": "6a9e4fc5324c68921c3a900340361e107af7599fe34dc8fa7759b2c5ae22a6e6",
+      "srv/VoiceTask.srv": "0462429dcab62ab1d63a246d0de077b133660310f29402b03048b9e275bedac4"
+    },
+    "service_cases": [
+      {
+        "task": "start_listening",
+        "success": true,
+        "keys": [
+          "interaction_id",
+          "listening",
+          "ok"
+        ],
+        "error_present": false
+      },
+      {
+        "task": "hold_interaction",
+        "success": true,
+        "keys": [
+          "expires_in_sec",
+          "held",
+          "hold_token",
+          "interaction_id",
+          "lease_sec",
+          "ok",
+          "renewed"
+        ],
+        "error_present": false
+      },
+      {
+        "task": "get_interaction_state",
+        "success": true,
+        "keys": [
+          "active_elapsed_sec",
+          "hold_active",
+          "holds",
+          "idle_elapsed_sec",
+          "idle_timeout_sec",
+          "interaction_active",
+          "interaction_id",
+          "last_activity_reason",
+          "listening",
+          "max_duration_sec",
+          "ok",
+          "refresh_on_any_speech",
+          "state"
+        ],
+        "error_present": false
+      },
+      {
+        "task": "release_interaction_hold",
+        "success": true,
+        "keys": [
+          "held",
+          "hold_token",
+          "idle_timer_reset",
+          "interaction_id",
+          "ok",
+          "released"
+        ],
+        "error_present": false
+      },
+      {
+        "task": "unsupported_migration_task",
+        "success": false,
+        "keys": [
+          "error",
+          "ok"
+        ],
+        "error_present": true
+      },
+      {
+        "task": "get_interaction_state",
+        "success": false,
+        "keys": [],
+        "error_present": true
+      },
+      {
+        "task": "stop_listening",
+        "success": true,
+        "keys": [
+          "ended",
+          "listening",
+          "ok"
+        ],
+        "error_present": false
+      }
+    ],
+    "event": {
+      "event_type": "EVT_VOICE_COMMAND_SIT",
+      "action": "SIT",
+      "should_trigger_behavior_tree": true
+    },
+    "event_keys": [
+      "action",
+      "asr_text",
+      "command_id",
+      "control",
+      "danger_angle",
+      "danger_type",
+      "dispatch_role",
+      "emotion",
+      "event_type",
+      "header",
+      "intent",
+      "intent_category",
+      "intent_confidence",
+      "intent_source",
+      "interaction_id",
+      "is_executable",
+      "language",
+      "latency_ms",
+      "nlu_protocol",
+      "previous_state",
+      "raw_nlu_tag",
+      "response_text",
+      "schema_version",
+      "should_trigger_behavior_tree",
+      "slots",
+      "social",
+      "speaker_confidence",
+      "speaker_id",
+      "speaker_reason",
+      "speaker_role",
+      "speaker_status",
+      "specific_event_type",
+      "state",
+      "state_reason",
+      "utterance_id",
+      "wake_angle",
+      "wake_confidence",
+      "wake_id",
+      "wake_score_raw",
+      "wake_word"
+    ]
+  }
+}

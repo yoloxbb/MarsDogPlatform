@@ -11,7 +11,7 @@ REPO = Path(__file__).resolve().parents[3]
 BASELINE = json.loads((Path(__file__).resolve().parents[1] / "baseline/sources.json").read_text())
 
 
-@pytest.mark.parametrize("module", ["emotion", "behavior", "action"])
+@pytest.mark.parametrize("module", ["emotion", "behavior", "action", "voice"])
 def test_migration_preserves_wire_and_default_assets(module):
     source = REPO / "modules" / module
     protected = {
@@ -19,6 +19,7 @@ def test_migration_preserves_wire_and_default_assets(module):
         if name == "package.xml"
         or name.startswith(("config/", "configs/", "launch/", "marsdog_ros2/launch/", "scripts/"))
         or Path(name).suffix in {".msg", ".srv", ".action"}
+        or (module == "voice" and name.startswith(("lib/", "marsdog_voice_interaction/api/static/")))
     }
     assert protected, "No protected protocol/config files were selected"
     for name, record in protected.items():

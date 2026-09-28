@@ -1,4 +1,4 @@
-# Migration status — 2026-09-28
+# Migration status — 2026-09-29
 
 | Phase | Status | Evidence / remaining gate |
 | --- | --- | --- |
@@ -7,12 +7,13 @@
 | P2 | Emotion software migration verified | 19 commits preserved; 350 cases; wheel/ROS installed-state equivalence |
 | P3a | BehaviorTree software migration verified | 7 commits preserved; 532 cases; wheel/ROS adapter checks |
 | P3b | Action software migration verified with stated transport limits | 5 commits preserved; 418 pure passes / 29 skips; old/new 39 ROS callback cases each; four UDP DDS combinations pass |
-| P4 | Environment gate blocked; not migrated | Uncached locked Torch / sherpa-onnx-core; PyPI and checked mirrors time out at TLS handshake; no full regression/model acceptance |
+| P4a | Voice software migration verified | 23 reachable commits archived, 95 source files unchanged; 328 Humble unit cases, 165 pure subset, wheel/ROS mock equivalence; see P4_VOICE.md |
+| P4b | Vision not migrated | Original locked environment and software gate still pending; model/hardware acceptance separate |
 | P5 | Supplemental navigation/interface slice verified | New supplied packages copied; explicit operator recovery release approved/tested; robot_ws / rtabmap_ws unchanged; see P5_NAVIGATION_RECOVERY.md |
 | P6 | Not released | No remote/hosted CI run, production profile or hardware acceptance; default Fast DDS issue unresolved |
 | P7 | Not started | No uncertain production code retired |
 
-All seven original repositories remain unchanged. Only the three imported modules
+All seven original repositories remain unchanged. Only the four imported modules
 have verified all-ref bundles and commit maps; the others are not claimed archived.
 No production process, ROS protocol, robot behavior, model runtime or external
 motion-control/embedded implementation was replaced.
@@ -32,9 +33,8 @@ production launch/profile, real owner accounts and hardware acceptance still
 require real deployment facts. These gates do not
 justify weakening independent software regression or changing robot behavior.
 
-Next runnable slice: restore access to the locked artifacts (or supply a verified
-offline cache), run original Vision/Voice tests in their separate environments,
-then migrate one module at a time. Do not downgrade pins, omit declared dependencies
+Next runnable slice: restore Vision locked artifacts and run its original software
+gate before importing. Voice is now imported; see P4_VOICE.md. Do not downgrade pins, omit declared dependencies
 and call it a full-environment pass, or move implementations before their baseline.
 Native Robotics/vendor replay and production hardware gates are still pending.
 
@@ -72,3 +72,9 @@ Energy-policy validation: 22 independent-process contract cases; 31 ROS/navigati
 cases + 2 subtests; real installed Needs ROS measured/duplicate/legacy rejection;
 three clean wheels passed offline. Updated result-contract CI selects the new
 fixtures; original cases.json and all source repositories remain preserved.
+
+
+Voice P4a completed: original and migrated software observations match. The new
+Voice workflow checks pure Python and wheel resources only; full Humble unit and
+mock DDS checks were executed locally. No remote CI, model or production deployment
+acceptance is implied. HANDOFF_NEXT_SESSION.md now starts with the Vision gate.

@@ -1,0 +1,29 @@
+{
+  "source_id": "voice",
+  "source_path": "/home/elephant/MarsDog/MarsDogVoiceInteraction",
+  "original_head": "df85e30509b9561d782c1963e3ff362d39cbfa14",
+  "original_refs": [
+    "refs/heads/main df85e30509b9561d782c1963e3ff362d39cbfa14",
+    "refs/remotes/origin/HEAD df85e30509b9561d782c1963e3ff362d39cbfa14",
+    "refs/remotes/origin/main df85e30509b9561d782c1963e3ff362d39cbfa14",
+    "refs/remotes/origin/test/V1.0.0-alpha.1.2 0da52667e803b4cd63bc42b3755520496e9acfea",
+    "refs/remotes/origin/test/voice-3f5b1af 3f5b1af97e4f234c1651a334733445b152019eec",
+    "refs/tags/V1.0.0-alpha.1.2 fc2a79cb7db95c5d5116c8fbcdd942d2c8280b5a",
+    "refs/tags/v0.2.0 e0241019464e3255c93e39a54e023f8368940054"
+  ],
+  "original_commit_count": 23,
+  "target_before": "f10ffa8a01f8dce23b61e6bae90d575db421e7c5",
+  "imported_head": "2f9b0023fc4ede90ba14fb4382a6831f0b626ba5",
+  "merge_commit": "0384a81f5fa0464a3e4fab3f2646d2e5aa5a8ef2",
+  "archive": "/home/elephant/MarsDog/migration/archives/voice-df85e30-all-refs.bundle",
+  "archive_sha256": "f8a69cb2240fcfc79ff687bf99b7964052eae02027c91141477fc58b1f7804a4",
+  "restore_fsck": "PASS",
+  "restored_refs_equal": true,
+  "tracked_file_content_and_modes_equal": true,
+  "tracked_files": 95,
+  "transform": "git-filter-repo 2.47.0 --to-subdirectory-filter modules/voice (copy only)",
+  "original_sources": {
+    "status": "PASS",
+    "failures": []
+  }
+}

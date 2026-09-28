@@ -1,6 +1,7 @@
 # P4 environment gate
 
-Status: BLOCKED on dependency availability; Vision and Voice have not been imported.
+Current status (2026-09-29): Voice dependencies recovered and software migration verified;
+see P4_VOICE.md. Vision is not imported. The record below describes the earlier blocker.
 Date: 2026-09-28. Originals and their locks are unchanged.
 
 The original pure source snapshots are under the retained migration workspace.
@@ -27,3 +28,9 @@ Resume with accessible original lock artifacts or a hash-verified offline cache,
 then run baseline tests before any module import. Full models/NPU/audio/camera
 acceptance remains a separate hardware gate after software regression. Production
 profile facts requested from the user are still needed for final system acceptance.
+
+
+2026-09-29 update: the Voice original uv.lock now restores successfully (35 packages
+with dev extras/group) and passes independent wheel and Humble checks. No dependency
+pins changed. This supersedes the Voice network blocker above; it does not establish
+that every Vision artifact or real device/model environment is available.

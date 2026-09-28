@@ -1,7 +1,7 @@
 # MarsDog Platform
 
-Incremental migration in progress. Emotion/Needs, BehaviorTree and Action have been imported here.
-Vision, Voice and the existing robot_ws/rtabmap_ws remain in their original repositories.
+Incremental migration in progress. Emotion/Needs, BehaviorTree, Action and Voice have been imported here.
+Vision and the existing robot_ws/rtabmap_ws are not yet imported. All original repositories remain preserved.
 The newly supplied interface and waypoint navigation packages are copied into
 interfaces/ros2 and robotics/ros2/src; see docs/migration/P5_NAVIGATION_RECOVERY.md.
 This repository is not yet a complete robot release.
@@ -101,3 +101,25 @@ export MARSDOG_RESULT_FIXTURE="$PWD/integration/migration/fixtures/behavior-resu
 ```
 
 The retained historical cases.json is for the original source snapshots only.
+
+
+## Voice verification
+
+Voice is imported at modules/voice without changing its 95 tracked source files.
+Its original 23 reachable commits and refs are archived; see docs/migration/P4_VOICE.md.
+The pure Python subset has 165 cases; the full Humble-dependent unit suite has 328
+(the subset is included in that total). Model/audio/RK3588 acceptance is separate.
+
+~~~bash
+uv sync --project modules/voice --locked --no-install-project --extra dev --python /usr/bin/python3.10
+python3 -B tools/check_voice_tests.py --mode pure
+python3 -B tools/check_voice_install.py --uv uv
+# These require the existing /opt/ros/humble installation:
+python3 -B tools/check_voice_tests.py --mode humble
+python3 -B tools/check_voice_ros.py --uv uv
+~~~
+
+The ROS probe uses installed original mock code, remapped endpoints and temporary
+data. No production launch was switched. Keep Voice's independent NumPy 1.x lock.
+Before deployment, explicitly select config_path and MARSDOG_PYTHON; relative model
+and storage paths change with the source/install location. Read P4_VOICE.md first.

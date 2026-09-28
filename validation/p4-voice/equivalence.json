@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "scope": "Exact Voice source import, semantic wheel and installed ROS mock equivalence; no hardware",
+  "tracked_file_count": 95,
+  "lock_sha256": "9ef671e7dbbce78379c08d0f824b34ed567fa9b25cf857ae706608cbddd98368",
+  "all_tracked_source_bytes_and_modes_equal": true,
+  "wheel_observations_equal": true,
+  "ros_observations_equal": [
+    "service_fields",
+    "asset_hashes",
+    "service_cases",
+    "event",
+    "event_keys"
+  ],
+  "static_private_cross_module_imports": [],
+  "original_sources": {
+    "status": "PASS",
+    "failures": []
+  }
+}
