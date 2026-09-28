@@ -85,7 +85,7 @@
 Voice 尚未导入平台，原始源快照为：
 
 ```text
-/migration/work/p1-20260928/sources/voice
+/home/elephant/MarsDog/migration/work/p1-20260928/sources/voice
 ```
 
 原 Voice 约束：
@@ -103,7 +103,7 @@ Voice 尚未导入平台，原始源快照为：
 Voice 原锁定依赖现已成功恢复到其隔离快照环境（命令结束码 0）：
 
 ```text
-cd /home/elephant/MarsDog/migration/work/p1-20260928/sources/voice
+cd /home/elephant/MarsDog/home/elephant/MarsDog/migration/work/p1-20260928/sources/voice
 UV_CACHE_DIR=/home/elephant/MarsDog/migration/.cache/uv \
 /home/elephant/MarsDog/migration/.tools/uv sync --locked --no-install-project --extra dev \
   --python /usr/bin/python3.10
@@ -139,7 +139,7 @@ Voice 原仓存在 `setup.py`、`pyproject.toml`、`CMakeLists.txt`，package da
 在不修改原始 Voice 源码的前提下，运行其原仓测试：
 
 ```bash
-cd /home/elephant/MarsDog/migration/work/p1-20260928/sources/voice
+cd /home/elephant/MarsDog/home/elephant/MarsDog/migration/work/p1-20260928/sources/voice
 PYTHONDONTWRITEBYTECODE=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
   .venv/bin/python -B -m pytest tests -q -p no:cacheprovider \
   --junitxml=/home/elephant/MarsDog/migration/reports/p1-20260928/p4-voice-junit.xml
@@ -174,7 +174,7 @@ PYTHONDONTWRITEBYTECODE=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
 
 导入必须：
 
-- 只操作 `/migration/work/history-voice` 的 disposable clone；
+- 只操作 `/home/elephant/MarsDog/migration/work/history-voice` 的 disposable clone；
 - 生成并验证 all-refs bundle、fsck、ref 列表、commit count 和 commit map；
 - 使用 `git-filter-repo --to-subdirectory-filter modules/voice`；
 - 比较原快照与 `modules/voice` 下文件内容和 mode；
@@ -242,7 +242,7 @@ export MARSDOG_LEGACY_ROOT=/home/elephant/MarsDog
 export UV_CACHE_DIR=/home/elephant/MarsDog/migration/.cache/uv
 
 # Voice 原测试（首个实际动作）
-cd /home/elephant/MarsDog/migration/work/p1-20260928/sources/voice
+cd /home/elephant/MarsDog/home/elephant/MarsDog/migration/work/p1-20260928/sources/voice
 PYTHONDONTWRITEBYTECODE=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
   .venv/bin/python -B -m pytest tests -q -p no:cacheprovider \
   --junitxml=/home/elephant/MarsDog/migration/reports/p1-20260928/p4-voice-junit.xml \
