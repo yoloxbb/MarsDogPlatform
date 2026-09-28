@@ -37,12 +37,25 @@ def main():
         assert hashlib.sha256(archive.read_bytes()).hexdigest() == record["sha256"], filename
         target = directory / record["package"]
         marker = target / "archive.sha256"
-        if target.exists():
-            assert marker.is_file() and marker.read_text().strip() == record["sha256"], str(target)
-        else:
-            with tempfile.TemporaryDirectory(prefix="extract-", dir=directory) as temp:
-                extracted = Path(temp) / "payload"
-                subprocess.run(["dpkg-deb", "--extract", str(archive), str(extracted)], check=True)
+        with tempfile.TemporaryDirectory(prefix="extract-", dir=directory) as temp:
+            extracted = Path(temp) / "payload"
+            subprocess.run(["dpkg-deb", "--extract", str(archive), str(extracted)], check=True)
+            def inventory(root):
+                result = {}
+                for item in root.rglob("*"):
+                    relative = item.relative_to(root).as_posix()
+                    if relative == "archive.sha256":
+                        continue
+                    if item.is_symlink():
+                        result[relative] = ("link", str(item.readlink()))
+                    elif item.is_file():
+                        result[relative] = ("file", item.stat().st_mode & 0o777,
+                                            hashlib.sha256(item.read_bytes()).hexdigest())
+                return result
+            if target.exists():
+                assert marker.is_file() and marker.read_text().strip() == record["sha256"], str(target)
+                assert inventory(target) == inventory(extracted), "Extracted ROS dependency changed: " + str(target)
+            else:
                 (extracted / "archive.sha256").write_text(record["sha256"] + "\n")
                 extracted.rename(target)
         print(record["package"] + ": " + record["version"], flush=True)

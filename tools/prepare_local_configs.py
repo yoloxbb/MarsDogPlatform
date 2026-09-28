@@ -15,6 +15,7 @@ def prepare(run, install):
     voice = yaml.safe_load((voice_share / "voice.mock.yaml").read_text())
     voice["mock"].update(seed=profile["voice_mock_seed"],
                          event_interval_sec=profile["voice_event_interval_sec"])
+    voice["mock"]["command_catalog"] = str(voice_share / "command_catalog.yaml")
     voice["logging"].update(dir=str(run / "voice-log"), file=True, console=True)
     voice["storage"]["root"] = str(run / "voice-data")
     for key in ("command_lexicon", "object_target_routing"):

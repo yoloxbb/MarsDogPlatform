@@ -1,0 +1,82 @@
+[
+  {
+    "path": ".gitignore",
+    "sha256": "0653ffe64fb5c7add64ecfc6bdad37fe851336bff597ca47334a042addaa7c6a",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  },
+  {
+    "path": "README.md",
+    "sha256": "d86bcfe34a79baeae1c334517f0390002d0f3ae99bd9d5d1c7115ce4b97a5bb6",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  },
+  {
+    "path": "go2_follow_ws/.gitignore",
+    "sha256": "48facdbaf9352365301b999258b4d3b42afc771878ea961725ae1fbc1e0e319a",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  },
+  {
+    "path": "go2_follow_ws/README.md",
+    "sha256": "d89a2d4b0e853172de12e532657056e57c6ea9752354a914b1ea59c23b408cce",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  },
+  {
+    "path": "go2_follow_ws/colcon_defaults.yaml",
+    "sha256": "18f3dda3aeea781068b4d3036df693b5452d8008ec548a4048985ff5c12e5972",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  },
+  {
+    "path": "go2_follow_ws/docs/follow_avoidance_test_recording.md",
+    "sha256": "cd6ea4f73767fd94febdd022902077c2de625aba8956ff30563a0259f465ad31",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  },
+  {
+    "path": "go2_follow_ws/docs/follow_test_recording_commands.md",
+    "sha256": "0ff3b090309b9de1261df359b8110485a75051236c7cd812e542a9db43591b75",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  },
+  {
+    "path": "go2_follow_ws/scripts/record_follow_test.sh",
+    "sha256": "03b3b50e5930df8f2b3ea8c82ab990535c859a38afcfe7a40ea8195e217d9d73",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  },
+  {
+    "path": "robot_ws.code-workspace",
+    "sha256": "6e5e7d6aa9885bc33387b3a20af7fd9267881ffedbb4fed10ad3c61684590847",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  },
+  {
+    "path": "scripts/build_all.sh",
+    "sha256": "ad305be412e7a8f0c189cd114770066bef09e73448f187f61b0c0d4b8f55294f",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  },
+  {
+    "path": "scripts/setup_robot_env.sh",
+    "sha256": "9cff63b840a5608b4f041c8a1c18d535567503927b4bc3349e5a0732c8fee6e4",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  },
+  {
+    "path": "scripts/source_all.sh",
+    "sha256": "7ddcff054af02a130e60df65bf14ab87de4e3714382b531672bb4ed9f04f9476",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  },
+  {
+    "path": "sensor_ws/README.md",
+    "sha256": "2069e302131e3b1f68d1f1fe0a9db95752ec02396a265bc347d21b1729314ad9",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  },
+  {
+    "path": "slam_ws/README.md",
+    "sha256": "1c36f6816eecb3e1d8f4817122d039351d03753cf224a0bbe8302c96b1824bc1",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  },
+  {
+    "path": "tools/analyze_imu_bag.py",
+    "sha256": "19242d54a10ba976b79fc4baed81655b8cdcf40a0de0ed1e2282305d0d108c73",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  },
+  {
+    "path": "tools/test_usb_camera.py",
+    "sha256": "6ce5b89a4a154a575db48c1be16cf1f2f171ed7afa9695354295e9b891f62b84",
+    "disposition": "Preserved in verified robot all-ref bundle and untouched original; not retired or invoked by local profile"
+  }
+]

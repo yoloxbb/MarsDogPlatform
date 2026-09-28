@@ -29,3 +29,7 @@ behavior_tree_node = "marsdog_behavior.ros_node:main"
 
 [project.urls]
 Repository = "https://github.com/yoloxbb/20260702_MarsDogTree"
+
+[project.optional-dependencies]
+# Humble generated message modules import NumPy; core-only installs remain small.
+ros = ["numpy==1.26.4"]

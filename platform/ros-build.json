@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "profile": "lite3-local-cpu",
+  "driver": "tools/marsdog.py",
+  "local_native_packages": [
+    "stereo_v4l2_camera",
+    "wit_imu",
+    "person_3d_localization",
+    "robot_slam_bringup",
+    "stereo_slam_legacy_bringup",
+    "go2_uwb_local_follow",
+    "go2_uwb_behavior"
+  ],
+  "local_inputs": [
+    ".external/uwb",
+    "interfaces/ros2/marsdog_interfaces",
+    "modules/emotion",
+    "modules/behavior",
+    "modules/action",
+    "modules/voice",
+    "modules/vision",
+    "robotics/ros2/src/waypoint_nav"
+  ],
+  "hardware_build_order": [
+    {
+      "layer": "OS/ROS",
+      "source": "Ubuntu 22.04 / ROS Humble; system packages",
+      "status": "Local ABI recorded; deployment image not frozen"
+    },
+    {
+      "layer": "vendor odometry",
+      "source": ".external/openvins or .external/vins-fusion",
+      "status": "Sources preserved; no algorithm upgrade"
+    },
+    {
+      "layer": "mapping",
+      "source": ".external/rtabmap",
+      "requires": [
+        "vendor odometry (OpenVINS when selected)"
+      ],
+      "status": "Exact modified fork preserved; full mapping build/runtime not accepted"
+    },
+    {
+      "layer": "native capabilities",
+      "source": "robotics/ros2/src",
+      "requires": [
+        "OS/ROS",
+        "vendor UWB IDL",
+        "Nav2 libraries for behavior_ext_plugins"
+      ],
+      "status": "CPU subset tested; hardware bringup not run"
+    },
+    {
+      "layer": "business modules",
+      "source": "modules + interfaces/ros2",
+      "requires": [
+        "public IDL",
+        "separate locked Python environments"
+      ],
+      "status": "Local installed profile"
+    },
+    {
+      "layer": "profile",
+      "source": "config/profiles",
+      "requires": [
+        "explicit selected capabilities"
+      ],
+      "status": "Only lite3-local-cpu is accepted; no production profile assumed"
+    }
+  ],
+  "excluded_from_local_build": {
+    "behavior_ext_plugins": "Requires complete Nav2 development libraries, not installed",
+    "rtabmap": "No real camera/IMU/map acceptance inputs; preserved external fork",
+    "openvins": "Pinned external source; hardware odometry not part of simulated profile",
+    "vins-fusion": "Alternative odometry preserved, not jointly launched"
+  },
+  "uwb_vendor_driver": "OFF in CPU profile; original ARM library not emulated"
+}

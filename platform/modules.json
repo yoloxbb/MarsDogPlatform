@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "python": "3.10 on Ubuntu 22.04 / ROS Humble",
+  "modules": {
+    "emotion": {
+      "path": "modules/emotion",
+      "namespaces": [
+        "marsdog_core",
+        "marsdog_ros2"
+      ],
+      "owner_role": "Needs/Emotion maintainer",
+      "runtime_extra": "ros"
+    },
+    "behavior": {
+      "path": "modules/behavior",
+      "namespaces": [
+        "marsdog_behavior",
+        "bionic_dog_bt"
+      ],
+      "owner_role": "Behavior maintainer",
+      "runtime_extra": "ros"
+    },
+    "action": {
+      "path": "modules/action",
+      "namespaces": [
+        "marsdog_action_executor"
+      ],
+      "owner_role": "Action maintainer"
+    },
+    "voice": {
+      "path": "modules/voice",
+      "namespaces": [
+        "marsdog_voice_interaction"
+      ],
+      "owner_role": "Voice maintainer",
+      "runtime_extra": "dev"
+    },
+    "vision": {
+      "path": "modules/vision",
+      "namespaces": [
+        "marsdog_vision_interaction"
+      ],
+      "owner_role": "Vision maintainer",
+      "runtime_extra": "dev,models"
+    },
+    "robotics": {
+      "path": "robotics/ros2/src",
+      "namespaces": [
+        "waypoint_nav"
+      ],
+      "owner_role": "Robotics maintainer"
+    },
+    "interfaces": {
+      "path": "interfaces/ros2",
+      "namespaces": [],
+      "owner_role": "Platform + affected producer/consumer maintainers"
+    }
+  },
+  "allowed_cross_imports": [
+    "marsdog_action_executor.action",
+    "marsdog_vision_interaction.srv",
+    "marsdog_voice_interaction.srv"
+  ],
+  "legacy_import_exceptions": [
+    {
+      "path": "modules/behavior/marsdog_behavior/mock_action_executor_node.py",
+      "import": "marsdog_ros2.action",
+      "reason": "Historical standalone mock entry; no matching generated type in Emotion. Preserved, excluded from local profile.",
+      "exit_condition": "Confirm production retirement or replace only after compatibility review"
+    }
+  ]
+}

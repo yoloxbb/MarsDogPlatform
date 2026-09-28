@@ -1,0 +1,195 @@
+{
+  "transport": "Cyclone DDS / localhost / fixed extracted dependency",
+  "ctest": [
+    {
+      "package": "uwb_aoa_pkg",
+      "name": "test_uart_stack",
+      "status": "passed"
+    },
+    {
+      "package": "uwb_aoa_pkg",
+      "name": "test_serial_reconnect",
+      "status": "passed"
+    },
+    {
+      "package": "go2_uwb_local_follow",
+      "name": "test_test_planner_recovery_launch.py",
+      "status": "passed"
+    },
+    {
+      "package": "go2_uwb_local_follow",
+      "name": "test_input_timing",
+      "status": "passed"
+    },
+    {
+      "package": "go2_uwb_local_follow",
+      "name": "test_obstacle_index",
+      "status": "passed"
+    },
+    {
+      "package": "go2_uwb_local_follow",
+      "name": "test_stereo_projection_core",
+      "status": "passed"
+    },
+    {
+      "package": "go2_uwb_local_follow",
+      "name": "test_follow_control_core",
+      "status": "passed"
+    },
+    {
+      "package": "go2_uwb_local_follow",
+      "name": "test_local_planner_core",
+      "status": "passed"
+    },
+    {
+      "package": "go2_uwb_local_follow",
+      "name": "test_mppi_planner_core",
+      "status": "passed"
+    },
+    {
+      "package": "go2_uwb_local_follow",
+      "name": "test_rolling_obstacle_map_core",
+      "status": "passed"
+    },
+    {
+      "package": "go2_uwb_behavior",
+      "name": "test_behavior_core",
+      "status": "passed"
+    },
+    {
+      "package": "go2_uwb_behavior",
+      "name": "test_test_behavior_action_launch.py",
+      "status": "passed"
+    },
+    {
+      "package": "person_3d_localization",
+      "name": "test_bbox_depth_processor",
+      "status": "passed"
+    }
+  ],
+  "status": "PASS_WITH_EXPLICIT_LIMITS",
+  "counts": {
+    "tests": 140,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "junit_reports": [
+    "build/person_3d_localization/test_results/person_3d_localization/test_bbox_depth_processor.gtest.xml",
+    "build/go2_uwb_local_follow/test_results/go2_uwb_local_follow/test_input_timing.gtest.xml",
+    "build/go2_uwb_local_follow/test_results/go2_uwb_local_follow/test_mppi_planner_core.gtest.xml",
+    "build/go2_uwb_local_follow/test_results/go2_uwb_local_follow/test_rolling_obstacle_map_core.gtest.xml",
+    "build/go2_uwb_local_follow/test_results/go2_uwb_local_follow/test_local_planner_core.gtest.xml",
+    "build/go2_uwb_local_follow/test_results/go2_uwb_local_follow/test_obstacle_index.gtest.xml",
+    "build/go2_uwb_local_follow/test_results/go2_uwb_local_follow/test_test_planner_recovery_launch.py.xunit.xml",
+    "build/go2_uwb_local_follow/test_results/go2_uwb_local_follow/test_stereo_projection_core.gtest.xml",
+    "build/go2_uwb_local_follow/test_results/go2_uwb_local_follow/test_follow_control_core.gtest.xml",
+    "build/go2_uwb_behavior/test_results/go2_uwb_behavior/test_test_behavior_action_launch.py.xunit.xml",
+    "build/go2_uwb_behavior/test_results/go2_uwb_behavior/test_behavior_core.gtest.xml",
+    "build/uwb_aoa_pkg/test_results/uwb_aoa_pkg/test_uart_stack.gtest.xml"
+  ],
+  "source_paths": [
+    "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/stereo_v4l2_camera",
+    "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/wit_imu",
+    "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/person_3d_localization",
+    "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/robot_slam_bringup",
+    "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/stereo_slam_legacy_bringup",
+    "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/go2_uwb_local_follow",
+    "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/go2_uwb_behavior",
+    "/home/elephant/MarsDog/marsdog-platform/.external/uwb"
+  ],
+  "functional_test_returncode": 0,
+  "build_packages": [
+    "stereo_v4l2_camera",
+    "wit_imu",
+    "person_3d_localization",
+    "robot_slam_bringup",
+    "stereo_slam_legacy_bringup",
+    "go2_uwb_local_follow",
+    "go2_uwb_behavior",
+    "uwb_aoa_pkg"
+  ],
+  "test_packages": [
+    "uwb_aoa_pkg",
+    "go2_uwb_local_follow",
+    "go2_uwb_behavior",
+    "person_3d_localization"
+  ],
+  "commands": [
+    [
+      "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/colcon",
+      "--log-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/robotics-migrated/log",
+      "build",
+      "--base-paths",
+      "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/stereo_v4l2_camera",
+      "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/wit_imu",
+      "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/person_3d_localization",
+      "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/robot_slam_bringup",
+      "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/stereo_slam_legacy_bringup",
+      "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/go2_uwb_local_follow",
+      "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/go2_uwb_behavior",
+      "/home/elephant/MarsDog/marsdog-platform/.external/uwb",
+      "--build-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/robotics-migrated/build",
+      "--install-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/robotics-migrated/install",
+      "--executor",
+      "sequential",
+      "--event-handlers",
+      "console_direct+",
+      "--cmake-args",
+      "-DBUILD_TESTING=ON",
+      "-DBUILD_UWB_VENDOR_DRIVER=OFF",
+      "-DPython3_EXECUTABLE=/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+      "-DPYTHON_EXECUTABLE=/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python"
+    ],
+    [
+      "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/colcon",
+      "--log-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/robotics-migrated/test-log",
+      "test",
+      "--base-paths",
+      "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/stereo_v4l2_camera",
+      "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/wit_imu",
+      "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/person_3d_localization",
+      "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/robot_slam_bringup",
+      "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/stereo_slam_legacy_bringup",
+      "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/go2_uwb_local_follow",
+      "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/go2_uwb_behavior",
+      "/home/elephant/MarsDog/marsdog-platform/.external/uwb",
+      "--build-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/robotics-migrated/build",
+      "--install-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/robotics-migrated/install",
+      "--packages-select",
+      "uwb_aoa_pkg",
+      "go2_uwb_local_follow",
+      "go2_uwb_behavior",
+      "person_3d_localization",
+      "--executor",
+      "sequential",
+      "--event-handlers",
+      "console_direct+",
+      "--return-code-on-test-failure",
+      "--ctest-args",
+      "-R",
+      "^test_",
+      "--output-on-failure"
+    ],
+    [
+      "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/colcon",
+      "test-result",
+      "--test-result-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/robotics-migrated/build",
+      "--verbose"
+    ]
+  ],
+  "limits": [
+    "No hardware/device launch",
+    "ARM64 UWB vendor algorithm disabled by original option",
+    "behavior_ext_plugins requires unavailable Nav2 libraries; excluded",
+    "Bringup install is not mapping/navigation runtime acceptance",
+    "Historical lint not part of CPU functional gate"
+  ]
+}

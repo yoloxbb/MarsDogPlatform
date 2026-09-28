@@ -49,6 +49,15 @@ _COMMANDS = (
     ("把玩具拿来", "BRING", "DO"),
     ("去找球", "FETCH", "DO"),
     ("停止", "STOP", "STOP"),
+    ("走", "WALK", "DO"),
+    ("回家", "GO_HOME", "DO"),
+    ("靠近点", "APPROACH", "DO"),
+    ("退后", "BACK_UP", "DO"),
+    ("站好", "STAND_STILL", "DO"),
+    ("别动", "HOLD_POSITION", "DO"),
+    ("安静", "QUIET", "STOP"),
+    ("吃罐头", "EAT_CANNED_FOOD", "DO"),
+    ("去拿回来", "GO_GET_IT", "DO"),
 )
 
 MOCK_AUDIO_EVENT_TYPES = (
@@ -76,6 +85,10 @@ _MOCK_INTERACTION_EVENT_TYPES = tuple(
 class MockEventProvider(BaseProvider):
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
+        self._catalog = None
+        if config.get("command_catalog"):
+            from marsdog_voice_interaction.core.command_lexicon import CommandLexicon
+            self._catalog = CommandLexicon(config["command_catalog"])
         self._interval = float(config.get("event_interval_sec", 5.0))
         self._random = random.Random(config.get("seed"))
         self._last = ""
@@ -166,6 +179,12 @@ class MockEventProvider(BaseProvider):
                 executable=True,
             )
             event["action"] = command_key
+            if self._catalog is not None:
+                # Explicit integration mode uses the same reviewed identifiers
+                # as real catalog commands. No BT validation is bypassed.
+                match = self._catalog.get_command(command_key)
+                if match is not None:
+                    event["command_id"] = match.command_id
         elif event_type == EVT_VOICE_CALL_NAME:
             event = classification_to_event(
                 social="CALL", intent="NONE", control="NONE",

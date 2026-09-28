@@ -1,0 +1,36 @@
+name: Platform boundaries and local ROS integration
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_ros:
+        description: Run on a provisioned isolated MarsDog Humble runner
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  boundaries:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: python3 -B tools/check_architecture.py
+  local-ros:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_ros
+    runs-on: [self-hosted, linux, x64, marsdog-humble]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: python3 -B tools/marsdog.py prepare --archive-dir "$MARSDOG_ARCHIVE_DIR"
+      - run: python3 -B tools/marsdog.py build
+      - run: python3 -B tools/marsdog.py smoke
+      - run: python3 -B tools/check_local_lifecycle.py
+      - run: python3 -B tools/check_contracts.py
+      - run: python3 -B tools/check_robotics.py --uwb-source .external/uwb --output out/robotics-ci
+# No runner/remote is registered yet. This job never starts hardware.

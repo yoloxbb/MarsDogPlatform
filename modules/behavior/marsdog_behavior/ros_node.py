@@ -2691,15 +2691,26 @@ class BehaviorTreeRosNode(NodeBase):
 def main():
     if HAS_ROS2:
         import rclpy
-        rclpy.init()
-        node = BehaviorTreeRosNode()
+        import signal
+        from rclpy.signals import SignalHandlerOptions
+        # Session release and goal cancellation need a live ROS context during
+        # destroy_node. Python handles SIGINT before context shutdown here.
+        rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
+        def interrupt(_signum, _frame):
+            raise KeyboardInterrupt
+        previous_term = signal.signal(signal.SIGTERM, interrupt)
+        node = None
         try:
+            node = BehaviorTreeRosNode()
             rclpy.spin(node)
         except KeyboardInterrupt:
             pass
         finally:
-            node.destroy_node()
-            rclpy.shutdown()
+            if node is not None:
+                node.destroy_node()
+            if rclpy.ok():
+                rclpy.shutdown()
+            signal.signal(signal.SIGTERM, previous_term)
     else:
         print("ROS2 not available. Use standalone demo instead:")
         print("  uv run python -m marsdog_behavior.standalone_demo")

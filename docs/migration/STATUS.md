@@ -1,78 +1,44 @@
-# Migration status — 2026-09-29
+# 当前迁移状态 — 2026-09-29
 
-| Phase | Status | Evidence / remaining gate |
+**Lite3 本机 CPU 软件集成目标已通过；生产硬件发布尚未完成。**
+最新可复现入口为 tools/marsdog.py，运行说明见 ../LOCAL_LITE3_CPU.md。
+此前本文件的累积进度保留在 Git 历史；以下为当前唯一状态表。
+
+| 阶段 | 当前状态 | 证据 |
 | --- | --- | --- |
-| P0 | Approved proposal | Frozen copy in docs/architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md |
-| P1 | Baseline / software contract slice complete | 7 source snapshots, 3,074 files, 38 ROS manifests, 48 IDLs; existing tests and known gaps retained |
-| P2 | Emotion software migration verified | 19 commits preserved; 350 cases; wheel/ROS installed-state equivalence |
-| P3a | BehaviorTree software migration verified | 7 commits preserved; 532 cases; wheel/ROS adapter checks |
-| P3b | Action software migration verified with stated transport limits | 5 commits preserved; 418 pure passes / 29 skips; old/new 39 ROS callback cases each; four UDP DDS combinations pass |
-| P4a | Voice software migration verified | 23 reachable commits archived, 95 source files unchanged; 328 Humble unit cases, 165 pure subset, wheel/ROS mock equivalence; see P4_VOICE.md |
-| P4b | Vision software migration verified | 32 commits / 125 files; 280 pass / 3 RGA skips; CPU wheel and mock DDS equivalence; see P4_VISION.md |
-| P5 | Supplemental navigation/interface slice verified | New supplied packages copied; explicit operator recovery release approved/tested; robot_ws / rtabmap_ws unchanged; see P5_NAVIGATION_RECOVERY.md |
-| P6 | Not released | No remote/hosted CI run, production profile or hardware acceptance; default Fast DDS issue unresolved |
-| P7 | Not started | No uncertain production code retired |
+| P0/P1 架构与原始基线 | 完成；七个原仓库未修改 | architecture 提案、integration/migration/baseline、validation/local-platform/original-sources.json |
+| P2 Emotion/Needs | 历史/独立环境/安装/ROS 完成 | 19 提交；本轮 218 tests + 156 subtests；P2_EMOTION.md |
+| P3 BehaviorTree | 历史/接口/安装/集成完成 | 7 提交；本轮 533 tests；退出 context 缺陷已修复 |
+| P3 Action | 历史/接口/安装/集成完成 | 5 提交；423 pass / 29 skip；显式本机 Lite3 I/O 与外部配置，生产默认不改 |
+| P4 Voice | 历史/安装/ROS 完成 | 23 提交；本轮 367 tests；修复 mock 命令覆盖，新增可选 catalog ID |
+| P4 Vision | 历史/资源/CPU 环境/ROS 完成 | 32 提交；280 pass / 3 RGA skip；真实模型与相机未验收 |
+| P5 新接口与航点 | 完成软件门禁 | 导航 31 tests + 2 subtests；取消/重启/终态恢复、公开类型与 Energy 证据策略 |
+| P5 Native ROS | 自研包历史/CPU 构建与功能回归完成 | 30 相关提交、122 文件；8 包构建，140 JUnit cases、13 CTest entries 全通过；两组计数有重叠 |
+| P5 Third-party | 固定、归档、恢复和校验完成 | 完整 robot 31 / RTAB 4 提交；.external 快照；上游完整 delta / 部分许可 UNKNOWN |
+| P6 本机集成 | prepare/build/doctor/up/smoke/退出与故障测试完成 | 15 包组合构建；10 进程 + probe 正常关闭；同 interaction/goal 关联的 GO_HOME 成功；lifecycle.json |
+| P6 契约与工程门禁 | 完成当前软件范围 | 25 契约/基线检查（15 跨进程用例 + 10 guards）；15 ROS manifest DAG；21 登记接口 |
+| P6 生产发布 / 远端 CI | 未验收 / 未配置 | 缺设备、模型、真实 Nav2/运控/电池来源与远端/owner 身份 |
+| P7 旧代码退役 | 未进行 | 不确定生产用途的代码/launch/脚本继续保留，不删除原仓 |
 
-All seven original repositories remain unchanged. The five imported Python modules
-have verified all-ref bundles and commit maps; the others are not claimed archived.
-No production process, ROS protocol, robot behavior, model runtime or external
-motion-control/embedded implementation was replaced.
+本机真实链路：
+Voice mock → audio_event → BT → marsdog_interfaces/ExecuteBehavior → Action
+→ waypoint_nav/VoiceTask → 模拟 NavigateToPose → Lite3 backend 模拟 I/O → SUCCESS。
+Vision 事件、Voice/Vision 服务、Needs/Emotion 状态同时验证。
+go_home 是语音命令，按现有规则不产生 Needs 结算事件。Energy 独立契约门禁验证
+拒绝模拟/陈旧/旧标量电量；当前没有 BMS 观测生产者。
 
-Each phase's small JSON/JUnit reports are versioned under validation. Larger raw
-logs, snapshots, build trees and bundles remain in the original migration workspace.
-The committed GitHub workflows have corresponding local command checks, but no
-remote run or branch protection has been configured. Actual CODEOWNERS identities
-remain UNKNOWN; role ownership is recorded, not represented by invented accounts.
+稳定性验证包含主动 SIGTERM、重复启动、Action 进程崩溃、清理全部自有 PID。
+故障注入那次运行的 FAIL 是预期结果，lifecycle 门禁验证 supervisor 正确失败退出。
+默认 Fast DDS 在本机的已知传输问题没有被冒充解决；本机 profile 明确使用验证过的
+Cyclone + loopback + 小分片。未修改系统网络或旧生产 RMW。
 
-The final integration run passes 20 cases: 13 independent-process result fixtures,
-4 baseline drift checks and 3 migrated-module protocol/default-asset guards.
+继续工作需要真实输入的范围：
 
-New marsdog_interfaces and waypoint_nav source was supplied and copied as a
-supplemental P5 slice; see P5_NAVIGATION_RECOVERY.md. Their production deployment,
-production launch/profile, real owner accounts and hardware acceptance still
-require real deployment facts. These gates do not
-justify weakening independent software regression or changing robot behavior.
+- 提供模型文件及版本/哈希后验证真实 CPU 推理与音频/图像回放。
+- 提供 Lite3 设备侧接口包、部署配置和硬件环境后验证运动、控制权、停止和状态。
+- 提供实际相机/IMU/地图输入后构建验收完整 Nav2、RTAB/OpenVINS 组合与性能。
+- 确认远端地址、owner 账号、厂商库分发许可后才能发布、绑定 CI/保护规则。
+- 不擅自退役 legacy 入口，不猜测运控/嵌入式/BMS 实现。
 
-Next runnable slice: native Robotics/vendor preservation and Lite3 local CPU integrated startup.
-The user selected Lite3 and local validation; see docs/architecture/LITE3_LOCAL_ACCEPTANCE.md.
-
-
-The supplemental connected navigation gate now covers real BT transport adapter ->
-Action node -> waypoint service -> fake Nav2 with 28 tests plus 2 subtests passing.
-See P5_NAVIGATION_RECOVERY.md for isolation boundaries and the newly reproduced
-Go2 go_home post-arrival missing-mapping defect. No hardware behavior was changed.
-
-
-Approved go_home arrival-hold correction verified (Action 420 passed / 29 skipped).
-Tree voice execution and tree Energy feedback tests now extend the navigation gate;
-production arbitration and real battery/charging confirmation remain unverified.
-The previous go_home defect is closed; two recharge branches expose a missing task
-adapter and an unmeasured default energyValue=100 respectively. See the follow-up
-in P5_NAVIGATION_RECOVERY.md; these block claiming a complete robot release.
-
-Final supplemental gate: 31 tests + 2 subtests passed; public Action probe passed.
-Review snapshot hashes: validation/navigation-recovery/review-snapshot.json.
-
-Energy truth audit: see ENERGY_SETTLEMENT_DECISION.md and the saved isolated
-characterization. Missing/invalid energy and charging_completed=false can all
-settle demand to zero today. Coordinated settlement policy approval is pending;
-no production fallback was changed in this audit.
-
-
-Energy settlement policy is now approved and implemented across Action, BT and
-Needs. Action no longer fabricates a battery measurement; BT forwards metadata;
-Needs requires interfaces/application/BATTERY_OBSERVATION.md evidence, including
-on charge interruption and direct Recharge(). Old scalar-only results preserve
-Energy. No live battery producer has been wired; real charging/docking remains
-unimplemented. The prior energy-audit pending status above is historical.
-
-Energy-policy validation: 22 independent-process contract cases; 31 ROS/navigation
-cases + 2 subtests; real installed Needs ROS measured/duplicate/legacy rejection;
-three clean wheels passed offline. Updated result-contract CI selects the new
-fixtures; original cases.json and all source repositories remain preserved.
-
-
-Voice P4a completed: original and migrated software observations match. The new
-Voice workflow checks pure Python and wheel resources only; full Humble unit and
-mock DDS checks were executed locally. No remote CI, model or production deployment
-acceptance is implied. HANDOFF_NEXT_SESSION.md now starts with the Vision gate.
+当前没有需要通过放宽断言或修改旧基线掩盖的已接受失败。历史试验失败与未验收范围
+均保留记录。正式源码与运行证据见 validation/local-platform/release-manifest.json。

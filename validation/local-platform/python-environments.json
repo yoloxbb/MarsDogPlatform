@@ -1,0 +1,62 @@
+{
+  "emotion": {
+    "numpy": "1.26.4",
+    "opencv-python": null,
+    "opencv-contrib-python": null,
+    "opencv-python-headless": null,
+    "torch": null,
+    "onnxruntime": null,
+    "onnx": null,
+    "protobuf": null,
+    "pydantic": null,
+    "PyYAML": "6.0.3"
+  },
+  "behavior": {
+    "numpy": "1.26.4",
+    "opencv-python": null,
+    "opencv-contrib-python": null,
+    "opencv-python-headless": null,
+    "torch": null,
+    "onnxruntime": null,
+    "onnx": null,
+    "protobuf": null,
+    "pydantic": null,
+    "PyYAML": "6.0.3"
+  },
+  "action": {
+    "numpy": "2.2.6",
+    "opencv-python": null,
+    "opencv-contrib-python": null,
+    "opencv-python-headless": null,
+    "torch": null,
+    "onnxruntime": null,
+    "onnx": null,
+    "protobuf": null,
+    "pydantic": null,
+    "PyYAML": "6.0.3"
+  },
+  "voice": {
+    "numpy": "1.26.4",
+    "opencv-python": null,
+    "opencv-contrib-python": null,
+    "opencv-python-headless": null,
+    "torch": null,
+    "onnxruntime": null,
+    "onnx": null,
+    "protobuf": null,
+    "pydantic": "2.13.4",
+    "PyYAML": "6.0.3"
+  },
+  "vision": {
+    "numpy": "1.26.4",
+    "opencv-python": "4.11.0.86",
+    "opencv-contrib-python": "4.11.0.86",
+    "opencv-python-headless": null,
+    "torch": "2.13.0",
+    "onnxruntime": null,
+    "onnx": null,
+    "protobuf": "4.25.9",
+    "pydantic": "2.13.5",
+    "PyYAML": "6.0.3"
+  }
+}

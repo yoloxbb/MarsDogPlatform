@@ -33,3 +33,11 @@ https://cyclonedds.io/docs/cyclonedds/0.10.2/config/config_file_reference.html
 No camera, IMU, UWB hardware, Lite3 motion, mapping quality, production Nav2 or
 RTAB-Map runtime acceptance is claimed. Local launch scaffolding is pending the
 separate integrated build and smoke gate.
+
+Selective import completed at 243f071675540cb5298920fff3e1528c03f41a98:
+30 relevant commits and 122 exact files/modes; complete 31 commits remain archived.
+The imported tree received only the recorded C++ syntax fix, and its own build /
+functional gate also passed (migrated.json). All original planner tests are unchanged.
+Sixteen workspace-level documentation/scripts/editor files are inventoried in
+history/robot-retained-workspace-assets.json and remain preserved in their archive.
+The accepted local integration and remaining deployment limits are now in STATUS.md.

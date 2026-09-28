@@ -13,7 +13,7 @@ def clean_environment():
     for key in list(env):
         if key.startswith(("ROS_", "AMENT_", "COLCON_", "RMW_", "FASTRTPS_", "FASTDDS_", "CYCLONEDDS_")):
             env.pop(key)
-    for key in ("PYTHONPATH", "PYTHONHOME", "VIRTUAL_ENV", "LOG_FILE", "CMAKE_PREFIX_PATH"):
+    for key in ("PYTHONPATH", "PYTHONHOME", "VIRTUAL_ENV", "LOG_FILE", "CMAKE_PREFIX_PATH", "LD_LIBRARY_PATH", "UV_PROJECT_ENVIRONMENT"):
         env.pop(key, None)
     return env
 

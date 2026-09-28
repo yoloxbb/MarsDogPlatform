@@ -1,0 +1,330 @@
+{
+  "schema_version": 1,
+  "scope": "Maintained cross-module interfaces; hardware and vendor internal graphs remain in their source manifests",
+  "interfaces": [
+    {
+      "name": "/perception/visual_event",
+      "type": "std_msgs/msg/String",
+      "provider": "vision",
+      "consumers": [
+        "behavior",
+        "emotion",
+        "action"
+      ],
+      "evidence": [
+        "modules/action/marsdog_action_executor/ros_node.py",
+        "modules/behavior/marsdog_behavior/ros_node.py",
+        "modules/emotion/marsdog_ros2/internal_need_node.py",
+        "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
+      "qos": "Publisher BEST_EFFORT; consumers must request compatible reliability"
+    },
+    {
+      "name": "/perception/audio_event",
+      "type": "std_msgs/msg/String",
+      "provider": "voice",
+      "consumers": [
+        "behavior",
+        "emotion"
+      ],
+      "evidence": [
+        "modules/behavior/marsdog_behavior/ros_node.py",
+        "modules/emotion/marsdog_ros2/internal_need_node.py",
+        "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics"
+    },
+    {
+      "name": "/perception/vision/object_detections",
+      "type": "std_msgs/msg/String",
+      "provider": "vision",
+      "consumers": [
+        "action"
+      ],
+      "evidence": [
+        "modules/action/marsdog_action_executor/ros_node.py",
+        "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics"
+    },
+    {
+      "name": "/perception/vision/task",
+      "type": "marsdog_vision_interaction/srv/VisionTask",
+      "provider": "vision",
+      "consumers": [
+        "behavior",
+        "action"
+      ],
+      "evidence": [
+        "modules/action/marsdog_action_executor/ros_node.py",
+        "modules/behavior/marsdog_behavior/ros_node.py",
+        "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
+      "idl": "modules/vision/srv/VisionTask.srv",
+      "idl_sha256": "0462429dcab62ab1d63a246d0de077b133660310f29402b03048b9e275bedac4"
+    },
+    {
+      "name": "/perception/voice/task",
+      "type": "marsdog_voice_interaction/srv/VoiceTask",
+      "provider": "voice",
+      "consumers": [
+        "behavior"
+      ],
+      "evidence": [
+        "modules/behavior/marsdog_behavior/ros_node.py",
+        "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
+      "idl": "modules/voice/srv/VoiceTask.srv",
+      "idl_sha256": "0462429dcab62ab1d63a246d0de077b133660310f29402b03048b9e275bedac4"
+    },
+    {
+      "name": "/emotion/state",
+      "type": "std_msgs/msg/String",
+      "provider": "emotion",
+      "consumers": [
+        "behavior",
+        "vision"
+      ],
+      "evidence": [
+        "modules/behavior/marsdog_behavior/ros_node.py",
+        "modules/emotion/marsdog_ros2/emotion_engine_node.py",
+        "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics"
+    },
+    {
+      "name": "/emotion/signal_event",
+      "type": "std_msgs/msg/String",
+      "provider": "emotion",
+      "consumers": [
+        "behavior"
+      ],
+      "evidence": [
+        "modules/behavior/marsdog_behavior/ros_node.py",
+        "modules/emotion/marsdog_ros2/emotion_engine_node.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics"
+    },
+    {
+      "name": "/internal_need/state",
+      "type": "std_msgs/msg/String",
+      "provider": "emotion",
+      "consumers": [
+        "behavior"
+      ],
+      "evidence": [
+        "modules/behavior/marsdog_behavior/ros_node.py",
+        "modules/emotion/marsdog_ros2/internal_need_node.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics"
+    },
+    {
+      "name": "/internal_need/signal_event",
+      "type": "std_msgs/msg/String",
+      "provider": "emotion",
+      "consumers": [
+        "behavior"
+      ],
+      "evidence": [
+        "modules/behavior/marsdog_behavior/ros_node.py",
+        "modules/emotion/marsdog_ros2/internal_need_node.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics"
+    },
+    {
+      "name": "/behavior/result_event",
+      "type": "std_msgs/msg/String",
+      "provider": "behavior",
+      "consumers": [
+        "emotion"
+      ],
+      "evidence": [
+        "modules/behavior/marsdog_behavior/ros_node.py",
+        "modules/emotion/marsdog_ros2/internal_need_node.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
+      "contract": "std_msgs/String JSON for demand behaviors only; does not use the similarly named generated msg. Battery evidence policy: application/BATTERY_OBSERVATION.md"
+    },
+    {
+      "name": "/behavior/attention_tracking",
+      "type": "std_msgs/msg/String",
+      "provider": "behavior",
+      "consumers": [
+        "action"
+      ],
+      "evidence": [
+        "modules/action/marsdog_action_executor/ros_node.py",
+        "modules/behavior/marsdog_behavior/ros_node.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics"
+    },
+    {
+      "name": "/behavior/goal_lease",
+      "type": "std_msgs/msg/String",
+      "provider": "behavior",
+      "consumers": [
+        "action"
+      ],
+      "evidence": [
+        "modules/action/marsdog_action_executor/ros_node.py",
+        "modules/behavior/marsdog_behavior/ros_node.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics"
+    },
+    {
+      "name": "/execute_behavior",
+      "type": "marsdog_interfaces/action/ExecuteBehavior",
+      "provider": "action",
+      "consumers": [
+        "behavior"
+      ],
+      "evidence": [
+        "modules/action/marsdog_action_executor/ros_node.py",
+        "modules/behavior/marsdog_behavior/ros_node.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
+      "idl": "interfaces/ros2/marsdog_interfaces/action/ExecuteBehavior.action",
+      "idl_sha256": "d1f89f9a4c953f1fc9472dacb3c4e7c0886eab1b03ad7a1d59242833254f0a9a"
+    },
+    {
+      "name": "/waypoint_nav/task",
+      "type": "marsdog_voice_interaction/srv/VoiceTask",
+      "provider": "waypoint",
+      "consumers": [
+        "action"
+      ],
+      "evidence": [
+        "modules/action/marsdog_action_executor/ros_node.py",
+        "robotics/ros2/src/waypoint_nav/waypoint_nav/waypoint_nav_dispatcher.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
+      "idl": "modules/voice/srv/VoiceTask.srv",
+      "idl_sha256": "0462429dcab62ab1d63a246d0de077b133660310f29402b03048b9e275bedac4",
+      "contract": "Legacy VoiceTask request/result JSON; cancel accepted is distinct from terminal confirmation and operator release"
+    },
+    {
+      "name": "/waypoint_nav/status",
+      "type": "std_msgs/msg/String",
+      "provider": "waypoint",
+      "consumers": [
+        "action"
+      ],
+      "evidence": [
+        "modules/action/marsdog_action_executor/ros_node.py",
+        "robotics/ros2/src/waypoint_nav/waypoint_nav/waypoint_nav_dispatcher.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
+      "contract": "Legacy VoiceTask request/result JSON; cancel accepted is distinct from terminal confirmation and operator release"
+    },
+    {
+      "name": "/person_3d_localization/locate_from_bbox",
+      "type": "person_3d_localization/srv/LocateFromBbox",
+      "provider": "robot",
+      "consumers": [
+        "vision"
+      ],
+      "evidence": [
+        "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+        "robotics/ros2/src/person_3d_localization/src/bbox_depth_goal_node.cpp"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
+      "idl": "robotics/ros2/src/person_3d_localization/srv/LocateFromBbox.srv",
+      "idl_sha256": "2686bcd67ad1c53c9e4e06de6479b045424a6296eae77c344485273428f167aa"
+    },
+    {
+      "name": "/go2/follow_uwb",
+      "type": "go2_uwb_behavior/action/FollowUwb",
+      "provider": "robot",
+      "consumers": [
+        "action"
+      ],
+      "evidence": [
+        "modules/action/marsdog_action_executor/ros_node.py",
+        "robotics/ros2/src/go2_uwb_behavior/src/uwb_behavior_controller_node.cpp"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
+      "idl": "robotics/ros2/src/go2_uwb_behavior/action/FollowUwb.action",
+      "idl_sha256": "b33fd479bd75affb515173b7d8a769f6528cd39dce12e56ec9c9b404a7dd34a6"
+    },
+    {
+      "name": "/go2/random_roam",
+      "type": "go2_uwb_behavior/action/RandomRoam",
+      "provider": "robot",
+      "consumers": [
+        "action"
+      ],
+      "evidence": [
+        "modules/action/marsdog_action_executor/ros_node.py",
+        "robotics/ros2/src/go2_uwb_behavior/src/uwb_behavior_controller_node.cpp"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
+      "idl": "robotics/ros2/src/go2_uwb_behavior/action/RandomRoam.action",
+      "idl_sha256": "5613f33fc99c81b9b767d1655230dbf0c11aaef5921eb360ba0d1bc6782502b2"
+    },
+    {
+      "name": "/go2/set_behavior",
+      "type": "go2_uwb_behavior/srv/SetBehavior",
+      "provider": "robot",
+      "consumers": [
+        "action"
+      ],
+      "evidence": [
+        "modules/action/marsdog_action_executor/ros_node.py",
+        "robotics/ros2/src/go2_uwb_behavior/src/uwb_behavior_controller_node.cpp"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
+      "idl": "robotics/ros2/src/go2_uwb_behavior/srv/SetBehavior.srv",
+      "idl_sha256": "ea3d7b3f6101cf64ef9058e86d918fd290715c838d7c7f23508f152dc0252c42"
+    },
+    {
+      "name": "/navigate_to_pose",
+      "type": "nav2_msgs/action/NavigateToPose",
+      "provider": "EXTERNAL_NAV2",
+      "consumers": [
+        "action",
+        "waypoint"
+      ],
+      "evidence": [
+        "modules/action/marsdog_action_executor/ros_node.py",
+        "robotics/ros2/src/waypoint_nav/waypoint_nav/waypoint_nav_dispatcher.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics"
+    },
+    {
+      "name": "/spin",
+      "type": "nav2_msgs/action/Spin",
+      "provider": "EXTERNAL_NAV2",
+      "consumers": [
+        "action"
+      ],
+      "evidence": [
+        "modules/action/marsdog_action_executor/ros_node.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics"
+    }
+  ]
+}

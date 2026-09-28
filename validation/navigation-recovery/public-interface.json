@@ -7,6 +7,6 @@
   "success_metadata": {
     "energyValue": 88
   },
-  "terminal_delay_after_cancel_ack_sec": 0.361,
+  "terminal_delay_after_cancel_ack_sec": 0.352,
   "ownership_retained_until_terminal": true
 }

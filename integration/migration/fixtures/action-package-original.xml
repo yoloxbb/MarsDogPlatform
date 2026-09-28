@@ -22,8 +22,12 @@
   <exec_depend>unitree_go</exec_depend>
   <exec_depend>transfer_interfaces</exec_depend>
 
-  <!-- Public type selected by the integrated profile; local fallback remains. -->
-  <exec_depend>marsdog_interfaces</exec_depend>
+  <!--
+    Public interface dependency: ExecuteBehavior.action will eventually
+    come from marsdog_interfaces.  Until that package is created, we
+    generate the action locally as a fallback.
+    <depend>marsdog_interfaces</depend>
+  -->
 
   <member_of_group>rosidl_interface_packages</member_of_group>
 

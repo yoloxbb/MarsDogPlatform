@@ -1,0 +1,39 @@
+{
+  "original_head": "7dd357fdfe1664775c051195a3c0562af6892d84",
+  "original_refs": [
+    "refs/heads/develop_lite3 7dd357fdfe1664775c051195a3c0562af6892d84",
+    "refs/remotes/origin/develop_lite3 7dd357fdfe1664775c051195a3c0562af6892d84",
+    "refs/tags/v1.0.0 349802ffedd64dcd27aaaeb1f4b6cdf3ae2dbf6d"
+  ],
+  "original_commit_count": 31,
+  "archive": "/home/elephant/MarsDog/migration/archives/robot-7dd357f-all-refs.bundle",
+  "archive_sha256": "d5a015faf17eb558ab365fa925a8c8029011085793d3bdfa867799693793caf8",
+  "restore_fsck": "PASS",
+  "restored_refs_equal": true,
+  "source_snapshot": "/home/elephant/MarsDog/migration/work/history-robot/source",
+  "tracked_files": 793,
+  "baseline_equal": true,
+  "target_before": "7b179164d964aac920a9f5531fbc99e6bb5267c9",
+  "imported_head": "8d3ef94d23ac1bf8823406418cb6c27624dd6c22",
+  "merge_commit": "243f071675540cb5298920fff3e1528c03f41a98",
+  "selected_files": 122,
+  "path_mapping": {
+    "sensor_ws/src/stereo_v4l2_camera/": "robotics/ros2/src/stereo_v4l2_camera/",
+    "imu_ws/src/stereo_v4l2_camera/": "robotics/ros2/src/stereo_v4l2_camera/",
+    "sensor_ws/src/wit_imu/": "robotics/ros2/src/wit_imu/",
+    "imu_ws/src/wit_imu/": "robotics/ros2/src/wit_imu/",
+    "slam_ws/src/person_3d_localization/": "robotics/ros2/src/person_3d_localization/",
+    "slam_ws/src/behavior_ext_plugins/": "robotics/ros2/src/behavior_ext_plugins/",
+    "slam_ws/src/robot_slam_bringup/": "robotics/ros2/src/robot_slam_bringup/",
+    "slam_ws/src/stereo_slam_legacy_bringup/": "robotics/ros2/src/stereo_slam_legacy_bringup/",
+    "go2_follow_ws/src/go2_uwb_local_follow/": "robotics/ros2/src/go2_uwb_local_follow/",
+    "go2_follow_ws/src/go2_uwb_behavior/": "robotics/ros2/src/go2_uwb_behavior/"
+  },
+  "filtered_reachable_commits": 30,
+  "exact_blobs_and_modes_equal": true,
+  "limits": [
+    "behavior_ext_plugins retained byte-for-byte; full Nav2 build not verified",
+    "Complete 31-commit history including omitted/vendor paths is in verified bundle",
+    "Known C++ syntax defect deliberately imported unchanged; separate repair follows"
+  ]
+}
