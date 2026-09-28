@@ -37,15 +37,47 @@
     "Hosted CI, remote release, real CODEOWNERS accounts and vendor redistribution licensing"
   ],
   "archives": {
-    "rtabmap-archive.json": {
-      "original_head": "91faa212039c9274f67aa30c147eeb4dfbfc63f2",
-      "archive": "/home/elephant/MarsDog/migration/archives/rtabmap-91faa21-all-refs.bundle",
-      "archive_sha256": "88b65a50e1aae713637a832283f802f111dafb7c0228fbb5fe98b8003eddcbf3"
+    "emotion": {
+      "original_head": "cd1e0476df7ab20873d048a8508e67301e7231c1",
+      "archive": "/home/elephant/MarsDog/migration/archives/emotion-cd1e047-all-refs.bundle",
+      "archive_sha256": "ae423e0f5bc894eb55908c6788c84a2123a353b3ed6c294f3d1268caea32fbb6",
+      "provenance": "docs/migration/history/emotion-import.json"
     },
-    "robot-archive.json": {
+    "behavior": {
+      "original_head": "9f2eb0dee84f84bb84a4e497aba4e3effe4d10da",
+      "archive": "/home/elephant/MarsDog/migration/archives/behavior-9f2eb0d-all-refs.bundle",
+      "archive_sha256": "0d72c9bd3f76cd57b0048e5878b904772d2d07b9dae8cbf9a60eea3bda9339fb",
+      "provenance": "docs/migration/history/behavior-import.json"
+    },
+    "action": {
+      "original_head": "f00c3fdf2945c7a09d5f49ffc3d0df39c37ca2a8",
+      "archive": "/home/elephant/MarsDog/migration/archives/action-f00c3fd-all-refs.bundle",
+      "archive_sha256": "2f8471f68f108e43630a76bd6430b0a88597569ca445a3e07a25648f0b36b4af",
+      "provenance": "docs/migration/history/action-import.json"
+    },
+    "voice": {
+      "original_head": "df85e30509b9561d782c1963e3ff362d39cbfa14",
+      "archive": "/home/elephant/MarsDog/migration/archives/voice-df85e30-all-refs.bundle",
+      "archive_sha256": "f8a69cb2240fcfc79ff687bf99b7964052eae02027c91141477fc58b1f7804a4",
+      "provenance": "docs/migration/history/voice-import.json"
+    },
+    "vision": {
+      "original_head": "a05dbf4b9cf3cde9707f05c4360d39e5a52968df",
+      "archive": "/home/elephant/MarsDog/migration/archives/vision-a05dbf4-all-refs.bundle",
+      "archive_sha256": "69223e8caed633a0f746f8d28ad180d5df3e3bd83afa2002a624162a41dbebd5",
+      "provenance": "docs/migration/history/vision-import.json"
+    },
+    "robot": {
       "original_head": "7dd357fdfe1664775c051195a3c0562af6892d84",
       "archive": "/home/elephant/MarsDog/migration/archives/robot-7dd357f-all-refs.bundle",
-      "archive_sha256": "d5a015faf17eb558ab365fa925a8c8029011085793d3bdfa867799693793caf8"
+      "archive_sha256": "d5a015faf17eb558ab365fa925a8c8029011085793d3bdfa867799693793caf8",
+      "provenance": "docs/migration/history/robot-archive.json"
+    },
+    "rtabmap": {
+      "original_head": "91faa212039c9274f67aa30c147eeb4dfbfc63f2",
+      "archive": "/home/elephant/MarsDog/migration/archives/rtabmap-91faa21-all-refs.bundle",
+      "archive_sha256": "88b65a50e1aae713637a832283f802f111dafb7c0228fbb5fe98b8003eddcbf3",
+      "provenance": "docs/migration/history/rtabmap-archive.json"
     }
   }
 }
