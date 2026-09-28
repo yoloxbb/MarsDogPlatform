@@ -1,0 +1,34 @@
+logging:
+  level: INFO
+  dir: ../log
+  console: true
+  file: true
+  event_trace: true
+audio_debug:
+  enabled: false
+  output_dir: /tmp/voice_debug
+mock:
+  enabled: true
+  mode: event
+  event_interval_sec: 0.1
+storage:
+  root: ../data/mock
+command_lexicon:
+  enabled: false
+  catalog: command_catalog.yaml
+object_target_routing:
+  enabled: true
+  catalog: object_targets.yaml
+speaker_api:
+  enabled: false
+topics:
+  audio_event: /perception/audio_event
+  enrollment_event: /perception/voice/enrollment_event
+  voice_task: /perception/voice/task
+interaction:
+  idle_timeout_sec: 10.0
+  hold_max_lease_sec: 30.0
+  # 测试模式默认关闭，以免「超时后回到待机」用例无法验证；
+  # 需要连续测试时设 true，并把 max_duration_sec 设 0 取消绝对上限。
+  refresh_on_any_speech: false
+providers: {}
