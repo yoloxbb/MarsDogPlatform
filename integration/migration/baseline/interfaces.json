@@ -1,0 +1,3328 @@
+{
+  "schema_version": 1,
+  "idl": [
+    {
+      "source": "vision",
+      "path": "srv/VisionTask.srv",
+      "sha256": "0462429dcab62ab1d63a246d0de077b133660310f29402b03048b9e275bedac4",
+      "content": "string task_id\nstring task_type\nstring params_json\n---\nbool success\nstring task_id\nstring task_type\nstring result_json\nstring error_message\nfloat64 latency_ms\n"
+    },
+    {
+      "source": "voice",
+      "path": "srv/VoiceTask.srv",
+      "sha256": "0462429dcab62ab1d63a246d0de077b133660310f29402b03048b9e275bedac4",
+      "content": "string task_id\nstring task_type\nstring params_json\n---\nbool success\nstring task_id\nstring task_type\nstring result_json\nstring error_message\nfloat64 latency_ms\n"
+    },
+    {
+      "source": "action",
+      "path": "action/ExecuteBehavior.action",
+      "sha256": "269f18ea9cb42e2e2d162bb399579a30f75859207e4b8a28ba9732c7eac197d8",
+      "content": "# /execute_behavior — long-running behavior execution Action\n#\n# ═══════════════════════════════════════════════════════════════════════════\n# DEPRECATED — this definition has moved to marsdog_interfaces.\n#\n# This file is kept for backward compatibility during the transition\n# period.  It is NO LONGER the authoritative definition.\n#\n# The ros_node will try marsdog_interfaces.action.ExecuteBehavior first\n# and fall back to this local copy only if marsdog_interfaces is not\n# installed.  Once marsdog_interfaces is available in all workspaces\n# this file and the associated CMakeLists.txt action generation should\n# be removed.\n# ═══════════════════════════════════════════════════════════════════════════\n#\n# Client: /behavior_tree_node (marsdog_behavior)\n# Server: /action_executor_node (marsdog_action_executor)\n\n# ── Goal ──────────────────────────────────────────────────────────────\nstring  goal_id            # UUID from client\nstring  behavior_id        # Original signal ID\nstring  behavior_name      # Behavior to execute\nint32   priority_level     # 0-6\nstring  params_json        # JSON-encoded params (interactive, target_identity, ...)\nfloat64 timeout_sec        # Max execution time\n---\n# ── Result ────────────────────────────────────────────────────────────\nstring  goal_id\nstring  behavior_id\nstring  behavior_name\nstring  status             # SUCCESS / FAILURE / FAILED / CANCELED / TIMEOUT\nstring  result             # completed / canceled / timeout\nstring  reason\nfloat64 reward\nstring  emotion_delta_json\nstring  need_delta_json\nstring  metadata_json     # JSON-encoded dynamic metadata (e.g. {\"energyValue\":88})\n---\n# ── Feedback ──────────────────────────────────────────────────────────\nstring  goal_id\nstring  behavior_id\nstring  behavior_name\nstring  status             # RUNNING\nfloat64 progress           # 0.0 - 1.0\nbool    safe_to_interrupt\nstring  current_action     # Exact action ID from the current behavior-tree table\nstring  message            # Human-readable description\n"
+    },
+    {
+      "source": "robot",
+      "path": "go2_follow_ws/src/go2_uwb_behavior/action/FollowUwb.action",
+      "sha256": "b33fd479bd75affb515173b7d8a769f6528cd39dce12e56ec9c9b404a7dd34a6",
+      "content": "float64 timeout_sec\n---\nuint8 SUCCESS=0\nuint8 CANCELED=1\nuint8 PREEMPTED_BY_MODE=2\nuint8 NOT_READY=3\nuint8 TIMEOUT=4\nuint8 INPUT_TIMEOUT=5\nuint8 STOP_UNCONFIRMED=6\nuint8 code\nstring message\nfloat64 elapsed_sec\nfloat64 final_distance\n---\nuint8 STARTING=0\nuint8 FOLLOWING=1\nuint8 HOLDING=2\nuint8 INPUT_PAUSED=3\nuint8 STOPPING=4\nuint8 state\nfloat64 distance\nfloat64 heading\nfloat64 elapsed_sec\n"
+    },
+    {
+      "source": "robot",
+      "path": "go2_follow_ws/src/go2_uwb_behavior/action/OrbitUwbOnce.action",
+      "sha256": "e3d08f2d0915eb31039b09a3e9e7a780106f11cdcf3a265188d2a2e1fe14a5e9",
+      "content": "# 超时为 0 时使用服务端默认值；半径为 0 时使用配置的默认半径；方向 +1 逆时针、-1 顺时针、0 使用默认方向。\nfloat64 timeout_sec\nfloat64 orbit_radius\nint8 direction\n---\nuint8 SUCCESS=0\nuint8 CANCELED=1\nuint8 PREEMPTED_BY_MODE=2\nuint8 NOT_READY=3\nuint8 TIMEOUT=4\nuint8 INPUT_TIMEOUT=5\nuint8 BLOCKED=6\nuint8 STOP_UNCONFIRMED=7\nuint8 code\nstring message\nfloat64 elapsed_sec\nfloat64 final_distance\nfloat64 completed_angle\n---\nuint8 STARTING=0\nuint8 APPROACHING=1\nuint8 ORBITING=2\nuint8 INPUT_PAUSED=3\nuint8 STOPPING=4\nuint8 state\nfloat64 distance\nfloat64 orbit_angle\nfloat64 elapsed_sec\n"
+    },
+    {
+      "source": "robot",
+      "path": "go2_follow_ws/src/go2_uwb_behavior/action/RandomRoam.action",
+      "sha256": "5613f33fc99c81b9b767d1655230dbf0c11aaef5921eb360ba0d1bc6782502b2",
+      "content": "uint32 random_seed\nfloat64 timeout_sec\nfloat64 min_radius\nfloat64 max_radius\n---\nuint8 SUCCESS=0\nuint8 CANCELED=1\nuint8 PREEMPTED_BY_MODE=2\nuint8 NOT_READY=3\nuint8 NO_VALID_GOAL=4\nuint8 BLOCKED=5\nuint8 TIMEOUT=6\nuint8 INPUT_TIMEOUT=7\nuint8 GEOFENCE_STOP=8\nuint8 STOP_UNCONFIRMED=9\nuint8 code\nstring message\ngeometry_msgs/PoseStamped reached_pose\ngeometry_msgs/PoseStamped center_pose\ngeometry_msgs/PoseStamped target_pose\nfloat64 owner_distance\nfloat64 min_clearance\n---\nuint8 PREPARING=0\nuint8 SELECTING_GOAL=1\nuint8 NAVIGATING=2\nuint8 RETURNING=3\nuint8 STOPPING=4\nuint8 RETRYING=5\nuint8 state\ngeometry_msgs/PoseStamped target_pose\nfloat64 distance_remaining\nfloat64 owner_distance\nfloat64 elapsed_sec\n"
+    },
+    {
+      "source": "robot",
+      "path": "go2_follow_ws/src/go2_uwb_behavior/srv/SetBehavior.srv",
+      "sha256": "ea3d7b3f6101cf64ef9058e86d918fd290715c838d7c7f23508f152dc0252c42",
+      "content": "uint8 IDLE=0\nuint8 FOLLOW=1\nuint8 STOP=2\nuint8 ROAM=3\nuint8 mode\n---\nbool accepted\nuint8 current_mode\nstring message\n"
+    },
+    {
+      "source": "robot",
+      "path": "go2_follow_ws/src/uwb/msg/LibAoaRobotMsg.msg",
+      "sha256": "b5233b570d7e6965245ccf5f0a41e9e1f0cbed690041a95774272863ca372547",
+      "content": "std_msgs/Header header\nfloat64 r\nfloat64 a\nfloat64 x\nfloat64 y\nint8 state\nint8[6] rssi\nuint8 pos_confidence\nuint32 sync_cnt\nuint32 fob_id\nuint16 fob_type\nfloat64 raw_distance\nfloat64 raw_angle\nfloat64 raw_pitch\nint8 rx_power\nint8 rssi_fpp\nint8 rssi_np\nint8 rssi_ble\n"
+    },
+    {
+      "source": "robot",
+      "path": "slam_ws/src/person_3d_localization/srv/LocateFromBbox.srv",
+      "sha256": "2686bcd67ad1c53c9e4e06de6479b045424a6296eae77c344485273428f167aa",
+      "content": "# bbox 必须属于 image_header 指向的原始相机图像，并已还原 letterbox/缩放。\nstd_msgs/Header image_header\nsensor_msgs/RegionOfInterest bbox\n# 大于 0 时覆盖节点默认安全距离，单位为米。\nfloat32 stand_off_distance\n---\nuint8 STATUS_OK=0\nuint8 STATUS_NO_DEPTH=1\nuint8 STATUS_NO_CAMERA_INFO=2\nuint8 STATUS_INVALID_BBOX=3\nuint8 STATUS_INVALID_DEPTH=4\nuint8 STATUS_TF_UNAVAILABLE=5\nuint8 STATUS_INVALID_REQUEST=6\n\nbool success\nbool navigation_required\nuint8 status\nstring message\ngeometry_msgs/PointStamped person_point\ngeometry_msgs/PoseStamped navigation_goal\nfloat32 valid_depth_ratio\nfloat32 mean_depth\nfloat32 depth_stddev\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/CameraModel.msg",
+      "sha256": "0a55da4174557d327a8449ad281a3e68d8ccbe9707c3c56b9fa6ad37ed87c09e",
+      "content": "\nsensor_msgs/CameraInfo camera_info\ngeometry_msgs/Transform local_transform\n\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/CameraModels.msg",
+      "sha256": "915213bbec73973fa74d0e21d1693a5efb532dea6ecfcf2c22baf694e01c3cd3",
+      "content": "\nCameraModel[] models\n\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/EnvSensor.msg",
+      "sha256": "aa7f508176b5e87d335a343ec09082e5a00ef09cbb16e3f949428e9c5a120f81",
+      "content": "\nstd_msgs/Header header\n\n# Environmental sensor\n\n# built-in types\nint32 TYPE_UNDEFINED=0\nint32 TYPE_WIFI_SIGNAL_STRENGTH=1      # dBm\nint32 TYPE_AMBIENT_TEMPERATURE=2       # Celcius\nint32 TYPE_AMBIENT_AIR_PRESSURE=3      # hPa\nint32 TYPE_AMBIENT_LIGHT=4             # lx\nint32 TYPE_AMBIENT_RELATIVE_HUMIDITY=5 # %\n\n# user types\nint32 TYPE_CUSTOM1=100\nint32 TYPE_CUSTOM2=101\nint32 TYPE_CUSTOM3=102\nint32 TYPE_CUSTOM4=103\nint32 TYPE_CUSTOM5=104\nint32 TYPE_CUSTOM6=105\nint32 TYPE_CUSTOM7=106\nint32 TYPE_CUSTOM8=107\nint32 TYPE_CUSTOM9=108\n\nint32 type\n\nfloat64 value"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/GPS.msg",
+      "sha256": "d3c42e85d4ad70105e6c722c0e49bcee7a4735e20693458aba85c956594a09e9",
+      "content": "\nfloat64 stamp      # in seconds\nfloat64 longitude  # DD format\nfloat64 latitude   # DD format\nfloat64 altitude   # in meters\nfloat64 error      # in meters\nfloat64 bearing    # North 0->360 deg"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/GlobalDescriptor.msg",
+      "sha256": "729d0f03f615154592ea34d017554ff404de2f1b8d4be5eaacc4d331e30af4d0",
+      "content": "\nstd_msgs/Header header\n\n# compressed global descriptor\n# use rtabmap::util3d::uncompressData() from \"rtabmap/core/util3d.h\"\nint32 type\nuint8[] info\nuint8[] data"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/Goal.msg",
+      "sha256": "348bd3262d1e646a9ffec2fe120e229d263c801680b36703ad3db8b33b55c20b",
+      "content": "\nstd_msgs/Header header\n\n# Set either node_id or node_label\nint32 node_id\nstring node_label\n\n# optional: if not set, the base frame of the robot is used\nstring frame_id\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/Info.msg",
+      "sha256": "d1ee1cbcaba56dcee87797c08f4f75c80750efbcbc67e59b9ef23604baa5f2b6",
+      "content": "\n########################################\n# RTAB-Map info with statistics \n########################################\n\nstd_msgs/Header header\n\nint32 ref_id\nint32 loop_closure_id\nint32 proximity_detection_id\nint32 landmark_id\n\ngeometry_msgs/Transform loop_closure_transform\n\n####\n# For statistics...\n####\n# State (node IDs) of the current Working Memory (including STM)\nint32[] wm_state\n\n# std::map<int, float> posterior;\nint32[] posterior_keys\nfloat32[] posterior_values\n\n# std::map<int, float> likelihood;\nint32[] likelihood_keys\nfloat32[] likelihood_values\n\n# std::map<int, float> raw_likelihood;\nint32[] raw_likelihood_keys\nfloat32[] raw_likelihood_values\n\n# std::map<int, int> weights;\nint32[] weights_keys\nint32[] weights_values\n\n# std::map<int, std::string> labels;\nint32[] labels_keys\nstring[] labels_values\n\n# std::map<std::string, float> stats\nstring[] stats_keys\nfloat32[] stats_values\n\n# std::vector<int> local_path\nint32[] local_path\nint32 current_goal_id\n\n# std::vector<int> odomCache\nMapGraph odom_cache\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/KeyPoint.msg",
+      "sha256": "41e5afbdd020dd2ef04378d92549ec6d5d0d50dde758d15d906703b62b8bb632",
+      "content": "#class cv::KeyPoint\n#{\n#    Point2f pt;\n#    float size;\n#    float angle;\n#    float response;\n#    int octave;\n#    int class_id;\n#}\n\nPoint2f pt\nfloat32 size\nfloat32 angle\nfloat32 response\nint32 octave\nint32 class_id"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/LandmarkDetection.msg",
+      "sha256": "a990297896e4e3eeca1a9e2064d8dadade8acfc6bbdd492a340a56cdb8c74474",
+      "content": "\n# header.stamp: the timestamp of the detection (e.g. image timestamp)\n# header.frame_id: the base frame of pose (e.g., camera optical frame)\nstd_msgs/Header header\n\n# Landmark's frame id\nstring landmark_frame_id\n\n# Landmark's unique ID: should be >0\nint32 id\n\n# Size in meters of the landmark/tag (optional, set 0 to not use it).\nfloat32 size\n\n# Pose of the landmark in header.frame_id frame.\n# If covariance is unknown, keep it as null matrix.\n# rtabmap_slam/rtabmap's landmark_angular_variance and\n# landmark_linear_variance parameters can be used\n# for convenience if covariance is null.\ngeometry_msgs/PoseWithCovariance pose\n\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/LandmarkDetections.msg",
+      "sha256": "e4b9cd38316d287893c7b528cc08996f3b82b72e5c32704143b982fb25efe2c4",
+      "content": "\n# header.stamp: the timestamp of the detection (e.g. image timestamp)\n# header.frame_id: the base frame of pose (e.g., camera optical frame)\nstd_msgs/Header header\n\nLandmarkDetection[] landmarks\n\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/Link.msg",
+      "sha256": "39c63da19e45cd554442405affa628fa87596b3950c6768fb4cbad1fda4ff57a",
+      "content": "#class rtabmap::Link\n#{\n#   int from;\n#   int to;\n#   Type type;\n#   Transform transform;\n#   cv::Mat(6,6,CV_64FC1) information;\n#}\n\nint32 from_id\nint32 to_id\nint32 type\ngeometry_msgs/Transform transform\nfloat64[36] information\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/MapData.msg",
+      "sha256": "b925c0d96a7ed7ded12fa98aeb98d117a1fcce5f4c815e354958e6b82e9893f0",
+      "content": "\nstd_msgs/Header header\n\n##################\n# Optimized graph\n##################\nMapGraph graph\n\n##################\n# Graph data\n##################\nNode[] nodes\n\n\n\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/MapGraph.msg",
+      "sha256": "66bbfa413c83fe574aece166fe4ef826a36db3183278254a33cc75f551d39732",
+      "content": "\nstd_msgs/Header header\n\n##\n# /map to /odom transform\n# Always identity when the graph is optimized from the latest pose.\n##\ngeometry_msgs/Transform map_to_odom\n\n# The poses\nint32[] poses_id\ngeometry_msgs/Pose[] poses\n\n# The links\nLink[] links\n\n\n\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/Node.msg",
+      "sha256": "87e10d3b360b5fd6de23de0ed9a123422686b026af0d3076daf9c11759c3a548",
+      "content": "#class rtabmap::Signature\n\nint32 id\nint32 map_id\nint32 weight\nfloat64 stamp\nstring label\n\n# Pose from odometry not corrected\ngeometry_msgs/Pose pose\n\n# std::multimap<wordId, index>\n# std::vector<cv::Keypoint>\n# std::vector<cv::Point3f>\nint32[] word_id_keys\nint32[] word_id_values\nKeyPoint[] word_kpts\nPoint3f[] word_pts\n# compressed descriptors\n# use rtabmap::util3d::uncompressData() from \"rtabmap/core/util3d.h\"\nuint8[] word_descriptors\n\nSensorData data\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/OdomInfo.msg",
+      "sha256": "3dda2571b87e2993e9f96ead06342fdb95f397d15082089cdd1bad4b6be508e9",
+      "content": "\nstd_msgs/Header header\n\nbool lost\nint32 matches\nint32 inliers\nfloat32 icp_inliers_ratio\nfloat32 icp_rotation\nfloat32 icp_translation\nfloat32 icp_structural_complexity\nfloat32 icp_structural_distribution\nint32 icp_correspondences\nfloat64[36] covariance\nint32 features\nint32 local_map_size\nint32 local_scan_map_size\nint32 local_key_frames\nint32 local_bundle_outliers\nint32 local_bundle_constraints\nfloat32 local_bundle_time\nfloat32 local_bundle_avg_inlier_distance\nint32 local_bundle_max_key_frames_for_inlier\nbool key_frame_added\nfloat32 time_estimation\nfloat32 time_particle_filtering\nfloat32 stamp\nfloat32 interval\nfloat32 distance_travelled\nint32 memory_usage # MB\n\nfloat32 gravity_roll_error\nfloat32 gravity_pitch_error\n\n# Local bundle camera ids\nint32[] local_bundle_ids\n\n# Local bundle camera models\nCameraModels[] local_bundle_models\n\n# Local bundle camera poses\ngeometry_msgs/Pose[] local_bundle_poses\n\ngeometry_msgs/Transform transform\ngeometry_msgs/Transform transform_filtered\ngeometry_msgs/Transform transform_ground_truth\ngeometry_msgs/Transform guess\n\n# 0=F2M, 1=F2F\nint32 type\n\n# F2M odometry\n#   std::multimap<int, cv::KeyPoint> words;\n#   std::vector<int> wordMatches;\n#   std::vector<int> wordInliers;\nint32[] words_keys\nKeyPoint[] words_values\nint32[] word_matches\nint32[] word_inliers\nint32[] local_map_keys\nPoint3f[] local_map_values\n\n# local scan map data\nsensor_msgs/PointCloud2 local_scan_map\n\n# F2F odometry\n#   std::vector<cv::Point2f> ref_corners;\n#   std::vector<cv::Point2f> new_corners;\n#   std::vector<int> corner_inliers;\nPoint2f[] ref_corners\nPoint2f[] new_corners\nint32[] corner_inliers\n\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/Path.msg",
+      "sha256": "fa476bdbed24a31a038c062fc11e147d78670c7046ea8643f95bef01faa3df9a",
+      "content": "\nstd_msgs/Header header\n\nint32[] node_ids\ngeometry_msgs/Pose[] poses\n\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/Point2f.msg",
+      "sha256": "f2fb3f0ca66d529db4f7a4b0d105019f812e98ce883db651f87b9d11ff5e1174",
+      "content": "#class cv::Point2f\n#{\n#    float x;\n#    float y;\n#}\n\nfloat32 x\nfloat32 y"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/Point3f.msg",
+      "sha256": "234b84c886b46c7bd5eb7b3813a9ce4ce48b96d11b790a2793006b3062c3e8a0",
+      "content": "#class cv::Point3f\n#{\n#    float x;\n#    float y;\n#    float z;\n#}\n\nfloat32 x\nfloat32 y\nfloat32 z"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/RGBDImage.msg",
+      "sha256": "b6f577e282e192aaaf34994578780143998025c4a4253f09266a40f3e438f20d",
+      "content": "\nstd_msgs/Header header\n\n# For stereo, rgb corresponds to left camera, and depth the right camera.\n\n# camera info\nsensor_msgs/CameraInfo rgb_camera_info\nsensor_msgs/CameraInfo depth_camera_info\n\n# Raw\nsensor_msgs/Image rgb\nsensor_msgs/Image depth\n\n# Compressed\nsensor_msgs/CompressedImage rgb_compressed\nsensor_msgs/CompressedImage depth_compressed\n\n# Local features\nKeyPoint[] key_points\nPoint3f[] points\n# compressed descriptors\n# use rtabmap::util3d::uncompressData() from \"rtabmap/core/util3d.h\"\nuint8[] descriptors\n\nGlobalDescriptor global_descriptor\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/RGBDImages.msg",
+      "sha256": "cad1fc6c163cd53c6d6db9a2c7cd616f2ddcc4e0e15b960d91f03cc6c3bbb1d5",
+      "content": "\nstd_msgs/Header header\n\nRGBDImage[] rgbd_images\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/ScanDescriptor.msg",
+      "sha256": "505a4fd80a7c748ab390e4e10a28d43ceac5def4977befa564d604575378fca2",
+      "content": "\nstd_msgs/Header header\n\n# scan or scan_cloud is set\nsensor_msgs/LaserScan scan\nsensor_msgs/PointCloud2 scan_cloud\n\nGlobalDescriptor global_descriptor"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/SensorData.msg",
+      "sha256": "b81cb621f935c2eeee33620bb506717496a4d24253b6731c2cf3bd3a9c3decda",
+      "content": "#class rtabmap::SensorData\n\nstd_msgs/Header header\n\n# For RGB-D, left corresponds to rgb camera, and right corresponds to depth camera.\n\n# Raw images\nsensor_msgs/Image left\nsensor_msgs/Image right\n\n# Compressed images\n# use rtabmap::util3d::uncompressImage() from \"rtabmap/core/util3d.h\"\nuint8[] left_compressed\nuint8[] right_compressed\n\n# Camera info\nsensor_msgs/CameraInfo[] left_camera_info\nsensor_msgs/CameraInfo[] right_camera_info\n\n# Transform from base frame to camera frame\ngeometry_msgs/Transform[] local_transform\n\n# raw 2d or 3D laser scan\nsensor_msgs/PointCloud2 laser_scan\n# compressed 2D or 3D laser scan\n# use rtabmap::util3d::uncompressData() from \"rtabmap/core/util3d.h\"\nuint8[] laser_scan_compressed\nint32 laser_scan_max_pts\nfloat32 laser_scan_max_range\nint32 laser_scan_format\n# local transform (base frame -> laser frame)\ngeometry_msgs/Transform laser_scan_local_transform\n\n# compressed user data\n# use rtabmap::util3d::uncompressData() from \"rtabmap/core/util3d.h\"\nuint8[] user_data\n\n# compressed occupancy grid\n# use rtabmap::util3d::uncompressData() from \"rtabmap/core/util3d.h\"\nuint8[] grid_ground\nuint8[] grid_obstacles\nuint8[] grid_empty_cells\nfloat32 grid_cell_size\nPoint3f grid_view_point\n\n# Local features\nKeyPoint[] key_points\nPoint3f[] points\n# compressed descriptors\n# use rtabmap::util3d::uncompressData() from \"rtabmap/core/util3d.h\"\nuint8[] descriptors\n\nGlobalDescriptor[] global_descriptors\n\nEnvSensor[] env_sensors\n\nsensor_msgs/Imu imu\ngeometry_msgs/Transform imu_local_transform\n\nLandmarkDetection[] landmarks\n\n# Ground truth\ngeometry_msgs/Pose ground_truth_pose\n\n# GPS\nGPS gps\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/msg/UserData.msg",
+      "sha256": "1d3557f2b26443f3808ca73a8221ce65e0d0678f5409727e5ac8f7ce263dcf52",
+      "content": "\nstd_msgs/Header header\n\n# OpenCV matrix containing the user data. A matrix of type CV_8UC1 \n# with 1 row is considered to be compressed (with rtabmap::compressData() method).\n# If you have one dimension unsigned 8 bits uncompressed data, make sure to transpose it\n# (to have multiple rows instead of multiple columns) in order to be detected as\n# not compressed.\nuint32 rows\nuint32 cols\nuint32 type\nuint8[] data"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/AddLink.srv",
+      "sha256": "ac27096cce6699042cf2436e69205a398b5cbf9000ba5e0ef1546e9bc2a6074e",
+      "content": "#request\nLink link\n---\n#response"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/CleanupLocalGrids.srv",
+      "sha256": "0c242f390b62640eaf9f41f09ac87e6555f2660e5c2cd6c878fc743ed4e39572",
+      "content": "#  Cleanup local grids service\n# \n#     Clear empty space from local occupancy grids \n#     (and laser scans) based on the current optimized global 2d grid map.\n#     If the map needs to be regenerated in the future (e.g., when\n#     we re-use the map in SLAM mode), removed obstacles won't reappear.\n#     Use this with care and only when you know that the map doesn't have errors, \n#     otherwise some real obstacles/walls may be cleared if there is too much \n#     drift in the map.\n#\n\n# Radius in cells around empty cell without obstacles to clear underlying obstacles, default 1 cell if not set.\nint32 radius\n\n# Filter also the scans, default false if not set.\n# The filtered laser scans will be used for localization,\n# so if dynamic obstacles have been removed, localization won't try to\n# match them anymore. Filtering the laser scans cannot be reverted, \n# but grids can (see DatabaseViewer->Edit menu).\nbool filter_scans\n\n---\n# return the number of grids or scans modified, -1 if there is an error\nint32 modified\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/DetectMoreLoopClosures.srv",
+      "sha256": "6da248c23debbbf1bf475dd04771bd41d9e0924803ad973f009e363ed5c8ac05",
+      "content": "# Detect more loop closures service\n#\n#     Based on the current optimized graph, \n#     this process will try to find more nodes corresponding with each \n#     other, and thus finding more loop closures to add to graph.\n# \n\n# Cluster radius (m),     default 1 m if not set\nfloat32 cluster_radius_max\n\n# Cluster radius min (m), default 0 m if not set\nfloat32 cluster_radius_min\n\n# Cluster angle (deg),    default 0 deg if not set\nfloat32 cluster_angle\n\n# Iterations,             default 1 if not set\nint32 iterations\n\n# Add only intra session loop closures\nbool intra_only\n\n# Add only inter session loop closures\nbool inter_only\n---\n# return the number of loop closures detected, or -1 if it failed.\nint32 detected\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/GetMap.srv",
+      "sha256": "1752bab65fce1f316e639877c80fb877232cb0ad2f9343c9b5e2a43c0506e34f",
+      "content": "#request\nbool global_map\nbool optimized\nbool graph_only\n---\n#response\nMapData data\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/GetMap2.srv",
+      "sha256": "67b272fc2670040f48261130e04cc6998bd2964c8deda68cc8b682e9821e657e",
+      "content": "#request\nbool global_map\nbool optimized\nbool with_images\nbool with_scans\nbool with_user_data\nbool with_grids\nbool with_words\nbool with_global_descriptors\n---\n#response\nMapData data\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/GetNodeData.srv",
+      "sha256": "1bedf1a0c31641f74f5eb8150f510e15263358856df436d7d6ff4dca22c4df75",
+      "content": "#request\nint32[] ids\nbool images\nbool scan\nbool grid\nbool user_data\n---\n#response\nNode[] data\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/GetNodesInRadius.srv",
+      "sha256": "044b598a1c0ede8894766bafaea9e6049bf3279cd46b7414ed3dfa41393f99f9",
+      "content": "#request\n\n# In mapping mode (Mem/IncrementalMemory=true), if target pose \n#   and node_id are all zeros, poses around the latest node \n#   in the graph are returned.\n# In localization mode (Mem/IncrementalMemory=false), if target pose \n#   and node_id are all zeros, poses around the latest localization \n#   pose are returned.\n# If node_id is not zero, target pose is ignored.\n\n# Node id\nint32 node_id\n\n# Target pose:\nfloat32 x\nfloat32 y\nfloat32 z\n\n# Radius, <=0 means that RGBD/LocalRadius will be used \n# if k is also 0. If k>0 and a radius of 0 means all nearest \n# poses up to k.\nfloat32 radius\n\n# Maximum number of nearest poses\nint32 k\n\n---\n#response\nint32[] ids\ngeometry_msgs/Pose[] poses\nfloat32[] dists_sqr"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/GetPlan.srv",
+      "sha256": "98a86e1798eaa966742333168ff75b312f60de7eb946578b6c98ddbdc9e35a8c",
+      "content": "# Get a plan from the current position to the goal node or pose \n\n# The final node of the goal (set 0 to use pose instead)\nint32 goal_node\n# The final pose of the goal position (used only if goalNodeId=0)\ngeometry_msgs/PoseStamped goal\n\n# How many meters from the map's graph we can plan (0=infinite)\nfloat32 tolerance\n---\nPath plan"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/GlobalBundleAdjustment.srv",
+      "sha256": "4c855f527ebfae354ef8cfdcc09a04264c8bfd2222974a0a036383f242caf66f",
+      "content": "# Global Bundle Adjustment service\n#\n#       Perform global bundle adjustment. Note that as soon as the map \n#       is modified again, the graph is re-optimized the standard way (without SBA).\n#       It then makes only sense to use this after a mapping run (and after a call \n#       to /rtabmap/pause) when you know that the robot will restart in localization \n#       mode the next time, or at the beginning of the localization session.\n#\n\n# Optimizer type (0=g2o, 1=CVSBA), default 0\nint32 type\n\n# Iterations,        default 0 (use Optimizer/Iterations already loaded in the node)\nint32 iterations\n\n# Pixel variance,    default 0 (use g2o/PixelVariance already loaded in the node)\nfloat32 pixel_variance\n\n# Use vocabulary matches, default false (rematch all features between frames)\nbool voc_matches\n---\n# return false if failure\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/ListLabels.srv",
+      "sha256": "26b5e5b1695a6d478ace656175d29f6a2bb3904c03d50e02049209bc35d5cf02",
+      "content": "#request\n---\n#response \nint32[] ids\nstring[] labels"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/LoadDatabase.srv",
+      "sha256": "5b1b4b6f38788a0105ded4b948f2a674a9638d6af692c36d3e649f96b32db099",
+      "content": "#request\n\n# Local database path on which rtabmap is running.\n# If the path doesn't exist, a new database will be created.\nstring database_path\n\n# If the database already exists, data will be cleared if true.\nbool clear\n\n---\n#response, return false on rtabmap initialization failure."
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/PublishMap.srv",
+      "sha256": "332598a50b48525d3d0d9a6cdd1a108bd96868802c681aeca860b5e07f6e0b22",
+      "content": "#request\nbool global_map\nbool optimized\nbool graph_only\n---\n#response\n"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/RemoveLabel.srv",
+      "sha256": "f55ccf0019de7e9c81dcf7ad152e785f59054ba80a9dc8b0768e011d5dba0db4",
+      "content": "#request\nstring label\n---\n#response "
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/ResetPose.srv",
+      "sha256": "484830ab8928be6cfc5893f1e5d504f467ad9b18abd9b65ff3e4f89f9ce08f95",
+      "content": "#request\nfloat32 x\nfloat32 y\nfloat32 z\nfloat32 roll\nfloat32 pitch\nfloat32 yaw\n---\n#response"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/SetGoal.srv",
+      "sha256": "c1c37b7a7a58ce9f0a9af40f5c4bec522e8772cd864c07db107a45a741851a47",
+      "content": "#request\n\n# Set either node_id or node_label\nint32 node_id\nstring node_label\n\n# optional: if not set, the base frame of the robot is used\nstring frame_id\n\n---\n\n#response \nint32[] path_ids\ngeometry_msgs/Pose[] path_poses\nfloat32 planning_time"
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/srv/SetLabel.srv",
+      "sha256": "f36fba8ba4a7848b014f4e83680214320531d31e955ffb838f7e0117e241f642",
+      "content": "#request\n# Set node_id = 0 to set label to last node\nint32 node_id\nstring node_label\n---\n#response "
+    }
+  ],
+  "packages": [
+    {
+      "source": "vision",
+      "path": "package.xml",
+      "name": "marsdog_vision_interaction",
+      "version": "0.1.1",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake_python",
+          "condition": null
+        },
+        {
+          "kind": "buildtool_depend",
+          "name": "rosidl_default_generators",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclpy",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rosidl_default_runtime",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch_ros",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "voice",
+      "path": "package.xml",
+      "name": "marsdog_voice_interaction",
+      "version": "0.1.0",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake_python",
+          "condition": null
+        },
+        {
+          "kind": "buildtool_depend",
+          "name": "rosidl_default_generators",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclpy",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rosidl_default_runtime",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch_ros",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "emotion",
+      "path": "package.xml",
+      "name": "marsdog_need_emotion",
+      "version": "0.1.0",
+      "build_types": [
+        {
+          "name": "ament_python",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_python",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "ament_index_python",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch_ros",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "python3",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rcl_interfaces",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rclpy",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "python3-pytest",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "behavior",
+      "path": "package.xml",
+      "name": "marsdog_behavior",
+      "version": "0.2.0",
+      "build_types": [
+        {
+          "name": "ament_python",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "depend",
+          "name": "rclpy",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "builtin_interfaces",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "marsdog_interfaces",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "marsdog_vision_interaction",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "marsdog_voice_interaction",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "python3-pyyaml",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "python3-pytest",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "action",
+      "path": "package.xml",
+      "name": "marsdog_action_executor",
+      "version": "0.1.0",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake_python",
+          "condition": null
+        },
+        {
+          "kind": "buildtool_depend",
+          "name": "rosidl_default_generators",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclpy",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "action_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav2_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "marsdog_voice_interaction",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "marsdog_vision_interaction",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "unitree_api",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "unitree_go",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "transfer_interfaces",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "VINS-Fusion-ROS2-humble-arm/camera_models/package.xml",
+      "name": "camera_models",
+      "version": "0.0.0",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_auto",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_common",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "VINS-Fusion-ROS2-humble-arm/global_fusion/package.xml",
+      "name": "global_fusion",
+      "version": "0.0.0",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclpy",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "visualization_msgs",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_auto",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_common",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "VINS-Fusion-ROS2-humble-arm/loop_fusion/package.xml",
+      "name": "loop_fusion",
+      "version": "0.0.0",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "ament_index_cpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "visualization_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "camera_models",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_auto",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_common",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "VINS-Fusion-ROS2-humble-arm/vins/package.xml",
+      "name": "vins",
+      "version": "0.0.0",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rcpputils",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "visualization_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_ros",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "camera_models",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "image_transport",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_auto",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_common",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "go2_follow_ws/src/go2_uwb_behavior/package.xml",
+      "name": "go2_uwb_behavior",
+      "version": "0.1.0",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "buildtool_depend",
+          "name": "rosidl_default_generators",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "action_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "builtin_interfaces",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "diagnostic_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "go2_uwb_local_follow",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp_action",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_ros",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "ament_index_python",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch_ros",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rosidl_default_runtime",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "stereo_image_proc",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_cmake_gtest",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_auto",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_common",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "launch_testing_ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "rclpy",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "go2_follow_ws/src/go2_uwb_local_follow/package.xml",
+      "name": "go2_uwb_local_follow",
+      "version": "1.0.0",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "diagnostic_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "stereo_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_ros",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "uwb_aoa_pkg",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "stereo_image_proc",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "ament_index_python",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch_ros",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_cmake_gtest",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "launch_testing_ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "rclpy",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_auto",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_common",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "go2_follow_ws/src/uwb/package.xml",
+      "name": "uwb_aoa_pkg",
+      "version": "1.0.0",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "buildtool_depend",
+          "name": "rosidl_default_generators",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rosidl_default_runtime",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "rclpy",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_cmake_gtest",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_auto",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_common",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "openvins_ws/src/open_vins/ov_core/package.xml",
+      "name": "ov_core",
+      "version": "2.7.0",
+      "build_types": [
+        {
+          "name": "catkin",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "name": "ament_cmake",
+          "condition": "$ROS_VERSION == 2"
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "catkin",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "cmake_modules",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "roscpp",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "rosbag",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "eigen",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "libopencv-dev",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "libopencv-contrib-dev",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "boost",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "openvins_ws/src/open_vins/ov_eval/package.xml",
+      "name": "ov_eval",
+      "version": "2.7.0",
+      "build_types": [
+        {
+          "name": "catkin",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "name": "ament_cmake",
+          "condition": "$ROS_VERSION == 2"
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "catkin",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "cmake_modules",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "roscpp",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "rospy",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "nav_msgs",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "ov_core",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "ov_core",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "eigen",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "boost",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "openvins_ws/src/open_vins/ov_init/package.xml",
+      "name": "ov_init",
+      "version": "2.7.0",
+      "build_types": [
+        {
+          "name": "catkin",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "name": "ament_cmake",
+          "condition": "$ROS_VERSION == 2"
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "catkin",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "cmake_modules",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "roscpp",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "ov_core",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "ov_core",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "eigen",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "libopencv-dev",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "libopencv-contrib-dev",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "boost",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "libceres-dev",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "openvins_ws/src/open_vins/ov_msckf/package.xml",
+      "name": "ov_msckf",
+      "version": "2.7.0",
+      "build_types": [
+        {
+          "name": "catkin",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "name": "ament_cmake",
+          "condition": "$ROS_VERSION == 2"
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "catkin",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "cmake_modules",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "roscpp",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "rosbag",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "tf",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "nav_msgs",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "visualization_msgs",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "image_transport",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "ov_core",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "depend",
+          "name": "ov_init",
+          "condition": "$ROS_VERSION == 1"
+        },
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_ros",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_geometry_msgs",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "nav_msgs",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "image_transport",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "ov_core",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "ov_init",
+          "condition": "$ROS_VERSION == 2"
+        },
+        {
+          "kind": "depend",
+          "name": "eigen",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "libopencv-dev",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "libopencv-contrib-dev",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "boost",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "libceres-dev",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "sensor_ws/src/stereo_v4l2_camera/package.xml",
+      "name": "stereo_v4l2_camera",
+      "version": "0.1.0",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "libopencv-dev",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "yaml-cpp",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch_ros",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_auto",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_common",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "sensor_ws/src/wit_imu/package.xml",
+      "name": "wit_imu",
+      "version": "0.0.1",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rclpy",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "python3-serial",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "slam_ws/src/behavior_ext_plugins/package.xml",
+      "name": "behavior_ext_plugins",
+      "version": "1.1.12",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "ament_index_cpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "behaviortree_cpp_v3",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp_action",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp_lifecycle",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "visualization_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav2_util",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav2_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_ros",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav2_costmap_2d",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav2_core",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav2_behaviors",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav2_behavior_tree",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "pluginlib",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_common",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_auto",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_cmake_gtest",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "slam_ws/src/person_3d_localization/package.xml",
+      "name": "person_3d_localization",
+      "version": "0.1.0",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "buildtool_depend",
+          "name": "rosidl_default_generators",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "image_geometry",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_ros",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch_ros",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rosidl_default_runtime",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_cmake_gtest",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_auto",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_lint_common",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "slam_ws/src/robot_slam_bringup/package.xml",
+      "name": "robot_slam_bringup",
+      "version": "0.1.0",
+      "build_types": [
+        {
+          "name": "ament_python",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "depend",
+          "name": "ament_index_python",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclpy",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_ros",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "behavior_ext_plugins",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "go2_description",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch_ros",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "nav2_bringup",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "nav2_common",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "nav2_lifecycle_manager",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "nav2_map_server",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "realsense2_camera",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rclcpp_components",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "robot_state_publisher",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_odom",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_slam",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_viz",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "spatio_temporal_voxel_layer",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "vins",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "wit_imu",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_copyright",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_flake8",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_pep257",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "python3-pytest",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "robot",
+      "path": "slam_ws/src/stereo_slam_legacy_bringup/package.xml",
+      "name": "stereo_slam_legacy_bringup",
+      "version": "0.1.0",
+      "build_types": [
+        {
+          "name": "ament_python",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "depend",
+          "name": "ament_index_python",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclpy",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "image_proc",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "launch_ros",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "robot_localization",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_odom",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_slam",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_viz",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "tf2_ros",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap/package.xml",
+      "name": "rtabmap",
+      "version": "0.23.8",
+      "build_types": [
+        {
+          "name": "cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "cmake",
+          "condition": null
+        },
+        {
+          "kind": "build_depend",
+          "name": "proj",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "libg2o",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "gtsam",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "libpcl-all-dev",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "libpointmatcher",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "libsqlite3-dev",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "liboctomap-dev",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "qt_gui_cpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "zlib",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_conversions/package.xml",
+      "name": "rtabmap_conversions",
+      "version": "0.23.7",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "build_depend",
+          "name": "ros_environment",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "image_geometry",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "laser_geometry",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "pcl_conversions",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp_components",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_eigen",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_ros",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_costmap_plugins/package.xml",
+      "name": "rtabmap_costmap_plugins",
+      "version": "0.23.7",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake_ros",
+          "condition": null
+        },
+        {
+          "kind": "build_depend",
+          "name": "ros_environment",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "pluginlib",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav2_costmap_2d",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "visualization_msgs",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_demos/package.xml",
+      "name": "rtabmap_demos",
+      "version": "0.23.7",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_odom",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_slam",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_util",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_rviz_plugins",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_viz",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "nav2_bringup",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_examples/package.xml",
+      "name": "rtabmap_examples",
+      "version": "0.23.7",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_odom",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_slam",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_util",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_rviz_plugins",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_slam",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_util",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_viz",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "imu_filter_madgwick",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "tf2_ros",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "realsense2_camera",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "velodyne",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_launch/package.xml",
+      "name": "rtabmap_launch",
+      "version": "0.23.7",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_odom",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_slam",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_msgs",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_util",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_rviz_plugins",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_slam",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_util",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_viz",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_msgs/package.xml",
+      "name": "rtabmap_msgs",
+      "version": "0.23.7",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "buildtool_depend",
+          "name": "rosidl_default_generators",
+          "condition": null
+        },
+        {
+          "kind": "build_depend",
+          "name": "ros_environment",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "builtin_interfaces",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_srvs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rosidl_default_runtime",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_odom/package.xml",
+      "name": "rtabmap_odom",
+      "version": "0.23.7",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake_ros",
+          "condition": null
+        },
+        {
+          "kind": "build_depend",
+          "name": "ros_environment",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "image_geometry",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "laser_geometry",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "message_filters",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "pcl_conversions",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "pcl_ros",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "pluginlib",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp_components",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_conversions",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_util",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_sync",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_openvins_mono/package.xml",
+      "name": "rtabmap_openvins_mono",
+      "version": "0.1.0",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_ros",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "message_filters",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_python/package.xml",
+      "name": "rtabmap_python",
+      "version": "0.23.7",
+      "build_types": [
+        {
+          "name": "ament_python",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "test_depend",
+          "name": "ament_copyright",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_flake8",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "ament_pep257",
+          "condition": null
+        },
+        {
+          "kind": "test_depend",
+          "name": "python3-pytest",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_ros/package.xml",
+      "name": "rtabmap_ros",
+      "version": "0.23.7",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_conversions",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_demos",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_examples",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_launch",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_msgs",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_odom",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_python",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_rviz_plugins",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_slam",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_sync",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_util",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_viz",
+          "condition": null
+        },
+        {
+          "kind": "exec_depend",
+          "name": "rtabmap_costmap_plugins",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_rviz_plugins/package.xml",
+      "name": "rtabmap_rviz_plugins",
+      "version": "0.23.7",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake_ros",
+          "condition": null
+        },
+        {
+          "kind": "build_depend",
+          "name": "ros_environment",
+          "condition": null
+        },
+        {
+          "kind": "build_depend",
+          "name": "qtbase5-private-dev",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "pcl_conversions",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "pluginlib",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rviz_common",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rviz_rendering",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rviz_default_plugins",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_conversions",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_msgs",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_slam/package.xml",
+      "name": "rtabmap_slam",
+      "version": "0.23.7",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake_ros",
+          "condition": null
+        },
+        {
+          "kind": "build_depend",
+          "name": "ros_environment",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav2_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp_components",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_srvs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_ros",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "visualization_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "apriltag_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "aruco_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "aruco_opencv_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_util",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_sync",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_sync/package.xml",
+      "name": "rtabmap_sync",
+      "version": "0.23.7",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake_ros",
+          "condition": null
+        },
+        {
+          "kind": "build_depend",
+          "name": "ros_environment",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "image_transport",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "message_filters",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp_components",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_conversions",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "diagnostic_updater",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_util/package.xml",
+      "name": "rtabmap_util",
+      "version": "0.23.7",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake",
+          "condition": null
+        },
+        {
+          "kind": "build_depend",
+          "name": "ros_environment",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "image_transport",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp_components",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "octomap_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "sensor_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "stereo_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2_ros",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "laser_geometry",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "image_geometry",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "pcl_conversions",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "pcl_ros",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "message_filters",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_conversions",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_sync",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "grid_map_ros",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "source": "rtabmap",
+      "path": "src/rtabmap_ros/rtabmap_viz/package.xml",
+      "name": "rtabmap_viz",
+      "version": "0.23.7",
+      "build_types": [
+        {
+          "name": "ament_cmake",
+          "condition": null
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "buildtool_depend",
+          "name": "ament_cmake_ros",
+          "condition": null
+        },
+        {
+          "kind": "build_depend",
+          "name": "ros_environment",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "cv_bridge",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "geometry_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rclcpp",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "std_srvs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "nav_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_msgs",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "rtabmap_sync",
+          "condition": null
+        },
+        {
+          "kind": "depend",
+          "name": "tf2",
+          "condition": null
+        }
+      ]
+    }
+  ]
+}

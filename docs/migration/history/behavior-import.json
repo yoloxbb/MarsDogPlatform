@@ -1,0 +1,25 @@
+{
+  "source_id": "behavior",
+  "source_path": "/home/elephant/MarsDog/20260702_MarsDogTree",
+  "original_head": "9f2eb0dee84f84bb84a4e497aba4e3effe4d10da",
+  "original_refs": [
+    "refs/heads/master 9f2eb0dee84f84bb84a4e497aba4e3effe4d10da",
+    "refs/remotes/origin/HEAD 9f2eb0dee84f84bb84a4e497aba4e3effe4d10da",
+    "refs/remotes/origin/master 9f2eb0dee84f84bb84a4e497aba4e3effe4d10da"
+  ],
+  "original_commit_count": 7,
+  "target_before": "0cd4ea7f35e7207f45f20dc3c2833d7c0f68a737",
+  "imported_head": "0da13a7a623512d748ace5751937475e599e919c",
+  "merge_commit": "eb783817f19a66d879dfc3c3ee8c2f000a6615e2",
+  "archive": "/home/elephant/MarsDog/migration/archives/behavior-9f2eb0d-all-refs.bundle",
+  "archive_sha256": "0d72c9bd3f76cd57b0048e5878b904772d2d07b9dae8cbf9a60eea3bda9339fb",
+  "restore_fsck": "PASS",
+  "restored_refs_equal": true,
+  "tracked_file_content_and_modes_equal": true,
+  "tracked_files": 90,
+  "transform": "git-filter-repo 2.47.0 --to-subdirectory-filter modules/behavior (copy only)",
+  "original_sources": {
+    "status": "PASS",
+    "failures": []
+  }
+}

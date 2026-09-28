@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools==79.0.1", "wheel==0.48.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -25,6 +25,7 @@ dev = [
 [project.scripts]
 behavior-tree-demo = "bionic_dog_bt.demo:main"
 marsdog-standalone = "marsdog_behavior.standalone_demo:main"
+behavior_tree_node = "marsdog_behavior.ros_node:main"
 
 [project.urls]
 Repository = "https://github.com/yoloxbb/20260702_MarsDogTree"

@@ -1,0 +1,9 @@
+.tools/
+.venvs/
+.cache/
+work/
+.venv/
+__pycache__/
+.pytest_cache/
+*.egg-info/
+archives/

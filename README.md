@@ -1,7 +1,7 @@
 # MarsDog Platform
 
-Incremental migration in progress. Only Emotion/Needs has been imported here.
-Vision, Voice, BehaviorTree, Action and Robotics remain in their original repositories.
+Incremental migration in progress. Emotion/Needs and BehaviorTree have been imported here.
+Vision, Voice, Action and Robotics remain in their original repositories.
 This repository is not yet a complete robot release.
 
 ## Current module
@@ -9,10 +9,13 @@ This repository is not yet a complete robot release.
 - modules/emotion: existing marsdog_core, marsdog_ros2, and ROS package
   marsdog_need_emotion. Algorithms, ROS interfaces and default behavior are preserved.
 - docs/migration/history: original commit/ref provenance and old-to-new commit map.
+- modules/behavior: existing marsdog_behavior and bionic_dog_bt, including the
+  marsdog_behavior ROS package. Decision and cancellation semantics are preserved.
 
 The first import preserved 19 reachable commits through a prefix-only transformation
 of a disposable clone. The original repository and a verified all-ref bundle remain
 untouched. Imported SHAs differ; see the commit map.
+The BehaviorTree import additionally preserved 7 commits and verified all 90 files.
 
 ## Local Python verification
 
@@ -43,3 +46,26 @@ The Emotion GitHub workflow runs the pure regressions and clean-wheel probe. It 
 committed for a future remote; no hosted CI run has happened yet. ROS and hardware
 acceptance are separate from that job. The checkout action is pinned to the verified
 [official v4.4.0 release](https://github.com/actions/checkout/releases/tag/v4.4.0).
+
+## BehaviorTree verification
+
+~~~bash
+uv sync --project modules/behavior --locked --python /usr/bin/python3.10
+(cd modules/behavior && uv run --locked python -B -m pytest tests marsdog_behavior/tests -q -p no:cacheprovider)
+python3 -B tools/check_behavior_install.py --uv uv
+~~~
+
+See docs/migration/P3_BEHAVIOR.md for the old/new installed ROS adapter comparison.
+That test uses real DDS and historical generated IDL with a fake Action server;
+it does not prove hardware execution or navigation availability.
+
+## Migration tooling and retained evidence
+
+integration/migration contains the versioned baseline, tools and compatibility
+fixtures. Historical sources, raw logs, bundles and large build trees remain in the
+original aggregate workspace. Set MARSDOG_MIGRATION_WORKSPACE to its migration
+directory to rerun versioned tools using those artifacts; set MARSDOG_LEGACY_ROOT
+if the original repositories move to a different aggregate directory.
+
+No root Python workspace combines module environments. No production launch has
+been switched. This repository currently has no remote and no hosted CI history.

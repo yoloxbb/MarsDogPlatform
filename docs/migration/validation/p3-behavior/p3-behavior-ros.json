@@ -1,0 +1,92 @@
+{
+  "build": {
+    "status": "PASS",
+    "exit_code": 0,
+    "duration_sec": 2.28,
+    "command": [
+      "/home/elephant/MarsDog/migration/ros-tools/.venv/bin/colcon",
+      "--log-base",
+      "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-behavior/log",
+      "build",
+      "--base-paths",
+      "/home/elephant/MarsDog/marsdog-platform/modules/behavior",
+      "--build-base",
+      "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-behavior/build",
+      "--install-base",
+      "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-behavior/install",
+      "--executor",
+      "sequential",
+      "--event-handlers",
+      "console_direct+",
+      "--cmake-args",
+      "-DBUILD_TESTING=OFF",
+      "-DPython3_EXECUTABLE=/home/elephant/MarsDog/migration/ros-tools/.venv/bin/python",
+      "-DPYTHON_EXECUTABLE=/home/elephant/MarsDog/migration/ros-tools/.venv/bin/python"
+    ],
+    "log": "/home/elephant/MarsDog/migration/reports/p1-20260928/ros-p3-behavior-build.log",
+    "install": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-behavior/install"
+  },
+  "probes": {
+    "baseline": {
+      "status": "PASS",
+      "command": [
+        "/home/elephant/MarsDog/migration/ros-tools/.venv/bin/python",
+        "-B",
+        "/home/elephant/MarsDog/migration/tools/ros_behavior_probe.py",
+        "--install",
+        "/home/elephant/MarsDog/migration/work/p1-20260928/ros-behavior-humble59/install",
+        "--endpoint",
+        "/migration_behavior_15926132eee94d219be9a5b1c6ab1b37/execute_behavior",
+        "--output",
+        "/home/elephant/MarsDog/migration/reports/p1-20260928/p3-behavior-baseline-ros-probe.json"
+      ],
+      "domain": "182",
+      "localhost_only": true,
+      "result": {
+        "status": "PASS",
+        "module_file": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-behavior-humble59/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/action_client_adapter.py",
+        "config_dir": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-behavior-humble59/install/marsdog_behavior/share/marsdog_behavior/config",
+        "type": "marsdog_action_executor/action/ExecuteBehavior",
+        "scope": "Real installed BT adapter and generated original IDL; fake Action server; no hardware",
+        "success_metadata": {
+          "energyValue": 88
+        },
+        "terminal_delay_after_cancel_ack_sec": 0.361,
+        "ownership_retained_until_terminal": true
+      }
+    },
+    "migrated": {
+      "status": "PASS",
+      "command": [
+        "/home/elephant/MarsDog/migration/ros-tools/.venv/bin/python",
+        "-B",
+        "/home/elephant/MarsDog/migration/tools/ros_behavior_probe.py",
+        "--install",
+        "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-behavior/install",
+        "--endpoint",
+        "/migration_behavior_fa78eb286d804dcaa42f580d39accdfa/execute_behavior",
+        "--output",
+        "/home/elephant/MarsDog/migration/reports/p1-20260928/p3-behavior-migrated-ros-probe.json"
+      ],
+      "domain": "188",
+      "localhost_only": true,
+      "result": {
+        "status": "PASS",
+        "module_file": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-behavior/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/action_client_adapter.py",
+        "config_dir": "/home/elephant/MarsDog/migration/work/p1-20260928/ros-p3-behavior/install/marsdog_behavior/share/marsdog_behavior/config",
+        "type": "marsdog_action_executor/action/ExecuteBehavior",
+        "scope": "Real installed BT adapter and generated original IDL; fake Action server; no hardware",
+        "success_metadata": {
+          "energyValue": 88
+        },
+        "terminal_delay_after_cancel_ack_sec": 0.36,
+        "ownership_retained_until_terminal": true
+      }
+    }
+  },
+  "original_sources": {
+    "status": "PASS",
+    "failures": []
+  },
+  "status": "PASS"
+}

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 
@@ -14,6 +15,7 @@ def get_config_dir(explicit: str | None = None) -> Path:
     2. ``MARSDOG_BEHAVIOR_CONFIG_DIR`` override.
     3. Repository/source layout.
     4. ROS2 package share directory.
+    5. Ordinary Python installation prefix share directory.
     """
     if explicit:
         return Path(explicit).expanduser().resolve()
@@ -34,6 +36,10 @@ def get_config_dir(explicit: str | None = None) -> Path:
             return share_dir
     except (ImportError, LookupError):
         pass
+
+    installed_dir = Path(sys.prefix) / "share" / "marsdog_behavior" / "config"
+    if installed_dir.is_dir():
+        return installed_dir
 
     raise FileNotFoundError(
         "marsdog_behavior config directory not found; set "
