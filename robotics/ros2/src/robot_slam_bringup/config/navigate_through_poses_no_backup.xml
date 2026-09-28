@@ -1,0 +1,85 @@
+<!--
+  本行为树不做周期重规划。全局路径只在两种时机重新计算：
+    1) 目标变更 —— GlobalUpdatedGoal 检测黑板 {goal}/{goals} 变化；该条件首次 tick
+       必返回 SUCCESS（globally_updated_goal_condition.cpp 的 first_time 分支），
+       因此首次规划也由它保证；
+    2) 恢复行为执行完毕 —— 恢复分支末尾显式调用一次 ComputePathThroughPoses。
+  其余时间机器人始终跟随同一条路径，动态避障完全由 MPPI 局部控制器承担。
+  例外见下方 RemovePassedGoals 的注释：每经过一个航点会额外重规划一次。
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+      <PipelineSequence name="NavigateWithoutPeriodicReplanning">
+        <Sequence name="UpdateGoalsThenMaybeReplan">
+          <!-- 必须每个 tick 执行，不能挪进规划分支：RemovePassedGoals 只连续移除当前距
+               机器人 transform_tolerance + radius 以内的队首航点，一旦驶离该航点就再也
+               移不掉（remove_passed_goals_action.cpp 的 while 循环遇到超距即 break）。
+               若只在恢复时才 tick 它，已走过的航点仍留在 {goals} 里，恢复后的重规划会
+               规划出一条先回头去旧航点的路径。
+               代价是：它改写 {goals} 会被 GlobalUpdatedGoal 判为目标变更，所以本树存在
+               一个无法回避的例外 —— 每经过一个航点触发一次重规划。这属于目标集合真的
+               变了，不是周期规划。 -->
+          <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.8"/>
+          <!-- 原为 <RateController hz="0.5">，每 2 s 无条件重规划一次。
+               改为条件短路：目标未变时 GlobalUpdatedGoal 返回 FAILURE，经 Inverter 变
+               SUCCESS，Fallback 立即成功而不进入规划分支。 -->
+          <Fallback name="ReplanOnlyOnGoalChange">
+            <Inverter>
+              <GlobalUpdatedGoal/>
+            </Inverter>
+            <Sequence name="ComputeAndSmoothPath">
+              <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
+              <!-- 约束平滑器读全局代价地图，把路径推离膨胀带以求居中；
+                   Ceres 无解或平滑后碰撞时失败，此时 {path} 保持规划器原值，
+                   由 AlwaysSuccess 吞掉失败，避免误触发外层恢复流程。
+                   原先此处需要避开 ReactiveSequence 反复重发规划请求的问题；现已改为
+                   普通 Sequence，规划与平滑各自只跑一次。 -->
+              <Fallback name="SmoothPathOrKeepOriginal">
+                <SmoothPath unsmoothed_path="{path}" smoothed_path="{path}" smoother_id="constrained_smoother" max_smoothing_duration="0.6" check_for_collisions="true"/>
+                <AlwaysSuccess/>
+              </Fallback>
+            </Sequence>
+          </Fallback>
+        </Sequence>
+        <FollowPath
+          path="{path}"
+          controller_id="FollowPath"
+          goal_checker_id="general_goal_checker"/>
+      </PipelineSequence>
+      <ReactiveFallback name="RecoveryFallback">
+        <GoalUpdated/>
+        <!-- 两种恢复动作按失败轮次轮换：先清局部图，再由 BackUpTwzFree 搜索全局图自由方向。 -->
+        <Sequence name="RecoverThenReplan">
+          <RoundRobin name="RecoveryActions">
+            <!-- 只清局部图。全局代价地图刻意不清空：清空后规划器在一张空图上重新规划，
+                 得到的仍是原来那条被堵的路径，而 update_frequency 0.5 Hz 要数秒才能把
+                 障碍重新填回来，这段时间机器人处于无障碍认知的状态。 -->
+            <Sequence name="ClearLocalCostmapAndWait">
+              <ClearEntireCostmap name="ClearLocalCostmap" service_name="local_costmap/clear_entirely_local_costmap"/>
+              <Wait wait_duration="1"/>
+            </Sequence>
+            <!-- backup_dist=0.15 保留为标准 BT 接口的兼容值；BackUpTwzFree 启动后
+                 会根据自由空间质心动态选择 0.15～1.0 m 的实际距离。 -->
+            <BackUp backup_dist="0.15" backup_speed="0.40" time_allowance="5"/>
+          </RoundRobin>
+          <!-- 清图或移动恢复完成后重新规划。
+               规划失败必须由 AlwaysSuccess 吞掉：否则恢复动作被判定失败，RecoveryNode
+               会直接结束导航，无法进入下一轮恢复。 -->
+          <Sequence name="ReplanAndSmoothAfterRecovery">
+            <Fallback name="ReplanOrKeepPath">
+              <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
+              <AlwaysSuccess/>
+            </Fallback>
+            <!-- 主分支此后不会再平滑（目标未变，条件短路），所以恢复侧必须自己补一次，
+                 否则机器人会去跟一条未经 constrained_smoother 推离膨胀带的原始 A* 路径。 -->
+            <Fallback name="SmoothPathOrKeepOriginal">
+              <SmoothPath unsmoothed_path="{path}" smoothed_path="{path}" smoother_id="constrained_smoother" max_smoothing_duration="0.6" check_for_collisions="true"/>
+              <AlwaysSuccess/>
+            </Fallback>
+          </Sequence>
+        </Sequence>
+      </ReactiveFallback>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>

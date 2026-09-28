@@ -1,0 +1,86 @@
+// Copyright (c) 2022 Joshua Wallace
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef BEHAVIOR_EXT_PLUGINS__BACK_UP_TWZ_FREE_ACTION_HPP_
+#define BEHAVIOR_EXT_PLUGINS__BACK_UP_TWZ_FREE_ACTION_HPP_
+
+#include <memory>
+#include <string>
+
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_behaviors/plugins/drive_on_heading.hpp"
+#include "nav2_msgs/action/back_up.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_msgs/srv/get_costmap.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
+
+using BackUpAction = nav2_msgs::action::BackUp;
+
+namespace nav2_behaviors
+{
+class BackUpTwzFree : public DriveOnHeading<nav2_msgs::action::BackUp>
+{
+public:
+  // 功能：收到 BackUp action 后，从配置的 costmap 话题或后备服务中寻找机器人周围的自由空间，
+  // 并把本次脱困的线速度方向设置为朝向自由空间的方向。
+  Status onRun(const std::shared_ptr<const BackUpAction::Goal> command) override;
+
+  // 功能：周期性发布本次脱困速度，直到达到目标距离、超时或碰撞检测失败。
+  Status onCycleUpdate() override;
+
+protected:
+  // 功能：读取插件参数，并创建 costmap 订阅、后备服务客户端与 RViz 可视化发布器。
+  void onConfigure() override;
+
+private:
+  // 功能：缓存最新搜索代价地图，避免恢复动作被同步服务请求阻塞。
+  void searchCostmapCallback(const nav2_msgs::msg::Costmap::SharedPtr msg);
+
+  // 功能：设置本轮动态移动距离，并按距离和合速度补足允许执行时间。
+  void configureRecoveryGoal(
+    double target_distance,
+    double speed,
+    const rclcpp::Duration & requested_time_allowance);
+
+  // 功能：按机身坐标系二维线速度预测恢复轨迹，确保横移方向也参与碰撞检查。
+  bool isRecoveryMotionCollisionFree(
+    const double & distance,
+    geometry_msgs::msg::Twist * cmd_vel,
+    geometry_msgs::msg::Pose2D & pose2d);
+
+  // 用于读取 local_costmap/get_costmap 或 global_costmap/get_costmap。
+  rclcpp::Client<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_client_;
+  rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr search_costmap_sub_;
+  nav2_msgs::msg::Costmap::SharedPtr latest_search_costmap_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
+  std::string service_name_;
+  std::string search_costmap_topic_;
+  // 记录搜索地图的坐标系，保证全局地图搜索、行程统计和可视化使用同一坐标系。
+  std::string search_frame_;
+
+  double twist_x_{0.0};
+  double twist_y_{0.0};
+  double max_radius_{1.0};
+  double robot_radius_{0.1};
+  double min_recovery_distance_{0.15};
+  double max_recovery_distance_{1.0};
+  double recovery_time_margin_{1.5};
+  int free_threshold_{5};
+  double cost_threshold_{0.0};
+  bool visualization_{false};
+  bool enable_strafe_{true};
+};
+}  // namespace nav2_behaviors
+
+#endif  // BEHAVIOR_EXT_PLUGINS__BACK_UP_TWZ_FREE_ACTION_HPP_

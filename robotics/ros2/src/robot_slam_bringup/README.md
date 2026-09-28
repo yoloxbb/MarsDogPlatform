@@ -1,0 +1,100 @@
+# robot_slam_bringup
+
+Lite3、D435i 的 RTAB-Map 与 Nav2 主启动包，并保留既有 GO2/OpenVINS/VINS-Fusion 入口。
+
+`nav.launch.py` 是主要入口，相关导航配置和行为树均保留在本包中。
+传感器驱动统一由 `sensor_ws` 提供，本包只负责组合里程计、建图和导航。
+
+## 文件说明
+
+- `nav.launch.py`：主要入口；Lite3 `/leg_odom2` + D435i 双目 + RTAB-Map + 可选 Nav2。
+- `go2_d435i_slam_nav2.launch.py`：保留的一套 GO2 OpenVINS 建图与导航入口。
+- `openvins_rtabmap.launch.py`：上述入口使用的 OpenVINS/RTAB-Map 公共管线。
+- `d435i_wit_vins_rtabmap.launch.py`：保留的一套 VINS-Fusion 视觉惯性入口。
+- `openvins_rtabmap.yaml`：OpenVINS 与 RTAB-Map 参数。
+- `go2_nav2.yaml`：GO2 Nav2 参数。
+- `d435i_extrinsics_relay.py`：转发 D435i IMU frame，并更新右目双目基线。
+
+## 构建
+
+```bash
+source "$(git rev-parse --show-toplevel)/scripts/setup_robot_env.sh"
+source /opt/ros/humble/setup.bash
+cd "${ROBOT_WS_ROOT}/sensor_ws"
+colcon build --symlink-install --executor sequential
+source install/setup.bash
+
+cd "${ROBOT_WS_ROOT}/slam_ws"
+colcon build --packages-select robot_slam_bringup --symlink-install
+source install/setup.bash
+```
+
+## 主要启动方式
+
+Lite3 里程计 + RTAB-Map 建图：
+
+```bash
+ros2 launch robot_slam_bringup nav.launch.py
+```
+
+启动 Nav2：
+
+```bash
+ros2 launch robot_slam_bringup nav.launch.py use_nav2:=true
+```
+
+更换机器人时，可直接从命令行传入底盘里程计话题和 TF frame，无需修改
+`config/nav.yaml`。例如：
+
+```bash
+ros2 launch robot_slam_bringup nav.launch.py \
+  use_nav2:=true \
+  odom_topic:=/robot/odom \
+  cmd_vel_topic:=/robot/cmd_vel \
+  base_frame:=base_link \
+  odom_frame:=odom \
+  map_frame:=map \
+  sensor_frame:=camera_depth_optical_frame
+```
+
+这些参数会同时作用于 RTAB-Map 和 Nav2；`cmd_vel_topic` 同时覆盖速度平滑器和
+恢复行为的最终输出，`sensor_frame` 用于局部代价地图的点云清除射线。未传入时
+仍使用当前分支对应机器人的配置作为默认值。
+
+Lite3 描述包因部署环境而异，默认不启动 `robot_state_publisher`；需要由本启动文件
+发布 URDF 时，请同时传入 `start_robot_state_publisher:=true`、
+`description_package` 和 `description_file`。
+
+只使用双目视觉里程计时，应同时把 RTAB-Map 的里程计输入切到 `/vo`：
+
+```bash
+ros2 launch robot_slam_bringup nav.launch.py \
+  use_stereo_odometry:=true \
+  stereo_odom_topic:=/vo \
+  odom_topic:=/vo
+```
+
+## 其他保留入口
+
+GO2 建图：
+
+```bash
+ros2 launch robot_slam_bringup go2_d435i_slam_nav2.launch.py \
+  localization:=false \
+  navigation:=false \
+  delete_db_on_start:=true \
+  database_path:=$HOME/.ros/rtabmap_go2_d435i.db
+```
+
+GO2 使用已有数据库重定位并启动 Nav2：
+
+```bash
+ros2 launch robot_slam_bringup go2_d435i_slam_nav2.launch.py \
+  localization:=true \
+  navigation:=true \
+  delete_db_on_start:=false \
+  database_path:=$HOME/.ros/rtabmap_go2_d435i.db
+```
+
+GO2 入口不会启动 D435i 驱动；启动本包前应先启动 RealSense，并确认合并后的
+IMU 话题、双目图像和 TF 已正常发布。

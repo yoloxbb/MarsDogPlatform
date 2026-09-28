@@ -1,0 +1,23 @@
+# bbox 必须属于 image_header 指向的原始相机图像，并已还原 letterbox/缩放。
+std_msgs/Header image_header
+sensor_msgs/RegionOfInterest bbox
+# 大于 0 时覆盖节点默认安全距离，单位为米。
+float32 stand_off_distance
+---
+uint8 STATUS_OK=0
+uint8 STATUS_NO_DEPTH=1
+uint8 STATUS_NO_CAMERA_INFO=2
+uint8 STATUS_INVALID_BBOX=3
+uint8 STATUS_INVALID_DEPTH=4
+uint8 STATUS_TF_UNAVAILABLE=5
+uint8 STATUS_INVALID_REQUEST=6
+
+bool success
+bool navigation_required
+uint8 status
+string message
+geometry_msgs/PointStamped person_point
+geometry_msgs/PoseStamped navigation_goal
+float32 valid_depth_ratio
+float32 mean_depth
+float32 depth_stddev

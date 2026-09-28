@@ -1,0 +1,33 @@
+bbox_depth_goal_node:
+  ros__parameters:
+    # bbox 必须对应此深度图对齐到的相机图像坐标。
+    depth_topic: /camera/camera/aligned_depth_to_color/image_raw
+    camera_info_topic: /camera/camera/color/camera_info
+    service_name: /person_3d_localization/locate_from_bbox
+    person_point_topic: /person_3d_localization/person_point
+    navigation_goal_topic: /person_3d_localization/navigation_goal
+
+    target_frame: map
+    robot_frame: base_footprint
+    default_stand_off_distance: 1.5
+    arrival_tolerance: 0.15
+
+    # 按原图时间戳匹配缓存深度；60 帧约覆盖 2 秒的 30 Hz 数据。
+    cache_size: 60
+    max_timestamp_difference: 0.05
+    max_latest_depth_age: 0.5
+    tf_timeout: 0.3
+
+    depth_min: 0.3
+    depth_max: 6.0
+    depth_16u_scale: 0.001
+    bbox_width_scale: 0.6
+    bbox_height_scale: 0.7
+    sample_stride: 2
+    min_valid_points: 30
+    min_valid_depth_ratio: 0.20
+
+    # 中值绝对偏差用于剔除 bbox 内的人体后方背景。
+    mad_scale: 3.0
+    min_depth_deviation: 0.08
+    max_depth_deviation: 0.40
