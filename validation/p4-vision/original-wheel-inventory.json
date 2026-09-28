@@ -1,0 +1,26 @@
+{
+  "scope": "Wheel archive inventory only; NOT dependency installation or runtime tests",
+  "wheel_build": "PASS",
+  "source_config_files": [
+    "camera_params.yaml",
+    "fastdds.xml",
+    "vision.mock.yaml",
+    "vision.object-only.yaml",
+    "vision.yaml"
+  ],
+  "wheel_config_files": [
+    "marsdog_vision_interaction-0.1.1.data/data/share/marsdog_vision_interaction/config/camera_params.yaml",
+    "marsdog_vision_interaction-0.1.1.data/data/share/marsdog_vision_interaction/config/vision.mock.yaml",
+    "marsdog_vision_interaction-0.1.1.data/data/share/marsdog_vision_interaction/config/vision.object-only.yaml",
+    "marsdog_vision_interaction-0.1.1.data/data/share/marsdog_vision_interaction/config/vision.yaml"
+  ],
+  "wheel_fastdds_files": [],
+  "wheel_launch_files": [
+    "marsdog_vision_interaction-0.1.1.data/data/share/marsdog_vision_interaction/launch/vision.launch.py",
+    "marsdog_vision_interaction-0.1.1.data/data/share/marsdog_vision_interaction/launch/vision_debug.launch.py"
+  ],
+  "wheel_web_files": [
+    "marsdog_vision_interaction/web/__init__.py",
+    "marsdog_vision_interaction/web/dashboard.html"
+  ]
+}

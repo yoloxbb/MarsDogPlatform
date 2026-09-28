@@ -8,7 +8,7 @@
 | P3a | BehaviorTree software migration verified | 7 commits preserved; 532 cases; wheel/ROS adapter checks |
 | P3b | Action software migration verified with stated transport limits | 5 commits preserved; 418 pure passes / 29 skips; old/new 39 ROS callback cases each; four UDP DDS combinations pass |
 | P4a | Voice software migration verified | 23 reachable commits archived, 95 source files unchanged; 328 Humble unit cases, 165 pure subset, wheel/ROS mock equivalence; see P4_VOICE.md |
-| P4b | Vision not migrated | Original locked environment and software gate still pending; model/hardware acceptance separate |
+| P4b | Vision not migrated; preflight recorded | Full dev+models locked sync incomplete after bounded online attempt; ROS build and wheel inventory done; see P4_VISION_PREFLIGHT.md |
 | P5 | Supplemental navigation/interface slice verified | New supplied packages copied; explicit operator recovery release approved/tested; robot_ws / rtabmap_ws unchanged; see P5_NAVIGATION_RECOVERY.md |
 | P6 | Not released | No remote/hosted CI run, production profile or hardware acceptance; default Fast DDS issue unresolved |
 | P7 | Not started | No uncertain production code retired |

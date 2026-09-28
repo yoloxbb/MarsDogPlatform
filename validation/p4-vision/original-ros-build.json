@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "exit_code": 0,
+  "duration_sec": 4.429,
+  "command": [
+    "/home/elephant/MarsDog/migration/ros-tools/.venv/bin/colcon",
+    "--log-base",
+    "/home/elephant/MarsDog/marsdog-platform/out/vision-original-ros/ros-vision/log",
+    "build",
+    "--base-paths",
+    "/home/elephant/MarsDog/migration/work/p1-20260928/sources/vision",
+    "--build-base",
+    "/home/elephant/MarsDog/marsdog-platform/out/vision-original-ros/ros-vision/build",
+    "--install-base",
+    "/home/elephant/MarsDog/marsdog-platform/out/vision-original-ros/ros-vision/install",
+    "--executor",
+    "sequential",
+    "--event-handlers",
+    "console_direct+",
+    "--cmake-args",
+    "-DBUILD_TESTING=OFF",
+    "-DPython3_EXECUTABLE=/home/elephant/MarsDog/migration/ros-tools/.venv/bin/python",
+    "-DPYTHON_EXECUTABLE=/home/elephant/MarsDog/migration/ros-tools/.venv/bin/python"
+  ],
+  "log": "/home/elephant/MarsDog/marsdog-platform/out/vision-original-ros/ros-vision-build.log",
+  "install": "/home/elephant/MarsDog/marsdog-platform/out/vision-original-ros/ros-vision/install",
+  "scope": "Original Vision ROS build only; optional RGA/board path not certified; Python environment gate independent"
+}

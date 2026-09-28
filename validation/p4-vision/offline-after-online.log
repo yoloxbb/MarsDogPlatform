@@ -1,0 +1,5 @@
+Resolved 97 packages in 1ms
+error: Failed to download `triton==3.7.1`
+  cause: Network connectivity is disabled, but the requested data wasn't found in the cache for: `https://files.pythonhosted.org/packages/15/76/c79c34311625227a288df3e483fc5cdf3d596624cbd4b4758c4cbdc14af3/triton-3.7.1-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl`
+
+hint: `triton` (v3.7.1) was included because `marsdog-vision-interaction` (v0.1.1) depends on `ultralytics` (v8.4.118) which depends on `torch` (v2.13.0) which depends on `triton`

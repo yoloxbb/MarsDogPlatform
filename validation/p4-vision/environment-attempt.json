@@ -1,0 +1,33 @@
+{
+  "status": "INCOMPLETE",
+  "scope": "Original Vision dev+models locked environment; no test success claimed",
+  "online_command": [
+    "/home/elephant/MarsDog/migration/.tools/uv",
+    "sync",
+    "--locked",
+    "--no-install-project",
+    "--extra",
+    "dev",
+    "--extra",
+    "models",
+    "--python",
+    "/usr/bin/python3.10"
+  ],
+  "online_limit_seconds": 300,
+  "online_host_exit_code": 1,
+  "online_result": "Did not complete installation within bounded attempt; raw log has download progress, no final success. Network root cause UNKNOWN.",
+  "offline_exit_code": 1,
+  "completed_downloads_in_online_log": [
+    "nvidia-cufile",
+    "sentencepiece",
+    "ultralytics",
+    "kiwisolver",
+    "networkx",
+    "pydantic-core",
+    "nvidia-cuda-runtime",
+    "jax"
+  ],
+  "lock_sha256": "74ce8d455705bab42e56221d6630fdcaa9e1250b93ccd4d54b1b78522617b944",
+  "original_tests_run": false,
+  "source_imported": false
+}

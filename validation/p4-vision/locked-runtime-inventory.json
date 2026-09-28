@@ -1,0 +1,303 @@
+{
+  "scope": "Original lock inventory, not verified installed state",
+  "lock_sha256": "74ce8d455705bab42e56221d6630fdcaa9e1250b93ccd4d54b1b78522617b944",
+  "packages": [
+    {
+      "name": "mediapipe",
+      "version": "0.10.18",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "dependencies": [
+        {
+          "name": "absl-py"
+        },
+        {
+          "name": "attrs"
+        },
+        {
+          "name": "flatbuffers"
+        },
+        {
+          "name": "jax"
+        },
+        {
+          "name": "jaxlib"
+        },
+        {
+          "name": "matplotlib"
+        },
+        {
+          "name": "numpy"
+        },
+        {
+          "name": "opencv-contrib-python"
+        },
+        {
+          "name": "protobuf"
+        },
+        {
+          "name": "sentencepiece"
+        },
+        {
+          "name": "sounddevice"
+        }
+      ]
+    },
+    {
+      "name": "numpy",
+      "version": "1.26.4",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "dependencies": []
+    },
+    {
+      "name": "opencv-contrib-python",
+      "version": "4.11.0.86",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "dependencies": [
+        {
+          "name": "numpy"
+        }
+      ]
+    },
+    {
+      "name": "opencv-python",
+      "version": "4.11.0.86",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "dependencies": [
+        {
+          "name": "numpy"
+        }
+      ]
+    },
+    {
+      "name": "protobuf",
+      "version": "4.25.9",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "dependencies": []
+    },
+    {
+      "name": "pydantic",
+      "version": "2.13.5",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "dependencies": [
+        {
+          "name": "annotated-types"
+        },
+        {
+          "name": "pydantic-core"
+        },
+        {
+          "name": "typing-extensions"
+        },
+        {
+          "name": "typing-inspection"
+        }
+      ]
+    },
+    {
+      "name": "rknn-toolkit-lite2",
+      "version": "2.3.2",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "dependencies": [
+        {
+          "name": "numpy"
+        },
+        {
+          "name": "psutil"
+        },
+        {
+          "name": "ruamel-yaml"
+        }
+      ]
+    },
+    {
+      "name": "supervision",
+      "version": "0.29.1",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "dependencies": [
+        {
+          "name": "defusedxml"
+        },
+        {
+          "name": "matplotlib"
+        },
+        {
+          "name": "numpy"
+        },
+        {
+          "name": "opencv-python"
+        },
+        {
+          "name": "pillow"
+        },
+        {
+          "name": "pydeprecate"
+        },
+        {
+          "name": "pyyaml"
+        },
+        {
+          "name": "requests"
+        },
+        {
+          "name": "scipy"
+        },
+        {
+          "name": "tqdm"
+        }
+      ]
+    },
+    {
+      "name": "torch",
+      "version": "2.13.0",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "dependencies": [
+        {
+          "name": "cuda-bindings",
+          "marker": "sys_platform == 'linux'"
+        },
+        {
+          "name": "cuda-toolkit",
+          "extra": [
+            "cublas",
+            "cudart",
+            "cufft",
+            "cufile",
+            "cupti",
+            "curand",
+            "cusolver",
+            "cusparse",
+            "nvjitlink",
+            "nvrtc",
+            "nvtx"
+          ],
+          "marker": "sys_platform == 'linux'"
+        },
+        {
+          "name": "filelock"
+        },
+        {
+          "name": "fsspec"
+        },
+        {
+          "name": "jinja2"
+        },
+        {
+          "name": "networkx"
+        },
+        {
+          "name": "nvidia-cudnn-cu13",
+          "marker": "sys_platform == 'linux'"
+        },
+        {
+          "name": "nvidia-cusparselt-cu13",
+          "marker": "sys_platform == 'linux'"
+        },
+        {
+          "name": "nvidia-nccl-cu13",
+          "marker": "sys_platform == 'linux'"
+        },
+        {
+          "name": "nvidia-nvshmem-cu13",
+          "marker": "sys_platform == 'linux'"
+        },
+        {
+          "name": "setuptools"
+        },
+        {
+          "name": "sympy"
+        },
+        {
+          "name": "triton",
+          "marker": "sys_platform == 'linux'"
+        },
+        {
+          "name": "typing-extensions"
+        }
+      ]
+    },
+    {
+      "name": "torchvision",
+      "version": "0.28.0",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "dependencies": [
+        {
+          "name": "numpy"
+        },
+        {
+          "name": "pillow"
+        },
+        {
+          "name": "torch"
+        }
+      ]
+    },
+    {
+      "name": "ultralytics",
+      "version": "8.4.118",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "dependencies": [
+        {
+          "name": "filelock"
+        },
+        {
+          "name": "matplotlib"
+        },
+        {
+          "name": "numpy"
+        },
+        {
+          "name": "nvidia-ml-py"
+        },
+        {
+          "name": "opencv-python"
+        },
+        {
+          "name": "pillow"
+        },
+        {
+          "name": "polars"
+        },
+        {
+          "name": "psutil"
+        },
+        {
+          "name": "pyyaml"
+        },
+        {
+          "name": "requests"
+        },
+        {
+          "name": "torch"
+        },
+        {
+          "name": "torchvision"
+        },
+        {
+          "name": "ultralytics-thop"
+        }
+      ]
+    }
+  ]
+}

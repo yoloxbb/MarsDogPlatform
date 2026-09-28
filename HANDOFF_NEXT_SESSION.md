@@ -36,7 +36,7 @@ uv 在 /home/elephant/MarsDog/migration/.tools/uv（0.12.19）。
 
 1. AGENTS.md、README.md。
 2. docs/architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md。
-3. docs/migration/STATUS.md、P4_VOICE.md、P4_ENVIRONMENT_GATE.md。
+3. docs/migration/STATUS.md、P4_VOICE.md、P4_ENVIRONMENT_GATE.md、P4_VISION_PREFLIGHT.md。
 4. docs/migration/P5_NAVIGATION_RECOVERY.md。
 5. docs/migration/ENERGY_SETTLEMENT_DECISION.md、interfaces/application/BATTERY_OBSERVATION.md。
 6. integration/migration/tools/baseline_lib.py、import_verified_history.py。
@@ -124,10 +124,19 @@ export UV_CACHE_DIR=/home/elephant/MarsDog/migration/.cache/uv
 git status --short
 python3 -B integration/migration/tools/check_baseline.py
 cd /home/elephant/MarsDog/migration/work/p1-20260928/sources/vision
-/home/elephant/MarsDog/migration/.tools/uv sync --locked --no-install-project --extra dev --python /usr/bin/python3.10
+/home/elephant/MarsDog/migration/.tools/uv sync --locked --no-install-project --extra dev --extra models --python /usr/bin/python3.10
 ```
 
 原七仓路径/HEAD/3074 文件等冻结于 integration/migration/baseline。
 新增导航源码独立基线为 docs/migration/new_navigation_baseline.json。
 原 source snapshot 在 /home/elephant/MarsDog/migration/work/p1-20260928/sources。
 所有工作应先读实际代码和现有证据，重要未知明确写 UNKNOWN。
+
+
+Vision 预检已完成：独立 ROS build 通过（RGA bridge 未编译），wheel 可构建但缺
+launch 默认引用的 fastdds.xml，详见 P4_VISION_PREFLIGHT.md。完整环境恢复状态
+见 validation/p4-vision/environment-attempt.json；Vision 未导入，原测试未运行。
+
+Vision 在线恢复进程已结束，没有遗留下载任务；300 秒尝试未完成安装，已做离线
+缺包复核。原日志、完整命令及退出状态见 validation/p4-vision。下次从现有 cache
+续接，不用新建环境、不改 lock，不应重复已完成的 Voice 历史导入。
