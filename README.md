@@ -1,7 +1,7 @@
 # MarsDog Platform
 
-Incremental migration in progress. Emotion/Needs, BehaviorTree, Action and Voice have been imported here.
-Vision and the existing robot_ws/rtabmap_ws are not yet imported. All original repositories remain preserved.
+Incremental migration in progress. Emotion/Needs, BehaviorTree, Action, Voice and Vision have been imported here.
+The existing robot_ws/rtabmap_ws are not yet imported. All original repositories remain preserved.
 The newly supplied interface and waypoint navigation packages are copied into
 interfaces/ros2 and robotics/ros2/src; see docs/migration/P5_NAVIGATION_RECOVERY.md.
 This repository is not yet a complete robot release.
@@ -123,3 +123,9 @@ The ROS probe uses installed original mock code, remapped endpoints and temporar
 data. No production launch was switched. Keep Voice's independent NumPy 1.x lock.
 Before deployment, explicitly select config_path and MARSDOG_PYTHON; relative model
 and storage paths change with the source/install location. Read P4_VOICE.md first.
+
+## Vision verification
+
+Vision is imported at modules/vision. Original and migrated Humble tests: 280 passed / 3 RGA skips.
+CPU wheel and installed mock DDS checks pass; see docs/migration/P4_VISION.md.
+The only source repair installs two missing wheel resources. No model/device inference is claimed.

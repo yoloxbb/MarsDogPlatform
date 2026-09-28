@@ -1,0 +1,33 @@
+{
+  "status": "PASS_WITH_EXPLICIT_LIMITS",
+  "test_counts": {
+    "tests": 283,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 3
+  },
+  "ros_equal": [
+    "asset_hashes",
+    "service_cases",
+    "event_keys",
+    "service_fields"
+  ],
+  "source_changes": [
+    "setup.py"
+  ],
+  "wheel": "PASS",
+  "cpu_runtime": {
+    "numpy": "1.26.4",
+    "opencv-python": "4.11.0.86",
+    "opencv-contrib-python": "4.11.0.86",
+    "torch": "2.13.0",
+    "mediapipe": "0.10.18",
+    "protobuf": "4.25.9",
+    "pydantic": "2.13.5"
+  },
+  "limits": [
+    "No real models/camera/NPU",
+    "3 RGA parity cases skipped",
+    "No hosted CI run"
+  ]
+}

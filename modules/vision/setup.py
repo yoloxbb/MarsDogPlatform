@@ -12,8 +12,8 @@ setup(
     package_data={package_name: ["web/*.html"]},
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
-        ("share/" + package_name, ["package.xml"]),
-        ("share/" + package_name + "/config", glob("config/*.yaml")),
+        ("share/" + package_name, ["package.xml", "scripts/fastdds_env.sh"]),
+        ("share/" + package_name + "/config", glob("config/*.yaml") + glob("config/*.xml")),
         ("share/" + package_name + "/launch", glob("launch/*.py")),
     ],
     install_requires=[

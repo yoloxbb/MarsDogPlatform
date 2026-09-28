@@ -8,12 +8,12 @@
 | P3a | BehaviorTree software migration verified | 7 commits preserved; 532 cases; wheel/ROS adapter checks |
 | P3b | Action software migration verified with stated transport limits | 5 commits preserved; 418 pure passes / 29 skips; old/new 39 ROS callback cases each; four UDP DDS combinations pass |
 | P4a | Voice software migration verified | 23 reachable commits archived, 95 source files unchanged; 328 Humble unit cases, 165 pure subset, wheel/ROS mock equivalence; see P4_VOICE.md |
-| P4b | Vision not migrated; preflight recorded | Full dev+models locked sync incomplete after bounded online attempt; ROS build and wheel inventory done; see P4_VISION_PREFLIGHT.md |
+| P4b | Vision software migration verified | 32 commits / 125 files; 280 pass / 3 RGA skips; CPU wheel and mock DDS equivalence; see P4_VISION.md |
 | P5 | Supplemental navigation/interface slice verified | New supplied packages copied; explicit operator recovery release approved/tested; robot_ws / rtabmap_ws unchanged; see P5_NAVIGATION_RECOVERY.md |
 | P6 | Not released | No remote/hosted CI run, production profile or hardware acceptance; default Fast DDS issue unresolved |
 | P7 | Not started | No uncertain production code retired |
 
-All seven original repositories remain unchanged. Only the four imported modules
+All seven original repositories remain unchanged. The five imported Python modules
 have verified all-ref bundles and commit maps; the others are not claimed archived.
 No production process, ROS protocol, robot behavior, model runtime or external
 motion-control/embedded implementation was replaced.
@@ -33,10 +33,8 @@ production launch/profile, real owner accounts and hardware acceptance still
 require real deployment facts. These gates do not
 justify weakening independent software regression or changing robot behavior.
 
-Next runnable slice: restore Vision locked artifacts and run its original software
-gate before importing. Voice is now imported; see P4_VOICE.md. Do not downgrade pins, omit declared dependencies
-and call it a full-environment pass, or move implementations before their baseline.
-Native Robotics/vendor replay and production hardware gates are still pending.
+Next runnable slice: native Robotics/vendor preservation and Lite3 local CPU integrated startup.
+The user selected Lite3 and local validation; see docs/architecture/LITE3_LOCAL_ACCEPTANCE.md.
 
 
 The supplemental connected navigation gate now covers real BT transport adapter ->

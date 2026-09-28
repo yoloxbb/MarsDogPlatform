@@ -1,0 +1,24 @@
+{
+  "source_id": "vision",
+  "source_path": "/home/elephant/MarsDog/MarsDog",
+  "original_head": "a05dbf4b9cf3cde9707f05c4360d39e5a52968df",
+  "original_refs": [
+    "refs/heads/VisionInteraction a05dbf4b9cf3cde9707f05c4360d39e5a52968df",
+    "refs/remotes/origin/VisionInteraction a05dbf4b9cf3cde9707f05c4360d39e5a52968df"
+  ],
+  "original_commit_count": 32,
+  "target_before": "e45d50ba17a2e19842818889999fb09fe34f8dab",
+  "imported_head": "8ffa13ed21c5399b61ad34454e4e10d7f2f6bfea",
+  "merge_commit": "eb68575ab580a44188eba6d45b5dd656aac85bbe",
+  "archive": "/home/elephant/MarsDog/migration/archives/vision-a05dbf4-all-refs.bundle",
+  "archive_sha256": "69223e8caed633a0f746f8d28ad180d5df3e3bd83afa2002a624162a41dbebd5",
+  "restore_fsck": "PASS",
+  "restored_refs_equal": true,
+  "tracked_file_content_and_modes_equal": true,
+  "tracked_files": 125,
+  "transform": "git-filter-repo 2.47.0 --to-subdirectory-filter modules/vision (copy only)",
+  "original_sources": {
+    "status": "PASS",
+    "failures": []
+  }
+}

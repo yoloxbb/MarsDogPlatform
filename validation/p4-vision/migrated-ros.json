@@ -1,0 +1,169 @@
+{
+  "status": "PASS",
+  "source": "/home/elephant/MarsDog/marsdog-platform/modules/vision",
+  "commands": [
+    [
+      "/home/elephant/MarsDog/migration/.tools/uv",
+      "sync",
+      "--project",
+      "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools",
+      "--locked",
+      "--python",
+      "/usr/bin/python3.10"
+    ],
+    [
+      "bash",
+      "--noprofile",
+      "--norc",
+      "-c",
+      "set -e\nsource /opt/ros/humble/setup.bash\n/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python -B -c 'import os,json;print(json.dumps(dict(os.environ)))'"
+    ],
+    [
+      "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/colcon",
+      "--log-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/vision-ros/log",
+      "build",
+      "--base-paths",
+      "/home/elephant/MarsDog/marsdog-platform/modules/vision",
+      "--build-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/vision-ros/build",
+      "--install-base",
+      "/home/elephant/MarsDog/marsdog-platform/out/vision-ros/install",
+      "--executor",
+      "sequential",
+      "--event-handlers",
+      "console_direct+",
+      "--cmake-args",
+      "-DBUILD_TESTING=OFF",
+      "-DPython3_EXECUTABLE=/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+      "-DPYTHON_EXECUTABLE=/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python"
+    ],
+    [
+      "bash",
+      "--noprofile",
+      "--norc",
+      "-c",
+      "set -e\nsource /opt/ros/humble/setup.bash\nsource /home/elephant/MarsDog/marsdog-platform/out/vision-ros/install/local_setup.bash\n/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python -B -c 'import os,json;print(json.dumps(dict(os.environ)))'"
+    ],
+    [
+      "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/bin/python",
+      "-B",
+      "/home/elephant/MarsDog/marsdog-platform/tools/ros_vision_probe.py",
+      "--install",
+      "/home/elephant/MarsDog/marsdog-platform/out/vision-ros/install",
+      "--source",
+      "/home/elephant/MarsDog/marsdog-platform/modules/vision",
+      "--output",
+      "/home/elephant/MarsDog/marsdog-platform/out/vision-ros/probe.json"
+    ]
+  ],
+  "scope": "Humble build and installed Vision mock transport, no hardware",
+  "probe": {
+    "status": "PASS",
+    "module_file": "/home/elephant/MarsDog/marsdog-platform/out/vision-ros/install/marsdog_vision_interaction/lib/python3.10/site-packages/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+    "scope": "Installed mock provider + synthetic ROS image; no real camera/model/motion",
+    "asset_hashes": {
+      "config/fastdds.xml": "740318c040958d3a693115c1303f249c3f05f6515c7f1151caef35a755aa986a",
+      "config/vision.mock.yaml": "44132247464e155bf6b5cb3fb8869e687ea217b6c09e02e5adf23edddc9562b9",
+      "config/vision.object-only.yaml": "6f5e163355b86843feab43a30ea39c4f3fdd5e99578afa361c48ed46ae8f45bd",
+      "config/camera_params.yaml": "4d2625f8cff25d4d5a62718f11a3e9d564a6ca7e8ab8bd4173dbe9456f89434c",
+      "config/vision.yaml": "e7a40ab62ccb25d761d639d11361e8e210799f6ca5e462c1bd524f8502a1915b",
+      "launch/vision.launch.py": "8a2b9520de0c3dd7746dfbec890da7aea89a5ef98d5e5ac991876d6f875d95ca",
+      "launch/vision_debug.launch.py": "1f4e0e41142db3814d450a6244167fd85892bcb8347f62010350599a7aafdbef",
+      "srv/VisionTask.srv": "0462429dcab62ab1d63a246d0de077b133660310f29402b03048b9e275bedac4"
+    },
+    "service_cases": [
+      {
+        "task": "check_person",
+        "success": true,
+        "keys": [
+          "count",
+          "identity",
+          "ok",
+          "present",
+          "target"
+        ]
+      },
+      {
+        "task": "query_targets",
+        "success": true,
+        "keys": [
+          "active_target",
+          "animal_candidates",
+          "header",
+          "human_candidates",
+          "object_candidates",
+          "ok",
+          "schema_version",
+          "sequence",
+          "snapshot_age_ms",
+          "snapshot_id",
+          "targets",
+          "vision_epoch"
+        ]
+      },
+      {
+        "task": "get_object_detection_state",
+        "success": true,
+        "keys": [
+          "automatic_stream",
+          "ok",
+          "stream"
+        ]
+      },
+      {
+        "task": "list_faces",
+        "success": true,
+        "keys": [
+          "faces",
+          "ok"
+        ]
+      },
+      {
+        "task": "unsupported_migration_task",
+        "success": false,
+        "keys": [
+          "error",
+          "ok"
+        ]
+      },
+      {
+        "task": "check_person",
+        "success": false,
+        "keys": []
+      }
+    ],
+    "event_keys": [
+      "active_target",
+      "debug_faces",
+      "debug_humans",
+      "events",
+      "faces",
+      "hands",
+      "header",
+      "human_candidates",
+      "humans",
+      "schema_version",
+      "sequence",
+      "snapshot_id",
+      "tracked_objects",
+      "vision_epoch"
+    ],
+    "service_fields": {
+      "request": {
+        "task_id": "string",
+        "task_type": "string",
+        "params_json": "string"
+      },
+      "response": {
+        "success": "boolean",
+        "task_id": "string",
+        "task_type": "string",
+        "result_json": "string",
+        "error_message": "string",
+        "latency_ms": "double"
+      }
+    },
+    "endpoint_prefix": "/migration_vision_9472f1c6621544a8944face9d7ce5d35"
+  }
+}

@@ -1,6 +1,6 @@
 # MarsDog 平台迁移交接
 
-更新：2026-09-29。下一步：Vision 原锁环境与软件基线；Voice 软件迁移已完成。
+更新：2026-09-29。下一步：原生 Robotics/vendor 和 Lite3 本机 CPU 统一启动。五个 Python 模块已导入。
 
 ## 工作目标与授权
 
@@ -51,7 +51,7 @@ uv 在 /home/elephant/MarsDog/migration/.tools/uv（0.12.19）。
 | Voice | modules/voice，软件验证完成；模型/板端待验收 | 23 个可达提交已归档 |
 | 新 interfaces | interfaces/ros2/marsdog_interfaces | 原来源无 Git，独立 hash 基线 |
 | 新 waypoint_nav | robotics/ros2/src/waypoint_nav，mock Nav2 验证通过 | 同上 |
-| Vision | 原仓/快照，尚未导入 | 未创建归档 |
+| Vision | modules/vision，软件验证完成（280 pass / 3 RGA skips） | 32 个可达提交已归档 |
 | robot_ws、rtabmap_ws | 原仓保持不变，完整原生 ROS/vendor 迁移尚未完成 | 未创建归档 |
 
 Voice 导入 merge：0384a81。95 个跟踪文件、mode、配置、lock、IDL、静态资源
@@ -140,3 +140,10 @@ launch 默认引用的 fastdds.xml，详见 P4_VISION_PREFLIGHT.md。完整环�
 Vision 在线恢复进程已结束，没有遗留下载任务；300 秒尝试未完成安装，已做离线
 缺包复核。原日志、完整命令及退出状态见 validation/p4-vision。下次从现有 cache
 续接，不用新建环境、不改 lock，不应重复已完成的 Voice 历史导入。
+
+## 最新执行状态（覆盖以上历史下一步）
+
+用户已选 Lite3、本机 CPU、统一启动入口；无模型/设备的能力必须明确为开发 mock。
+Vision 已导入，ROS/clean wheel/原测试对照完成，唯一源码修复是 setup.py 补装 XML 和 shell 资源。
+见 P4_VISION.md 和 validation/p4-vision/equivalence.json。继续原生 ROS 包、vendor 固定来源，
+然后完成 prepare/build/doctor/up/smoke 和可控退出。不要重复 Python 历史导入。

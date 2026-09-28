@@ -1,0 +1,25 @@
+name: Vision CPU packaging checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  wheel:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      CUDA_VISIBLE_DEVICES: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - run: python3 -B tools/bootstrap_uv.py
+      - run: .tools/uv sync --project modules/vision --locked --no-install-project --extra dev --extra models --python /usr/bin/python3.10
+      - run: python3 -B tools/check_vision_install.py --uv "$GITHUB_WORKSPACE/.tools/uv"
+      - run: modules/vision/.venv/bin/python -B -m pytest integration/migration/tests/test_migrated_interfaces.py -q -p no:cacheprovider
+# Full unit/ROS checks need Humble: check_vision_tests.py and check_vision_ros.py.
