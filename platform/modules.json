@@ -9,7 +9,16 @@
         "marsdog_ros2"
       ],
       "owner_role": "Needs/Emotion maintainer",
-      "runtime_extra": "ros"
+      "runtime_extra": "ros",
+      "development": {
+        "sync_args": [
+          "--no-editable"
+        ],
+        "test_paths": [
+          "tests"
+        ],
+        "test_scope": "Pure unit suite; ros extra only for runtime"
+      }
     },
     "behavior": {
       "path": "modules/behavior",
@@ -18,14 +27,33 @@
         "bionic_dog_bt"
       ],
       "owner_role": "Behavior maintainer",
-      "runtime_extra": "ros"
+      "runtime_extra": "ros",
+      "development": {
+        "sync_args": [
+          "--no-editable"
+        ],
+        "test_paths": [
+          "tests",
+          "marsdog_behavior/tests"
+        ],
+        "test_scope": "Both existing pure unit test trees"
+      }
     },
     "action": {
       "path": "modules/action",
       "namespaces": [
         "marsdog_action_executor"
       ],
-      "owner_role": "Action maintainer"
+      "owner_role": "Action maintainer",
+      "development": {
+        "sync_args": [
+          "--no-editable"
+        ],
+        "test_paths": [
+          "tests"
+        ],
+        "test_scope": "Unit suite; explicit ROS/optional GUI skips recorded"
+      }
     },
     "voice": {
       "path": "modules/voice",
@@ -33,7 +61,15 @@
         "marsdog_voice_interaction"
       ],
       "owner_role": "Voice maintainer",
-      "runtime_extra": "dev"
+      "runtime_extra": "dev",
+      "development": {
+        "sync_args": [
+          "--no-install-project",
+          "--extra",
+          "dev"
+        ],
+        "test_scope": "Default pure subset; --ros adds Humble-dependent unit files"
+      }
     },
     "vision": {
       "path": "modules/vision",
@@ -41,7 +77,17 @@
         "marsdog_vision_interaction"
       ],
       "owner_role": "Vision maintainer",
-      "runtime_extra": "dev,models"
+      "runtime_extra": "dev,models",
+      "development": {
+        "sync_args": [
+          "--no-install-project",
+          "--extra",
+          "dev",
+          "--extra",
+          "models"
+        ],
+        "test_scope": "Full unit suite requires Humble; RGA hardware skips explicit"
+      }
     },
     "robotics": {
       "path": "robotics/ros2/src",

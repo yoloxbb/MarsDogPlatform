@@ -19,7 +19,7 @@ jobs:
         with:
           persist-credentials: false
       - run: python3 -B tools/bootstrap_uv.py
-      - run: .tools/uv sync --project modules/vision --locked --no-install-project --extra dev --extra models --python /usr/bin/python3.10
+      - run: python3 -B tools/dev.py setup vision --uv "$GITHUB_WORKSPACE/.tools/uv"
       - run: python3 -B tools/check_vision_install.py --uv "$GITHUB_WORKSPACE/.tools/uv"
       - run: modules/vision/.venv/bin/python -B -m pytest integration/migration/tests/test_migrated_interfaces.py -q -p no:cacheprovider
 # Full unit/ROS checks need Humble: check_vision_tests.py and check_vision_ros.py.

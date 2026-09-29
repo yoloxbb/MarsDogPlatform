@@ -8,6 +8,7 @@ from pathlib import Path, PurePosixPath
 import subprocess
 import tarfile
 import tempfile
+from runtime_environment import vendor_archive_directory
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -78,8 +79,7 @@ def materialize(name, record, archive_dir):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--archive-dir", type=Path, default=Path(os.environ.get(
-        "MARSDOG_MIGRATION_WORKSPACE", ROOT.parent / "migration")) / "archives")
+    parser.add_argument("--archive-dir", type=Path, default=vendor_archive_directory())
     parser.add_argument("--only", nargs="*")
     args = parser.parse_args()
     lock = json.loads((ROOT / "third_party/sources.lock.json").read_text())

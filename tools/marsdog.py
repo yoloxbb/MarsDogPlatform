@@ -14,7 +14,7 @@ import subprocess
 import sys
 import time
 
-from runtime_environment import ROOT, clean_environment, ros_environment
+from runtime_environment import ROOT, clean_environment, ros_environment, vendor_archive_directory
 
 LOCAL = ROOT / "out/local"
 INSTALL = LOCAL / "ros/install"
@@ -306,7 +306,7 @@ def main():
     parser.add_argument("command", choices=("prepare", "build", "doctor", "up", "smoke", "replay", "models", "intent-replay", "voice-cpu-ros"))
     parser.add_argument("--profile", choices=("lite3-local-cpu", "lite3-nav2-cpu"), default="lite3-local-cpu")
     parser.add_argument("--uv", default="uv")
-    parser.add_argument("--archive-dir", type=Path, default=ROOT.parent / "migration/archives")
+    parser.add_argument("--archive-dir", type=Path, default=vendor_archive_directory())
     parser.add_argument("--duration", type=float, default=0, help="Bound up duration in seconds; zero runs until Ctrl-C")
     parser.add_argument("--manifest", type=Path, help="Annotated CPU replay asset manifest")
     parser.add_argument("--output", type=Path, help="CPU replay evidence directory")

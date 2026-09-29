@@ -56,3 +56,8 @@ def ros_environment(install=None, domain=210):
     # Underlay setup can reset paths; fixed dependencies must remain available.
     add_ros_dependencies(env)
     return local_transport(env, domain)
+
+
+def vendor_archive_directory():
+    """Portable default; legacy archive storage must be explicitly selected."""
+    return Path(os.environ.get("MARSDOG_ARCHIVE_DIR", ROOT / ".cache/vendor-archives")).expanduser().resolve()

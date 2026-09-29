@@ -22,8 +22,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - run: python3 -B tools/check_architecture.py
-      - run: python3 -B -m unittest discover -s integration/platform/tests -v
+      - run: python3 -B tools/dev.py check
   local-ros:
     if: github.event_name == 'workflow_dispatch' && inputs.run_ros
     runs-on: [self-hosted, linux, x64, marsdog-humble]

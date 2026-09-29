@@ -23,14 +23,14 @@ jobs:
       - name: Bootstrap verified uv
         run: python3 -B tools/bootstrap_uv.py
       - name: Independent locked Voice environment
-        run: .tools/uv sync --project modules/voice --locked --no-install-project --extra dev --python /usr/bin/python3.10
+        run: python3 -B tools/dev.py setup voice --uv "$GITHUB_WORKSPACE/.tools/uv"
       - name: Pure subset (Humble-dependent files reported separately)
-        run: python3 -B tools/check_voice_tests.py --mode pure
+        run: python3 -B tools/dev.py test voice
       - name: Clean wheel, HTTP schema and static assets
         run: python3 -B tools/check_voice_install.py --uv "$GITHUB_WORKSPACE/.tools/uv"
       - name: Frozen interfaces and default resources
         run: modules/voice/.venv/bin/python -B -m pytest integration/migration/tests/test_migrated_interfaces.py -q -p no:cacheprovider
 
-# Complete 328-case unit suite and installed mock DDS checks require an existing
+# Complete unit suite and installed mock DDS checks require an existing
 # Humble host: tools/check_voice_tests.py --mode humble; tools/check_voice_ros.py.
 # This Python job must never be presented as that ROS or hardware gate.

@@ -1,6 +1,17 @@
 # 当前迁移状态 — 2026-09-29
 
-**Lite3 本机 CPU 集成及真实 Nav2 增量验收已通过；生产硬件发布尚未完成。**
+**当前目标：完成统一主仓的团队开发与源码交付闭环；先 WSL2，后开发板/Lite3。**
+五模块/自研 ROS/历史迁移和既有本机软件集成已完成，不重新开始合仓。
+模型精度暂缓；实机、远端 CI 和板端构建分别作为后续外部阶段。
+最新执行计划见 [方案 v2](../architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md) 第 15 节。
+
+**本轮未提交工作：** 开发 CLI、源码 bundle 工具、显式归档路径、开发/协作/交付文档和 CI 复用。
+已运行 dev.py check：架构通过、平台 51 tests / OK；
+日志 out/developer-platform/dev-check-initial.log。
+新 CLI 的各模块真实测试、实际主仓 bundle、独立克隆/交付验收尚待执行。
+Git 基线仍为 3bf529e；以 git status 识别并保留工作区修改。
+
+以下表格是阶段累计记录，其中“本轮”指对应历史阶段，不代表本次全部重新运行。
 统一入口为 tools/marsdog.py。默认配置见 ../LOCAL_LITE3_CPU.md；
 可选真实 Nav2 见 ../LOCAL_NAV2_CPU.md。本文件为当前状态，旧阶段记录保留在 Git。
 
@@ -23,6 +34,7 @@
 | P6 CPU 软件流程 | 按用户要求不以精度阻塞；真实 Voice→BT→Action、模拟导航及推理中取消恢复已验证 | P6_CPU_FLOW.md、validation/cpu-flow |
 | P6 工程门禁 | 当前软件范围通过 | 25 契约/基线检查；15 ROS manifest DAG、21 登记接口；6 项构建隔离测试 |
 | P6 生产发布 / 远端 CI | 未验收 / 未配置 | 缺完整感知质量验收、原 RKLLM 等价性证据、设备、SLAM 输入、生产配置、远端和 owner 身份 |
+| P7a 团队开发 / P7b 源码交付 | 本轮实现中、未提交；仅平台 51 测试已跑 | 方案 v2 第 15 节、out/developer-platform/dev-check-initial.log |
 | P7 旧代码退役 | 未进行 | 不确定生产用途的代码/launch/脚本保留，未删除原仓 |
 
 两套运行配置共用公开接口：
@@ -37,18 +49,11 @@ go_home 按原规则不产生 Needs 结算；不存在伪造的 BMS 电量生产
 原有取消/停止流程。未放宽任何非零退出或导航终态断言。
 本机 Cyclone loopback 小分片设置不改变旧生产 RMW 或系统网络。
 
-当前优先级：用户明确先保证流程，模型精度暂缓。通过
-tools/marsdog.py voice-cpu-ros --acceptance flow --with-behavior 重复软件链路验收。
-模型质量、软件流程和硬件验收分别报告；误分类不再阻塞流程集成，门限/会话/异常退出仍阻塞。
-
-后续继续：
-
-- 扩大模块公开接口、故障恢复与统一启动验证；保留独立环境和已完成历史迁移。
-- 有实际录音/设备后验证麦克风、VAD/KWS、ASR/声纹调用与外设生命周期。
-- 有传感器/标定/地图后验收 OpenVINS/RTAB 定位建图；CPU 构建不是传感器验收。
-- 有 Lite3 设备侧接口包后验证运动、控制权、停止和状态，不自行放开未验证动作。
-- 确认远端、owner 和厂商许可后配置远端 CI/发布。
-- 不猜测运控/嵌入式/BMS 实现，不退役未知生产入口。
+当前优先级：用户明确需要可协作开发、易上手、可交付到开发板的统一主仓。
+模型精度与没有硬件均不阻塞本阶段软件目标。
+下一步是复核并验证本轮开发入口/CI/交付工具、提交源码、完成干净克隆验收和冻结证据，
+详见方案 v2 第 15 节及 HANDOFF_NEXT_SESSION.md。
+硬件、传感器、remote/owner/许可按外部条件推进，不猜测缺失实现、不退役未知入口。
 
 最新流程证据见 validation/cpu-flow/release-manifest.json。Qwen SIT 被原 Lite3 门限拒绝，
 词库 GO_HOME 完成模拟导航；二者不能混称为所有动作执行成功。

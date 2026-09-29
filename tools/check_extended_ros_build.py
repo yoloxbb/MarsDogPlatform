@@ -10,7 +10,7 @@ import subprocess
 import sys
 import time
 
-from runtime_environment import ROOT, ros_environment
+from runtime_environment import ROOT, ros_environment, vendor_archive_directory
 from prepare_extended_ros import environment, BASE, VIEW, sha, inventory
 
 TOOLS = ROOT / "platform/humble-build-tools/.venv/bin"
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("layers", nargs="+", choices=["nav2-plugin", "openvins", "rtabmap"])
     parser.add_argument("--archive-dir", type=Path,
-                        default=Path(os.environ.get("MARSDOG_MIGRATION_WORKSPACE", ROOT.parent / "migration")) / "archives")
+                        default=vendor_archive_directory())
     parser.add_argument("--jobs", type=int, choices=range(1, 5), default=2)
     args = parser.parse_args()
     BASE.mkdir(parents=True, exist_ok=True)

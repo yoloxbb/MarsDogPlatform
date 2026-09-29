@@ -1,112 +1,77 @@
 # MarsDog Platform
 
-MarsDog 自研软件主仓。五个 Python 模块和八个自研 ROS package 已按历史迁入；
-原始七仓库完整保留，RTAB-Map/OpenVINS/VINS/UWB 以固定外部快照管理。
-当前交付是 **Lite3 本机 CPU 开发与集成版本**，尚不等于实机发布。
+MarsDog 的统一开发主仓：视觉、语音、Emotion/Needs、行为树、Action 和自研 ROS
+模块在这里开发、测试和提交。五个 Python 模块仍有独立包、锁文件和环境。
+原仓历史已迁入并保留来源记录；后续功能直接在本仓完成一个可评审的变更。
 
-在当前 WSL Ubuntu-22.04 中：
+当前支持 **WSL2 / Ubuntu 22.04 / Python 3.10 / ROS Humble 的 Lite3 CPU 开发环境**。
+没有实机；本机集成用明确的设备替身。开发板的系统、ABI、NPU SDK 尚待确认。
+目标是先完成软件协作和集成，再在板端构建、接入 Lite3。
+
+## 从这里开始
+
+- 新成员：[开发快速开始](docs/development/QUICKSTART.md)
+- 新功能、提交与合并：[贡献指南](CONTRIBUTING.md)
+- 模块边界与跨模块变更：[开发流程](docs/development/WORKFLOW.md)
+- WSL 到开发板：[源码交付与板端接入](docs/deployment/SOURCE_HANDOFF.md)
+- 当前事实：[迁移状态](docs/migration/STATUS.md)
+- Agent / 后续会话：[AGENTS.md](AGENTS.md)、[交接](HANDOFF_NEXT_SESSION.md)
+
+在本仓根目录执行，不需要原仓在旁边：
 
 ~~~bash
-cd /home/elephant/MarsDog/marsdog-platform
+# 仅标准库：架构/接口/依赖环检查 + 平台工具回归
+python3 tools/dev.py check
+
+# 一次准备、测试一个模块；已安装 uv 时可改用 --uv /absolute/path/to/uv
+python3 tools/bootstrap_uv.py
+python3 tools/dev.py setup emotion
+python3 tools/dev.py test emotion
+~~~
+
+其他模块名为 behavior、action、voice、vision。Voice 默认运行纯 Python 子集，
+完整测试加 --ros；Vision 完整单测需要已有 Humble。
+全部入口、跳过项解释和依赖安装范围见快速开始。
+
+## 整机开发组合
+
+准备前需已有 ROS Humble，并取得固定第三方源码归档；工具不安装系统 ROS。
+`--archive-dir` 可指向任意位置，或设置 `MARSDOG_ARCHIVE_DIR`；
+未指定时只查本仓 `.cache/vendor-archives`。
+
+~~~bash
+python3 tools/marsdog.py prepare --uv /absolute/path/to/uv --archive-dir /absolute/path/to/archives
+python3 tools/marsdog.py build
+python3 tools/marsdog.py doctor
 python3 tools/marsdog.py up
 ~~~
 
-另有已接入真实 Nav2 的可选本机配置：
+Ctrl-C 关闭整组进程，日志写入 out/local/runs。
+默认 lite3-local-cpu 使用感知 mock、模拟导航和设备；
+`up --profile lite3-nav2-cpu` 使用真实 Nav2，定位/地图/运动输入仍为模拟。
+详细准备与验证见 [本机组合](docs/LOCAL_LITE3_CPU.md)、[Nav2 组合](docs/LOCAL_NAV2_CPU.md)。
 
-~~~bash
-python3 tools/marsdog.py up --profile lite3-nav2-cpu
-~~~
+真实 CPU 感知是可选开发路径：见 [CPU 软件流程](docs/CPU_SOFTWARE_FLOW.md)、
+[CPU 意图后端](docs/CPU_INTENT.md)、[模型资产](docs/CPU_MODEL_ASSETS.md)。
+原 RKLLM 保留；精度改进当前不阻塞仓库整合，不自动替换默认 profile。
 
-范围与复现步骤见 [真实 Nav2 CPU 验收](docs/LOCAL_NAV2_CPU.md)。
-定位/运动/地图仍为模拟输入，未完成实机及完整感知验收。
+## 代码归属
 
-已接收 models.zip，并接入官方 CPU 权重。先准备带哈希和标注的资产清单：
-
-~~~bash
-python3 tools/marsdog.py models --model-archive /home/elephant/MarsDog/models.zip --download
-python3 tools/marsdog.py replay --manifest out/models/cpu-20260929/cpu-replay.json --check-only
-python3 tools/marsdog.py replay --manifest out/models/cpu-20260929/cpu-replay.json
-~~~
-
-见 [CPU 模型实测](docs/CPU_MODEL_ASSETS.md)及 [CPU 感知回放](docs/CPU_PERCEPTION_REPLAY.md)。
-SenseVoice 中文参考已通过；YOLOE 13 张正例有 2 张漏检，整体回放仍返回 FAIL。
-模型准备不代表质量验收，默认启动 profile 继续使用显式感知 mock。
-
-已按用户授权接入可选 Qwen2.5-0.5B-Instruct CPU 意图后端，保留原 RKLLM。
-准备、配置和真实分类限制见 [CPU 意图后端](docs/CPU_INTENT.md)。
-该候选尚未通过完整模型质量验收，不自动替换默认 profile。
-
-当前按用户要求优先验收软件流程，模型精度不阻塞集成：
-
-~~~bash
-python3 tools/marsdog.py voice-cpu-ros --acceptance flow --with-behavior
-~~~
-
-该命令验证真实 CPU Voice→BT→Action 与模拟导航，以及推理中停止、重启和迟到事件隔离。
-Qwen 标签、已知 Lite3 能力拒绝和模型质量仍如实记录，详见 [CPU 软件流程](docs/CPU_SOFTWARE_FLOW.md)。
-
-真实 CPU Voice 到隔离 ROS 的增量验证：
-
-~~~bash
-python3 tools/marsdog.py voice-cpu-ros
-~~~
-
-见 [CPU Voice ROS 验证](docs/CPU_VOICE_ROS.md)：一条真实 WAV，加四条明确文本测试输入。
-链路已贯通；CPU 原文传递修复后五场景通过。整体模型质量仍未达标，不替换整机默认 profile。
-输入差异修复及剩余错误见 [阶段记录](docs/migration/P6_CPU_INPUT_TEXT.md)。
-
-Ctrl-C 关闭整组进程。日志/配置副本/数据写入 out/local/runs；
-子进程崩溃会使组合失败退出，重复启动会被拒绝。详细说明见
-[本机启动与验收](docs/LOCAL_LITE3_CPU.md)。
-
-~~~bash
-python3 tools/marsdog.py doctor
-python3 tools/marsdog.py smoke
-python3 tools/check_local_lifecycle.py
-python3 tools/check_architecture.py
-python3 tools/check_contracts.py
-~~~
-
-源码改动后运行 python3 tools/marsdog.py build。首次环境准备使用
-python3 tools/marsdog.py prepare --uv /path/to/uv --archive-dir /path/to/archives。
-已有 Ubuntu 22.04、Python 3.10、ROS Humble 是前提；工具不修改系统 ROS 或生产启动。
-
-当前没有设备。两套整机开发 profile 的 Vision/Voice 使用明确的原有 mock provider，
-相机/地图/Nav2/Lite3 I/O 使用开发替身；真实模块进程、ROS 消息、服务、
-BT 仲裁、Action 导航阶段和结果链路参与验收。未验证动作仍按原规则拒绝，
-不会绕过底盘门限或将模拟电量用于 Needs 结算。
-
-代码位置：
-
-| 领域 | 位置 | 说明 |
+| 领域 | 唯一开发位置 | 职责 |
 | --- | --- | --- |
-| Vision / Voice | modules/vision、modules/voice | 原有 namespace、ROS package、服务类型与资源 |
-| Emotion / Needs | modules/emotion | marsdog_core + marsdog_ros2；独立状态权威 |
-| BehaviorTree | modules/behavior | 全局选择、抢占、会话与业务结果 |
-| Action | modules/action | 技能阶段、执行终态、导航/外部硬件适配 |
-| Native ROS / waypoint | robotics/ros2/src | 驱动、定位、跟随、避障、导航接入；保留现有包名 |
-| 公共契约 | interfaces | 新提供的 IDL、接口 registry、电量证据和外部边界 |
-| 构建 / 环境 / 集成 | platform、tools、integration、config | 仅工具与组合，不承载业务算法 |
-| 第三方 | third_party → .external | 固定来源/提交/哈希，保留定制 fork |
+| Vision | modules/vision | 感知与视觉任务，发布现有事件 |
+| Voice | modules/voice | 语音会话、ASR/意图、语音任务与事件 |
+| Emotion / Needs | modules/emotion | 内部状态与需求结算的权威 |
+| BehaviorTree | modules/behavior | 选择、仲裁、抢占与会话协调 |
+| Action | modules/action | 技能阶段编排、执行终态、外部能力适配 |
+| 原生 ROS / 航点 | robotics/ros2/src | 定位、跟随、避障、导航和现有驱动接入 |
+| 公共契约 | interfaces | ROS IDL、接口登记、外部边界与证据 |
+| 工程与组合 | platform、tools、integration、config | 构建、测试、运行组合；不承载领域业务 |
+| 第三方 | third_party → .external | 固定历史快照及定制 fork；不当作自研目录 |
 
-每模块保留独立 pyproject.toml、uv.lock、.venv。Emotion/BT 的 ROS 可选依赖为
-NumPy 1.26.4；Action 保持 2.2.6；Vision/Voice 保持 1.x。没有根 uv workspace。
-普通模块测试可在各自目录用 .venv/bin/python -B -m pytest 运行；
-Voice/Vision 的完整 ROS 依赖单测分别用 tools/check_voice_tests.py --mode humble
-和 tools/check_vision_tests.py。构建工具是独立的 platform/humble-build-tools。
+没有根 Python 大环境：Emotion/BT 的 ROS extra 为 NumPy 1.26.4，
+Action 保持 2.2.6，Vision/Voice 保持 1.x。模块内使用自己的 pyproject.toml 和 uv.lock。
+公共 ROS 类型由原 owning package 维护，现有服务/动作/Topic 身份不随目录调整而改名。
 
-原生 CPU 回归：
-
-~~~bash
-python3 tools/check_robotics.py --uwb-source .external/uwb --output out/robotics-check
-~~~
-
-该门禁编译八个包并运行已有功能测试；完整 Nav2 插件、RTAB-Map、硬件和模型验收
-另行记录。当前主仓无远端、无 hosted CI 运行；已提交 CI 配置与 owner 角色，
-不冒充配置了真实 CODEOWNERS 账号。
-
-继续开发先读 [AGENTS.md](AGENTS.md)、
-[当前状态](docs/migration/STATUS.md)、
-[会话交接](HANDOFF_NEXT_SESSION.md)、
-[已落地架构自审](docs/architecture/PLATFORM_IMPLEMENTATION_REVIEW.md)。
-原提案作为历史文档保留，未实施措辞不代表当前状态。
+本仓已有 CI 配置，但尚无远端、真实 owner 账号或 hosted CI 运行记录。
+源码离线交付保留 Git 历史；模型、构建输出、虚拟环境和设备配置不进入主仓。
