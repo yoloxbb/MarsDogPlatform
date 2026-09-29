@@ -51,3 +51,25 @@ Lite3 仍走现有 backend 的预检和规划；不建立不存在的控制器�
 本轮窄范围修复：Vision wheel 资源、原生 C++ 两处语法错误、Action 外部配置/
 显式本机 I/O、Voice mock 命令覆盖/可选 catalog ID、BT 有效 ROS context 内退出、
 ROS 依赖声明。先前批准的导航恢复与电量证据策略见各独立迁移记录。
+
+
+## 2026-09-29：真实 Nav2 增量复审
+
+本轮通过 profile 替换原开发 Nav2 服务，实现真实 planner/controller/navigator 与
+现有 Voice→BT→Action→waypoint 的通信。航点、IDL 与算法未改；Action main 增加有效
+context 内执行原有取消/停止流程的信号处理修复，SIGINT/SIGTERM 及新旧 profile 均复验通过。
+MarsDog BT 的全局决策与 Nav2 内部路径执行 BT 仍分属不同层，Action 继续执行高层技能阶段。
+本机模拟器只提供理想运动/定位反馈，不承担或猜测 Lite3 运控实现。
+
+- 未新增业务 common、全局 RobotState、应用事件总线或统一 Python 环境。
+- 重用现有 supervisor；profile 只配置进程和环境。自审移除了工具层循环 import。
+- Nav2/SLAM 依赖使用单独的固定、可校验 Debian 提取目录，不改变系统包数据库。
+- 固定第三方快照继续验证；上游生成 SQL 的核心构建使用独立副本。
+- 新老 profile 分开验收；公开接口不变，旧业务契约继续通过。
+- 新增准备工具的幂等、相对路径边界、污染/篡改拒绝有 6 项测试。
+- 本次未宣称真实传感器、定位精度、模型推理、Lite3 设备或完整生产配置通过。
+
+仍需关注的实际边界：模拟反馈不覆盖机体动力学；Nav2 profile 是本机参数；
+RTAB 可选优化后端由当前可用依赖决定，必须随构建结果记录；
+Debian 派生路径视图仍依赖已有 Humble/系统 ABI，不是完整部署镜像；
+未知供应商分发许可与生产入口用途仍不据此消除。

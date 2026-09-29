@@ -7,8 +7,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 
-def prepare(run, install):
-    profile = json.loads((ROOT / "config/profiles/lite3-local-cpu.json").read_text())
+def prepare(run, install, profile_name="lite3-local-cpu"):
+    profile = json.loads((ROOT / "config/profiles" / (profile_name + ".json")).read_text())
     run.mkdir(parents=True, exist_ok=True)
     share = lambda package: install / package / "share" / package
     voice_share = share("marsdog_voice_interaction") / "config"
@@ -48,14 +48,21 @@ def prepare(run, install):
             "position": {"x": float(index + 1), "y": 1.0, "z": 0.0},
             "orientation": {"x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0}}})
     (run / "waypoints.yaml").write_text(yaml.safe_dump(waypoints, allow_unicode=True))
+    if profile_name == "lite3-nav2-cpu":
+        config = yaml.safe_load((ROOT / "config/nav2/cpu.yaml").read_text())
+        bt = config["bt_navigator"]["ros__parameters"]
+        bt["default_nav_to_pose_bt_xml"] = str(ROOT / "config/nav2/cpu.xml")
+        bt["default_nav_through_poses_bt_xml"] = str(ROOT / "config/nav2/through_poses.xml")
+        (run / "nav2.yaml").write_text(yaml.safe_dump(config))
     (run / "profile.json").write_text(json.dumps(profile, indent=2) + "\n")
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--run", required=True, type=Path)
     parser.add_argument("--install", required=True, type=Path)
+    parser.add_argument("--profile", choices=("lite3-local-cpu", "lite3-nav2-cpu"), default="lite3-local-cpu")
     args = parser.parse_args()
-    prepare(args.run.resolve(), args.install.resolve())
+    prepare(args.run.resolve(), args.install.resolve(), args.profile)
 
 if __name__ == "__main__":
     main()

@@ -68,3 +68,6 @@ WSL 下已复现的 DDS 丢包；没有修改系统网络或生产 RMW 默认。
 模块独立开发继续使用其 pyproject、uv.lock 与 tests。模块 ROS 入口、默认配置和
 算法仍在原模块中；平台只生成本次运行的配置副本。跨模块协议见 interfaces/registry.json，
 生产切换待办见 migration/STATUS.md 与 architecture/PLATFORM_IMPLEMENTATION_REVIEW.md。
+
+可选的真实 Nav2 配置见 [LOCAL_NAV2_CPU.md](LOCAL_NAV2_CPU.md)。
+上述默认配置与验收范围保持不变；新 profile 单独记录真实规划/控制与模拟输入的边界。

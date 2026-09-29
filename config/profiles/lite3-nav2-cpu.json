@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "name": "lite3-nav2-cpu",
+  "robot": "lite3",
+  "execution": "local_cpu_nav2_simulation",
+  "ros_distribution": "humble",
+  "ros_domain_id": 212,
+  "rmw": "rmw_cyclonedds_cpp",
+  "voice_mock_seed": 46,
+  "voice_event_interval_sec": 4,
+  "explicit_limits": [
+    "Real Nav2 planner/controller/navigator; ideal simulated planar motion, odometry and localization",
+    "Synthetic static map, no SLAM accuracy or physical obstacle acceptance",
+    "Vision/Voice mock providers; Lite3 simulated I/O",
+    "Nav2 velocity output is remapped exclusively to /development/nav2/cmd_vel",
+    "No simulated battery settlement or hardware protocol changes"
+  ]
+}

@@ -85,3 +85,19 @@ python3 -B integration/migration/tools/prepare_nav2_fixture.py
 The pinned deb is only a local build/test interface artifact, not a production Nav2
 release selection. Actual chassis interface suppliers and production profiles remain
 unresolved; no replacement protocols or hardware implementations were created.
+
+## 2026-09-29: real Nav2 shutdown follow-up
+
+The real Nav2 profile exposed an existing Action exit race: rclpy's signal handler
+could close the context between an ok() check and emergency-stop publication.
+main now initializes rclpy with SignalHandlerOptions.NO and handles SIGTERM as a
+Python interruption; the existing cancellation, 7-second drain, stop and explicit
+context cleanup stay in their existing order. SIGINT uses Python's interrupt path.
+No action IDL, default configuration, hardware protocol or execution algorithm changes.
+
+The installed-process gate tools/check_action_shutdown.py verifies SIGINT and
+SIGTERM independently on isolated ROS domain 214: simulated zero-velocity output
+arrives before a clean exit, no hardware command publisher exists, and the child PID
+is reaped. Action pure regression is 423 passed / 29 skipped. Both integrated profiles
+and all 25 existing contracts pass after the fix. Independent Action wheel was rebuilt
+from the same source without dependency/lock changes. See validation/real-nav2.

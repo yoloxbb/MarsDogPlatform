@@ -3028,7 +3028,14 @@ def main(args: list[str] | None = None) -> None:
         )
         sys.exit(1)
 
-    rclpy.init(args=args)
+    import signal
+    from rclpy.signals import SignalHandlerOptions
+    # Cancellation and zero-velocity publication must finish before the ROS
+    # context closes. An ok() check cannot prevent asynchronous signal shutdown.
+    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
+    def interrupt(_signum, _frame):
+        raise KeyboardInterrupt
+    previous_term = signal.signal(signal.SIGTERM, interrupt)
     node = ActionExecutorNode()
     # Long Goal workers and synchronous service waits need spare ROS callback
     # threads for inner Action results, service replies and lease renewals.
@@ -3074,6 +3081,7 @@ def main(args: list[str] | None = None) -> None:
         executor.shutdown()
         node.destroy_node()
         _shutdown_rclpy_if_ok(rclpy, RCLError)
+        signal.signal(signal.SIGTERM, previous_term)
 
 
 if __name__ == "__main__":

@@ -24,8 +24,8 @@ Lite3 本机 prepare/build/doctor/up/smoke 统一入口；
 
 先读 README.md、AGENTS.md、docs/migration/STATUS.md、
 docs/architecture/PLATFORM_IMPLEMENTATION_REVIEW.md 和 docs/LOCAL_LITE3_CPU.md。
-当前主仓 git log/status 与 validation/local-platform/release-manifest.json
-提供最终源码基线；不要根据旧阶段提案中“尚未实施”重新开始迁移。
+当前主仓 git log/status 与 validation/real-nav2/release-manifest.json
+提供最新源码基线；validation/local-platform 保留此前验收快照。不要根据旧阶段提案中“尚未实施”重新开始迁移。
 
 最常用命令（在主仓内）：
 
@@ -62,3 +62,29 @@ go_home 不产生 Needs 结算；不要为 smoke 人为改变这个产品语义�
 不要修改原仓、删除归档、强行重写算法、升级 vendor、放宽控制门限、改公开 ROS 类型，
 也不要发布未经确认的厂商库。新增业务功能直接在主仓独立模块实现，经公开接口与
 契约/集成门禁验证。不要再次大规模搬文件或创建第二个主仓。
+
+
+## 本次继续工作 — 可选真实 Nav2
+
+2026-09-29 新增 lite3-nav2-cpu；用 tools/marsdog.py up --profile lite3-nav2-cpu
+统一启动真实 Nav2 + 现有业务模块。默认 profile 不变。
+已通过真实 GO_HOME 规划/速度/位姿/Action 终态关联；7 项故障恢复契约；
+两个 profile 的关闭、重复启动和子进程故障传播；25 项旧契约；6 项构建隔离测试。
+Nav2 使用 domain212，OpenVINS 测试213，Action 退出测试214，默认mock210。不要并行启动同域验收。
+固定 Debian 扩展依赖在 third_party/extended-ros-deps.lock.json，仅提取到 out，
+未执行 apt install。独立派生元数据视图适配 CMake 绝对路径并记录哈希。
+
+OpenVINS 四包已构建且原有腿部速度融合 CTest 通过。
+RTAB 核心 0.23.8 + 全部 ROS wrapper 0.23.7，共 16 包构建通过。100 个 ELF 依赖
+检查通过；已启用 OpenVINS/Qt/VTK/OctoMap，g2o/GTSAM/Ceres 优化后端未启用。
+上游会向源码写 DatabaseSchema.sql，构建驱动已新增独立 out/extended-ros/vendor-source
+副本；禁止放宽 vendor 校验或将生成文件加入固定快照。
+tools/check_extended_ros_runtime.py 区分 ELF 依赖加载、原有 CTest 与未验证的传感器运行。
+本轮唯一业务源码修复是 modules/action 的 ROS main 信号退出顺序，确保原有取消/
+停止流程在 context 关闭前完成；SIGINT/SIGTERM 进程测试及 423 pass / 29 skip 通过。
+robotics 自研实现、IDL、默认配置、原始七仓和算法未改。
+详细操作与范围见 docs/LOCAL_NAV2_CPU.md、docs/migration/P6_REAL_NAV2.md。
+
+下一步优先真实 CPU Vision/Voice 回放。先核对已有模型/样本资产；缺少时需要用户提供
+实际路径、版本/哈希和录音/图像，不用随机模型或模拟成功冒充推理验收。
+原始七仓、固定 vendor 与主机包清单已重新验证；新增阶段证据全部在 validation/real-nav2。

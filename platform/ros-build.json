@@ -30,7 +30,7 @@
     {
       "layer": "vendor odometry",
       "source": ".external/openvins or .external/vins-fusion",
-      "status": "Sources preserved; no algorithm upgrade"
+      "status": "Pinned OpenVINS 4-package CPU build and original leg-velocity CTest passed; sensor/accuracy acceptance pending; VINS alternative preserved"
     },
     {
       "layer": "mapping",
@@ -38,7 +38,7 @@
       "requires": [
         "vendor odometry (OpenVINS when selected)"
       ],
-      "status": "Exact modified fork preserved; full mapping build/runtime not accepted"
+      "status": "Pinned core and all wrappers (16 packages) CPU build and ELF dependencies passed; real mapping/runtime accuracy pending"
     },
     {
       "layer": "native capabilities",
@@ -48,7 +48,7 @@
         "vendor UWB IDL",
         "Nav2 libraries for behavior_ext_plugins"
       ],
-      "status": "CPU subset tested; hardware bringup not run"
+      "status": "Own native CPU builds tested; optional behavior_ext_plugins builds and loads in real Nav2; hardware bringup not accepted"
     },
     {
       "layer": "business modules",
@@ -65,14 +65,23 @@
       "requires": [
         "explicit selected capabilities"
       ],
-      "status": "Only lite3-local-cpu is accepted; no production profile assumed"
+      "status": "lite3-local-cpu and optional lite3-nav2-cpu software acceptance; no production profile"
     }
   ],
   "excluded_from_local_build": {
-    "behavior_ext_plugins": "Requires complete Nav2 development libraries, not installed",
-    "rtabmap": "No real camera/IMU/map acceptance inputs; preserved external fork",
-    "openvins": "Pinned external source; hardware odometry not part of simulated profile",
+    "behavior_ext_plugins": "Separate optional lite3-nav2-cpu build and real Nav2 load/activation gate; default mock profile remains unchanged",
+    "rtabmap": "Separate fixed-source 16-package CPU build passed; real camera/IMU/map acceptance pending",
+    "openvins": "Separate fixed-source CPU build and existing leg-velocity test; sensor/estimator acceptance pending",
     "vins-fusion": "Alternative odometry preserved, not jointly launched"
   },
-  "uwb_vendor_driver": "OFF in CPU profile; original ARM library not emulated"
+  "uwb_vendor_driver": "OFF in CPU profile; original ARM library not emulated",
+  "optional_profiles": {
+    "lite3-nav2-cpu": {
+      "driver": "tools/marsdog.py --profile lite3-nav2-cpu",
+      "domain": 212,
+      "dependencies": "third_party/extended-ros-deps.lock.json",
+      "build": "tools/check_extended_ros_build.py nav2-plugin",
+      "runtime": "Real Nav2 with synthetic map/localization/kinematics; no hardware"
+    }
+  }
 }

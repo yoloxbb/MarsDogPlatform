@@ -1,11 +1,15 @@
 """Run migrated Action -> BT -> Needs contracts in separate environments."""
+import argparse
 import os
 from pathlib import Path
 import subprocess
 from runtime_environment import ROOT, clean_environment
 
 def main():
-    out = ROOT / "validation/local-platform"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", type=Path, default=ROOT / "out/contracts")
+    args = parser.parse_args()
+    out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=True)
     env = clean_environment()
     env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"

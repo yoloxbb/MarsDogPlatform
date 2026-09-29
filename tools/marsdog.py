@@ -172,17 +172,21 @@ def process_specs(directory):
     ]
 
 
-def supervise(args):
+def supervise(args, *, profile=PROFILE, local=LOCAL, specs=process_specs,
+              probe_script="local_smoke.py", env_transform=None, shutdown_hook=None):
     env = doctor(args)
-    directory = LOCAL / "runs" / (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + str(os.getpid()))
+    if env_transform is not None:
+        env = env_transform(env)
+    local.mkdir(parents=True, exist_ok=True)
+    directory = local / "runs" / (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + str(os.getpid()))
     directory.mkdir(parents=True)
     env.update(MARSDOG_LOCAL_SIMULATION="1", ROS_LOG_DIR=str(directory / "ros-log"),
                MARSDOG_VISION_PROJECT_DIR=str(INSTALL / "marsdog_vision_interaction/share/marsdog_vision_interaction"),
                MARSDOG_VISION_MODEL_DIR=str(directory / "absent-models"),
                MARSDOG_VISION_DATA_DIR=str(directory / "vision-data"))
     run([BUILD_TOOLS / "python", "-B", ROOT / "tools/prepare_local_configs.py",
-         "--run", directory, "--install", INSTALL], env=env)
-    lock = (LOCAL / "lite3-local-cpu.lock").open("a")
+         "--run", directory, "--install", INSTALL, "--profile", profile["name"]], env=env)
+    lock = (LOCAL / (profile["name"] + ".lock")).open("a")
     try:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
@@ -194,11 +198,11 @@ def supervise(args):
         nonlocal stopping
         stopping = True
     old_handlers = {s: signal.signal(s, stop_signal) for s in (signal.SIGINT, signal.SIGTERM)}
-    data = {"status": "RUNNING", "profile": PROFILE, "run_directory": str(directory)}
+    data = {"status": "RUNNING", "profile": profile, "run_directory": str(directory)}
     error = None
     probe = None
     try:
-        for name, cmd in process_specs(directory):
+        for name, cmd in specs(directory):
             if stopping:
                 break
             stream = (directory / (name + ".log")).open("w")
@@ -215,13 +219,13 @@ def supervise(args):
         if args.command == "smoke" and not stopping:
             stream = (directory / "probe.log").open("w")
             streams.append(stream)
-            cmd = [str(BUILD_TOOLS / "python"), "-B", str(ROOT / "tools/local_smoke.py"),
+            cmd = [str(BUILD_TOOLS / "python"), "-B", str(ROOT / "tools" / probe_script),
                    "--output", str(directory / "smoke.json")]
             probe = subprocess.Popen(cmd, cwd=directory, env=env, stdout=stream,
                                      stderr=subprocess.STDOUT, start_new_session=True)
             children.append(("probe", probe, cmd))
         started = time.monotonic()
-        print("SIMULATED Lite3 CPU profile. Logs:", directory, flush=True)
+        print("LOCAL SIMULATION profile:", profile["name"], "Logs:", directory, flush=True)
         while not stopping:
             for name, proc, _ in children:
                 code = proc.poll()
@@ -253,6 +257,14 @@ def supervise(args):
                 return True
             except ProcessLookupError:
                 return False
+        if shutdown_hook is not None:
+            try:
+                data["lifecycle_shutdown"] = shutdown_hook(env, directory, children)
+            except BaseException as exc:
+                data["lifecycle_shutdown"] = {"status": "FAIL", "error": str(exc)}
+                if error is None:
+                    error = exc
+                    data.update(status="FAIL", error=str(exc))
         for _, proc, _ in children:
             signal_group(proc, signal.SIGINT)
         deadline = time.monotonic() + 8.0
@@ -279,7 +291,7 @@ def supervise(args):
         for sig, handler in old_handlers.items():
             signal.signal(sig, handler)
         (directory / "result.json").write_text(json.dumps(data, indent=2) + "\n")
-        (LOCAL / "latest-run.json").write_text(json.dumps(data, indent=2) + "\n")
+        (local / "latest-run.json").write_text(json.dumps(data, indent=2) + "\n")
         fcntl.flock(lock, fcntl.LOCK_UN)
         lock.close()
     print(json.dumps({"status": data["status"], "report": str(directory / "result.json")}))
@@ -290,12 +302,16 @@ def supervise(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("prepare", "build", "doctor", "up", "smoke"))
+    parser.add_argument("--profile", choices=("lite3-local-cpu", "lite3-nav2-cpu"), default="lite3-local-cpu")
     parser.add_argument("--uv", default="uv")
     parser.add_argument("--archive-dir", type=Path, default=ROOT.parent / "migration/archives")
     parser.add_argument("--duration", type=float, default=0, help="Bound up duration in seconds; zero runs until Ctrl-C")
     args = parser.parse_args()
     if args.duration < 0:
         parser.error("--duration must be nonnegative")
+    if args.profile == "lite3-nav2-cpu":
+        from nav2_profile import main as nav2_main
+        return nav2_main(args, sys.modules[__name__])
     if args.command in ("up", "smoke"):
         supervise(args)
     else:

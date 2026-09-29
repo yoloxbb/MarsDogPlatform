@@ -41,3 +41,6 @@ functional gate also passed (migrated.json). All original planner tests are unch
 Sixteen workspace-level documentation/scripts/editor files are inventoried in
 history/robot-retained-workspace-assets.json and remain preserved in their archive.
 The accepted local integration and remaining deployment limits are now in STATUS.md.
+
+Follow-up: behavior_ext_plugins now also builds and loads in the optional real Nav2 CPU profile.
+See P6_REAL_NAV2.md; the earlier eight-package result remains the original migration evidence.

@@ -11,6 +11,15 @@ cd /home/elephant/MarsDog/marsdog-platform
 python3 tools/marsdog.py up
 ~~~
 
+另有已接入真实 Nav2 的可选本机配置：
+
+~~~bash
+python3 tools/marsdog.py up --profile lite3-nav2-cpu
+~~~
+
+范围与复现步骤见 [真实 Nav2 CPU 验收](docs/LOCAL_NAV2_CPU.md)。
+定位/运动/地图仍为模拟输入，未完成实机或模型验收。
+
 Ctrl-C 关闭整组进程。日志/配置副本/数据写入 out/local/runs；
 子进程崩溃会使组合失败退出，重复启动会被拒绝。详细说明见
 [本机启动与验收](docs/LOCAL_LITE3_CPU.md)。

@@ -1,0 +1,676 @@
+{
+  "schema_version": 1,
+  "scope": "Ubuntu 22.04 amd64; optional full ROS CPU development dependencies; extract only, never apt install",
+  "requested": [
+    "ros-humble-nav2-bt-navigator",
+    "ros-humble-nav2-controller",
+    "ros-humble-nav2-planner",
+    "ros-humble-nav2-navfn-planner",
+    "ros-humble-nav2-regulated-pure-pursuit-controller",
+    "ros-humble-nav2-behaviors",
+    "ros-humble-nav2-lifecycle-manager",
+    "libceres-dev",
+    "liboctomap-dev",
+    "ros-humble-image-transport-plugins",
+    "ros-humble-pcl-ros"
+  ],
+  "packages": [
+    {
+      "package": "libk5crypto3",
+      "version": "1.19.2-2ubuntu0.10",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/k/krb5/libk5crypto3_1.19.2-2ubuntu0.10_amd64.deb",
+      "sha256": "40429c0099678fbc35045f0c63a10bc3490251d80cf1006095eaa0272c8d5e27",
+      "depends": "libc6 (>= 2.33), libkrb5support0 (>= 1.16)",
+      "size": 86496
+    },
+    {
+      "package": "libkrb5support0",
+      "version": "1.19.2-2ubuntu0.10",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/k/krb5/libkrb5support0_1.19.2-2ubuntu0.10_amd64.deb",
+      "sha256": "0406052ac2d267f05088ada6d36df61aaa338cbe8d5e13fb1d7f79da560817ed",
+      "depends": "libc6 (>= 2.34)",
+      "size": 32708
+    },
+    {
+      "package": "libkrb5-3",
+      "version": "1.19.2-2ubuntu0.10",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/k/krb5/libkrb5-3_1.19.2-2ubuntu0.10_amd64.deb",
+      "sha256": "0da3e0df7d6314615160a42f65ff345986783be02cd65a6ce797cfbacc7bcb0d",
+      "depends": "libc6 (>= 2.34), libcom-err2 (>= 1.43.9), libk5crypto3 (>= 1.18.2), libkeyutils1 (>= 1.5.9), libkrb5support0 (= 1.19.2-2ubuntu0.10), libssl3 (>= 3.0.0~~alpha1)",
+      "size": 355538
+    },
+    {
+      "package": "libgssapi-krb5-2",
+      "version": "1.19.2-2ubuntu0.10",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/k/krb5/libgssapi-krb5-2_1.19.2-2ubuntu0.10_amd64.deb",
+      "sha256": "08e98a3dc74361cdb13c0d68bc73e0352552490546c1ad3ce5bff5426f6a2dfe",
+      "depends": "libc6 (>= 2.33), libcom-err2 (>= 1.43.9), libk5crypto3 (>= 1.16), libkrb5-3 (= 1.19.2-2ubuntu0.10), libkrb5support0 (>= 1.15~beta1)",
+      "size": 144666
+    },
+    {
+      "package": "libncurses6",
+      "version": "6.3-2ubuntu0.3",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/n/ncurses/libncurses6_6.3-2ubuntu0.3_amd64.deb",
+      "sha256": "38f97a45931ab6f296be017344afc45e5ccbf83f24896f79625318691a9bebf8",
+      "depends": "libtinfo6 (= 6.3-2ubuntu0.3), libc6 (>= 2.34)",
+      "size": 111258
+    },
+    {
+      "package": "libncursesw6",
+      "version": "6.3-2ubuntu0.3",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/n/ncurses/libncursesw6_6.3-2ubuntu0.3_amd64.deb",
+      "sha256": "734107c126c2685508e4186f6be65f4edc0d393f1bc1cb4c307a76d1beb09496",
+      "depends": "libtinfo6 (= 6.3-2ubuntu0.3), libc6 (>= 2.34)",
+      "size": 147472
+    },
+    {
+      "package": "libtinfo6",
+      "version": "6.3-2ubuntu0.3",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/n/ncurses/libtinfo6_6.3-2ubuntu0.3_amd64.deb",
+      "sha256": "3b8dff43a31168f5020928f2ab9a97324c5b47ae708311781f6bd01306c96214",
+      "depends": "libc6 (>= 2.33)",
+      "size": 104576
+    },
+    {
+      "package": "libgssrpc4",
+      "version": "1.19.2-2ubuntu0.10",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/k/krb5/libgssrpc4_1.19.2-2ubuntu0.10_amd64.deb",
+      "sha256": "37481241adc5d1c46672ad3c1920a82e6c26f97a473467a84adc0f7dfa77799e",
+      "depends": "libc6 (>= 2.15), libgssapi-krb5-2 (>= 1.17)",
+      "size": 58678
+    },
+    {
+      "package": "libkdb5-10",
+      "version": "1.19.2-2ubuntu0.10",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/k/krb5/libkdb5-10_1.19.2-2ubuntu0.10_amd64.deb",
+      "sha256": "80bb07a9be24d740794777c75023d328b24c722fcb1a3762d2cc88941c19fb6f",
+      "depends": "libc6 (>= 2.33), libcom-err2 (>= 1.43.9), libgssrpc4 (>= 1.7dfsg~alpha1), libk5crypto3 (>= 1.7+dfsg), libkrb5-3 (>= 1.14+dfsg), libkrb5support0 (>= 1.15~beta1)",
+      "size": 40478
+    },
+    {
+      "package": "libkadm5srv-mit12",
+      "version": "1.19.2-2ubuntu0.10",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/k/krb5/libkadm5srv-mit12_1.19.2-2ubuntu0.10_amd64.deb",
+      "sha256": "33f9e251251f85af8ddb00bfe7e334d4b3a5bd3e10fa18044206be026d801773",
+      "depends": "libc6 (>= 2.33), libcom-err2 (>= 1.43.9), libgssapi-krb5-2 (>= 1.6.dfsg.2), libgssrpc4 (>= 1.6.dfsg.2), libk5crypto3 (>= 1.6.dfsg.2), libkdb5-10 (>= 1.19.2), libkrb5-3 (>= 1.13~alpha1+dfsg), libkrb5support0 (>= 1.17)",
+      "size": 54710
+    },
+    {
+      "package": "libkadm5clnt-mit12",
+      "version": "1.19.2-2ubuntu0.10",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/k/krb5/libkadm5clnt-mit12_1.19.2-2ubuntu0.10_amd64.deb",
+      "sha256": "1f1b618fcf2a6ebc7b8bbe098e7c9afe31d59c4201c4f7b0a83347e9d071098a",
+      "depends": "libc6 (>= 2.25), libcom-err2 (>= 1.43.9), libgssapi-krb5-2 (>= 1.17), libgssrpc4 (>= 1.6.dfsg.2), libk5crypto3 (>= 1.6.dfsg.2), libkrb5-3 (>= 1.15~beta1), libkrb5support0 (>= 1.17)",
+      "size": 41866
+    },
+    {
+      "package": "comerr-dev",
+      "version": "2.1-1.46.5-2ubuntu1.2",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/e/e2fsprogs/comerr-dev_2.1-1.46.5-2ubuntu1.2_amd64.deb",
+      "sha256": "b1094bc872f0d1f2440f26f581e8fcad5d71dc420dd1c75018b0a9d935248577",
+      "depends": "libc6-dev | libc-dev, libcom-err2 (= 1.46.5-2ubuntu1.2)",
+      "size": 41002
+    },
+    {
+      "package": "krb5-multidev",
+      "version": "1.19.2-2ubuntu0.10",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/k/krb5/krb5-multidev_1.19.2-2ubuntu0.10_amd64.deb",
+      "sha256": "0b37373e56348269bef4dca0d166914be563573332da89e974ec32018d60dce3",
+      "depends": "libkrb5-3 (= 1.19.2-2ubuntu0.10), libk5crypto3 (= 1.19.2-2ubuntu0.10), libgssapi-krb5-2 (= 1.19.2-2ubuntu0.10), libgssrpc4 (= 1.19.2-2ubuntu0.10), libkadm5srv-mit12 (= 1.19.2-2ubuntu0.10), libkadm5clnt-mit12 (= 1.19.2-2ubuntu0.10), comerr-dev",
+      "size": 125118
+    },
+    {
+      "package": "libsuitesparseconfig5",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/s/suitesparse/libsuitesparseconfig5_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "5e0433af3c3a5fa0c20073804fc1f73834b34dd98633ad9ff0a33a28c350830b",
+      "depends": "libc6 (>= 2.17)",
+      "size": 10380
+    },
+    {
+      "package": "libamd2",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/s/suitesparse/libamd2_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "fb1304a59465049d4c20e886acb316ba54ae1a6e41e287e8f7a0dd351a899bae",
+      "depends": "libc6 (>= 2.2.5), libsuitesparseconfig5 (>= 1:5.0.0)",
+      "size": 21580
+    },
+    {
+      "package": "libmd-dev",
+      "version": "1.0.4-1build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/libm/libmd/libmd-dev_1.0.4-1build1_amd64.deb",
+      "sha256": "a2cefd3f43134c7e662b43d5da1bc42bb80927032f3a142da845939d09288bc5",
+      "depends": "libmd0 (= 1.0.4-1build1)",
+      "size": 39988
+    },
+    {
+      "package": "libbsd-dev",
+      "version": "0.11.5-1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/libb/libbsd/libbsd-dev_0.11.5-1_amd64.deb",
+      "sha256": "16f20fc8f05bdb68b0db046a4f91dfe664d91409bc4e196b302ab5432bce5022",
+      "depends": "libbsd0 (= 0.11.5-1), libmd-dev",
+      "size": 168470
+    },
+    {
+      "package": "libbtf1",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/s/suitesparse/libbtf1_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "f6201a3428f3b8e731c21beb48b786d456fe601936f4666244242426637f265f",
+      "depends": "libc6 (>= 2.2.5)",
+      "size": 12064
+    },
+    {
+      "package": "libcamd2",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/s/suitesparse/libcamd2_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "b771ae509a48132b2c00e050589abcc379c212c3777d0621e989898de4f144bf",
+      "depends": "libc6 (>= 2.2.5), libsuitesparseconfig5 (>= 1:5.0.0)",
+      "size": 23302
+    },
+    {
+      "package": "libccolamd2",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/s/suitesparse/libccolamd2_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "d8f24c71ee5e8da8fd633f1e6c78a1a6f70c5752b50f816dcae548a929a5cc0f",
+      "depends": "libc6 (>= 2.4), libsuitesparseconfig5 (>= 1:5.0.0)",
+      "size": 25234
+    },
+    {
+      "package": "libcolamd2",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/s/suitesparse/libcolamd2_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "6893bdfcd37c2e4110f3a8de4b536b9408613d8d01b99f9a468b5fd0cf245f89",
+      "depends": "libc6 (>= 2.4), libsuitesparseconfig5 (>= 1:5.0.0)",
+      "size": 18024
+    },
+    {
+      "package": "libmetis5",
+      "version": "5.1.0.dfsg-7build2",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/m/metis/libmetis5_5.1.0.dfsg-7build2_amd64.deb",
+      "sha256": "357ce72c2d3698feeb54212edfadd334e06789458cece8d61636e2dadb2fb080",
+      "depends": "libc6 (>= 2.33)",
+      "size": 180622
+    },
+    {
+      "package": "libcholmod3",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/s/suitesparse/libcholmod3_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "440d5d208f1eeead716166203de85a973d102bd06d9dd8f46a11ce6f357a5d1d",
+      "depends": "libamd2 (>= 1:4.5.2), libblas3 | libblas.so.3, libc6 (>= 2.7), libcamd2 (>= 1:4.5.2), libccolamd2 (>= 1:4.5.2), libcolamd2 (>= 1:4.5.2), libgomp1 (>= 4.9), liblapack3 | liblapack.so.3, libmetis5 (>= 5.1.0.dfsg), libsuitesparseconfig5 (>= 1:5.0.0)",
+      "size": 346430
+    },
+    {
+      "package": "libcxsparse3",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/s/suitesparse/libcxsparse3_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "d78cb3f8599fc1352bc9450b432c5c7c6d42100d129e39f84566c812cf4b24f1",
+      "depends": "libc6 (>= 2.7)",
+      "size": 70806
+    },
+    {
+      "package": "libgflags2.2",
+      "version": "2.2.2-2",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/g/gflags/libgflags2.2_2.2.2-2_amd64.deb",
+      "sha256": "715b81b4d6577b577c09bfb5cc572edc271f3af4d419c7b0eacf2f6feb943df6",
+      "depends": "libc6 (>= 2.14), libgcc-s1 (>= 3.0), libstdc++6 (>= 5.2)",
+      "size": 78052
+    },
+    {
+      "package": "libgoogle-glog0v5",
+      "version": "0.5.0+really0.4.0-2",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/g/google-glog/libgoogle-glog0v5_0.5.0%2breally0.4.0-2_amd64.deb",
+      "sha256": "c7bebf51aacb022984daa16d5b0ea48275c87d275b8202f401bd775b3523ba94",
+      "depends": "libc6 (>= 2.34), libgcc-s1 (>= 3.3.1), libgflags2.2 (>= 2.2.2), libstdc++6 (>= 5.2), libunwind8",
+      "size": 60322
+    },
+    {
+      "package": "libspqr2",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/s/suitesparse/libspqr2_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "d107b150b105d4c646d98b9a130f2fadd5d125d5cc570469ed17d88da03c1d09",
+      "depends": "libblas3 | libblas.so.3, libc6 (>= 2.14), libcholmod3 (>= 1:4.5.2), libgcc-s1 (>= 4.0), liblapack3 | liblapack.so.3, libsuitesparseconfig5 (>= 1:5.0.0)",
+      "size": 71632
+    },
+    {
+      "package": "libceres2",
+      "version": "2.0.0+dfsg1-5",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/c/ceres-solver/libceres2_2.0.0%2bdfsg1-5_amd64.deb",
+      "sha256": "5ae3f53129a6bef1987c122721f0e572b21c05efe7047df306fc5b4901221121",
+      "depends": "libblas3 | libblas.so.3, libc6 (>= 2.34), libcholmod3 (>= 1:4.5.2), libcxsparse3 (>= 1:4.5.2), libgcc-s1 (>= 4.0), libgoogle-glog0v5 (>= 0.5.0+really0.4.0), liblapack3 | liblapack.so.3, libspqr2 (>= 1:5.10.1+dfsg), libstdc++6 (>= 11), libunwind8",
+      "size": 834484
+    },
+    {
+      "package": "libgflags-dev",
+      "version": "2.2.2-2",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/g/gflags/libgflags-dev_2.2.2-2_amd64.deb",
+      "sha256": "7e75f61ad260248753a2703b1a04e07896f5e7e54fe52f6955d8126eb581d6e9",
+      "depends": "libgflags2.2 (= 2.2.2-2)",
+      "size": 93656
+    },
+    {
+      "package": "libunwind-dev",
+      "version": "1.3.2-2build2.1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/libu/libunwind/libunwind-dev_1.3.2-2build2.1_amd64.deb",
+      "sha256": "f8a7f63a6663190bf77275626e9ff654505f52ce876aff7e51b976e565ac081f",
+      "depends": "libunwind8 (= 1.3.2-2build2.1), liblzma-dev",
+      "size": 1882960
+    },
+    {
+      "package": "libgoogle-glog-dev",
+      "version": "0.5.0+really0.4.0-2",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/g/google-glog/libgoogle-glog-dev_0.5.0%2breally0.4.0-2_amd64.deb",
+      "sha256": "133bce58e98e56366960410dabbf0259eca1cfaa1b0f67063201be542a8ecd3c",
+      "depends": "libgoogle-glog0v5 (= 0.5.0+really0.4.0-2), libgflags-dev, libunwind-dev | libunwind7-dev",
+      "size": 91938
+    },
+    {
+      "package": "libklu1",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/s/suitesparse/libklu1_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "f16a0091e5cb3c4023730ef0b98157d64b742ccb335f67b4503083e6beecaf22",
+      "depends": "libamd2 (>= 1:4.5.2), libbtf1 (>= 1:4.5.2), libc6 (>= 2.4), libcolamd2 (>= 1:4.5.2), libsuitesparseconfig5 (>= 1:5.0.0)",
+      "size": 77634
+    },
+    {
+      "package": "libldl2",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/s/suitesparse/libldl2_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "275f3821a9c5be97e5bf8831b09cdfa918eb2ab9d949f52b21476b6e80b75dc5",
+      "depends": "libc6 (>= 2.2.5)",
+      "size": 11706
+    },
+    {
+      "package": "libmongoose2",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/s/suitesparse/libmongoose2_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "da0508dabcb9c0cdfda8821c4240ab7eb208bce6f62561179ac482af5a5f9f27",
+      "depends": "libc6 (>= 2.14), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 5.2), libsuitesparseconfig5 (>= 1:5.0.0)",
+      "size": 33522
+    },
+    {
+      "package": "libumfpack5",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/s/suitesparse/libumfpack5_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "3cf270a12d0cf6f168c5866aaa440059421dcc210cfcaf15dc1cd450a08d3d8f",
+      "depends": "libamd2 (>= 1:4.5.2), libblas3 | libblas.so.3, libc6 (>= 2.29), libcholmod3 (>= 1:4.5.2), libsuitesparseconfig5 (>= 1:5.0.0)",
+      "size": 250162
+    },
+    {
+      "package": "librbio2",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/s/suitesparse/librbio2_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "911c987489b4ae86f80a735aba59f513f768cb33695c9eca0ed20b0efc3d69ed",
+      "depends": "libc6 (>= 2.7), libsuitesparseconfig5 (>= 1:5.0.0)",
+      "size": 26560
+    },
+    {
+      "package": "libsliplu1",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/s/suitesparse/libsliplu1_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "cb590a9e927efc96690944bbdf7cb02849ba6adf1cf2c6b1537170f082b95ed5",
+      "depends": "libamd2 (>= 1:4.5.2), libc6 (>= 2.29), libcolamd2 (>= 1:4.5.2), libgmp10 (>= 2:6.2.1+dfsg), libmpfr6 (>= 4.0.0), libsuitesparseconfig5 (>= 1:5.0.0)",
+      "size": 37090
+    },
+    {
+      "package": "libsuitesparse-dev",
+      "version": "1:5.10.1+dfsg-4build1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/s/suitesparse/libsuitesparse-dev_5.10.1%2bdfsg-4build1_amd64.deb",
+      "sha256": "46834c804b105bdb627d5b1830e8edc0bf61dcc3c3cc29da848fcde08b1b3e23",
+      "depends": "libamd2 (= 1:5.10.1+dfsg-4build1), libcamd2 (= 1:5.10.1+dfsg-4build1), libbtf1 (= 1:5.10.1+dfsg-4build1), libcolamd2 (= 1:5.10.1+dfsg-4build1), libccolamd2 (= 1:5.10.1+dfsg-4build1), libcholmod3 (= 1:5.10.1+dfsg-4build1), libcxsparse3 (= 1:5.10.1+dfsg-4build1), libklu1 (= 1:5.10.1+dfsg-4build1), libldl2 (= 1:5.10.1+dfsg-4build1), libmongoose2 (= 1:5.10.1+dfsg-4build1), libumfpack5 (= 1:5.10.1+dfsg-4build1), librbio2 (= 1:5.10.1+dfsg-4build1), libspqr2 (= 1:5.10.1+dfsg-4build1), libsliplu1 (= 1:5.10.1+dfsg-4build1), libsuitesparseconfig5 (= 1:5.10.1+dfsg-4build1), libblas-dev | libblas.so, liblapack-dev | liblapack.so",
+      "size": 1057674
+    },
+    {
+      "package": "libceres-dev",
+      "version": "2.0.0+dfsg1-5",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/c/ceres-solver/libceres-dev_2.0.0%2bdfsg1-5_amd64.deb",
+      "sha256": "710d3aa19adb134868b942046fc9156214dfc063a971bd1ab694a13316e47589",
+      "depends": "libceres2 (= 2.0.0+dfsg1-5), libgoogle-glog-dev, libgflags-dev, libeigen3-dev (>= 3.4.0), libeigen3-dev (<< 3.4.1), libsuitesparse-dev (>= 1:4.4.3)",
+      "size": 1176860
+    },
+    {
+      "package": "libncurses-dev",
+      "version": "6.3-2ubuntu0.3",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/n/ncurses/libncurses-dev_6.3-2ubuntu0.3_amd64.deb",
+      "sha256": "e51d55c365b957b442a1cef83256e4c3f71a66a743e5ba972a902f2da6b1123e",
+      "depends": "libtinfo6 (= 6.3-2ubuntu0.3), libncurses6 (= 6.3-2ubuntu0.3), libncursesw6 (= 6.3-2ubuntu0.3), libc6-dev | libc-dev, ncurses-bin (>= 6.0+20151017)",
+      "size": 380538
+    },
+    {
+      "package": "libnorm-dev",
+      "version": "1.5.9+dfsg-2",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/n/norm/libnorm-dev_1.5.9%2bdfsg-2_amd64.deb",
+      "sha256": "b286f251528030761b96d4233bf4b27ce24cd7f700169e4b4aa6cf2ae7da5fd6",
+      "depends": "libnorm1 (= 1.5.9+dfsg-2), libxml2-dev",
+      "size": 388888
+    },
+    {
+      "package": "liboctomap1.9",
+      "version": "1.9.7+dfsg-3",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/o/octomap/liboctomap1.9_1.9.7%2bdfsg-3_amd64.deb",
+      "sha256": "8ff6be1d139d6c049556bc7efd9d5bddb3c03357e3fd49da6fc4eba4532c5494",
+      "depends": "libc6 (>= 2.29), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 11)",
+      "size": 80360
+    },
+    {
+      "package": "liboctomap-dev",
+      "version": "1.9.7+dfsg-3",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/o/octomap/liboctomap-dev_1.9.7%2bdfsg-3_amd64.deb",
+      "sha256": "09e53db4b356adcdfa156008b4c39d090dca3aec294465707c6cf6bc5710c894",
+      "depends": "liboctomap1.9 (= 1.9.7+dfsg-3)",
+      "size": 1163972
+    },
+    {
+      "package": "libpgm-dev",
+      "version": "5.3.128~dfsg-2",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/libp/libpgm/libpgm-dev_5.3.128%7edfsg-2_amd64.deb",
+      "sha256": "1b35994a72c9de66be8a36b705b08e77d62b1fb02c3b45cedf57ea266c5619ed",
+      "depends": "libpgm-5.3-0 (= 5.3.128~dfsg-2)",
+      "size": 193128
+    },
+    {
+      "package": "libsodium-dev",
+      "version": "1.0.18-1ubuntu0.22.04.1",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/libs/libsodium/libsodium-dev_1.0.18-1ubuntu0.22.04.1_amd64.deb",
+      "sha256": "e89724be580faf6db2728a79de2e9b93edfa42a8dc78f200526832563a6bb469",
+      "depends": "libsodium23 (= 1.0.18-1ubuntu0.22.04.1)",
+      "size": 185184
+    },
+    {
+      "package": "libkrb5-dev",
+      "version": "1.19.2-2ubuntu0.10",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/k/krb5/libkrb5-dev_1.19.2-2ubuntu0.10_amd64.deb",
+      "sha256": "9ef65ad8bf324927d4a35b72d17ad7153451a43a501213888ec78873b7119d24",
+      "depends": "krb5-multidev (= 1.19.2-2ubuntu0.10)",
+      "size": 11972
+    },
+    {
+      "package": "libzmq3-dev",
+      "version": "4.3.4-2",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/universe/z/zeromq3/libzmq3-dev_4.3.4-2_amd64.deb",
+      "sha256": "c6ed849e53257b52d3d9df299a698cfb37862a4ce464a803324ad00cd7d471c0",
+      "depends": "libzmq5 (= 4.3.4-2), libpgm-dev (>= 5.2.122~dfsg), libsodium-dev, libnorm-dev, libkrb5-dev, libbsd-dev",
+      "size": 529744
+    },
+    {
+      "package": "ros-humble-behaviortree-cpp-v3",
+      "version": "3.8.7-1jammy.20260908.003336",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-behaviortree-cpp-v3/ros-humble-behaviortree-cpp-v3_3.8.7-1jammy.20260908.003336_amd64.deb",
+      "sha256": "4c6e13b9d6649fcd75bed803799a99b989df224dc4f01e2a7bf0899482b155ad",
+      "depends": "libboost-context1.74.0 (>= 1.74.0), libc6 (>= 2.34), libgcc-s1 (>= 3.3.1), libncurses6 (>= 6), libstdc++6 (>= 12), libtinfo6 (>= 6), libzmq5 (>= 4.0.1+dfsg), libboost-coroutine1.74.0, libncurses-dev, libzmq3-dev, ros-humble-ament-index-cpp, ros-humble-rclcpp, ros-humble-ros-workspace",
+      "size": 284340
+    },
+    {
+      "package": "ros-humble-bond",
+      "version": "4.1.4-1jammy.20260907.213713",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-bond/ros-humble-bond_4.1.4-1jammy.20260907.213713_amd64.deb",
+      "sha256": "22481b36c3e1c29b3a9bd6e2e9f4a987767f8826d7f0ce8bf18827bd916bf2c0",
+      "depends": "libc6 (>= 2.4), libgcc-s1 (>= 3.3.1), libpython3.10 (>= 3.10.0), libstdc++6 (>= 5.2), ros-humble-fastcdr, ros-humble-builtin-interfaces, ros-humble-rosidl-default-runtime, ros-humble-std-msgs, ros-humble-ros-workspace",
+      "size": 49696
+    },
+    {
+      "package": "ros-humble-smclib",
+      "version": "4.1.4-1jammy.20260317.155122",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-smclib/ros-humble-smclib_4.1.4-1jammy.20260317.155122_amd64.deb",
+      "sha256": "d316ef072287866f3c82e050568405e48fc6e9e58eb1c143f0e8c96ebac63004",
+      "depends": "ros-humble-ros-workspace",
+      "size": 15020
+    },
+    {
+      "package": "ros-humble-bondcpp",
+      "version": "4.1.4-1jammy.20260907.235408",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-bondcpp/ros-humble-bondcpp_4.1.4-1jammy.20260907.235408_amd64.deb",
+      "sha256": "c7a44c5d70a4c6b4f0aabc77ad66b6604995c886f2765f20272e4c28d3312075",
+      "depends": "libc6 (>= 2.34), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 11), libuuid1 (>= 2.16), ros-humble-bond, ros-humble-rclcpp, ros-humble-rclcpp-lifecycle, ros-humble-smclib, uuid-dev, ros-humble-ros-workspace",
+      "size": 126410
+    },
+    {
+      "package": "ros-humble-compressed-depth-image-transport",
+      "version": "2.5.5-1jammy.20260908.002700",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-compressed-depth-image-transport/ros-humble-compressed-depth-image-transport_2.5.5-1jammy.20260908.002700_amd64.deb",
+      "sha256": "e22eacfc80279962f7e9715c8106c2e12c8f6ea5907494f054e662a55068f4ed",
+      "depends": "libc6 (>= 2.34), libconsole-bridge1.0 (>= 1.0.1+dfsg2), libgcc-s1 (>= 3.3.1), libopencv-core4.5d (>= 4.5.4+dfsg), libopencv-imgcodecs4.5d (>= 4.5.4+dfsg), libstdc++6 (>= 11), ros-humble-cv-bridge, ros-humble-image-transport, ros-humble-ros-workspace",
+      "size": 120974
+    },
+    {
+      "package": "ros-humble-compressed-image-transport",
+      "version": "2.5.5-1jammy.20260908.002726",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-compressed-image-transport/ros-humble-compressed-image-transport_2.5.5-1jammy.20260908.002726_amd64.deb",
+      "sha256": "af9a9f7f87bc2e0d1b72809ddd39d627ee3a5611aa148571815cd63267ba27a1",
+      "depends": "libc6 (>= 2.34), libconsole-bridge1.0 (>= 1.0.1+dfsg2), libgcc-s1 (>= 3.3.1), libopencv-core4.5d (>= 4.5.4+dfsg), libopencv-imgcodecs4.5d (>= 4.5.4+dfsg), libopencv-imgproc4.5d (>= 4.5.4+dfsg), libstdc++6 (>= 11), ros-humble-cv-bridge, ros-humble-image-transport, ros-humble-ros-workspace",
+      "size": 129726
+    },
+    {
+      "package": "ros-humble-diagnostic-updater",
+      "version": "4.0.7-1jammy.20260907.223805",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-diagnostic-updater/ros-humble-diagnostic-updater_4.0.7-1jammy.20260907.223805_amd64.deb",
+      "sha256": "8687b9e56d001d02e622a8c62100e06ae277fe4209f0c32919cc9d3af3ea9ae0",
+      "depends": "libc6 (>= 2.34), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 11), ros-humble-diagnostic-msgs, ros-humble-rclcpp, ros-humble-rclpy, ros-humble-std-msgs, ros-humble-ros-workspace",
+      "size": 113700
+    },
+    {
+      "package": "ros-humble-theora-image-transport",
+      "version": "2.5.5-1jammy.20260907.230003",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-theora-image-transport/ros-humble-theora-image-transport_2.5.5-1jammy.20260907.230003_amd64.deb",
+      "sha256": "6b8928462e990c4fc62dd74a308aa0ffed71ef709722f80037ae3da65b9d8a8f",
+      "depends": "libc6 (>= 2.34), libconsole-bridge1.0 (>= 1.0.1+dfsg2), libgcc-s1 (>= 3.3.1), libogg0 (>= 1.0rc3), libopencv-core4.5d (>= 4.5.4+dfsg), libopencv-imgproc4.5d (>= 4.5.4+dfsg), libpython3.10 (>= 3.10.0), libstdc++6 (>= 11), libtheora0 (>= 1.0), ros-humble-fastcdr, libogg-dev, libopencv-imgproc-dev, libtheora-dev, ros-humble-cv-bridge, ros-humble-image-transport, ros-humble-pluginlib, ros-humble-rclcpp, ros-humble-rcutils, ros-humble-rosidl-default-runtime, ros-humble-sensor-msgs, ros-humble-std-msgs, ros-humble-ros-workspace",
+      "size": 213768
+    },
+    {
+      "package": "ros-humble-image-transport-plugins",
+      "version": "2.5.5-1jammy.20260908.011646",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-image-transport-plugins/ros-humble-image-transport-plugins_2.5.5-1jammy.20260908.011646_amd64.deb",
+      "sha256": "eca191aea3991ef1efc623ab3813c53031732c39336d6ba0379d3b90a120e93a",
+      "depends": "ros-humble-compressed-depth-image-transport, ros-humble-compressed-image-transport, ros-humble-theora-image-transport, ros-humble-ros-workspace",
+      "size": 6664
+    },
+    {
+      "package": "ros-humble-nav-2d-msgs",
+      "version": "1.1.20-1jammy.20260907.212326",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav-2d-msgs/ros-humble-nav-2d-msgs_1.1.20-1jammy.20260907.212326_amd64.deb",
+      "sha256": "dc3415db8e526df626b7139720785e84bb0a2fefa3cd8d2f7e55207128ea0091",
+      "depends": "libc6 (>= 2.4), libgcc-s1 (>= 3.3.1), libpython3.10 (>= 3.10.0), libstdc++6 (>= 5.2), ros-humble-fastcdr, ros-humble-geometry-msgs, ros-humble-rosidl-default-generators, ros-humble-rosidl-default-runtime, ros-humble-std-msgs, ros-humble-ros-workspace",
+      "size": 71550
+    },
+    {
+      "package": "ros-humble-nav2-msgs",
+      "version": "1.1.20-1jammy.20260907.223327",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-msgs/ros-humble-nav2-msgs_1.1.20-1jammy.20260907.223327_amd64.deb",
+      "sha256": "7ea288dd8e6718cb46658616eceb667bfda53c0d2b08596e3bc8a70061dc3487",
+      "depends": "libc6 (>= 2.4), libgcc-s1 (>= 3.3.1), libpython3.10 (>= 3.10.0), libstdc++6 (>= 5.2), ros-humble-fastcdr, ros-humble-action-msgs, ros-humble-builtin-interfaces, ros-humble-geometry-msgs, ros-humble-nav-msgs, ros-humble-rclcpp, ros-humble-rosidl-default-generators, ros-humble-std-msgs, ros-humble-ros-workspace",
+      "size": 779292
+    },
+    {
+      "package": "ros-humble-nav2-common",
+      "version": "1.1.20-1jammy.20260907.215155",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-common/ros-humble-nav2-common_1.1.20-1jammy.20260907.215155_amd64.deb",
+      "sha256": "c792b96b0a8d405bea49e9c0b641a8d2ec489d95c4720d671af4792e5a1e191a",
+      "depends": "python3-yaml, ros-humble-ament-cmake-core, ros-humble-launch, ros-humble-launch-ros, ros-humble-osrf-pycommon, ros-humble-rclpy, ros-humble-ros-workspace",
+      "size": 10192
+    },
+    {
+      "package": "ros-humble-nav2-util",
+      "version": "1.1.20-1jammy.20260907.235813",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-util/ros-humble-nav2-util_1.1.20-1jammy.20260907.235813_amd64.deb",
+      "sha256": "12fb5df2f48df2c8faaf8e21f5e56c8f122a36ba9951e424bf8f6b2768ddb1e9",
+      "depends": "libc6 (>= 2.34), libgcc-s1 (>= 3.3.1), liborocos-kdl1.5 (>= 1.5.1), libstdc++6 (>= 11), libboost-program-options1.74.0, ros-humble-action-msgs, ros-humble-bond, ros-humble-bondcpp, ros-humble-geometry-msgs, ros-humble-launch, ros-humble-launch-testing-ament-cmake, ros-humble-lifecycle-msgs, ros-humble-nav-msgs, ros-humble-nav2-common, ros-humble-nav2-msgs, ros-humble-rcl-interfaces, ros-humble-rclcpp, ros-humble-rclcpp-action, ros-humble-rclcpp-lifecycle, ros-humble-tf2, ros-humble-tf2-geometry-msgs, ros-humble-tf2-ros, ros-humble-ros-workspace",
+      "size": 159422
+    },
+    {
+      "package": "ros-humble-nav-2d-utils",
+      "version": "1.1.20-1jammy.20260908.000907",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav-2d-utils/ros-humble-nav-2d-utils_1.1.20-1jammy.20260908.000907_amd64.deb",
+      "sha256": "df85b77ad8c8ad54ce714893bf3061a3db601229e928ebd4b2e397f84c893bcd",
+      "depends": "libc6 (>= 2.32), libgcc-s1 (>= 3.3.1), liborocos-kdl1.5 (>= 1.5.1), libstdc++6 (>= 5.2), ros-humble-geometry-msgs, ros-humble-nav-2d-msgs, ros-humble-nav-msgs, ros-humble-nav2-msgs, ros-humble-nav2-util, ros-humble-std-msgs, ros-humble-tf2, ros-humble-tf2-geometry-msgs, ros-humble-ros-workspace",
+      "size": 24144
+    },
+    {
+      "package": "ros-humble-nav2-behavior-tree",
+      "version": "1.1.20-1jammy.20260908.004120",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-behavior-tree/ros-humble-nav2-behavior-tree_1.1.20-1jammy.20260908.004120_amd64.deb",
+      "sha256": "d3361158db7ed999cc7beb8767e16fc1f4173ec66dca9a7b77076109fde5460f",
+      "depends": "libc6 (>= 2.35), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 11), ros-humble-behaviortree-cpp-v3, ros-humble-builtin-interfaces, ros-humble-geometry-msgs, ros-humble-lifecycle-msgs, ros-humble-nav-msgs, ros-humble-nav2-msgs, ros-humble-nav2-util, ros-humble-rclcpp, ros-humble-rclcpp-action, ros-humble-rclcpp-lifecycle, ros-humble-sensor-msgs, ros-humble-std-msgs, ros-humble-std-srvs, ros-humble-tf2, ros-humble-tf2-geometry-msgs, ros-humble-tf2-ros, ros-humble-ros-workspace",
+      "size": 1215896
+    },
+    {
+      "package": "ros-humble-nav2-voxel-grid",
+      "version": "1.1.20-1jammy.20260908.002526",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-voxel-grid/ros-humble-nav2-voxel-grid_1.1.20-1jammy.20260908.002526_amd64.deb",
+      "sha256": "bcb6b7a3b2096ce3b71e8a7b56ae4ce2cbe7381c81d2d64cc350e1ad7dd5b108",
+      "depends": "libc6 (>= 2.32), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 5.2), ros-humble-rclcpp, ros-humble-ros-workspace",
+      "size": 19448
+    },
+    {
+      "package": "ros-humble-nav2-costmap-2d",
+      "version": "1.1.20-1jammy.20260908.002855",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-costmap-2d/ros-humble-nav2-costmap-2d_1.1.20-1jammy.20260908.002855_amd64.deb",
+      "sha256": "2fb08cfa9bc9ba139891096abb52f36bafc716ea53d67b4ef5eb4161b277d098",
+      "depends": "libc6 (>= 2.35), libconsole-bridge1.0 (>= 1.0.1+dfsg2), libgcc-s1 (>= 3.3.1), liborocos-kdl1.5 (>= 1.5.1), libstdc++6 (>= 11), libtinyxml2-9 (>= 8.0.0), ros-humble-angles, ros-humble-geometry-msgs, ros-humble-laser-geometry, ros-humble-map-msgs, ros-humble-message-filters, ros-humble-nav-msgs, ros-humble-nav2-msgs, ros-humble-nav2-util, ros-humble-nav2-voxel-grid, ros-humble-pluginlib, ros-humble-rclcpp, ros-humble-rclcpp-lifecycle, ros-humble-sensor-msgs, ros-humble-std-msgs, ros-humble-std-srvs, ros-humble-tf2, ros-humble-tf2-geometry-msgs, ros-humble-tf2-ros, ros-humble-tf2-sensor-msgs, ros-humble-visualization-msgs, ros-humble-ros-workspace",
+      "size": 927266
+    },
+    {
+      "package": "ros-humble-nav2-core",
+      "version": "1.1.20-1jammy.20260908.004903",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-core/ros-humble-nav2-core_1.1.20-1jammy.20260908.004903_amd64.deb",
+      "sha256": "d2bef6d0ee947d83f4dba5baef9aba93b7e70f6270bff7755b36ac258236afdc",
+      "depends": "ros-humble-geometry-msgs, ros-humble-nav-msgs, ros-humble-nav2-costmap-2d, ros-humble-nav2-util, ros-humble-pluginlib, ros-humble-rclcpp, ros-humble-rclcpp-lifecycle, ros-humble-std-msgs, ros-humble-tf2-ros, ros-humble-ros-workspace",
+      "size": 11224
+    },
+    {
+      "package": "ros-humble-nav2-behaviors",
+      "version": "1.1.20-1jammy.20260908.011930",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-behaviors/ros-humble-nav2-behaviors_1.1.20-1jammy.20260908.011930_amd64.deb",
+      "sha256": "4ca38f16ab3527135697c3427079ae186177e788b1f692832043d52576f6229a",
+      "depends": "libc6 (>= 2.35), libconsole-bridge1.0 (>= 1.0.1+dfsg2), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 11), ros-humble-geometry-msgs, ros-humble-nav-msgs, ros-humble-nav2-behavior-tree, ros-humble-nav2-core, ros-humble-nav2-costmap-2d, ros-humble-nav2-msgs, ros-humble-nav2-util, ros-humble-pluginlib, ros-humble-rclcpp, ros-humble-rclcpp-action, ros-humble-rclcpp-lifecycle, ros-humble-ros-workspace",
+      "size": 402086
+    },
+    {
+      "package": "ros-humble-nav2-bt-navigator",
+      "version": "1.1.20-1jammy.20260908.011944",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-bt-navigator/ros-humble-nav2-bt-navigator_1.1.20-1jammy.20260908.011944_amd64.deb",
+      "sha256": "3d1c84695d4a75262afe24f1a3bfc54209933c9218cb0e35c295e8ca28534c5a",
+      "depends": "libc6 (>= 2.35), libconsole-bridge1.0 (>= 1.0.1+dfsg2), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 11), ros-humble-behaviortree-cpp-v3, ros-humble-geometry-msgs, ros-humble-nav-msgs, ros-humble-nav2-behavior-tree, ros-humble-nav2-core, ros-humble-nav2-msgs, ros-humble-nav2-util, ros-humble-rclcpp, ros-humble-rclcpp-action, ros-humble-rclcpp-lifecycle, ros-humble-std-msgs, ros-humble-tf2-ros, ros-humble-ros-workspace",
+      "size": 257174
+    },
+    {
+      "package": "ros-humble-nav2-controller",
+      "version": "1.1.20-1jammy.20260908.005456",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-controller/ros-humble-nav2-controller_1.1.20-1jammy.20260908.005456_amd64.deb",
+      "sha256": "3d6f78d928efc9b388e14cbf100f97f08aafdc952b8426db883549459eb490aa",
+      "depends": "libc6 (>= 2.35), libconsole-bridge1.0 (>= 1.0.1+dfsg2), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 11), libtinyxml2-9 (>= 8.0.0), ros-humble-angles, ros-humble-nav-2d-msgs, ros-humble-nav-2d-utils, ros-humble-nav2-core, ros-humble-nav2-msgs, ros-humble-nav2-util, ros-humble-pluginlib, ros-humble-rclcpp, ros-humble-rclcpp-action, ros-humble-std-msgs, ros-humble-ros-workspace",
+      "size": 311458
+    },
+    {
+      "package": "ros-humble-nav2-lifecycle-manager",
+      "version": "1.1.20-1jammy.20260908.000824",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-lifecycle-manager/ros-humble-nav2-lifecycle-manager_1.1.20-1jammy.20260908.000824_amd64.deb",
+      "sha256": "870f001600faed2ecbf0ef166eb301b29952deb1e07f6113174354d64c2f18a8",
+      "depends": "libc6 (>= 2.34), libconsole-bridge1.0 (>= 1.0.1+dfsg2), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 11), ros-humble-bondcpp, ros-humble-diagnostic-updater, ros-humble-geometry-msgs, ros-humble-lifecycle-msgs, ros-humble-nav2-msgs, ros-humble-nav2-util, ros-humble-rclcpp-action, ros-humble-rclcpp-lifecycle, ros-humble-std-msgs, ros-humble-std-srvs, ros-humble-tf2-geometry-msgs, ros-humble-ros-workspace",
+      "size": 90364
+    },
+    {
+      "package": "ros-humble-nav2-navfn-planner",
+      "version": "1.1.20-1jammy.20260908.005505",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-navfn-planner/ros-humble-nav2-navfn-planner_1.1.20-1jammy.20260908.005505_amd64.deb",
+      "sha256": "d8e15b0263fc3b42f01ea3e74a11bb13580752a5130aa1462b72c94c8f348950",
+      "depends": "libc6 (>= 2.35), libconsole-bridge1.0 (>= 1.0.1+dfsg2), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 11), ros-humble-builtin-interfaces, ros-humble-geometry-msgs, ros-humble-nav-msgs, ros-humble-nav2-common, ros-humble-nav2-core, ros-humble-nav2-costmap-2d, ros-humble-nav2-msgs, ros-humble-nav2-util, ros-humble-pluginlib, ros-humble-rclcpp, ros-humble-rclcpp-action, ros-humble-rclcpp-lifecycle, ros-humble-tf2-ros, ros-humble-visualization-msgs, ros-humble-ros-workspace",
+      "size": 48008
+    },
+    {
+      "package": "ros-humble-nav2-planner",
+      "version": "1.1.20-1jammy.20260908.005526",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-planner/ros-humble-nav2-planner_1.1.20-1jammy.20260908.005526_amd64.deb",
+      "sha256": "7e1fc3869351ab7ef3775f6aea364330a86e9ae2efafea495ed6d538ae9ed538",
+      "depends": "libc6 (>= 2.35), libconsole-bridge1.0 (>= 1.0.1+dfsg2), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 11), libtinyxml2-9 (>= 8.0.0), ros-humble-builtin-interfaces, ros-humble-geometry-msgs, ros-humble-nav-msgs, ros-humble-nav2-common, ros-humble-nav2-core, ros-humble-nav2-costmap-2d, ros-humble-nav2-msgs, ros-humble-nav2-util, ros-humble-pluginlib, ros-humble-rclcpp, ros-humble-rclcpp-action, ros-humble-rclcpp-lifecycle, ros-humble-tf2-ros, ros-humble-visualization-msgs, ros-humble-ros-workspace",
+      "size": 200050
+    },
+    {
+      "package": "ros-humble-nav2-regulated-pure-pursuit-controller",
+      "version": "1.1.20-1jammy.20260908.005527",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-nav2-regulated-pure-pursuit-controller/ros-humble-nav2-regulated-pure-pursuit-controller_1.1.20-1jammy.20260908.005527_amd64.deb",
+      "sha256": "1e9ad0c7995b0da8cf42df6393c36dd9bfc2ebccbf9553f60439d4e9009a7106",
+      "depends": "libc6 (>= 2.35), libconsole-bridge1.0 (>= 1.0.1+dfsg2), libgcc-s1 (>= 3.3.1), liborocos-kdl1.5 (>= 1.5.1), libstdc++6 (>= 11), ros-humble-geometry-msgs, ros-humble-nav2-common, ros-humble-nav2-core, ros-humble-nav2-costmap-2d, ros-humble-nav2-msgs, ros-humble-nav2-util, ros-humble-pluginlib, ros-humble-rclcpp, ros-humble-tf2, ros-humble-tf2-geometry-msgs, ros-humble-ros-workspace",
+      "size": 82300
+    },
+    {
+      "package": "ros-humble-pcl-ros",
+      "version": "2.4.5-2jammy.20260908.000723",
+      "architecture": "amd64",
+      "url": "https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu/pool/main/r/ros-humble-pcl-ros/ros-humble-pcl-ros_2.4.5-2jammy.20260908.000723_amd64.deb",
+      "sha256": "d45962521ae961b563375c2b9695f7cbe2cec7e7da92931c3eaf90b22556d823",
+      "depends": "libc6 (>= 2.34), libconsole-bridge1.0 (>= 1.0.1+dfsg2), libgcc-s1 (>= 3.3.1), libpcl-io1.12 (>= 1.12.1+dfsg), libstdc++6 (>= 11), libeigen3-dev, libpcl-common1.12, libpcl-dev, libpcl-features1.12, libpcl-filters1.12, libpcl-segmentation1.12, libpcl-surface1.12, ros-humble-geometry-msgs, ros-humble-pcl-conversions, ros-humble-rclcpp, ros-humble-rclcpp-components, ros-humble-sensor-msgs, ros-humble-tf2, ros-humble-tf2-geometry-msgs, ros-humble-tf2-ros, ros-humble-ros-workspace",
+      "size": 122952
+    }
+  ]
+}

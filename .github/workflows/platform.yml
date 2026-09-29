@@ -9,6 +9,10 @@ on:
         description: Run on a provisioned isolated MarsDog Humble runner
         type: boolean
         default: false
+      run_extended_ros:
+        description: Also build preserved SLAM sources and test real Nav2 on the isolated runner
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -19,10 +23,11 @@ jobs:
         with:
           persist-credentials: false
       - run: python3 -B tools/check_architecture.py
+      - run: python3 -B -m unittest discover -s integration/platform/tests -v
   local-ros:
     if: github.event_name == 'workflow_dispatch' && inputs.run_ros
     runs-on: [self-hosted, linux, x64, marsdog-humble]
-    timeout-minutes: 45
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -31,6 +36,16 @@ jobs:
       - run: python3 -B tools/marsdog.py build
       - run: python3 -B tools/marsdog.py smoke
       - run: python3 -B tools/check_local_lifecycle.py
+      - run: python3 -B tools/check_action_shutdown.py
       - run: python3 -B tools/check_contracts.py
       - run: python3 -B tools/check_robotics.py --uwb-source .external/uwb --output out/robotics-ci
+      - if: inputs.run_extended_ros
+        run: |
+          python3 -B tools/prepare_extended_ros.py
+          python3 -B tools/materialize_vendors.py --archive-dir "$MARSDOG_ARCHIVE_DIR" --only openvins rtabmap
+          python3 -B tools/check_extended_ros_build.py nav2-plugin openvins rtabmap --archive-dir "$MARSDOG_ARCHIVE_DIR"
+          python3 -B tools/check_extended_ros_runtime.py
+          python3 -B tools/marsdog.py smoke --profile lite3-nav2-cpu
+          python3 -B tools/check_nav2_recovery.py
+          python3 -B tools/check_local_lifecycle.py --profile lite3-nav2-cpu
 # No runner/remote is registered yet. This job never starts hardware.
