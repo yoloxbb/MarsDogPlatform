@@ -1,0 +1,39 @@
+{
+  "install": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install",
+  "asr": {
+    "module": "voice",
+    "model": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/model.int8.onnx",
+    "tokens": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/tokens.txt",
+    "model_type": "sense_voice",
+    "language": "zh",
+    "num_threads": 2,
+    "command_catalog": "/home/elephant/MarsDog/marsdog-platform/modules/voice/config/command_catalog.yaml",
+    "samples": [
+      {
+        "id": "upstream-zh-itn",
+        "audio": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/test_wavs/zh.wav",
+        "expected_text": "开放时间早上9点至下午5点。"
+      }
+    ]
+  },
+  "intent": {
+    "enabled": true,
+    "type": "qwen_cpu",
+    "config": {
+      "model": "/home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct",
+      "num_threads": 2,
+      "max_context_len": 4096,
+      "max_new_tokens": 32,
+      "max_input_chars": 256
+    }
+  },
+  "prefix": "/development/voice_cpu_3e7cd1cca4584de88de5888ee5454c13",
+  "wav_case": {
+    "id": "upstream-zh-itn",
+    "audio": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/test_wavs/zh.wav",
+    "expected_text": "开放时间早上9点至下午5点。",
+    "source": "qwen_cpu",
+    "expected_tag": "NONE|NONE|NONE",
+    "must_not_execute": true
+  }
+}
