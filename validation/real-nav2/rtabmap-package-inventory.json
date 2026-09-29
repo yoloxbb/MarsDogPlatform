@@ -1,0 +1,82 @@
+[
+  {
+    "name": "rtabmap",
+    "version": "0.23.8",
+    "source": ".external/rtabmap/src/rtabmap"
+  },
+  {
+    "name": "rtabmap_conversions",
+    "version": "0.23.7",
+    "source": ".external/rtabmap/src/rtabmap_ros/rtabmap_conversions"
+  },
+  {
+    "name": "rtabmap_costmap_plugins",
+    "version": "0.23.7",
+    "source": ".external/rtabmap/src/rtabmap_ros/rtabmap_costmap_plugins"
+  },
+  {
+    "name": "rtabmap_demos",
+    "version": "0.23.7",
+    "source": ".external/rtabmap/src/rtabmap_ros/rtabmap_demos"
+  },
+  {
+    "name": "rtabmap_examples",
+    "version": "0.23.7",
+    "source": ".external/rtabmap/src/rtabmap_ros/rtabmap_examples"
+  },
+  {
+    "name": "rtabmap_launch",
+    "version": "0.23.7",
+    "source": ".external/rtabmap/src/rtabmap_ros/rtabmap_launch"
+  },
+  {
+    "name": "rtabmap_msgs",
+    "version": "0.23.7",
+    "source": ".external/rtabmap/src/rtabmap_ros/rtabmap_msgs"
+  },
+  {
+    "name": "rtabmap_odom",
+    "version": "0.23.7",
+    "source": ".external/rtabmap/src/rtabmap_ros/rtabmap_odom"
+  },
+  {
+    "name": "rtabmap_openvins_mono",
+    "version": "0.1.0",
+    "source": ".external/rtabmap/src/rtabmap_ros/rtabmap_openvins_mono"
+  },
+  {
+    "name": "rtabmap_python",
+    "version": "0.23.7",
+    "source": ".external/rtabmap/src/rtabmap_ros/rtabmap_python"
+  },
+  {
+    "name": "rtabmap_ros",
+    "version": "0.23.7",
+    "source": ".external/rtabmap/src/rtabmap_ros/rtabmap_ros"
+  },
+  {
+    "name": "rtabmap_rviz_plugins",
+    "version": "0.23.7",
+    "source": ".external/rtabmap/src/rtabmap_ros/rtabmap_rviz_plugins"
+  },
+  {
+    "name": "rtabmap_slam",
+    "version": "0.23.7",
+    "source": ".external/rtabmap/src/rtabmap_ros/rtabmap_slam"
+  },
+  {
+    "name": "rtabmap_sync",
+    "version": "0.23.7",
+    "source": ".external/rtabmap/src/rtabmap_ros/rtabmap_sync"
+  },
+  {
+    "name": "rtabmap_util",
+    "version": "0.23.7",
+    "source": ".external/rtabmap/src/rtabmap_ros/rtabmap_util"
+  },
+  {
+    "name": "rtabmap_viz",
+    "version": "0.23.7",
+    "source": ".external/rtabmap/src/rtabmap_ros/rtabmap_viz"
+  }
+]

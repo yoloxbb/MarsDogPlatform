@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="1"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname="DESKTOP-OMBRFBC"
+	time="0"
+	timestamp="2026-09-29T13:59:27"
+	>
+	<testcase name="test_leg_velocity" classname="test_leg_velocity" time="0.137817" status="run">
+		<system-out>[OV-LEG] R_BI=[1.000000 0.000000 0.000000; 0.000000 1.000000 0.000000; 0.000000 0.000000 1.000000] r_IB_I=[0.0000 0.0000 0.0000]
+[OV-LEG] t=1.000000 mode=WAITING-&gt;VISUAL_ONLY active=100 accepted=8 reason=vio_initialized_with_visual
+[OV-LEG] t=1.050000 mode=VISUAL_ONLY-&gt;IMU_ONLY active=80 accepted=0 reason=visual_update_missing
+[OV-LEG] t=1.050000 mode=IMU_ONLY-&gt;LEG_ASSIST active=80 accepted=0 reason=leg_update_accepted
+[OV-LEG] t=1.050000 mode=LEG_ASSIST active=80 visual_accepted=0 age=0.000 accepted=1 innovation=[0.0000 0.0000 0.0000 0.0000] chi2=0.000/9.488 lever=[0.0000 0.0000 0.0000] reason=accepted
+[OV-LEG] t=1.100000 mode=LEG_ASSIST-&gt;RECOVERING active=40 accepted=4 reason=visual_recovery_started
+[OV-LEG] t=1.100000 mode=RECOVERING active=40 visual_accepted=4 age=0.000 accepted=1 innovation=[0.0000 0.0000 0.0000 0.0000] chi2=0.000/9.488 lever=[0.0000 0.0000 0.0000] reason=accepted
+[OV-LEG] t=1.150000 mode=RECOVERING active=80 visual_accepted=4 age=0.000 accepted=1 innovation=[0.0000 0.0000 0.0000 0.0000] chi2=0.000/9.488 lever=[0.0000 0.0000 0.0000] reason=accepted
+[OV-LEG] t=1.200000 mode=RECOVERING-&gt;IMU_ONLY active=80 accepted=0 reason=visual_recovery_interrupted
+[OV-LEG] t=1.200000 mode=IMU_ONLY-&gt;LEG_ASSIST active=80 accepted=0 reason=leg_update_accepted
+[OV-LEG] t=1.200000 mode=LEG_ASSIST active=80 visual_accepted=0 age=0.000 accepted=1 innovation=[0.0000 0.0000 0.0000 0.0000] chi2=0.000/9.488 lever=[0.0000 0.0000 0.0000] reason=accepted
+[OV-LEG] t=1.250000 mode=LEG_ASSIST-&gt;RECOVERING active=80 accepted=6 reason=visual_recovery_started
+[OV-LEG] t=1.250000 mode=RECOVERING active=80 visual_accepted=6 age=0.000 accepted=1 innovation=[0.0000 0.0000 0.0000 0.0000] chi2=0.000/9.488 lever=[0.0000 0.0000 0.0000] reason=accepted
+[OV-LEG] t=1.360000 mode=RECOVERING active=80 visual_accepted=6 age=0.000 accepted=1 innovation=[0.0000 0.0000 0.0000 0.0000] chi2=0.000/9.488 lever=[0.0000 0.0000 0.0000] reason=accepted
+[OV-LEG] t=1.460000 mode=RECOVERING-&gt;VISUAL_ONLY active=80 accepted=6 reason=visual_recovery_stable
+[OV-LEG] t=1.800000 mode=VISUAL_ONLY-&gt;IMU_ONLY active=80 accepted=0 reason=visual_update_missing
+[OV-LEG] R_BI=[1.000000 0.000000 0.000000; 0.000000 1.000000 0.000000; 0.000000 0.000000 1.000000] r_IB_I=[0.0000 0.0000 0.0000]
+[OV-LEG] t=2.000000 mode=WAITING-&gt;VISUAL_ONLY active=100 accepted=5 reason=vio_initialized_with_visual
+[OV-LEG] t=2.050000 mode=VISUAL_ONLY-&gt;IMU_ONLY active=100 accepted=0 reason=visual_update_missing
+[OV-LEG] t=2.050000 mode=IMU_ONLY-&gt;LEG_ASSIST active=100 accepted=0 reason=leg_update_accepted
+[OV-LEG] t=2.050000 mode=LEG_ASSIST active=100 visual_accepted=0 age=0.000 accepted=1 innovation=[0.0000 -0.0000 0.0000 0.0000] chi2=0.000/9.488 lever=[0.0000 0.0000 0.0000] reason=accepted
+[OV-LEG] t=2.200000 mode=IMU_ONLY active=20 visual_accepted=0 age=0.000 accepted=0 innovation=[4.9000 0.0000 0.0000 0.0000] chi2=426.844/9.488 lever=[0.0000 0.0000 0.0000] reason=chi2_rejected
+足式四维速度模型与雅可比测试通过。
+</system-out>
+	</testcase>
+</testsuite>

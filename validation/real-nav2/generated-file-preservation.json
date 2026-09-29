@@ -1,0 +1,6 @@
+{
+  "source": "/home/elephant/MarsDog/marsdog-platform/.external/rtabmap/src/rtabmap/corelib/src/resources/DatabaseSchema.sql",
+  "preserved_as": "/home/elephant/MarsDog/marsdog-platform/out/extended-ros/initial-generated/DatabaseSchema.sql",
+  "sha256": "296075fa87cf1f69454414e8d19d176f17583f6e6c0683342b842f3a3a4f9ea4",
+  "reason": "Known upstream CONFIGURE_FILE output, absent from fixed Git tree; core build finished before moving"
+}

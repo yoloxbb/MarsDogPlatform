@@ -1,0 +1,9 @@
+{
+  "src/rtabmap/corelib/src/resources/DatabaseSchema.sql": {
+    "before": null,
+    "after": [
+      "100644",
+      "43f534b89eec4a154afbd7d58a08fe6f96fe10d0"
+    ]
+  }
+}

@@ -1,0 +1,34 @@
+[INFO] [1790660843.800041113] [bt_navigator]: 
+	bt_navigator lifecycle node launched. 
+	Waiting on external lifecycle transitions to activate
+	See https://design.ros2.org/articles/node_lifecycle.html for more information.
+[INFO] [1790660843.800190253] [bt_navigator]: Creating
+[INFO] [1790660844.088468952] [bt_navigator]: Configuring
+[INFO] [1790660844.519813614] [bt_navigator]: Activating
+[INFO] [1790660844.525789996] [bt_navigator]: Creating bond (bt_navigator) to lifecycle manager.
+[INFO] [1790660846.151477281] [bt_navigator]: Begin navigating from current location (0.50, 1.00) to (1.00, 1.00)
+[INFO] [1790660847.361789605] [bt_navigator]: Goal succeeded
+[INFO] [1790660847.452896602] [bt_navigator]: Begin navigating from current location (0.88, 1.00) to (5.00, 1.00)
+[INFO] [1790660847.525195836] [bt_navigator]: [navigate_to_pose] [ActionServer] Client requested to cancel the goal. Cancelling.
+[INFO] [1790660847.525299233] [bt_navigator]: Goal canceled
+[INFO] [1790660847.550906104] [bt_navigator]: Begin navigating from current location (0.89, 1.00) to (5.00, 1.00)
+[INFO] [1790660848.373578573] [bt_navigator]: [navigate_to_pose] [ActionServer] Client requested to cancel the goal. Cancelling.
+[INFO] [1790660848.373750907] [bt_navigator]: Goal canceled
+[INFO] [1790660848.453636817] [bt_navigator]: Begin navigating from current location (0.89, 1.00) to (3.00, 1.00)
+[WARN] [1790660848.483858429] [bt_navigator]: [navigate_to_pose] [ActionServer] Aborting handle.
+[ERROR] [1790660848.484125320] [bt_navigator]: Goal failed
+[INFO] [1790660848.552356179] [bt_navigator]: Begin navigating from current location (0.89, 1.00) to (5.00, 1.00)
+[WARN] [1790660850.162091195] [BehaviorTreeEngine]: Behavior Tree tick rate 100.00 was exceeded!
+[INFO] [1790660850.215493474] [bt_navigator]: [navigate_to_pose] [ActionServer] Client requested to cancel the goal. Cancelling.
+[INFO] [1790660850.215592862] [bt_navigator]: Goal canceled
+[INFO] [1790660850.252735425] [bt_navigator]: Begin navigating from current location (0.89, 1.00) to (5.00, 1.00)
+[INFO] [1790660863.713312885] [bt_navigator]: Goal succeeded
+[INFO] [1790660864.109876642] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[INFO] [1790660864.109927881] [bt_navigator]: Running Nav2 LifecycleNode rcl preshutdown (bt_navigator)
+[INFO] [1790660864.109981766] [bt_navigator]: Deactivating
+[INFO] [1790660864.109998000] [bt_navigator]: Destroying bond (bt_navigator) to lifecycle manager.
+[INFO] [1790660864.120291710] [bt_navigator]: Cleaning up
+[INFO] [1790660864.168558836] [bt_navigator]: Completed Cleaning up
+[INFO] [1790660864.168653906] [bt_navigator]: Destroying bond (bt_navigator) to lifecycle manager.
+terminate called after throwing an instance of 'rclcpp::exceptions::RCLError'
+  what():  feedback publisher is invalid, at ./src/rcl_action/action_server.c:919

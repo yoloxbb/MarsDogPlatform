@@ -1,0 +1,1070 @@
+{
+  "status": "PASS",
+  "profile": {
+    "schema_version": 1,
+    "name": "lite3-nav2-cpu",
+    "robot": "lite3",
+    "execution": "local_cpu_nav2_simulation",
+    "ros_distribution": "humble",
+    "ros_domain_id": 212,
+    "rmw": "rmw_cyclonedds_cpp",
+    "voice_mock_seed": 46,
+    "voice_event_interval_sec": 4,
+    "explicit_limits": [
+      "Real Nav2 planner/controller/navigator; ideal simulated planar motion, odometry and localization",
+      "Synthetic static map, no SLAM accuracy or physical obstacle acceptance",
+      "Vision/Voice mock providers; Lite3 simulated I/O",
+      "Nav2 velocity output is remapped exclusively to /development/nav2/cmd_vel",
+      "No simulated battery settlement or hardware protocol changes"
+    ]
+  },
+  "run_directory": "/home/elephant/MarsDog/marsdog-platform/out/nav2-recovery/runs/20260929T060031Z-375305",
+  "smoke": {
+    "status": "PASS",
+    "error": null,
+    "cases": [
+      {
+        "name": "real_plan_and_arrival",
+        "status": "PASS",
+        "evidence": {
+          "terminal": {
+            "code": "NAV2_SUCCEEDED",
+            "matched_id": "A",
+            "message": "\u5df2\u5230\u8fbe\u76ee\u6807\u5730\u70b9",
+            "place": "\u5367\u5ba4",
+            "safe_to_interrupt": false,
+            "sequence": 4,
+            "state": "SUCCEEDED",
+            "task_id": "arrival",
+            "task_type": "goto_place"
+          },
+          "pose": [
+            0.8812618473207355,
+            1.0000000010792134
+          ]
+        }
+      },
+      {
+        "name": "cancel_waits_for_real_terminal",
+        "status": "PASS",
+        "evidence": {
+          "code": "CLIENT_CANCELLED",
+          "matched_id": "E",
+          "message": "Nav2 \u5df2\u786e\u8ba4\u76ee\u6807\u53d6\u6d88",
+          "place": "\u5ba2\u5385",
+          "safe_to_interrupt": false,
+          "sequence": 5,
+          "state": "INTERRUPTED",
+          "task_id": "cancel",
+          "task_type": "goto_place"
+        }
+      },
+      {
+        "name": "timeout_cancels_before_failure",
+        "status": "PASS",
+        "evidence": {
+          "code": "TIMEOUT",
+          "matched_id": "E",
+          "message": "\u5bfc\u822a\u8d85\u65f6\u4e14 Nav2 \u5df2\u786e\u8ba4\u505c\u6b62",
+          "place": "\u5ba2\u5385",
+          "safe_to_interrupt": false,
+          "sequence": 5,
+          "state": "FAILED",
+          "task_id": "timeout",
+          "task_type": "goto_place"
+        }
+      },
+      {
+        "name": "unreachable_goal_is_failure",
+        "status": "PASS",
+        "evidence": {
+          "code": "NAV2_FAILED",
+          "matched_id": "C",
+          "message": "Nav2 \u8fd4\u56de\u5931\u8d25\u7ec8\u6001",
+          "place": "\u53a8\u623f",
+          "safe_to_interrupt": false,
+          "sequence": 4,
+          "state": "FAILED",
+          "task_id": "blocked",
+          "task_type": "goto_place"
+        }
+      },
+      {
+        "name": "transport_interruption_holds_lock_until_real_result",
+        "status": "PASS",
+        "evidence": {
+          "locked": {
+            "code": "RECOVERY_REQUIRED",
+            "matched_id": "E",
+            "message": "\u53d6\u6d88\u7b49\u5f85 1 \u79d2\u540e\u4ecd\u672a\u786e\u8ba4 Nav2 \u505c\u6b62",
+            "place": "\u5ba2\u5385",
+            "safe_to_interrupt": false,
+            "sequence": 5,
+            "state": "RUNNING",
+            "task_id": "interrupted",
+            "task_type": "goto_place"
+          },
+          "rejected": {
+            "accepted": false,
+            "code": "RECOVERY_BLOCKED",
+            "message": "\u5bfc\u822a\u6062\u590d\u672a\u786e\u8ba4\uff0c\u62d2\u7edd\u65b0\u4efb\u52a1"
+          },
+          "confirmed_terminal": {
+            "code": "TIMEOUT",
+            "matched_id": "E",
+            "message": "\u5bfc\u822a\u8d85\u65f6\u4e14 Nav2 \u5df2\u786e\u8ba4\u505c\u6b62",
+            "place": "\u5ba2\u5385",
+            "safe_to_interrupt": false,
+            "sequence": 6,
+            "state": "FAILED",
+            "task_id": "interrupted",
+            "task_type": "goto_place"
+          }
+        }
+      },
+      {
+        "name": "recovered_navigation_uses_obstacle_detour",
+        "status": "PASS",
+        "evidence": {
+          "terminal": {
+            "code": "NAV2_SUCCEEDED",
+            "matched_id": "E",
+            "message": "\u5df2\u5230\u8fbe\u76ee\u6807\u5730\u70b9",
+            "place": "\u5ba2\u5385",
+            "safe_to_interrupt": false,
+            "sequence": 4,
+            "state": "SUCCEEDED",
+            "task_id": "recovered",
+            "task_type": "goto_place"
+          },
+          "pose": [
+            4.919820634674575,
+            1.0813594348139626
+          ],
+          "path": [
+            [
+              0.9000000134110451,
+              1.0000000149011612
+            ],
+            [
+              0.9627958441197251,
+              1.0363113557742736
+            ],
+            [
+              1.002140060099066,
+              1.0671663443321933
+            ],
+            [
+              1.038974682077388,
+              1.100977818682459
+            ],
+            [
+              1.075951592265838,
+              1.134633558014535
+            ],
+            [
+              1.1141666578377283,
+              1.1668765241932348
+            ],
+            [
+              1.1510944537981516,
+              1.2005861461249907
+            ],
+            [
+              1.1881373582502803,
+              1.2341692154730737
+            ],
+            [
+              1.2259262267638178,
+              1.266910571856954
+            ],
+            [
+              1.2629165837603296,
+              1.3005516246043385
+            ],
+            [
+              1.3006968692048915,
+              1.3333029945686903
+            ],
+            [
+              1.3383136948691856,
+              1.3662419522738745
+            ],
+            [
+              1.3758060660333342,
+              1.3993224352497222
+            ],
+            [
+              1.413476392827576,
+              1.4322001670628808
+            ],
+            [
+              1.4510216929170738,
+              1.4652206639233327
+            ],
+            [
+              1.4884787781309896,
+              1.4983412012210664
+            ],
+            [
+              1.5260390509074782,
+              1.5313445319435672
+            ],
+            [
+              1.563525509290777,
+              1.5644317860071624
+            ],
+            [
+              1.6010456323779465,
+              1.5974807977300998
+            ],
+            [
+              1.6385635620141557,
+              1.6305324797411629
+            ],
+            [
+              1.6760517370112495,
+              1.6636177310886637
+            ],
+            [
+              1.7136587398299383,
+              1.696567751416083
+            ],
+            [
+              1.751236178744378,
+              1.7295519132845385
+            ],
+            [
+              1.78878939433082,
+              1.7625633502388496
+            ],
+            [
+              1.8264515195258184,
+              1.7954504280604482
+            ],
+            [
+              1.8640835086119694,
+              1.8283720288928151
+            ],
+            [
+              1.9018198296698898,
+              1.8611740389641227
+            ],
+            [
+              1.9395227721262387,
+              1.894014196008655
+            ],
+            [
+              1.9772033986032511,
+              1.92688029299498
+            ],
+            [
+              2.014968139156224,
+              1.9596496874041804
+            ],
+            [
+              2.0527027436003493,
+              1.9924534140892831
+            ],
+            [
+              2.0904243780735783,
+              2.0252722088288095
+            ],
+            [
+              2.128212197545352,
+              2.058015091091619
+            ],
+            [
+              2.1659744585450653,
+              2.090787155788945
+            ],
+            [
+              2.2038187355372116,
+              2.123464615992674
+            ],
+            [
+              2.2416294431929202,
+              2.156180795374226
+            ],
+            [
+              2.2794191700133553,
+              2.1889211980837757
+            ],
+            [
+              2.317280994613185,
+              2.2215782496568295
+            ],
+            [
+              2.3551134460436316,
+              2.254269252036053
+            ],
+            [
+              2.3929294942755917,
+              2.2869793279018893
+            ],
+            [
+              2.41527656339521,
+              2.331707607682162
+            ],
+            [
+              2.4446831113797884,
+              2.372145688118721
+            ],
+            [
+              2.4814808261615156,
+              2.4059973121583056
+            ],
+            [
+              2.5007074728713548,
+              2.45215286094178
+            ],
+            [
+              2.5248150248052923,
+              2.495957221030551
+            ],
+            [
+              2.553990211397263,
+              2.536562766679566
+            ],
+            [
+              2.590474358059083,
+              2.5707519914321892
+            ],
+            [
+              2.605467835150179,
+              2.6184511574872005
+            ],
+            [
+              2.6266773615282375,
+              2.6637297073562394
+            ],
+            [
+              2.656745759498264,
+              2.7036783621263254
+            ],
+            [
+              2.7039503500454174,
+              2.687194482791341
+            ],
+            [
+              2.7479586057060743,
+              2.7109280036528105
+            ],
+            [
+              2.7914818226021794,
+              2.7355396678379122
+            ],
+            [
+              2.8177849235800636,
+              2.7780619081566016
+            ],
+            [
+              2.8534634061673785,
+              2.8130913199944985
+            ],
+            [
+              2.89666599775353,
+              2.8382612651327435
+            ],
+            [
+              2.9461241207439315,
+              2.8309206430751175
+            ],
+            [
+              2.995319792558547,
+              2.8219883385596916
+            ],
+            [
+              3.044713828633931,
+              2.8142275275919957
+            ],
+            [
+              3.0938688739220623,
+              2.8050741613667327
+            ],
+            [
+              3.1425093165413926,
+              2.7934938847049153
+            ],
+            [
+              3.188644838163924,
+              2.774218982073947
+            ],
+            [
+              3.234305239234942,
+              2.753844492939777
+            ],
+            [
+              3.277056933597578,
+              2.727915613769227
+            ],
+            [
+              3.3177979010015406,
+              2.6989298268993167
+            ],
+            [
+              3.3565922283618477,
+              2.6673864762095576
+            ],
+            [
+              3.3934959917291394,
+              2.6336506282337098
+            ],
+            [
+              3.4303047691331017,
+              2.5998106390209585
+            ],
+            [
+              3.4664192716243747,
+              2.565231170732247
+            ],
+            [
+              3.503048758254181,
+              2.5311975856303803
+            ],
+            [
+              3.538935904785035,
+              2.496382559782006
+            ],
+            [
+              3.57430883011682,
+              2.4610445389307216
+            ],
+            [
+              3.610043007285043,
+              2.4260723475526618
+            ],
+            [
+              3.6453056878642087,
+              2.39062446341849
+            ],
+            [
+              3.680309731964911,
+              2.3549213760334453
+            ],
+            [
+              3.7155975895464053,
+              2.319498478166736
+            ],
+            [
+              3.7506214700731846,
+              2.2838146550031695
+            ],
+            [
+              3.785489710949207,
+              2.247979006886169
+            ],
+            [
+              3.8205521199189434,
+              2.2123333306958273
+            ],
+            [
+              3.8554611780563164,
+              2.176536973961248
+            ],
+            [
+              3.8902687652449117,
+              2.1406423887706154
+            ],
+            [
+              3.925235425311854,
+              2.104902680291275
+            ],
+            [
+              3.960097944141893,
+              2.0690611193934245
+            ],
+            [
+              3.994882261676821,
+              2.033143836753723
+            ],
+            [
+              4.029792845693123,
+              1.9973493873678052
+            ],
+            [
+              4.064625991353779,
+              1.9614794069749024
+            ],
+            [
+              4.09939543156915,
+              1.9255478192202418
+            ],
+            [
+              4.134272446249014,
+              1.8897203727024845
+            ],
+            [
+              4.169082703725735,
+              1.8538282670651114
+            ],
+            [
+              4.204031053245529,
+              1.8180706295083553
+            ],
+            [
+              4.238885942680923,
+              1.7822218206855922
+            ],
+            [
+              4.273683230186748,
+              1.746317126547055
+            ],
+            [
+              4.3085915253846565,
+              1.7105203883427436
+            ],
+            [
+              4.343426578393974,
+              1.674652315298502
+            ],
+            [
+              4.378211277398634,
+              1.6387352233936667
+            ],
+            [
+              4.413086003260105,
+              1.6029058695272482
+            ],
+            [
+              4.447902364252542,
+              1.5670195813032919
+            ],
+            [
+              4.482674474756038,
+              1.5310903777344578
+            ],
+            [
+              4.517523260675716,
+              1.495235846865711
+            ],
+            [
+              4.55232207406047,
+              1.4593324878712366
+            ],
+            [
+              4.587081596062802,
+              1.4233910772709706
+            ],
+            [
+              4.621908638207742,
+              1.387515374832084
+            ],
+            [
+              4.656690285454545,
+              1.351595612639123
+            ],
+            [
+              4.691437218955713,
+              1.3156420903748582
+            ],
+            [
+              4.726243661735111,
+              1.2797462654075957
+            ],
+            [
+              4.761008905783427,
+              1.2438103861184473
+            ],
+            [
+              4.795743250783431,
+              1.2078446568227506
+            ],
+            [
+              4.830529475667021,
+              1.1719294722665765
+            ],
+            [
+              4.865278697986582,
+              1.135977952718406
+            ],
+            [
+              4.90000007301569,
+              1.1000000163912773
+            ],
+            [
+              5.0,
+              1.0
+            ]
+          ],
+          "executed_trajectory": [
+            [
+              0.8812618473207355,
+              1.0000000010792134
+            ],
+            [
+              0.921149105485463,
+              1.002095755908249
+            ],
+            [
+              0.970295261493755,
+              1.01105813717616
+            ],
+            [
+              1.0179021127517396,
+              1.0262486683326093
+            ],
+            [
+              1.0665059791253435,
+              1.048261937731251
+            ],
+            [
+              1.1215865801386797,
+              1.0810618493189141
+            ],
+            [
+              1.1886294985631567,
+              1.1319587153665587
+            ],
+            [
+              1.2617989797492848,
+              1.2000539555465952
+            ],
+            [
+              1.3303354190811791,
+              1.2728272092717876
+            ],
+            [
+              1.3967038895704598,
+              1.3476730133093517
+            ],
+            [
+              1.4626438034550124,
+              1.422817173224102
+            ],
+            [
+              1.5294106666142835,
+              1.4973337434347624
+            ],
+            [
+              1.5974952134855667,
+              1.5705231124825145
+            ],
+            [
+              1.667193149462223,
+              1.6422272729516239
+            ],
+            [
+              1.7384450998693493,
+              1.7124076224229279
+            ],
+            [
+              1.8110189623057902,
+              1.781156554415774
+            ],
+            [
+              1.8847403779873442,
+              1.8487667391817315
+            ],
+            [
+              1.9592643142165282,
+              1.915402183401427
+            ],
+            [
+              2.034449326471888,
+              1.9813850817245975
+            ],
+            [
+              2.11001493490058,
+              2.046857410576493
+            ],
+            [
+              2.1851949849691197,
+              2.112766993722228
+            ],
+            [
+              2.2586642932356473,
+              2.180613943637044
+            ],
+            [
+              2.3291764888631836,
+              2.251489882283052
+            ],
+            [
+              2.3964977625553985,
+              2.3254451670984477
+            ],
+            [
+              2.460115771622091,
+              2.402543638574665
+            ],
+            [
+              2.524005422107985,
+              2.479534649095883
+            ],
+            [
+              2.5907040071596943,
+              2.5540368745495017
+            ],
+            [
+              2.6596480078580274,
+              2.625528944295172
+            ],
+            [
+              2.7199386638517833,
+              2.6775661736398084
+            ],
+            [
+              2.7747556344450364,
+              2.7149920703649375
+            ],
+            [
+              2.82791567761842,
+              2.743177963826921
+            ],
+            [
+              2.881082295540919,
+              2.7641777937040573
+            ],
+            [
+              2.934373622467162,
+              2.778632021200128
+            ],
+            [
+              2.988177828064075,
+              2.78695895116937
+            ],
+            [
+              3.042790991562891,
+              2.7892673728066066
+            ],
+            [
+              3.098894909116748,
+              2.785381722723344
+            ],
+            [
+              3.157269122106796,
+              2.77472953097523
+            ],
+            [
+              3.219166880798662,
+              2.7561284232725054
+            ],
+            [
+              3.2859125469274106,
+              2.7276426389813606
+            ],
+            [
+              3.3603820878783024,
+              2.6854827995661745
+            ],
+            [
+              3.440925248627652,
+              2.6276820220949437
+            ],
+            [
+              3.516635593913801,
+              2.5624335250000425
+            ],
+            [
+              3.5881704439610633,
+              2.492541804157365
+            ],
+            [
+              3.656823742682265,
+              2.419878835909524
+            ],
+            [
+              3.723849424613991,
+              2.3456709946718104
+            ],
+            [
+              3.7901727473773117,
+              2.2708029058061414
+            ],
+            [
+              3.8563914024895865,
+              2.1959018927171607
+            ],
+            [
+              3.922947458597025,
+              2.1212563956671002
+            ],
+            [
+              3.990010079422881,
+              2.047097090481677
+            ],
+            [
+              4.057684037501991,
+              1.9734524985168909
+            ],
+            [
+              4.1259074093178345,
+              1.9003479233002438
+            ],
+            [
+              4.194630931368457,
+              1.827685476193776
+            ],
+            [
+              4.263808537036401,
+              1.755320571166504
+            ],
+            [
+              4.333102763389474,
+              1.6834042506552378
+            ],
+            [
+              4.402711278730368,
+              1.6115453517642995
+            ],
+            [
+              4.472395820830381,
+              1.539836285823957
+            ],
+            [
+              4.542110301209019,
+              1.4682040494482185
+            ],
+            [
+              4.611875961682766,
+              1.3965378246265072
+            ],
+            [
+              4.6815935774960655,
+              1.3248967675891798
+            ],
+            [
+              4.75026311484499,
+              1.2544288821269094
+            ],
+            [
+              4.807033716347928,
+              1.1963305047211705
+            ],
+            [
+              4.850926785173209,
+              1.151515445334369
+            ],
+            [
+              4.884834330165469,
+              1.1169583599113297
+            ],
+            [
+              4.911042826630989,
+              1.0902854296429985
+            ],
+            [
+              4.919820634674575,
+              1.0813594348139626
+            ],
+            [
+              4.919820634674575,
+              1.0813594348139626
+            ],
+            [
+              4.919820634674575,
+              1.0813594348139626
+            ],
+            [
+              4.919820634674575,
+              1.0813594348139626
+            ]
+          ],
+          "minimum_wall_clearance_m": 0.2803862547178874
+        }
+      },
+      {
+        "name": "previous_terminal_remains_queryable",
+        "status": "PASS",
+        "evidence": {
+          "found": true,
+          "target_task_id": "arrival",
+          "status": {
+            "code": "NAV2_SUCCEEDED",
+            "matched_id": "A",
+            "message": "\u5df2\u5230\u8fbe\u76ee\u6807\u5730\u70b9",
+            "place": "\u5367\u5ba4",
+            "safe_to_interrupt": false,
+            "sequence": 4,
+            "state": "SUCCEEDED",
+            "task_id": "arrival",
+            "task_type": "goto_place"
+          }
+        }
+      }
+    ],
+    "elapsed_seconds": 18.853,
+    "last_statuses": {
+      "arrival": {
+        "code": "NAV2_SUCCEEDED",
+        "matched_id": "A",
+        "message": "\u5df2\u5230\u8fbe\u76ee\u6807\u5730\u70b9",
+        "place": "\u5367\u5ba4",
+        "safe_to_interrupt": false,
+        "sequence": 4,
+        "state": "SUCCEEDED",
+        "task_id": "arrival",
+        "task_type": "goto_place"
+      },
+      "cancel": {
+        "code": "CLIENT_CANCELLED",
+        "matched_id": "E",
+        "message": "Nav2 \u5df2\u786e\u8ba4\u76ee\u6807\u53d6\u6d88",
+        "place": "\u5ba2\u5385",
+        "safe_to_interrupt": false,
+        "sequence": 5,
+        "state": "INTERRUPTED",
+        "task_id": "cancel",
+        "task_type": "goto_place"
+      },
+      "timeout": {
+        "code": "TIMEOUT",
+        "matched_id": "E",
+        "message": "\u5bfc\u822a\u8d85\u65f6\u4e14 Nav2 \u5df2\u786e\u8ba4\u505c\u6b62",
+        "place": "\u5ba2\u5385",
+        "safe_to_interrupt": false,
+        "sequence": 5,
+        "state": "FAILED",
+        "task_id": "timeout",
+        "task_type": "goto_place"
+      },
+      "blocked": {
+        "code": "NAV2_FAILED",
+        "matched_id": "C",
+        "message": "Nav2 \u8fd4\u56de\u5931\u8d25\u7ec8\u6001",
+        "place": "\u53a8\u623f",
+        "safe_to_interrupt": false,
+        "sequence": 4,
+        "state": "FAILED",
+        "task_id": "blocked",
+        "task_type": "goto_place"
+      },
+      "interrupted": {
+        "code": "TIMEOUT",
+        "matched_id": "E",
+        "message": "\u5bfc\u822a\u8d85\u65f6\u4e14 Nav2 \u5df2\u786e\u8ba4\u505c\u6b62",
+        "place": "\u5ba2\u5385",
+        "safe_to_interrupt": false,
+        "sequence": 6,
+        "state": "FAILED",
+        "task_id": "interrupted",
+        "task_type": "goto_place"
+      },
+      "recovered": {
+        "code": "NAV2_SUCCEEDED",
+        "matched_id": "E",
+        "message": "\u5df2\u5230\u8fbe\u76ee\u6807\u5730\u70b9",
+        "place": "\u5ba2\u5385",
+        "safe_to_interrupt": false,
+        "sequence": 4,
+        "state": "SUCCEEDED",
+        "task_id": "recovered",
+        "task_type": "goto_place"
+      }
+    },
+    "scope": "Real Nav2 lifecycle/action/planner/controller and waypoint persistence; synthetic inputs"
+  },
+  "lifecycle_shutdown": {
+    "status": "PASS",
+    "operation": "ManageLifecycleNodes.SHUTDOWN"
+  },
+  "processes": [
+    {
+      "name": "nav_inputs",
+      "pid": 375414,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+        "-B",
+        "/home/elephant/MarsDog/marsdog-platform/tools/nav2_simulated_inputs.py"
+      ]
+    },
+    {
+      "name": "controller_server",
+      "pid": 375428,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/out/extended-ros/relocated/opt/ros/humble/lib/nav2_controller/controller_server",
+        "--ros-args",
+        "--params-file",
+        "/home/elephant/MarsDog/marsdog-platform/out/nav2-recovery/runs/20260929T060031Z-375305/nav2.yaml",
+        "-r",
+        "cmd_vel:=/development/nav2/cmd_vel"
+      ]
+    },
+    {
+      "name": "planner_server",
+      "pid": 375447,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/out/extended-ros/relocated/opt/ros/humble/lib/nav2_planner/planner_server",
+        "--ros-args",
+        "--params-file",
+        "/home/elephant/MarsDog/marsdog-platform/out/nav2-recovery/runs/20260929T060031Z-375305/nav2.yaml",
+        "-r",
+        "cmd_vel:=/development/nav2/cmd_vel"
+      ]
+    },
+    {
+      "name": "behavior_server",
+      "pid": 375457,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/out/extended-ros/relocated/opt/ros/humble/lib/nav2_behaviors/behavior_server",
+        "--ros-args",
+        "--params-file",
+        "/home/elephant/MarsDog/marsdog-platform/out/nav2-recovery/runs/20260929T060031Z-375305/nav2.yaml",
+        "-r",
+        "cmd_vel:=/development/nav2/cmd_vel"
+      ]
+    },
+    {
+      "name": "bt_navigator",
+      "pid": 375467,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/out/extended-ros/relocated/opt/ros/humble/lib/nav2_bt_navigator/bt_navigator",
+        "--ros-args",
+        "--params-file",
+        "/home/elephant/MarsDog/marsdog-platform/out/nav2-recovery/runs/20260929T060031Z-375305/nav2.yaml",
+        "-r",
+        "cmd_vel:=/development/nav2/cmd_vel"
+      ]
+    },
+    {
+      "name": "lifecycle_manager",
+      "pid": 375477,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/out/extended-ros/relocated/opt/ros/humble/lib/nav2_lifecycle_manager/lifecycle_manager",
+        "--ros-args",
+        "--params-file",
+        "/home/elephant/MarsDog/marsdog-platform/out/nav2-recovery/runs/20260929T060031Z-375305/nav2.yaml",
+        "-r",
+        "cmd_vel:=/development/nav2/cmd_vel"
+      ]
+    },
+    {
+      "name": "waypoint",
+      "pid": 375500,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+        "-B",
+        "-c",
+        "from waypoint_nav.waypoint_nav_dispatcher import main; main()",
+        "--ros-args",
+        "-p",
+        "waypoints_file:=/home/elephant/MarsDog/marsdog-platform/out/nav2-recovery/runs/20260929T060031Z-375305/waypoints.yaml",
+        "-p",
+        "task_store_file:=/home/elephant/MarsDog/marsdog-platform/out/nav2-recovery/runs/20260929T060031Z-375305/tasks.sqlite3",
+        "-p",
+        "cancel_confirmation_timeout_sec:=1.0"
+      ]
+    },
+    {
+      "name": "probe",
+      "pid": 375527,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+        "-B",
+        "/home/elephant/MarsDog/marsdog-platform/tools/nav2_recovery_probe.py",
+        "--output",
+        "/home/elephant/MarsDog/marsdog-platform/out/nav2-recovery/runs/20260929T060031Z-375305/smoke.json"
+      ]
+    }
+  ],
+  "forced_shutdowns": []
+}

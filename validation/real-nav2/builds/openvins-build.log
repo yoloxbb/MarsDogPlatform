@@ -1,0 +1,516 @@
+Starting >>> ov_core
+[0.430s] WARNING:colcon.colcon_ros.prefix_path.ament:The path '/home/elephant/MarsDog/marsdog-platform/out/extended-ros/relocated/opt/ros/humble' in the environment variable AMENT_PREFIX_PATH doesn't contain any 'local_setup.*' files.
+[0.430s] WARNING:colcon.colcon_ros.prefix_path.ament:The path '/home/elephant/MarsDog/marsdog-platform/out/ros-deps/ros-humble-iceoryx-hoofs/opt/ros/humble' in the environment variable AMENT_PREFIX_PATH doesn't contain any 'local_setup.*' files.
+[0.430s] WARNING:colcon.colcon_ros.prefix_path.ament:The path '/home/elephant/MarsDog/marsdog-platform/out/ros-deps/ros-humble-iceoryx-posh/opt/ros/humble' in the environment variable AMENT_PREFIX_PATH doesn't contain any 'local_setup.*' files.
+[0.430s] WARNING:colcon.colcon_ros.prefix_path.ament:The path '/home/elephant/MarsDog/marsdog-platform/out/ros-deps/ros-humble-iceoryx-binding-c/opt/ros/humble' in the environment variable AMENT_PREFIX_PATH doesn't contain any 'local_setup.*' files.
+[0.430s] WARNING:colcon.colcon_ros.prefix_path.ament:The path '/home/elephant/MarsDog/marsdog-platform/out/ros-deps/ros-humble-cyclonedds/opt/ros/humble' in the environment variable AMENT_PREFIX_PATH doesn't contain any 'local_setup.*' files.
+[0.430s] WARNING:colcon.colcon_ros.prefix_path.ament:The path '/home/elephant/MarsDog/marsdog-platform/out/ros-deps/ros-humble-rmw-cyclonedds-cpp/opt/ros/humble' in the environment variable AMENT_PREFIX_PATH doesn't contain any 'local_setup.*' files.
+[0.430s] WARNING:colcon.colcon_ros.prefix_path.ament:The path '/home/elephant/MarsDog/marsdog-platform/out/ros-deps/ros-humble-nav2-msgs/opt/ros/humble' in the environment variable AMENT_PREFIX_PATH doesn't contain any 'local_setup.*' files.
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found OpenCV: /usr (found suitable version "4.5.4", minimum required is "4") 
+-- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.74.0/BoostConfig.cmake (found version "1.74.0") found components: system filesystem thread date_time 
+-- OPENCV: 4.5.4 | BOOST: 1.74.0
+-- PYTHON VERSION: 3.10.12
+-- PYTHON INCLUDE: /usr/include/python3.10
+-- PYTHON LIBRARIES: /usr/lib/x86_64-linux-gnu/libpython3.10.so
+-- Found Python3: /home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python (found version "3.10.12") found components: Interpreter 
+-- ROS *2* version found, building ROS2.cmake
+-- Found rclcpp: 16.0.21 (/opt/ros/humble/share/rclcpp/cmake)
+-- Found rosidl_generator_c: 3.1.9 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+-- Found rosidl_adapter: 3.1.9 (/opt/ros/humble/share/rosidl_adapter/cmake)
+-- Found rosidl_generator_cpp: 3.1.9 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+-- Found rmw_implementation_cmake: 6.1.4 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+-- Found rmw_cyclonedds_cpp: 1.3.5 (/home/elephant/MarsDog/marsdog-platform/out/ros-deps/ros-humble-rmw-cyclonedds-cpp/opt/ros/humble/share/rmw_cyclonedds_cpp/cmake)
+-- Using RMW implementation 'rmw_cyclonedds_cpp' as default
+-- Found Threads: TRUE  
+-- Found cv_bridge: 3.2.1 (/opt/ros/humble/share/cv_bridge/cmake)
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/build/ov_core
+Consolidate compiler generated dependencies of target ov_core_lib
+[ 78%] Built target ov_core_lib
+Consolidate compiler generated dependencies of target test_profile
+Consolidate compiler generated dependencies of target test_webcam
+[100%] Built target test_webcam
+[100%] Built target test_profile
+-- Install configuration: "Release"
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/lib/libov_core_lib.so
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/cpi
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/cpi/CpiV1.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/cpi/CpiBase.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/cpi/CpiV2.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/types
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/types/LandmarkRepresentation.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/types/JPLQuat.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/types/PoseJPL.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/types/IMU.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/types/Landmark.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/types/Vec.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/types/Type.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/utils
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/utils/dataset_reader.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/utils/quat_ops.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/utils/opencv_lambda_body.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/utils/sensor_data.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/utils/colors.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/utils/opencv_yaml_parse.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/utils/print.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/cam
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/cam/CamEqui.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/cam/CamBase.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/cam/CamRadtan.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/feat
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/feat/FeatureDatabase.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/feat/FeatureHelper.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/feat/Feature.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/feat/FeatureInitializerOptions.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/feat/FeatureInitializer.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/plot
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/plot/matplotlibcpp.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/track
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/track/TrackAruco.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/track/TrackKLT.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/track/Grider_FAST.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/track/TrackBase.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/track/TrackSIM.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/track/Grider_GRID.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/track/TrackDescriptor.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/sim
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/include/sim/BsplineSE3.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/environment/library_path.sh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/environment/library_path.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/lib/ov_core/test_webcam
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/lib/ov_core/test_profile
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ament_index/resource_index/package_run_dependencies/ov_core
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ament_index/resource_index/parent_prefix_path/ov_core
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/environment/ament_prefix_path.sh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/environment/ament_prefix_path.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/environment/path.sh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/environment/path.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/local_setup.bash
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/local_setup.sh
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/local_setup.zsh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/local_setup.dsv
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/package.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ament_index/resource_index/packages/ov_core
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/cmake/ament_cmake_export_include_directories-extras.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/cmake/ament_cmake_export_libraries-extras.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/cmake/ov_coreConfig.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/cmake/ov_coreConfig-version.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/package.xml
+Finished <<< ov_core [3.89s]
+Starting >>> ov_eval
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.74.0/BoostConfig.cmake (found version "1.74.0") found components: system filesystem thread date_time 
+-- PYTHON VERSION: 3.10.12
+-- PYTHON INCLUDE: /usr/include/python3.10
+-- PYTHON LIBRARIES: /usr/lib/x86_64-linux-gnu/libpython3.10.so
+-- Found Python3: /home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python (found version "3.10.12") found components: Interpreter 
+-- ROS *2* version found, building ROS2.cmake
+-- Found rclcpp: 16.0.21 (/opt/ros/humble/share/rclcpp/cmake)
+-- Found rosidl_generator_c: 3.1.9 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+-- Found rosidl_adapter: 3.1.9 (/opt/ros/humble/share/rosidl_adapter/cmake)
+-- Found rosidl_generator_cpp: 3.1.9 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+-- Found rmw_implementation_cmake: 6.1.4 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+-- Found rmw_cyclonedds_cpp: 1.3.5 (/home/elephant/MarsDog/marsdog-platform/out/ros-deps/ros-humble-rmw-cyclonedds-cpp/opt/ros/humble/share/rmw_cyclonedds_cpp/cmake)
+-- Using RMW implementation 'rmw_cyclonedds_cpp' as default
+-- Found Threads: TRUE  
+-- Found ov_core: 2.7.0 (/home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/cmake)
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/build/ov_eval
+Consolidate compiler generated dependencies of target ov_eval_lib
+[ 25%] Built target ov_eval_lib
+Consolidate compiler generated dependencies of target format_converter
+Consolidate compiler generated dependencies of target error_comparison
+Consolidate compiler generated dependencies of target error_dataset
+Consolidate compiler generated dependencies of target error_singlerun
+[ 40%] Built target format_converter
+[ 40%] Built target error_comparison
+[ 48%] Built target error_dataset
+[ 55%] Built target error_singlerun
+Consolidate compiler generated dependencies of target timing_comparison
+Consolidate compiler generated dependencies of target error_simulation
+Consolidate compiler generated dependencies of target timing_flamegraph
+Consolidate compiler generated dependencies of target timing_histogram
+[ 70%] Built target timing_flamegraph
+[ 70%] Built target timing_comparison
+[ 77%] Built target error_simulation
+[ 85%] Built target timing_histogram
+Consolidate compiler generated dependencies of target timing_percentages
+Consolidate compiler generated dependencies of target plot_trajectories
+[100%] Built target timing_percentages
+[100%] Built target plot_trajectories
+-- Install configuration: "Release"
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/lib/libov_eval_lib.so
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/include
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/include/utils
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/include/utils/Recorder.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/include/utils/Statistics.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/include/utils/Loader.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/include/calc
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/include/calc/ResultSimulation.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/include/calc/ResultTrajectory.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/include/alignment
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/include/alignment/AlignTrajectory.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/include/alignment/AlignUtils.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/environment/library_path.sh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/environment/library_path.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/lib/ov_eval/format_converter
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/lib/ov_eval/error_comparison
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/lib/ov_eval/error_dataset
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/lib/ov_eval/error_singlerun
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/lib/ov_eval/error_simulation
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/lib/ov_eval/timing_comparison
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/lib/ov_eval/timing_flamegraph
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/lib/ov_eval/timing_histogram
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/lib/ov_eval/timing_percentages
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/lib/ov_eval/plot_trajectories
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ament_index/resource_index/package_run_dependencies/ov_eval
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ament_index/resource_index/parent_prefix_path/ov_eval
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/environment/ament_prefix_path.sh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/environment/ament_prefix_path.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/environment/path.sh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/environment/path.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/local_setup.bash
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/local_setup.sh
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/local_setup.zsh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/local_setup.dsv
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/package.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ament_index/resource_index/packages/ov_eval
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/cmake/ament_cmake_export_include_directories-extras.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/cmake/ament_cmake_export_libraries-extras.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/cmake/ov_evalConfig.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/cmake/ov_evalConfig-version.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_eval/share/ov_eval/package.xml
+Finished <<< ov_eval [3.18s]
+Starting >>> ov_init
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found OpenCV: /usr (found suitable version "4.5.4", minimum required is "4") 
+-- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.74.0/BoostConfig.cmake (found version "1.74.0") found components: system filesystem thread date_time 
+-- Found Threads: TRUE  
+-- Found required Ceres dependency: Eigen version 3.4.0 in /usr/include/eigen3
+-- Found required Ceres dependency: glog
+-- Found required Ceres dependency: gflags
+-- Found Ceres version: 2.0.0 installed in: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/relocated/usr with components: [EigenSparse, SparseLinearAlgebraLibrary, LAPACK, SuiteSparse, CXSparse, SchurSpecializations, Multithreading]
+-- OPENCV: 4.5.4 | BOOST: 1.74.0 | CERES: 2.0.0
+-- PYTHON VERSION: 3.10.12
+-- PYTHON INCLUDE: /usr/include/python3.10
+-- PYTHON LIBRARIES: /usr/lib/x86_64-linux-gnu/libpython3.10.so
+-- Found Python3: /home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python (found version "3.10.12") found components: Interpreter 
+-- ROS *2* version found, building ROS2.cmake
+-- Found rclcpp: 16.0.21 (/opt/ros/humble/share/rclcpp/cmake)
+-- Found rosidl_generator_c: 3.1.9 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+-- Found rosidl_adapter: 3.1.9 (/opt/ros/humble/share/rosidl_adapter/cmake)
+-- Found rosidl_generator_cpp: 3.1.9 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+-- Found rmw_implementation_cmake: 6.1.4 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+-- Found rmw_cyclonedds_cpp: 1.3.5 (/home/elephant/MarsDog/marsdog-platform/out/ros-deps/ros-humble-rmw-cyclonedds-cpp/opt/ros/humble/share/rmw_cyclonedds_cpp/cmake)
+-- Using RMW implementation 'rmw_cyclonedds_cpp' as default
+-- Found cv_bridge: 3.2.1 (/opt/ros/humble/share/cv_bridge/cmake)
+-- Found ov_core: 2.7.0 (/home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/cmake)
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/build/ov_init
+Consolidate compiler generated dependencies of target ov_init_lib
+[ 62%] Built target ov_init_lib
+Consolidate compiler generated dependencies of target test_dynamic_init
+Consolidate compiler generated dependencies of target test_simulation
+Consolidate compiler generated dependencies of target test_dynamic_mle
+[100%] Built target test_dynamic_init
+[100%] Built target test_dynamic_mle
+[100%] Built target test_simulation
+-- Install configuration: "Release"
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/lib/libov_init_lib.so
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/utils
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/utils/helper.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/static
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/static/StaticInitializer.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/dynamic
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/dynamic/DynamicInitializer.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/init
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/init/InertialInitializerOptions.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/init/InertialInitializer.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/sim
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/sim/SimulatorInit.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/ceres
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/ceres/Factor_ImageReprojCalib.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/ceres/State_JPLQuatLocal.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/ceres/Factor_ImuCPIv1.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/include/ceres/Factor_GenericPrior.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/environment/library_path.sh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/environment/library_path.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/lib/ov_init/test_simulation
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/lib/ov_init/test_dynamic_mle
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/lib/ov_init/test_dynamic_init
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/launch/
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/launch//dynamic.launch
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/launch//mle.launch
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/launch//display.rviz
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ament_index/resource_index/package_run_dependencies/ov_init
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ament_index/resource_index/parent_prefix_path/ov_init
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/environment/ament_prefix_path.sh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/environment/ament_prefix_path.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/environment/path.sh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/environment/path.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/local_setup.bash
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/local_setup.sh
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/local_setup.zsh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/local_setup.dsv
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/package.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ament_index/resource_index/packages/ov_init
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/cmake/ament_cmake_export_include_directories-extras.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/cmake/ament_cmake_export_libraries-extras.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/cmake/ov_initConfig.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/cmake/ov_initConfig-version.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/package.xml
+Finished <<< ov_init [4.28s]
+Starting >>> ov_msckf
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found OpenCV: /usr (found suitable version "4.5.4", minimum required is "4") 
+-- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.74.0/BoostConfig.cmake (found version "1.74.0") found components: system filesystem thread date_time 
+-- Found Threads: TRUE  
+-- Found required Ceres dependency: Eigen version 3.4.0 in /usr/include/eigen3
+-- Found required Ceres dependency: glog
+-- Found required Ceres dependency: gflags
+-- Found Ceres version: 2.0.0 installed in: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/relocated/usr with components: [EigenSparse, SparseLinearAlgebraLibrary, LAPACK, SuiteSparse, CXSparse, SchurSpecializations, Multithreading]
+-- OPENCV: 4.5.4 | BOOST: 1.74.0 | CERES: 2.0.0
+-- Found Python3: /home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python (found version "3.10.12") found components: Interpreter 
+-- ROS *2* version found, building ROS2.cmake
+-- Found rclcpp: 16.0.21 (/opt/ros/humble/share/rclcpp/cmake)
+-- Found rosidl_generator_c: 3.1.9 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+-- Found rosidl_adapter: 3.1.9 (/opt/ros/humble/share/rosidl_adapter/cmake)
+-- Found rosidl_generator_cpp: 3.1.9 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+-- Found rmw_implementation_cmake: 6.1.4 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+-- Found rmw_cyclonedds_cpp: 1.3.5 (/home/elephant/MarsDog/marsdog-platform/out/ros-deps/ros-humble-rmw-cyclonedds-cpp/opt/ros/humble/share/rmw_cyclonedds_cpp/cmake)
+-- Using RMW implementation 'rmw_cyclonedds_cpp' as default
+-- Found tf2_ros: 0.25.23 (/opt/ros/humble/share/tf2_ros/cmake)
+-- Found tf2_geometry_msgs: 0.25.23 (/opt/ros/humble/share/tf2_geometry_msgs/cmake)
+-- Found eigen3_cmake_module: 0.1.1 (/opt/ros/humble/share/eigen3_cmake_module/cmake)
+-- Found Eigen3: TRUE (found version "3.4.0") 
+-- Ensuring Eigen3 include directory is part of orocos-kdl CMake target
+-- Found sensor_msgs: 4.9.2 (/opt/ros/humble/share/sensor_msgs/cmake)
+-- Found nav_msgs: 4.9.2 (/opt/ros/humble/share/nav_msgs/cmake)
+-- Found cv_bridge: 3.2.1 (/opt/ros/humble/share/cv_bridge/cmake)
+-- Found image_transport: 3.1.13 (/opt/ros/humble/share/image_transport/cmake)
+-- Found ov_core: 2.7.0 (/home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_core/share/ov_core/cmake)
+-- Found ov_init: 2.7.0 (/home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_init/share/ov_init/cmake)
+-- Configuring done
+-- Generating done
+CMake Warning:
+  Manually-specified variables were not used by the project:
+
+    PYTHON_EXECUTABLE
+
+
+-- Build files have been written to: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/build/ov_msckf
+Consolidate compiler generated dependencies of target ov_msckf_lib
+[ 60%] Built target ov_msckf_lib
+Consolidate compiler generated dependencies of target test_sim_meas
+Consolidate compiler generated dependencies of target run_simulation
+Consolidate compiler generated dependencies of target test_sim_repeat
+Consolidate compiler generated dependencies of target run_subscribe_msckf
+[ 76%] Built target test_sim_repeat
+[ 88%] Built target run_simulation
+[ 88%] Built target run_subscribe_msckf
+[ 92%] Built target test_sim_meas
+Consolidate compiler generated dependencies of target test_leg_velocity
+[100%] Built target test_leg_velocity
+-- Install configuration: "Release"
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/lib/libov_msckf_lib.so
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/utils
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/utils/NoiseManager.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/update
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/update/UpdaterMSCKF.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/update/UpdaterZeroVelocity.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/update/UpdaterOptions.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/update/UpdaterHelper.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/update/UpdaterLegVelocity.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/update/UpdaterSLAM.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/ros
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/ros/ROS1Visualizer.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/ros/ROSVisualizerHelper.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/ros/ROS2Visualizer.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/state
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/state/Propagator.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/state/State.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/state/StateHelper.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/state/StateOptions.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/sim
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/sim/Simulator.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/core
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/core/VioManager.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/include/core/VioManagerOptions.h
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/environment/library_path.sh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/environment/library_path.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/lib/ov_msckf/run_subscribe_msckf
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/lib/ov_msckf/run_simulation
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/lib/ov_msckf/test_sim_meas
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/lib/ov_msckf/test_sim_repeat
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/lib/ov_msckf/test_leg_velocity
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/launch/
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/launch//display_driving.rviz
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/launch//simulation.launch
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/launch//display_ros2.rviz
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/launch//subscribe.launch.py
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/launch//subscribe.launch
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/launch//display.rviz
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/launch//serial.launch
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config/
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_plane
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_plane/kalibr_imu_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_plane/kalibr_imucam_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_plane/estimator_config.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//kaist_vio
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//kaist_vio/kalibr_imu_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//kaist_vio/kalibr_imucam_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//kaist_vio/estimator_config.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//euroc_mav
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//euroc_mav/kalibr_imu_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//euroc_mav/kalibr_imucam_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//euroc_mav/estimator_config.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_aruco
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_aruco/kalibr_imu_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_aruco/kalibr_imucam_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_aruco/estimator_config.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rs_t265
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rs_t265/launch_t265.example
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rs_t265/kalibr_imu_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rs_t265/mask_t265_cam1.xcf
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rs_t265/mask_t265_cam0.png
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rs_t265/mask_t265_cam0.xcf
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rs_t265/kalibr_imucam_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rs_t265/estimator_config.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rs_t265/mask_t265_cam1.png
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_ironsides
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_ironsides/kalibr_imu_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_ironsides/mask_ironsides0.xcf
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_ironsides/mask_ironsides1.png
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_ironsides/kalibr_imucam_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_ironsides/estimator_config.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_ironsides/mask_ironsides0.png
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_ironsides/mask_ironsides1.xcf
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_indoor
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_indoor/kalibr_imu_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_indoor/kalibr_imucam_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_indoor/estimator_config.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_outdoor
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_outdoor/kalibr_imu_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_outdoor/mask_uzhfpv_outdoor_mask1.xcf
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_outdoor/mask_uzhfpv_outdoor_mask0.png
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_outdoor/kalibr_imucam_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_outdoor/mask_uzhfpv_outdoor_mask0.xcf
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_outdoor/estimator_config.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_outdoor/mask_uzhfpv_outdoor_mask1.png
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//tum_vi
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//tum_vi/mask_tumvi1.png
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//tum_vi/kalibr_imu_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//tum_vi/kalibr_imucam_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//tum_vi/mask_tumvi0.png
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//tum_vi/mask_tumvi0.xcf
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//tum_vi/estimator_config.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//tum_vi/mask_tumvi1.xcf
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rs_d455
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rs_d455/kalibr_imu_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rs_d455/launch_d455.example
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rs_d455/kalibr_imucam_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rs_d455/estimator_config.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_sim
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_sim/kalibr_imu_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_sim/kalibr_imucam_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//rpng_sim/estimator_config.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_outdoor_45
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_outdoor_45/kalibr_imu_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_outdoor_45/kalibr_imucam_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_outdoor_45/estimator_config.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_indoor_45
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_indoor_45/kalibr_imu_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_indoor_45/kalibr_imucam_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//uzhfpv_indoor_45/estimator_config.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//kaist
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//kaist/kalibr_imu_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//kaist/kalibr_imucam_chain.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/config//kaist/estimator_config.yaml
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ament_index/resource_index/package_run_dependencies/ov_msckf
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ament_index/resource_index/parent_prefix_path/ov_msckf
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/environment/ament_prefix_path.sh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/environment/ament_prefix_path.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/environment/path.sh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/environment/path.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/local_setup.bash
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/local_setup.sh
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/local_setup.zsh
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/local_setup.dsv
+-- Installing: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/package.dsv
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ament_index/resource_index/packages/ov_msckf
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/cmake/ament_cmake_export_include_directories-extras.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/cmake/ament_cmake_export_libraries-extras.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/cmake/ov_msckfConfig.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/cmake/ov_msckfConfig-version.cmake
+-- Up-to-date: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/install/ov_msckf/share/ov_msckf/package.xml
+--- stderr: ov_msckf
+CMake Warning:
+  Manually-specified variables were not used by the project:
+
+    PYTHON_EXECUTABLE
+
+
+---
+Finished <<< ov_msckf [4.85s]
+
+Summary: 4 packages finished [16.4s]
+  1 package had stderr output: ov_msckf

@@ -1,0 +1,11 @@
+test_cmake_variable_relative_path_remains_relative (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_existing_view_is_idempotent_and_rejects_changes (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_relative_library_symlink_is_preserved (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_relocates_only_existing_absolute_payload_paths (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_generated_sql_stays_in_copy_and_other_edits_are_rejected (test_extended_ros_preparation.VendorBuildCopyTests) ... ok
+test_polluted_sealed_snapshot_is_rejected (test_extended_ros_preparation.VendorBuildCopyTests) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.024s
+
+OK

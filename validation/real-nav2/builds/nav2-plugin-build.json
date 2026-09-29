@@ -1,0 +1,41 @@
+{
+  "status": "PASS",
+  "layer": "nav2-plugin",
+  "command": [
+    "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/colcon",
+    "--log-base",
+    "/home/elephant/MarsDog/marsdog-platform/out/extended-ros/logs/nav2-plugin",
+    "build",
+    "--base-paths",
+    "/home/elephant/MarsDog/marsdog-platform/robotics/ros2/src/behavior_ext_plugins",
+    "--build-base",
+    "/home/elephant/MarsDog/marsdog-platform/out/extended-ros/build",
+    "--install-base",
+    "/home/elephant/MarsDog/marsdog-platform/out/extended-ros/install",
+    "--executor",
+    "sequential",
+    "--event-handlers",
+    "console_direct+",
+    "--cmake-clean-cache",
+    "--cmake-args",
+    "-DCMAKE_BUILD_TYPE=Release",
+    "-DPYTHON_EXECUTABLE=/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+    "-DPython3_EXECUTABLE=/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+    "-DBUILD_TESTING=OFF"
+  ],
+  "returncode": 0,
+  "parallel_compile_jobs": 4,
+  "elapsed_seconds": 4.23,
+  "source_paths": [
+    "robotics/ros2/src/behavior_ext_plugins"
+  ],
+  "build_source_paths": [
+    "robotics/ros2/src/behavior_ext_plugins"
+  ],
+  "source_sha256": "b2da4881b90e79956c65818c90af19df8a995dfb4fdfc0894b07011af2999d92",
+  "sources_unchanged_during_build": true,
+  "source_lock_sha256": "52e678fc996169c3b905c621592f438b19fea8be446b2363995564f73b98cd34",
+  "dependency_lock_sha256": "59c5e8df68e562ed584c44f622eab3082faac1593836152853b611089c0b0fcc",
+  "log": "/home/elephant/MarsDog/marsdog-platform/out/extended-ros/nav2-plugin-build.log",
+  "scope": "CPU compilation only, no hardware/estimator accuracy claim"
+}

@@ -1,0 +1,12 @@
+{
+  "openvins": {
+    "status": "VERIFIED",
+    "path": "/home/elephant/MarsDog/marsdog-platform/.external/openvins",
+    "files": 329
+  },
+  "rtabmap": {
+    "status": "VERIFIED",
+    "path": "/home/elephant/MarsDog/marsdog-platform/.external/rtabmap",
+    "files": 1738
+  }
+}

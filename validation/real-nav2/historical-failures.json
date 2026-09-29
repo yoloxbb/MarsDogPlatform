@@ -1,0 +1,80 @@
+{
+  "scope": "Superseded trials retained, not counted as accepted passes",
+  "records": [
+    {
+      "path": "out/extended-ros/nav2-plugin-initial-failure.json",
+      "sha256": "97fe9229e5e5dc2261e03c031d6b26d5e40303ca2e31af0cc73844a5b1da47ac",
+      "category": "Historical prerequisite/path isolation trial; superseded by final fixed-source build"
+    },
+    {
+      "path": "out/extended-ros/nav2-plugin-initial-failure.log",
+      "sha256": "b427b784cfcebc7841c1ef18cca0aa537b845c7b590ec9a6231466ec7c2471af",
+      "category": "Historical prerequisite/path isolation trial; superseded by final fixed-source build"
+    },
+    {
+      "path": "out/extended-ros/openvins-initial-failure.json",
+      "sha256": "923b622024ef9256c9f69f7e76ee1869092268a8f028720e565206f2ab88a650",
+      "category": "Historical prerequisite/path isolation trial; superseded by final fixed-source build"
+    },
+    {
+      "path": "out/extended-ros/openvins-initial-failure.log",
+      "sha256": "76561143c184e9ba36ed1f5575df8a1c2b21cefa78c8efd8d974f20a27095929",
+      "category": "Historical prerequisite/path isolation trial; superseded by final fixed-source build"
+    },
+    {
+      "path": "out/extended-ros/openvins-relocation-failure.json",
+      "sha256": "9c0a98a6bb79856bffaf5ca578c34a83dd2b895ebca75974e109b2b8e8994a33",
+      "category": "Historical prerequisite/path isolation trial; superseded by final fixed-source build"
+    },
+    {
+      "path": "out/extended-ros/openvins-relocation-failure.log",
+      "sha256": "b029c030c9c6517aeee0402609f7840462a15766a1e1b82e46f769c570e3c15a",
+      "category": "Historical prerequisite/path isolation trial; superseded by final fixed-source build"
+    },
+    {
+      "path": "out/extended-ros/openvins-tests-initial-failure.json",
+      "sha256": "7a5c5c412ce54a87a3ef668b73b87d8e3b8d611050fb5309d3505d8d59a6acf0",
+      "category": "Historical prerequisite/path isolation trial; superseded by final fixed-source build"
+    },
+    {
+      "path": "out/extended-ros/rtabmap-library-path-failure.json",
+      "sha256": "7b6056dd1c0c40df7c00b484d23094eaf933e6c89d7e8811b76795f82644b62e",
+      "category": "Historical prerequisite/path isolation trial; superseded by final fixed-source build"
+    },
+    {
+      "path": "out/extended-ros/rtabmap-library-path-failure.log",
+      "sha256": "9cec8f575b10c81ba2517e326f30a004434ffd9339350c486a3c9a76024efc01",
+      "category": "Historical prerequisite/path isolation trial; superseded by final fixed-source build"
+    },
+    {
+      "path": "out/extended-ros/rtabmap-relocation-failure.json",
+      "sha256": "baad4a1bfb8f09a2ccdf995d74b1f2f7a97464c397a196092427a2be8b57a7db",
+      "category": "Historical prerequisite/path isolation trial; superseded by final fixed-source build"
+    },
+    {
+      "path": "out/extended-ros/rtabmap-relocation-failure.log",
+      "sha256": "58c277881b011195c1312a044ee500941af852ff793bdee4f4dc77a3ee3304d0",
+      "category": "Historical prerequisite/path isolation trial; superseded by final fixed-source build"
+    },
+    {
+      "path": "out/extended-ros/rtabmap-before-source-isolation.json",
+      "sha256": "04fe0263ede8519db068b69499878aa8a5bda309b24ca22af1116239f10ba680",
+      "category": "Compiler succeeded but sealed-source invariance failed; final core rebuild uses out-only source copy"
+    },
+    {
+      "path": "out/extended-ros/rtabmap-before-source-isolation.log",
+      "sha256": "f49284bd811bace01e72621859823783c17a5342f9672bddc64117b908374baf",
+      "category": "Compiler succeeded but sealed-source invariance failed; final core rebuild uses out-only source copy"
+    },
+    {
+      "path": "out/nav2-recovery/runs/20260929T054722Z-358209/result.json",
+      "sha256": "16cea965b2429fc1fcd7f1b707c60704ea450faef269fd9705ff9b1ad2cc205b",
+      "category": "nav2-context signal shutdown race; fixed without accepting nonzero exit"
+    },
+    {
+      "path": "out/nav2-local/runs/20260929T055059Z-362555/result.json",
+      "sha256": "5a8df57adf36c8d8fae673e70c09a8625af2a7f6c0d94328327855e3b6bb5c37",
+      "category": "action-context signal shutdown race; fixed without accepting nonzero exit"
+    }
+  ]
+}

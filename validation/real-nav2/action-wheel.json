@@ -1,0 +1,6 @@
+{
+  "path": "/home/elephant/MarsDog/marsdog-platform/modules/action/.venv/lib/python3.10/site-packages/marsdog_action_executor/ros_node.py",
+  "sha256": "b6910019fe3ae5cc30f119b076e93ae4d5d3bfe99a43216385017bf1ca039f39",
+  "status": "PASS",
+  "scope": "Non-editable Action wheel matches maintained ROS entrypoint source"
+}

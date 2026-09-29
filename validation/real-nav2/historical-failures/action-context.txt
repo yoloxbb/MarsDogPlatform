@@ -1,0 +1,61 @@
+[INFO] [1790661062.997126627] [action_executor_node]: ROS transport: domain_id=212, rmw=rmw_cyclonedds_cpp, localhost_only=1
+[INFO] [1790661062.997899519] [action_executor_node]: Loading configs from: /home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T055059Z-362555/action-config
+[INFO] [1790661063.305038336] [action_executor_node]: Strict behavior-tree contract loaded: 74 behaviors, 183 actions
+[WARN] [1790661063.312511474] [action_executor_node]: SIMULATED Lite3 I/O: no hardware command publishers; status is synthetic
+[INFO] [1790661063.312929283] [action_executor_node]: Lite3 chassis backend enabled: cmd_vel=/cmd_vel, simple_cmd=/simple_cmd, status=/robot_status, mapped_actions=169, enabled_actions=9, navigation_settle=5 samples/2.0s
+[INFO] [1790661063.316964264] [action_executor_node]: Wake orientation adapter disabled
+[INFO] [1790661063.412220395] [action_executor_node]: Navigation adapter enabled: fixed_service=/waypoint_nav/task, random_place=K, random_pool=A,B,C,D,E,frame=map, waypoints=5, routed_behaviors=12, random_nav_behaviors=8, mapped_stage_actions=39
+[INFO] [1790661063.425002642] [action_executor_node]: Accepted behavior-tree names: 74
+[INFO] [1790661063.430508396] [action_executor_node]: Action Server /execute_behavior started (action from marsdog_interfaces).
+[INFO] [1790661063.430815595] [action_executor_node]: ActionExecutorNode (v2) started — sole /execute_behavior server. Ensure no other marsdog_action_executor instance is running.
+[INFO] [1790661063.893602455] [action_executor_node]: Accepted goal: cand_bc53afa1217b -> expressCalmWithHuman (priority=5)
+[INFO] [1790661063.897021015] [action_executor_node]: [cand_bc53afa1217b] Executing: expressCalmWithHuman
+[INFO] [1790661063.897540425] [action_executor_node]: [cand_bc53afa1217b] Validated: expressCalmWithHuman
+[INFO] [1790661063.897751917] [action_executor_node]: [cand_bc53afa1217b] Plan: expressCalmWithHuman -> 2 stages
+[INFO] [1790661063.897979568] [action_executor_node]: [cand_bc53afa1217b] Stage 1/2: target_approach
+Unit ACT_APPROACH_VISUAL_TARGET requires a real controller; route=visual_target_approach is unavailable
+[WARN] [1790661063.898818062] [action_executor_node]: [cand_bc53afa1217b] Stage target_approach failed: controller_required:visual_target_approach (policy=abort, required=True)
+[INFO] [1790661063.899124478] [action_executor_node]: [cand_bc53afa1217b] Result: controller_error (success=False, stages=[], units=[], duration=0.0s)
+[INFO] [1790661068.893353371] [action_executor_node]: Accepted goal: cand_64a4e91b219f -> respond_owner_call (priority=1)
+[INFO] [1790661068.896157929] [action_executor_node]: [cand_64a4e91b219f] Executing: respond_owner_call
+[INFO] [1790661068.896557323] [action_executor_node]: [cand_64a4e91b219f] Validated: respond_owner_call
+[INFO] [1790661068.896755860] [action_executor_node]: [cand_64a4e91b219f] Plan: respond_owner_call -> 1 stages
+[INFO] [1790661068.896987828] [action_executor_node]: [cand_64a4e91b219f] Stage 1/1: action
+Unit ACT_INTERACT_RESPOND_CALL requires a real controller; route=wake_orientation is unavailable
+[WARN] [1790661068.897738017] [action_executor_node]: [cand_64a4e91b219f] Stage action failed: controller_required:wake_orientation (policy=abort, required=True)
+[INFO] [1790661068.897963911] [action_executor_node]: [cand_64a4e91b219f] Result: controller_error (success=False, stages=[], units=[], duration=0.0s)
+[INFO] [1790661069.093221491] [action_executor_node]: Accepted goal: cand_1649c250627a -> expressCalmInPlaceWithHuman (priority=5)
+[INFO] [1790661069.095058888] [action_executor_node]: [cand_1649c250627a] Executing: expressCalmInPlaceWithHuman
+[INFO] [1790661069.096065572] [action_executor_node]: [cand_1649c250627a] Validated: expressCalmInPlaceWithHuman
+[INFO] [1790661069.096731545] [action_executor_node]: [cand_1649c250627a] Plan: expressCalmInPlaceWithHuman -> 1 stages
+[INFO] [1790661069.097006804] [action_executor_node]: [cand_1649c250627a] Stage 1/1: expression
+Lite3 failure: lite3_action_gated:unit_id=ACT_SLEEP_BY_FEET,fidelity=proxy,verified=False
+Unit ACT_SLEEP_BY_FEET failed: failure (lite3_action_gated:unit_id=ACT_SLEEP_BY_FEET,fidelity=proxy,verified=False)
+[WARN] [1790661069.097879531] [action_executor_node]: [cand_1649c250627a] Stage expression failed: lite3_action_gated:unit_id=ACT_SLEEP_BY_FEET,fidelity=proxy,verified=False (policy=abort, required=True)
+[INFO] [1790661069.098108868] [action_executor_node]: [cand_1649c250627a] Result: failure (success=False, stages=[], units=[], duration=0.0s)
+[INFO] [1790661072.893140935] [action_executor_node]: Accepted goal: cand_eaa78bffc128 -> go_home (priority=1)
+[INFO] [1790661072.894829735] [action_executor_node]: [cand_eaa78bffc128] Executing: go_home
+[INFO] [1790661072.896337815] [action_executor_node]: [cand_eaa78bffc128] Validated: go_home
+[INFO] [1790661072.896588009] [action_executor_node]: [cand_eaa78bffc128] Plan: go_home -> 1 stages
+[INFO] [1790661072.896814330] [action_executor_node]: [cand_eaa78bffc128] Navigation: go_home -> waypoint A (timeout=60s)
+[INFO] [1790661074.609753065] [action_executor_node]: [cand_eaa78bffc128] Stage 1/1: navigation
+[INFO] [1790661075.610885209] [action_executor_node]: [cand_eaa78bffc128] Result: success (success=True, stages=['navigation'], units=['ACT_NAV_GO_HOME'], duration=2.7s)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/ros_node.py", line 3061, in main
+    node._stationary_expression_adapter.emergency_stop()
+  File "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/adapters/stationary_expression_adapter.py", line 69, in emergency_stop
+    self.cancel_step()
+  File "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/adapters/stationary_expression_adapter.py", line 66, in cancel_step
+    self._publish_stop()
+  File "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/adapters/stationary_expression_adapter.py", line 78, in _publish_stop
+    self._publish_twist(TwistCommand())
+  File "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/adapters/lite3_backend.py", line 364, in publish_velocity
+    self._publish_twist(command)
+  File "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/adapters/simulated_lite3.py", line 35, in twist
+    self.emit({"simulated": True, "kind": "twist", **asdict(command)})
+  File "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/adapters/simulated_lite3.py", line 53, in emit
+    publisher.publish(String(data=json.dumps(event)))
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/publisher.py", line 70, in publish
+    self.__publisher.publish(msg)
+rclpy._rclpy_pybind11.RCLError: Failed to publish: publisher's context is invalid, at ./src/rcl/publisher.c:389

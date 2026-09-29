@@ -1,0 +1,8 @@
+Internal ctest changing into directory: /home/elephant/MarsDog/marsdog-platform/out/extended-ros/build/ov_msckf
+Test project /home/elephant/MarsDog/marsdog-platform/out/extended-ros/build/ov_msckf
+    Start 1: test_leg_velocity
+1/1 Test #1: test_leg_velocity ................   Passed    0.14 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.14 sec

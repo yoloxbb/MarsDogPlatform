@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "cases": [
+    {
+      "case": "interrupt",
+      "status": "PASS",
+      "run": "/home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T060006Z-374173",
+      "observed_supervisor_status": "PASS",
+      "returncode": 0,
+      "all_owned_pids_reaped": true
+    },
+    {
+      "case": "child_crash",
+      "status": "PASS",
+      "run": "/home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T060019Z-374799",
+      "observed_supervisor_status": "FAIL",
+      "returncode": 1,
+      "all_owned_pids_reaped": true
+    }
+  ],
+  "profile": "lite3-nav2-cpu",
+  "scope": "Local profile only; no hardware"
+}

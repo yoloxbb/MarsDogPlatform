@@ -1,0 +1,410 @@
+{
+  "status": "PASS",
+  "errors": [],
+  "cross_module_imports": [
+    {
+      "consumer": "behavior",
+      "provider": "action",
+      "path": "modules/behavior/marsdog_behavior/ros_node.py",
+      "line": 387,
+      "module": "marsdog_action_executor.action"
+    },
+    {
+      "consumer": "behavior",
+      "provider": "action",
+      "path": "modules/behavior/marsdog_behavior/action_client_adapter.py",
+      "line": 74,
+      "module": "marsdog_action_executor.action"
+    },
+    {
+      "consumer": "behavior",
+      "provider": "emotion",
+      "path": "modules/behavior/marsdog_behavior/mock_action_executor_node.py",
+      "line": 149,
+      "module": "marsdog_ros2.action"
+    },
+    {
+      "consumer": "action",
+      "provider": "vision",
+      "path": "modules/action/marsdog_action_executor/ros_node.py",
+      "line": 267,
+      "module": "marsdog_vision_interaction.srv"
+    },
+    {
+      "consumer": "action",
+      "provider": "voice",
+      "path": "modules/action/marsdog_action_executor/adapters/waypoint_nav_adapter.py",
+      "line": 226,
+      "module": "marsdog_voice_interaction.srv"
+    },
+    {
+      "consumer": "action",
+      "provider": "vision",
+      "path": "modules/action/marsdog_action_executor/adapters/person_nav_approach_adapter.py",
+      "line": 284,
+      "module": "marsdog_vision_interaction.srv"
+    }
+  ],
+  "ros_packages": {
+    "marsdog_need_emotion": {
+      "path": "modules/emotion/package.xml",
+      "compile": [
+        "ament_python"
+      ],
+      "runtime": [
+        "ament_index_python",
+        "launch",
+        "launch_ros",
+        "python3",
+        "rcl_interfaces",
+        "rclpy",
+        "std_msgs"
+      ]
+    },
+    "marsdog_behavior": {
+      "path": "modules/behavior/package.xml",
+      "compile": [
+        "builtin_interfaces",
+        "marsdog_interfaces",
+        "rclpy",
+        "std_msgs"
+      ],
+      "runtime": [
+        "builtin_interfaces",
+        "marsdog_interfaces",
+        "marsdog_vision_interaction",
+        "marsdog_voice_interaction",
+        "python3-pyyaml",
+        "rclpy",
+        "std_msgs"
+      ]
+    },
+    "marsdog_action_executor": {
+      "path": "modules/action/package.xml",
+      "compile": [
+        "action_msgs",
+        "ament_cmake",
+        "ament_cmake_python",
+        "geometry_msgs",
+        "marsdog_vision_interaction",
+        "marsdog_voice_interaction",
+        "nav2_msgs",
+        "rclpy",
+        "rosidl_default_generators",
+        "std_msgs"
+      ],
+      "runtime": [
+        "action_msgs",
+        "geometry_msgs",
+        "marsdog_interfaces",
+        "marsdog_vision_interaction",
+        "marsdog_voice_interaction",
+        "nav2_msgs",
+        "rclpy",
+        "std_msgs",
+        "transfer_interfaces",
+        "unitree_api",
+        "unitree_go"
+      ]
+    },
+    "marsdog_voice_interaction": {
+      "path": "modules/voice/package.xml",
+      "compile": [
+        "ament_cmake",
+        "ament_cmake_python",
+        "rclpy",
+        "rosidl_default_generators",
+        "std_msgs"
+      ],
+      "runtime": [
+        "launch",
+        "launch_ros",
+        "rclpy",
+        "rosidl_default_runtime",
+        "std_msgs"
+      ]
+    },
+    "marsdog_vision_interaction": {
+      "path": "modules/vision/package.xml",
+      "compile": [
+        "ament_cmake",
+        "ament_cmake_python",
+        "geometry_msgs",
+        "rclpy",
+        "rosidl_default_generators",
+        "sensor_msgs",
+        "std_msgs"
+      ],
+      "runtime": [
+        "geometry_msgs",
+        "launch",
+        "launch_ros",
+        "rclpy",
+        "rosidl_default_runtime",
+        "sensor_msgs",
+        "std_msgs"
+      ]
+    },
+    "person_3d_localization": {
+      "path": "robotics/ros2/src/person_3d_localization/package.xml",
+      "compile": [
+        "ament_cmake",
+        "geometry_msgs",
+        "image_geometry",
+        "rclcpp",
+        "rosidl_default_generators",
+        "sensor_msgs",
+        "std_msgs",
+        "tf2",
+        "tf2_geometry_msgs",
+        "tf2_ros"
+      ],
+      "runtime": [
+        "geometry_msgs",
+        "image_geometry",
+        "launch",
+        "launch_ros",
+        "rclcpp",
+        "rosidl_default_runtime",
+        "sensor_msgs",
+        "std_msgs",
+        "tf2",
+        "tf2_geometry_msgs",
+        "tf2_ros"
+      ]
+    },
+    "stereo_v4l2_camera": {
+      "path": "robotics/ros2/src/stereo_v4l2_camera/package.xml",
+      "compile": [
+        "ament_cmake",
+        "libopencv-dev",
+        "rclcpp",
+        "sensor_msgs",
+        "yaml-cpp"
+      ],
+      "runtime": [
+        "launch",
+        "launch_ros",
+        "libopencv-dev",
+        "rclcpp",
+        "sensor_msgs",
+        "yaml-cpp"
+      ]
+    },
+    "wit_imu": {
+      "path": "robotics/ros2/src/wit_imu/package.xml",
+      "compile": [
+        "ament_cmake",
+        "rclcpp",
+        "sensor_msgs"
+      ],
+      "runtime": [
+        "python3-serial",
+        "rclcpp",
+        "rclpy",
+        "sensor_msgs"
+      ]
+    },
+    "go2_uwb_local_follow": {
+      "path": "robotics/ros2/src/go2_uwb_local_follow/package.xml",
+      "compile": [
+        "ament_cmake",
+        "diagnostic_msgs",
+        "geometry_msgs",
+        "nav_msgs",
+        "rclcpp",
+        "sensor_msgs",
+        "std_msgs",
+        "stereo_msgs",
+        "tf2",
+        "tf2_ros",
+        "uwb_aoa_pkg"
+      ],
+      "runtime": [
+        "ament_index_python",
+        "diagnostic_msgs",
+        "geometry_msgs",
+        "launch_ros",
+        "nav_msgs",
+        "rclcpp",
+        "sensor_msgs",
+        "std_msgs",
+        "stereo_image_proc",
+        "stereo_msgs",
+        "tf2",
+        "tf2_ros",
+        "uwb_aoa_pkg"
+      ]
+    },
+    "go2_uwb_behavior": {
+      "path": "robotics/ros2/src/go2_uwb_behavior/package.xml",
+      "compile": [
+        "action_msgs",
+        "ament_cmake",
+        "builtin_interfaces",
+        "diagnostic_msgs",
+        "geometry_msgs",
+        "go2_uwb_local_follow",
+        "nav_msgs",
+        "rclcpp",
+        "rclcpp_action",
+        "rosidl_default_generators",
+        "sensor_msgs",
+        "std_msgs",
+        "tf2",
+        "tf2_ros"
+      ],
+      "runtime": [
+        "action_msgs",
+        "ament_index_python",
+        "builtin_interfaces",
+        "diagnostic_msgs",
+        "geometry_msgs",
+        "go2_uwb_local_follow",
+        "launch_ros",
+        "nav_msgs",
+        "rclcpp",
+        "rclcpp_action",
+        "rosidl_default_runtime",
+        "sensor_msgs",
+        "std_msgs",
+        "stereo_image_proc",
+        "tf2",
+        "tf2_ros"
+      ]
+    },
+    "behavior_ext_plugins": {
+      "path": "robotics/ros2/src/behavior_ext_plugins/package.xml",
+      "compile": [
+        "ament_cmake",
+        "ament_index_cpp",
+        "behaviortree_cpp_v3",
+        "geometry_msgs",
+        "nav2_behavior_tree",
+        "nav2_behaviors",
+        "nav2_core",
+        "nav2_costmap_2d",
+        "nav2_msgs",
+        "nav2_util",
+        "nav_msgs",
+        "pluginlib",
+        "rclcpp",
+        "rclcpp_action",
+        "rclcpp_lifecycle",
+        "std_msgs",
+        "tf2",
+        "tf2_geometry_msgs",
+        "tf2_ros",
+        "visualization_msgs"
+      ],
+      "runtime": [
+        "ament_index_cpp",
+        "behaviortree_cpp_v3",
+        "geometry_msgs",
+        "nav2_behavior_tree",
+        "nav2_behaviors",
+        "nav2_core",
+        "nav2_costmap_2d",
+        "nav2_msgs",
+        "nav2_util",
+        "nav_msgs",
+        "pluginlib",
+        "rclcpp",
+        "rclcpp_action",
+        "rclcpp_lifecycle",
+        "std_msgs",
+        "tf2",
+        "tf2_geometry_msgs",
+        "tf2_ros",
+        "visualization_msgs"
+      ]
+    },
+    "waypoint_nav": {
+      "path": "robotics/ros2/src/waypoint_nav/package.xml",
+      "compile": [],
+      "runtime": [
+        "action_msgs",
+        "geometry_msgs",
+        "marsdog_voice_interaction",
+        "nav2_msgs",
+        "nav_msgs",
+        "python3-yaml",
+        "rclpy",
+        "std_msgs",
+        "unique_identifier_msgs",
+        "visualization_msgs"
+      ]
+    },
+    "robot_slam_bringup": {
+      "path": "robotics/ros2/src/robot_slam_bringup/package.xml",
+      "compile": [
+        "ament_index_python",
+        "geometry_msgs",
+        "rclpy",
+        "sensor_msgs",
+        "tf2_ros"
+      ],
+      "runtime": [
+        "ament_index_python",
+        "behavior_ext_plugins",
+        "geometry_msgs",
+        "go2_description",
+        "launch",
+        "launch_ros",
+        "nav2_bringup",
+        "nav2_common",
+        "nav2_lifecycle_manager",
+        "nav2_map_server",
+        "rclcpp_components",
+        "rclpy",
+        "realsense2_camera",
+        "robot_state_publisher",
+        "rtabmap_odom",
+        "rtabmap_slam",
+        "rtabmap_viz",
+        "sensor_msgs",
+        "spatio_temporal_voxel_layer",
+        "tf2_ros",
+        "vins",
+        "wit_imu"
+      ]
+    },
+    "stereo_slam_legacy_bringup": {
+      "path": "robotics/ros2/src/stereo_slam_legacy_bringup/package.xml",
+      "compile": [
+        "ament_index_python",
+        "rclpy",
+        "sensor_msgs"
+      ],
+      "runtime": [
+        "ament_index_python",
+        "image_proc",
+        "launch",
+        "launch_ros",
+        "rclpy",
+        "robot_localization",
+        "rtabmap_odom",
+        "rtabmap_slam",
+        "rtabmap_viz",
+        "sensor_msgs",
+        "tf2_ros"
+      ]
+    },
+    "marsdog_interfaces": {
+      "path": "interfaces/ros2/marsdog_interfaces/package.xml",
+      "compile": [
+        "ament_cmake",
+        "rosidl_default_generators"
+      ],
+      "runtime": [
+        "rosidl_default_runtime"
+      ]
+    }
+  },
+  "registered_interfaces": 21,
+  "limits": [
+    "Non-literal dynamic imports are not resolved statically",
+    "External ROS dependencies require the build/doctor gates",
+    "Communication feedback loops are allowed; implementation import/ROS dependency cycles are not"
+  ]
+}
