@@ -1,0 +1,4907 @@
+{
+  "status": "PASS",
+  "profile": {
+    "schema_version": 1,
+    "name": "lite3-nav2-cpu",
+    "robot": "lite3",
+    "execution": "local_cpu_nav2_simulation",
+    "ros_distribution": "humble",
+    "ros_domain_id": 212,
+    "rmw": "rmw_cyclonedds_cpp",
+    "voice_mock_seed": 46,
+    "voice_event_interval_sec": 4,
+    "explicit_limits": [
+      "Real Nav2 planner/controller/navigator; ideal simulated planar motion, odometry and localization",
+      "Synthetic static map, no SLAM accuracy or physical obstacle acceptance",
+      "Vision/Voice mock providers; Lite3 simulated I/O",
+      "Nav2 velocity output is remapped exclusively to /development/nav2/cmd_vel",
+      "No simulated battery settlement or hardware protocol changes"
+    ]
+  },
+  "run_directory": "/home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T114649Z-572996",
+  "smoke": {
+    "status": "PASS",
+    "error": null,
+    "scope": "Real Nav2 and business processes; ideal synthetic kinematics/map/localization",
+    "elapsed_seconds": 11.48,
+    "counts": {
+      "audio": 2,
+      "goals": 3,
+      "results": 3,
+      "waypoint": 4,
+      "visual": 115,
+      "needs": 12,
+      "emotion": 11
+    },
+    "samples": {
+      "audio": [
+        {
+          "schema_version": 2,
+          "header": {
+            "stamp": 1790682418.6565502,
+            "frame_id": "microphone_array"
+          },
+          "event_type": "EVT_VOICE_WAKEUP",
+          "interaction_id": "7daed9398710451b8bdb6c03beebeac3",
+          "utterance_id": "",
+          "wake_id": "5a01a02233744093af0ad38998707e74",
+          "wake_word": "\u4f60\u597d\u5c0f\u72d7",
+          "wake_angle": 69.88825376144786,
+          "wake_confidence": 1.0,
+          "wake_score_raw": 0.0,
+          "asr_text": "",
+          "speaker_id": "",
+          "speaker_confidence": 0.0,
+          "speaker_role": "undetermined",
+          "speaker_status": "unavailable",
+          "speaker_reason": "",
+          "social": "",
+          "intent": "",
+          "emotion": "",
+          "action": "",
+          "control": "",
+          "language": "zh",
+          "command_id": "",
+          "intent_category": "",
+          "intent_source": "",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "",
+          "raw_nlu_tag": "",
+          "specific_event_type": "",
+          "dispatch_role": "",
+          "slots": [],
+          "response_text": "",
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "danger_type": "",
+          "danger_angle": 0.0,
+          "state": "attention",
+          "previous_state": "idle",
+          "state_reason": "",
+          "latency_ms": 0.0
+        },
+        {
+          "schema_version": 2,
+          "header": {
+            "stamp": 1790682422.7062733,
+            "frame_id": "microphone_array"
+          },
+          "event_type": "EVT_VOICE_COMMAND_GO_HOME",
+          "interaction_id": "7daed9398710451b8bdb6c03beebeac3",
+          "utterance_id": "ca4e83b3b000452880d5a01a897430df",
+          "wake_id": "5a01a02233744093af0ad38998707e74",
+          "wake_word": "",
+          "wake_angle": 0.0,
+          "wake_confidence": 0.0,
+          "wake_score_raw": 0.0,
+          "asr_text": "\u56de\u5bb6",
+          "speaker_id": "mock_master",
+          "speaker_confidence": 0.95,
+          "speaker_role": "",
+          "speaker_status": "",
+          "speaker_reason": "",
+          "social": "NONE",
+          "intent": "GO_HOME",
+          "emotion": "NONE",
+          "action": "GO_HOME",
+          "control": "DO",
+          "language": "zh",
+          "command_id": "CMD_GO_HOME",
+          "intent_category": "command",
+          "intent_source": "mock_event",
+          "intent_confidence": 1.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "NONE|GO_HOME|DO",
+          "specific_event_type": "EVT_VOICE_COMMAND_GO_HOME",
+          "dispatch_role": "specific_command",
+          "slots": [],
+          "response_text": "",
+          "is_executable": true,
+          "should_trigger_behavior_tree": true,
+          "danger_type": "",
+          "danger_angle": 0.0,
+          "state": "execution",
+          "previous_state": "interaction",
+          "state_reason": "",
+          "latency_ms": 0.0
+        }
+      ],
+      "goals": [
+        {
+          "goal_id": "cand_af9d1a777f55",
+          "behavior_name": "respond_owner_call",
+          "behavior_id": "cand_af9d1a777f55",
+          "priority_level": 1,
+          "params": {
+            "schema_version": "2.0",
+            "source": "audio_direct",
+            "trigger_event": "EVT_VOICE_WAKEUP",
+            "intent": "orient_to_sound",
+            "category": "external_interaction",
+            "level": null,
+            "variant": null,
+            "interaction_mode": "solo",
+            "interactive": false,
+            "target": null,
+            "intensity": 0.0,
+            "source_emotion": "",
+            "source_need": "",
+            "candidate_id": "cand_af9d1a777f55",
+            "sub_priority": 1,
+            "semantic_rank": 2,
+            "modality_rank": 1,
+            "result_mapping": null,
+            "lifecycle_scope": "voice_session",
+            "completion_policy": "bounded",
+            "cancel_on_voice_idle": true,
+            "use_wake_angle": true,
+            "asr_text": "",
+            "intent_confidence": 0.0,
+            "interaction_id": "7daed9398710451b8bdb6c03beebeac3",
+            "wake_id": "5a01a02233744093af0ad38998707e74",
+            "utterance_id": "",
+            "audio_event_key": "7daed9398710451b8bdb6c03beebeac3::EVT_VOICE_WAKEUP",
+            "wake_event_stamp": 1790682418.6565502,
+            "session_role": "wake_orientation",
+            "session_preempt_rank": 10,
+            "target_track_id": null,
+            "target_identity": null,
+            "command_key": "",
+            "command_id": "",
+            "command_catalog_version": "",
+            "intent_source": "",
+            "dispatch_role": "",
+            "specific_event_type": "",
+            "nlu_protocol": "",
+            "raw_nlu_tag": "",
+            "voice_slots": {},
+            "wake_angle_deg": 69.88825376144786,
+            "wake_confidence": 0.0,
+            "wake_frame_id": "microphone_array"
+          },
+          "timeout_sec": 8.0,
+          "timestamp": 1790682418.737186
+        },
+        {
+          "goal_id": "cand_460c7fef4423",
+          "behavior_name": "expressCalmInPlaceWithHuman",
+          "behavior_id": "cand_460c7fef4423",
+          "priority_level": 5,
+          "params": {
+            "schema_version": "2.0",
+            "source": "emotion",
+            "trigger_event": "EMO_CALM_TRIGGERED",
+            "intent": "express_calm",
+            "category": "emotion_expression",
+            "level": "LOW",
+            "variant": "calm",
+            "interaction_mode": "interactive",
+            "interactive": true,
+            "target": {
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+              "target_type": "human",
+              "track_id": 1,
+              "face_track_id": -1,
+              "identity": "unknown",
+              "identity_confidence": 0.0,
+              "identity_state": "unverified",
+              "speaker_id": "unknown",
+              "is_speaking": false,
+              "is_registered": false,
+              "bbox": [
+                0.25,
+                0.1,
+                0.4,
+                0.8
+              ],
+              "face_bbox": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "face_center": [
+                0.0,
+                0.0
+              ],
+              "body_center": [
+                0.45,
+                0.5
+              ],
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "keypoints": [],
+              "confidence": 0.8,
+              "detection_confidence": 0.8,
+              "face_confidence": 0.0,
+              "speaker_confidence": 0.0,
+              "selection_reason": "largest visual target",
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.5,
+              "range_valid": false,
+              "distance_m": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              },
+              "center": [
+                0.45,
+                0.5
+              ],
+              "bearing_deg": -3.45,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 11,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              },
+              "snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:57",
+              "snapshot_sequence": 57,
+              "source_stamp": 1790682418.818337,
+              "frame_id": "simulated_camera",
+              "count": 1
+            },
+            "intensity": 30.0,
+            "source_emotion": "Calm",
+            "source_need": "",
+            "candidate_id": "cand_460c7fef4423",
+            "sub_priority": 0,
+            "semantic_rank": 3,
+            "modality_rank": 3,
+            "result_mapping": null,
+            "interaction_variant": "voice_waiting",
+            "interaction_id": "7daed9398710451b8bdb6c03beebeac3",
+            "session_role": "voice_waiting_emotion",
+            "mobility_policy": "in_place",
+            "lifecycle_scope": "behavior",
+            "emotion": "Calm",
+            "visual_route": "human",
+            "visual_resolved": true,
+            "target_identity": "unknown"
+          },
+          "timeout_sec": 30.0,
+          "timestamp": 1790682418.93799
+        },
+        {
+          "goal_id": "cand_edc9c9aac2fb",
+          "behavior_name": "go_home",
+          "behavior_id": "cand_edc9c9aac2fb",
+          "priority_level": 1,
+          "params": {
+            "schema_version": "2.0",
+            "source": "audio_direct",
+            "trigger_event": "EVT_VOICE_COMMAND_GO_HOME",
+            "intent": "command_go_home",
+            "category": "external_interaction",
+            "level": null,
+            "variant": null,
+            "interaction_mode": "solo",
+            "interactive": false,
+            "target": null,
+            "intensity": 100.0,
+            "source_emotion": "",
+            "source_need": "",
+            "candidate_id": "cand_edc9c9aac2fb",
+            "sub_priority": 1,
+            "semantic_rank": 1,
+            "modality_rank": 1,
+            "result_mapping": null,
+            "lifecycle_scope": "voice_session",
+            "completion_policy": "bounded",
+            "cancel_on_voice_idle": true,
+            "asr_text": "\u56de\u5bb6",
+            "intent_confidence": 1.0,
+            "interaction_id": "7daed9398710451b8bdb6c03beebeac3",
+            "wake_id": "",
+            "utterance_id": "ca4e83b3b000452880d5a01a897430df",
+            "audio_event_key": "7daed9398710451b8bdb6c03beebeac3:ca4e83b3b000452880d5a01a897430df:EVT_VOICE_COMMAND_GO_HOME",
+            "wake_event_stamp": 1790682422.7062733,
+            "session_role": "voice_command",
+            "session_preempt_rank": 0,
+            "target_track_id": null,
+            "target_identity": null,
+            "command_key": "",
+            "command_id": "CMD_GO_HOME",
+            "command_catalog_version": "",
+            "intent_source": "mock_event",
+            "dispatch_role": "specific_command",
+            "specific_event_type": "EVT_VOICE_COMMAND_GO_HOME",
+            "nlu_protocol": "rkllm_social_intent_control_v1",
+            "raw_nlu_tag": "NONE|GO_HOME|DO",
+            "voice_slots": {}
+          },
+          "timeout_sec": 60.0,
+          "timestamp": 1790682422.7375877
+        }
+      ],
+      "results": [
+        {
+          "goal_id": "cand_af9d1a777f55",
+          "behavior_id": "cand_af9d1a777f55",
+          "behavior_name": "respond_owner_call",
+          "status": "CONTROLLER_ERROR",
+          "result": "failed",
+          "reason": "controller_required:wake_orientation",
+          "duration_sec": 0.002881765365600586,
+          "failed_action": "",
+          "interrupted_by": "",
+          "reward": -0.5,
+          "emotion_delta_json": "{}",
+          "need_delta_json": "{}",
+          "metadata_json": "{}",
+          "timestamp": 1790682418.7413023
+        },
+        {
+          "goal_id": "cand_460c7fef4423",
+          "behavior_id": "cand_460c7fef4423",
+          "behavior_name": "expressCalmInPlaceWithHuman",
+          "status": "FAILURE",
+          "result": "failed",
+          "reason": "lite3_action_gated:unit_id=ACT_SLEEP_BY_FEET,fidelity=proxy,verified=False",
+          "duration_sec": 0.003663301467895508,
+          "failed_action": "",
+          "interrupted_by": "",
+          "reward": -0.5,
+          "emotion_delta_json": "{}",
+          "need_delta_json": "{}",
+          "metadata_json": "{}",
+          "timestamp": 1790682418.9428425
+        },
+        {
+          "goal_id": "cand_edc9c9aac2fb",
+          "behavior_id": "cand_edc9c9aac2fb",
+          "behavior_name": "go_home",
+          "status": "SUCCESS",
+          "result": "completed",
+          "reason": "behavior completed",
+          "duration_sec": 2.71104097366333,
+          "failed_action": "",
+          "interrupted_by": "",
+          "reward": 1.0,
+          "emotion_delta_json": "{}",
+          "need_delta_json": "{}",
+          "metadata_json": "{}",
+          "timestamp": 1790682425.4502344
+        }
+      ],
+      "waypoint": [
+        {
+          "code": "QUEUED",
+          "matched_id": "A",
+          "message": "\u4efb\u52a1\u5df2\u6301\u4e45\u5316\uff0c\u7b49\u5f85\u4e0b\u53d1",
+          "place": "\u5367\u5ba4",
+          "safe_to_interrupt": true,
+          "sequence": 1,
+          "state": "RUNNING",
+          "task_id": "action:cand_edc9c9aac2fb:waypoint",
+          "task_type": "goto_place"
+        },
+        {
+          "code": "DISPATCHED",
+          "matched_id": "A",
+          "message": "UUID \u548c\u53d1\u9001\u610f\u56fe\u5df2\u6301\u4e45\u5316\uff0cNav2 \u662f\u5426\u6536\u5230\u5c1a\u672a\u786e\u5b9a",
+          "place": "\u5367\u5ba4",
+          "safe_to_interrupt": false,
+          "sequence": 2,
+          "state": "RUNNING",
+          "task_id": "action:cand_edc9c9aac2fb:waypoint",
+          "task_type": "goto_place"
+        },
+        {
+          "code": "NAV2_ACCEPTED",
+          "matched_id": "A",
+          "message": "Nav2 \u5df2\u63a5\u53d7\u5bfc\u822a\u76ee\u6807",
+          "place": "\u5367\u5ba4",
+          "safe_to_interrupt": true,
+          "sequence": 3,
+          "state": "RUNNING",
+          "task_id": "action:cand_edc9c9aac2fb:waypoint",
+          "task_type": "goto_place"
+        },
+        {
+          "code": "NAV2_SUCCEEDED",
+          "matched_id": "A",
+          "message": "\u5df2\u5230\u8fbe\u76ee\u6807\u5730\u70b9",
+          "place": "\u5367\u5ba4",
+          "safe_to_interrupt": false,
+          "sequence": 4,
+          "state": "SUCCEEDED",
+          "task_id": "action:cand_edc9c9aac2fb:waypoint",
+          "task_type": "goto_place"
+        }
+      ],
+      "visual": [
+        {
+          "schema_version": 1,
+          "header": {
+            "stamp": 1790682424.7182407,
+            "frame_id": "simulated_camera"
+          },
+          "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+          "snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:116",
+          "sequence": 116,
+          "active_target": {
+            "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+            "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+            "target_type": "human",
+            "track_id": 1,
+            "face_track_id": -1,
+            "identity": "unknown",
+            "identity_confidence": 0.0,
+            "identity_state": "unverified",
+            "speaker_id": "unknown",
+            "is_speaking": false,
+            "is_registered": false,
+            "bbox": [
+              0.25,
+              0.1,
+              0.4,
+              0.8
+            ],
+            "face_bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "face_center": [
+              0.0,
+              0.0
+            ],
+            "body_center": [
+              0.45,
+              0.5
+            ],
+            "pose_state": "standing",
+            "pose_action": "",
+            "pose_action_label": "",
+            "keypoint_format": "mediapipe_33",
+            "keypoints": [],
+            "confidence": 0.8,
+            "detection_confidence": 0.8,
+            "face_confidence": 0.0,
+            "speaker_confidence": 0.0,
+            "selection_reason": "largest visual target",
+            "tracking_state": "tracking",
+            "last_seen_age_ms": 0.4,
+            "range_valid": false,
+            "distance_m": null,
+            "pose_3d": {
+              "valid": false,
+              "frame_id": "",
+              "x": null,
+              "y": null,
+              "z": null
+            },
+            "center": [
+              0.45,
+              0.5
+            ],
+            "bearing_deg": -3.45,
+            "bearing_valid": true,
+            "bearing_source": "configured_hfov",
+            "range_source": "none",
+            "depth_sync_delta_ms": null,
+            "held_object": {
+              "state": "inactive",
+              "action": "",
+              "action_label": "",
+              "candidate_action": "",
+              "object_label": "",
+              "object_track_id": -1,
+              "hand_source": "",
+              "association_score": 0.0,
+              "wrist_distance_ratio": null,
+              "evidence_hits": 0,
+              "required_hits": 2,
+              "last_positive_age_ms": null,
+              "object_result_sequence": 22,
+              "rejection_reason": "no_valid_wrist",
+              "evaluated_object_label": "",
+              "evaluated_object_confidence": 0.0,
+              "pose_object_sync_delta_ms": null,
+              "valid_wrist_count": 0,
+              "evaluated_wrist_distance_ratio": null,
+              "wrist_distance_threshold_ratio": 0.16
+            }
+          },
+          "human_candidates": [
+            {
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+              "target_type": "human",
+              "track_id": 1,
+              "face_track_id": -1,
+              "identity": "unknown",
+              "identity_confidence": 0.0,
+              "identity_state": "unverified",
+              "speaker_id": "unknown",
+              "is_speaking": false,
+              "is_registered": false,
+              "bbox": [
+                0.25,
+                0.1,
+                0.4,
+                0.8
+              ],
+              "face_bbox": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "face_center": [
+                0.0,
+                0.0
+              ],
+              "body_center": [
+                0.45,
+                0.5
+              ],
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "keypoints": [],
+              "confidence": 0.8,
+              "detection_confidence": 0.8,
+              "face_confidence": 0.0,
+              "speaker_confidence": 0.0,
+              "selection_reason": "largest visual target",
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.4,
+              "range_valid": false,
+              "distance_m": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              },
+              "center": [
+                0.45,
+                0.5
+              ],
+              "bearing_deg": -3.45,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 22,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              }
+            }
+          ],
+          "faces": [],
+          "humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 22,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              },
+              "keypoints": []
+            }
+          ],
+          "hands": [],
+          "tracked_objects": [
+            {
+              "header": {
+                "stamp": 1790682424.3182743,
+                "frame_id": "simulated_camera"
+              },
+              "source_sequence": 22,
+              "source_snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:object-result:22",
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:object:1",
+              "target_type": "object",
+              "track_id": 1,
+              "object_track_id": 1,
+              "label": "dog toy ball",
+              "display_label": "dog toy ball",
+              "object_kind": "toy",
+              "x": 0.3,
+              "y": 0.45,
+              "w": 0.12,
+              "h": 0.12,
+              "confidence": 0.88,
+              "center_x": 0.36,
+              "center_y": 0.51,
+              "bbox": [
+                0.3,
+                0.45,
+                0.12,
+                0.12
+              ],
+              "center": [
+                0.36,
+                0.51
+              ],
+              "detection_confidence": 0.88,
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.0,
+              "bearing_deg": -9.66,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_valid": false,
+              "distance_m": null,
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              }
+            }
+          ],
+          "events": [],
+          "debug_humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 0,
+                "rejection_reason": "",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.0
+              },
+              "keypoints": []
+            }
+          ],
+          "debug_faces": []
+        },
+        {
+          "schema_version": 1,
+          "header": {
+            "stamp": 1790682424.8184,
+            "frame_id": "simulated_camera"
+          },
+          "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+          "snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:117",
+          "sequence": 117,
+          "active_target": {
+            "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+            "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+            "target_type": "human",
+            "track_id": 1,
+            "face_track_id": -1,
+            "identity": "unknown",
+            "identity_confidence": 0.0,
+            "identity_state": "unverified",
+            "speaker_id": "unknown",
+            "is_speaking": false,
+            "is_registered": false,
+            "bbox": [
+              0.25,
+              0.1,
+              0.4,
+              0.8
+            ],
+            "face_bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "face_center": [
+              0.0,
+              0.0
+            ],
+            "body_center": [
+              0.45,
+              0.5
+            ],
+            "pose_state": "standing",
+            "pose_action": "",
+            "pose_action_label": "",
+            "keypoint_format": "mediapipe_33",
+            "keypoints": [],
+            "confidence": 0.8,
+            "detection_confidence": 0.8,
+            "face_confidence": 0.0,
+            "speaker_confidence": 0.0,
+            "selection_reason": "largest visual target",
+            "tracking_state": "tracking",
+            "last_seen_age_ms": 0.5,
+            "range_valid": false,
+            "distance_m": null,
+            "pose_3d": {
+              "valid": false,
+              "frame_id": "",
+              "x": null,
+              "y": null,
+              "z": null
+            },
+            "center": [
+              0.45,
+              0.5
+            ],
+            "bearing_deg": -3.45,
+            "bearing_valid": true,
+            "bearing_source": "configured_hfov",
+            "range_source": "none",
+            "depth_sync_delta_ms": null,
+            "held_object": {
+              "state": "inactive",
+              "action": "",
+              "action_label": "",
+              "candidate_action": "",
+              "object_label": "",
+              "object_track_id": -1,
+              "hand_source": "",
+              "association_score": 0.0,
+              "wrist_distance_ratio": null,
+              "evidence_hits": 0,
+              "required_hits": 2,
+              "last_positive_age_ms": null,
+              "object_result_sequence": 22,
+              "rejection_reason": "no_valid_wrist",
+              "evaluated_object_label": "",
+              "evaluated_object_confidence": 0.0,
+              "pose_object_sync_delta_ms": null,
+              "valid_wrist_count": 0,
+              "evaluated_wrist_distance_ratio": null,
+              "wrist_distance_threshold_ratio": 0.16
+            }
+          },
+          "human_candidates": [
+            {
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+              "target_type": "human",
+              "track_id": 1,
+              "face_track_id": -1,
+              "identity": "unknown",
+              "identity_confidence": 0.0,
+              "identity_state": "unverified",
+              "speaker_id": "unknown",
+              "is_speaking": false,
+              "is_registered": false,
+              "bbox": [
+                0.25,
+                0.1,
+                0.4,
+                0.8
+              ],
+              "face_bbox": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "face_center": [
+                0.0,
+                0.0
+              ],
+              "body_center": [
+                0.45,
+                0.5
+              ],
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "keypoints": [],
+              "confidence": 0.8,
+              "detection_confidence": 0.8,
+              "face_confidence": 0.0,
+              "speaker_confidence": 0.0,
+              "selection_reason": "largest visual target",
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.5,
+              "range_valid": false,
+              "distance_m": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              },
+              "center": [
+                0.45,
+                0.5
+              ],
+              "bearing_deg": -3.45,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 22,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              }
+            }
+          ],
+          "faces": [],
+          "humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 22,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              },
+              "keypoints": []
+            }
+          ],
+          "hands": [],
+          "tracked_objects": [
+            {
+              "header": {
+                "stamp": 1790682424.3182743,
+                "frame_id": "simulated_camera"
+              },
+              "source_sequence": 22,
+              "source_snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:object-result:22",
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:object:1",
+              "target_type": "object",
+              "track_id": 1,
+              "object_track_id": 1,
+              "label": "dog toy ball",
+              "display_label": "dog toy ball",
+              "object_kind": "toy",
+              "x": 0.3,
+              "y": 0.45,
+              "w": 0.12,
+              "h": 0.12,
+              "confidence": 0.88,
+              "center_x": 0.36,
+              "center_y": 0.51,
+              "bbox": [
+                0.3,
+                0.45,
+                0.12,
+                0.12
+              ],
+              "center": [
+                0.36,
+                0.51
+              ],
+              "detection_confidence": 0.88,
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.0,
+              "bearing_deg": -9.66,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_valid": false,
+              "distance_m": null,
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              }
+            }
+          ],
+          "events": [],
+          "debug_humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 0,
+                "rejection_reason": "",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.0
+              },
+              "keypoints": []
+            }
+          ],
+          "debug_faces": []
+        },
+        {
+          "schema_version": 1,
+          "header": {
+            "stamp": 1790682424.9182749,
+            "frame_id": "simulated_camera"
+          },
+          "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+          "snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:118",
+          "sequence": 118,
+          "active_target": {
+            "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+            "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+            "target_type": "human",
+            "track_id": 1,
+            "face_track_id": -1,
+            "identity": "unknown",
+            "identity_confidence": 0.0,
+            "identity_state": "unverified",
+            "speaker_id": "unknown",
+            "is_speaking": false,
+            "is_registered": false,
+            "bbox": [
+              0.25,
+              0.1,
+              0.4,
+              0.8
+            ],
+            "face_bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "face_center": [
+              0.0,
+              0.0
+            ],
+            "body_center": [
+              0.45,
+              0.5
+            ],
+            "pose_state": "standing",
+            "pose_action": "",
+            "pose_action_label": "",
+            "keypoint_format": "mediapipe_33",
+            "keypoints": [],
+            "confidence": 0.8,
+            "detection_confidence": 0.8,
+            "face_confidence": 0.0,
+            "speaker_confidence": 0.0,
+            "selection_reason": "largest visual target",
+            "tracking_state": "tracking",
+            "last_seen_age_ms": 0.4,
+            "range_valid": false,
+            "distance_m": null,
+            "pose_3d": {
+              "valid": false,
+              "frame_id": "",
+              "x": null,
+              "y": null,
+              "z": null
+            },
+            "center": [
+              0.45,
+              0.5
+            ],
+            "bearing_deg": -3.45,
+            "bearing_valid": true,
+            "bearing_source": "configured_hfov",
+            "range_source": "none",
+            "depth_sync_delta_ms": null,
+            "held_object": {
+              "state": "inactive",
+              "action": "",
+              "action_label": "",
+              "candidate_action": "",
+              "object_label": "",
+              "object_track_id": -1,
+              "hand_source": "",
+              "association_score": 0.0,
+              "wrist_distance_ratio": null,
+              "evidence_hits": 0,
+              "required_hits": 2,
+              "last_positive_age_ms": null,
+              "object_result_sequence": 23,
+              "rejection_reason": "no_valid_wrist",
+              "evaluated_object_label": "",
+              "evaluated_object_confidence": 0.0,
+              "pose_object_sync_delta_ms": null,
+              "valid_wrist_count": 0,
+              "evaluated_wrist_distance_ratio": null,
+              "wrist_distance_threshold_ratio": 0.16
+            }
+          },
+          "human_candidates": [
+            {
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+              "target_type": "human",
+              "track_id": 1,
+              "face_track_id": -1,
+              "identity": "unknown",
+              "identity_confidence": 0.0,
+              "identity_state": "unverified",
+              "speaker_id": "unknown",
+              "is_speaking": false,
+              "is_registered": false,
+              "bbox": [
+                0.25,
+                0.1,
+                0.4,
+                0.8
+              ],
+              "face_bbox": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "face_center": [
+                0.0,
+                0.0
+              ],
+              "body_center": [
+                0.45,
+                0.5
+              ],
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "keypoints": [],
+              "confidence": 0.8,
+              "detection_confidence": 0.8,
+              "face_confidence": 0.0,
+              "speaker_confidence": 0.0,
+              "selection_reason": "largest visual target",
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.4,
+              "range_valid": false,
+              "distance_m": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              },
+              "center": [
+                0.45,
+                0.5
+              ],
+              "bearing_deg": -3.45,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 23,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              }
+            }
+          ],
+          "faces": [],
+          "humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 23,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              },
+              "keypoints": []
+            }
+          ],
+          "hands": [],
+          "tracked_objects": [
+            {
+              "header": {
+                "stamp": 1790682424.8184,
+                "frame_id": "simulated_camera"
+              },
+              "source_sequence": 23,
+              "source_snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:object-result:23",
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:object:1",
+              "target_type": "object",
+              "track_id": 1,
+              "object_track_id": 1,
+              "label": "dog toy ball",
+              "display_label": "dog toy ball",
+              "object_kind": "toy",
+              "x": 0.3,
+              "y": 0.45,
+              "w": 0.12,
+              "h": 0.12,
+              "confidence": 0.88,
+              "center_x": 0.36,
+              "center_y": 0.51,
+              "bbox": [
+                0.3,
+                0.45,
+                0.12,
+                0.12
+              ],
+              "center": [
+                0.36,
+                0.51
+              ],
+              "detection_confidence": 0.88,
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.0,
+              "bearing_deg": -9.66,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_valid": false,
+              "distance_m": null,
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              }
+            }
+          ],
+          "events": [],
+          "debug_humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 0,
+                "rejection_reason": "",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.0
+              },
+              "keypoints": []
+            }
+          ],
+          "debug_faces": []
+        },
+        {
+          "schema_version": 1,
+          "header": {
+            "stamp": 1790682425.0182545,
+            "frame_id": "simulated_camera"
+          },
+          "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+          "snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:119",
+          "sequence": 119,
+          "active_target": {
+            "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+            "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+            "target_type": "human",
+            "track_id": 1,
+            "face_track_id": -1,
+            "identity": "unknown",
+            "identity_confidence": 0.0,
+            "identity_state": "unverified",
+            "speaker_id": "unknown",
+            "is_speaking": false,
+            "is_registered": false,
+            "bbox": [
+              0.25,
+              0.1,
+              0.4,
+              0.8
+            ],
+            "face_bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "face_center": [
+              0.0,
+              0.0
+            ],
+            "body_center": [
+              0.45,
+              0.5
+            ],
+            "pose_state": "standing",
+            "pose_action": "",
+            "pose_action_label": "",
+            "keypoint_format": "mediapipe_33",
+            "keypoints": [],
+            "confidence": 0.8,
+            "detection_confidence": 0.8,
+            "face_confidence": 0.0,
+            "speaker_confidence": 0.0,
+            "selection_reason": "largest visual target",
+            "tracking_state": "tracking",
+            "last_seen_age_ms": 0.5,
+            "range_valid": false,
+            "distance_m": null,
+            "pose_3d": {
+              "valid": false,
+              "frame_id": "",
+              "x": null,
+              "y": null,
+              "z": null
+            },
+            "center": [
+              0.45,
+              0.5
+            ],
+            "bearing_deg": -3.45,
+            "bearing_valid": true,
+            "bearing_source": "configured_hfov",
+            "range_source": "none",
+            "depth_sync_delta_ms": null,
+            "held_object": {
+              "state": "inactive",
+              "action": "",
+              "action_label": "",
+              "candidate_action": "",
+              "object_label": "",
+              "object_track_id": -1,
+              "hand_source": "",
+              "association_score": 0.0,
+              "wrist_distance_ratio": null,
+              "evidence_hits": 0,
+              "required_hits": 2,
+              "last_positive_age_ms": null,
+              "object_result_sequence": 23,
+              "rejection_reason": "no_valid_wrist",
+              "evaluated_object_label": "",
+              "evaluated_object_confidence": 0.0,
+              "pose_object_sync_delta_ms": null,
+              "valid_wrist_count": 0,
+              "evaluated_wrist_distance_ratio": null,
+              "wrist_distance_threshold_ratio": 0.16
+            }
+          },
+          "human_candidates": [
+            {
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+              "target_type": "human",
+              "track_id": 1,
+              "face_track_id": -1,
+              "identity": "unknown",
+              "identity_confidence": 0.0,
+              "identity_state": "unverified",
+              "speaker_id": "unknown",
+              "is_speaking": false,
+              "is_registered": false,
+              "bbox": [
+                0.25,
+                0.1,
+                0.4,
+                0.8
+              ],
+              "face_bbox": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "face_center": [
+                0.0,
+                0.0
+              ],
+              "body_center": [
+                0.45,
+                0.5
+              ],
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "keypoints": [],
+              "confidence": 0.8,
+              "detection_confidence": 0.8,
+              "face_confidence": 0.0,
+              "speaker_confidence": 0.0,
+              "selection_reason": "largest visual target",
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.5,
+              "range_valid": false,
+              "distance_m": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              },
+              "center": [
+                0.45,
+                0.5
+              ],
+              "bearing_deg": -3.45,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 23,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              }
+            }
+          ],
+          "faces": [],
+          "humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 23,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              },
+              "keypoints": []
+            }
+          ],
+          "hands": [],
+          "tracked_objects": [
+            {
+              "header": {
+                "stamp": 1790682424.8184,
+                "frame_id": "simulated_camera"
+              },
+              "source_sequence": 23,
+              "source_snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:object-result:23",
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:object:1",
+              "target_type": "object",
+              "track_id": 1,
+              "object_track_id": 1,
+              "label": "dog toy ball",
+              "display_label": "dog toy ball",
+              "object_kind": "toy",
+              "x": 0.3,
+              "y": 0.45,
+              "w": 0.12,
+              "h": 0.12,
+              "confidence": 0.88,
+              "center_x": 0.36,
+              "center_y": 0.51,
+              "bbox": [
+                0.3,
+                0.45,
+                0.12,
+                0.12
+              ],
+              "center": [
+                0.36,
+                0.51
+              ],
+              "detection_confidence": 0.88,
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.0,
+              "bearing_deg": -9.66,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_valid": false,
+              "distance_m": null,
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              }
+            }
+          ],
+          "events": [],
+          "debug_humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 0,
+                "rejection_reason": "",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.0
+              },
+              "keypoints": []
+            }
+          ],
+          "debug_faces": []
+        },
+        {
+          "schema_version": 1,
+          "header": {
+            "stamp": 1790682425.1188412,
+            "frame_id": "simulated_camera"
+          },
+          "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+          "snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:120",
+          "sequence": 120,
+          "active_target": {
+            "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+            "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+            "target_type": "human",
+            "track_id": 1,
+            "face_track_id": -1,
+            "identity": "unknown",
+            "identity_confidence": 0.0,
+            "identity_state": "unverified",
+            "speaker_id": "unknown",
+            "is_speaking": false,
+            "is_registered": false,
+            "bbox": [
+              0.25,
+              0.1,
+              0.4,
+              0.8
+            ],
+            "face_bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "face_center": [
+              0.0,
+              0.0
+            ],
+            "body_center": [
+              0.45,
+              0.5
+            ],
+            "pose_state": "standing",
+            "pose_action": "",
+            "pose_action_label": "",
+            "keypoint_format": "mediapipe_33",
+            "keypoints": [],
+            "confidence": 0.8,
+            "detection_confidence": 0.8,
+            "face_confidence": 0.0,
+            "speaker_confidence": 0.0,
+            "selection_reason": "largest visual target",
+            "tracking_state": "tracking",
+            "last_seen_age_ms": 0.4,
+            "range_valid": false,
+            "distance_m": null,
+            "pose_3d": {
+              "valid": false,
+              "frame_id": "",
+              "x": null,
+              "y": null,
+              "z": null
+            },
+            "center": [
+              0.45,
+              0.5
+            ],
+            "bearing_deg": -3.45,
+            "bearing_valid": true,
+            "bearing_source": "configured_hfov",
+            "range_source": "none",
+            "depth_sync_delta_ms": null,
+            "held_object": {
+              "state": "inactive",
+              "action": "",
+              "action_label": "",
+              "candidate_action": "",
+              "object_label": "",
+              "object_track_id": -1,
+              "hand_source": "",
+              "association_score": 0.0,
+              "wrist_distance_ratio": null,
+              "evidence_hits": 0,
+              "required_hits": 2,
+              "last_positive_age_ms": null,
+              "object_result_sequence": 23,
+              "rejection_reason": "no_valid_wrist",
+              "evaluated_object_label": "",
+              "evaluated_object_confidence": 0.0,
+              "pose_object_sync_delta_ms": null,
+              "valid_wrist_count": 0,
+              "evaluated_wrist_distance_ratio": null,
+              "wrist_distance_threshold_ratio": 0.16
+            }
+          },
+          "human_candidates": [
+            {
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+              "target_type": "human",
+              "track_id": 1,
+              "face_track_id": -1,
+              "identity": "unknown",
+              "identity_confidence": 0.0,
+              "identity_state": "unverified",
+              "speaker_id": "unknown",
+              "is_speaking": false,
+              "is_registered": false,
+              "bbox": [
+                0.25,
+                0.1,
+                0.4,
+                0.8
+              ],
+              "face_bbox": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "face_center": [
+                0.0,
+                0.0
+              ],
+              "body_center": [
+                0.45,
+                0.5
+              ],
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "keypoints": [],
+              "confidence": 0.8,
+              "detection_confidence": 0.8,
+              "face_confidence": 0.0,
+              "speaker_confidence": 0.0,
+              "selection_reason": "largest visual target",
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.4,
+              "range_valid": false,
+              "distance_m": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              },
+              "center": [
+                0.45,
+                0.5
+              ],
+              "bearing_deg": -3.45,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 23,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              }
+            }
+          ],
+          "faces": [],
+          "humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 23,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              },
+              "keypoints": []
+            }
+          ],
+          "hands": [],
+          "tracked_objects": [
+            {
+              "header": {
+                "stamp": 1790682424.8184,
+                "frame_id": "simulated_camera"
+              },
+              "source_sequence": 23,
+              "source_snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:object-result:23",
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:object:1",
+              "target_type": "object",
+              "track_id": 1,
+              "object_track_id": 1,
+              "label": "dog toy ball",
+              "display_label": "dog toy ball",
+              "object_kind": "toy",
+              "x": 0.3,
+              "y": 0.45,
+              "w": 0.12,
+              "h": 0.12,
+              "confidence": 0.88,
+              "center_x": 0.36,
+              "center_y": 0.51,
+              "bbox": [
+                0.3,
+                0.45,
+                0.12,
+                0.12
+              ],
+              "center": [
+                0.36,
+                0.51
+              ],
+              "detection_confidence": 0.88,
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.0,
+              "bearing_deg": -9.66,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_valid": false,
+              "distance_m": null,
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              }
+            }
+          ],
+          "events": [],
+          "debug_humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 0,
+                "rejection_reason": "",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.0
+              },
+              "keypoints": []
+            }
+          ],
+          "debug_faces": []
+        },
+        {
+          "schema_version": 1,
+          "header": {
+            "stamp": 1790682425.218271,
+            "frame_id": "simulated_camera"
+          },
+          "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+          "snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:121",
+          "sequence": 121,
+          "active_target": {
+            "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+            "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+            "target_type": "human",
+            "track_id": 1,
+            "face_track_id": -1,
+            "identity": "unknown",
+            "identity_confidence": 0.0,
+            "identity_state": "unverified",
+            "speaker_id": "unknown",
+            "is_speaking": false,
+            "is_registered": false,
+            "bbox": [
+              0.25,
+              0.1,
+              0.4,
+              0.8
+            ],
+            "face_bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "face_center": [
+              0.0,
+              0.0
+            ],
+            "body_center": [
+              0.45,
+              0.5
+            ],
+            "pose_state": "standing",
+            "pose_action": "",
+            "pose_action_label": "",
+            "keypoint_format": "mediapipe_33",
+            "keypoints": [],
+            "confidence": 0.8,
+            "detection_confidence": 0.8,
+            "face_confidence": 0.0,
+            "speaker_confidence": 0.0,
+            "selection_reason": "largest visual target",
+            "tracking_state": "tracking",
+            "last_seen_age_ms": 0.5,
+            "range_valid": false,
+            "distance_m": null,
+            "pose_3d": {
+              "valid": false,
+              "frame_id": "",
+              "x": null,
+              "y": null,
+              "z": null
+            },
+            "center": [
+              0.45,
+              0.5
+            ],
+            "bearing_deg": -3.45,
+            "bearing_valid": true,
+            "bearing_source": "configured_hfov",
+            "range_source": "none",
+            "depth_sync_delta_ms": null,
+            "held_object": {
+              "state": "inactive",
+              "action": "",
+              "action_label": "",
+              "candidate_action": "",
+              "object_label": "",
+              "object_track_id": -1,
+              "hand_source": "",
+              "association_score": 0.0,
+              "wrist_distance_ratio": null,
+              "evidence_hits": 0,
+              "required_hits": 2,
+              "last_positive_age_ms": null,
+              "object_result_sequence": 23,
+              "rejection_reason": "no_valid_wrist",
+              "evaluated_object_label": "",
+              "evaluated_object_confidence": 0.0,
+              "pose_object_sync_delta_ms": null,
+              "valid_wrist_count": 0,
+              "evaluated_wrist_distance_ratio": null,
+              "wrist_distance_threshold_ratio": 0.16
+            }
+          },
+          "human_candidates": [
+            {
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+              "target_type": "human",
+              "track_id": 1,
+              "face_track_id": -1,
+              "identity": "unknown",
+              "identity_confidence": 0.0,
+              "identity_state": "unverified",
+              "speaker_id": "unknown",
+              "is_speaking": false,
+              "is_registered": false,
+              "bbox": [
+                0.25,
+                0.1,
+                0.4,
+                0.8
+              ],
+              "face_bbox": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "face_center": [
+                0.0,
+                0.0
+              ],
+              "body_center": [
+                0.45,
+                0.5
+              ],
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "keypoints": [],
+              "confidence": 0.8,
+              "detection_confidence": 0.8,
+              "face_confidence": 0.0,
+              "speaker_confidence": 0.0,
+              "selection_reason": "largest visual target",
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.5,
+              "range_valid": false,
+              "distance_m": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              },
+              "center": [
+                0.45,
+                0.5
+              ],
+              "bearing_deg": -3.45,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 23,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              }
+            }
+          ],
+          "faces": [],
+          "humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 23,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              },
+              "keypoints": []
+            }
+          ],
+          "hands": [],
+          "tracked_objects": [
+            {
+              "header": {
+                "stamp": 1790682424.8184,
+                "frame_id": "simulated_camera"
+              },
+              "source_sequence": 23,
+              "source_snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:object-result:23",
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:object:1",
+              "target_type": "object",
+              "track_id": 1,
+              "object_track_id": 1,
+              "label": "dog toy ball",
+              "display_label": "dog toy ball",
+              "object_kind": "toy",
+              "x": 0.3,
+              "y": 0.45,
+              "w": 0.12,
+              "h": 0.12,
+              "confidence": 0.88,
+              "center_x": 0.36,
+              "center_y": 0.51,
+              "bbox": [
+                0.3,
+                0.45,
+                0.12,
+                0.12
+              ],
+              "center": [
+                0.36,
+                0.51
+              ],
+              "detection_confidence": 0.88,
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.0,
+              "bearing_deg": -9.66,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_valid": false,
+              "distance_m": null,
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              }
+            }
+          ],
+          "events": [],
+          "debug_humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 0,
+                "rejection_reason": "",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.0
+              },
+              "keypoints": []
+            }
+          ],
+          "debug_faces": []
+        },
+        {
+          "schema_version": 1,
+          "header": {
+            "stamp": 1790682425.3182921,
+            "frame_id": "simulated_camera"
+          },
+          "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+          "snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:122",
+          "sequence": 122,
+          "active_target": {
+            "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+            "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+            "target_type": "human",
+            "track_id": 1,
+            "face_track_id": -1,
+            "identity": "unknown",
+            "identity_confidence": 0.0,
+            "identity_state": "unverified",
+            "speaker_id": "unknown",
+            "is_speaking": false,
+            "is_registered": false,
+            "bbox": [
+              0.25,
+              0.1,
+              0.4,
+              0.8
+            ],
+            "face_bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "face_center": [
+              0.0,
+              0.0
+            ],
+            "body_center": [
+              0.45,
+              0.5
+            ],
+            "pose_state": "standing",
+            "pose_action": "",
+            "pose_action_label": "",
+            "keypoint_format": "mediapipe_33",
+            "keypoints": [],
+            "confidence": 0.8,
+            "detection_confidence": 0.8,
+            "face_confidence": 0.0,
+            "speaker_confidence": 0.0,
+            "selection_reason": "largest visual target",
+            "tracking_state": "tracking",
+            "last_seen_age_ms": 0.5,
+            "range_valid": false,
+            "distance_m": null,
+            "pose_3d": {
+              "valid": false,
+              "frame_id": "",
+              "x": null,
+              "y": null,
+              "z": null
+            },
+            "center": [
+              0.45,
+              0.5
+            ],
+            "bearing_deg": -3.45,
+            "bearing_valid": true,
+            "bearing_source": "configured_hfov",
+            "range_source": "none",
+            "depth_sync_delta_ms": null,
+            "held_object": {
+              "state": "inactive",
+              "action": "",
+              "action_label": "",
+              "candidate_action": "",
+              "object_label": "",
+              "object_track_id": -1,
+              "hand_source": "",
+              "association_score": 0.0,
+              "wrist_distance_ratio": null,
+              "evidence_hits": 0,
+              "required_hits": 2,
+              "last_positive_age_ms": null,
+              "object_result_sequence": 23,
+              "rejection_reason": "no_valid_wrist",
+              "evaluated_object_label": "",
+              "evaluated_object_confidence": 0.0,
+              "pose_object_sync_delta_ms": null,
+              "valid_wrist_count": 0,
+              "evaluated_wrist_distance_ratio": null,
+              "wrist_distance_threshold_ratio": 0.16
+            }
+          },
+          "human_candidates": [
+            {
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+              "target_type": "human",
+              "track_id": 1,
+              "face_track_id": -1,
+              "identity": "unknown",
+              "identity_confidence": 0.0,
+              "identity_state": "unverified",
+              "speaker_id": "unknown",
+              "is_speaking": false,
+              "is_registered": false,
+              "bbox": [
+                0.25,
+                0.1,
+                0.4,
+                0.8
+              ],
+              "face_bbox": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "face_center": [
+                0.0,
+                0.0
+              ],
+              "body_center": [
+                0.45,
+                0.5
+              ],
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "keypoints": [],
+              "confidence": 0.8,
+              "detection_confidence": 0.8,
+              "face_confidence": 0.0,
+              "speaker_confidence": 0.0,
+              "selection_reason": "largest visual target",
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.5,
+              "range_valid": false,
+              "distance_m": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              },
+              "center": [
+                0.45,
+                0.5
+              ],
+              "bearing_deg": -3.45,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 23,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              }
+            }
+          ],
+          "faces": [],
+          "humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 23,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              },
+              "keypoints": []
+            }
+          ],
+          "hands": [],
+          "tracked_objects": [
+            {
+              "header": {
+                "stamp": 1790682424.8184,
+                "frame_id": "simulated_camera"
+              },
+              "source_sequence": 23,
+              "source_snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:object-result:23",
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:object:1",
+              "target_type": "object",
+              "track_id": 1,
+              "object_track_id": 1,
+              "label": "dog toy ball",
+              "display_label": "dog toy ball",
+              "object_kind": "toy",
+              "x": 0.3,
+              "y": 0.45,
+              "w": 0.12,
+              "h": 0.12,
+              "confidence": 0.88,
+              "center_x": 0.36,
+              "center_y": 0.51,
+              "bbox": [
+                0.3,
+                0.45,
+                0.12,
+                0.12
+              ],
+              "center": [
+                0.36,
+                0.51
+              ],
+              "detection_confidence": 0.88,
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.0,
+              "bearing_deg": -9.66,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_valid": false,
+              "distance_m": null,
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              }
+            }
+          ],
+          "events": [],
+          "debug_humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 0,
+                "rejection_reason": "",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.0
+              },
+              "keypoints": []
+            }
+          ],
+          "debug_faces": []
+        },
+        {
+          "schema_version": 1,
+          "header": {
+            "stamp": 1790682425.418741,
+            "frame_id": "simulated_camera"
+          },
+          "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+          "snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:123",
+          "sequence": 123,
+          "active_target": {
+            "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+            "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+            "target_type": "human",
+            "track_id": 1,
+            "face_track_id": -1,
+            "identity": "unknown",
+            "identity_confidence": 0.0,
+            "identity_state": "unverified",
+            "speaker_id": "unknown",
+            "is_speaking": false,
+            "is_registered": false,
+            "bbox": [
+              0.25,
+              0.1,
+              0.4,
+              0.8
+            ],
+            "face_bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "face_center": [
+              0.0,
+              0.0
+            ],
+            "body_center": [
+              0.45,
+              0.5
+            ],
+            "pose_state": "standing",
+            "pose_action": "",
+            "pose_action_label": "",
+            "keypoint_format": "mediapipe_33",
+            "keypoints": [],
+            "confidence": 0.8,
+            "detection_confidence": 0.8,
+            "face_confidence": 0.0,
+            "speaker_confidence": 0.0,
+            "selection_reason": "largest visual target",
+            "tracking_state": "tracking",
+            "last_seen_age_ms": 0.5,
+            "range_valid": false,
+            "distance_m": null,
+            "pose_3d": {
+              "valid": false,
+              "frame_id": "",
+              "x": null,
+              "y": null,
+              "z": null
+            },
+            "center": [
+              0.45,
+              0.5
+            ],
+            "bearing_deg": -3.45,
+            "bearing_valid": true,
+            "bearing_source": "configured_hfov",
+            "range_source": "none",
+            "depth_sync_delta_ms": null,
+            "held_object": {
+              "state": "inactive",
+              "action": "",
+              "action_label": "",
+              "candidate_action": "",
+              "object_label": "",
+              "object_track_id": -1,
+              "hand_source": "",
+              "association_score": 0.0,
+              "wrist_distance_ratio": null,
+              "evidence_hits": 0,
+              "required_hits": 2,
+              "last_positive_age_ms": null,
+              "object_result_sequence": 23,
+              "rejection_reason": "no_valid_wrist",
+              "evaluated_object_label": "",
+              "evaluated_object_confidence": 0.0,
+              "pose_object_sync_delta_ms": null,
+              "valid_wrist_count": 0,
+              "evaluated_wrist_distance_ratio": null,
+              "wrist_distance_threshold_ratio": 0.16
+            }
+          },
+          "human_candidates": [
+            {
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:human:1",
+              "target_type": "human",
+              "track_id": 1,
+              "face_track_id": -1,
+              "identity": "unknown",
+              "identity_confidence": 0.0,
+              "identity_state": "unverified",
+              "speaker_id": "unknown",
+              "is_speaking": false,
+              "is_registered": false,
+              "bbox": [
+                0.25,
+                0.1,
+                0.4,
+                0.8
+              ],
+              "face_bbox": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "face_center": [
+                0.0,
+                0.0
+              ],
+              "body_center": [
+                0.45,
+                0.5
+              ],
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "keypoints": [],
+              "confidence": 0.8,
+              "detection_confidence": 0.8,
+              "face_confidence": 0.0,
+              "speaker_confidence": 0.0,
+              "selection_reason": "largest visual target",
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.5,
+              "range_valid": false,
+              "distance_m": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              },
+              "center": [
+                0.45,
+                0.5
+              ],
+              "bearing_deg": -3.45,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 23,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              }
+            }
+          ],
+          "faces": [],
+          "humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 23,
+                "rejection_reason": "no_valid_wrist",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.16
+              },
+              "keypoints": []
+            }
+          ],
+          "hands": [],
+          "tracked_objects": [
+            {
+              "header": {
+                "stamp": 1790682424.8184,
+                "frame_id": "simulated_camera"
+              },
+              "source_sequence": 23,
+              "source_snapshot_id": "cb05cc13e14f4ce0993692065c3a28e5:object-result:23",
+              "vision_epoch": "cb05cc13e14f4ce0993692065c3a28e5",
+              "target_id": "cb05cc13e14f4ce0993692065c3a28e5:object:1",
+              "target_type": "object",
+              "track_id": 1,
+              "object_track_id": 1,
+              "label": "dog toy ball",
+              "display_label": "dog toy ball",
+              "object_kind": "toy",
+              "x": 0.3,
+              "y": 0.45,
+              "w": 0.12,
+              "h": 0.12,
+              "confidence": 0.88,
+              "center_x": 0.36,
+              "center_y": 0.51,
+              "bbox": [
+                0.3,
+                0.45,
+                0.12,
+                0.12
+              ],
+              "center": [
+                0.36,
+                0.51
+              ],
+              "detection_confidence": 0.88,
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0.0,
+              "bearing_deg": -9.66,
+              "bearing_valid": true,
+              "bearing_source": "configured_hfov",
+              "range_valid": false,
+              "distance_m": null,
+              "range_source": "none",
+              "depth_sync_delta_ms": null,
+              "pose_3d": {
+                "valid": false,
+                "frame_id": "",
+                "x": null,
+                "y": null,
+                "z": null
+              }
+            }
+          ],
+          "events": [],
+          "debug_humans": [
+            {
+              "track_id": 1,
+              "x": 0.25,
+              "y": 0.1,
+              "w": 0.4,
+              "h": 0.8,
+              "confidence": 0.8,
+              "pose_state": "standing",
+              "pose_action": "",
+              "pose_action_label": "",
+              "keypoint_format": "mediapipe_33",
+              "held_object": {
+                "state": "inactive",
+                "action": "",
+                "action_label": "",
+                "candidate_action": "",
+                "object_label": "",
+                "object_track_id": -1,
+                "hand_source": "",
+                "association_score": 0.0,
+                "wrist_distance_ratio": null,
+                "evidence_hits": 0,
+                "required_hits": 2,
+                "last_positive_age_ms": null,
+                "object_result_sequence": 0,
+                "rejection_reason": "",
+                "evaluated_object_label": "",
+                "evaluated_object_confidence": 0.0,
+                "pose_object_sync_delta_ms": null,
+                "valid_wrist_count": 0,
+                "evaluated_wrist_distance_ratio": null,
+                "wrist_distance_threshold_ratio": 0.0
+              },
+              "keypoints": []
+            }
+          ],
+          "debug_faces": []
+        }
+      ],
+      "needs": [
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682418.079732,
+          "demands": {
+            "Hunger": {
+              "value": 65,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_HUNGER_RECOVERED",
+              "levelActive": false
+            },
+            "Bladder": {
+              "value": 0,
+              "triggerThreshold": 75,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_BLADDER_RECOVERED",
+              "levelActive": false
+            },
+            "Sleepiness": {
+              "value": 15,
+              "triggerThreshold": 65,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SLEEPINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Cleanliness": {
+              "value": 10,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_CLEANLINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Energy": {
+              "value": 0,
+              "triggerThreshold": 80,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_ENERGY_RECOVERED",
+              "levelActive": false
+            },
+            "Social": {
+              "value": 20,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": 70,
+              "urgentOperator": "gt",
+              "overflowThreshold": 85,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SOCIAL_RECOVERED",
+              "levelActive": false
+            },
+            "Exploration": {
+              "value": 10,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_EXPLORATION_RECOVERED",
+              "levelActive": false
+            }
+          },
+          "levelEvents": {
+            "Hunger": "NEED_HUNGER_RECOVERED",
+            "Bladder": "NEED_BLADDER_RECOVERED",
+            "Sleepiness": "NEED_SLEEPINESS_RECOVERED",
+            "Cleanliness": "NEED_CLEANLINESS_RECOVERED",
+            "Energy": "NEED_ENERGY_RECOVERED",
+            "Social": "NEED_SOCIAL_RECOVERED",
+            "Exploration": "NEED_EXPLORATION_RECOVERED"
+          },
+          "triggered": [],
+          "sleep": {
+            "isSleeping": false,
+            "sleepDepth": "Shallow",
+            "sleepDurationMinutes": 0,
+            "shallowSleepTicksRemaining": 0
+          },
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:06.543923+08:00",
+            "virtualTimestamp": 1790647206.543923,
+            "virtualElapsedSeconds": 6.543923,
+            "wallTimestamp": 1790682418.079732
+          }
+        },
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682419.0797076,
+          "demands": {
+            "Hunger": {
+              "value": 65,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_HUNGER_RECOVERED",
+              "levelActive": false
+            },
+            "Bladder": {
+              "value": 0,
+              "triggerThreshold": 75,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_BLADDER_RECOVERED",
+              "levelActive": false
+            },
+            "Sleepiness": {
+              "value": 15,
+              "triggerThreshold": 65,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SLEEPINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Cleanliness": {
+              "value": 10,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_CLEANLINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Energy": {
+              "value": 0,
+              "triggerThreshold": 80,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_ENERGY_RECOVERED",
+              "levelActive": false
+            },
+            "Social": {
+              "value": 20,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": 70,
+              "urgentOperator": "gt",
+              "overflowThreshold": 85,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SOCIAL_RECOVERED",
+              "levelActive": false
+            },
+            "Exploration": {
+              "value": 10,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_EXPLORATION_RECOVERED",
+              "levelActive": false
+            }
+          },
+          "levelEvents": {
+            "Hunger": "NEED_HUNGER_RECOVERED",
+            "Bladder": "NEED_BLADDER_RECOVERED",
+            "Sleepiness": "NEED_SLEEPINESS_RECOVERED",
+            "Cleanliness": "NEED_CLEANLINESS_RECOVERED",
+            "Energy": "NEED_ENERGY_RECOVERED",
+            "Social": "NEED_SOCIAL_RECOVERED",
+            "Exploration": "NEED_EXPLORATION_RECOVERED"
+          },
+          "triggered": [],
+          "sleep": {
+            "isSleeping": false,
+            "sleepDepth": "Shallow",
+            "sleepDurationMinutes": 0,
+            "shallowSleepTicksRemaining": 0
+          },
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:07.544010+08:00",
+            "virtualTimestamp": 1790647207.54401,
+            "virtualElapsedSeconds": 7.54401,
+            "wallTimestamp": 1790682419.0797076
+          }
+        },
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682420.079824,
+          "demands": {
+            "Hunger": {
+              "value": 65,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_HUNGER_RECOVERED",
+              "levelActive": false
+            },
+            "Bladder": {
+              "value": 0,
+              "triggerThreshold": 75,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_BLADDER_RECOVERED",
+              "levelActive": false
+            },
+            "Sleepiness": {
+              "value": 15,
+              "triggerThreshold": 65,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SLEEPINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Cleanliness": {
+              "value": 10,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_CLEANLINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Energy": {
+              "value": 0,
+              "triggerThreshold": 80,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_ENERGY_RECOVERED",
+              "levelActive": false
+            },
+            "Social": {
+              "value": 20,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": 70,
+              "urgentOperator": "gt",
+              "overflowThreshold": 85,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SOCIAL_RECOVERED",
+              "levelActive": false
+            },
+            "Exploration": {
+              "value": 10,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_EXPLORATION_RECOVERED",
+              "levelActive": false
+            }
+          },
+          "levelEvents": {
+            "Hunger": "NEED_HUNGER_RECOVERED",
+            "Bladder": "NEED_BLADDER_RECOVERED",
+            "Sleepiness": "NEED_SLEEPINESS_RECOVERED",
+            "Cleanliness": "NEED_CLEANLINESS_RECOVERED",
+            "Energy": "NEED_ENERGY_RECOVERED",
+            "Social": "NEED_SOCIAL_RECOVERED",
+            "Exploration": "NEED_EXPLORATION_RECOVERED"
+          },
+          "triggered": [],
+          "sleep": {
+            "isSleeping": false,
+            "sleepDepth": "Shallow",
+            "sleepDurationMinutes": 0,
+            "shallowSleepTicksRemaining": 0
+          },
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:08.544136+08:00",
+            "virtualTimestamp": 1790647208.544136,
+            "virtualElapsedSeconds": 8.544136,
+            "wallTimestamp": 1790682420.079824
+          }
+        },
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682421.0797575,
+          "demands": {
+            "Hunger": {
+              "value": 65,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_HUNGER_RECOVERED",
+              "levelActive": false
+            },
+            "Bladder": {
+              "value": 0,
+              "triggerThreshold": 75,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_BLADDER_RECOVERED",
+              "levelActive": false
+            },
+            "Sleepiness": {
+              "value": 15,
+              "triggerThreshold": 65,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SLEEPINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Cleanliness": {
+              "value": 10,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_CLEANLINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Energy": {
+              "value": 0,
+              "triggerThreshold": 80,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_ENERGY_RECOVERED",
+              "levelActive": false
+            },
+            "Social": {
+              "value": 20,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": 70,
+              "urgentOperator": "gt",
+              "overflowThreshold": 85,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SOCIAL_RECOVERED",
+              "levelActive": false
+            },
+            "Exploration": {
+              "value": 10,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_EXPLORATION_RECOVERED",
+              "levelActive": false
+            }
+          },
+          "levelEvents": {
+            "Hunger": "NEED_HUNGER_RECOVERED",
+            "Bladder": "NEED_BLADDER_RECOVERED",
+            "Sleepiness": "NEED_SLEEPINESS_RECOVERED",
+            "Cleanliness": "NEED_CLEANLINESS_RECOVERED",
+            "Energy": "NEED_ENERGY_RECOVERED",
+            "Social": "NEED_SOCIAL_RECOVERED",
+            "Exploration": "NEED_EXPLORATION_RECOVERED"
+          },
+          "triggered": [],
+          "sleep": {
+            "isSleeping": false,
+            "sleepDepth": "Shallow",
+            "sleepDurationMinutes": 0,
+            "shallowSleepTicksRemaining": 0
+          },
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:09.544021+08:00",
+            "virtualTimestamp": 1790647209.544021,
+            "virtualElapsedSeconds": 9.544021,
+            "wallTimestamp": 1790682421.0797575
+          }
+        },
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682422.079766,
+          "demands": {
+            "Hunger": {
+              "value": 65,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_HUNGER_RECOVERED",
+              "levelActive": false
+            },
+            "Bladder": {
+              "value": 0,
+              "triggerThreshold": 75,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_BLADDER_RECOVERED",
+              "levelActive": false
+            },
+            "Sleepiness": {
+              "value": 15,
+              "triggerThreshold": 65,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SLEEPINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Cleanliness": {
+              "value": 10,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_CLEANLINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Energy": {
+              "value": 0,
+              "triggerThreshold": 80,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_ENERGY_RECOVERED",
+              "levelActive": false
+            },
+            "Social": {
+              "value": 20,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": 70,
+              "urgentOperator": "gt",
+              "overflowThreshold": 85,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SOCIAL_RECOVERED",
+              "levelActive": false
+            },
+            "Exploration": {
+              "value": 10,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_EXPLORATION_RECOVERED",
+              "levelActive": false
+            }
+          },
+          "levelEvents": {
+            "Hunger": "NEED_HUNGER_RECOVERED",
+            "Bladder": "NEED_BLADDER_RECOVERED",
+            "Sleepiness": "NEED_SLEEPINESS_RECOVERED",
+            "Cleanliness": "NEED_CLEANLINESS_RECOVERED",
+            "Energy": "NEED_ENERGY_RECOVERED",
+            "Social": "NEED_SOCIAL_RECOVERED",
+            "Exploration": "NEED_EXPLORATION_RECOVERED"
+          },
+          "triggered": [],
+          "sleep": {
+            "isSleeping": false,
+            "sleepDepth": "Shallow",
+            "sleepDurationMinutes": 0,
+            "shallowSleepTicksRemaining": 0
+          },
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:10.543710+08:00",
+            "virtualTimestamp": 1790647210.54371,
+            "virtualElapsedSeconds": 10.54371,
+            "wallTimestamp": 1790682422.079766
+          }
+        },
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682423.079706,
+          "demands": {
+            "Hunger": {
+              "value": 65,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_HUNGER_RECOVERED",
+              "levelActive": false
+            },
+            "Bladder": {
+              "value": 0,
+              "triggerThreshold": 75,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_BLADDER_RECOVERED",
+              "levelActive": false
+            },
+            "Sleepiness": {
+              "value": 15,
+              "triggerThreshold": 65,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SLEEPINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Cleanliness": {
+              "value": 10,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_CLEANLINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Energy": {
+              "value": 0,
+              "triggerThreshold": 80,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_ENERGY_RECOVERED",
+              "levelActive": false
+            },
+            "Social": {
+              "value": 20,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": 70,
+              "urgentOperator": "gt",
+              "overflowThreshold": 85,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SOCIAL_RECOVERED",
+              "levelActive": false
+            },
+            "Exploration": {
+              "value": 10,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_EXPLORATION_RECOVERED",
+              "levelActive": false
+            }
+          },
+          "levelEvents": {
+            "Hunger": "NEED_HUNGER_RECOVERED",
+            "Bladder": "NEED_BLADDER_RECOVERED",
+            "Sleepiness": "NEED_SLEEPINESS_RECOVERED",
+            "Cleanliness": "NEED_CLEANLINESS_RECOVERED",
+            "Energy": "NEED_ENERGY_RECOVERED",
+            "Social": "NEED_SOCIAL_RECOVERED",
+            "Exploration": "NEED_EXPLORATION_RECOVERED"
+          },
+          "triggered": [],
+          "sleep": {
+            "isSleeping": false,
+            "sleepDepth": "Shallow",
+            "sleepDurationMinutes": 0,
+            "shallowSleepTicksRemaining": 0
+          },
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:11.543698+08:00",
+            "virtualTimestamp": 1790647211.543698,
+            "virtualElapsedSeconds": 11.543698,
+            "wallTimestamp": 1790682423.079706
+          }
+        },
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682424.0797396,
+          "demands": {
+            "Hunger": {
+              "value": 65,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_HUNGER_RECOVERED",
+              "levelActive": false
+            },
+            "Bladder": {
+              "value": 0,
+              "triggerThreshold": 75,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_BLADDER_RECOVERED",
+              "levelActive": false
+            },
+            "Sleepiness": {
+              "value": 15,
+              "triggerThreshold": 65,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SLEEPINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Cleanliness": {
+              "value": 10,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_CLEANLINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Energy": {
+              "value": 0,
+              "triggerThreshold": 80,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_ENERGY_RECOVERED",
+              "levelActive": false
+            },
+            "Social": {
+              "value": 20,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": 70,
+              "urgentOperator": "gt",
+              "overflowThreshold": 85,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SOCIAL_RECOVERED",
+              "levelActive": false
+            },
+            "Exploration": {
+              "value": 10,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_EXPLORATION_RECOVERED",
+              "levelActive": false
+            }
+          },
+          "levelEvents": {
+            "Hunger": "NEED_HUNGER_RECOVERED",
+            "Bladder": "NEED_BLADDER_RECOVERED",
+            "Sleepiness": "NEED_SLEEPINESS_RECOVERED",
+            "Cleanliness": "NEED_CLEANLINESS_RECOVERED",
+            "Energy": "NEED_ENERGY_RECOVERED",
+            "Social": "NEED_SOCIAL_RECOVERED",
+            "Exploration": "NEED_EXPLORATION_RECOVERED"
+          },
+          "triggered": [],
+          "sleep": {
+            "isSleeping": false,
+            "sleepDepth": "Shallow",
+            "sleepDurationMinutes": 0,
+            "shallowSleepTicksRemaining": 0
+          },
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:12.544068+08:00",
+            "virtualTimestamp": 1790647212.544068,
+            "virtualElapsedSeconds": 12.544068,
+            "wallTimestamp": 1790682424.0797396
+          }
+        },
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682425.0797276,
+          "demands": {
+            "Hunger": {
+              "value": 65,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_HUNGER_RECOVERED",
+              "levelActive": false
+            },
+            "Bladder": {
+              "value": 0,
+              "triggerThreshold": 75,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_BLADDER_RECOVERED",
+              "levelActive": false
+            },
+            "Sleepiness": {
+              "value": 15,
+              "triggerThreshold": 65,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SLEEPINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Cleanliness": {
+              "value": 10,
+              "triggerThreshold": 70,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_CLEANLINESS_RECOVERED",
+              "levelActive": false
+            },
+            "Energy": {
+              "value": 0,
+              "triggerThreshold": 80,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": 90,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_ENERGY_RECOVERED",
+              "levelActive": false
+            },
+            "Social": {
+              "value": 20,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": 70,
+              "urgentOperator": "gt",
+              "overflowThreshold": 85,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_SOCIAL_RECOVERED",
+              "levelActive": false
+            },
+            "Exploration": {
+              "value": 10,
+              "triggerThreshold": 60,
+              "triggerOperator": "gt",
+              "urgentThreshold": null,
+              "urgentOperator": null,
+              "overflowThreshold": null,
+              "triggered": false,
+              "urgent": false,
+              "overflow": false,
+              "level": "NORMAL",
+              "levelEvent": "NEED_EXPLORATION_RECOVERED",
+              "levelActive": false
+            }
+          },
+          "levelEvents": {
+            "Hunger": "NEED_HUNGER_RECOVERED",
+            "Bladder": "NEED_BLADDER_RECOVERED",
+            "Sleepiness": "NEED_SLEEPINESS_RECOVERED",
+            "Cleanliness": "NEED_CLEANLINESS_RECOVERED",
+            "Energy": "NEED_ENERGY_RECOVERED",
+            "Social": "NEED_SOCIAL_RECOVERED",
+            "Exploration": "NEED_EXPLORATION_RECOVERED"
+          },
+          "triggered": [],
+          "sleep": {
+            "isSleeping": false,
+            "sleepDepth": "Shallow",
+            "sleepDurationMinutes": 0,
+            "shallowSleepTicksRemaining": 0
+          },
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:13.543882+08:00",
+            "virtualTimestamp": 1790647213.543882,
+            "virtualElapsedSeconds": 13.543882,
+            "wallTimestamp": 1790682425.0797276
+          }
+        }
+      ],
+      "emotion": [
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682417.5358489,
+          "emotions": {
+            "Joy": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Excite": {
+              "value": 0,
+              "triggerThreshold": 40,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Anxiety": {
+              "value": 0,
+              "triggerThreshold": 25,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Fear": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Curious": {
+              "value": 0,
+              "triggerThreshold": 20,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Calm": {
+              "value": 30,
+              "triggerThreshold": 0,
+              "triggerOperator": "gte",
+              "triggered": true
+            }
+          },
+          "triggered": [
+            {
+              "emotion": "Calm",
+              "value": 30,
+              "eventType": "EMO_CALM_TRIGGERED",
+              "triggerThreshold": 0,
+              "triggerOperator": "gte"
+            }
+          ],
+          "dominantEmotion": "Calm",
+          "personality": {
+            "A": 50,
+            "O": 50,
+            "E": 50,
+            "C": 50
+          },
+          "lastEmotionEventResult": {},
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:06+08:00",
+            "virtualTimestamp": 1790647206.0,
+            "virtualElapsedSeconds": 6.0,
+            "wallTimestamp": 1790682417.5358489
+          }
+        },
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682418.5357304,
+          "emotions": {
+            "Joy": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Excite": {
+              "value": 0,
+              "triggerThreshold": 40,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Anxiety": {
+              "value": 0,
+              "triggerThreshold": 25,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Fear": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Curious": {
+              "value": 0,
+              "triggerThreshold": 20,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Calm": {
+              "value": 30,
+              "triggerThreshold": 0,
+              "triggerOperator": "gte",
+              "triggered": true
+            }
+          },
+          "triggered": [
+            {
+              "emotion": "Calm",
+              "value": 30,
+              "eventType": "EMO_CALM_TRIGGERED",
+              "triggerThreshold": 0,
+              "triggerOperator": "gte"
+            }
+          ],
+          "dominantEmotion": "Calm",
+          "personality": {
+            "A": 50,
+            "O": 50,
+            "E": 50,
+            "C": 50
+          },
+          "lastEmotionEventResult": {},
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:07+08:00",
+            "virtualTimestamp": 1790647207.0,
+            "virtualElapsedSeconds": 7.0,
+            "wallTimestamp": 1790682418.5357304
+          }
+        },
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682419.5358512,
+          "emotions": {
+            "Joy": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Excite": {
+              "value": 0,
+              "triggerThreshold": 40,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Anxiety": {
+              "value": 0,
+              "triggerThreshold": 25,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Fear": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Curious": {
+              "value": 0,
+              "triggerThreshold": 20,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Calm": {
+              "value": 30,
+              "triggerThreshold": 0,
+              "triggerOperator": "gte",
+              "triggered": true
+            }
+          },
+          "triggered": [
+            {
+              "emotion": "Calm",
+              "value": 30,
+              "eventType": "EMO_CALM_TRIGGERED",
+              "triggerThreshold": 0,
+              "triggerOperator": "gte"
+            }
+          ],
+          "dominantEmotion": "Calm",
+          "personality": {
+            "A": 50,
+            "O": 50,
+            "E": 50,
+            "C": 50
+          },
+          "lastEmotionEventResult": {},
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:08+08:00",
+            "virtualTimestamp": 1790647208.0,
+            "virtualElapsedSeconds": 8.0,
+            "wallTimestamp": 1790682419.5358512
+          }
+        },
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682420.5358312,
+          "emotions": {
+            "Joy": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Excite": {
+              "value": 0,
+              "triggerThreshold": 40,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Anxiety": {
+              "value": 0,
+              "triggerThreshold": 25,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Fear": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Curious": {
+              "value": 0,
+              "triggerThreshold": 20,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Calm": {
+              "value": 30,
+              "triggerThreshold": 0,
+              "triggerOperator": "gte",
+              "triggered": true
+            }
+          },
+          "triggered": [
+            {
+              "emotion": "Calm",
+              "value": 30,
+              "eventType": "EMO_CALM_TRIGGERED",
+              "triggerThreshold": 0,
+              "triggerOperator": "gte"
+            }
+          ],
+          "dominantEmotion": "Calm",
+          "personality": {
+            "A": 50,
+            "O": 50,
+            "E": 50,
+            "C": 50
+          },
+          "lastEmotionEventResult": {},
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:09+08:00",
+            "virtualTimestamp": 1790647209.0,
+            "virtualElapsedSeconds": 9.0,
+            "wallTimestamp": 1790682420.5358312
+          }
+        },
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682421.5362709,
+          "emotions": {
+            "Joy": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Excite": {
+              "value": 0,
+              "triggerThreshold": 40,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Anxiety": {
+              "value": 0,
+              "triggerThreshold": 25,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Fear": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Curious": {
+              "value": 0,
+              "triggerThreshold": 20,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Calm": {
+              "value": 30,
+              "triggerThreshold": 0,
+              "triggerOperator": "gte",
+              "triggered": true
+            }
+          },
+          "triggered": [
+            {
+              "emotion": "Calm",
+              "value": 30,
+              "eventType": "EMO_CALM_TRIGGERED",
+              "triggerThreshold": 0,
+              "triggerOperator": "gte"
+            }
+          ],
+          "dominantEmotion": "Calm",
+          "personality": {
+            "A": 50,
+            "O": 50,
+            "E": 50,
+            "C": 50
+          },
+          "lastEmotionEventResult": {},
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:10+08:00",
+            "virtualTimestamp": 1790647210.0,
+            "virtualElapsedSeconds": 10.0,
+            "wallTimestamp": 1790682421.5362709
+          }
+        },
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682422.5360498,
+          "emotions": {
+            "Joy": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Excite": {
+              "value": 0,
+              "triggerThreshold": 40,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Anxiety": {
+              "value": 0,
+              "triggerThreshold": 25,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Fear": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Curious": {
+              "value": 0,
+              "triggerThreshold": 20,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Calm": {
+              "value": 30,
+              "triggerThreshold": 0,
+              "triggerOperator": "gte",
+              "triggered": true
+            }
+          },
+          "triggered": [
+            {
+              "emotion": "Calm",
+              "value": 30,
+              "eventType": "EMO_CALM_TRIGGERED",
+              "triggerThreshold": 0,
+              "triggerOperator": "gte"
+            }
+          ],
+          "dominantEmotion": "Calm",
+          "personality": {
+            "A": 50,
+            "O": 50,
+            "E": 50,
+            "C": 50
+          },
+          "lastEmotionEventResult": {},
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:11+08:00",
+            "virtualTimestamp": 1790647211.0,
+            "virtualElapsedSeconds": 11.0,
+            "wallTimestamp": 1790682422.5360498
+          }
+        },
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682423.5356836,
+          "emotions": {
+            "Joy": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Excite": {
+              "value": 0,
+              "triggerThreshold": 40,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Anxiety": {
+              "value": 0,
+              "triggerThreshold": 25,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Fear": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Curious": {
+              "value": 0,
+              "triggerThreshold": 20,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Calm": {
+              "value": 30,
+              "triggerThreshold": 0,
+              "triggerOperator": "gte",
+              "triggered": true
+            }
+          },
+          "triggered": [
+            {
+              "emotion": "Calm",
+              "value": 30,
+              "eventType": "EMO_CALM_TRIGGERED",
+              "triggerThreshold": 0,
+              "triggerOperator": "gte"
+            }
+          ],
+          "dominantEmotion": "Calm",
+          "personality": {
+            "A": 50,
+            "O": 50,
+            "E": 50,
+            "C": 50
+          },
+          "lastEmotionEventResult": {},
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:12+08:00",
+            "virtualTimestamp": 1790647212.0,
+            "virtualElapsedSeconds": 12.0,
+            "wallTimestamp": 1790682423.5356836
+          }
+        },
+        {
+          "schema_version": "2.0",
+          "timestamp": 1790682424.5357358,
+          "emotions": {
+            "Joy": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Excite": {
+              "value": 0,
+              "triggerThreshold": 40,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Anxiety": {
+              "value": 0,
+              "triggerThreshold": 25,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Fear": {
+              "value": 0,
+              "triggerThreshold": 30,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Curious": {
+              "value": 0,
+              "triggerThreshold": 20,
+              "triggerOperator": "gte",
+              "triggered": false
+            },
+            "Calm": {
+              "value": 30,
+              "triggerThreshold": 0,
+              "triggerOperator": "gte",
+              "triggered": true
+            }
+          },
+          "triggered": [
+            {
+              "emotion": "Calm",
+              "value": 30,
+              "eventType": "EMO_CALM_TRIGGERED",
+              "triggerThreshold": 0,
+              "triggerOperator": "gte"
+            }
+          ],
+          "dominantEmotion": "Calm",
+          "personality": {
+            "A": 50,
+            "O": 50,
+            "E": 50,
+            "C": 50
+          },
+          "lastEmotionEventResult": {},
+          "timeContext": {
+            "mode": "standard_24h",
+            "scale": 1,
+            "revision": 0,
+            "virtualStartDateTime": "2026-09-29T10:00:00+08:00",
+            "virtualDateTime": "2026-09-29T10:00:13+08:00",
+            "virtualTimestamp": 1790647213.0,
+            "virtualElapsedSeconds": 13.0,
+            "wallTimestamp": 1790682424.5357358
+          }
+        }
+      ]
+    },
+    "plans": [
+      [
+        [
+          0.5000000074505806,
+          1.0000000149011612
+        ],
+        [
+          0.6000000089406967,
+          1.0000000149011612
+        ],
+        [
+          0.6500000096857548,
+          1.0000000149011612
+        ],
+        [
+          0.7000000104308128,
+          1.0000000149011612
+        ],
+        [
+          0.7500000111758709,
+          1.0000000149011612
+        ],
+        [
+          0.800000011920929,
+          1.0000000149011612
+        ],
+        [
+          0.9000000134110451,
+          1.0000000149011612
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ]
+    ],
+    "initial_pose": [
+      0.5,
+      1.0
+    ],
+    "final_pose": [
+      0.8843935229910143,
+      1.000000001067411
+    ],
+    "velocity_samples": [
+      [
+        0.2757410198474093,
+        0.0,
+        -1.4634386164785717e-08
+      ],
+      [
+        0.2619719592299513,
+        0.0,
+        -1.392282609029927e-08
+      ],
+      [
+        0.24235055714934658,
+        0.0,
+        -1.2908165457469768e-08
+      ],
+      [
+        0.2302420317095684,
+        0.0,
+        -1.2280190797697997e-08
+      ],
+      [
+        0.21296801621524933,
+        0.0,
+        -1.1383779020250563e-08
+      ],
+      [
+        0.20229681105542616,
+        0.0,
+        -1.0828419245278582e-08
+      ],
+      [
+        0.1871379483455543,
+        0.0,
+        -1.0038914213071832e-08
+      ],
+      [
+        0.1777746688222115,
+        0.0,
+        -9.549852267940804e-09
+      ],
+      [
+        0.1644647762543236,
+        0.0,
+        -8.854148675171403e-09
+      ],
+      [
+        0.1562261967825658,
+        0.0,
+        -8.422315820572186e-09
+      ],
+      [
+        0.0,
+        0.0,
+        0.00019774860373154154
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "nav2_statuses": [
+      {
+        "goal_id": "f5d92527b5714173a71b56274295b7f1",
+        "status": 2
+      },
+      {
+        "goal_id": "f5d92527b5714173a71b56274295b7f1",
+        "status": 4
+      }
+    ]
+  },
+  "lifecycle_shutdown": {
+    "status": "PASS",
+    "operation": "ManageLifecycleNodes.SHUTDOWN"
+  },
+  "processes": [
+    {
+      "name": "nav_inputs",
+      "pid": 573117,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+        "-B",
+        "/home/elephant/MarsDog/marsdog-platform/tools/nav2_simulated_inputs.py"
+      ]
+    },
+    {
+      "name": "controller_server",
+      "pid": 573131,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/out/extended-ros/relocated/opt/ros/humble/lib/nav2_controller/controller_server",
+        "--ros-args",
+        "--params-file",
+        "/home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T114649Z-572996/nav2.yaml",
+        "-r",
+        "cmd_vel:=/development/nav2/cmd_vel"
+      ]
+    },
+    {
+      "name": "planner_server",
+      "pid": 573162,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/out/extended-ros/relocated/opt/ros/humble/lib/nav2_planner/planner_server",
+        "--ros-args",
+        "--params-file",
+        "/home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T114649Z-572996/nav2.yaml",
+        "-r",
+        "cmd_vel:=/development/nav2/cmd_vel"
+      ]
+    },
+    {
+      "name": "behavior_server",
+      "pid": 573178,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/out/extended-ros/relocated/opt/ros/humble/lib/nav2_behaviors/behavior_server",
+        "--ros-args",
+        "--params-file",
+        "/home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T114649Z-572996/nav2.yaml",
+        "-r",
+        "cmd_vel:=/development/nav2/cmd_vel"
+      ]
+    },
+    {
+      "name": "bt_navigator",
+      "pid": 573188,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/out/extended-ros/relocated/opt/ros/humble/lib/nav2_bt_navigator/bt_navigator",
+        "--ros-args",
+        "--params-file",
+        "/home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T114649Z-572996/nav2.yaml",
+        "-r",
+        "cmd_vel:=/development/nav2/cmd_vel"
+      ]
+    },
+    {
+      "name": "lifecycle_manager",
+      "pid": 573198,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/out/extended-ros/relocated/opt/ros/humble/lib/nav2_lifecycle_manager/lifecycle_manager",
+        "--ros-args",
+        "--params-file",
+        "/home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T114649Z-572996/nav2.yaml",
+        "-r",
+        "cmd_vel:=/development/nav2/cmd_vel"
+      ]
+    },
+    {
+      "name": "time",
+      "pid": 573226,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_ros2.time_controller_node import main; main()",
+        "--ros-args",
+        "-p",
+        "time_scale:=1",
+        "-p",
+        "virtual_start_time:=10:00"
+      ]
+    },
+    {
+      "name": "personality",
+      "pid": 573241,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_ros2.personality_node import main; main()"
+      ]
+    },
+    {
+      "name": "needs",
+      "pid": 573264,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_ros2.internal_need_node import main; main()"
+      ]
+    },
+    {
+      "name": "emotion",
+      "pid": 573287,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_ros2.emotion_engine_node import main; main()"
+      ]
+    },
+    {
+      "name": "waypoint",
+      "pid": 573322,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+        "-B",
+        "-c",
+        "from waypoint_nav.waypoint_nav_dispatcher import main; main()",
+        "--ros-args",
+        "-p",
+        "waypoints_file:=/home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T114649Z-572996/waypoints.yaml",
+        "-p",
+        "task_store_file:=/home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T114649Z-572996/tasks.sqlite3"
+      ]
+    },
+    {
+      "name": "action",
+      "pid": 573351,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/action/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_action_executor.ros_node import main; main()",
+        "--ros-args",
+        "-p",
+        "config_dir:=/home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T114649Z-572996/action-config",
+        "-p",
+        "chassis_type:=lite3",
+        "-p",
+        "lite3_enabled:=true",
+        "-p",
+        "go2_enabled:=false",
+        "-p",
+        "lite3_simulated_io:=true",
+        "-p",
+        "lite3_allow_proxies:=true",
+        "-p",
+        "lite3_allow_unverified:=false",
+        "-p",
+        "uwb_follow_enabled:=false",
+        "-p",
+        "wake_orientation_enabled:=false",
+        "-p",
+        "attention_tracking_enabled:=false",
+        "-p",
+        "target_approach_enabled:=false",
+        "-p",
+        "navigation_enabled:=true"
+      ]
+    },
+    {
+      "name": "vision",
+      "pid": 573367,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_vision_interaction.nodes.vision_interaction_node import main; main()",
+        "--ros-args",
+        "-p",
+        "config_path:=/home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T114649Z-572996/vision.yaml",
+        "-p",
+        "log_dir:=/home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T114649Z-572996/vision-log"
+      ]
+    },
+    {
+      "name": "behavior",
+      "pid": 573392,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_behavior.ros_node import main; main()"
+      ]
+    },
+    {
+      "name": "voice",
+      "pid": 573428,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/voice/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_voice_interaction.nodes.voice_interaction_node import main; main()",
+        "--ros-args",
+        "-p",
+        "config_path:=/home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T114649Z-572996/voice.yaml"
+      ]
+    },
+    {
+      "name": "probe",
+      "pid": 573447,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+        "-B",
+        "/home/elephant/MarsDog/marsdog-platform/tools/nav2_smoke.py",
+        "--output",
+        "/home/elephant/MarsDog/marsdog-platform/out/nav2-local/runs/20260929T114649Z-572996/smoke.json"
+      ]
+    }
+  ],
+  "forced_shutdowns": []
+}

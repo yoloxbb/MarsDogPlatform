@@ -1,0 +1,9 @@
+{
+  "status": "READY",
+  "model_acceptance": false,
+  "model_directory": "/home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct",
+  "lock_sha256": "70cbe1d34eaf83a8bc7c36cdaefa0af12ca609fd81626ee1ecf0ebdc866c0cc3",
+  "files": 9,
+  "git_metadata_extracted": false,
+  "replay_manifest": "/home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct/intent-replay.json"
+}

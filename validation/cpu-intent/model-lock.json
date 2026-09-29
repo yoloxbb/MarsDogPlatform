@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
+  "archive": {
+    "filename": "Qwen2.5-0.5B-Instruct.zip",
+    "size": 1575361059,
+    "sha256": "e4e62c8bd6453870a6c51fafbb940cb9bff91fd785bf76c208229860f287ef2e"
+  },
+  "files": [
+    {
+      "member": "Qwen2.5-0.5B-Instruct/config.json",
+      "path": "config.json",
+      "size": 686,
+      "sha256": "1b92fb341d335957a883c105f5e842298e809f2bafe7f55ecfaa3024b30ce3a1"
+    },
+    {
+      "member": "Qwen2.5-0.5B-Instruct/generation_config.json",
+      "path": "generation_config.json",
+      "size": 256,
+      "sha256": "d9292be634413d89bf1e11c0fa2195a6c1bf4287cef565808db53be500e3a0d4"
+    },
+    {
+      "member": "Qwen2.5-0.5B-Instruct/LICENSE",
+      "path": "LICENSE",
+      "size": 11544,
+      "sha256": "b907c8234b565e5ecefff8232dbb6f1d603fbf9a47a3176db734dcae27175d08"
+    },
+    {
+      "member": "Qwen2.5-0.5B-Instruct/README.md",
+      "path": "README.md",
+      "size": 5026,
+      "sha256": "f2707aecc87e81a68e614cba25a72ae2498c1975f125077652a5d8f086bf0840"
+    },
+    {
+      "member": "Qwen2.5-0.5B-Instruct/merges.txt",
+      "path": "merges.txt",
+      "size": 1823226,
+      "sha256": "0de0bc38a29ea38eef099b677fa1ff52edd181e573529af26c4cd2136e233777"
+    },
+    {
+      "member": "Qwen2.5-0.5B-Instruct/model.safetensors",
+      "path": "model.safetensors",
+      "size": 988097824,
+      "sha256": "fdf756fa7fcbe7404d5c60e26bff1a0c8b8aa1f72ced49e7dd0210fe288fb7fe"
+    },
+    {
+      "member": "Qwen2.5-0.5B-Instruct/tokenizer.json",
+      "path": "tokenizer.json",
+      "size": 7334926,
+      "sha256": "47ec9be242d3ef39b9c97ac0a3f06c1752f061b234e295bc0a2842067a3fe4f9"
+    },
+    {
+      "member": "Qwen2.5-0.5B-Instruct/tokenizer_config.json",
+      "path": "tokenizer_config.json",
+      "size": 7511,
+      "sha256": "fa2a40a9d8c8c4bb7f25ab726eb78ec9cbaaef96d1fa26f1d7f5615e886449a8"
+    },
+    {
+      "member": "Qwen2.5-0.5B-Instruct/vocab.json",
+      "path": "vocab.json",
+      "size": 2776833,
+      "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+    }
+  ],
+  "supplied_git_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "upstream": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct",
+  "runtime": "Local CPU float32, safetensors only, no remote code",
+  "role": "Explicit user-authorized development intent backend; not the original RKLLM fine-tuned weights"
+}
