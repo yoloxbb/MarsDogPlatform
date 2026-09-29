@@ -1,0 +1,30 @@
+Traceback (most recent call last):
+  File "/home/elephant/MarsDog/marsdog-platform/modules/voice/tests/ros_cpu_pipeline_probe.py", line 445, in <module>
+    raise SystemExit(main())
+  File "/home/elephant/MarsDog/marsdog-platform/modules/voice/tests/ros_cpu_pipeline_probe.py", line 439, in main
+    worker(request, args.output)
+  File "/home/elephant/MarsDog/marsdog-platform/modules/voice/tests/ros_cpu_pipeline_probe.py", line 162, in worker
+    rclpy.spin_once(node, timeout_sec=0.05)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 208, in spin_once
+    executor.spin_once(timeout_sec=timeout_sec)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 812, in spin_once
+    self._spin_once_impl(timeout_sec)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 809, in _spin_once_impl
+    raise handler.exception()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/task.py", line 309, in _execute_coroutine_step
+    result = coro.send(None)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 488, in handler
+    await call_coroutine(entity, arg)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 396, in _execute_timer
+    await await_or_execute(tmr.callback)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 110, in await_or_execute
+    return callback(*args)
+  File "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_voice_interaction/lib/python3.10/site-packages/marsdog_voice_interaction/nodes/voice_interaction_node.py", line 1140, in _poll
+    self._process_speech(
+  File "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_voice_interaction/lib/python3.10/site-packages/marsdog_voice_interaction/nodes/voice_interaction_node.py", line 2071, in _process_speech
+    self._publish(event)
+  File "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_voice_interaction/lib/python3.10/site-packages/marsdog_voice_interaction/nodes/voice_interaction_node.py", line 2342, in _publish
+    self._audio_pub.publish(message)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/publisher.py", line 70, in publish
+    self.__publisher.publish(msg)
+rclpy._rclpy_pybind11.RCLError: Failed to publish: publisher's context is invalid, at ./src/rcl/publisher.c:389

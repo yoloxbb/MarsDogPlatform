@@ -1,0 +1,199 @@
+acquire_timeout_sec: 5.0
+allow_bbox_distance_fallback: true
+angular_gain: 0.8
+approach_timeout_sec: 20.0
+arrival_hold_sec: 0.4
+bbox_height_deadband: 0.04
+bbox_height_hysteresis: 0.03
+bbox_target_height: 0.8
+behavior_policies:
+  expressAnxietyWithHuman: &id001
+    desired_distance_m: 1.2
+    distance_mode: bbox_height
+    minimum_safe_distance_m: 0.8
+    target_lost_timeout_sec: 2.0
+    target_max_age_ms: 500.0
+    target_type: human
+  expressCalmWithHuman: *id001
+  expressCuriosityWithHuman: *id001
+  expressExcitementWithHuman: *id001
+  expressFearWithHuman: *id001
+  expressJoyWithHuman: *id001
+  farewell_leave:
+    arrival_hold_sec: 3.0
+    bbox_height_deadband: 0.04
+    bbox_target_height: 0.76
+    desired_distance_m: 1.1
+    distance_mode: bbox_height
+    linear_gain: 0.8
+    max_linear_accel: 0.3
+    max_linear_x: 0.3
+    minimum_safe_distance_m: 0.8
+    required_identity: owner
+    target_lost_timeout_sec: 1.0
+    target_max_age_ms: 500.0
+    target_type: human
+  greetAnimal:
+    desired_distance_m: 1.2
+    min_confidence: 0.4
+    minimum_safe_distance_m: 0.8
+    target_lost_timeout_sec: 1.8
+    target_max_age_ms: 500.0
+    target_type: animal
+  inspectDeliveryBox: &id002
+    desired_distance_m: 0.9
+    min_confidence: 0.35
+    minimum_safe_distance_m: 0.55
+    target_lost_timeout_sec: 1.8
+    target_max_age_ms: 500.0
+    target_type: object
+  inspectDogFood: *id002
+  inspectDoor: *id002
+  inspectFamiliarPlayItem: *id002
+  inspectObject: *id002
+  inspectTissuePaper: *id002
+  inspectTrashCan: *id002
+  inviteAnimalToPlay:
+    desired_distance_m: 1.2
+    min_confidence: 0.4
+    minimum_safe_distance_m: 0.8
+    target_lost_timeout_sec: 1.8
+    target_max_age_ms: 500.0
+    target_type: animal
+  inviteHumanToPlay:
+    desired_distance_m: 1.2
+    distance_mode: bbox_height
+    minimum_safe_distance_m: 0.8
+    target_lost_timeout_sec: 2.0
+    target_max_age_ms: 500.0
+    target_type: human
+  miss_owner:
+    arrival_hold_sec: 0.3
+    bbox_height_deadband: 0.03
+    bbox_target_height: 0.84
+    desired_distance_m: 0.9
+    distance_mode: bbox_height
+    linear_gain: 1.0
+    max_linear_accel: 0.5
+    max_linear_x: 0.3
+    minimum_safe_distance_m: 0.8
+    required_identity: owner
+    target_lost_timeout_sec: 2.0
+    target_max_age_ms: 500.0
+    target_type: human
+  seekHumanInteraction:
+    desired_distance_m: 1.2
+    distance_mode: bbox_height
+    minimum_safe_distance_m: 0.8
+    target_lost_timeout_sec: 2.0
+    target_max_age_ms: 500.0
+    target_type: human
+  seekInteraction:
+    desired_distance_m: 1.2
+    distance_mode: bbox_height
+    minimum_safe_distance_m: 0.8
+    target_lost_timeout_sec: 2.0
+    target_max_age_ms: 500.0
+    target_type: human
+  testAnimalBoundary:
+    desired_distance_m: 1.5
+    min_confidence: 0.4
+    minimum_safe_distance_m: 1.0
+    target_lost_timeout_sec: 1.8
+    target_max_age_ms: 500.0
+    target_type: animal
+  unhappy:
+    arrival_hold_sec: 1.5
+    bbox_height_deadband: 0.03
+    bbox_target_height: 0.82
+    desired_distance_m: 0.95
+    distance_mode: bbox_height
+    linear_gain: 0.45
+    max_linear_accel: 0.12
+    max_linear_x: 0.3
+    minimum_safe_distance_m: 0.8
+    required_identity: owner
+    target_lost_timeout_sec: 2.0
+    target_max_age_ms: 500.0
+    target_type: human
+distance_deadband_m: 0.12
+distance_hysteresis_m: 0.1
+enabled: false
+go2_owner_approach_policies:
+  approach_owner:
+    arrival_hold_sec: 0.5
+    bbox_height_deadband: 0.04
+    bbox_target_height: 0.84
+    desired_distance_m: 0.9
+    distance_mode: bbox_height
+    max_linear_accel: 0.25
+    max_linear_x: 0.3
+    minimum_safe_distance_m: 0.8
+    required_identity: owner
+    target_lost_timeout_sec: 1.5
+    target_max_age_ms: 500.0
+    target_type: human
+  come_to_owner: &id003
+    arrival_hold_sec: 0.5
+    bbox_height_deadband: 0.04
+    bbox_target_height: 0.8
+    desired_distance_m: 1.0
+    distance_mode: bbox_height
+    max_linear_accel: 0.25
+    max_linear_x: 0.3
+    minimum_safe_distance_m: 0.8
+    required_identity: owner
+    target_lost_timeout_sec: 1.5
+    target_max_age_ms: 500.0
+    target_type: human
+  return_to_owner: *id003
+heading_deadband: 0.06
+linear_gain: 1.0
+lite3_owner_approach_policies:
+  approach_owner:
+    arrival_hold_sec: 0.5
+    bbox_height_deadband: 0.04
+    bbox_target_height: 0.84
+    desired_distance_m: 0.9
+    distance_mode: bbox_height
+    max_linear_accel: 0.15
+    max_linear_x: 0.15
+    minimum_safe_distance_m: 0.8
+    required_identity: owner
+    target_lost_timeout_sec: 1.5
+    target_max_age_ms: 500.0
+    target_type: human
+  come_to_owner: &id004
+    arrival_hold_sec: 0.5
+    bbox_height_deadband: 0.04
+    bbox_target_height: 0.8
+    desired_distance_m: 1.0
+    distance_mode: bbox_height
+    max_linear_accel: 0.15
+    max_linear_x: 0.15
+    minimum_safe_distance_m: 0.8
+    required_identity: owner
+    target_lost_timeout_sec: 1.5
+    target_max_age_ms: 500.0
+    target_type: human
+  return_to_owner: *id004
+lost_timeout_sec: 2.0
+max_angular_accel: 0.3
+max_angular_z: 0.3
+max_heading_error: 0.25
+max_linear_accel: 0.5
+max_linear_x: 0.35
+min_confidence: 0.5
+minimum_safe_distance_m: 0.45
+minimum_stop_distance_m: 0.5
+object_detection_stream:
+  confidence: 0.35
+  lease_margin_sec: 2.0
+  rate_hz: 4.0
+  required: true
+  service_name: /perception/vision/task
+  service_timeout_sec: 1.0
+  topic: /perception/vision/object_detections
+publish_rate_hz: 10.0
+reacquire_min_consecutive_frames: 3
+visual_timeout_sec: 0.8

@@ -1,0 +1,58 @@
+{
+  "status": "PASS",
+  "profile": {
+    "schema_version": 1,
+    "name": "lite3-local-cpu",
+    "robot": "lite3",
+    "execution": "local_development_simulation",
+    "ros_distribution": "humble",
+    "ros_domain_id": 210,
+    "rmw": "rmw_cyclonedds_cpp",
+    "voice_mock_seed": 46,
+    "voice_event_interval_sec": 4.0,
+    "explicit_limits": [
+      "Voice uses the original mock event provider, not microphone/ASR inference",
+      "Vision uses original mock providers and a synthetic image, not model inference",
+      "Lite3 backend uses simulated I/O and never publishes hardware commands",
+      "Nav2 action server and map are development simulations, not mapping or planning",
+      "No synthetic battery observation is published for Needs settlement"
+    ]
+  },
+  "installed_modules": {
+    "emotion": {
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+      "module": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_need_emotion/lib/python3.10/site-packages/marsdog_ros2/emotion_engine_node.py"
+    },
+    "behavior": {
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+      "module": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/ros_node.py"
+    },
+    "action": {
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/action/.venv/bin/python",
+      "module": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/ros_node.py"
+    },
+    "voice": {
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/voice/.venv/bin/python",
+      "module": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_voice_interaction/lib/python3.10/site-packages/marsdog_voice_interaction/nodes/voice_interaction_node.py"
+    },
+    "vision": {
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/bin/python",
+      "module": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_vision_interaction/lib/python3.10/site-packages/marsdog_vision_interaction/nodes/vision_interaction_node.py"
+    }
+  },
+  "install": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install",
+  "scope": "Installed imports and generated public IDL; runtime checked by smoke"
+}
++ /home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python -B /home/elephant/MarsDog/marsdog-platform/tools/prepare_local_configs.py --run /home/elephant/MarsDog/marsdog-platform/out/local/runs/20260929T140437Z-684193 --install /home/elephant/MarsDog/marsdog-platform/out/local/ros/install --profile lite3-local-cpu
+Started inputs PID 684314
+Started time PID 684328
+Started personality PID 684363
+Started needs PID 684389
+Started emotion PID 684410
+Started waypoint PID 684439
+Started action PID 684469
+Started vision PID 684494
+Started behavior PID 684517
+Started voice PID 684541
+LOCAL SIMULATION profile: lite3-local-cpu Logs: /home/elephant/MarsDog/marsdog-platform/out/local/runs/20260929T140437Z-684193
+{"status": "PASS", "report": "/home/elephant/MarsDog/marsdog-platform/out/local/runs/20260929T140437Z-684193/result.json"}

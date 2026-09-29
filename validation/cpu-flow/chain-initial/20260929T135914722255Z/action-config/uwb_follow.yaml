@@ -1,0 +1,20 @@
+aoa_executable: libAoa_robot_example
+aoa_package: uwb_aoa_pkg
+cmd_vel_topic: /cmd_vel
+diagnostics_topic: /go2_uwb_local_follow/follow_diagnostics
+enabled: false
+follow_launch_file: local_follow.launch.py
+follow_package: go2_uwb_local_follow
+ros_interface:
+  follow_action: /go2/follow_uwb
+  ready_timeout_sec: 4.0
+  server_timeout_sec: 5.0
+  set_behavior_service: /go2/set_behavior
+serial_device: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AG00S82A-if00-port0
+setup_script: /home/cat/robot_ws/go2_follow/install/setup.bash
+shutdown_timeout_sec: 3.0
+startup_grace_sec: 1.0
+stop_publish_count: 3
+target_fob_id: '2271560484'
+target_timeout_sec: 3.0
+target_topic: /uwb/target_point

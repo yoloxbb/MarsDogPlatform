@@ -1,0 +1,201 @@
+action_name: /navigate_to_pose
+behavior_routes:
+  barkShortAlert:
+    stages:
+    - circle
+    - action
+    - exit
+    - head_up
+    waypoint: D
+  eatExcitedly:
+    stages:
+    - lower_head
+    - head_up
+    - lie_down
+    - stand_up
+    - lower_head_again
+    - waist_twist
+    waypoint: C
+  eatNormally:
+    stages:
+    - lower_head
+    - head_up
+    - lie_down
+    - stand_up
+    - lower_head_again
+    - waist_twist
+    waypoint: C
+  go_home:
+    stages:
+    - navigation
+    waypoint: A
+  inspectDogFood:
+    stages:
+    - lower_head
+    - head_up
+    - lie_down
+    - stand_up
+    - lower_head_again
+    - waist_twist
+    waypoint: C
+  lickPaws:
+    stages:
+    - groom
+    waypoint: E
+  recharge:
+    stages:
+    - recharge
+    waypoint: B
+  restInPlace:
+    stages:
+    - recover
+    waypoint: B
+  seekFood:
+    stages:
+    - lower_head
+    - head_up
+    - lie_down
+    - stand_up
+    - lower_head_again
+    - waist_twist
+    waypoint: C
+  seekFoodUrgently:
+    stages:
+    - lower_head
+    - head_up
+    - lie_down
+    - stand_up
+    - lower_head_again
+    - waist_twist
+    waypoint: C
+  sleepNow:
+    stages:
+    - circle
+    - prepare
+    - sleep_pose
+    - sleeping
+    - wakeup
+    waypoint: A
+  sleepOnSide:
+    stages:
+    - circle
+    - prepare
+    - sleep_pose
+    - sleeping
+    - wakeup
+    waypoint: A
+enabled: true
+frame_id: map
+random_navigation_behaviors:
+- walk_to_random_point
+- go_out_to_play
+- expressCalmAlone
+- expressJoyAlone
+- expressCuriosityAlone
+- expressExcitementAlone
+- expressAnxietyAlone
+- expressFearAlone
+random_navigation_fixed_pool:
+- A
+- B
+- C
+- D
+- E
+random_navigation_in_place_probability:
+  expressAnxietyAlone: 0.5
+  expressCalmAlone: 0.5
+  expressCuriosityAlone: 0.5
+  expressExcitementAlone: 0.5
+  expressFearAlone: 0.5
+  expressJoyAlone: 0.5
+random_navigation_place: K
+random_navigation_result_timeout_sec: 45.0
+result_timeout_sec: 300.0
+server_timeout_sec: 10.0
+stage_actions:
+- ACT_NAV_GO_HOME
+- ACT_CIRCLE_AROUND
+- ACT_SCRATCH_BED_OR_GROUND
+- ACT_STRETCH_BODY
+- ACT_YAWN
+- ACT_SPLoot_LIE_DOWN
+- ACT_LICK_FUR_OR_PAWS
+- ACT_SLEEP_CURLED_UP
+- ACT_SLEEP_ON_STOMACH
+- ACT_SLEEP_ON_SIDE_CURLED_UP
+- ACT_SLEEP_ON_SIDE
+- ACT_SLEEP_ON_BACK
+- ACT_FLIP_BODY
+- ACT_WHINE_SOFTLY
+- ACT_TWITCH_OR_KICK_LEGS
+- ACT_GETUP_CRAWL
+- ACT_GETUP_ROLL
+- ACT_GETUP_BOUNCE
+- ACT_GETUP_STRETCH
+- ACT_GETUP_SIT
+- ACT_SLOW_DOWN_IN_RESPONSE_TO_OWNER
+- ACT_RETURN_TO_DOG_BED_FOR_CHARGING
+- ACT_LICK_PAWS_OR_FUR
+- ACT_RUB_BODY_AGAINST_OBJECT
+- ACT_PAW_AT_MUZZLE
+- ACT_SHAKE_OFF_WATER
+- ACT_SCRATCH_EAR_WITH_HIND_LEG
+- ACT_RAISE_HEAD
+- ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD
+- ACT_TWIST_WAIST_LEFT_RIGHT
+- ACT_SNIFF_AND_CIRCLE_AT_TOILET_SPOT
+- ACT_SQUAT_AND_ELIMINATE
+- ACT_SCRATCH_SOIL_OR_GROUND
+- ACT_SNIFF_EXCREMENT
+- ACT_WALK_AWAY_OR_SHAKE_HEAD
+- ACT_RETURN_TO_CHARGER
+- ACT_BARK_AND_LIE_DOWN_IF_NO_CHARGER
+- ACT_BASIC_LIE_DOWN
+- ACT_BASIC_STAND
+waypoint_nav:
+  cancel_confirmation_timeout_sec: 5.0
+  client_id: marsdog_action_executor
+  places:
+    A: 卧室
+    B: 充电桩
+    C: 厨房
+    D: 卫生间
+    E: 客厅
+  preempt_lock_wait_sec: 8.0
+  protocol_version: '1.0'
+  query_timeout_sec: 2.0
+  service_name: /waypoint_nav/task
+  service_timeout_sec: 5.0
+  status_topic: /waypoint_nav/status
+  terminal_retention_sec: 86400
+waypoints:
+  A:
+    label: sleep
+    orientation_w: 0.991
+    orientation_z: 0.136
+    x: -3.715
+    y: -1.065
+  B:
+    label: charging
+    orientation_w: 0.613
+    orientation_z: 0.79
+    x: -1.855
+    y: -0.665
+  C:
+    label: food
+    orientation_w: 0.966
+    orientation_z: 0.259
+    x: -2.961
+    y: 1.478
+  D:
+    label: toilet
+    orientation_w: 0.706
+    orientation_z: -0.708
+    x: -1.905
+    y: 3.36
+  E:
+    label: cleaning
+    orientation_w: 0.907
+    orientation_z: -0.421
+    x: -4.039
+    y: 2.627

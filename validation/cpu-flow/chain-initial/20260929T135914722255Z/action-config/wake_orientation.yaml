@@ -1,0 +1,13 @@
+action_name: /spin
+angle_deadband_deg: 5.0
+angle_direction_sign: -1.0
+angle_zero_offset_deg: 90.0
+enabled: false
+linear_array_back_search_enabled: false
+required_frame_id: microphone_array
+result_timeout_sec: 15.0
+server_timeout_sec: 5.0
+time_allowance_sec: 12.0
+visual_confirm_timeout_sec: 1.5
+visual_max_age_ms: 800.0
+visual_min_confidence: 0.6

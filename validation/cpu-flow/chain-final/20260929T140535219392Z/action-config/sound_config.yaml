@@ -1,0 +1,60 @@
+bark_sound:
+  behavior_sounds:
+    eatExcitedly: sounds/进食.mp3
+    eatNormally: sounds/进食.mp3
+    expressAnxietyAlone: sounds/焦虑.wav
+    expressAnxietyInPlaceWithHuman: sounds/焦虑.wav
+    expressAnxietyWithHuman: sounds/焦虑.wav
+    expressCalmInPlaceWithHuman: null
+    expressCuriosityAlone: sounds/好奇.mp3
+    expressCuriosityInPlaceWithHuman: sounds/好奇.mp3
+    expressCuriosityWithHuman: sounds/好奇.mp3
+    expressExcitementAlone: sounds/兴奋愉悦.wav
+    expressExcitementInPlaceWithHuman: sounds/兴奋愉悦.wav
+    expressExcitementWithHuman: sounds/兴奋愉悦.wav
+    expressFearAlone: sounds/恐惧.wav
+    expressFearInPlaceWithHuman: sounds/恐惧.wav
+    expressFearWithHuman: sounds/恐惧.wav
+    expressJoyAlone: sounds/兴奋愉悦.wav
+    expressJoyInPlaceWithHuman: sounds/兴奋愉悦.wav
+    expressJoyWithHuman: sounds/兴奋愉悦.wav
+    inspectDogFood: sounds/进食.mp3
+    quiet: null
+    seekFood: sounds/进食.mp3
+    seekFoodUrgently: sounds/进食.mp3
+  enabled: false
+  file: sounds/好奇.mp3
+  stage_sounds:
+    sleepNow:
+      sleep_pose: sounds/睡觉呼噜.mp3
+      sleeping: sounds/睡觉呼噜.mp3
+    sleepOnSide:
+      sleep_pose: sounds/睡觉呼噜.mp3
+      sleeping: sounds/睡觉呼噜.mp3
+  stop_behaviors:
+  - quiet
+  voice_command_behaviors:
+  - respond_owner_call
+  - walk_to_random_point
+  - go_out_to_play
+  - go_home
+  - approach_owner
+  - back_up
+  - sit_down
+  - lie_down
+  - stand_up
+  - stand_still
+  - hold_position
+  - wait_in_place
+  - come_to_owner
+  - follow_owner
+  - give_paw
+  - high_five
+  - roll_over
+  - spin_around
+  - return_to_owner
+  - drop_object
+  - play_dead
+  - bring_object
+  - fetch_object
+  - emergency_stop

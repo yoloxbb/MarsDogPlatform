@@ -1,0 +1,73 @@
+[INFO] [1790690737.109249220] [action_executor_node]: ROS transport: domain_id=215, rmw=rmw_cyclonedds_cpp, localhost_only=1
+[INFO] [1790690737.110015858] [action_executor_node]: Loading configs from: /home/elephant/MarsDog/marsdog-platform/out/cpu-flow/final-chain/20260929T140535219392Z/action-config
+[INFO] [1790690737.319200533] [action_executor_node]: Strict behavior-tree contract loaded: 74 behaviors, 183 actions
+[WARN] [1790690737.323722279] [action_executor_node]: SIMULATED Lite3 I/O: no hardware command publishers; status is synthetic
+[INFO] [1790690737.324040647] [action_executor_node]: Lite3 chassis backend enabled: cmd_vel=/cmd_vel, simple_cmd=/simple_cmd, status=/robot_status, mapped_actions=169, enabled_actions=9, navigation_settle=5 samples/2.0s
+[INFO] [1790690737.325788323] [action_executor_node]: Wake orientation adapter disabled
+[INFO] [1790690737.397698628] [action_executor_node]: Navigation adapter enabled: fixed_service=/waypoint_nav/task, random_place=K, random_pool=A,B,C,D,E,frame=map, waypoints=5, routed_behaviors=12, random_nav_behaviors=8, mapped_stage_actions=39
+[INFO] [1790690737.409484335] [action_executor_node]: Accepted behavior-tree names: 74
+[INFO] [1790690737.412819564] [action_executor_node]: Action Server /execute_behavior started (action from marsdog_interfaces).
+[INFO] [1790690737.413061207] [action_executor_node]: ActionExecutorNode (v2) started — sole /execute_behavior server. Ensure no other marsdog_action_executor instance is running.
+[INFO] [1790690737.767312265] [action_executor_node]: Accepted goal: cand_b9a9f3ef57bd -> expressCalmWithHuman (priority=5)
+[INFO] [1790690737.776410332] [action_executor_node]: [cand_b9a9f3ef57bd] Executing: expressCalmWithHuman
+[INFO] [1790690737.776869751] [action_executor_node]: [cand_b9a9f3ef57bd] Validated: expressCalmWithHuman
+[INFO] [1790690737.777068267] [action_executor_node]: [cand_b9a9f3ef57bd] Plan: expressCalmWithHuman -> 2 stages
+[INFO] [1790690737.777304456] [action_executor_node]: [cand_b9a9f3ef57bd] Stage 1/2: target_approach
+[WARN] [1790690737.779122480] [action_executor_node]: [cand_b9a9f3ef57bd] Stage target_approach failed: controller_required:visual_target_approach (policy=abort, required=True)
+[INFO] [1790690737.779364934] [action_executor_node]: [cand_b9a9f3ef57bd] Result: controller_error (success=False, stages=[], units=[], duration=0.0s)
+[INFO] [1790690747.862324451] [action_executor_node]: Accepted goal: cand_f463b2c9270e -> expressCalmWithHuman (priority=5)
+[INFO] [1790690747.864686395] [action_executor_node]: [cand_f463b2c9270e] Executing: expressCalmWithHuman
+[INFO] [1790690747.865296966] [action_executor_node]: [cand_f463b2c9270e] Validated: expressCalmWithHuman
+[INFO] [1790690747.865546524] [action_executor_node]: [cand_f463b2c9270e] Plan: expressCalmWithHuman -> 2 stages
+[INFO] [1790690747.865748181] [action_executor_node]: [cand_f463b2c9270e] Stage 1/2: target_approach
+[WARN] [1790690747.866384268] [action_executor_node]: [cand_f463b2c9270e] Stage target_approach failed: controller_required:visual_target_approach (policy=abort, required=True)
+[INFO] [1790690747.866580227] [action_executor_node]: [cand_f463b2c9270e] Result: controller_error (success=False, stages=[], units=[], duration=0.0s)
+[INFO] [1790690758.163419323] [action_executor_node]: Accepted goal: cand_12ae448d3171 -> expressCalmWithHuman (priority=5)
+[INFO] [1790690758.167055717] [action_executor_node]: [cand_12ae448d3171] Executing: expressCalmWithHuman
+[INFO] [1790690758.167458517] [action_executor_node]: [cand_12ae448d3171] Validated: expressCalmWithHuman
+[INFO] [1790690758.167653438] [action_executor_node]: [cand_12ae448d3171] Plan: expressCalmWithHuman -> 2 stages
+[INFO] [1790690758.167873171] [action_executor_node]: [cand_12ae448d3171] Stage 1/2: target_approach
+[WARN] [1790690758.168513433] [action_executor_node]: [cand_12ae448d3171] Stage target_approach failed: controller_required:visual_target_approach (policy=abort, required=True)
+[INFO] [1790690758.168752535] [action_executor_node]: [cand_12ae448d3171] Result: controller_error (success=False, stages=[], units=[], duration=0.0s)
+[INFO] [1790690760.361536008] [action_executor_node]: Accepted goal: cand_1315cdf3a77e -> sit_down (priority=1)
+[INFO] [1790690760.364114122] [action_executor_node]: [cand_1315cdf3a77e] Executing: sit_down
+[INFO] [1790690760.364441417] [action_executor_node]: [cand_1315cdf3a77e] Validated: sit_down
+[INFO] [1790690760.364597841] [action_executor_node]: [cand_1315cdf3a77e] Plan: sit_down -> 1 stages
+[INFO] [1790690760.364762107] [action_executor_node]: [cand_1315cdf3a77e] Stage 1/1: action
+[WARN] [1790690760.365482692] [action_executor_node]: [cand_1315cdf3a77e] Stage action failed: lite3_action_gated:unit_id=ACT_BASIC_SIT,fidelity=proxy,verified=False (policy=abort, required=True)
+[INFO] [1790690760.365655447] [action_executor_node]: [cand_1315cdf3a77e] Result: failure (success=False, stages=[], units=[], duration=0.0s)
+[INFO] [1790690768.361697908] [action_executor_node]: Accepted goal: cand_0593a08879af -> expressCalmWithHuman (priority=5)
+[INFO] [1790690768.363944578] [action_executor_node]: [cand_0593a08879af] Executing: expressCalmWithHuman
+[INFO] [1790690768.364226396] [action_executor_node]: [cand_0593a08879af] Validated: expressCalmWithHuman
+[INFO] [1790690768.364367603] [action_executor_node]: [cand_0593a08879af] Plan: expressCalmWithHuman -> 2 stages
+[INFO] [1790690768.364526137] [action_executor_node]: [cand_0593a08879af] Stage 1/2: target_approach
+[WARN] [1790690768.364940708] [action_executor_node]: [cand_0593a08879af] Stage target_approach failed: controller_required:visual_target_approach (policy=abort, required=True)
+[INFO] [1790690768.365087500] [action_executor_node]: [cand_0593a08879af] Result: controller_error (success=False, stages=[], units=[], duration=0.0s)
+[INFO] [1790690768.562164072] [action_executor_node]: Accepted goal: cand_d25af0fa97ce -> sit_down (priority=1)
+[INFO] [1790690768.564124802] [action_executor_node]: [cand_d25af0fa97ce] Executing: sit_down
+[INFO] [1790690768.564386095] [action_executor_node]: [cand_d25af0fa97ce] Validated: sit_down
+[INFO] [1790690768.564533340] [action_executor_node]: [cand_d25af0fa97ce] Plan: sit_down -> 1 stages
+[INFO] [1790690768.564695199] [action_executor_node]: [cand_d25af0fa97ce] Stage 1/1: action
+[WARN] [1790690768.565332871] [action_executor_node]: [cand_d25af0fa97ce] Stage action failed: lite3_action_gated:unit_id=ACT_BASIC_SIT,fidelity=proxy,verified=False (policy=abort, required=True)
+[INFO] [1790690768.565559929] [action_executor_node]: [cand_d25af0fa97ce] Result: failure (success=False, stages=[], units=[], duration=0.0s)
+[INFO] [1790690777.562034851] [action_executor_node]: Accepted goal: cand_d6f387f5a190 -> sit_down (priority=1)
+[INFO] [1790690777.563144309] [action_executor_node]: [cand_d6f387f5a190] Executing: sit_down
+[INFO] [1790690777.564322215] [action_executor_node]: [cand_d6f387f5a190] Validated: sit_down
+[INFO] [1790690777.564498798] [action_executor_node]: [cand_d6f387f5a190] Plan: sit_down -> 1 stages
+[INFO] [1790690777.564664047] [action_executor_node]: [cand_d6f387f5a190] Stage 1/1: action
+[WARN] [1790690777.565300630] [action_executor_node]: [cand_d6f387f5a190] Stage action failed: lite3_action_gated:unit_id=ACT_BASIC_SIT,fidelity=proxy,verified=False (policy=abort, required=True)
+[INFO] [1790690777.565528378] [action_executor_node]: [cand_d6f387f5a190] Result: failure (success=False, stages=[], units=[], duration=0.0s)
+[INFO] [1790690777.762682459] [action_executor_node]: Accepted goal: cand_0f048c56a5e0 -> go_home (priority=1)
+[INFO] [1790690777.764826421] [action_executor_node]: [cand_0f048c56a5e0] Executing: go_home
+[INFO] [1790690777.765083106] [action_executor_node]: [cand_0f048c56a5e0] Validated: go_home
+[INFO] [1790690777.765260206] [action_executor_node]: [cand_0f048c56a5e0] Plan: go_home -> 1 stages
+[INFO] [1790690777.765454926] [action_executor_node]: [cand_0f048c56a5e0] Navigation: go_home -> waypoint A (timeout=60s)
+[INFO] [1790690778.851198148] [action_executor_node]: [cand_0f048c56a5e0] Stage 1/1: navigation
+[INFO] [1790690779.852322256] [action_executor_node]: [cand_0f048c56a5e0] Result: success (success=True, stages=['navigation'], units=['ACT_NAV_GO_HOME'], duration=2.1s)
+[INFO] [1790690779.961853476] [action_executor_node]: Accepted goal: cand_a0f93971fa55 -> expressCalmWithHuman (priority=5)
+[INFO] [1790690779.963076630] [action_executor_node]: [cand_a0f93971fa55] Executing: expressCalmWithHuman
+[INFO] [1790690779.964058934] [action_executor_node]: [cand_a0f93971fa55] Validated: expressCalmWithHuman
+[INFO] [1790690779.964235738] [action_executor_node]: [cand_a0f93971fa55] Plan: expressCalmWithHuman -> 2 stages
+[INFO] [1790690779.964404784] [action_executor_node]: [cand_a0f93971fa55] Stage 1/2: target_approach
+[WARN] [1790690779.964864303] [action_executor_node]: [cand_a0f93971fa55] Stage target_approach failed: controller_required:visual_target_approach (policy=abort, required=True)
+[INFO] [1790690779.965025645] [action_executor_node]: [cand_a0f93971fa55] Result: controller_error (success=False, stages=[], units=[], duration=0.0s)
