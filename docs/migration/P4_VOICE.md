@@ -102,3 +102,9 @@ lib/librkllmrt.so 是原历史中的 ARM64/aarch64 第三方二进制，不是 M
 
 转入 Vision 原锁环境和原测试 gate，再决定历史导入。robot_ws/rtabmap_ws、
 真实 battery producer、Nav2 生产配置、设备模型验收及实际 owner 账号仍待后续。
+
+## 2026-09-29：CPU 回放增量
+
+新增离线已切分 WAV ASR replay 与可选 provider 参数；未配置时旧 factory 调用不变。
+回放拒绝真实 ASR 初始化失败，不改变生产节点原 fallback；当前回归380 pass。
+详情见 P6_PERCEPTION_REPLAY.md。

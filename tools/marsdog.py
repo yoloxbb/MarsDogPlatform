@@ -301,12 +301,25 @@ def supervise(args, *, profile=PROFILE, local=LOCAL, specs=process_specs,
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("prepare", "build", "doctor", "up", "smoke"))
+    parser.add_argument("command", choices=("prepare", "build", "doctor", "up", "smoke", "replay"))
     parser.add_argument("--profile", choices=("lite3-local-cpu", "lite3-nav2-cpu"), default="lite3-local-cpu")
     parser.add_argument("--uv", default="uv")
     parser.add_argument("--archive-dir", type=Path, default=ROOT.parent / "migration/archives")
     parser.add_argument("--duration", type=float, default=0, help="Bound up duration in seconds; zero runs until Ctrl-C")
+    parser.add_argument("--manifest", type=Path, help="Annotated CPU replay asset manifest")
+    parser.add_argument("--output", type=Path, help="CPU replay evidence directory")
+    parser.add_argument("--check-only", action="store_true", help="Validate replay assets without inference")
     args = parser.parse_args()
+    if args.command == "replay":
+        if args.manifest is None:
+            parser.error("replay requires --manifest")
+        from check_perception_replay import main as replay_main
+        replay_args = ["--manifest", str(args.manifest)]
+        if args.output is not None:
+            replay_args += ["--output", str(args.output)]
+        if args.check_only:
+            replay_args.append("--check-only")
+        raise SystemExit(replay_main(replay_args))
     if args.duration < 0:
         parser.error("--duration must be nonnegative")
     if args.profile == "lite3-nav2-cpu":

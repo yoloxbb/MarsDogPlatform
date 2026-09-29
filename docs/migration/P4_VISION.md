@@ -37,3 +37,9 @@ python3 -B tools/check_vision_ros.py --uv uv
 CI 只运行 wheel CPU/资源和接口保护，完整 Humble 单测/传输为本机验证，不伪称 hosted CI。
 生产数据和模型根路径需使用明确的 MARSDOG_VISION_PROJECT_DIR/MODEL_DIR/DATA_DIR，
 不搬移原人脸数据。Lite3 本机统一启动采用独立开发 profile。
+
+## 2026-09-29：CPU 回放增量
+
+新增离线 object replay 入口与可选 device 参数；未配置时旧 predict 调用不变。
+原锁/默认配置/IDL保持不变，当前回归289 pass / 3 RGA skip；真实模型仍缺失。
+详情见 P6_PERCEPTION_REPLAY.md。

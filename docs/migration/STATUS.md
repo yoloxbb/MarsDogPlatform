@@ -17,6 +17,7 @@
 | P5 Third-party | 固定/归档/校验及所选 CPU 构建完成 | OpenVINS 4 包、RTAB 核心与 wrapper 16 包；原 OpenVINS CTest 1 项、100 个 ELF 依赖检查通过；上游完整 delta / 部分许可 UNKNOWN |
 | P6 默认本机集成 | prepare/build/doctor/up/smoke 与生命周期完成 | lite3-local-cpu，10 进程 + probe；本轮回归通过 |
 | P6 真实 Nav2 集成 | 实际 planner/controller/navigator + 模拟输入通过 | lite3-nav2-cpu，15 进程 + probe；GO_HOME、7 项故障恢复、生命周期通过；P6_REAL_NAV2.md |
+| P6 CPU 感知回放 | 基础设施完成；实际模型验收缺资产 | Vision 289 pass / 3 skip、Voice 380 pass、平台工具 19 项；P6_PERCEPTION_REPLAY.md |
 | P6 工程门禁 | 当前软件范围通过 | 25 契约/基线检查；15 ROS manifest DAG、21 登记接口；6 项构建隔离测试 |
 | P6 生产发布 / 远端 CI | 未验收 / 未配置 | 缺真实模型、设备、SLAM 输入、生产配置、远端和 owner 身份 |
 | P7 旧代码退役 | 未进行 | 不确定生产用途的代码/launch/脚本保留，未删除原仓 |
@@ -41,5 +42,7 @@ go_home 按原规则不产生 Needs 结算；不存在伪造的 BMS 电量生产
 - 确认远端、owner 账号和厂商库分发许可后，配置远端 CI、保护规则与发布。
 - 不猜测运控/嵌入式/BMS 实现，不自行退役未知生产入口。
 
-当前源码和新增冻结证据见 validation/real-nav2/release-manifest.json。
+当前源码和新增冻结证据见 validation/perception-replay/release-manifest.json；
+该清单只确认回放基础设施，model_acceptance=false。
+此前 Nav2 阶段证据见 validation/real-nav2/release-manifest.json。
 此前 validation/local-platform/release-manifest.json 是保留的旧验收快照，其报告哈希未改。

@@ -96,6 +96,16 @@ print(json.dumps({
 }))
 """
             observation = json.loads(run([str(python), "-B", "-c", probe]))
+            if (source / "marsdog_voice_interaction/replay.py").is_file():
+                replay_code = (
+                    "import hashlib,json,pathlib;import marsdog_voice_interaction.replay as replay;"
+                    "p=pathlib.Path(replay.__file__);"
+                    "print(json.dumps({'module_file':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}))")
+                replay_entry = json.loads(run([str(python), "-B", "-c", replay_code]))
+                assert Path(replay_entry["module_file"]).is_relative_to(project / ".venv")
+                assert replay_entry["sha256"] == hashlib.sha256((source / "marsdog_voice_interaction/replay.py").read_bytes()).hexdigest()
+                run([str(python), "-B", "-m", "marsdog_voice_interaction.replay", "--help"])
+                observation["replay_entrypoint"] = replay_entry
             assert Path(observation["module_file"]).is_relative_to(project / ".venv")
             assert not observation["rclpy_installed"]
             assert observation["scripts"] == {

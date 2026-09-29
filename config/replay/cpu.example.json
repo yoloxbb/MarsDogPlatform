@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "description": "Template only. Supply real CPU models, independently annotated samples, and actual SHA256 values.",
+  "vision": {
+    "model": {
+      "path": "assets/vision/model.onnx",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "settings": {
+      "image_size": 640,
+      "confidence": 0.2,
+      "iou": 0.2,
+      "max_detections": 50
+    },
+    "samples": [
+      {
+        "id": "ball",
+        "image": {
+          "path": "assets/vision/ball.jpg",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "expected_labels": [
+          "dog toy ball"
+        ]
+      }
+    ]
+  },
+  "voice": {
+    "model_type": "sense_voice",
+    "language": "zh",
+    "num_threads": 2,
+    "model": {
+      "path": "assets/voice/model.int8.onnx",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "tokens": {
+      "path": "assets/voice/tokens.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "samples": [
+      {
+        "id": "go-home",
+        "audio": {
+          "path": "assets/voice/go-home.wav",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "expected_text": "回家",
+        "expected_event_type": "EVT_VOICE_COMMAND_GO_HOME"
+      }
+    ]
+  }
+}

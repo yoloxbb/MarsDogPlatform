@@ -20,6 +20,16 @@ python3 tools/marsdog.py up --profile lite3-nav2-cpu
 范围与复现步骤见 [真实 Nav2 CPU 验收](docs/LOCAL_NAV2_CPU.md)。
 定位/运动/地图仍为模拟输入，未完成实机或模型验收。
 
+真实模型的离线 CPU 回放入口已就绪，先准备带哈希和标注的资产清单：
+
+~~~bash
+python3 tools/marsdog.py replay --manifest /absolute/path/to/cpu-replay.json --check-only
+python3 tools/marsdog.py replay --manifest /absolute/path/to/cpu-replay.json
+~~~
+
+见 [CPU 感知回放](docs/CPU_PERCEPTION_REPLAY.md)。当前缺少模型资产，模板会明确返回
+BLOCKED_MISSING_ASSETS；不会将 mock 结果当作推理验收。
+
 Ctrl-C 关闭整组进程。日志/配置副本/数据写入 out/local/runs；
 子进程崩溃会使组合失败退出，重复启动会被拒绝。详细说明见
 [本机启动与验收](docs/LOCAL_LITE3_CPU.md)。

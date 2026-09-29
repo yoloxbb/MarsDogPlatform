@@ -114,6 +114,9 @@ class ASRSherpaProvider(BaseProvider):
                 debug=False,
             )
 
+            if self.config.get("provider") is not None:
+                common["provider"] = str(self.config["provider"])
+
             if self._model_type == "paraformer":
                 self._recognizer = OfflineRecognizer.from_paraformer(
                     paraformer=self._model_path,

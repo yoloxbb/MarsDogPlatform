@@ -82,6 +82,16 @@ print(json.dumps({'module_file':str(root),'scripts':scripts,'assets':assets,'web
  'versions':{n:importlib.metadata.version(n) for n in ['numpy','opencv-python','opencv-contrib-python','torch','mediapipe','protobuf','pydantic']}}))
 """
             observation = json.loads(run([str(python), "-B", "-c", probe]))
+            if (source / "marsdog_vision_interaction/replay.py").is_file():
+                replay_code = (
+                    "import hashlib,json,pathlib;import marsdog_vision_interaction.replay as replay;"
+                    "p=pathlib.Path(replay.__file__);"
+                    "print(json.dumps({'module_file':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}))")
+                replay_entry = json.loads(run([str(python), "-B", "-c", replay_code]))
+                assert Path(replay_entry["module_file"]).is_relative_to(project / ".venv")
+                assert replay_entry["sha256"] == hashlib.sha256((source / "marsdog_vision_interaction/replay.py").read_bytes()).hexdigest()
+                run([str(python), "-B", "-m", "marsdog_vision_interaction.replay", "--help"])
+                observation["replay_entrypoint"] = replay_entry
             assert Path(observation["module_file"]).is_relative_to(project / ".venv")
             expected = {str(f.relative_to(source)): hashlib.sha256(f.read_bytes()).hexdigest()
                         for folder in ("config", "launch") for f in (source / folder).rglob("*")

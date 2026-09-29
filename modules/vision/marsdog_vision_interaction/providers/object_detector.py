@@ -168,6 +168,9 @@ class ObjectDetectorProvider(BaseProvider):
     ) -> list[dict[str, Any]]:
         """Run Ultralytics preprocessing, inference, NMS, and decoding."""
         started = time.perf_counter()
+        runtime_options = {}
+        if self.config.get("device") is not None:
+            runtime_options["device"] = self.config["device"]
         results = self._model.predict(
             source=frame,
             conf=threshold,
@@ -176,6 +179,7 @@ class ObjectDetectorProvider(BaseProvider):
             imgsz=self._image_size,
             save=False,
             verbose=False,
+            **runtime_options,
         )
         objects = self._results_to_objects(results)
         logger.info(

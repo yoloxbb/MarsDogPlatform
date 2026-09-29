@@ -24,7 +24,7 @@ Lite3 本机 prepare/build/doctor/up/smoke 统一入口；
 
 先读 README.md、AGENTS.md、docs/migration/STATUS.md、
 docs/architecture/PLATFORM_IMPLEMENTATION_REVIEW.md 和 docs/LOCAL_LITE3_CPU.md。
-当前主仓 git log/status 与 validation/real-nav2/release-manifest.json
+当前主仓 git log/status 与 validation/perception-replay/release-manifest.json
 提供最新源码基线；validation/local-platform 保留此前验收快照。不要根据旧阶段提案中“尚未实施”重新开始迁移。
 
 最常用命令（在主仓内）：
@@ -88,3 +88,23 @@ robotics 自研实现、IDL、默认配置、原始七仓和算法未改。
 下一步优先真实 CPU Vision/Voice 回放。先核对已有模型/样本资产；缺少时需要用户提供
 实际路径、版本/哈希和录音/图像，不用随机模型或模拟成功冒充推理验收。
 原始七仓、固定 vendor 与主机包清单已重新验证；新增阶段证据全部在 validation/real-nav2。
+
+## 最新增量：CPU 感知回放入口
+
+tools/marsdog.py replay --manifest /absolute/path/to/cpu-replay.json 已实现；
+--check-only 仅做资产校验。模板 config/replay/cpu.example.json，说明
+docs/CPU_PERCEPTION_REPLAY.md。status=READY 不等于模型推理通过。
+模型缺失返回 BLOCKED_MISSING_ASSETS / exit 2，本机当前就是此状态。
+
+首切片是 YOLOE 物体检测 + SenseVoice/Paraformer 的已切分 WAV ASR和精确词库 payload。
+不会启动 ROS/硬件，不覆盖完整 Vision、Voice 会话/VAD/KWS/RKLLM，不替换旧 mock profile。
+两模块各自 replay.py 复用已有 provider，显式可选 CPU 参数，不改默认参数和生产 YAML。
+平台只做哈希/标注清单、子进程与报告；五套环境/lock保持独立。
+
+软件回归：Vision 289 pass / 3 RGA skip；Voice 380 pass；平台19项（含旧6项）；
+25契约、15 ROS manifests/21接口；wheel和ROS构建、两套profile smoke通过。
+实际模型推理尚未验收。新证据 validation/perception-replay，旧冻结报告未覆盖。
+
+本轮已递归核对工作区可用资产，未发现权重；已向用户询问模型/样本路径。
+后续优先接收实际 CPU 模型、tokens/标签、带预期答案的 PCM16 单声道16k WAV和图像。
+不要下载随机替代权重或把 Action 展示媒体当感知标注集，也不要因缺模型反复搬代码。
