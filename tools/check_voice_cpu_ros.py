@@ -80,11 +80,14 @@ def stop_owned_group(process):
     process.wait(timeout=5)
 
 
-def evaluate_report(data, code):
+def evaluate_report(data, code, *, with_behavior=False):
     integration = (code == 0 and data.get("integration_acceptance") is True
                    and data.get("worker_returncode") == 0
-                   and data.get("real_asr_cases") == 1 and data.get("text_fixture_cases") == 4
+                   and data.get("real_asr_cases") == 1 and data.get("text_fixture_cases") == (7 if with_behavior else 6)
                    and data.get("after_stop_no_inference") is True
+                   and data.get("in_flight", {}).get("status") == "PASS"
+                   and data["in_flight"].get("late_semantic_events") == 0
+                   and data["in_flight"].get("recovery_catalog_dispatch") is True
                    and isinstance(data.get("worker", {}).get("pid"), int)
                    and isinstance(data.get("observer_pid"), int)
                    and data["worker"]["pid"] > 0 and data["observer_pid"] > 0
@@ -92,8 +95,20 @@ def evaluate_report(data, code):
     expected = ["upstream-zh-itn", "qwen-sit", "qwen-no-sit", "qwen-reject", "catalog-sit"]
     integration = integration and [x.get("id") for x in data.get("cases", [])] == expected
     integration = integration and all(not x["transport_errors"] for x in data.get("cases", []))
+    if with_behavior:
+        chain = data.get("behavior_chain", {})
+        integration = (integration and chain.get("status") == "PASS"
+                       and bool(chain.get("navigation_goal_id"))
+                       and chain.get("navigation_success") is True
+                       and chain.get("no_hardware_publishers") is True)
     quality = bool(integration and all(not x["quality_errors"] for x in data["cases"]))
     return bool(integration), quality
+
+
+def acceptance_status(integration, quality, mode):
+    if mode not in {"strict", "flow"}:
+        raise ValueError("Unknown acceptance mode")
+    return "PASS" if integration and (quality or mode == "flow") else "FAIL"
 
 
 def main(argv=None):
@@ -104,6 +119,9 @@ def main(argv=None):
                         default=ROOT / "out/models/qwen2.5-0.5b-instruct/intent-replay.json")
     parser.add_argument("--output", type=Path, default=ROOT / "out/voice-cpu-ros")
     parser.add_argument("--timeout", type=int, default=240)
+    parser.add_argument("--acceptance", choices=("strict", "flow"), default="strict")
+    parser.add_argument("--with-behavior", action="store_true",
+                        help="Include installed BT/Action/Needs and simulated Lite3/navigation")
     args = parser.parse_args(argv)
     if not 30 <= args.timeout <= 600:
         parser.error("timeout must be 30..600 seconds")
@@ -111,10 +129,11 @@ def main(argv=None):
     directory = args.output.resolve() / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     directory.mkdir()
     report = {"status": "FAIL", "integration_acceptance": False, "model_acceptance": False,
-              "run_directory": str(directory), "domain": 215}
+              "run_directory": str(directory), "domain": 215, "acceptance": args.acceptance, "with_behavior": args.with_behavior}
     lock_path = ROOT / "out/voice-cpu-ros/domain215.lock"
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     process = None
+    components, component_logs = [], []
     def interrupt(signum, frame):
         raise KeyboardInterrupt("CPU ROS probe interrupted")
     old_handlers = {s: signal.signal(s, interrupt) for s in (signal.SIGTERM, signal.SIGINT)}
@@ -128,11 +147,38 @@ def main(argv=None):
                 raise RuntimeError("Installed code is stale: run tools/marsdog.py build")
             request, assets = prepare_request(args.voice_manifest.resolve(), args.intent_manifest.resolve(),
                                              directory, INSTALL)
+            request_data = json.loads(request.read_text())
+            request_data["with_behavior"] = args.with_behavior
+            request.write_text(json.dumps(request_data, ensure_ascii=False, indent=2) + "\n")
             tool_hash = sha256(Path(__file__))
             report.update(assets_sha256=assets, source_fingerprint=before, tool_sha256=tool_hash)
             env = ros_environment(INSTALL, 215)
             env.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1", TOKENIZERS_PARALLELISM="false",
                        ROS_LOG_DIR=str(directory / "ros-log"))
+            if args.with_behavior:
+                from marsdog import BUILD_TOOLS, process_specs
+                env.update(MARSDOG_LOCAL_SIMULATION="1",
+                           MARSDOG_VISION_PROJECT_DIR=str(INSTALL / "marsdog_vision_interaction/share/marsdog_vision_interaction"),
+                           MARSDOG_VISION_MODEL_DIR=str(directory / "absent-models"),
+                           MARSDOG_VISION_DATA_DIR=str(directory / "vision-data"))
+                subprocess.run([str(BUILD_TOOLS / "python"), "-B", str(ROOT / "tools/prepare_local_configs.py"),
+                                "--run", str(directory), "--install", str(INSTALL)],
+                               env=env, check=True, capture_output=True, timeout=30)
+                prefix = request_data["prefix"]
+                for name, cmd in process_specs(directory):
+                    if name == "voice":
+                        continue  # Only the real installed CPU Voice worker may publish.
+                    cmd = list(cmd)
+                    if "--ros-args" not in cmd:
+                        cmd.append("--ros-args")
+                    for endpoint in ("/perception/audio_event", "/perception/voice/task"):
+                        cmd += ["-r", endpoint + ":=" + prefix + endpoint]
+                    stream = (directory / (name + ".log")).open("w")
+                    component_logs.append(stream)
+                    child_env = dict(env, MARSDOG_PYTHON=cmd[0])
+                    child = subprocess.Popen(cmd, cwd=directory, env=child_env, stdout=stream,
+                                             stderr=subprocess.STDOUT, start_new_session=True)
+                    components.append((name, child, cmd))
             python = ROOT / "modules/voice/.venv/bin/python"
             env["MARSDOG_PYTHON"] = str(python)
             command = [str(python), "-B", str(ROOT / "modules/voice/tests/ros_cpu_pipeline_probe.py"),
@@ -157,9 +203,11 @@ def main(argv=None):
                 raise RuntimeError("Model/audio/manifest changed during probe")
             if source_fingerprint() != before or sha256(Path(__file__)) != tool_hash:
                 raise RuntimeError("Source changed during probe")
-            integration, quality = evaluate_report(data, code)
+            if any(child.poll() is not None for _, child, _ in components):
+                raise RuntimeError("A behavior-chain component exited before validation completed")
+            integration, quality = evaluate_report(data, code, with_behavior=args.with_behavior)
             report.update(integration_acceptance=integration, fixture_quality_passed=quality,
-                          status="PASS" if integration and quality else "FAIL")
+                          status=acceptance_status(integration, quality, args.acceptance))
     except (Exception, KeyboardInterrupt) as exc:
         report.update(status="FAIL", error=str(exc) or type(exc).__name__)
     finally:
@@ -168,6 +216,19 @@ def main(argv=None):
                 stop_owned_group(process)
             except Exception as exc:
                 report.update(status="FAIL", integration_acceptance=False, cleanup_error=str(exc))
+        report["components"] = []
+        for name, child, cmd in reversed(components):
+            try:
+                stop_owned_group(child)
+            except Exception as exc:
+                report.update(status="FAIL", integration_acceptance=False, cleanup_error=str(exc))
+            report["components"].append({"name": name, "pid": child.pid, "command": cmd,
+                                         "shutdown_returncode": child.returncode})
+            if child.returncode != 0:
+                report.update(status="FAIL", integration_acceptance=False,
+                              component_shutdown_error=f"{name}: {child.returncode}")
+        for stream in component_logs:
+            stream.close()
         for sig, handler in old_handlers.items():
             signal.signal(sig, handler)
         (directory / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")

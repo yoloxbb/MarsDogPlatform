@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 ROS_TESTS = ("test_command_lexicon.py", "test_logging_contract.py",
-             "test_session_recovery.py", "test_speaker_node.py")
+             "test_session_recovery.py", "test_speaker_node.py", "test_cpu_intent_lifecycle.py")
 
 
 def main():

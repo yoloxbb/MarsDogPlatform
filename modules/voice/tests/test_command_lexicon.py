@@ -580,6 +580,7 @@ class _FakeSpeaker:
 
 class _DirectRouteHarness:
     _process_speech = VoiceInteractionNode._process_speech
+    _complete_intent = VoiceInteractionNode._complete_intent
     _wakeup_supersedes_utterance = VoiceInteractionNode._wakeup_supersedes_utterance
     _clean_text = staticmethod(VoiceInteractionNode._clean_text)
     _effective_kws_arbitration = (
@@ -642,6 +643,7 @@ class _DirectRouteHarness:
 class _KwsRouteHarness:
     _poll_kws_events = VoiceInteractionNode._poll_kws_events
     _process_speech = VoiceInteractionNode._process_speech
+    _complete_intent = VoiceInteractionNode._complete_intent
     _wakeup_supersedes_utterance = VoiceInteractionNode._wakeup_supersedes_utterance
     _clean_text = staticmethod(VoiceInteractionNode._clean_text)
     _effective_kws_arbitration = (

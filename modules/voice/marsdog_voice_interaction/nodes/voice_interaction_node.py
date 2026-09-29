@@ -199,6 +199,8 @@ class VoiceInteractionNode(Node):
             max_workers=1, thread_name_prefix="wake-speaker"
         )
         self._pending_wake_identity: tuple[str, str, Future[dict[str, Any]]] | None = None
+        self._intent_executor: ThreadPoolExecutor | None = None
+        self._pending_intent: tuple[str, dict[str, Any], Future] | None = None
         self._last_capture_retry = 0.0
         self._max_interaction_duration = self._resolve_max_interaction_duration(
             self._idle_timeout,
@@ -1070,6 +1072,8 @@ class VoiceInteractionNode(Node):
             if wake_event is not None and self._handle_wakeup(wake_event, audio):
                 return
         self._poll_wake_identity_result()
+        if self._poll_pending_intent(audio):
+            return
         if audio is not None and hasattr(audio, "poll_result"):
             if audio.is_capturing():  # type: ignore[attr-defined]
                 session = self._enrollment.speaker_session
@@ -1141,6 +1145,8 @@ class VoiceInteractionNode(Node):
                                 result,
                                 utterance_id,
                             )
+                            if getattr(self, "_pending_intent", None) is not None:
+                                return
                             if self._latest_wake_id != wake_before_speech:
                                 # A hardware wake arrived during ASR/speaker
                                 # processing and already started a new turn.
@@ -1150,22 +1156,7 @@ class VoiceInteractionNode(Node):
                                 "VAD silence result; idle timer remains at %.3f",
                                 self._last_interaction_time,
                             )
-                        self._command_tracker.finish()
-                        timed_out_id = self._timeout_interaction_id(
-                            time.monotonic()
-                        )
-                        if timed_out_id:
-                            self._end_interaction(
-                                "interaction_timeout",
-                                expected_interaction_id=timed_out_id,
-                            )
-                        elif self._is_interaction_active():
-                            self._start_interaction_capture(audio)
-                        elif not (self._enrollment.speaker_session is not None
-                                  and not self._enrollment.speaker_session.done):
-                            self._cancel_audio_capture(
-                                audio, preserve_microphone=self._wake_speaker_enabled
-                            )
+                        self._finish_speech_capture(audio)
                         return
                     if enrollment_active:
                         return
@@ -1192,6 +1183,55 @@ class VoiceInteractionNode(Node):
             if now - self._last_capture_retry >= 0.5:
                 self._last_capture_retry = now
                 self._start_interaction_capture(audio)
+
+    def _finish_speech_capture(self, audio: BaseProvider | None) -> None:
+        self._command_tracker.finish()
+        timed_out_id = self._timeout_interaction_id(
+            time.monotonic()
+        )
+        if timed_out_id:
+            self._end_interaction(
+                "interaction_timeout",
+                expected_interaction_id=timed_out_id,
+            )
+        elif audio is not None and self._is_interaction_active():
+            self._start_interaction_capture(audio)
+        elif not (self._enrollment.speaker_session is not None
+                  and not self._enrollment.speaker_session.done):
+            self._cancel_audio_capture(
+                audio, preserve_microphone=self._wake_speaker_enabled
+            )
+
+    def _poll_pending_intent(self, audio: BaseProvider | None) -> bool:
+        """Only model computation runs off-thread; completion stays on ROS."""
+        pending = getattr(self, "_pending_intent", None)
+        if pending is None:
+            return False
+        interaction_id, context, future = pending
+        timed_out_id = self._timeout_interaction_id(time.monotonic())
+        if timed_out_id:
+            self._end_interaction("interaction_timeout", expected_interaction_id=timed_out_id)
+        if not future.done():
+            # Keep one task in flight even after stop. Never queue another model
+            # call or capture a new utterance against shared provider state.
+            return True
+        self._pending_intent = None
+        with self._interaction_lock:
+            current = (self._interaction_active and self._interaction_id == interaction_id
+                       and self._latest_wake_id == context["utterance_wake_id"])
+        if not current:
+            self._trace("intent_discard", interaction_id=interaction_id,
+                        utterance_id=context["utterance_id"], reason="session_or_wake_changed")
+            return False
+        try:
+            parsed_intent = future.result()
+        except Exception as exc:
+            logger.error("Background intent failed: %s", exc)
+            parsed_intent = None
+        self._complete_intent(parsed_intent, **context)
+        if self._latest_wake_id == context["utterance_wake_id"]:
+            self._finish_speech_capture(audio)
+        return True
 
     def _handle_wakeup(self, event: dict[str, Any], audio: BaseProvider | None) -> bool:
         """Accept one fresh hardware wake, including during an active VAD turn."""
@@ -1962,7 +2002,27 @@ class VoiceInteractionNode(Node):
             return True
 
         intent_started = time.perf_counter()
+        context = dict(text=text, utterance_id=utterance_id,
+                       utterance_wake_id=utterance_wake_id, asr_result=asr_result,
+                       speaker_id=speaker_id, confidence=confidence,
+                       pipeline_started=pipeline_started, intent_started=intent_started)
+        provider = self._providers.get("intent_llm")
+        if getattr(provider, "background_intent", False) and provider.is_available():
+            if getattr(self, "_pending_intent", None) is not None:
+                raise RuntimeError("An intent computation is already pending")
+            if getattr(self, "_intent_executor", None) is None:
+                self._intent_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="cpu-intent")
+            future = self._intent_executor.submit(self._parse_intent, text, raw_text=raw_text)
+            self._pending_intent = (self._interaction_id, context, future)
+            return True
         parsed_intent = self._parse_intent(text, raw_text=raw_text)
+        return self._complete_intent(parsed_intent, **context)
+
+    def _complete_intent(
+        self, parsed_intent: dict[str, Any] | None, *, text: str,
+        utterance_id: str, utterance_wake_id: str, asr_result: dict[str, Any],
+        speaker_id: str, confidence: float, pipeline_started: float, intent_started: float,
+    ) -> bool:
         if self._wakeup_supersedes_utterance(utterance_wake_id):
             return False
         if parsed_intent is None:
@@ -2087,6 +2147,8 @@ class VoiceInteractionNode(Node):
         return True
 
     def _start_interaction_capture(self, audio: BaseProvider) -> None:
+        if getattr(self, "_pending_intent", None) is not None:
+            return
         """Allocate an utterance ID, reset KWS, then start microphone capture."""
         utterance_id = uuid.uuid4().hex
         self._command_tracker.begin(utterance_id)
@@ -2747,6 +2809,10 @@ class VoiceInteractionNode(Node):
             self._enrollment.sync_to_provider(speaker)
 
     def destroy_node(self) -> None:
+        pending = getattr(self, "_pending_intent", None)
+        self._pending_intent = None
+        if pending is not None:
+            pending[2].cancel()
         self._wake_identity_executor.shutdown(wait=True, cancel_futures=True)
         if self._speaker_api is not None:
             self._speaker_api.stop()
@@ -2755,6 +2821,9 @@ class VoiceInteractionNode(Node):
             for provider in self._providers.values():
                 if provider is not None:
                     provider.stop()
+        executor = getattr(self, "_intent_executor", None)
+        if executor is not None:
+            executor.shutdown(wait=True, cancel_futures=True)
         super().destroy_node()
 
 

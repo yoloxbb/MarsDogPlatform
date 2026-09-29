@@ -32,6 +32,7 @@ def provider(monkeypatch):
 
 def test_provider_returns_same_protocol_without_execution_or_fake_confidence(provider):
     assert provider.preserve_asr_text is True
+    assert provider.background_intent is True
     result = provider.parse_intent("请坐下")
     assert result["raw_nlu_tag"] == "NONE|SIT|DO"
     assert result["intent_source"] == "qwen_cpu"

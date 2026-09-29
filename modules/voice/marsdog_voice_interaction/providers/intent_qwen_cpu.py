@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 class IntentQwenCPUProvider(BaseProvider):
     # Generic instruction models need punctuation and word boundaries.
     preserve_asr_text = True
+    background_intent = True
 
     def __init__(self, config: dict[str, Any]):
         super().__init__(config)

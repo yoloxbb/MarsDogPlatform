@@ -120,6 +120,8 @@ class _FakeWakeup:
 class _NodeHarness:
     _trace = VoiceInteractionNode._trace
     _poll = VoiceInteractionNode._poll
+    _poll_pending_intent = VoiceInteractionNode._poll_pending_intent
+    _finish_speech_capture = VoiceInteractionNode._finish_speech_capture
     _poll_direct_mock = VoiceInteractionNode._poll_direct_mock
     _handle_wakeup = VoiceInteractionNode._handle_wakeup
     _poll_wake_identity_result = VoiceInteractionNode._poll_wake_identity_result

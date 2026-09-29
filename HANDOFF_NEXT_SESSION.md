@@ -4,16 +4,21 @@
 用户已授权工程实施、历史迁移、普通兼容性修复；首个目标明确为 Lite3，
 暂用本机 CPU，尚无设备，模块启动命令需要合并。
 
-**最新可执行结论（后文各“增量”保留历史，以下优先）：**
+**最新可执行结论（后文保留历史，以下优先）：**
 
-- 统一启动已完成；真实 CPU Voice→隔离 ROS 输入修复后 5/5，12 次服务调用通过。
-- Voice 424/0 skip、平台 36、契约 25、wheel/build/doctor/默认 smoke 通过。
-- Qwen v2 原 40 条仍 21/40，新措辞 3/12；模型质量不通过，默认整机感知仍 mock。
-- 仅 CPU provider 接收原始 ASR；原 RKLLM、规则、词库、公开事件文本和五套锁不变。
-- 一次“示例移入 system”实验仍 3/12，否定分类退化，未采用；原始输出保留。
-- 下一切片先验收推理期间 VoiceTask 的停止/会话响应与迟到事件，再扩大受控 BT/Action
-  联调。模型误分类、视觉漏检和实际口令语料分别推进，不把接线通过等同于模型通过。
-- 本轮源码、证据提交以 git log 及 validation/cpu-input-text/release-manifest.json 为准。
+- 用户最新要求：暂不关心模型精度，优先保证流程。不要再以精度不足阻塞软件集成，
+  不继续改提示词/权重或回放准确率；既有失败记录保留。
+- 可复用命令：python3 tools/marsdog.py voice-cpu-ros --acceptance flow --with-behavior。
+  详见 docs/CPU_SOFTWARE_FLOW.md、docs/migration/P6_CPU_FLOW.md。
+- 已修复 Qwen 同步推理阻塞 ROS 服务：一个后台任务计算，ROS 线程核对会话后发布；
+  停止/重启不等待推理结束，旧结果丢弃。新采集等旧任务退出，不排队并发推理。
+- 真实 CPU Voice→BT→Action/模拟导航已验证。Qwen SIT 到 Action 后按原 Lite3 未验证
+  门限拒绝并回传终态；词库 GO_HOME 导航 SUCCESS。不要把拒绝写成坐下执行成功。
+- 原 RKLLM、提示词/权重、生产 YAML、五套锁、公开 IDL、BT/Action 算法和默认 profile 不变。
+- 本轮回归 Voice 430/0 skip、平台 39、契约 25；原阻塞/审计竞态失败和最终成功证据分别保留。
+- 当前源码与冻结报告以 git log 和 validation/cpu-flow/release-manifest.json 为准。
+- 后续继续模块流程、故障恢复和本机组合；真实麦克风/VAD/KWS、SLAM 传感器和 Lite3
+  设备仍需对应环境。不要回到“先提高模型精度再集成”的旧优先级。
 
 当前完成：五个 Python 模块 + 八个自研 ROS package 的历史迁移；
 七原仓完整归档且未修改；RTAB/OpenVINS/VINS/UWB 固定外部快照；
@@ -35,7 +40,7 @@ Lite3 本机 prepare/build/doctor/up/smoke 统一入口；
 
 先读 README.md、AGENTS.md、docs/migration/STATUS.md、
 docs/architecture/PLATFORM_IMPLEMENTATION_REVIEW.md 和 docs/LOCAL_LITE3_CPU.md。
-当前主仓 git log/status 与 validation/cpu-input-text/release-manifest.json
+当前主仓 git log/status 与 validation/cpu-flow/release-manifest.json
 提供最新源码基线；validation/local-platform 保留此前验收快照。不要根据旧阶段提案中“尚未实施”重新开始迁移。
 
 最常用命令（在主仓内）：
@@ -265,3 +270,11 @@ CPU provider 新增 preserve_asr_text=true；节点只对它传原始 ASR 文本
 部分否定被错分为 DO，但现有门限拦截、没有可执行事件；未采用，正式 v2 不变。
 新增诊断集已用于该实验，不再视为未见过的留出集。完整脚本/报告冻结在
 validation/cpu-input-text/experiments/system-examples，不将实验当作 ROS 或模型验收。
+
+## 最新增量：流程优先与 CPU 推理中会话控制
+
+用户已明确模型精度暂不阻塞；flow 与 strict 的报告维度分离，默认 strict 不变。
+新增 --with-behavior 连接原模块进程和公开接口，无硬件。后台 Qwen 仅计算，
+事件仍由 ROS 线程发布，停止/超时/新唤醒后的旧结果不会进入新会话。
+原同步 ASR/声纹/设备调用未因此变成异步；没有承诺全系统硬实时。
+最新说明与证据见 docs/CPU_SOFTWARE_FLOW.md、validation/cpu-flow。

@@ -36,6 +36,15 @@ SenseVoice 中文参考已通过；YOLOE 13 张正例有 2 张漏检，整体回
 准备、配置和真实分类限制见 [CPU 意图后端](docs/CPU_INTENT.md)。
 该候选尚未通过完整模型质量验收，不自动替换默认 profile。
 
+当前按用户要求优先验收软件流程，模型精度不阻塞集成：
+
+~~~bash
+python3 tools/marsdog.py voice-cpu-ros --acceptance flow --with-behavior
+~~~
+
+该命令验证真实 CPU Voice→BT→Action 与模拟导航，以及推理中停止、重启和迟到事件隔离。
+Qwen 标签、已知 Lite3 能力拒绝和模型质量仍如实记录，详见 [CPU 软件流程](docs/CPU_SOFTWARE_FLOW.md)。
+
 真实 CPU Voice 到隔离 ROS 的增量验证：
 
 ~~~bash

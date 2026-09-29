@@ -315,11 +315,14 @@ def main():
     parser.add_argument("--download", action="store_true", help="Fetch missing pinned CPU model assets")
     parser.add_argument("--intent-archive", type=Path, help="User-supplied Qwen CPU model ZIP")
     parser.add_argument("--voice-intent-cpu", action="store_true", help="Prepare optional CPU intent dependencies for Voice")
+    parser.add_argument("--acceptance", choices=("strict", "flow"), default="strict",
+                        help="Voice CPU ROS: require flow only, or flow and fixed-scene quality")
+    parser.add_argument("--with-behavior", action="store_true", help="Extend CPU Voice flow through BT/Action and simulated navigation")
     args = parser.parse_args()
     if args.command == "voice-cpu-ros":
         from check_voice_cpu_ros import main as voice_ros_main
         extra = ["--output", str(args.output)] if args.output is not None else []
-        raise SystemExit(voice_ros_main(extra))
+        raise SystemExit(voice_ros_main(extra + ["--acceptance", args.acceptance] + (["--with-behavior"] if args.with_behavior else [])))
     if args.command == "intent-replay":
         if args.manifest is None:
             parser.error("intent-replay requires --manifest")

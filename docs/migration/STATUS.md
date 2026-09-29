@@ -20,6 +20,7 @@
 | P6 CPU 感知回放 | 资产就绪；ASR 通过，视觉 11/13，整体 FAIL | 27 平台测试；模型与辅助 runtime 实测见 P6_CPU_MODEL_ASSETS.md、validation/cpu-model-assets |
 | P6 CPU 意图 | 可选 Qwen 后端已接入；开发集 21/40，质量仍 FAIL | P6_CPU_INTENT.md、validation/cpu-intent |
 | P6 CPU Voice ROS | 双进程真实 ASR/Qwen→DDS 五场景通过；已修复原文传递，整体模型未通过 | P6_CPU_INPUT_TEXT.md、validation/cpu-input-text |
+| P6 CPU 软件流程 | 按用户要求不以精度阻塞；真实 Voice→BT→Action、模拟导航及推理中取消恢复已验证 | P6_CPU_FLOW.md、validation/cpu-flow |
 | P6 工程门禁 | 当前软件范围通过 | 25 契约/基线检查；15 ROS manifest DAG、21 登记接口；6 项构建隔离测试 |
 | P6 生产发布 / 远端 CI | 未验收 / 未配置 | 缺完整感知质量验收、原 RKLLM 等价性证据、设备、SLAM 输入、生产配置、远端和 owner 身份 |
 | P7 旧代码退役 | 未进行 | 不确定生产用途的代码/launch/脚本保留，未删除原仓 |
@@ -36,19 +37,21 @@ go_home 按原规则不产生 Needs 结算；不存在伪造的 BMS 电量生产
 原有取消/停止流程。未放宽任何非零退出或导航终态断言。
 本机 Cyclone loopback 小分片设置不改变旧生产 RMW 或系统网络。
 
-下一步优先补齐真实 CPU 感知验收：
+当前优先级：用户明确先保证流程，模型精度暂缓。通过
+tools/marsdog.py voice-cpu-ros --acceptance flow --with-behavior 重复软件链路验收。
+模型质量、软件流程和硬件验收分别报告；误分类不再阻塞流程集成，门限/会话/异常退出仍阻塞。
 
-- 原文接线已修复；先验收同步推理期间 VoiceTask 响应与迟到事件隔离，再扩展 BT/Action。
-  当前固定 ROS 5/5；Qwen 原集 21/40、新措辞 3/12。一次布局实验无改善，未采用。
+后续继续：
 
-- 修复/核对两张狗漏检；用已接入的 Qwen CPU 候选继续做独立口令集和隔离 ROS 验收。
-  通用 Qwen 已由用户授权暂用；原微调权重仅仍是 RKLLM 等价性验证所需。
-- 已下载官方 26s CPU 基础权重并保留原 18 类；57 项包内资产与 7 项下载全部固定哈希。
-- 用相机/IMU/标定/地图回放验收 OpenVINS/RTAB 定位建图与性能；CPU 构建不是精度验收。
-- 用 Lite3 设备侧接口包、部署配置和硬件验证运动、控制权、停止和状态。
-- 确认远端、owner 账号和厂商库分发许可后，配置远端 CI、保护规则与发布。
-- 不猜测运控/嵌入式/BMS 实现，不自行退役未知生产入口。
+- 扩大模块公开接口、故障恢复与统一启动验证；保留独立环境和已完成历史迁移。
+- 有实际录音/设备后验证麦克风、VAD/KWS、ASR/声纹调用与外设生命周期。
+- 有传感器/标定/地图后验收 OpenVINS/RTAB 定位建图；CPU 构建不是传感器验收。
+- 有 Lite3 设备侧接口包后验证运动、控制权、停止和状态，不自行放开未验证动作。
+- 确认远端、owner 和厂商许可后配置远端 CI/发布。
+- 不猜测运控/嵌入式/BMS 实现，不退役未知生产入口。
 
+最新流程证据见 validation/cpu-flow/release-manifest.json。Qwen SIT 被原 Lite3 门限拒绝，
+词库 GO_HOME 完成模拟导航；二者不能混称为所有动作执行成功。
 最新输入传递修复见 validation/cpu-input-text/release-manifest.json，固定 ROS 五场景已通过，整体模型质量仍未通过。
 此前 CPU Voice ROS 切片见 validation/cpu-voice-ros/release-manifest.json，旧否定失败保留。
 此前意图切片见 validation/cpu-intent/release-manifest.json，保留原 RKLLM 默认引擎。

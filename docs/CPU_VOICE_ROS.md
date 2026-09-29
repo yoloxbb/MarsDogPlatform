@@ -5,6 +5,9 @@
 不改变生产配置、RKLLM、ROS IDL 或 BT/Action。验证器位于测试和集成工具中；
 后续节点修复仅让显式 CPU provider 接收原始 ASR 文本，详见下方阶段记录。
 
+当前用户优先级为流程验收：使用 --acceptance flow 忽略样本精度门槛但保留误分类记录，
+加 --with-behavior 验证原 BT/Action 和模拟导航。参见 [CPU 软件流程](CPU_SOFTWARE_FLOW.md)。
+
 ## 运行
 
 在当前 WSL 平台根目录、CPU 资产和 Voice intent-cpu 环境已经准备好的条件下：
@@ -75,7 +78,7 @@ FixtureAudio 只替代设备捕获，文本输入明确记录 explicit_text_fixt
 - fixture_quality_passed：固定输入的实际文本和意图标签是否符合标注。
 - model_acceptance：固定为 false；这些少量集成样本不能替代模型质量验收。
 
-status=PASS / exit 0 要求链路与本次样本标注都通过。若链路通过但模型误分类，
+默认 strict 的 status=PASS / exit 0 要求链路与本次样本标注都通过；flow 模式仅以流程为门禁。若链路通过但模型误分类，
 仍为 FAIL / exit 1，同时保留 integration_acceptance=true 和原始结果。
 
 首轮发现：“现在不要坐下。”经节点原有标点清理变成“现在不要坐下”，
@@ -86,10 +89,12 @@ Qwen 返回 NONE|NONE|NONE；期望为 NONE|SIT|STOP。没有可执行事件，
 详见 [输入差异修复](migration/P6_CPU_INPUT_TEXT.md)，最新证据 validation/cpu-input-text。
 没有修改标注、关闭原清理函数或改变默认模型来隐藏失败。
 
-当前单线程节点在 _poll 中同步运行推理；本门禁的 stop 检查发生在推理完成后。
-**不声称推理进行中的服务响应或即时取消已验证。**
+此前单线程 Qwen 阻塞服务已修复：CPU 计算在单个后台任务，发布仍在 ROS 线程。
+门禁现已增加真实 Qwen 推理中的停止/重启与旧结果丢弃；ASR/声纹保持原同步路径。
 真实麦克风/VAD/KWS/声纹、机器人口令录音、BT/Action 整链路和设备验收仍未覆盖。
-输入传递已对齐；后续先验证推理期间会话响应，并用独立口令集继续验证否定语义。
+输入传递和 Qwen 推理期间会话控制已验证；精度优化暂缓，继续扩大软件流程与故障恢复。
 
 最新结果见 [输入修复记录](migration/P6_CPU_INPUT_TEXT.md)与 validation/cpu-input-text。
 首轮冻结结果见 [历史阶段记录](migration/P6_CPU_VOICE_ROS.md)与 validation/cpu-voice-ros。
+
+最新增量与冻结证据见 [流程阶段记录](migration/P6_CPU_FLOW.md)及 validation/cpu-flow。

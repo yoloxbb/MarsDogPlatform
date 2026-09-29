@@ -91,19 +91,31 @@ class ObservedASR:
 
 class ObservedIntent:
     @property
+    def background_intent(self):
+        return self.delegate.background_intent
+
+    @property
     def preserve_asr_text(self):
         return self.delegate.preserve_asr_text
 
-    def __init__(self, delegate, audit):
+    def __init__(self, delegate, audit, directory=None):
         self.delegate, self.audit = delegate, audit
+        self.directory = directory
     @property
     def input_rejected(self):
         return self.delegate.input_rejected
     def parse_intent(self, text):
         started = time.monotonic()
+        case_id = self.audit["current_case"]
+        if self.directory is not None:
+            atomic_json(self.directory / "intent-progress.json",
+                        {"id": case_id, "started": started, "finished": None})
         result = self.delegate.parse_intent(text)
+        if self.directory is not None:
+            atomic_json(self.directory / "intent-progress.json",
+                        {"id": case_id, "started": started, "finished": time.monotonic()})
         self.audit["intent"].append({
-            "id": self.audit["current_case"], "text": text, "classification": result,
+            "id": case_id, "text": text, "classification": result,
             "raw_output": self.delegate.last_output, "error": self.delegate.last_error,
             "input_rejected": self.delegate.input_rejected,
             "elapsed_ms": (time.monotonic()-started)*1000})
@@ -138,7 +150,7 @@ def worker(request, directory):
         audio = FixtureAudio()
         node._providers["audio"] = audio
         node._providers["asr"] = ObservedASR(node._providers["asr"], audit)
-        node._providers["intent_llm"] = ObservedIntent(node._providers["intent_llm"], audit)
+        node._providers["intent_llm"] = ObservedIntent(node._providers["intent_llm"], audit, directory)
         prefix = request["prefix"]
         assert all(p.topic_name.startswith(prefix) for p in node.publishers
                    if p.topic_name not in ("/rosout", "/parameter_events"))
@@ -152,7 +164,8 @@ def worker(request, directory):
                     audio.enqueue(delivery["case"])
                     last_request = delivery["sequence"]
             rclpy.spin_once(node, timeout_sec=0.05)
-            audit.update(delivered=audio.delivered, input_sequence=last_request)
+            audit.update(delivered=audio.delivered, input_sequence=last_request,
+                         capturing=audio.is_capturing(), intent_pending=getattr(node, "_pending_intent", None) is not None)
             atomic_json(directory / "worker-state.json", audit)
         audit["status"] = "PASS"
     finally:
@@ -262,6 +275,16 @@ def observer(request, directory):
         node = Node("voice_cpu_observer")
         node.create_subscription(String, config["topics"]["audio_event"],
                                  lambda m: events.append(json.loads(m.data)), 100)
+        chain_topics = ("/debug/execute_behavior/goal", "/debug/execute_behavior/result",
+                        "/development/nav2_events", "/development/lite3_io",
+                        "/emotion/state", "/internal_need/state")
+        chain_events = {topic: [] for topic in chain_topics}
+        if request.get("with_behavior"):
+            for topic in chain_topics:
+                node.create_subscription(String, topic,
+                    lambda message, key=topic: chain_events[key].append(json.loads(message.data)), 100)
+            result["scope"] = ("Installed CPU Voice/BT/Action/Needs/Emotion with ROS transport; "
+                               "one real ASR WAV, explicit command text, mock Vision and simulated Lite3/Nav2")
         client = node.create_client(VoiceTask, config["topics"]["voice_task"])
         def until(predicate, seconds=45):
             deadline = time.monotonic()+seconds
@@ -271,14 +294,21 @@ def observer(request, directory):
                 rclpy.spin_once(node, timeout_sec=0.05)
             if not predicate():
                 raise TimeoutError("Isolated Voice pipeline timed out")
-        def call(kind, params=None):
+        def call(kind, params=None, seconds=45):
+            started = time.monotonic()
             future = client.call_async(VoiceTask.Request(task_id=kind, task_type=kind,
                                                        params_json=json.dumps(params or {})))
-            until(future.done)
+            # Record slow service responses even when this lifecycle check fails.
+            try:
+                until(future.done, seconds)
+            except TimeoutError:
+                services.append({"task": kind, "timeout_sec": seconds,
+                                 "elapsed_ms": (time.monotonic()-started)*1000})
+                raise
             response = future.result()
             assert response.success, response.error_message
             value = json.loads(response.result_json)
-            services.append({"task": kind, "result": value})
+            services.append({"task": kind, "result": value, "elapsed_ms": (time.monotonic()-started)*1000})
             return value
         with (directory / "worker.log").open("w") as log:
             # Same owned process group as observer: outer timeout reaps both.
@@ -310,6 +340,11 @@ def observer(request, directory):
                     if not deliveries:
                         return False
                     uid = deliveries[0]["utterance_id"]
+                    # DDS can arrive before the worker's next audit snapshot.
+                    # Require both independent observations before evaluating.
+                    if case["source"] != "command_lexicon" and not any(
+                            item["id"] == case["id"] for item in audit["intent"]):
+                        return False
                     return any(e.get("utterance_id") == uid and e.get("intent_source") == case["source"] for e in events)
                 until(completed)
                 audit = json.loads((directory / "worker-state.json").read_text())
@@ -336,6 +371,93 @@ def observer(request, directory):
             # A new service session has a distinct ID and remains controllable.
             restarted = call("start_listening")
             assert restarted["interaction_id"] != identity
+            # Stop while the real model is still computing, then restart before
+            # it finishes. No injected prediction or artificial model delay.
+            sequence += 1
+            atomic_json(directory / "input.json", {"sequence": sequence, "case": {
+                "id": "in-flight", "text": "请在原地坐下。"}})
+            progress_path = directory / "intent-progress.json"
+            until(lambda: progress_path.exists()
+                  and json.loads(progress_path.read_text()).get("id") == "in-flight")
+            begun = json.loads(progress_path.read_text())
+            assert begun["finished"] is None, "Inference finished before cancellation test"
+            assert call("get_interaction_state", seconds=2)["interaction_id"] == restarted["interaction_id"]
+            assert call("stop_listening", seconds=2)["listening"] is False
+            stop_response_time = time.monotonic()
+            replacement = call("start_listening", seconds=2)
+            assert replacement["interaction_id"] != restarted["interaction_id"]
+            assert call("get_interaction_state", seconds=2)["interaction_id"] == replacement["interaction_id"]
+            until(lambda: json.loads(progress_path.read_text()).get("finished") is not None)
+            finished = json.loads(progress_path.read_text())
+            assert stop_response_time < finished["finished"], "Stop waited for model completion"
+            until(lambda: not json.loads((directory / "worker-state.json").read_text()).get("intent_pending", True))
+            audit = json.loads((directory / "worker-state.json").read_text())
+            obsolete_uid = next(d["utterance_id"] for d in audit["delivered"] if d["id"] == "in-flight")
+            for _ in range(5):
+                rclpy.spin_once(node, timeout_sec=0.05)
+            assert not any(e.get("utterance_id") == obsolete_uid and
+                           e.get("intent_source") in ("qwen_cpu", "rule", "invalid_protocol_fallback")
+                           for e in events), "Cancelled inference published a late semantic event"
+            until(lambda: json.loads((directory / "worker-state.json").read_text()).get("capturing"))
+            sequence += 1
+            atomic_json(directory / "input.json", {"sequence": sequence, "case": {
+                "id": "recovery-catalog", "text": "坐下"}})
+            until(lambda: any(e.get("interaction_id") == replacement["interaction_id"]
+                             and e.get("intent_source") == "command_lexicon"
+                             and e.get("should_trigger_behavior_tree") for e in events))
+            result["in_flight"] = {"status": "PASS", "model_started": begun["started"],
+                                  "model_finished": finished["finished"], "stop_response": stop_response_time,
+                                  "cancelled_session": restarted["interaction_id"],
+                                  "replacement_session": replacement["interaction_id"],
+                                  "obsolete_utterance": obsolete_uid, "late_semantic_events": 0,
+                                  "recovery_catalog_dispatch": True}
+            if request.get("with_behavior"):
+                current_session = call("start_listening")["interaction_id"]
+                until(lambda: json.loads((directory / "worker-state.json").read_text()).get("capturing"))
+                sequence += 1
+                atomic_json(directory / "input.json", {"sequence": sequence, "case": {
+                    "id": "chain-go-home", "text": "回家"}})
+                goals = chain_events["/debug/execute_behavior/goal"]
+                results = chain_events["/debug/execute_behavior/result"]
+                def go_home_goal():
+                    return next((g for g in goals if g.get("behavior_name") == "go_home"
+                                 and g.get("params", {}).get("interaction_id") == current_session
+                                 and g.get("params", {}).get("trigger_event") == "EVT_VOICE_COMMAND_GO_HOME"), None)
+                until(lambda: go_home_goal() is not None, 30)
+                goal = go_home_goal()
+                until(lambda: any(r.get("goal_id") == goal["goal_id"] and
+                                  str(r.get("status", "")).lower() == "success" for r in results), 40)
+                assert any(e.get("interaction_id") == current_session and
+                           e.get("event_type") == "EVT_VOICE_COMMAND_GO_HOME" and
+                           e.get("intent_source") == "command_lexicon" for e in events)
+                assert any(e.get("state") == "SUCCEEDED" and e.get("simulated") is True
+                           for e in chain_events["/development/nav2_events"])
+                assert all(chain_events[t] for t in chain_topics), "Missing component flow evidence"
+                model_commands = [e for e in events if e.get("intent_source") == "qwen_cpu"
+                                  and e.get("should_trigger_behavior_tree")]
+                correlated = []
+                for event in model_commands:
+                    matching = [g for g in goals if
+                                g.get("params", {}).get("interaction_id") == event.get("interaction_id") and
+                                g.get("params", {}).get("utterance_id") == event.get("utterance_id") and
+                                g.get("params", {}).get("trigger_event") == event.get("event_type")]
+                    assert len(matching) == 1, "Executable model event must create exactly one BT/Action goal"
+                    for g in matching:
+                        terminal = [r for r in results if r.get("goal_id") == g["goal_id"]]
+                        assert len(terminal) == 1, "Model-driven Action must have exactly one terminal result"
+                        outcome = terminal[0]
+                        succeeded = str(outcome.get("status", "")).lower() == "success"
+                        gated = (outcome.get("status") == "FAILURE" and outcome.get("result") == "failed"
+                                 and str(outcome.get("reason", "")).startswith("lite3_action_gated:"))
+                        assert succeeded or gated, "Unexpected Action failure: " + str(outcome)
+                        correlated.append({"goal": g, "terminal": terminal})
+                forbidden = ("/simple_cmd", "/cmd_vel", "/api/sport/request", "/robot_status")
+                assert not any(node.get_publishers_info_by_topic(t) for t in forbidden)
+                result["behavior_chain"] = {"status": "PASS", "navigation_goal_id": goal["goal_id"],
+                    "navigation_success": True, "no_hardware_publishers": True,
+                    "model_command_results": correlated, "navigation_goal": goal,
+                    "samples": chain_events,
+                    "limits": "Catalog GO_HOME validates navigation; real Qwen commands use unchanged capability gates. No hardware."}
             call("stop_listening")
             atomic_json(directory / "finish.json", {})
             code = process.wait(timeout=30)
