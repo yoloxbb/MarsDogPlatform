@@ -1,0 +1,13 @@
+{"id": "no-lie", "status": "FAIL", "tag": "NONE|STAND|DO"}
+{"id": "no-stand", "status": "FAIL", "tag": "NONE|STAND|DO"}
+{"id": "no-follow", "status": "FAIL", "tag": "NONE|GO_OUT|DO"}
+{"id": "no-home", "status": "PASS", "tag": "NONE|GO_HOME|STOP"}
+{"id": "ask-lie", "status": "FAIL", "tag": "NONE|SIT|DO"}
+{"id": "quote", "status": "PASS", "tag": "NONE|NONE|NONE"}
+{"id": "self-statement", "status": "FAIL", "tag": "NONE|STAY|DO"}
+{"id": "weather", "status": "FAIL", "tag": "NONE|DOG_STATUS|QUERY"}
+{"id": "praise", "status": "FAIL", "tag": "NONE|NONE|NONE"}
+{"id": "back", "status": "PASS", "tag": "NONE|BACK|DO"}
+{"id": "english-no-sit", "status": "FAIL", "tag": "NONE|SIT|DO"}
+{"id": "english-capability", "status": "FAIL", "tag": "NONE|GO|DO"}
+EXPERIMENT RESULT 3 / 12

@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "mode": "humble",
+  "scope": "Existing unit tests; no actual microphone/models/ROS transport",
+  "excluded_files": [],
+  "source": "/home/elephant/MarsDog/marsdog-platform/modules/voice",
+  "command": [
+    "/home/elephant/MarsDog/marsdog-platform/modules/voice/.venv/bin/python",
+    "-B",
+    "-m",
+    "pytest",
+    "tests",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=/home/elephant/MarsDog/marsdog-platform/out/cpu-input-text/checks/voice-tests/junit.xml"
+  ],
+  "counts": {
+    "tests": 424,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}

@@ -1,0 +1,18 @@
+from pathlib import Path
+import json,time,hashlib
+from marsdog_voice_interaction.adapters.llm import qwen_cpu_engine,cpu_intent_prompt
+from marsdog_voice_interaction.intent_replay import replay
+root=Path('/home/elephant/MarsDog/marsdog-platform')
+def experimental_messages(utterance, system_prompt=cpu_intent_prompt.SYSTEM_PROMPT):
+    examples='\n'.join('输入：'+json.dumps(text,ensure_ascii=False)+'\n输出：'+tag for text,tag in cpu_intent_prompt.EXAMPLES)
+    return [{'role':'system','content':system_prompt+'\n\n以下为独立的分类示例，不是正在进行的对话：\n'+examples},
+            {'role':'user','content':utterance}]
+qwen_cpu_engine.build_messages=experimental_messages
+request={'provider':json.loads((root/'out/models/qwen2.5-0.5b-instruct/intent-provider.json').read_text()),
+         'cases':json.loads((root/'modules/voice/tests/data/cpu_intent_additional_v1.json').read_text())['cases']}
+result=replay(request)
+result.update(prompt_version='experiment-system-examples-v2',experimental=True,default_prompt_changed=False,
+              experiment_script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+              experimental_system_sha256=hashlib.sha256(experimental_messages('')[0]['content'].encode()).hexdigest())
+(root/'out/cpu-input-text/prompt-layout-experiment.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+print('EXPERIMENT RESULT',result['passed'],'/',len(result['cases']),flush=True)

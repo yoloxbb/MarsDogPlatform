@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "model_directory": "/home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct",
+  "model_lock": "/home/elephant/MarsDog/marsdog-platform/config/models/qwen2.5-0.5b-intent.lock.json",
+  "cases": "/home/elephant/MarsDog/marsdog-platform/modules/voice/tests/data/cpu_intent_additional_v1.json",
+  "provider": {
+    "enabled": true,
+    "type": "qwen_cpu",
+    "config": {
+      "model": "/home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct",
+      "num_threads": 2,
+      "max_context_len": 4096,
+      "max_new_tokens": 32,
+      "max_input_chars": 256
+    }
+  }
+}

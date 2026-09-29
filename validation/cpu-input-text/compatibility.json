@@ -1,0 +1,30 @@
+{
+  "status": "PASS",
+  "baseline_commit": "05cc3be",
+  "protected_sha256": {
+    "modules/voice/CMakeLists.txt": "4aaf77eb2446c711691d5c4df179392b65cd05ea04e9fe276948650c7f016080",
+    "modules/voice/config/command_catalog.yaml": "52b98c604d1d98617ce4369f96d9f4a0fe7ef5ad5815fd26b279d65675343326",
+    "modules/voice/config/kws_keywords.txt": "25a2c14abc1be818e11c40482070ead7086a9a6bcf47136e9a9dd1044fac28da",
+    "modules/voice/config/kws_keywords_raw.txt": "382173ffb2d22893d1658647f24f249fc882e2103f120a579ad1bb546b8ef264",
+    "modules/voice/config/object_targets.yaml": "abdc24c56a7a36b6a53576de92a3bf65df9468ffac07c84c96a6276690c4197b",
+    "modules/voice/config/voice.mock.yaml": "f19f78a89400ccd28ff8bacff5ea44eb39feeba722ebc68ed77b446d02c5b36f",
+    "modules/voice/config/voice.pipeline.mock.yaml": "12b8c474f4c5ca64d0b8b7319bcb14401d161b8d4167fdb42e2940957e5d2451",
+    "modules/voice/config/voice.yaml": "2874bf13cec1a667e092eb1fc2d23206b8d48686b43dd5bf817253b9d8ec789a",
+    "modules/voice/launch/voice.launch.py": "fba5630e093817223ab8379d29dca04e3cd5c0781a166e5cb26f8aeccc2266ff",
+    "modules/voice/marsdog_voice_interaction/adapters/llm/__init__.py": "552a278b28ea88f8f121a7b71e515a253154e03d3591ecbfcb84deaec493b802",
+    "modules/voice/marsdog_voice_interaction/adapters/llm/cpu_intent_prompt.py": "c08f322553850ba7ddfe1759aae5a67b8e782cdd68fcdd4c4415b9034dd88902",
+    "modules/voice/marsdog_voice_interaction/adapters/llm/qwen_cpu_engine.py": "8f3ac86dff9ddf7ac0eaf3d1ba4381884d4dc5c13761dce280602d746464c8fc",
+    "modules/voice/marsdog_voice_interaction/adapters/llm/rkllm_engine.py": "974c3c5e9bc64d9bad0a87b4968663a9b28b563bbb3673914067edf29b36c099",
+    "modules/voice/marsdog_voice_interaction/adapters/llm/rkllm_engine_chatml.py": "8ff4ff959ceafae62581edd767423f75b71f8db25ccf6847f73abba60ee2ac9e",
+    "modules/voice/marsdog_voice_interaction/providers/intent_rkllm.py": "94f08563badfc39789f6eea203f578d114ba82b0c7d8893697b84a439680eab3",
+    "modules/voice/package.xml": "0b22b3474e9ba920df884568d42559c3c5972428882fd103ffbc2bbe013643cc",
+    "modules/voice/pyproject.toml": "97cb1200fbaf7629ea8a575d64e89b6940422143115c6020484955163d9a10b3",
+    "modules/voice/srv/VoiceTask.srv": "0462429dcab62ab1d63a246d0de077b133660310f29402b03048b9e275bedac4",
+    "modules/voice/uv.lock": "9db9072ce6a0fd4d0bbec97fa25cce134902ded12ac3549f9a4f61894019c6de",
+    "modules/emotion/uv.lock": "cf7f058cbd403426550cea3ea9c60286378fce3a428f457e4ebfc10f4aa46134",
+    "modules/behavior/uv.lock": "45d295bbdeee601fb0201a417addfb4baa7a80ed6b82428625be69d830ffcf09",
+    "modules/action/uv.lock": "5e53693ff283ec81160b91943cc9b7180ff4ef91accca2186ce224941e958d01",
+    "modules/vision/uv.lock": "74ce8d455705bab42e56221d6630fdcaa9e1250b93ccd4d54b1b78522617b944"
+  },
+  "scope": "Original RKLLM, both CPU engine and v2 prompt, Voice config/build/interfaces and all five dependency locks unchanged"
+}

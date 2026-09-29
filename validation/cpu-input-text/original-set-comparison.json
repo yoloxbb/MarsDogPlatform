@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "original_set_predictions_unchanged": true,
+  "total": 40,
+  "matched": 21,
+  "baseline": "validation/cpu-intent/replay/final/voice.json",
+  "current": "out/cpu-input-text/original-40/20260929T123433293173Z/result.json",
+  "unexpected_execution_cases": 0
+}

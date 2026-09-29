@@ -1,0 +1,880 @@
+{
+  "status": "FAIL",
+  "device": "cpu",
+  "real_model_inference": true,
+  "cases": [
+    {
+      "id": "no-lie",
+      "text": "不要趴下。",
+      "expected_tag": "NONE|LIE|STOP",
+      "raw_output": "NONE|BARK|STOP",
+      "provider_error": "",
+      "input_rejected": false,
+      "classification": {
+        "asr_text": "不要趴下。",
+        "social": "NONE",
+        "intent": "BARK",
+        "control": "STOP",
+        "emotion": "NONE",
+        "action": "BARK",
+        "language": "zh",
+        "command_id": "INTENT_BARK_STOP",
+        "intent_category": "command",
+        "intent_source": "qwen_cpu",
+        "intent_confidence": 0.0,
+        "nlu_protocol": "rkllm_social_intent_control_v1",
+        "raw_nlu_tag": "NONE|BARK|STOP",
+        "specific_event_type": "",
+        "dispatch_role": "classification",
+        "slots": [],
+        "is_executable": false,
+        "should_trigger_behavior_tree": false
+      },
+      "events": [
+        {
+          "asr_text": "不要趴下。",
+          "social": "NONE",
+          "intent": "BARK",
+          "control": "STOP",
+          "emotion": "NONE",
+          "action": "BARK",
+          "language": "zh",
+          "command_id": "INTENT_BARK_STOP",
+          "intent_category": "command",
+          "intent_source": "qwen_cpu",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "NONE|BARK|STOP",
+          "specific_event_type": "",
+          "dispatch_role": "semantic_classification",
+          "slots": [
+            {
+              "key": "model_action_gate",
+              "value": "rejected"
+            },
+            {
+              "key": "model_action_gate_reason",
+              "value": "missing_intent_text_evidence"
+            },
+            {
+              "key": "derived_axis",
+              "value": "intent"
+            }
+          ],
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "event_type": "EVT_VOICE_COMMAND_KNOWN"
+        }
+      ],
+      "status": "FAIL",
+      "errors": [
+        "classification_mismatch"
+      ],
+      "elapsed_ms": 7461.531
+    },
+    {
+      "id": "no-stand",
+      "text": "请不要站起来。",
+      "expected_tag": "NONE|STAND|STOP",
+      "raw_output": "NONE|STAND|STOP",
+      "provider_error": "",
+      "input_rejected": false,
+      "classification": {
+        "asr_text": "请不要站起来。",
+        "social": "NONE",
+        "intent": "STAND",
+        "control": "STOP",
+        "emotion": "NONE",
+        "action": "STAND",
+        "language": "zh",
+        "command_id": "INTENT_STAND_STOP",
+        "intent_category": "command",
+        "intent_source": "qwen_cpu",
+        "intent_confidence": 0.0,
+        "nlu_protocol": "rkllm_social_intent_control_v1",
+        "raw_nlu_tag": "NONE|STAND|STOP",
+        "specific_event_type": "",
+        "dispatch_role": "classification",
+        "slots": [],
+        "is_executable": false,
+        "should_trigger_behavior_tree": false
+      },
+      "events": [
+        {
+          "asr_text": "请不要站起来。",
+          "social": "NONE",
+          "intent": "STAND",
+          "control": "STOP",
+          "emotion": "NONE",
+          "action": "STAND",
+          "language": "zh",
+          "command_id": "INTENT_STAND_STOP",
+          "intent_category": "command",
+          "intent_source": "qwen_cpu",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "NONE|STAND|STOP",
+          "specific_event_type": "",
+          "dispatch_role": "semantic_classification",
+          "slots": [
+            {
+              "key": "derived_axis",
+              "value": "intent"
+            }
+          ],
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "event_type": "EVT_VOICE_COMMAND_KNOWN"
+        }
+      ],
+      "status": "PASS",
+      "errors": [],
+      "elapsed_ms": 7383.322
+    },
+    {
+      "id": "no-follow",
+      "text": "请不要继续跟随我。",
+      "expected_tag": "NONE|FOLLOW|STOP",
+      "raw_output": "NONE|FOLLOW|STOP",
+      "provider_error": "",
+      "input_rejected": false,
+      "classification": {
+        "asr_text": "请不要继续跟随我。",
+        "social": "NONE",
+        "intent": "FOLLOW",
+        "control": "STOP",
+        "emotion": "NONE",
+        "action": "FOLLOW",
+        "language": "zh",
+        "command_id": "INTENT_FOLLOW_STOP",
+        "intent_category": "command",
+        "intent_source": "qwen_cpu",
+        "intent_confidence": 0.0,
+        "nlu_protocol": "rkllm_social_intent_control_v1",
+        "raw_nlu_tag": "NONE|FOLLOW|STOP",
+        "specific_event_type": "",
+        "dispatch_role": "classification",
+        "slots": [],
+        "is_executable": false,
+        "should_trigger_behavior_tree": false
+      },
+      "events": [
+        {
+          "asr_text": "请不要继续跟随我。",
+          "social": "NONE",
+          "intent": "FOLLOW",
+          "control": "STOP",
+          "emotion": "NONE",
+          "action": "FOLLOW",
+          "language": "zh",
+          "command_id": "INTENT_FOLLOW_STOP",
+          "intent_category": "command",
+          "intent_source": "qwen_cpu",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "NONE|FOLLOW|STOP",
+          "specific_event_type": "",
+          "dispatch_role": "semantic_classification",
+          "slots": [
+            {
+              "key": "derived_axis",
+              "value": "intent"
+            }
+          ],
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "event_type": "EVT_VOICE_COMMAND_KNOWN"
+        }
+      ],
+      "status": "PASS",
+      "errors": [],
+      "elapsed_ms": 7429.056
+    },
+    {
+      "id": "no-home",
+      "text": "暂时不许回家。",
+      "expected_tag": "NONE|GO_HOME|STOP",
+      "raw_output": "SCOLD|NONE|NONE",
+      "provider_error": "",
+      "input_rejected": false,
+      "classification": {
+        "asr_text": "暂时不许回家。",
+        "social": "SCOLD",
+        "intent": "NONE",
+        "control": "NONE",
+        "emotion": "SCOLD",
+        "action": "NONE",
+        "language": "zh",
+        "command_id": "",
+        "intent_category": "social",
+        "intent_source": "qwen_cpu",
+        "intent_confidence": 0.0,
+        "nlu_protocol": "rkllm_social_intent_control_v1",
+        "raw_nlu_tag": "SCOLD|NONE|NONE",
+        "specific_event_type": "",
+        "dispatch_role": "classification",
+        "slots": [],
+        "is_executable": false,
+        "should_trigger_behavior_tree": false
+      },
+      "events": [
+        {
+          "asr_text": "暂时不许回家。",
+          "social": "SCOLD",
+          "intent": "NONE",
+          "control": "NONE",
+          "emotion": "SCOLD",
+          "action": "NONE",
+          "language": "zh",
+          "command_id": "",
+          "intent_category": "social",
+          "intent_source": "qwen_cpu",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "SCOLD|NONE|NONE",
+          "specific_event_type": "",
+          "dispatch_role": "semantic_classification",
+          "slots": [
+            {
+              "key": "derived_axis",
+              "value": "social"
+            }
+          ],
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "event_type": "EVT_VOICE_SCOLD"
+        }
+      ],
+      "status": "FAIL",
+      "errors": [
+        "classification_mismatch"
+      ],
+      "elapsed_ms": 7420.064
+    },
+    {
+      "id": "ask-lie",
+      "text": "你会不会趴下？",
+      "expected_tag": "NONE|LIE|QUERY",
+      "raw_output": "SCOLD|SIT|STOP",
+      "provider_error": "",
+      "input_rejected": false,
+      "classification": {
+        "asr_text": "你会不会趴下？",
+        "social": "SCOLD",
+        "intent": "SIT",
+        "control": "STOP",
+        "emotion": "SCOLD",
+        "action": "SIT",
+        "language": "zh",
+        "command_id": "INTENT_SIT_STOP",
+        "intent_category": "command",
+        "intent_source": "qwen_cpu",
+        "intent_confidence": 0.0,
+        "nlu_protocol": "rkllm_social_intent_control_v1",
+        "raw_nlu_tag": "SCOLD|SIT|STOP",
+        "specific_event_type": "",
+        "dispatch_role": "classification",
+        "slots": [],
+        "is_executable": false,
+        "should_trigger_behavior_tree": false
+      },
+      "events": [
+        {
+          "asr_text": "你会不会趴下？",
+          "social": "SCOLD",
+          "intent": "SIT",
+          "control": "STOP",
+          "emotion": "SCOLD",
+          "action": "SIT",
+          "language": "zh",
+          "command_id": "INTENT_SIT_STOP",
+          "intent_category": "command",
+          "intent_source": "qwen_cpu",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "SCOLD|SIT|STOP",
+          "specific_event_type": "",
+          "dispatch_role": "semantic_classification",
+          "slots": [
+            {
+              "key": "derived_axis",
+              "value": "social"
+            }
+          ],
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "event_type": "EVT_VOICE_SCOLD"
+        },
+        {
+          "asr_text": "你会不会趴下？",
+          "social": "SCOLD",
+          "intent": "SIT",
+          "control": "STOP",
+          "emotion": "SCOLD",
+          "action": "SIT",
+          "language": "zh",
+          "command_id": "INTENT_SIT_STOP",
+          "intent_category": "command",
+          "intent_source": "qwen_cpu",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "SCOLD|SIT|STOP",
+          "specific_event_type": "",
+          "dispatch_role": "semantic_classification",
+          "slots": [
+            {
+              "key": "derived_axis",
+              "value": "intent"
+            }
+          ],
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "event_type": "EVT_VOICE_COMMAND_KNOWN"
+        }
+      ],
+      "status": "FAIL",
+      "errors": [
+        "classification_mismatch"
+      ],
+      "elapsed_ms": 7519.932
+    },
+    {
+      "id": "quote",
+      "text": "他说“坐下”，我是在重复他的话。",
+      "expected_tag": "NONE|NONE|NONE",
+      "raw_output": "SCOLD|SIT|DO",
+      "provider_error": "",
+      "input_rejected": false,
+      "classification": {
+        "asr_text": "他说“坐下”，我是在重复他的话。",
+        "social": "SCOLD",
+        "intent": "SIT",
+        "control": "DO",
+        "emotion": "SCOLD",
+        "action": "SIT",
+        "language": "zh",
+        "command_id": "INTENT_SIT_DO",
+        "intent_category": "command",
+        "intent_source": "qwen_cpu",
+        "intent_confidence": 0.0,
+        "nlu_protocol": "rkllm_social_intent_control_v1",
+        "raw_nlu_tag": "SCOLD|SIT|DO",
+        "specific_event_type": "",
+        "dispatch_role": "classification",
+        "slots": [],
+        "is_executable": false,
+        "should_trigger_behavior_tree": false
+      },
+      "events": [
+        {
+          "asr_text": "他说“坐下”，我是在重复他的话。",
+          "social": "SCOLD",
+          "intent": "SIT",
+          "control": "DO",
+          "emotion": "SCOLD",
+          "action": "SIT",
+          "language": "zh",
+          "command_id": "INTENT_SIT_DO",
+          "intent_category": "command",
+          "intent_source": "qwen_cpu",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "SCOLD|SIT|DO",
+          "specific_event_type": "",
+          "dispatch_role": "semantic_classification",
+          "slots": [
+            {
+              "key": "model_action_gate",
+              "value": "rejected"
+            },
+            {
+              "key": "model_action_gate_reason",
+              "value": "statement_subject_prefix"
+            },
+            {
+              "key": "derived_axis",
+              "value": "social"
+            }
+          ],
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "event_type": "EVT_VOICE_SCOLD"
+        },
+        {
+          "asr_text": "他说“坐下”，我是在重复他的话。",
+          "social": "SCOLD",
+          "intent": "SIT",
+          "control": "DO",
+          "emotion": "SCOLD",
+          "action": "SIT",
+          "language": "zh",
+          "command_id": "INTENT_SIT_DO",
+          "intent_category": "command",
+          "intent_source": "qwen_cpu",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "SCOLD|SIT|DO",
+          "specific_event_type": "",
+          "dispatch_role": "semantic_classification",
+          "slots": [
+            {
+              "key": "model_action_gate",
+              "value": "rejected"
+            },
+            {
+              "key": "model_action_gate_reason",
+              "value": "statement_subject_prefix"
+            },
+            {
+              "key": "derived_axis",
+              "value": "intent"
+            }
+          ],
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "event_type": "EVT_VOICE_COMMAND_KNOWN"
+        }
+      ],
+      "status": "FAIL",
+      "errors": [
+        "classification_mismatch"
+      ],
+      "elapsed_ms": 7601.134
+    },
+    {
+      "id": "self-statement",
+      "text": "我坐在沙发上看书。",
+      "expected_tag": "NONE|NONE|NONE",
+      "raw_output": "NONE|STAY|DO",
+      "provider_error": "",
+      "input_rejected": false,
+      "classification": {
+        "asr_text": "我坐在沙发上看书。",
+        "social": "NONE",
+        "intent": "STAY",
+        "control": "DO",
+        "emotion": "NONE",
+        "action": "STAY",
+        "language": "zh",
+        "command_id": "INTENT_STAY_DO",
+        "intent_category": "command",
+        "intent_source": "qwen_cpu",
+        "intent_confidence": 0.0,
+        "nlu_protocol": "rkllm_social_intent_control_v1",
+        "raw_nlu_tag": "NONE|STAY|DO",
+        "specific_event_type": "",
+        "dispatch_role": "classification",
+        "slots": [],
+        "is_executable": false,
+        "should_trigger_behavior_tree": false
+      },
+      "events": [
+        {
+          "asr_text": "我坐在沙发上看书。",
+          "social": "NONE",
+          "intent": "STAY",
+          "control": "DO",
+          "emotion": "NONE",
+          "action": "STAY",
+          "language": "zh",
+          "command_id": "INTENT_STAY_DO",
+          "intent_category": "command",
+          "intent_source": "qwen_cpu",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "NONE|STAY|DO",
+          "specific_event_type": "",
+          "dispatch_role": "semantic_classification",
+          "slots": [
+            {
+              "key": "derived_axis",
+              "value": "intent"
+            }
+          ],
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "event_type": "EVT_VOICE_COMMAND_KNOWN"
+        }
+      ],
+      "status": "FAIL",
+      "errors": [
+        "classification_mismatch"
+      ],
+      "elapsed_ms": 7447.744
+    },
+    {
+      "id": "weather",
+      "text": "外面正在下雨。",
+      "expected_tag": "NONE|NONE|NONE",
+      "raw_output": "NONE|DOG_STATUS|QUERY",
+      "provider_error": "",
+      "input_rejected": false,
+      "classification": {
+        "asr_text": "外面正在下雨。",
+        "social": "NONE",
+        "intent": "DOG_STATUS",
+        "control": "QUERY",
+        "emotion": "NONE",
+        "action": "DOG_STATUS",
+        "language": "zh",
+        "command_id": "INTENT_DOG_STATUS_QUERY",
+        "intent_category": "query",
+        "intent_source": "qwen_cpu",
+        "intent_confidence": 0.0,
+        "nlu_protocol": "rkllm_social_intent_control_v1",
+        "raw_nlu_tag": "NONE|DOG_STATUS|QUERY",
+        "specific_event_type": "",
+        "dispatch_role": "classification",
+        "slots": [],
+        "is_executable": false,
+        "should_trigger_behavior_tree": false
+      },
+      "events": [
+        {
+          "asr_text": "外面正在下雨。",
+          "social": "NONE",
+          "intent": "DOG_STATUS",
+          "control": "QUERY",
+          "emotion": "NONE",
+          "action": "DOG_STATUS",
+          "language": "zh",
+          "command_id": "INTENT_DOG_STATUS_QUERY",
+          "intent_category": "query",
+          "intent_source": "qwen_cpu",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "NONE|DOG_STATUS|QUERY",
+          "specific_event_type": "",
+          "dispatch_role": "semantic_classification",
+          "slots": [
+            {
+              "key": "derived_axis",
+              "value": "intent"
+            }
+          ],
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "event_type": "EVT_VOICE_STATUS_CARE"
+        }
+      ],
+      "status": "FAIL",
+      "errors": [
+        "classification_mismatch"
+      ],
+      "elapsed_ms": 7472.384
+    },
+    {
+      "id": "praise",
+      "text": "这次你做得非常棒。",
+      "expected_tag": "PRAISE|NONE|NONE",
+      "raw_output": "NONE|NONE|NONE",
+      "provider_error": "",
+      "input_rejected": false,
+      "classification": {
+        "asr_text": "这次你做得非常棒。",
+        "social": "NONE",
+        "intent": "NONE",
+        "control": "NONE",
+        "emotion": "NONE",
+        "action": "NONE",
+        "language": "zh",
+        "command_id": "",
+        "intent_category": "none",
+        "intent_source": "qwen_cpu",
+        "intent_confidence": 0.0,
+        "nlu_protocol": "rkllm_social_intent_control_v1",
+        "raw_nlu_tag": "NONE|NONE|NONE",
+        "specific_event_type": "",
+        "dispatch_role": "classification",
+        "slots": [],
+        "is_executable": false,
+        "should_trigger_behavior_tree": false
+      },
+      "events": [
+        {
+          "asr_text": "这次你做得非常棒。",
+          "social": "NONE",
+          "intent": "NONE",
+          "control": "NONE",
+          "emotion": "NONE",
+          "action": "NONE",
+          "language": "zh",
+          "command_id": "",
+          "intent_category": "neutral",
+          "intent_source": "qwen_cpu",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "NONE|NONE|NONE",
+          "specific_event_type": "",
+          "dispatch_role": "semantic_classification",
+          "slots": [
+            {
+              "key": "derived_axis",
+              "value": "neutral"
+            }
+          ],
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "event_type": "EVT_VOICE_NEUTRAL"
+        }
+      ],
+      "status": "FAIL",
+      "errors": [
+        "classification_mismatch"
+      ],
+      "elapsed_ms": 7444.48
+    },
+    {
+      "id": "back",
+      "text": "请往后退一点。",
+      "expected_tag": "NONE|BACK|DO",
+      "raw_output": "NONE|BACK|DO",
+      "provider_error": "",
+      "input_rejected": false,
+      "classification": {
+        "asr_text": "请往后退一点。",
+        "social": "NONE",
+        "intent": "BACK",
+        "control": "DO",
+        "emotion": "NONE",
+        "action": "BACK",
+        "language": "zh",
+        "command_id": "INTENT_BACK_DO",
+        "intent_category": "command",
+        "intent_source": "qwen_cpu",
+        "intent_confidence": 0.0,
+        "nlu_protocol": "rkllm_social_intent_control_v1",
+        "raw_nlu_tag": "NONE|BACK|DO",
+        "specific_event_type": "",
+        "dispatch_role": "classification",
+        "slots": [],
+        "is_executable": false,
+        "should_trigger_behavior_tree": false
+      },
+      "events": [
+        {
+          "asr_text": "请往后退一点。",
+          "social": "NONE",
+          "intent": "BACK",
+          "control": "DO",
+          "emotion": "NONE",
+          "action": "BACK_UP",
+          "language": "zh",
+          "command_id": "CMD_BACK_UP",
+          "intent_category": "command",
+          "intent_source": "qwen_cpu",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "NONE|BACK|DO",
+          "specific_event_type": "EVT_VOICE_COMMAND_BACK_UP",
+          "dispatch_role": "specific_command",
+          "slots": [
+            {
+              "key": "model_action_gate",
+              "value": "accepted"
+            },
+            {
+              "key": "model_action_gate_reason",
+              "value": "intent_text_evidence"
+            },
+            {
+              "key": "derived_axis",
+              "value": "specific_command"
+            },
+            {
+              "key": "command_key",
+              "value": "BACK_UP"
+            },
+            {
+              "key": "model_dispatch_policy",
+              "value": "allowlist_and_text_evidence"
+            }
+          ],
+          "is_executable": true,
+          "should_trigger_behavior_tree": true,
+          "event_type": "EVT_VOICE_COMMAND_BACK_UP"
+        },
+        {
+          "asr_text": "请往后退一点。",
+          "social": "NONE",
+          "intent": "BACK",
+          "control": "DO",
+          "emotion": "NONE",
+          "action": "BACK_UP",
+          "language": "zh",
+          "command_id": "CMD_BACK_UP",
+          "intent_category": "command",
+          "intent_source": "qwen_cpu",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "NONE|BACK|DO",
+          "specific_event_type": "EVT_VOICE_COMMAND_BACK_UP",
+          "dispatch_role": "semantic_classification",
+          "slots": [
+            {
+              "key": "model_action_gate",
+              "value": "accepted"
+            },
+            {
+              "key": "model_action_gate_reason",
+              "value": "intent_text_evidence"
+            },
+            {
+              "key": "derived_axis",
+              "value": "intent"
+            },
+            {
+              "key": "command_key",
+              "value": "BACK_UP"
+            },
+            {
+              "key": "specific_dispatch",
+              "value": "published"
+            }
+          ],
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "event_type": "EVT_VOICE_COMMAND_KNOWN"
+        }
+      ],
+      "status": "PASS",
+      "errors": [],
+      "elapsed_ms": 7469.725
+    },
+    {
+      "id": "english-no-sit",
+      "text": "Please do not sit down.",
+      "expected_tag": "NONE|SIT|STOP",
+      "raw_output": "NONE|NONE|NONE",
+      "provider_error": "",
+      "input_rejected": false,
+      "classification": {
+        "asr_text": "Please do not sit down.",
+        "social": "NONE",
+        "intent": "NONE",
+        "control": "NONE",
+        "emotion": "NONE",
+        "action": "NONE",
+        "language": "zh",
+        "command_id": "",
+        "intent_category": "none",
+        "intent_source": "qwen_cpu",
+        "intent_confidence": 0.0,
+        "nlu_protocol": "rkllm_social_intent_control_v1",
+        "raw_nlu_tag": "NONE|NONE|NONE",
+        "specific_event_type": "",
+        "dispatch_role": "classification",
+        "slots": [],
+        "is_executable": false,
+        "should_trigger_behavior_tree": false
+      },
+      "events": [
+        {
+          "asr_text": "Please do not sit down.",
+          "social": "NONE",
+          "intent": "NONE",
+          "control": "NONE",
+          "emotion": "NONE",
+          "action": "NONE",
+          "language": "zh",
+          "command_id": "",
+          "intent_category": "neutral",
+          "intent_source": "qwen_cpu",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "NONE|NONE|NONE",
+          "specific_event_type": "",
+          "dispatch_role": "semantic_classification",
+          "slots": [
+            {
+              "key": "derived_axis",
+              "value": "neutral"
+            }
+          ],
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "event_type": "EVT_VOICE_NEUTRAL"
+        }
+      ],
+      "status": "FAIL",
+      "errors": [
+        "classification_mismatch"
+      ],
+      "elapsed_ms": 7478.417
+    },
+    {
+      "id": "english-capability",
+      "text": "What actions can you perform?",
+      "expected_tag": "NONE|DOG_CAPABILITY|QUERY",
+      "raw_output": "NONE|NONE|NONE",
+      "provider_error": "",
+      "input_rejected": false,
+      "classification": {
+        "asr_text": "What actions can you perform?",
+        "social": "NONE",
+        "intent": "NONE",
+        "control": "NONE",
+        "emotion": "NONE",
+        "action": "NONE",
+        "language": "zh",
+        "command_id": "",
+        "intent_category": "none",
+        "intent_source": "qwen_cpu",
+        "intent_confidence": 0.0,
+        "nlu_protocol": "rkllm_social_intent_control_v1",
+        "raw_nlu_tag": "NONE|NONE|NONE",
+        "specific_event_type": "",
+        "dispatch_role": "classification",
+        "slots": [],
+        "is_executable": false,
+        "should_trigger_behavior_tree": false
+      },
+      "events": [
+        {
+          "asr_text": "What actions can you perform?",
+          "social": "NONE",
+          "intent": "NONE",
+          "control": "NONE",
+          "emotion": "NONE",
+          "action": "NONE",
+          "language": "zh",
+          "command_id": "",
+          "intent_category": "neutral",
+          "intent_source": "qwen_cpu",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "NONE|NONE|NONE",
+          "specific_event_type": "",
+          "dispatch_role": "semantic_classification",
+          "slots": [
+            {
+              "key": "derived_axis",
+              "value": "neutral"
+            }
+          ],
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "event_type": "EVT_VOICE_NEUTRAL"
+        }
+      ],
+      "status": "FAIL",
+      "errors": [
+        "classification_mismatch"
+      ],
+      "elapsed_ms": 7439.45
+    }
+  ],
+  "passed": 3,
+  "input_rejections": 0,
+  "unexpected_execution_cases": 0,
+  "prompt_version": "qwen-cpu-intent-v2",
+  "prompt_module_sha256": "c08f322553850ba7ddfe1759aae5a67b8e782cdd68fcdd4c4415b9034dd88902",
+  "versions": {
+    "torch": "2.13.0+cpu",
+    "transformers": "4.57.6",
+    "tokenizers": "0.22.2",
+    "safetensors": "0.8.0"
+  },
+  "torch_cuda_build": null,
+  "scope": "Direct prompted CPU classification + existing event payload gates; no catalog/rule fallback, ROS, audio or hardware"
+}

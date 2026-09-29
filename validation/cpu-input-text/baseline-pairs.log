@@ -1,0 +1,8 @@
+raw '现在不要坐下。' NONE|SIT|STOP
+node_cleaned '现在不要坐下' NONE|NONE|NONE
+raw '请在原地坐下。' NONE|SIT|DO
+node_cleaned '请在原地坐下' NONE|SIT|DO
+raw 'Do not follow me.' NONE|FOLLOW|STOP
+node_cleaned 'Donotfollowme' NONE|FOLLOW|STOP
+raw '你会坐下吗？' NONE|SIT|STOP
+node_cleaned '你会坐下吗' NONE|SIT|STOP

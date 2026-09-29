@@ -1,0 +1,12 @@
+{"id": "no-lie", "status": "FAIL", "tag": "NONE|BARK|STOP"}
+{"id": "no-stand", "status": "PASS", "tag": "NONE|STAND|STOP"}
+{"id": "no-follow", "status": "PASS", "tag": "NONE|FOLLOW|STOP"}
+{"id": "no-home", "status": "FAIL", "tag": "SCOLD|NONE|NONE"}
+{"id": "ask-lie", "status": "FAIL", "tag": "SCOLD|SIT|STOP"}
+{"id": "quote", "status": "FAIL", "tag": "SCOLD|SIT|DO"}
+{"id": "self-statement", "status": "FAIL", "tag": "NONE|STAY|DO"}
+{"id": "weather", "status": "FAIL", "tag": "NONE|DOG_STATUS|QUERY"}
+{"id": "praise", "status": "FAIL", "tag": "NONE|NONE|NONE"}
+{"id": "back", "status": "PASS", "tag": "NONE|BACK|DO"}
+{"id": "english-no-sit", "status": "FAIL", "tag": "NONE|NONE|NONE"}
+{"id": "english-capability", "status": "FAIL", "tag": "NONE|NONE|NONE"}

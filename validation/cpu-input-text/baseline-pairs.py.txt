@@ -1,0 +1,21 @@
+from pathlib import Path
+import json,hashlib,time,sys
+from marsdog_voice_interaction.providers.intent_qwen_cpu import IntentQwenCPUProvider
+from marsdog_voice_interaction.nodes.voice_interaction_node import VoiceInteractionNode
+from marsdog_voice_interaction.adapters.llm import cpu_intent_prompt,qwen_cpu_engine
+root=Path('/home/elephant/MarsDog/marsdog-platform')
+texts=['现在不要坐下。','请在原地坐下。','Do not follow me.','你会坐下吗？']
+r={'scope':'Paired direct CPU inference, before patch; no ROS node or dispatch', 'prompt_sha256':hashlib.sha256(Path(cpu_intent_prompt.__file__).read_bytes()).hexdigest(),
+'engine_sha256':hashlib.sha256(Path(qwen_cpu_engine.__file__).read_bytes()).hexdigest(),'cases':[]}
+provider=IntentQwenCPUProvider({'model':str(root/'out/models/qwen2.5-0.5b-instruct'),'num_threads':2})
+try:
+ provider.start()
+ assert provider.is_available(),provider.last_error
+ for raw in texts:
+  for kind,text in [('raw',raw),('node_cleaned',VoiceInteractionNode._clean_text(raw))]:
+   started=time.monotonic();result=provider.parse_intent(text)
+   entry={'kind':kind,'raw_text':raw,'model_input':text,'result':result,'error':provider.last_error,'elapsed_ms':(time.monotonic()-started)*1000}
+   r['cases'].append(entry)
+   print(kind,repr(text),result.get('raw_nlu_tag') if result else None,flush=True)
+   (root/'out/cpu-input-text/baseline-pairs.json').write_text(json.dumps(r,ensure_ascii=False,indent=2)+'\n')
+finally:provider.stop()
