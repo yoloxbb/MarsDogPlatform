@@ -1,0 +1,36 @@
+{
+  "status": "PASS_WITH_EXPLICIT_LIMITS",
+  "counts": {
+    "tests": 292,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 3
+  },
+  "skips": [
+    {
+      "case": "test_rga_image_parity_when_helper_is_explicitly_requested[shape0-False]",
+      "reason": "set MARSDOG_HAND_RGA_TEST_LIBRARY for an RGA parity smoke"
+    },
+    {
+      "case": "test_rga_image_parity_when_helper_is_explicitly_requested[shape1-True]",
+      "reason": "set MARSDOG_HAND_RGA_TEST_LIBRARY for an RGA parity smoke"
+    },
+    {
+      "case": "test_rga_image_parity_when_helper_is_explicitly_requested[shape2-True]",
+      "reason": "set MARSDOG_HAND_RGA_TEST_LIBRARY for an RGA parity smoke"
+    }
+  ],
+  "source": "/home/elephant/MarsDog/marsdog-platform/modules/vision",
+  "command": [
+    "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/bin/python",
+    "-B",
+    "-m",
+    "pytest",
+    "tests",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=/home/elephant/MarsDog/marsdog-platform/out/perception-replay-development/vision/junit.xml"
+  ],
+  "scope": "Original unit suite on CPU; no camera/model/NPU hardware validation"
+}

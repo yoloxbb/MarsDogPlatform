@@ -1,0 +1,76 @@
+{
+  "status": "BLOCKED_MISSING_ASSETS",
+  "inference_executed": false,
+  "run_directory": "/home/elephant/MarsDog/marsdog-platform/out/perception-replay-assets/20260929T065728372705Z-400086",
+  "scope": "Offline model replay only; no ROS publication, microphone, camera or robot",
+  "manifest": "/home/elephant/MarsDog/marsdog-platform/config/replay/cpu.example.json",
+  "manifest_sha256": "b34d8b839bf71962d235705b59c6e4ed872e1ff88c655825391a455b46ece9ab",
+  "errors": [
+    {
+      "code": "MISSING_ASSET",
+      "asset": "vision.model",
+      "path": "/home/elephant/MarsDog/marsdog-platform/config/replay/assets/vision/model.onnx"
+    },
+    {
+      "code": "MISSING_ASSET",
+      "asset": "vision.ball",
+      "path": "/home/elephant/MarsDog/marsdog-platform/config/replay/assets/vision/ball.jpg"
+    },
+    {
+      "code": "MISSING_ASSET",
+      "asset": "voice.model",
+      "path": "/home/elephant/MarsDog/marsdog-platform/config/replay/assets/voice/model.int8.onnx"
+    },
+    {
+      "code": "MISSING_ASSET",
+      "asset": "voice.tokens",
+      "path": "/home/elephant/MarsDog/marsdog-platform/config/replay/assets/voice/tokens.txt"
+    },
+    {
+      "code": "MISSING_ASSET",
+      "asset": "voice.go-home",
+      "path": "/home/elephant/MarsDog/marsdog-platform/config/replay/assets/voice/go-home.wav"
+    }
+  ],
+  "assets": [
+    {
+      "name": "vision.model",
+      "path": "/home/elephant/MarsDog/marsdog-platform/config/replay/assets/vision/model.onnx",
+      "expected_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "status": "MISSING"
+    },
+    {
+      "name": "vision.ball",
+      "path": "/home/elephant/MarsDog/marsdog-platform/config/replay/assets/vision/ball.jpg",
+      "expected_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "status": "MISSING"
+    },
+    {
+      "name": "voice.model",
+      "path": "/home/elephant/MarsDog/marsdog-platform/config/replay/assets/voice/model.int8.onnx",
+      "expected_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "status": "MISSING"
+    },
+    {
+      "name": "voice.tokens",
+      "path": "/home/elephant/MarsDog/marsdog-platform/config/replay/assets/voice/tokens.txt",
+      "expected_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "status": "MISSING"
+    },
+    {
+      "name": "voice.command_catalog",
+      "path": "/home/elephant/MarsDog/marsdog-platform/modules/voice/config/command_catalog.yaml",
+      "expected_sha256": "52b98c604d1d98617ce4369f96d9f4a0fe7ef5ad5815fd26b279d65675343326",
+      "sha256": "52b98c604d1d98617ce4369f96d9f4a0fe7ef5ad5815fd26b279d65675343326",
+      "bytes": 35366,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "voice.go-home",
+      "path": "/home/elephant/MarsDog/marsdog-platform/config/replay/assets/voice/go-home.wav",
+      "expected_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "status": "MISSING"
+    }
+  ],
+  "model_acceptance": false
+}

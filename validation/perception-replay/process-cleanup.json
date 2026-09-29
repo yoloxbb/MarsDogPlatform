@@ -1,0 +1,140 @@
+{
+  "status": "PASS",
+  "processes": [
+    {
+      "name": "inputs",
+      "pid": 395383,
+      "reaped": true
+    },
+    {
+      "name": "time",
+      "pid": 395397,
+      "reaped": true
+    },
+    {
+      "name": "personality",
+      "pid": 395425,
+      "reaped": true
+    },
+    {
+      "name": "needs",
+      "pid": 395455,
+      "reaped": true
+    },
+    {
+      "name": "emotion",
+      "pid": 395479,
+      "reaped": true
+    },
+    {
+      "name": "waypoint",
+      "pid": 395502,
+      "reaped": true
+    },
+    {
+      "name": "action",
+      "pid": 395525,
+      "reaped": true
+    },
+    {
+      "name": "vision",
+      "pid": 395540,
+      "reaped": true
+    },
+    {
+      "name": "behavior",
+      "pid": 395556,
+      "reaped": true
+    },
+    {
+      "name": "voice",
+      "pid": 395586,
+      "reaped": true
+    },
+    {
+      "name": "probe",
+      "pid": 395625,
+      "reaped": true
+    },
+    {
+      "name": "nav_inputs",
+      "pid": 395871,
+      "reaped": true
+    },
+    {
+      "name": "controller_server",
+      "pid": 395885,
+      "reaped": true
+    },
+    {
+      "name": "planner_server",
+      "pid": 395904,
+      "reaped": true
+    },
+    {
+      "name": "behavior_server",
+      "pid": 395914,
+      "reaped": true
+    },
+    {
+      "name": "bt_navigator",
+      "pid": 395933,
+      "reaped": true
+    },
+    {
+      "name": "lifecycle_manager",
+      "pid": 395946,
+      "reaped": true
+    },
+    {
+      "name": "time",
+      "pid": 395968,
+      "reaped": true
+    },
+    {
+      "name": "personality",
+      "pid": 395983,
+      "reaped": true
+    },
+    {
+      "name": "needs",
+      "pid": 396006,
+      "reaped": true
+    },
+    {
+      "name": "emotion",
+      "pid": 396029,
+      "reaped": true
+    },
+    {
+      "name": "waypoint",
+      "pid": 396052,
+      "reaped": true
+    },
+    {
+      "name": "action",
+      "pid": 396068,
+      "reaped": true
+    },
+    {
+      "name": "vision",
+      "pid": 396099,
+      "reaped": true
+    },
+    {
+      "name": "behavior",
+      "pid": 396128,
+      "reaped": true
+    },
+    {
+      "name": "voice",
+      "pid": 396151,
+      "reaped": true
+    },
+    {
+      "name": "probe",
+      "pid": 396175,
+      "reaped": true
+    }
+  ]
+}

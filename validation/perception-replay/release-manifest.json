@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "status": "SOFTWARE_READY_AWAITING_MODEL_ASSETS",
+  "model_acceptance": false,
+  "source_commit": "080b5bfe538e8f36cbe3606368857259a6112198",
+  "prior_source_commit": "5d435bdb5f49340b300e5ba30e9e9dfa64e7d638",
+  "build_source_sha256": "5b174a2d234918011539a16e183fd1f7ca95413046b9af90d292077a2e1368fb",
+  "reports_sha256": {
+    "validation/perception-replay/README.md": "21c084cefa9ba8575e3cd6e21b5bab2c512c2c4477e53d87284569b942208311",
+    "validation/perception-replay/architecture.json": "d04cad4dc8e3c1796fe0cd91dfc0130df84ec282a17afbd220b00400843a88bb",
+    "validation/perception-replay/asset-audit.json": "90c028a3d6f4e78cb6c2f909910b75970f20d6441d542355dd08614191b68048",
+    "validation/perception-replay/baseline-runtime.json": "dcf0bfe29c40d2273db4c8b196f3667a96d76664eefaa9e471fff898da64555c",
+    "validation/perception-replay/build-receipt.json": "3c5bcf6ec9d79ca5e091f02a05f5520000a16a08464237ab4547d9560f8df0c7",
+    "validation/perception-replay/contracts.xml": "ee28f121c32015de2e354d372bc13bb6bd38c8e2b756362fec0aa2b2541ca670",
+    "validation/perception-replay/doctor.json": "43c5e0953b2a34dcd29dc579742259e286175a2b74905f4fe31d88e7e223ba94",
+    "validation/perception-replay/missing-assets.json": "cd6b40f3b04de241b66cc0284fc1df1ca88dbacb3b76cf8912241efcf73db56d",
+    "validation/perception-replay/nav2-runtime.json": "53ce1b814242588ff1b7fdf6c18caa7891f8dfa49cde2d8230d1f120db84af34",
+    "validation/perception-replay/original-sources.json": "09be4af24ec2b3be0d0adfb7a8abaac1a278bc4a8f7a210075a2d1146d67fac4",
+    "validation/perception-replay/platform-tests.txt": "682851af1e8efe87f494590808720e5c5652fba96fcfcd0f98b1d39b5757dc6c",
+    "validation/perception-replay/preserved-baselines.json": "99893c6f7bb6ba181eef477fdfe3f19e145b1606eba85313b92f381d905a09b0",
+    "validation/perception-replay/process-cleanup.json": "9daaba914d334cc948d85a2e1efe54f424cbcb4869f6668b236e8eee51e17bfc",
+    "validation/perception-replay/vision-install.json": "edb9c4b3ba9e9aa416adac92dd5b1705d57d5db94ce0c6336bc8e7f1c48a5302",
+    "validation/perception-replay/vision-tests.json": "d23acfc65edf44ccc324575b13aa54b9c6889d33ecb916a1355047eeb428a880",
+    "validation/perception-replay/vision.xml": "5b3dbf98f0d202c4fb9f0be5bd60f249967d109cf2652f3c890778fa412e87ab",
+    "validation/perception-replay/voice-install.json": "b7f3415cd5dd6485fb5935b3de34d89c61edce215f94af9a927fff6246f4c46a",
+    "validation/perception-replay/voice-tests.json": "2bfadcb33d38e31abf8d1ac6d68fdab0f06148c18799acf41d0fcd2dbfe56dbe",
+    "validation/perception-replay/voice.xml": "744dcdc9b5e4fed79193bc6dcc3aff79331d6c8f1fba5ef549cc4a898f7b25e8"
+  },
+  "accepted": [
+    "CPU replay entrypoints packaged independently without changing dependency locks",
+    "Manifest paths/SHA256/annotations, failure rejection and subprocess ownership",
+    "Existing providers accept explicit CPU arguments while defaults stay compatible",
+    "Module regression, wheel and ROS build, both development profile smoke, existing contracts",
+    "Original repositories, old frozen reports and host package inventory unchanged"
+  ],
+  "not_accepted": [
+    "Real model inference/accuracy/performance: model and annotated sample assets absent",
+    "Vision face/pose/hand/depth fusion and live camera timing",
+    "Voice VAD/wakeup/KWS/speaker/RKLLM/session/fuzzy routing or ROS publication",
+    "Hardware, motion/embedded/BMS/docking/charging, remote CI and deployment"
+  ],
+  "source_exceptions": {
+    "modules/vision/marsdog_vision_interaction/providers/object_detector.py": "Optional device passthrough only",
+    "modules/voice/marsdog_voice_interaction/providers/asr_sherpa.py": "Optional provider passthrough only"
+  },
+  "remote": null
+}

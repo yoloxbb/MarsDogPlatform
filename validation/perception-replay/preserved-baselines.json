@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "old_report_hashes": "unchanged",
+  "python_dependencies": "locks/projects/manifests unchanged",
+  "host_package_sha256": "b58a54ea719e66f3b8432a2d834b61d50bb98c6828d6e1118406f7cb49920343"
+}

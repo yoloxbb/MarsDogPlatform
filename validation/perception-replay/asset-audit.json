@@ -1,0 +1,61 @@
+{
+  "status": "BLOCKED_MISSING_ASSETS",
+  "root": "/home/elephant/MarsDog",
+  "excluded_directory_names": [
+    ".cache",
+    ".external",
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "devel",
+    "install",
+    "log",
+    "logs",
+    "migration",
+    "node_modules",
+    "out",
+    "venv"
+  ],
+  "files_examined": 4006,
+  "model_candidate_suffixes": [
+    ".onnx",
+    ".pt",
+    ".pth",
+    ".rkllm",
+    ".rknn",
+    ".safetensors",
+    ".task",
+    ".tflite",
+    ".weights"
+  ],
+  "model_candidates": [],
+  "media_files": 342,
+  "media_by_top_level": {
+    "marsdog-platform": 22,
+    "slam": 298,
+    "20260707_MarsDogAction": 22
+  },
+  "scope": "Repository and user asset directories only; no home-wide search, no generated/cache/vendor duplicates",
+  "required_for_first_slice": [
+    {
+      "capability": "Vision object detection",
+      "implementation": "modules/vision/marsdog_vision_interaction/providers/object_detector.py:ObjectDetectorProvider",
+      "assets": [
+        "Local YOLOE CPU .pt or self-contained .onnx preserving actual labels",
+        "Annotated JPG/PNG image(s)",
+        "SHA256 for every supplied file"
+      ]
+    },
+    {
+      "capability": "Voice segmented audio ASR",
+      "implementation": "modules/voice/marsdog_voice_interaction/providers/asr_sherpa.py:ASRSherpaProvider",
+      "assets": [
+        "SenseVoice or Paraformer .onnx",
+        "Matching tokens.txt",
+        "PCM16 mono 16kHz WAV segment(s) and expected text",
+        "SHA256 for every supplied file"
+      ]
+    }
+  ]
+}

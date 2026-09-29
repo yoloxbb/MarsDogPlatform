@@ -1,0 +1,28 @@
+{"status": "FAIL", "report": "/tmp/tmpexhfaf28/runs/20260929T065727632717Z-400075/result.json", "model_acceptance": false}
+{"status": "READY", "report": "/tmp/tmpylx98atu/runs/20260929T065727636439Z-400075/result.json", "model_acceptance": false}
+{"status": "BLOCKED_MISSING_ASSETS", "report": "/tmp/tmpylx98atu/runs/20260929T065727637607Z-400075/result.json", "model_acceptance": false}
+{"status": "FAIL", "report": "/tmp/tmpw86asjc4/runs/20260929T065727638870Z-400075/result.json", "model_acceptance": false}
+test_cmake_variable_relative_path_remains_relative (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_existing_view_is_idempotent_and_rejects_changes (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_relative_library_symlink_is_preserved (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_relocates_only_existing_absolute_payload_paths (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_generated_sql_stays_in_copy_and_other_edits_are_rejected (test_extended_ros_preparation.VendorBuildCopyTests) ... ok
+test_polluted_sealed_snapshot_is_rejected (test_extended_ros_preparation.VendorBuildCopyTests) ... ok
+test_changed_asset_during_run_refuses_acceptance (test_perception_replay.ReplayPreflightTests) ... ok
+test_check_only_and_blocked_never_invoke_module (test_perception_replay.ReplayPreflightTests) ... ok
+test_cli_corrupt_manifest_records_failure (test_perception_replay.ReplayPreflightTests) ... ok
+test_cpu_format_and_sha_required (test_perception_replay.ReplayPreflightTests) ... ok
+test_hashes_and_relative_paths (test_perception_replay.ReplayPreflightTests) ... ok
+test_interrupt_reaps_real_worker_and_records_failure (test_perception_replay.ReplayPreflightTests) ... ok
+test_missing_and_tampered_assets_are_distinct (test_perception_replay.ReplayPreflightTests) ... ok
+test_negative_image_needs_explicit_annotation (test_perception_replay.ReplayPreflightTests) ... ok
+test_rejects_accelerator_and_mock_settings (test_perception_replay.ReplayPreflightTests) ... ok
+test_requires_real_annotations_and_unique_ids (test_perception_replay.ReplayPreflightTests) ... ok
+test_subprocess_exit_and_missing_sample_cannot_report_pass (test_perception_replay.ReplayPreflightTests) ... ok
+test_timeout_kills_owned_process_group (test_perception_replay.ReplayPreflightTests) ... ok
+test_voice_default_catalog_has_recorded_hash (test_perception_replay.ReplayPreflightTests) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.721s
+
+OK
