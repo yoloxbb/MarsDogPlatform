@@ -32,6 +32,10 @@ python3 tools/marsdog.py replay --manifest out/models/cpu-20260929/cpu-replay.js
 SenseVoice 中文参考已通过；YOLOE 13 张正例有 2 张漏检，整体回放仍返回 FAIL。
 模型准备不代表质量验收，默认启动 profile 继续使用显式感知 mock。
 
+已按用户授权接入可选 Qwen2.5-0.5B-Instruct CPU 意图后端，保留原 RKLLM。
+准备、配置和真实分类限制见 [CPU 意图后端](docs/CPU_INTENT.md)。
+该候选尚未通过完整模型质量验收，不自动替换默认 profile。
+
 Ctrl-C 关闭整组进程。日志/配置副本/数据写入 out/local/runs；
 子进程崩溃会使组合失败退出，重复启动会被拒绝。详细说明见
 [本机启动与验收](docs/LOCAL_LITE3_CPU.md)。

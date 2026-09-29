@@ -378,7 +378,7 @@ def route_classification_events(
         asr_text,
     )
     command_route = potential_command_route
-    if source == "rkllm" and potential_command_route is not None:
+    if source in {"rkllm", "qwen_cpu"} and potential_command_route is not None:
         gate_allowed, gate_reason = _model_action_evidence(
             intent,
             control,

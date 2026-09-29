@@ -24,7 +24,7 @@ Lite3 本机 prepare/build/doctor/up/smoke 统一入口；
 
 先读 README.md、AGENTS.md、docs/migration/STATUS.md、
 docs/architecture/PLATFORM_IMPLEMENTATION_REVIEW.md 和 docs/LOCAL_LITE3_CPU.md。
-当前主仓 git log/status 与 validation/cpu-model-assets/release-manifest.json
+当前主仓 git log/status 与 validation/cpu-intent/release-manifest.json
 提供最新源码基线；validation/local-platform 保留此前验收快照。不要根据旧阶段提案中“尚未实施”重新开始迁移。
 
 最常用命令（在主仓内）：
@@ -137,7 +137,8 @@ CLIP 只用于准备进程的临时 PYTHONPATH，生成包含原 18 类和 end2e
 
 CPU 26s 来自官方同系列基础权重；与原 RKNN 训练权重等价仍 UNKNOWN。
 RKLLM 是专门微调的 SOCIAL|INTENT|CONTROL 分类器，原 HF/PyTorch 权重/tokenizer 缺失。
-已询问用户原始权重/训练记录，未收到答复；不要下载通用 Qwen 猜测替代。
+这是前一阶段的阻塞记录；用户随后明确授权暂用通用 Qwen2.5-0.5B-Instruct，
+见下方最新增量。不能再把缺原微调权重当作开发 CPU 后端的阻塞。
 RTMPose/yolo26n/2025 ASR等资产不自动变成生产选择；Pose MediaPipe是已有备选，不是YOLOv8权重转换。
 
 工具层修复：失败推理保留在总报告，一模块失败继续另一模块，整个回放仍 FAIL。
@@ -146,3 +147,43 @@ RTMPose/yolo26n/2025 ASR等资产不自动变成生产选择；Pose MediaPipe是
 
 下一切片：先核对原26s导出权重/提示来源、补实际标注口令与图像、拿到微调意图权重；
 之后做隔离 ROS 感知事件/服务与 BT/Action 链路。硬件/SLAM/远端CI限制仍保留。
+
+
+## 最新增量：用户授权的 Qwen CPU 意图后端
+
+
+- 新增 Voice 自有 qwen_cpu provider、惰性 CPU 引擎、自写 v2 提示词与合法标签约束。
+- 原 factory 选择兼容；仅显式 type=qwen_cpu 时使用新后端。
+- CPU 分类沿用现有路由和动作证据门限，保留所有旧事件/服务/ROS 类型。
+- CPU 主动输入拒绝停止规则回退，关闭后的分类不会迟到进入事件链。
+- 独立 intent-cpu extra / Voice lock，无跨模块导入、公共业务模块或全局 Python 环境。
+- 统一 models --intent-archive 与 intent-replay 入口；固定模型、输入和源码/依赖哈希。
+- 原七仓、原 RKLLM engine/provider/prompt、生产配置不动；不调用底盘或硬件。
+
+## 验收范围
+
+最终软件与模型检查的冻结结果记录在 validation/cpu-intent/release-manifest.json。
+软件通过和模型质量未通过分别记录，不能用软件测试数替代模型精度。
+
+模型开发集 40 条：v1 为 16/40；v2 为 21/40，保留完整失败。
+v1 暴露的协议注入可执行事件已通过 CPU 输入拒绝和节点无规则回退处理。
+v2 对应的限制执行用例无可执行事件，但语义仍有 19 条 exact-match 失败，
+其中 1 条是明确拒绝而非错误动作预测。没有删用例或改期望来制造通过。
+
+## 后续
+
+保持此版本作为显式开发候选；基于独立实际口令集评估提示词/小模型适配，
+核对复杂否定、转述和多意图。暂用通用 Qwen 不再受“缺少原微调权重”阻塞；
+要声称与 RKLLM 等价，仍需原微调权重/训练标签与板端对照。
+随后验收真实 ASR 和隔离 ROS 感知事件链，继续处理现有视觉两张漏检。
+硬件、SLAM 传感器、远端 CI、厂商许可等原有限制仍存在。
+
+操作见 docs/CPU_INTENT.md。使用 prepare 时加 --voice-intent-cpu，以免 uv 同步移除可选依赖。
+原 ZIP /home/elephant/MarsDog/Qwen2.5-0.5B-Instruct.zip 保留；固定 9 项模型文件在
+out/models/qwen2.5-0.5b-instruct。不要解压其 Git/hooks，也不要把 GB 权重提交主仓。
+CPU provider 已在节点中可选择；默认两个 ROS profile 仍为 mock。
+软件门禁、模型 exact-match 与实机验收必须分别报告。
+
+本轮最终软件门禁：Voice 412/0 skip，平台32，契约25；独立wheel、ROSbuild/doctor、
+两套mock感知profile smoke、原七仓基线均通过。Qwen真实回放21/40，39次生成、1次拒绝，
+22条限制执行样本无可执行事件；单句中位数7.52秒。不能称为质量或性能验收通过。

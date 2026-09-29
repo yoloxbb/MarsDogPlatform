@@ -106,6 +106,21 @@ print(json.dumps({
                 assert replay_entry["sha256"] == hashlib.sha256((source / "marsdog_voice_interaction/replay.py").read_bytes()).hexdigest()
                 run([str(python), "-B", "-m", "marsdog_voice_interaction.replay", "--help"])
                 observation["replay_entrypoint"] = replay_entry
+            cpu_files = ["adapters/llm/cpu_intent_prompt.py", "adapters/llm/qwen_cpu_engine.py",
+                         "providers/intent_qwen_cpu.py", "providers/intent_factory.py", "intent_replay.py"]
+            if (source / "marsdog_voice_interaction/providers/intent_qwen_cpu.py").is_file():
+                cpu_probe = (
+                    "import hashlib,importlib.util,json,pathlib;import marsdog_voice_interaction as p;"
+                    "from marsdog_voice_interaction.providers.intent_factory import create_intent_provider;"
+                    "assert create_intent_provider({'enabled':True,'type':'qwen_cpu'}) is not None;"
+                    "assert importlib.util.find_spec('torch') is None;"
+                    "assert importlib.util.find_spec('transformers') is None;"
+                    "root=pathlib.Path(p.__file__).parent;"
+                    "print(json.dumps({n:hashlib.sha256((root/n).read_bytes()).hexdigest() for n in " + repr(cpu_files) + "}))")
+                cpu_hashes = json.loads(run([str(python), "-B", "-c", cpu_probe]))
+                assert cpu_hashes == {n: hashlib.sha256((source / "marsdog_voice_interaction" / n).read_bytes()).hexdigest() for n in cpu_files}
+                run([str(python), "-B", "-m", "marsdog_voice_interaction.intent_replay", "--help"])
+                observation["optional_cpu_modules"] = cpu_hashes
             assert Path(observation["module_file"]).is_relative_to(project / ".venv")
             assert not observation["rclpy_installed"]
             assert observation["scripts"] == {

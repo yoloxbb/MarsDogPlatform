@@ -55,6 +55,8 @@ def prepare(args):
             command += ["--extra", "ros"]
         if module.endswith(("/voice", "/vision")):
             command += ["--extra", "dev"]
+        if module.endswith("/voice") and getattr(args, "voice_intent_cpu", False):
+            command += ["--extra", "intent-cpu"]
         if module.endswith("/vision"):
             command += ["--extra", "models"]
         run(command, env=env)
@@ -301,7 +303,7 @@ def supervise(args, *, profile=PROFILE, local=LOCAL, specs=process_specs,
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("prepare", "build", "doctor", "up", "smoke", "replay", "models"))
+    parser.add_argument("command", choices=("prepare", "build", "doctor", "up", "smoke", "replay", "models", "intent-replay"))
     parser.add_argument("--profile", choices=("lite3-local-cpu", "lite3-nav2-cpu"), default="lite3-local-cpu")
     parser.add_argument("--uv", default="uv")
     parser.add_argument("--archive-dir", type=Path, default=ROOT.parent / "migration/archives")
@@ -311,8 +313,26 @@ def main():
     parser.add_argument("--check-only", action="store_true", help="Validate replay assets without inference")
     parser.add_argument("--model-archive", type=Path, help="Supplied models.zip for pinned CPU assets")
     parser.add_argument("--download", action="store_true", help="Fetch missing pinned CPU model assets")
+    parser.add_argument("--intent-archive", type=Path, help="User-supplied Qwen CPU model ZIP")
+    parser.add_argument("--voice-intent-cpu", action="store_true", help="Prepare optional CPU intent dependencies for Voice")
     args = parser.parse_args()
+    if args.command == "intent-replay":
+        if args.manifest is None:
+            parser.error("intent-replay requires --manifest")
+        from check_cpu_intent import main as intent_main
+        replay_args = ["--manifest", str(args.manifest)]
+        if args.output is not None:
+            replay_args += ["--output", str(args.output)]
+        raise SystemExit(intent_main(replay_args))
     if args.command == "models":
+        if args.intent_archive is not None:
+            if args.model_archive is not None:
+                parser.error("Prepare one archive at a time")
+            from prepare_qwen_intent import main as qwen_main
+            model_args = ["--archive", str(args.intent_archive)]
+            if args.output is not None:
+                model_args += ["--output", str(args.output)]
+            raise SystemExit(qwen_main(model_args))
         if args.model_archive is None:
             parser.error("models requires --model-archive")
         from prepare_cpu_models import main as models_main

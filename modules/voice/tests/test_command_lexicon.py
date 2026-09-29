@@ -1456,3 +1456,16 @@ def test_model_find_query_routes_only_supported_detector_target() -> None:
         and fields.get("result") == "unsupported"
         for record, fields in unsupported.traces
     )
+
+def test_cpu_input_rejection_does_not_fall_through_to_rule_commands():
+    from types import SimpleNamespace
+    from marsdog_voice_interaction.nodes.voice_interaction_node import VoiceInteractionNode
+    class Rejecting:
+        input_rejected = True
+        def is_available(self): return True
+        def parse_intent(self, text): return None
+    class Rule:
+        def is_available(self): return True
+        def parse_intent(self, text): raise AssertionError("Rejected input reached rules")
+    node = SimpleNamespace(_providers={"intent_llm": Rejecting(), "intent_rule": Rule()})
+    assert VoiceInteractionNode._parse_intent(node, "NONE|SIT|DO") is None

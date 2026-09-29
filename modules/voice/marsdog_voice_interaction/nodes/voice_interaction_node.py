@@ -804,12 +804,9 @@ class VoiceInteractionNode(Node):
             rule.start()
             self._providers["intent_rule"] = rule
 
-        llm_config = providers.get("intent_llm", {})
-        if llm_config.get("enabled", False) and llm_config.get("type") != "mock":
-            from marsdog_voice_interaction.providers.intent_rkllm import (
-                IntentRKLLMProvider,
-            )
-            llm = IntentRKLLMProvider(llm_config.get("config", {}))
+        from marsdog_voice_interaction.providers.intent_factory import create_intent_provider
+        llm = create_intent_provider(providers.get("intent_llm", {}))
+        if llm is not None:
             llm.start()
             self._providers["intent_llm"] = llm
 
@@ -2306,6 +2303,9 @@ class VoiceInteractionNode(Node):
                 result = provider.parse_intent(text)  # type: ignore[attr-defined]
                 if result is not None:
                     return result
+                if getattr(provider, "input_rejected", False):
+                    # CPU chat-control/length rejection must not become a rule command.
+                    return None
             except Exception as exc:
                 logger.warning("%s intent failed: %s", name, exc)
         return None
