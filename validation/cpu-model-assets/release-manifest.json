@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-09-29T09:08:20.669192+00:00",
+  "status": "CPU_ASSETS_READY_PARTIAL_MODEL_ACCEPTANCE",
+  "source_commit": "c2c56250b69148f8c5cf9f1ed2d6997e536f0237",
+  "actual_inference_executed": true,
+  "model_acceptance": false,
+  "vision": {
+    "real_cpu_inference": true,
+    "samples": 13,
+    "passed": 11,
+    "failed": [
+      "000000000307",
+      "000000000394"
+    ],
+    "metric": "Expected label presence only; not mAP or production accuracy"
+  },
+  "voice": {
+    "status": "PASS",
+    "scope": "One upstream Chinese ITN regression; not robot command/session"
+  },
+  "auxiliary_models": {
+    "status": "PASS",
+    "scope": "See per-case limitations; hand positive recall, KWS recall and identity accuracy NOT accepted"
+  },
+  "checks": {
+    "platform_tests": 27,
+    "contracts": 25,
+    "architecture": "PASS",
+    "original_repositories": "PASS",
+    "module_locks_changed": false,
+    "production_profiles_changed": false,
+    "ros_rebuild": "Not required; no installed package implementation or ROS source changed"
+  },
+  "asset_lock": {
+    "path": "config/models/cpu-assets.lock.json",
+    "sha256": "01ed2886f0b846418ccc8116ffb58e81c908f086b32328b0cfd07555cac806c6"
+  },
+  "remaining": [
+    "Two YOLOE dog positives failed",
+    "Original fine-tuned RKLLM checkpoint/tokenizer UNKNOWN",
+    "RKNN/CPU checkpoint and numerical equivalence UNKNOWN",
+    "Robot-specific annotated commands/images and isolated ROS perception integration",
+    "Sensor SLAM, Lite3 hardware, hosted CI and deployment acceptance"
+  ],
+  "reports": [
+    {
+      "path": "README.md",
+      "sha256": "5ceb8f83cd68da7ee131b54ff32b9c5e0b484e6a1b6b2d8a5572f8998cf4fda3"
+    },
+    {
+      "path": "assets/archive-inventory.json",
+      "sha256": "55d7ab475ec421b77d29ff4d85c411d8fb225e879852ad400645e10b6ca6dcf6"
+    },
+    {
+      "path": "assets/cpu-replay.json",
+      "sha256": "a546c56636046f9bab7342db6fe593549b5dccb15d18971e69206e782f1ae7a4"
+    },
+    {
+      "path": "assets/download-recovery.json",
+      "sha256": "ec8b0aa872a0992f62ab47b5013ea490360ce14b7e4424a532b0dc5ed98f7d2b"
+    },
+    {
+      "path": "assets/yoloe-derivation.json",
+      "sha256": "6c3bb6e0d735edee3e798bcb1461770df3c2430e10fc2f2861a40e03ff6f8eb6"
+    },
+    {
+      "path": "aux/result.json",
+      "sha256": "e32f3ea4f5a95360b17136770346b7e1d11c89ef02ee3818ea5bff42343c3e3f"
+    },
+    {
+      "path": "aux/vision.json",
+      "sha256": "fcb8812c5302dea80cb5685e482e71aea2851eade7fc902a905963d06dbffddc"
+    },
+    {
+      "path": "aux/vision.log",
+      "sha256": "3d1652b520e56c301c68757afe5d5fa42069c4d188396e59a65753132697964f"
+    },
+    {
+      "path": "aux/voice.json",
+      "sha256": "e730ba7d76e83d0613f2bd6a9bc21bb90821f0e88119eb1fc696288e6ae3fb6f"
+    },
+    {
+      "path": "aux/voice.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "checks/architecture.log",
+      "sha256": "3951a99a6380fed01973da9004a87cb4d2f2e4b47500fd5f1864adf6074decc5"
+    },
+    {
+      "path": "checks/baseline.log",
+      "sha256": "09be4af24ec2b3be0d0adfb7a8abaac1a278bc4a8f7a210075a2d1146d67fac4"
+    },
+    {
+      "path": "checks/contracts.log",
+      "sha256": "3f15350cb12cac471a3284ddad7e210e7de64ee3e57e73c36b288a2d0af6fe19"
+    },
+    {
+      "path": "checks/diff-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "checks/model-preparation.log",
+      "sha256": "5d265d78e15ba4db710d9c6a1076a00eedbdf94d44e7aa4a82aa378cb94a2628"
+    },
+    {
+      "path": "checks/platform-tests.log",
+      "sha256": "6e7ee36ef7cededafc984c5f2d385d1f31582221ec6d7132958495ba3be34e13"
+    },
+    {
+      "path": "checks/preparation-final.log",
+      "sha256": "ce428e8c0826867b7c0308ba4a45606b155521329c8e649dca02c8d26b74db23"
+    },
+    {
+      "path": "checks/preparation-reuse.log",
+      "sha256": "98220b1329d8b02409ebe584d5323015fd380354c820e86af7107faf576befcb"
+    },
+    {
+      "path": "checks/voice-final.log",
+      "sha256": "5188b740d61054ce9de05a22787a422b5ebf04837e591b084ae3b3cdf8da13ff"
+    },
+    {
+      "path": "initial-development-runs/aux/result.json",
+      "sha256": "e3523ee608b7c84af3b280e2d5ffe69e15ea40d8981a9560703ee08d7b288748"
+    },
+    {
+      "path": "initial-development-runs/aux/vision.json",
+      "sha256": "885e5c06ddacf529b64b3c3c56653e81b9e5d21fd70797da5b3afa7443f1547a"
+    },
+    {
+      "path": "initial-development-runs/aux/vision.log",
+      "sha256": "4c355c57c2753bb49b64dc81e428e23356df7a2cfd789a07caa78db1fdf3fd68"
+    },
+    {
+      "path": "initial-development-runs/replay/preflight.json",
+      "sha256": "d47680ca4b7827abe7fff129ae3eb0603941ce8c1b1987ad875b961cea3cefe4"
+    },
+    {
+      "path": "initial-development-runs/replay/result.json",
+      "sha256": "9723c7d3a87018b0aa52170e2a6dfd434d0448da96921bf69847bf15aa44ab04"
+    },
+    {
+      "path": "initial-development-runs/replay/vision-request.json",
+      "sha256": "a4e16223bf0e0772736105a77661e039c8430187c6e6922f75cf0e031c82b6cf"
+    },
+    {
+      "path": "initial-development-runs/replay/vision.json",
+      "sha256": "c2633ec8cce3ea4648a0f05a02e787d54ccad3fa02bbc596e7d2379d012f5ca8"
+    },
+    {
+      "path": "initial-development-runs/replay/vision.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "replay/preflight.json",
+      "sha256": "d47680ca4b7827abe7fff129ae3eb0603941ce8c1b1987ad875b961cea3cefe4"
+    },
+    {
+      "path": "replay/result.json",
+      "sha256": "ce269ef1dfe1adf8c411311c16445e085d4e3379dd3addafb90fe948bf54f099"
+    },
+    {
+      "path": "replay/vision-request.json",
+      "sha256": "a4e16223bf0e0772736105a77661e039c8430187c6e6922f75cf0e031c82b6cf"
+    },
+    {
+      "path": "replay/vision.json",
+      "sha256": "6aefb94ccf73e27ac73d5d425444b5ccc661e1478c0dda57b72c3ed78d7f9c88"
+    },
+    {
+      "path": "replay/vision.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "replay/voice-request.json",
+      "sha256": "13e8e0a9e3c09522d14ab2f0c20fe8f995c00c15b64679465e2b6dd3efacc588"
+    },
+    {
+      "path": "replay/voice.json",
+      "sha256": "b55274cab750325a163873f4174956cadca2955320b712318e96336f95fc52be"
+    },
+    {
+      "path": "replay/voice.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "voice/preflight.json",
+      "sha256": "c61a12811fa29942f54a29621c90f2a13f6e2a3baa77c25d27b95c56886c7602"
+    },
+    {
+      "path": "voice/result.json",
+      "sha256": "fd0e74eedb6c09a6de67fe852dc8f61c036a009e9ccec2fc7d931cf9312557dc"
+    },
+    {
+      "path": "voice/voice-request.json",
+      "sha256": "13e8e0a9e3c09522d14ab2f0c20fe8f995c00c15b64679465e2b6dd3efacc588"
+    },
+    {
+      "path": "voice/voice.json",
+      "sha256": "796ab160d5e6d8d80d3fe810b50b199eb719ef4f685dd87d642b5131a29e0a47"
+    },
+    {
+      "path": "voice/voice.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

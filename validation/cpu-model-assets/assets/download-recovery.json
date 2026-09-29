@@ -1,0 +1,11 @@
+{
+  "status": "RECOVERED_AND_OFFICIAL_SHA256_VERIFIED",
+  "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/mobileclip2_b.ts",
+  "rejected_partial_bytes": 253768122,
+  "rejected_partial_sha256": "9bf6cba2e9f86dade7ca6697565d96dc7c95302f81dc04746d176011895a48c2",
+  "recovery_content_range": "bytes 253768122-253794475/253794476",
+  "tail_bytes": 26354,
+  "verified_size": 253794476,
+  "verified_sha256": "35d7f213e4d75f38514e4656ad3cb91158bd33e3805d8ac349f23b186f66982f",
+  "incomplete_download_used_for_inference": false
+}

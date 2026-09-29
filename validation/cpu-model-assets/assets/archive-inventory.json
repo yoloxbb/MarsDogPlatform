@@ -1,0 +1,704 @@
+{
+  "schema_version": 1,
+  "archive": {
+    "path": "/home/elephant/MarsDog/models.zip",
+    "sha256": "6160bd0aa7944a22aa11ac024746930e2a2fa5e04b32f7e2c318db9d3c6785a6",
+    "size": 2575737852
+  },
+  "files": [
+    {
+      "member": "models/vision/hand_landmarker.task",
+      "size": 7819105,
+      "crc32": "e8ea6a7b",
+      "selected": true,
+      "sha256": "fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1"
+    },
+    {
+      "member": "models/vision/rtmpose-m-27c0e6.onnx",
+      "size": 54339984,
+      "crc32": "5b902418",
+      "selected": true,
+      "sha256": "c9df2570aff3209b1a7871ce13be4470655eb7cf3053f641e2f4397980880a3c"
+    },
+    {
+      "member": "models/vision/gesture_recognizer.task",
+      "size": 8373440,
+      "crc32": "6d5ffdb2",
+      "selected": true,
+      "sha256": "97952348cf6a6a4915c2ea1496b4b37ebabc50cbbf80571435643c455f2b0482"
+    },
+    {
+      "member": "models/vision/face_recognition_sface_2021dec.onnx",
+      "size": 38696353,
+      "crc32": "4ab8b732",
+      "selected": true,
+      "sha256": "0ba9fbfa01b5270c96627c4ef784da859931e02f04419c829e83484087c34e79"
+    },
+    {
+      "member": "models/vision/yoloe-26n-seg.pt",
+      "size": 11710443,
+      "crc32": "cf0be912",
+      "selected": true,
+      "sha256": "1741c1f8da3cea47e2c01829c334a50dc0b9bbd05e685b90a3ce84fae32c8c1b"
+    },
+    {
+      "member": "models/vision/pose_landmarker_full.task",
+      "size": 9398198,
+      "crc32": "a9440d4d",
+      "selected": true,
+      "sha256": "4eaa5eb7a98365221087693fcc286334cf0858e2eb6e15b506aa4a7ecdcec4ad"
+    },
+    {
+      "member": "models/vision/face_detection_yunet_2023mar.onnx",
+      "size": 232589,
+      "crc32": "bfdf4e40",
+      "selected": true,
+      "sha256": "8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4"
+    },
+    {
+      "member": "models/vision/metadata.yaml",
+      "size": 1256,
+      "crc32": "5c549c18",
+      "selected": true,
+      "sha256": "c83ff79ac0e2c6e29b8294a9ece3c255436ff54e45468354256e9f6833daafdb"
+    },
+    {
+      "member": "models/vision/yoloe-26s-seg_rknn_model/metadata.yaml",
+      "size": 1311,
+      "crc32": "ddd04df4",
+      "selected": true,
+      "sha256": "021e0aafbe8d48c627a9db9b7aa8783c2b923b59c8a91f0658abf3f039375f13"
+    },
+    {
+      "member": "models/vision/yoloe-26s-seg_rknn_model/yoloe-26s-seg-rk3588.rknn",
+      "size": 13250952,
+      "crc32": "e7616352",
+      "selected": false
+    },
+    {
+      "member": "models/vision/yoloe-26s-seg_rknn_model/dataset.txt",
+      "size": 268,
+      "crc32": "cbf570c5",
+      "selected": true,
+      "sha256": "0eb539b990b06ac66c56532a9c122879cae27b76efa76ed247ac55db62ae0f86"
+    },
+    {
+      "member": "models/vision/pose_landmarker_lite.task",
+      "size": 5777746,
+      "crc32": "b4afce59",
+      "selected": true,
+      "sha256": "59929e1d1ee95287735ddd833b19cf4ac46d29bc7afddbbf6753c459690d574a"
+    },
+    {
+      "member": "models/vision/yolo26n.onnx",
+      "size": 9930192,
+      "crc32": "5f38225e",
+      "selected": true,
+      "sha256": "51875cbdd2ed8bcd4abd20d4d20ac7716e84d1582a989c333d76dc32003407f9"
+    },
+    {
+      "member": "models/vision/yoloe-26s-seg-rk3588.rknn",
+      "size": 24078305,
+      "crc32": "3e195831",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/README.md",
+      "size": 104,
+      "crc32": "cbde45ef",
+      "selected": true,
+      "sha256": "763991a00edaea534ab36bf1b7cf89e61e911666dcfabbba71f91f9f7c593a63"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/tokens.txt",
+      "size": 315894,
+      "crc32": "6976e280",
+      "selected": true,
+      "sha256": "f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/model.int8.onnx",
+      "size": 239233841,
+      "crc32": "0635a161",
+      "selected": true,
+      "sha256": "c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/test_wavs/ja.wav",
+      "size": 230444,
+      "crc32": "a4c92b48",
+      "selected": true,
+      "sha256": "460bd8dccb0d2a5f4e29c628f837be4082d13defc64c3fc21dd1b6bb0e119095"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/test_wavs/zh.wav",
+      "size": 178988,
+      "crc32": "f2ee1f2d",
+      "selected": true,
+      "sha256": "b77f1794fe374a0ba1ee1dc458bfaf9349496cbbfc32780c50ba3c5a7ad8e373"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/test_wavs/yue.wav",
+      "size": 164780,
+      "crc32": "b6c8ad0e",
+      "selected": true,
+      "sha256": "0960b2db54ae202071d250e6462fbf74a3c863f0e3e7f01273e4939c996875a0"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/test_wavs/en.wav",
+      "size": 228908,
+      "crc32": "9aa34a42",
+      "selected": true,
+      "sha256": "eb1eb008904465b74c304aad8342e8c7d3c6e61ffe9f66adcaca9cf0f76a93f4"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/test_wavs/ko.wav",
+      "size": 147500,
+      "crc32": "c04b87cb",
+      "selected": true,
+      "sha256": "0dc797a5c81ed30fc339d91f3da718ab02854e17ffa37cb93c4c039ac5c6bb9c"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/LICENSE",
+      "size": 71,
+      "crc32": "8b427437",
+      "selected": true,
+      "sha256": "221c6df10b0931a5629adad671ea48fb7747e034c414b6d2bfa275bc3dd4ea17"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/export-onnx.py",
+      "size": 5905,
+      "crc32": "5e6e317b",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/README.md",
+      "size": 131,
+      "crc32": "261262c5",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/tokens.txt",
+      "size": 315894,
+      "crc32": "6976e280",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/model.int8.onnx",
+      "size": 237115547,
+      "crc32": "5dbe5cd8",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-6.wav",
+      "size": 979022,
+      "crc32": "5d2f040a",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-17.wav",
+      "size": 441644,
+      "crc32": "b14d345d",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-16.wav",
+      "size": 182444,
+      "crc32": "a5f90c45",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-12.wav",
+      "size": 155726,
+      "crc32": "b2bdfb41",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-0.wav",
+      "size": 98382,
+      "crc32": "e181923c",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-7.wav",
+      "size": 444844,
+      "crc32": "64a27551",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-15.wav",
+      "size": 204878,
+      "crc32": "96d777ce",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/ja.wav",
+      "size": 230444,
+      "crc32": "a4c92b48",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-10.wav",
+      "size": 213070,
+      "crc32": "32e2f5e8",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-3.wav",
+      "size": 139342,
+      "crc32": "312622d0",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-5.wav",
+      "size": 229454,
+      "crc32": "673dce24",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/zh.wav",
+      "size": 178988,
+      "crc32": "f2ee1f2d",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-13.wav",
+      "size": 340046,
+      "crc32": "b1d87b23",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-14.wav",
+      "size": 417870,
+      "crc32": "def5eb85",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-2.wav",
+      "size": 147534,
+      "crc32": "d3c47e0b",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-8.wav",
+      "size": 450638,
+      "crc32": "24394b6a",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-1.wav",
+      "size": 483406,
+      "crc32": "4c92a638",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-4.wav",
+      "size": 102478,
+      "crc32": "072b83a1",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue.wav",
+      "size": 164780,
+      "crc32": "b6c8ad0e",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-11.wav",
+      "size": 86094,
+      "crc32": "b5d21182",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/en.wav",
+      "size": 228908,
+      "crc32": "9aa34a42",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/ko.wav",
+      "size": 147500,
+      "crc32": "c04b87cb",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/test_wavs/yue-9.wav",
+      "size": 458830,
+      "crc32": "0b7103cd",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/quantize-model.py",
+      "size": 585,
+      "crc32": "ff4115ed",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/README.md",
+      "size": 190,
+      "crc32": "350b4c8a",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/model.onnx",
+      "size": 822641426,
+      "crc32": "5d43c4a6",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/tokens.txt",
+      "size": 75354,
+      "crc32": "d8f1d87d",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/model.int8.onnx",
+      "size": 227330205,
+      "crc32": "0f15f9cd",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/test_wavs/4-tianjin.wav",
+      "size": 249932,
+      "crc32": "6b696fdc",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/test_wavs/1.wav",
+      "size": 164976,
+      "crc32": "82c36683",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/test_wavs/8k.wav",
+      "size": 72434,
+      "crc32": "68e4ee2b",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/test_wavs/3-sichuan.wav",
+      "size": 250764,
+      "crc32": "b5ad4648",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/test_wavs/0.wav",
+      "size": 179646,
+      "crc32": "0b9bdb6c",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/test_wavs/2-zh-en.wav",
+      "size": 259278,
+      "crc32": "270e159e",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/test_wavs/5-henan.wav",
+      "size": 255724,
+      "crc32": "e79985f8",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/config.yaml",
+      "size": 56129,
+      "crc32": "f3d6ae1b",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/generate-tokens.py",
+      "size": 741,
+      "crc32": "8d670858",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/add-model-metadata.py",
+      "size": 2440,
+      "crc32": "e1d497da",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/tokens.json",
+      "size": 93182,
+      "crc32": "3cbd9561",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-paraformer-zh-2024-03-09/am.mvn",
+      "size": 11203,
+      "crc32": "2b9590fb",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-rk3588-25-seconds-sense-voice-zh-en-ja-ko-yue-2024-07-17/README.md",
+      "size": 104,
+      "crc32": "cbde45ef",
+      "selected": true,
+      "sha256": "763991a00edaea534ab36bf1b7cf89e61e911666dcfabbba71f91f9f7c593a63"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-rk3588-25-seconds-sense-voice-zh-en-ja-ko-yue-2024-07-17/tokens.txt",
+      "size": 315894,
+      "crc32": "6976e280",
+      "selected": true,
+      "sha256": "f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-rk3588-25-seconds-sense-voice-zh-en-ja-ko-yue-2024-07-17/test_wavs/ja.wav",
+      "size": 230444,
+      "crc32": "a4c92b48",
+      "selected": true,
+      "sha256": "460bd8dccb0d2a5f4e29c628f837be4082d13defc64c3fc21dd1b6bb0e119095"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-rk3588-25-seconds-sense-voice-zh-en-ja-ko-yue-2024-07-17/test_wavs/zh.wav",
+      "size": 178988,
+      "crc32": "f2ee1f2d",
+      "selected": true,
+      "sha256": "b77f1794fe374a0ba1ee1dc458bfaf9349496cbbfc32780c50ba3c5a7ad8e373"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-rk3588-25-seconds-sense-voice-zh-en-ja-ko-yue-2024-07-17/test_wavs/yue.wav",
+      "size": 164780,
+      "crc32": "b6c8ad0e",
+      "selected": true,
+      "sha256": "0960b2db54ae202071d250e6462fbf74a3c863f0e3e7f01273e4939c996875a0"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-rk3588-25-seconds-sense-voice-zh-en-ja-ko-yue-2024-07-17/test_wavs/en.wav",
+      "size": 228908,
+      "crc32": "9aa34a42",
+      "selected": true,
+      "sha256": "eb1eb008904465b74c304aad8342e8c7d3c6e61ffe9f66adcaca9cf0f76a93f4"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-rk3588-25-seconds-sense-voice-zh-en-ja-ko-yue-2024-07-17/test_wavs/ko.wav",
+      "size": 147500,
+      "crc32": "c04b87cb",
+      "selected": true,
+      "sha256": "0dc797a5c81ed30fc339d91f3da718ab02854e17ffa37cb93c4c039ac5c6bb9c"
+    },
+    {
+      "member": "models/asr/sherpa-onnx-rk3588-25-seconds-sense-voice-zh-en-ja-ko-yue-2024-07-17/model.rknn",
+      "size": 489793814,
+      "crc32": "617b2473",
+      "selected": false
+    },
+    {
+      "member": "models/asr/sherpa-onnx-rk3588-25-seconds-sense-voice-zh-en-ja-ko-yue-2024-07-17/LICENSE",
+      "size": 71,
+      "crc32": "8b427437",
+      "selected": true,
+      "sha256": "221c6df10b0931a5629adad671ea48fb7747e034c414b6d2bfa275bc3dd4ea17"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/joiner-epoch-13-avg-2-chunk-8-left-64.int8.onnx",
+      "size": 86629,
+      "crc32": "95939321",
+      "selected": true,
+      "sha256": "190d4067b4cc20b72a42a1916e69d92052000fb7051a427ebb1bc72a69207dc1"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/encoder-epoch-13-avg-2-chunk-8-left-64.int8.onnx",
+      "size": 4600657,
+      "crc32": "d5833b4b",
+      "selected": true,
+      "sha256": "2ca84d6bfe73e1ea3c9c49f600f7cad1c9ddd423c53c906b8bfe802444dd78d5"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/tokens.txt",
+      "size": 1928,
+      "crc32": "3e9ca088",
+      "selected": true,
+      "sha256": "2d3f32311f9b692b964da3c90e830258d3e78e013cb0c992dbfb15cd5a1a71b0"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/encoder-epoch-13-avg-2-chunk-16-left-64.int8.onnx",
+      "size": 4599656,
+      "crc32": "38eb0261",
+      "selected": true,
+      "sha256": "408bbd740838c42d5bf6d1c5b80b3c88b616c7860b92d980328b5b068c76ae48"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/test_wavs/zh_2.wav",
+      "size": 144856,
+      "crc32": "7f930513",
+      "selected": true,
+      "sha256": "04a579c23bdd6de049814f1cbfb470d735d7747ba37eb0a92d813c89da942706"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/test_wavs/zh_3.wav",
+      "size": 257006,
+      "crc32": "ab8ae7f9",
+      "selected": true,
+      "sha256": "710e79fb3450042be50bb2f6432a2a549b53577aea041a577e53a926fcabb614"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/test_wavs/en_1.wav",
+      "size": 534924,
+      "crc32": "6a90580e",
+      "selected": true,
+      "sha256": "5143a6ba93c4b274e2c4ac22deb75c2c48936c853f0519add1de828b6c79cc5a"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/test_wavs/keywords_raw.txt",
+      "size": 208,
+      "crc32": "e7a2b36c",
+      "selected": true,
+      "sha256": "5b1ade36d81417b3479410134a0fb1f3b099b7cac4dea42f6939421902b59d19"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/test_wavs/en_trans.txt",
+      "size": 367,
+      "crc32": "d64dd1b3",
+      "selected": true,
+      "sha256": "55ca91f3ee53c324b2f802f63c50cacc8931da846c4aaa35f115680201ff904b"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/test_wavs/en_0.wav",
+      "size": 212044,
+      "crc32": "c604af7a",
+      "selected": true,
+      "sha256": "6bc58a4efdf20daac252b6b1502632601a71efe0308f6757dc1eda34891a7e4f"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/test_wavs/zh_6.wav",
+      "size": 113518,
+      "crc32": "a80de085",
+      "selected": true,
+      "sha256": "f5da5689f1960431a53855d7fbe78c9ab0b73e5495ffba631cd43458225d9039"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/test_wavs/keywords.txt",
+      "size": 284,
+      "crc32": "a38f656d",
+      "selected": true,
+      "sha256": "4878b5c2cddd6605d228877a196137e2412f0fcda1af44a524d7265a1547835c"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/test_wavs/zh_5.wav",
+      "size": 132938,
+      "crc32": "4d030bdf",
+      "selected": true,
+      "sha256": "55321b6d1ab4bd9a16928957a52cf943b2ae864543cca7f39e9844b4889e9bb8"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/test_wavs/zh_1.wav",
+      "size": 164976,
+      "crc32": "82c36683",
+      "selected": true,
+      "sha256": "30edbabea84ca4c076f5b43bb44495f436f6711319c32a200d3fc5c67c1fee1d"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/test_wavs/zh_4.wav",
+      "size": 147216,
+      "crc32": "bde8d49c",
+      "selected": true,
+      "sha256": "d46ca3a2ce52b5059f3d84e2cfdc62907e8579faa7078b1becaea614dd41b35d"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/test_wavs/zh_0.wav",
+      "size": 179646,
+      "crc32": "0b9bdb6c",
+      "selected": true,
+      "sha256": "668bf8df51a10027b84d5d8816a1ce11ae93545538dc05cfe2aa6811d399c250"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/decoder-epoch-13-avg-2-chunk-16-left-64.onnx",
+      "size": 759829,
+      "crc32": "5832369e",
+      "selected": true,
+      "sha256": "63a22dd60f40fff082ac3e09afa507f6787da36df76ded2fbe145fa233e22c21"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/encoder-epoch-13-avg-2-chunk-16-left-64.onnx",
+      "size": 11976272,
+      "crc32": "373c118f",
+      "selected": true,
+      "sha256": "540ff509ed89bd22afe04bf7049a54bb1c95c6d8a18742ea9691910cdb5f859e"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/decoder-epoch-13-avg-2-chunk-8-left-64.onnx",
+      "size": 759829,
+      "crc32": "5832369e",
+      "selected": true,
+      "sha256": "63a22dd60f40fff082ac3e09afa507f6787da36df76ded2fbe145fa233e22c21"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/encoder-epoch-13-avg-2-chunk-8-left-64.onnx",
+      "size": 11976951,
+      "crc32": "59907420",
+      "selected": true,
+      "sha256": "307e2f5e87e9d6df4fd058239f4437b6236db7699b9c61decb490f89fb4226d0"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/joiner-epoch-13-avg-2-chunk-16-left-64.int8.onnx",
+      "size": 86629,
+      "crc32": "95939321",
+      "selected": true,
+      "sha256": "190d4067b4cc20b72a42a1916e69d92052000fb7051a427ebb1bc72a69207dc1"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/joiner-epoch-13-avg-2-chunk-8-left-64.onnx",
+      "size": 338154,
+      "crc32": "5b821697",
+      "selected": true,
+      "sha256": "76f7a24ed0c08633af14b2ee377f747af880d3b65eeba2cd3f31f3380fb73e8d"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/keywords.txt",
+      "size": 316,
+      "crc32": "1da2941f",
+      "selected": true,
+      "sha256": "9d4887488e978c6926b4094d8b72f3cffd3c94a070073db53651c16291398e88"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/joiner-epoch-13-avg-2-chunk-16-left-64.onnx",
+      "size": 338154,
+      "crc32": "5b821697",
+      "selected": true,
+      "sha256": "76f7a24ed0c08633af14b2ee377f747af880d3b65eeba2cd3f31f3380fb73e8d"
+    },
+    {
+      "member": "models/wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/en.phone",
+      "size": 3330061,
+      "crc32": "e067667b",
+      "selected": true,
+      "sha256": "f7000ec3a90544c0c7c16090d8951779c2b322e14dad5006290f498567d439ea"
+    },
+    {
+      "member": "models/vad/silero_vad2.onnx",
+      "size": 2327524,
+      "crc32": "2c0e22eb",
+      "selected": true,
+      "sha256": "597d30b3ec076608d059477bb14cfeffdf951bf5cae370d38f65d33bbfe82004"
+    },
+    {
+      "member": "models/vad/silero_vad.onnx",
+      "size": 643854,
+      "crc32": "cd75352d",
+      "selected": true,
+      "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
+    },
+    {
+      "member": "models/vad/silero-vad-v4-rk3588.rknn",
+      "size": 2248941,
+      "crc32": "a363b545",
+      "selected": false
+    },
+    {
+      "member": "models/speaker/3dspeaker_speech_campplus_sv_zh_en_16k-common_advanced.onnx",
+      "size": 28281164,
+      "crc32": "5be78366",
+      "selected": true,
+      "sha256": "aa3cfc16963a10586a9393f5035d6d6b57e98d358b347f80c2a30bf4f00ceba2"
+    },
+    {
+      "member": "models/llm/qwen2_5_5b_rk3588_260903_w8a8.rkllm",
+      "size": 792355364,
+      "crc32": "00e330d5",
+      "selected": false
+    }
+  ],
+  "timestamp": "2026-09-29T08:43:38.854388+00:00"
+}

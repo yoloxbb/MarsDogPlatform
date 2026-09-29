@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "device": "cpu",
+  "real_model_inference": true,
+  "cases": [
+    {
+      "id": "upstream-zh-itn",
+      "status": "PASS",
+      "asr": {
+        "asr_text": "开放时间早上9点至下午5点。",
+        "language": "zh",
+        "confidence": null,
+        "reason": "ok",
+        "latency_ms": 122.2
+      },
+      "catalog_event": null,
+      "errors": [],
+      "elapsed_ms": 122.421
+    }
+  ],
+  "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/voice/marsdog_voice_interaction/replay.py",
+  "versions": {
+    "sherpa-onnx": "1.13.3",
+    "numpy": "1.26.4"
+  },
+  "scope": "Presegmented WAV ASR and existing exact command catalog payload only; no VAD/wakeup/speaker/LLM/ROS/session acceptance"
+}

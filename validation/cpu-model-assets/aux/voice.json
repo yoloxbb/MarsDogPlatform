@@ -1,0 +1,63 @@
+{
+  "status": "PASS",
+  "device": "cpu",
+  "cases": [
+    {
+      "id": "vad",
+      "status": "PASS",
+      "speech": {
+        "ok": true,
+        "source_sample_rate": 16000,
+        "source_duration_ms": 5592.0,
+        "speech_duration_ms": 4826.0,
+        "min_speech_duration_ms": 500.0,
+        "segment_count": 1,
+        "speech_ranges_ms": [
+          {
+            "start_ms": 742.0,
+            "end_ms": 5568.0
+          }
+        ],
+        "suggested_crop_ms": {
+          "start_ms": 442.0,
+          "end_ms": 5592.0
+        },
+        "valid_for_enrollment": true
+      },
+      "silence": {
+        "ok": true,
+        "source_sample_rate": 16000,
+        "source_duration_ms": 2000.0,
+        "speech_duration_ms": 0.0,
+        "min_speech_duration_ms": 500.0,
+        "segment_count": 0,
+        "speech_ranges_ms": [],
+        "suggested_crop_ms": null,
+        "valid_for_enrollment": false
+      }
+    },
+    {
+      "id": "speaker",
+      "status": "PASS",
+      "self_match": {
+        "matched": true,
+        "confidence": 1.0,
+        "reason": "matched"
+      },
+      "assertion": "Same input embedding consistency only; no persisted identity"
+    },
+    {
+      "id": "kws",
+      "status": "PASS",
+      "decode_steps": 40,
+      "keyword_hits": 0,
+      "keyword_file_sha256": "25a2c14abc1be818e11c40482070ead7086a9a6bcf47136e9a9dd1044fac28da",
+      "assertion": "Model/stream compatibility only; no command detection acceptance"
+    }
+  ],
+  "scope": "VAD positive/silence, speaker embedding self-match, KWS loading/stream decode only; no identification accuracy, keyword recall, wakeup hardware, RKLLM, ROS or robot",
+  "versions": {
+    "sherpa-onnx": "1.13.3",
+    "numpy": "1.26.4"
+  }
+}

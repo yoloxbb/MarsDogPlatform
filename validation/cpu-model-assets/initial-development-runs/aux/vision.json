@@ -1,0 +1,19 @@
+{
+  "status": "FAIL",
+  "device": "cpu",
+  "cases": [
+    {
+      "id": "yunet-sface",
+      "status": "PASS",
+      "faces": 4,
+      "feature_values": 128
+    }
+  ],
+  "scope": "Face detection/features and MediaPipe runtime smoke; no identity accuracy, gesture semantics, RKNN parity, camera or ROS acceptance",
+  "fixture": {
+    "path": "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/lib/python3.10/site-packages/ultralytics/assets/zidane.jpg",
+    "sha256": "16d73869e3267a7d4ed00de8e860833bd1657c1b252e94c0c348277adc7b6edb",
+    "annotation": "At least one face and person; independently visually inspected"
+  },
+  "error": "Expected at least one 33-landmark pose"
+}

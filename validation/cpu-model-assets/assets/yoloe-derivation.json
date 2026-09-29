@@ -1,0 +1,41 @@
+{
+  "status": "PASS",
+  "binding": {
+    "inputs": {
+      "downloads/yoloe-26s-seg.pt": "48f24206bc8680d60cbbfa296b0140da849669b9515058b72f5a945142df0654",
+      "downloads/mobileclip2_b.ts": "35d7f213e4d75f38514e4656ad3cb91158bd33e3805d8ac349f23b186f66982f",
+      "labels.json": "9eedfbfd5fd753be276e24f668398bd2904a2d5fe11a6518cfc8af204b12db2a"
+    },
+    "versions": {
+      "ultralytics": "8.4.118",
+      "torch": "2.13.0",
+      "numpy": "1.26.4"
+    },
+    "labels": [
+      "dog toy ball",
+      "dog frisbee toy",
+      "dog tug ring toy",
+      "dog collar",
+      "dog bowl",
+      "dog leash",
+      "dog treat bag",
+      "dog food can",
+      "dog bed",
+      "trash can",
+      "cardboard shipping box",
+      "sock",
+      "slipper",
+      "tissue paper",
+      "door",
+      "stairs",
+      "cat",
+      "dog"
+    ],
+    "script_sha256": "7a3e9617daa36a087fbfc240e9370bbba250221fdd2f407c26f93e3191c2abc1",
+    "text_tools_lock_sha256": "01ed2886f0b846418ccc8116ffb58e81c908f086b32328b0cfd07555cac806c6"
+  },
+  "output": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/derived/yoloe-26s-marsdog18.pt",
+  "output_sha256": "be56d822cb7d89b96f8f80f27fcad4b7c4326c6e451eb16e44aafb352be8a8c6",
+  "device": "cpu",
+  "scope": "Official same-scale base plus supplied 18 prompts; RKNN weight/quantization parity UNKNOWN"
+}

@@ -1,0 +1,116 @@
+{
+  "module": "vision",
+  "model": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/derived/yoloe-26s-marsdog18.pt",
+  "settings": {
+    "image_size": 640,
+    "confidence": 0.2,
+    "iou": 0.2,
+    "max_detections": 50
+  },
+  "samples": [
+    {
+      "id": "000000000074",
+      "image": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000074.jpg",
+      "expected_labels": [
+        "dog"
+      ],
+      "expected_empty": false
+    },
+    {
+      "id": "000000000307",
+      "image": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000307.jpg",
+      "expected_labels": [
+        "dog"
+      ],
+      "expected_empty": false
+    },
+    {
+      "id": "000000000599",
+      "image": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000599.jpg",
+      "expected_labels": [
+        "cat"
+      ],
+      "expected_empty": false
+    },
+    {
+      "id": "000000000400",
+      "image": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000400.jpg",
+      "expected_labels": [
+        "dog"
+      ],
+      "expected_empty": false
+    },
+    {
+      "id": "000000000575",
+      "image": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000575.jpg",
+      "expected_labels": [
+        "cat"
+      ],
+      "expected_empty": false
+    },
+    {
+      "id": "000000000394",
+      "image": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000394.jpg",
+      "expected_labels": [
+        "dog"
+      ],
+      "expected_empty": false
+    },
+    {
+      "id": "000000000581",
+      "image": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000581.jpg",
+      "expected_labels": [
+        "dog"
+      ],
+      "expected_empty": false
+    },
+    {
+      "id": "000000000309",
+      "image": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000309.jpg",
+      "expected_labels": [
+        "dog"
+      ],
+      "expected_empty": false
+    },
+    {
+      "id": "000000000490",
+      "image": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000490.jpg",
+      "expected_labels": [
+        "dog"
+      ],
+      "expected_empty": false
+    },
+    {
+      "id": "000000000650",
+      "image": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000650.jpg",
+      "expected_labels": [
+        "cat"
+      ],
+      "expected_empty": false
+    },
+    {
+      "id": "000000000042",
+      "image": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000042.jpg",
+      "expected_labels": [
+        "dog"
+      ],
+      "expected_empty": false
+    },
+    {
+      "id": "000000000109",
+      "image": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000109.jpg",
+      "expected_labels": [
+        "dog"
+      ],
+      "expected_empty": false
+    },
+    {
+      "id": "000000000443",
+      "image": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000443.jpg",
+      "expected_labels": [
+        "cat"
+      ],
+      "expected_empty": false
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "status": "FAIL",
+  "inference_executed": false,
+  "run_directory": "/home/elephant/MarsDog/marsdog-platform/out/cpu-model-acceptance/replay/20260929T085946535273Z-452725",
+  "scope": "Offline model replay only; no ROS publication, microphone, camera or robot",
+  "manifest": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/cpu-replay.json",
+  "manifest_sha256": "a546c56636046f9bab7342db6fe593549b5dccb15d18971e69206e782f1ae7a4",
+  "errors": [],
+  "assets": [
+    {
+      "name": "vision.model",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/derived/yoloe-26s-marsdog18.pt",
+      "expected_sha256": "be56d822cb7d89b96f8f80f27fcad4b7c4326c6e451eb16e44aafb352be8a8c6",
+      "sha256": "be56d822cb7d89b96f8f80f27fcad4b7c4326c6e451eb16e44aafb352be8a8c6",
+      "bytes": 31111589,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "vision.000000000074",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000074.jpg",
+      "expected_sha256": "99d864809a7355862032b54283bd4808971da5a2b976b20467203e6c192e755d",
+      "sha256": "99d864809a7355862032b54283bd4808971da5a2b976b20467203e6c192e755d",
+      "bytes": 47165,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "vision.000000000307",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000307.jpg",
+      "expected_sha256": "c839076b4fa14020f97c8a5909c84a1e85c912ca262a91c8c4648ebe27caf61f",
+      "sha256": "c839076b4fa14020f97c8a5909c84a1e85c912ca262a91c8c4648ebe27caf61f",
+      "bytes": 96160,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "vision.000000000599",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000599.jpg",
+      "expected_sha256": "9d924b4353cca7295c149e3659866a18e78234f0dc701df119191152f4a31fec",
+      "sha256": "9d924b4353cca7295c149e3659866a18e78234f0dc701df119191152f4a31fec",
+      "bytes": 57584,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "vision.000000000400",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000400.jpg",
+      "expected_sha256": "7b78338d4c7a30f7c38eb3bf11a7623a195e10926359adfd7281d6ce99e42dcb",
+      "sha256": "7b78338d4c7a30f7c38eb3bf11a7623a195e10926359adfd7281d6ce99e42dcb",
+      "bytes": 63846,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "vision.000000000575",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000575.jpg",
+      "expected_sha256": "839789fe6192bbd5776761d675aa76017b67810b556f3e25e2f3a31acffd86f3",
+      "sha256": "839789fe6192bbd5776761d675aa76017b67810b556f3e25e2f3a31acffd86f3",
+      "bytes": 163333,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "vision.000000000394",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000394.jpg",
+      "expected_sha256": "2cf78c1cfa98714d2ed8a643f931c39511bbb6085fddf157b27ed709089e0343",
+      "sha256": "2cf78c1cfa98714d2ed8a643f931c39511bbb6085fddf157b27ed709089e0343",
+      "bytes": 68453,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "vision.000000000581",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000581.jpg",
+      "expected_sha256": "60ad7a794ae3032c302c4e1d5111099921ce7e8df23df4401f60bdc74dc83bf1",
+      "sha256": "60ad7a794ae3032c302c4e1d5111099921ce7e8df23df4401f60bdc74dc83bf1",
+      "bytes": 45065,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "vision.000000000309",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000309.jpg",
+      "expected_sha256": "40087a8191fc80eba012c1ba4735402b4890aa0669a84ea0d3dac043ca543247",
+      "sha256": "40087a8191fc80eba012c1ba4735402b4890aa0669a84ea0d3dac043ca543247",
+      "bytes": 114443,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "vision.000000000490",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000490.jpg",
+      "expected_sha256": "1274c3c4010d45ddd84faf1c56f7c997c0c2533e4f25c6ccea25e8233e5684e5",
+      "sha256": "1274c3c4010d45ddd84faf1c56f7c997c0c2533e4f25c6ccea25e8233e5684e5",
+      "bytes": 26278,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "vision.000000000650",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000650.jpg",
+      "expected_sha256": "9bb45795336c1d05189fe51a77e04270cd1da8929d62060926798f3dd2d25204",
+      "sha256": "9bb45795336c1d05189fe51a77e04270cd1da8929d62060926798f3dd2d25204",
+      "bytes": 33865,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "vision.000000000042",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000042.jpg",
+      "expected_sha256": "9008ddd846fc6002ec47ea6067cb92cf70f294773cc15765b6a14ffb392f52fa",
+      "sha256": "9008ddd846fc6002ec47ea6067cb92cf70f294773cc15765b6a14ffb392f52fa",
+      "bytes": 56556,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "vision.000000000109",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000109.jpg",
+      "expected_sha256": "69edeeca53763fb2a4ee51739e4f9a4f053584b4f3ca4ff9911c49fa52ed2762",
+      "sha256": "69edeeca53763fb2a4ee51739e4f9a4f053584b4f3ca4ff9911c49fa52ed2762",
+      "bytes": 62103,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "vision.000000000443",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/fixtures/coco128/images/train2017/000000000443.jpg",
+      "expected_sha256": "f6483d57885c348a27dcdc272e4bd5296c75596d7c64fe638b24dbb503209902",
+      "sha256": "f6483d57885c348a27dcdc272e4bd5296c75596d7c64fe638b24dbb503209902",
+      "bytes": 37330,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "voice.model",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/model.int8.onnx",
+      "expected_sha256": "c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51",
+      "sha256": "c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51",
+      "bytes": 239233841,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "voice.tokens",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/tokens.txt",
+      "expected_sha256": "f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc",
+      "sha256": "f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc",
+      "bytes": 315894,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "voice.command_catalog",
+      "path": "/home/elephant/MarsDog/marsdog-platform/modules/voice/config/command_catalog.yaml",
+      "expected_sha256": "52b98c604d1d98617ce4369f96d9f4a0fe7ef5ad5815fd26b279d65675343326",
+      "sha256": "52b98c604d1d98617ce4369f96d9f4a0fe7ef5ad5815fd26b279d65675343326",
+      "bytes": 35366,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "voice.upstream-zh-itn",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/test_wavs/zh.wav",
+      "expected_sha256": "b77f1794fe374a0ba1ee1dc458bfaf9349496cbbfc32780c50ba3c5a7ad8e373",
+      "sha256": "b77f1794fe374a0ba1ee1dc458bfaf9349496cbbfc32780c50ba3c5a7ad8e373",
+      "bytes": 178988,
+      "status": "VERIFIED"
+    }
+  ],
+  "modules": {},
+  "error": "vision replay failed; see /home/elephant/MarsDog/marsdog-platform/out/cpu-model-acceptance/replay/20260929T085946535273Z-452725/vision.json",
+  "model_acceptance": false
+}

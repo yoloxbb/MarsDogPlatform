@@ -1,0 +1,10 @@
+WARNING ⚠️ user config directory '/home/elephant/MarsDog/marsdog-platform/out/cpu-model-acceptance/aux/20260929T085633156069Z/settings/Ultralytics' is not writable, using '/tmp/Ultralytics'. Set YOLO_CONFIG_DIR to override.
+Creating new Ultralytics Settings v0.0.7 file ✅ 
+View Ultralytics Settings with 'yolo settings' or at '/tmp/Ultralytics/settings.json'
+Update Settings with 'yolo settings key=value', i.e. 'yolo settings runs_dir=path/to/dir'. For help see https://docs.ultralytics.com/quickstart/#ultralytics-settings.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1790672202.224628  450288 gl_context_egl.cc:85] Successfully initialized EGL. Major : 1 Minor: 5
+I0000 00:00:1790672202.326659  450409 gl_context.cc:357] GL version: 3.1 (OpenGL ES 3.1 Mesa 23.2.1-1ubuntu3.1~22.04.4), renderer: D3D12 (Intel(R) Arc(TM) 130T GPU (16GB))
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+W0000 00:00:1790672202.395513  450410 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1790672202.430066  450422 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.

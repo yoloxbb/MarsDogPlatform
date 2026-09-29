@@ -1,0 +1,293 @@
+{
+  "status": "FAIL",
+  "device": "cpu",
+  "real_model_inference": true,
+  "cases": [
+    {
+      "id": "000000000074",
+      "status": "PASS",
+      "objects": [
+        {
+          "label": "dog",
+          "x": 0.1031,
+          "y": 0.6495,
+          "w": 0.4543,
+          "h": 0.2359,
+          "confidence": 0.9288,
+          "center_x": 0.3302,
+          "center_y": 0.7674
+        }
+      ],
+      "errors": [],
+      "elapsed_ms": 5464.015
+    },
+    {
+      "id": "000000000307",
+      "status": "FAIL",
+      "objects": [
+        {
+          "label": "dog frisbee toy",
+          "x": 0.5493,
+          "y": 0.773,
+          "w": 0.1067,
+          "h": 0.227,
+          "confidence": 0.9129,
+          "center_x": 0.6027,
+          "center_y": 0.8865
+        },
+        {
+          "label": "cat",
+          "x": 0.6354,
+          "y": 0.4145,
+          "w": 0.2709,
+          "h": 0.3546,
+          "confidence": 0.8416,
+          "center_x": 0.7708,
+          "center_y": 0.5918
+        }
+      ],
+      "errors": [
+        "Missing expected labels: dog"
+      ],
+      "elapsed_ms": 200.535
+    },
+    {
+      "id": "000000000599",
+      "status": "PASS",
+      "objects": [
+        {
+          "label": "cat",
+          "x": 0.0,
+          "y": 0.0968,
+          "w": 0.6315,
+          "h": 0.8941,
+          "confidence": 0.8749,
+          "center_x": 0.3158,
+          "center_y": 0.5439
+        }
+      ],
+      "errors": [],
+      "elapsed_ms": 179.934
+    },
+    {
+      "id": "000000000400",
+      "status": "PASS",
+      "objects": [
+        {
+          "label": "dog",
+          "x": 0.7045,
+          "y": 0.2328,
+          "w": 0.1015,
+          "h": 0.1131,
+          "confidence": 0.6944,
+          "center_x": 0.7553,
+          "center_y": 0.2893
+        }
+      ],
+      "errors": [],
+      "elapsed_ms": 277.069
+    },
+    {
+      "id": "000000000575",
+      "status": "PASS",
+      "objects": [
+        {
+          "label": "cat",
+          "x": 0.0028,
+          "y": 0.0824,
+          "w": 0.5498,
+          "h": 0.6999,
+          "confidence": 0.8113,
+          "center_x": 0.2777,
+          "center_y": 0.4324
+        }
+      ],
+      "errors": [],
+      "elapsed_ms": 222.598
+    },
+    {
+      "id": "000000000394",
+      "status": "FAIL",
+      "objects": [
+        {
+          "label": "dog frisbee toy",
+          "x": 0.3696,
+          "y": 0.3106,
+          "w": 0.5518,
+          "h": 0.4675,
+          "confidence": 0.9686,
+          "center_x": 0.6455,
+          "center_y": 0.5443
+        }
+      ],
+      "errors": [
+        "Missing expected labels: dog"
+      ],
+      "elapsed_ms": 187.691
+    },
+    {
+      "id": "000000000581",
+      "status": "PASS",
+      "objects": [
+        {
+          "label": "dog",
+          "x": 0.0001,
+          "y": 0.6263,
+          "w": 0.6214,
+          "h": 0.3737,
+          "confidence": 0.6717,
+          "center_x": 0.3108,
+          "center_y": 0.8131
+        },
+        {
+          "label": "cat",
+          "x": 0.2309,
+          "y": 0.3014,
+          "w": 0.3229,
+          "h": 0.5066,
+          "confidence": 0.5786,
+          "center_x": 0.3923,
+          "center_y": 0.5547
+        }
+      ],
+      "errors": [],
+      "elapsed_ms": 152.22
+    },
+    {
+      "id": "000000000309",
+      "status": "PASS",
+      "objects": [
+        {
+          "label": "dog",
+          "x": 0.705,
+          "y": 0.127,
+          "w": 0.1446,
+          "h": 0.1941,
+          "confidence": 0.7394,
+          "center_x": 0.7773,
+          "center_y": 0.224
+        },
+        {
+          "label": "dog",
+          "x": 0.2879,
+          "y": 0.3563,
+          "w": 0.3635,
+          "h": 0.3498,
+          "confidence": 0.5952,
+          "center_x": 0.4697,
+          "center_y": 0.5312
+        }
+      ],
+      "errors": [],
+      "elapsed_ms": 134.2
+    },
+    {
+      "id": "000000000490",
+      "status": "PASS",
+      "objects": [
+        {
+          "label": "dog",
+          "x": 0.0983,
+          "y": 0.391,
+          "w": 0.1744,
+          "h": 0.2861,
+          "confidence": 0.8827,
+          "center_x": 0.1855,
+          "center_y": 0.534
+        }
+      ],
+      "errors": [],
+      "elapsed_ms": 131.848
+    },
+    {
+      "id": "000000000650",
+      "status": "PASS",
+      "objects": [
+        {
+          "label": "cat",
+          "x": 0.291,
+          "y": 0.2734,
+          "w": 0.4455,
+          "h": 0.5462,
+          "confidence": 0.9159,
+          "center_x": 0.5137,
+          "center_y": 0.5465
+        }
+      ],
+      "errors": [],
+      "elapsed_ms": 97.04
+    },
+    {
+      "id": "000000000042",
+      "status": "PASS",
+      "objects": [
+        {
+          "label": "dog",
+          "x": 0.3493,
+          "y": 0.0915,
+          "w": 0.5301,
+          "h": 0.5226,
+          "confidence": 0.624,
+          "center_x": 0.6144,
+          "center_y": 0.3528
+        },
+        {
+          "label": "dog tug ring toy",
+          "x": 0.2579,
+          "y": 0.3114,
+          "w": 0.2785,
+          "h": 0.3162,
+          "confidence": 0.5678,
+          "center_x": 0.3972,
+          "center_y": 0.4695
+        }
+      ],
+      "errors": [],
+      "elapsed_ms": 99.867
+    },
+    {
+      "id": "000000000109",
+      "status": "PASS",
+      "objects": [
+        {
+          "label": "dog",
+          "x": 0.8454,
+          "y": 0.7112,
+          "w": 0.0343,
+          "h": 0.0464,
+          "confidence": 0.3315,
+          "center_x": 0.8625,
+          "center_y": 0.7344
+        }
+      ],
+      "errors": [],
+      "elapsed_ms": 91.194
+    },
+    {
+      "id": "000000000443",
+      "status": "PASS",
+      "objects": [
+        {
+          "label": "cat",
+          "x": 0.312,
+          "y": 0.1133,
+          "w": 0.6445,
+          "h": 0.7666,
+          "confidence": 0.7389,
+          "center_x": 0.6342,
+          "center_y": 0.4967
+        }
+      ],
+      "errors": [],
+      "elapsed_ms": 105.247
+    }
+  ],
+  "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/vision/marsdog_vision_interaction/replay.py",
+  "versions": {
+    "ultralytics": "8.4.118",
+    "torch": "2.13.0",
+    "numpy": "1.26.4",
+    "opencv-contrib-python": "4.11.0.86"
+  },
+  "scope": "YOLOE object detection and normalized boxes; no face/pose/hand/ROS/hardware acceptance"
+}

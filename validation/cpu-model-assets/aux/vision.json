@@ -1,0 +1,45 @@
+{
+  "status": "PASS",
+  "device": "cpu",
+  "cases": [
+    {
+      "id": "yunet-sface",
+      "status": "PASS",
+      "faces": 4,
+      "feature_values": 128
+    },
+    {
+      "id": "pose_landmarker_lite.task",
+      "status": "PASS",
+      "poses": 1
+    },
+    {
+      "id": "pose_landmarker_full.task",
+      "status": "PASS",
+      "poses": 1
+    },
+    {
+      "id": "hand_landmarker.task",
+      "status": "PASS",
+      "hands_in_photo": 0,
+      "assertion": "Runtime/shape and blank-negative; positive hand recall not asserted"
+    }
+  ],
+  "scope": "Face detection/features and MediaPipe runtime smoke; no identity accuracy, gesture semantics, RKNN parity, camera or ROS acceptance",
+  "fixture": {
+    "path": "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/lib/python3.10/site-packages/ultralytics/assets/zidane.jpg",
+    "sha256": "16d73869e3267a7d4ed00de8e860833bd1657c1b252e94c0c348277adc7b6edb",
+    "annotation": "At least one face and person; independently visually inspected"
+  },
+  "pose_fixture": {
+    "path": "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/lib/python3.10/site-packages/ultralytics/assets/bus.jpg",
+    "sha256": "c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63",
+    "annotation": "Visually inspected full standing people; at least one pose expected"
+  },
+  "versions": {
+    "opencv-contrib-python": "4.11.0.86",
+    "mediapipe": "0.10.18",
+    "numpy": "1.26.4",
+    "ultralytics": "8.4.118"
+  }
+}

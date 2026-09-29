@@ -1,0 +1,57 @@
+{
+  "status": "READY",
+  "assets": [
+    {
+      "name": "voice.model",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/model.int8.onnx",
+      "expected_sha256": "c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51",
+      "sha256": "c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51",
+      "bytes": 239233841,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "voice.tokens",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/tokens.txt",
+      "expected_sha256": "f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc",
+      "sha256": "f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc",
+      "bytes": 315894,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "voice.command_catalog",
+      "path": "/home/elephant/MarsDog/marsdog-platform/modules/voice/config/command_catalog.yaml",
+      "expected_sha256": "52b98c604d1d98617ce4369f96d9f4a0fe7ef5ad5815fd26b279d65675343326",
+      "sha256": "52b98c604d1d98617ce4369f96d9f4a0fe7ef5ad5815fd26b279d65675343326",
+      "bytes": 35366,
+      "status": "VERIFIED"
+    },
+    {
+      "name": "voice.upstream-zh-itn",
+      "path": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/test_wavs/zh.wav",
+      "expected_sha256": "b77f1794fe374a0ba1ee1dc458bfaf9349496cbbfc32780c50ba3c5a7ad8e373",
+      "sha256": "b77f1794fe374a0ba1ee1dc458bfaf9349496cbbfc32780c50ba3c5a7ad8e373",
+      "bytes": 178988,
+      "status": "VERIFIED"
+    }
+  ],
+  "errors": [],
+  "requests": {
+    "voice": {
+      "module": "voice",
+      "model": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/model.int8.onnx",
+      "tokens": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/tokens.txt",
+      "model_type": "sense_voice",
+      "language": "zh",
+      "num_threads": 2,
+      "command_catalog": "/home/elephant/MarsDog/marsdog-platform/modules/voice/config/command_catalog.yaml",
+      "samples": [
+        {
+          "id": "upstream-zh-itn",
+          "audio": "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/test_wavs/zh.wav",
+          "expected_text": "开放时间早上9点至下午5点。"
+        }
+      ]
+    }
+  },
+  "inference_executed": false
+}
