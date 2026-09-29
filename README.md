@@ -43,7 +43,8 @@ python3 tools/marsdog.py voice-cpu-ros
 ~~~
 
 见 [CPU Voice ROS 验证](docs/CPU_VOICE_ROS.md)：一条真实 WAV，加四条明确文本测试输入。
-链路已贯通；否定句仍有模型语义错误，门禁会保留 FAIL，不替换整机默认 profile。
+链路已贯通；CPU 原文传递修复后五场景通过。整体模型质量仍未达标，不替换整机默认 profile。
+输入差异修复及剩余错误见 [阶段记录](docs/migration/P6_CPU_INPUT_TEXT.md)。
 
 Ctrl-C 关闭整组进程。日志/配置副本/数据写入 out/local/runs；
 子进程崩溃会使组合失败退出，重复启动会被拒绝。详细说明见

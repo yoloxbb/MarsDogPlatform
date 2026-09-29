@@ -19,7 +19,7 @@
 | P6 真实 Nav2 集成 | 实际 planner/controller/navigator + 模拟输入通过 | lite3-nav2-cpu，15 进程 + probe；GO_HOME、7 项故障恢复、生命周期通过；P6_REAL_NAV2.md |
 | P6 CPU 感知回放 | 资产就绪；ASR 通过，视觉 11/13，整体 FAIL | 27 平台测试；模型与辅助 runtime 实测见 P6_CPU_MODEL_ASSETS.md、validation/cpu-model-assets |
 | P6 CPU 意图 | 可选 Qwen 后端已接入；开发集 21/40，质量仍 FAIL | P6_CPU_INTENT.md、validation/cpu-intent |
-| P6 CPU Voice ROS | 双进程真实 ASR/Qwen→DDS 链路通过；否定语义仍 FAIL | P6_CPU_VOICE_ROS.md、validation/cpu-voice-ros |
+| P6 CPU Voice ROS | 双进程真实 ASR/Qwen→DDS 五场景通过；已修复原文传递，整体模型未通过 | P6_CPU_INPUT_TEXT.md、validation/cpu-input-text |
 | P6 工程门禁 | 当前软件范围通过 | 25 契约/基线检查；15 ROS manifest DAG、21 登记接口；6 项构建隔离测试 |
 | P6 生产发布 / 远端 CI | 未验收 / 未配置 | 缺完整感知质量验收、原 RKLLM 等价性证据、设备、SLAM 输入、生产配置、远端和 owner 身份 |
 | P7 旧代码退役 | 未进行 | 不确定生产用途的代码/launch/脚本保留，未删除原仓 |
@@ -38,6 +38,9 @@ go_home 按原规则不产生 Needs 结算；不存在伪造的 BMS 电量生产
 
 下一步优先补齐真实 CPU 感知验收：
 
+- 原文接线已修复；先验收同步推理期间 VoiceTask 响应与迟到事件隔离，再扩展 BT/Action。
+  当前固定 ROS 5/5；Qwen 原集 21/40、新措辞 3/12。一次布局实验无改善，未采用。
+
 - 修复/核对两张狗漏检；用已接入的 Qwen CPU 候选继续做独立口令集和隔离 ROS 验收。
   通用 Qwen 已由用户授权暂用；原微调权重仅仍是 RKLLM 等价性验证所需。
 - 已下载官方 26s CPU 基础权重并保留原 18 类；57 项包内资产与 7 项下载全部固定哈希。
@@ -46,7 +49,8 @@ go_home 按原规则不产生 Needs 结算；不存在伪造的 BMS 电量生产
 - 确认远端、owner 账号和厂商库分发许可后，配置远端 CI、保护规则与发布。
 - 不猜测运控/嵌入式/BMS 实现，不自行退役未知生产入口。
 
-最新 CPU Voice ROS 切片见 validation/cpu-voice-ros/release-manifest.json，链路与模型语义分开记录。
+最新输入传递修复见 validation/cpu-input-text/release-manifest.json，固定 ROS 五场景已通过，整体模型质量仍未通过。
+此前 CPU Voice ROS 切片见 validation/cpu-voice-ros/release-manifest.json，旧否定失败保留。
 此前意图切片见 validation/cpu-intent/release-manifest.json，保留原 RKLLM 默认引擎。
 此前模型资产证据见 validation/cpu-model-assets/release-manifest.json；
 actual_inference_executed=true，但完整 model_acceptance=false，不能宣称所有模型已通过。

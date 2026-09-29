@@ -12,6 +12,9 @@ from marsdog_voice_interaction.providers.base import BaseProvider
 logger = logging.getLogger(__name__)
 
 class IntentQwenCPUProvider(BaseProvider):
+    # Generic instruction models need punctuation and word boundaries.
+    preserve_asr_text = True
+
     def __init__(self, config: dict[str, Any]):
         super().__init__(config)
         self._engine = None

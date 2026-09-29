@@ -4,6 +4,17 @@
 用户已授权工程实施、历史迁移、普通兼容性修复；首个目标明确为 Lite3，
 暂用本机 CPU，尚无设备，模块启动命令需要合并。
 
+**最新可执行结论（后文各“增量”保留历史，以下优先）：**
+
+- 统一启动已完成；真实 CPU Voice→隔离 ROS 输入修复后 5/5，12 次服务调用通过。
+- Voice 424/0 skip、平台 36、契约 25、wheel/build/doctor/默认 smoke 通过。
+- Qwen v2 原 40 条仍 21/40，新措辞 3/12；模型质量不通过，默认整机感知仍 mock。
+- 仅 CPU provider 接收原始 ASR；原 RKLLM、规则、词库、公开事件文本和五套锁不变。
+- 一次“示例移入 system”实验仍 3/12，否定分类退化，未采用；原始输出保留。
+- 下一切片先验收推理期间 VoiceTask 的停止/会话响应与迟到事件，再扩大受控 BT/Action
+  联调。模型误分类、视觉漏检和实际口令语料分别推进，不把接线通过等同于模型通过。
+- 本轮源码、证据提交以 git log 及 validation/cpu-input-text/release-manifest.json 为准。
+
 当前完成：五个 Python 模块 + 八个自研 ROS package 的历史迁移；
 七原仓完整归档且未修改；RTAB/OpenVINS/VINS/UWB 固定外部快照；
 独立锁文件、公开接口登记、DAG/import 门禁；
@@ -24,7 +35,7 @@ Lite3 本机 prepare/build/doctor/up/smoke 统一入口；
 
 先读 README.md、AGENTS.md、docs/migration/STATUS.md、
 docs/architecture/PLATFORM_IMPLEMENTATION_REVIEW.md 和 docs/LOCAL_LITE3_CPU.md。
-当前主仓 git log/status 与 validation/cpu-voice-ros/release-manifest.json
+当前主仓 git log/status 与 validation/cpu-input-text/release-manifest.json
 提供最新源码基线；validation/local-platform 保留此前验收快照。不要根据旧阶段提案中“尚未实施”重新开始迁移。
 
 最常用命令（在主仓内）：
@@ -191,7 +202,7 @@ CPU provider 已在节点中可选择；默认两个 ROS profile 仍为 mock。
 
 ## 最新增量：真实 CPU Voice 到隔离 ROS
 
-新增统一 voice-cpu-ros 门禁，具体操作与范围见 [CPU_VOICE_ROS.md](../CPU_VOICE_ROS.md)。
+新增统一 voice-cpu-ros 门禁，具体操作与范围见 [CPU_VOICE_ROS.md](docs/CPU_VOICE_ROS.md)。
 
 实现只包括 Voice 模块自有测试、平台验证工具和文档。生产 Python 模块、
 原 RKLLM、默认 YAML、依赖锁、ROS package/CMake/IDL 均保持本轮开始时的内容。
@@ -234,3 +245,23 @@ CPU provider 已在节点中可选择；默认两个 ROS profile 仍为 mock。
 本轮最终：Voice417/0skip、平台36、契约25、架构/build/doctor/默认smoke/原七仓均通过。
 CPU Voice ROS链路5场景/12次服务通过；固定输入语义4/5，否定失败仍使顶层exit1。
 报告 validation/cpu-voice-ros，生产代码/配置/锁/IDL无改动。
+
+
+## 最新增量：CPU 原始 ASR 文本传递修复
+
+此前否定句失败已经定位为输入差异，详见 docs/migration/P6_CPU_INPUT_TEXT.md。
+CPU provider 新增 preserve_asr_text=true；节点只对它传原始 ASR 文本。原 RKLLM、
+规则回退、词库、动作证据门限和对外 asr_text 保持原清理行为；不改提示词/权重。
+真实 CPU ROS 五场景已重新通过，原语义失败快照不覆盖。无标点输入仍可能错，
+“你会坐下吗？”在原文/清理文本中都错分为 STOP，不能宣称全面修好否定/询问。
+原40条及新增12条诊断均保留原始预测与失败，最终结果见 validation/cpu-input-text。
+原同步推理的中途会话控制尚未验收，先验证它与独立口令质量，再扩大 BT/Action 联调。
+
+本轮回归：424/0skip Voice、36平台、25契约、wheel/build/默认smoke/原七仓均通过；
+原40条仍21/40且预测逐条不变，新增12条仅3/12。11条限制执行输入无可执行事件。
+不能把固定ROS五场景通过误认为模型质量达标；原模型对询问、转述和情绪仍会错分。
+
+本轮另做一次离线提示词布局对比：同样规则/37 示例移入 system，仍 3/12，
+部分否定被错分为 DO，但现有门限拦截、没有可执行事件；未采用，正式 v2 不变。
+新增诊断集已用于该实验，不再视为未见过的留出集。完整脚本/报告冻结在
+validation/cpu-input-text/experiments/system-examples，不将实验当作 ROS 或模型验收。

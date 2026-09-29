@@ -45,7 +45,7 @@ def test_explicit_text_fixture_is_never_claimed_as_asr():
 def test_wrong_model_label_does_not_hide_transport_or_execution_violations():
     case = {"id": "case", "text": "fixture", "source": "qwen_cpu",
             "expected_tag": "NONE|FOLLOW|STOP", "must_not_execute": True}
-    audit = {"asr": [{"id": "case"}], "intent": [{"id": "case", "classification": {
+    audit = {"asr": [{"id": "case", "result": {"asr_text": "fixture"}}], "intent": [{"id": "case", "text": "fixture", "classification": {
         "raw_nlu_tag": "NONE|SIT|DO"}}]}
     events = [
         {"event_type": "speech", "interaction_id": "session"},
@@ -59,7 +59,7 @@ def test_wrong_model_label_does_not_hide_transport_or_execution_violations():
 def test_correct_sit_cannot_pass_with_only_non_executable_semantics():
     case = {"id": "qwen-sit", "text": "fixture", "source": "qwen_cpu",
             "expected_tag": "NONE|SIT|DO", "must_not_execute": False}
-    audit = {"asr": [{"id": "qwen-sit"}], "intent": [{"id": "qwen-sit", "classification": {
+    audit = {"asr": [{"id": "qwen-sit", "result": {"asr_text": "fixture"}}], "intent": [{"id": "qwen-sit", "text": "fixture", "classification": {
         "raw_nlu_tag": "NONE|SIT|DO"}}]}
     events = [
         {"event_type": "speech", "interaction_id": "session"},

@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "description": "Additional developer-authored diagnostic phrasing fixed before execution. Not product-validated labels, not an accuracy benchmark; no prompt tuning against this set.",
+  "cases": [
+    {
+      "id": "no-lie",
+      "text": "不要趴下。",
+      "expected_tag": "NONE|LIE|STOP",
+      "must_not_execute": true
+    },
+    {
+      "id": "no-stand",
+      "text": "请不要站起来。",
+      "expected_tag": "NONE|STAND|STOP",
+      "must_not_execute": true
+    },
+    {
+      "id": "no-follow",
+      "text": "请不要继续跟随我。",
+      "expected_tag": "NONE|FOLLOW|STOP",
+      "must_not_execute": true
+    },
+    {
+      "id": "no-home",
+      "text": "暂时不许回家。",
+      "expected_tag": "NONE|GO_HOME|STOP",
+      "must_not_execute": true
+    },
+    {
+      "id": "ask-lie",
+      "text": "你会不会趴下？",
+      "expected_tag": "NONE|LIE|QUERY",
+      "must_not_execute": true
+    },
+    {
+      "id": "quote",
+      "text": "他说“坐下”，我是在重复他的话。",
+      "expected_tag": "NONE|NONE|NONE",
+      "must_not_execute": true
+    },
+    {
+      "id": "self-statement",
+      "text": "我坐在沙发上看书。",
+      "expected_tag": "NONE|NONE|NONE",
+      "must_not_execute": true
+    },
+    {
+      "id": "weather",
+      "text": "外面正在下雨。",
+      "expected_tag": "NONE|NONE|NONE",
+      "must_not_execute": true
+    },
+    {
+      "id": "praise",
+      "text": "这次你做得非常棒。",
+      "expected_tag": "PRAISE|NONE|NONE",
+      "must_not_execute": true
+    },
+    {
+      "id": "back",
+      "text": "请往后退一点。",
+      "expected_tag": "NONE|BACK|DO",
+      "must_not_execute": false
+    },
+    {
+      "id": "english-no-sit",
+      "text": "Please do not sit down.",
+      "expected_tag": "NONE|SIT|STOP",
+      "must_not_execute": true
+    },
+    {
+      "id": "english-capability",
+      "text": "What actions can you perform?",
+      "expected_tag": "NONE|DOG_CAPABILITY|QUERY",
+      "must_not_execute": true
+    }
+  ]
+}

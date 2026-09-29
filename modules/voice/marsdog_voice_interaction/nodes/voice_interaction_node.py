@@ -1962,7 +1962,7 @@ class VoiceInteractionNode(Node):
             return True
 
         intent_started = time.perf_counter()
-        parsed_intent = self._parse_intent(text)
+        parsed_intent = self._parse_intent(text, raw_text=raw_text)
         if self._wakeup_supersedes_utterance(utterance_wake_id):
             return False
         if parsed_intent is None:
@@ -2294,13 +2294,21 @@ class VoiceInteractionNode(Node):
                 latency_ms=round(kws_latency_ms, 2),
             )
 
-    def _parse_intent(self, text: str) -> dict[str, Any] | None:
+    def _parse_intent(
+        self, text: str, *, raw_text: str | None = None,
+    ) -> dict[str, Any] | None:
         for name in ("intent_llm", "intent_rule"):
             provider = self._providers.get(name)
             if provider is None or not provider.is_available():
                 continue
             try:
-                result = provider.parse_intent(text)  # type: ignore[attr-defined]
+                # Only an opted-in provider sees the unmodified ASR utterance.
+                # Legacy RKLLM and rule fallback keep their normalized input.
+                provider_text = (
+                    raw_text if raw_text is not None
+                    and getattr(provider, "preserve_asr_text", False) else text
+                )
+                result = provider.parse_intent(provider_text)  # type: ignore[attr-defined]
                 if result is not None:
                     return result
                 if getattr(provider, "input_rejected", False):

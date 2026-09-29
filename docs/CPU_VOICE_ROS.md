@@ -2,7 +2,8 @@
 
 本切片验证现有 Voice 节点的处理链，使用真实 SenseVoice 与 Qwen CPU 模型，
 由另一个进程通过 DDS 接收原有 String/JSON 事件，并调用原 VoiceTask 服务。
-不改变生产配置、RKLLM、ROS IDL 或 BT/Action，实现只增加在测试和集成工具中。
+不改变生产配置、RKLLM、ROS IDL 或 BT/Action。验证器位于测试和集成工具中；
+后续节点修复仅让显式 CPU provider 接收原始 ASR 文本，详见下方阶段记录。
 
 ## 运行
 
@@ -39,7 +40,7 @@ out/voice-cpu-ros/<timestamp>，没有使用原声纹数据库。
               标点清理 → 原词库优先匹配
                           │ 未命中
                           ▼
-               真实 Qwen CPU → 原事件路由
+               原始 ASR → Qwen CPU → 原事件路由
                           │
                           ▼
           带话轮/会话 ID 的原 ROS String/JSON
@@ -77,14 +78,18 @@ FixtureAudio 只替代设备捕获，文本输入明确记录 explicit_text_fixt
 status=PASS / exit 0 要求链路与本次样本标注都通过。若链路通过但模型误分类，
 仍为 FAIL / exit 1，同时保留 integration_acceptance=true 和原始结果。
 
-本次发现：“现在不要坐下。”经节点原有标点清理变成“现在不要坐下”，
+首轮发现：“现在不要坐下。”经节点原有标点清理变成“现在不要坐下”，
 Qwen 返回 NONE|NONE|NONE；期望为 NONE|SIT|STOP。没有可执行事件，
 但语义断言仍失败。此前独立意图回放直接传原文本，本次暴露了实际预处理差异。
-没有修改标注、关闭标点清理或改变默认模型来隐藏失败。
+原失败证据保留在 validation/cpu-voice-ros。后续已仅让 CPU provider 接收原始 ASR 文本，
+该五场景重新通过；RKLLM、规则、词库和公开事件文本的清理方式保持不变。
+详见 [输入差异修复](migration/P6_CPU_INPUT_TEXT.md)，最新证据 validation/cpu-input-text。
+没有修改标注、关闭原清理函数或改变默认模型来隐藏失败。
 
 当前单线程节点在 _poll 中同步运行推理；本门禁的 stop 检查发生在推理完成后。
 **不声称推理进行中的服务响应或即时取消已验证。**
 真实麦克风/VAD/KWS/声纹、机器人口令录音、BT/Action 整链路和设备验收仍未覆盖。
-后续应先核对模型输入预处理与提示词，并用独立口令集验证否定语义和响应时延。
+输入传递已对齐；后续先验证推理期间会话响应，并用独立口令集继续验证否定语义。
 
-详细冻结结果见 [阶段记录](migration/P6_CPU_VOICE_ROS.md)与 validation/cpu-voice-ros。
+最新结果见 [输入修复记录](migration/P6_CPU_INPUT_TEXT.md)与 validation/cpu-input-text。
+首轮冻结结果见 [历史阶段记录](migration/P6_CPU_VOICE_ROS.md)与 validation/cpu-voice-ros。

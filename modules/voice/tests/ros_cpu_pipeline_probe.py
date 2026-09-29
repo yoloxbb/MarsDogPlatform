@@ -90,6 +90,10 @@ class ObservedASR:
 
 
 class ObservedIntent:
+    @property
+    def preserve_asr_text(self):
+        return self.delegate.preserve_asr_text
+
     def __init__(self, delegate, audit):
         self.delegate, self.audit = delegate, audit
     @property
@@ -166,6 +170,9 @@ def check_case(case, observed, audit, interaction_id):
     intents = [x for x in audit["intent"] if x["id"] == case["id"]]
     if len(asr) != 1:
         errors.append("ASR boundary must be traversed once")
+    if len(asr) == 1 and len(intents) == 1:
+        if intents[0].get("text") != asr[0]["result"].get("asr_text"):
+            errors.append("Qwen did not receive the original ASR text")
     if not observed or any(e.get("interaction_id") != interaction_id for e in observed):
         errors.append("Missing or mismatched interaction identity")
     speech = [e for e in observed if e.get("event_type") == "speech"]
