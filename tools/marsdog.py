@@ -303,7 +303,7 @@ def supervise(args, *, profile=PROFILE, local=LOCAL, specs=process_specs,
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("prepare", "build", "doctor", "up", "smoke", "replay", "models", "intent-replay"))
+    parser.add_argument("command", choices=("prepare", "build", "doctor", "up", "smoke", "replay", "models", "intent-replay", "voice-cpu-ros"))
     parser.add_argument("--profile", choices=("lite3-local-cpu", "lite3-nav2-cpu"), default="lite3-local-cpu")
     parser.add_argument("--uv", default="uv")
     parser.add_argument("--archive-dir", type=Path, default=ROOT.parent / "migration/archives")
@@ -316,6 +316,10 @@ def main():
     parser.add_argument("--intent-archive", type=Path, help="User-supplied Qwen CPU model ZIP")
     parser.add_argument("--voice-intent-cpu", action="store_true", help="Prepare optional CPU intent dependencies for Voice")
     args = parser.parse_args()
+    if args.command == "voice-cpu-ros":
+        from check_voice_cpu_ros import main as voice_ros_main
+        extra = ["--output", str(args.output)] if args.output is not None else []
+        raise SystemExit(voice_ros_main(extra))
     if args.command == "intent-replay":
         if args.manifest is None:
             parser.error("intent-replay requires --manifest")

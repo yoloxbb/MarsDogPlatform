@@ -36,6 +36,15 @@ SenseVoice 中文参考已通过；YOLOE 13 张正例有 2 张漏检，整体回
 准备、配置和真实分类限制见 [CPU 意图后端](docs/CPU_INTENT.md)。
 该候选尚未通过完整模型质量验收，不自动替换默认 profile。
 
+真实 CPU Voice 到隔离 ROS 的增量验证：
+
+~~~bash
+python3 tools/marsdog.py voice-cpu-ros
+~~~
+
+见 [CPU Voice ROS 验证](docs/CPU_VOICE_ROS.md)：一条真实 WAV，加四条明确文本测试输入。
+链路已贯通；否定句仍有模型语义错误，门禁会保留 FAIL，不替换整机默认 profile。
+
 Ctrl-C 关闭整组进程。日志/配置副本/数据写入 out/local/runs；
 子进程崩溃会使组合失败退出，重复启动会被拒绝。详细说明见
 [本机启动与验收](docs/LOCAL_LITE3_CPU.md)。

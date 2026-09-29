@@ -24,7 +24,7 @@ Lite3 本机 prepare/build/doctor/up/smoke 统一入口；
 
 先读 README.md、AGENTS.md、docs/migration/STATUS.md、
 docs/architecture/PLATFORM_IMPLEMENTATION_REVIEW.md 和 docs/LOCAL_LITE3_CPU.md。
-当前主仓 git log/status 与 validation/cpu-intent/release-manifest.json
+当前主仓 git log/status 与 validation/cpu-voice-ros/release-manifest.json
 提供最新源码基线；validation/local-platform 保留此前验收快照。不要根据旧阶段提案中“尚未实施”重新开始迁移。
 
 最常用命令（在主仓内）：
@@ -187,3 +187,50 @@ CPU provider 已在节点中可选择；默认两个 ROS profile 仍为 mock。
 本轮最终软件门禁：Voice 412/0 skip，平台32，契约25；独立wheel、ROSbuild/doctor、
 两套mock感知profile smoke、原七仓基线均通过。Qwen真实回放21/40，39次生成、1次拒绝，
 22条限制执行样本无可执行事件；单句中位数7.52秒。不能称为质量或性能验收通过。
+
+
+## 最新增量：真实 CPU Voice 到隔离 ROS
+
+新增统一 voice-cpu-ros 门禁，具体操作与范围见 [CPU_VOICE_ROS.md](../CPU_VOICE_ROS.md)。
+
+实现只包括 Voice 模块自有测试、平台验证工具和文档。生产 Python 模块、
+原 RKLLM、默认 YAML、依赖锁、ROS package/CMake/IDL 均保持本轮开始时的内容。
+
+## 本切片验证
+
+两个独立进程：已安装 Voice 节点与 ROS 观察节点。domain215、localhost、唯一端点前缀。
+复用原 VoiceTask 的 start/hold/release/get-state/stop，核对新会话 ID 与旧会话不同。
+经真实节点处理后，通过 DDS 检查话轮 ID、会话 ID、事件来源、可执行字段，
+以及实际模型输出与事件分类一致。不会直接构造预期分类来充当模型输出。
+
+一条官方 WAV 使用真实 SenseVoice CPU，识别文本正确，再进入 Qwen 和 ROS。
+其余四条明确是文本测试输入，用于 Qwen 正/负例、协议注入拒绝、词库优先。
+两者分开计数，不能把五条都说成真实 ASR 录音。
+
+## 结果解释
+
+首轮 integration_acceptance=true；固定输入语义 4/5 符合预期。
+否定句经原节点去掉标点后，Qwen 预测中性；它没有触发动作，但语义不正确。
+顶层报告保留 FAIL / exit 1。此前 40 条独立意图开发集结果未覆盖、未改写。
+
+会话停止验证只覆盖推理结束后的 stop 及不再处理捕获输入；
+原同步推理时的服务阻塞/即时取消不在本切片验收范围。
+不修改机器人行为、声纹身份或执行策略来使测试通过。
+
+## 后续优先级
+
+1. 对齐独立回放和真实节点的输入预处理，保留两种输入的差异证据；
+   在独立标注集上评估否定、转述、复合意图及处理时延。
+2. 增加实际机器人口令 WAV，扩展 ASR→Voice 会话→隔离 ROS 事件验收。
+3. 在模型质量和取消语义明确后，接入受控 BT/Action 集成；
+   保留已有 mock profile 和原 RKLLM 板端路径。
+4. 视觉两张漏检、SLAM 传感器、Lite3 设备、远端 CI 与许可事项按原交接推进。
+
+统一命令 python3 tools/marsdog.py voice-cpu-ros，前提模型已准备且 build 非 stale。
+域215、唯一 /development/voice_cpu_<uuid> 前缀，两进程无硬件。
+没有改生产源码/默认配置/锁/IDL。新验证器仅在 modules/voice/tests 与 tools。
+模型质量失败不能报告为整机感知通过；保留旧 cpu-intent 的21/40和所有失败。
+
+本轮最终：Voice417/0skip、平台36、契约25、架构/build/doctor/默认smoke/原七仓均通过。
+CPU Voice ROS链路5场景/12次服务通过；固定输入语义4/5，否定失败仍使顶层exit1。
+报告 validation/cpu-voice-ros，生产代码/配置/锁/IDL无改动。
