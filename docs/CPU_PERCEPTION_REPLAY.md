@@ -1,8 +1,9 @@
 # CPU 感知回放：首个可验证切片
 
-当前完成了回放工具与软件回归，实际模型推理仍未验收。工作区中未找到模型权重，
-详见 validation/perception-replay/asset-audit.json。原有两套整机开发 profile 继续使用
-感知 mock；本工具不会悄悄把其中一个替换成生产入口。
+回放工具与软件回归已完成。最新 models.zip 资产接入和实际结果见
+[CPU 模型实测](CPU_MODEL_ASSETS.md)：ASR 已通过，视觉仍有 2 张漏检，整体 FAIL。
+validation/perception-replay/asset-audit.json 是此前缺资产阶段的冻结记录。
+原有两套整机开发 profile 继续使用感知 mock。
 
 ## 范围与边界
 
@@ -93,8 +94,13 @@ Voice 生产节点原有的 ASR 失败回退 mock 行为仍保留；回放直接
 6 项构建隔离测试）；原有契约 25 项通过。wheel、ROS 构建及新旧 profile smoke 通过。
 证据见 validation/perception-replay；旧的冻结 Nav2/本机集成证据保持原样。
 
-下一步提供实际模型、对应 tokens/类别标签、录音/图像与预期答案，运行本工具。
+现可用统一 models 命令准备已固定资产并运行本工具。下一步补充机器人实际录音/图像，
+并处理当前视觉漏检及 RKLLM 原权重缺失。
 首批样本通过后再把真实输入接入隔离 ROS 事件和服务验收，不跳过模型层直接宣称整机成功。
 
 SIGINT/SIGTERM 中断与超时会回收本次模型子进程并保存 FAIL，不能留下 READY
 冒充已完成。平台测试包含实际阻塞子进程的中断验证；该进程不运行模型。
+
+模型接入后新增修复：一个模块验收失败仍保留其真实推理报告，并继续运行其他独立模块。
+整体仍返回 FAIL；inference_executed 与 model_acceptance 分别表达是否执行和是否通过，
+不把已运行但断言失败误写成没有运行。

@@ -301,7 +301,7 @@ def supervise(args, *, profile=PROFILE, local=LOCAL, specs=process_specs,
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("prepare", "build", "doctor", "up", "smoke", "replay"))
+    parser.add_argument("command", choices=("prepare", "build", "doctor", "up", "smoke", "replay", "models"))
     parser.add_argument("--profile", choices=("lite3-local-cpu", "lite3-nav2-cpu"), default="lite3-local-cpu")
     parser.add_argument("--uv", default="uv")
     parser.add_argument("--archive-dir", type=Path, default=ROOT.parent / "migration/archives")
@@ -309,7 +309,19 @@ def main():
     parser.add_argument("--manifest", type=Path, help="Annotated CPU replay asset manifest")
     parser.add_argument("--output", type=Path, help="CPU replay evidence directory")
     parser.add_argument("--check-only", action="store_true", help="Validate replay assets without inference")
+    parser.add_argument("--model-archive", type=Path, help="Supplied models.zip for pinned CPU assets")
+    parser.add_argument("--download", action="store_true", help="Fetch missing pinned CPU model assets")
     args = parser.parse_args()
+    if args.command == "models":
+        if args.model_archive is None:
+            parser.error("models requires --model-archive")
+        from prepare_cpu_models import main as models_main
+        model_args = ["--archive", str(args.model_archive)]
+        if args.output is not None:
+            model_args += ["--output", str(args.output)]
+        if args.download:
+            model_args.append("--download")
+        raise SystemExit(models_main(model_args))
     if args.command == "replay":
         if args.manifest is None:
             parser.error("replay requires --manifest")

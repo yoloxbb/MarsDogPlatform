@@ -33,6 +33,33 @@ class ReplayPreflightTests(unittest.TestCase):
         self.manifest.write_text(json.dumps(self.data))
         return replay.preflight(self.manifest)
 
+
+    def test_failed_inference_is_retained_and_other_module_still_runs(self):
+        self.data["voice"] = {
+            "model": self.asset("asr.onnx"), "tokens": self.asset("tokens.txt"),
+            "samples": [{"id": "speech", "audio": self.asset("speech.wav"), "expected_text": "回家"}]}
+        self.manifest.write_text(json.dumps(self.data))
+        calls = []
+        def run(name, request, directory, timeout):
+            calls.append(name)
+            report = {"status": "PASS", "device": "cpu", "real_model_inference": True,
+                      "cases": [{"id": sample["id"], "status": "PASS"} for sample in request["samples"]]}
+            if name == "vision":
+                report["status"] = "FAIL"
+                report["cases"][0]["status"] = "FAIL"
+                raise replay.ReplayFailure("Missing expected labels", report)
+            return report
+        output = self.root / "evidence"
+        with mock.patch.object(replay, "run_module", side_effect=run):
+            code = replay.main(["--manifest", str(self.manifest), "--output", str(output)])
+        result = json.loads(next(output.glob("*/result.json")).read_text())
+        self.assertEqual(code, 1)
+        self.assertEqual(calls, ["vision", "voice"])
+        self.assertTrue(result["inference_executed"])
+        self.assertFalse(result["model_acceptance"])
+        self.assertEqual(result["modules"]["vision"]["cases"][0]["status"], "FAIL")
+        self.assertEqual(result["modules"]["voice"]["status"], "PASS")
+
     def test_hashes_and_relative_paths(self):
         result = self.prepare()
         self.assertEqual(result["status"], "READY")

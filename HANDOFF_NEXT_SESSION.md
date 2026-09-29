@@ -9,7 +9,7 @@
 独立锁文件、公开接口登记、DAG/import 门禁；
 Lite3 本机 prepare/build/doctor/up/smoke 统一入口；
 实际跨进程 GO_HOME 成功、正常关闭、重复启动拒绝与子进程故障传播。
-这是本机软件交付，不是实机或模型推理发布。
+这是本机软件交付；已补真实 CPU 回放，但视觉存在 2 张漏检，不是实机/完整感知发布。
 
 实际工作区在 WSL，不在当前客户端显示的 C:\home 路径：
 
@@ -24,7 +24,7 @@ Lite3 本机 prepare/build/doctor/up/smoke 统一入口；
 
 先读 README.md、AGENTS.md、docs/migration/STATUS.md、
 docs/architecture/PLATFORM_IMPLEMENTATION_REVIEW.md 和 docs/LOCAL_LITE3_CPU.md。
-当前主仓 git log/status 与 validation/perception-replay/release-manifest.json
+当前主仓 git log/status 与 validation/cpu-model-assets/release-manifest.json
 提供最新源码基线；validation/local-platform 保留此前验收快照。不要根据旧阶段提案中“尚未实施”重新开始迁移。
 
 最常用命令（在主仓内）：
@@ -54,7 +54,7 @@ Voice 367；Vision 280/3 skip；Native 140 cases 与 13 CTest entries；
 go_home 不产生 Needs 结算；不要为 smoke 人为改变这个产品语义。
 模拟电量绝不能结算 Energy。
 
-后续需要输入才能做的工作：真实 CPU 模型/录音图像回放、Lite3 外部 IDL/SDK 和设备、
+后续需要输入才能做的工作：原微调 RKLLM 权重及机器人实际录音图像、Lite3 外部 IDL/SDK 和设备、
 完整 Nav2/RTAB 传感器与地图验收、远端与 owner 绑定、厂商许可、旧入口用途确认。
 已有证据不足时标 UNKNOWN，不伪造硬件、推理或 hosted CI 成功。
 仍缺运动控制算法和嵌入式仓库，只保留已有外部调用边界。
@@ -94,7 +94,7 @@ robotics 自研实现、IDL、默认配置、原始七仓和算法未改。
 tools/marsdog.py replay --manifest /absolute/path/to/cpu-replay.json 已实现；
 --check-only 仅做资产校验。模板 config/replay/cpu.example.json，说明
 docs/CPU_PERCEPTION_REPLAY.md。status=READY 不等于模型推理通过。
-模型缺失返回 BLOCKED_MISSING_ASSETS / exit 2，本机当前就是此状态。
+模型缺失返回 BLOCKED_MISSING_ASSETS / exit 2；该段是前一轮缺资产时的历史记录。
 
 首切片是 YOLOE 物体检测 + SenseVoice/Paraformer 的已切分 WAV ASR和精确词库 payload。
 不会启动 ROS/硬件，不覆盖完整 Vision、Voice 会话/VAD/KWS/RKLLM，不替换旧 mock profile。
@@ -105,6 +105,44 @@ docs/CPU_PERCEPTION_REPLAY.md。status=READY 不等于模型推理通过。
 25契约、15 ROS manifests/21接口；wheel和ROS构建、两套profile smoke通过。
 实际模型推理尚未验收。新证据 validation/perception-replay，旧冻结报告未覆盖。
 
-本轮已递归核对工作区可用资产，未发现权重；已向用户询问模型/样本路径。
+此前已递归核对工作区，彼时未发现权重；用户本轮已补充 models.zip，见下方最新增量。
 后续优先接收实际 CPU 模型、tokens/标签、带预期答案的 PCM16 单声道16k WAV和图像。
 不要下载随机替代权重或把 Action 展示媒体当感知标注集，也不要因缺模型反复搬代码。
+
+## 最新增量：已接收模型并执行 CPU 推理
+
+用户提供 /home/elephant/MarsDog/models.zip，SHA256
+6160bd0aa7944a22aa11ac024746930e2a2fa5e04b32f7e2c318db9d3c6785a6，原包保留。
+详细记录 docs/CPU_MODEL_ASSETS.md、docs/migration/P6_CPU_MODEL_ASSETS.md，
+证据 validation/cpu-model-assets。不要再报告“工作区没有模型”。
+
+统一准备：
+python3 tools/marsdog.py models --model-archive /home/elephant/MarsDog/models.zip --download
+统一回放：
+python3 tools/marsdog.py replay --manifest out/models/cpu-20260929/cpu-replay.json
+辅助检查：
+python3 tools/check_cpu_model_runtimes.py --assets out/models/cpu-20260929
+
+57 项包内 CPU/资源文件、7 项官方网络资产锁定 URL/大小/SHA256。
+资产位于 out/models/cpu-20260929；所有五个 Python 环境/lock 保持原状。
+CLIP 只用于准备进程的临时 PYTHONPATH，生成包含原 18 类和 end2end=false 的 26s CPU权重。
+不需要再次在线编码，也没有自动安装依赖。重复准备验证后复用。
+各模块独立清单 voice-replay.json / vision-replay.json 也由准备工具生成。
+
+实际结论：SenseVoice 中文官方参考 PASS；YOLOE 13 张正例 11 PASS / 2 FAIL。
+失败 000000000307 / 000000000394 都确实包含狗，不能删样本、降断言或改提示/阈值制造通过。
+脸/姿态/VAD/声纹/KWS/手部已做有限 runtime 探测；手部照片没检出手，KWS 0命中；
+这些只能证明文档所列的运行/负例/自匹配范围，不能称为召回/身份准确率通过。
+姿态初次半身图失败保留，补充全身图通过，未宣称修好了半身输入。
+
+CPU 26s 来自官方同系列基础权重；与原 RKNN 训练权重等价仍 UNKNOWN。
+RKLLM 是专门微调的 SOCIAL|INTENT|CONTROL 分类器，原 HF/PyTorch 权重/tokenizer 缺失。
+已询问用户原始权重/训练记录，未收到答复；不要下载通用 Qwen 猜测替代。
+RTMPose/yolo26n/2025 ASR等资产不自动变成生产选择；Pose MediaPipe是已有备选，不是YOLOv8权重转换。
+
+工具层修复：失败推理保留在总报告，一模块失败继续另一模块，整个回放仍 FAIL。
+目前两套 ROS 开发 profile 继续用感知 mock，没有提升未通过模型为默认生产输入。
+平台测试27、接口契约25、架构和原七仓基线通过。业务/IDL/ROS源码未改，无需ROS重建。
+
+下一切片：先核对原26s导出权重/提示来源、补实际标注口令与图像、拿到微调意图权重；
+之后做隔离 ROS 感知事件/服务与 BT/Action 链路。硬件/SLAM/远端CI限制仍保留。

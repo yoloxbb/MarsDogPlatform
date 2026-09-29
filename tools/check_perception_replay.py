@@ -143,6 +143,14 @@ def preflight(manifest):
             "inference_executed": False}
 
 
+class ReplayFailure(RuntimeError):
+    """Keep real inference evidence even when its acceptance assertions fail."""
+    def __init__(self, message, report):
+        super().__init__(message)
+        self.report = {**report, "reported_status": report.get("status"), "status": "FAIL",
+                       "acceptance_error": message}
+
+
 def run_module(name, request, directory, timeout):
     request_path, report_path = directory / (name + "-request.json"), directory / (name + ".json")
     request_path.write_text(json.dumps(request, ensure_ascii=False, indent=2) + "\n")
@@ -170,7 +178,7 @@ def run_module(name, request, directory, timeout):
     if (code != 0 or report.get("status") != "PASS" or report.get("device") != "cpu"
             or actual != wanted or not report.get("real_model_inference")
             or any(case.get("status") != "PASS" for case in report.get("cases", []))):
-        raise RuntimeError(name + " replay failed; see " + str(report_path))
+        raise ReplayFailure(name + " replay failed; see " + str(report_path), report)
     return report
 
 
@@ -198,13 +206,23 @@ def main(argv=None):
         report.update(status=prepared["status"], errors=prepared["errors"], assets=prepared["assets"])
         if prepared["status"] == "READY" and not args.check_only:
             report["modules"] = {}
+            failed = False
             for name, request in prepared["requests"].items():
-                report["modules"][name] = run_module(name, request, directory, args.timeout)
-                report["inference_executed"] = True
-            # Refuse acceptance if an input was edited during the run.
+                try:
+                    report["modules"][name] = run_module(name, request, directory, args.timeout)
+                except ReplayFailure as exc:
+                    report["modules"][name] = exc.report
+                    failed = True
+                except Exception as exc:
+                    report["modules"][name] = {"status": "FAIL", "error": str(exc),
+                                               "real_model_inference": False}
+                    failed = True
+                report["inference_executed"] = any(
+                    item.get("real_model_inference") is True for item in report["modules"].values())
+            # Refuse acceptance if an input was edited during the run, including failed runs.
             if any(sha256(Path(a["path"])) != a["sha256"] for a in prepared["assets"]):
                 raise RuntimeError("An input asset changed during replay")
-            report["status"] = "PASS"
+            report["status"] = "FAIL" if failed else "PASS"
         report["model_acceptance"] = report["status"] == "PASS"
     except (Exception, KeyboardInterrupt) as exc:
         report.update(status="FAIL", error=str(exc) or type(exc).__name__, model_acceptance=False)
