@@ -9,7 +9,9 @@ P7、五模块兼容性重构 R1–R4，以及后续业务恢复/导航交接/�
 
 - 唯一主仓：/home/elephant/MarsDog/marsdog-platform（WSL Ubuntu-22.04）。
 - P7 工程源码：2468639054763398882366bad7869236c0d2e68e；交付基线 3f50614。
-- 当前新源码分支：refactor/audio-contracts；R1 提交与证据以 git log 和
+- 当前开发主线：main；软件验收基线标签 acceptance/five-module-software-20260930。
+  main 已快进接收 1835707，随后只追加主线文档和证据。原 refactor/audio-contracts
+  保留在 1835707；收口证据在 validation/mainline-acceptance。R1 提交与证据以 git log 和
   validation/compat-refactor/r1 为准；R2–R4 证据在 validation/compat-refactor/r2-r4，
   最新提交以 git log 为准。不能将旧 P7 bundle 当作最新源码。
 - 继续前核对 git status --short 和 git log -3 --oneline，保留任何新出现的用户改动。
@@ -46,7 +48,8 @@ Vision 289 pass / 3 RGA skip。平台 51 tests，结果契约 25 tests。
 
 当前实测工程源码包：out/handoff/source-bundle-scenarios-ccee303。
 当前最终包：out/handoff/source-bundle-scenarios-20260930-final（含当前证据和交接）。
-包内分支为 refactor/audio-contracts；main 仍是历史 P7 基线，不能当作当前重构。
+这个既有包固定在 1835707：包内 refactor/audio-contracts 含重构，包内 main 是旧 P7。
+当前本地主仓 main 已完成收口；上述旧包不含本次标签，按包内 manifest 解释分支。
 旧 source-bundle-2468639 / source-bundle-final 仅为 P7 历史包。
 用可信 tools/source_handoff.py verify 后克隆，以 manifest 的 commit/哈希为准。
 没有复制模型、虚拟环境、构建输出；包不是完整离线依赖镜像。

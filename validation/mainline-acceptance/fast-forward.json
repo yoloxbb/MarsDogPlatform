@@ -1,0 +1,41 @@
+{
+  "old_main": "3f50614721419befddc4c59b218571ea95a5ddb1",
+  "accepted_ref": "refactor/audio-contracts",
+  "accepted_commit": "18357078a763f76facf83f8263c9a1c748acc4f8",
+  "accepted_tree": "644278b30827f5e76283e6234384d67ecffd294e",
+  "initial_status": "",
+  "ancestor_verified": true,
+  "started_utc": "2026-09-30T12:35:41.276670+00:00",
+  "status": "PASS",
+  "merge_mode": "fast-forward only",
+  "commands": [
+    {
+      "command": [
+        "git",
+        "switch",
+        "main"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "Switched to branch 'main'\n"
+    },
+    {
+      "command": [
+        "git",
+        "merge",
+        "--ff-only",
+        "--no-stat",
+        "refactor/audio-contracts"
+      ],
+      "returncode": 0,
+      "stdout": "Updating 3f50614..1835707\nFast-forward\n",
+      "stderr": ""
+    }
+  ],
+  "merged_main": "18357078a763f76facf83f8263c9a1c748acc4f8",
+  "merged_main_tree": "644278b30827f5e76283e6234384d67ecffd294e",
+  "accepted_branch_preserved": true,
+  "post_merge_status": "",
+  "no_source_changes_from_accepted_commit": true,
+  "no_remote_configured": true
+}

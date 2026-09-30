@@ -1,6 +1,6 @@
 # MarsDog Architecture and Migration Proposal
 
-**版本：2.3 · 更新：2026-09-30 · 状态：五模块重构、业务恢复验收、导航交接与新源码交付已完成。**
+**版本：2.4 · 更新：2026-09-30 · 状态：五模块重构、业务恢复/交付及本地主线验收基线已完成。**
 
 本文是后续会话的执行计划，替代 v1 中“尚未实施、下一步 P1”的进度判断。
 用户的最终目标是：把多个模块仓库整合为一个长期可维护的主仓，统一架构和工程入口，
@@ -18,11 +18,14 @@ Windows 对应路径为 \\wsl.localhost\Ubuntu-22.04\home\elephant\MarsDog\marsd
 聚合目录不是第二个 Git 主仓；新增业务开发只在主仓完成。
 本文相对链接以主仓 docs/architecture 下的文件为基准，聚合目录副本同步正文。
 
-**当前状态：第 15.4 节 R1–R4 重构和第 15.5 节场景/导航交接/源码交付均已完成。**
+**当前状态：第 15.4–15.6 节的重构、场景/交付和本地主线收口均已完成。**
+当前开发主线 main，验收标签 acceptance/five-module-software-20260930；
+后续从 main 创建功能分支。收口记录见 validation/mainline-acceptance/README.md。
 Voice、Vision、Emotion、BT、Action 已拆分领域职责并统一契约查阅与测试入口；
 实测工程源码 ccee303，最新提交以 git log 为准；重构证据见 validation/compat-refactor/r2-r4，
 新增七项恢复场景及干净克隆证据见 validation/scenario-delivery/DELIVERY.md。
-当前最终交付目录为 out/handoff/source-bundle-scenarios-20260930-final。
+最近已导出的交付目录为 out/handoff/source-bundle-scenarios-20260930-final，
+固定在 1835707；该包保留导出时的分支，不含之后的本地主线标签。
 导航/避障内部、模型精度和实机验收未纳入本轮。
 [重构结果](COMPATIBILITY_REFACTOR.md) 记录具体组件、门禁和限制。
 
@@ -436,6 +439,29 @@ Voice 重启重新发现、Vision 暂停缓存过期/超时、恢复后迟到回
 不复制环境、模型或构建产物。完整交接步骤在 docs/deployment/SOURCE_HANDOFF.md。
 本轮没有重跑未变代码的全量五模块/wheel/SLAM 扩展门禁，其历史证据原样保留；
 mock 输入、模拟 I/O、真实相机/模型/板端/实机及远端 CI 的界限保持明确。
+
+### 15.6 本地主线收口与验收标签（已完成）
+
+用户确认后，先核对工作区干净及分支祖先关系，再将 main 从 3f50614
+以 fast-forward 方式推进到已验收分支的 1835707。
+合入后的完整 Git tree 与 1835707 完全相同，无冲突、无业务源码改动；
+原 refactor/audio-contracts 分支与此前交付包保留。
+
+随后仅更新当前基线文档和收口证据，在 main 建立附注标签
+acceptance/five-module-software-20260930。该标签是本地软件验收基线，
+供后续功能分支起步及回溯；不是设备/模型验收或对外发布。
+证据见 validation/mainline-acceptance/README.md。
+代码与 ccee303 的独立克隆实测版本相同，继续使用既有平台、契约、
+构建、smoke 和恢复证据；本次不重复运行没有源码变化的完整测试。
+
+现有 out/handoff/source-bundle-scenarios-20260930-final 仍固定在 1835707，
+包内 refactor/audio-contracts 包含验收源码，包内 main 仍是导出当时的 P7 基线。
+它没有本次新标签，不能把包内 main 与当前本地主仓 main 混为一谈。
+如需交付最新主线，从当前 main 用 source_handoff.py 导出新目录，
+保留旧包及其 manifest 不变。
+
+本地主线已准备好，后续从 main 按具体需求创建功能分支。
+导航负责人、板端资料、远端/owner/runner 等按既定边界接入。
 
 ## 16. Human Confirmation and External Inputs
 

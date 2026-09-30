@@ -8,6 +8,10 @@ MarsDog 的统一开发主仓：视觉、语音、Emotion/Needs、行为树、Ac
 没有实机；本机集成用明确的设备替身。开发板的系统、ABI、NPU SDK 尚待确认。
 目标是先完成软件协作和集成，再在板端构建、接入 Lite3。
 
+当前开发主线为 main，软件验收基线标签为
+acceptance/five-module-software-20260930。
+后续功能从该主线创建分支；[收口记录](validation/mainline-acceptance/README.md)说明版本与验证范围。
+
 ## 从这里开始
 
 - 新成员：[开发快速开始](docs/development/QUICKSTART.md)

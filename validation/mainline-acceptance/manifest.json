@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "scope": "Local mainline fast-forward and acceptance baseline; unchanged executable payload",
+  "files": {
+    "README.md": "36edaa770f6870198bcd5b782d5c74e650f4a1f1836de6351f54949606dc5648",
+    "fast-forward.json": "fbdc65791eddabcc3060a022d432c227165465871d15e294505f674a74c923bf",
+    "prior-package-audit.json": "e2253957ceca6d32e8112b7d3f55e3f9d94b5aac15f6eb2fab2286169bf000ee",
+    "verification.json": "625a5f8564de502eb6b81bb15055fa8e1d6023e8836b92eeb18fad0495317780"
+  }
+}

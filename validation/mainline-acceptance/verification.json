@@ -1,0 +1,37 @@
+{
+  "status": "PASS",
+  "accepted_commit": "18357078a763f76facf83f8263c9a1c748acc4f8",
+  "runtime_tested_commit": "ccee3033d71cbf4de4a19199d7bcc7cab7abd1f2",
+  "allowed_post_merge_changes": [
+    "HANDOFF_NEXT_SESSION.md",
+    "README.md",
+    "docs/architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md",
+    "docs/deployment/SOURCE_HANDOFF.md",
+    "docs/migration/STATUS.md",
+    "validation/mainline-acceptance/"
+  ],
+  "actual_tracked_changes": [
+    "HANDOFF_NEXT_SESSION.md",
+    "README.md",
+    "docs/architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md",
+    "docs/deployment/SOURCE_HANDOFF.md",
+    "docs/migration/STATUS.md"
+  ],
+  "no_runtime_or_test_source_changes": true,
+  "prior_evidence_manifests_checked": [
+    {
+      "path": "validation/scenario-delivery/manifest.json",
+      "sha256": "23ed15d8077e0eaac1251620d2c7b489d4ad81135d3b366bc6dba787c5937051",
+      "verified_entries": 19
+    },
+    {
+      "path": "validation/scenario-delivery/delivery-manifest.json",
+      "sha256": "7b453a2f7ff24efd5a37dd775534b2e532506b78bec1fd3ef6b18ec63770ae18",
+      "verified_entries": 117
+    }
+  ],
+  "preserved_prior_package": "out/handoff/source-bundle-scenarios-20260930-final",
+  "new_bundle_created": false,
+  "tests_rerun": false,
+  "reason": "Fast-forward tree identical to accepted commit; only baseline documentation and evidence updated."
+}

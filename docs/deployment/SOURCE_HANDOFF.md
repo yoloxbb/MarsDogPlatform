@@ -38,7 +38,18 @@ bundle 保留主仓已有历史，不复制 .venv、out、.external、模型、�
 主仓的历史来源记录/commit maps 随版本保留；原始独立仓完整档案另行保管。
 源码 bundle 不是完整的离线依赖镜像；首次 Python/ROS 依赖下载仍需要网络或匹配的缓存。
 
-## 当前源码交付（2026-09-30）
+## 当前本地主线
+
+本地主仓 main 已接收全部验收成果，软件基线标签为
+acceptance/five-module-software-20260930。后续功能从 main 创建分支。
+收口只快进分支并同步文档、证据，没有改运行代码；见
+[主线验收记录](../../validation/mainline-acceptance/README.md)。
+
+下列已有包仍保留原 manifest 和 refs，不包含本次主线标签。
+需要交付最新 main 时，切换到干净 main，按上文 create/verify 导出新的目录；
+新包应从 main 克隆。不要覆盖原包，也不要把其旧 main 当作当前本地主线。
+
+## 主线收口前的源码交付包（2026-09-30）
 
 当前工程源码为 ccee3033d71cbf4de4a19199d7bcc7cab7abd1f2，包含五模块 R1–R4
 重构、新增恢复场景、业务矩阵及导航负责人交接。
@@ -50,7 +61,8 @@ bundle 保留主仓已有历史，不复制 .venv、out、.external、模型、�
 
 交付给新成员时复制整个最终目录，含 manifest、Git bundle 和两个固定 vendor 归档。
 先用可信版本的 source_handoff.py verify，再克隆其中 refactor/audio-contracts 分支。
-当前 main 分支仍是历史 P7 基线，不要误切回 main 认为它包含新重构。
+此包内 main 分支仍是导出时的 P7 基线；这里应选 refactor/audio-contracts。
+当前本地主仓 main 已更新，和这个历史包内的同名 ref 不是同一状态。
 
 ~~~bash
 python3 tools/source_handoff.py verify --directory /absolute/path/to/final-bundle
