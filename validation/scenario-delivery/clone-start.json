@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "clone": "/home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303",
+  "source_commit": "ccee3033d71cbf4de4a19199d7bcc7cab7abd1f2",
+  "absent_before_prepare": [
+    "out",
+    ".external",
+    "modules/voice/.venv",
+    "modules/vision/.venv",
+    "modules/emotion/.venv",
+    "modules/behavior/.venv",
+    "modules/action/.venv",
+    "platform/humble-build-tools/.venv"
+  ],
+  "allowed_reuse": [
+    "/opt/ros/humble system installation",
+    "uv/deb download caches only"
+  ],
+  "source_copy": "git clone from verified Git bundle"
+}

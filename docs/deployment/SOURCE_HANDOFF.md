@@ -38,6 +38,51 @@ bundle 保留主仓已有历史，不复制 .venv、out、.external、模型、�
 主仓的历史来源记录/commit maps 随版本保留；原始独立仓完整档案另行保管。
 源码 bundle 不是完整的离线依赖镜像；首次 Python/ROS 依赖下载仍需要网络或匹配的缓存。
 
+## 当前源码交付（2026-09-30）
+
+当前工程源码为 ccee3033d71cbf4de4a19199d7bcc7cab7abd1f2，包含五模块 R1–R4
+重构、新增恢复场景、业务矩阵及导航负责人交接。
+
+| 本机目录 | 用途 |
+| --- | --- |
+| out/handoff/source-bundle-scenarios-ccee303 | 实际独立克隆、重建与运行验收的工程源码包 |
+| out/handoff/source-bundle-scenarios-20260930-final | 最终交付包，追加本轮完整验收证据与当前交接；commit/SHA 以包内 manifest 为准 |
+
+交付给新成员时复制整个最终目录，含 manifest、Git bundle 和两个固定 vendor 归档。
+先用可信版本的 source_handoff.py verify，再克隆其中 refactor/audio-contracts 分支。
+当前 main 分支仍是历史 P7 基线，不要误切回 main 认为它包含新重构。
+
+~~~bash
+python3 tools/source_handoff.py verify --directory /absolute/path/to/final-bundle
+git clone --branch refactor/audio-contracts /absolute/path/to/final-bundle/marsdog-platform.bundle marsdog-platform
+cd marsdog-platform
+python3 -B tools/dev.py check
+python3 -B tools/marsdog.py prepare --uv /absolute/path/to/uv \
+  --archive-dir /absolute/path/to/final-bundle/vendor-archives
+python3 -B tools/marsdog.py build
+python3 -B tools/marsdog.py doctor
+python3 -B tools/marsdog.py smoke
+python3 -B tools/check_business_scenarios.py
+~~~
+
+本轮独立克隆位于 out/scenario-delivery/clean-clone-ccee303。
+起始不含 .venv、out 或 .external，按锁创建五套环境与独立 ROS install。
+只复用系统 Humble 和 uv/deb 下载缓存；没有复制旧环境或借旧源码 import。
+已通过 79 平台测试、全部声音/视觉/状态/任务/结果契约、默认 15 包从零构建、
+doctor/smoke、七项恢复场景及取消 transport；已记录进程正常退出且无残留。
+构建中原有 warning 保留在日志，不改变非零退出判定。
+证据与范围见 [本轮交付验收](../../validation/scenario-delivery/DELIVERY.md)。
+
+验收后仅追加文档与证据，最终包再次 verify/独立 clone，
+校验其余所有文件与 ccee303 相同，不把文档提交冒充再次完整构建。
+最终校验记录保存在本机 out/scenario-delivery/final-package-audit.json；
+Git 包内以实测源码、验收日志、清单和 Git diff 为复核依据，避免清单自引用。
+
+源码包包含 Git 历史与固定归档，仍不包含 Python/ROS 依赖缓存、模型或板端二进制。
+本轮只验收默认 mock 感知/模拟导航和 Lite3 I/O；没有模型精度或实机验收。
+导航/避障负责人接手前读 [导航交接](../development/NAVIGATION_HANDOFF.md)，
+软件业务边界见 [场景矩阵](../development/BUSINESS_SCENARIOS.md)。
+
 ## P7 历史交付验收
 
 源码 2468639 已经真实导出、校验、在独立目录克隆，并完成五模块独立环境/测试/

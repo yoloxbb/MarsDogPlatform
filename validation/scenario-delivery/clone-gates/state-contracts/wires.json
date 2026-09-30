@@ -1,0 +1,674 @@
+[
+  {
+    "id": "default",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 65, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_HUNGER_RECOVERED\", \"levelActive\": false}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_RECOVERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": true}}, \"triggered\": [{\"emotion\": \"Calm\", \"value\": 30, \"eventType\": \"EMO_CALM_TRIGGERED\", \"triggerThreshold\": 0, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Calm\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_CALM_TRIGGERED\", \"emotion\": \"Calm\", \"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "hunger_cycle",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 90, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": true, \"urgent\": false, \"overflow\": false, \"level\": \"TRIGGERED\", \"levelEvent\": \"NEED_HUNGER_TRIGGERED\", \"levelActive\": true}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_TRIGGERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [{\"type\": \"Hunger\", \"value\": 90, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"urgent\": false, \"overflow\": false}], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"NEED_HUNGER_TRIGGERED\", \"demand\": \"Hunger\", \"value\": 90, \"level\": \"TRIGGERED\", \"previousLevel\": \"NORMAL\", \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"overflowOperator\": \"gt\", \"trigger\": \"LEVEL_CHANGED\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": true}}, \"triggered\": [{\"emotion\": \"Calm\", \"value\": 30, \"eventType\": \"EMO_CALM_TRIGGERED\", \"triggerThreshold\": 0, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Calm\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_CALM_TRIGGERED\", \"emotion\": \"Calm\", \"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ],
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 90, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": true, \"urgent\": false, \"overflow\": false, \"level\": \"TRIGGERED\", \"levelEvent\": \"NEED_HUNGER_TRIGGERED\", \"levelActive\": true}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_TRIGGERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [{\"type\": \"Hunger\", \"value\": 90, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"urgent\": false, \"overflow\": false}], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": true}}, \"triggered\": [{\"emotion\": \"Calm\", \"value\": 30, \"eventType\": \"EMO_CALM_TRIGGERED\", \"triggerThreshold\": 0, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Calm\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_CALM_TRIGGERED\", \"emotion\": \"Calm\", \"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ],
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 0, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_HUNGER_RECOVERED\", \"levelActive\": false}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_RECOVERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"NEED_HUNGER_RECOVERED\", \"demand\": \"Hunger\", \"value\": 0, \"level\": \"NORMAL\", \"previousLevel\": \"TRIGGERED\", \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"overflowOperator\": \"gt\", \"trigger\": \"LEVEL_CHANGED\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": true}}, \"triggered\": [{\"emotion\": \"Calm\", \"value\": 30, \"eventType\": \"EMO_CALM_TRIGGERED\", \"triggerThreshold\": 0, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Calm\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_CALM_TRIGGERED\", \"emotion\": \"Calm\", \"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "social_levels",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 65, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_HUNGER_RECOVERED\", \"levelActive\": false}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 60, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_RECOVERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": true}}, \"triggered\": [{\"emotion\": \"Calm\", \"value\": 30, \"eventType\": \"EMO_CALM_TRIGGERED\", \"triggerThreshold\": 0, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Calm\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_CALM_TRIGGERED\", \"emotion\": \"Calm\", \"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ],
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 65, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_HUNGER_RECOVERED\", \"levelActive\": false}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 80, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": true, \"urgent\": true, \"overflow\": false, \"level\": \"URGENT\", \"levelEvent\": \"NEED_SOCIAL_URGENT\", \"levelActive\": true}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_RECOVERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_URGENT\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [{\"type\": \"Social\", \"value\": 80, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"urgent\": true, \"overflow\": false}], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"NEED_SOCIAL_URGENT\", \"demand\": \"Social\", \"value\": 80, \"level\": \"URGENT\", \"previousLevel\": \"NORMAL\", \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"overflowOperator\": \"gt\", \"trigger\": \"LEVEL_CHANGED\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": true}}, \"triggered\": [{\"emotion\": \"Calm\", \"value\": 30, \"eventType\": \"EMO_CALM_TRIGGERED\", \"triggerThreshold\": 0, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Calm\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_CALM_TRIGGERED\", \"emotion\": \"Calm\", \"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ],
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 65, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_HUNGER_RECOVERED\", \"levelActive\": false}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 100, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": true, \"urgent\": true, \"overflow\": true, \"level\": \"OVERFLOW\", \"levelEvent\": \"NEED_SOCIAL_OVERFLOW\", \"levelActive\": true}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_RECOVERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_OVERFLOW\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [{\"type\": \"Social\", \"value\": 100, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"urgent\": true, \"overflow\": true}], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"NEED_SOCIAL_OVERFLOW\", \"demand\": \"Social\", \"value\": 100, \"level\": \"OVERFLOW\", \"previousLevel\": \"URGENT\", \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"overflowOperator\": \"gt\", \"trigger\": \"LEVEL_CHANGED\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": true}}, \"triggered\": [{\"emotion\": \"Calm\", \"value\": 30, \"eventType\": \"EMO_CALM_TRIGGERED\", \"triggerThreshold\": 0, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Calm\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_CALM_TRIGGERED\", \"emotion\": \"Calm\", \"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ],
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 65, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_HUNGER_RECOVERED\", \"levelActive\": false}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 0, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_RECOVERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"NEED_SOCIAL_RECOVERED\", \"demand\": \"Social\", \"value\": 0, \"level\": \"NORMAL\", \"previousLevel\": \"OVERFLOW\", \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"overflowOperator\": \"gt\", \"trigger\": \"LEVEL_CHANGED\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": true}}, \"triggered\": [{\"emotion\": \"Calm\", \"value\": 30, \"eventType\": \"EMO_CALM_TRIGGERED\", \"triggerThreshold\": 0, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Calm\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_CALM_TRIGGERED\", \"emotion\": \"Calm\", \"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "joy_cycle",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 65, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_HUNGER_RECOVERED\", \"levelActive\": false}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_RECOVERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 100, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": true}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": false}}, \"triggered\": [{\"emotion\": \"Joy\", \"value\": 100, \"eventType\": \"EMO_JOY_TRIGGERED\", \"triggerThreshold\": 30, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Joy\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_JOY_TRIGGERED\", \"emotion\": \"Joy\", \"value\": 100, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ],
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 65, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_HUNGER_RECOVERED\", \"levelActive\": false}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_RECOVERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 100, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": true}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": false}}, \"triggered\": [{\"emotion\": \"Joy\", \"value\": 100, \"eventType\": \"EMO_JOY_TRIGGERED\", \"triggerThreshold\": 30, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Joy\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ],
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 65, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_HUNGER_RECOVERED\", \"levelActive\": false}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_RECOVERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": true}}, \"triggered\": [{\"emotion\": \"Calm\", \"value\": 30, \"eventType\": \"EMO_CALM_TRIGGERED\", \"triggerThreshold\": 0, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Calm\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_CALM_TRIGGERED\", \"emotion\": \"Calm\", \"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "all_emotions",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 65, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_HUNGER_RECOVERED\", \"levelActive\": false}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_RECOVERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 100, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": true}, \"Excite\": {\"value\": 100, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": true}, \"Anxiety\": {\"value\": 100, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": true}, \"Fear\": {\"value\": 100, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": true}, \"Curious\": {\"value\": 100, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": true}, \"Calm\": {\"value\": 100, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": false}}, \"triggered\": [{\"emotion\": \"Joy\", \"value\": 100, \"eventType\": \"EMO_JOY_TRIGGERED\", \"triggerThreshold\": 30, \"triggerOperator\": \"gte\"}, {\"emotion\": \"Excite\", \"value\": 100, \"eventType\": \"EMO_EXCITE_TRIGGERED\", \"triggerThreshold\": 40, \"triggerOperator\": \"gte\"}, {\"emotion\": \"Anxiety\", \"value\": 100, \"eventType\": \"EMO_ANXIETY_TRIGGERED\", \"triggerThreshold\": 25, \"triggerOperator\": \"gte\"}, {\"emotion\": \"Fear\", \"value\": 100, \"eventType\": \"EMO_FEAR_TRIGGERED\", \"triggerThreshold\": 30, \"triggerOperator\": \"gte\"}, {\"emotion\": \"Curious\", \"value\": 100, \"eventType\": \"EMO_CURIOUS_TRIGGERED\", \"triggerThreshold\": 20, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Joy\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_JOY_TRIGGERED\", \"emotion\": \"Joy\", \"value\": 100, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_EXCITE_TRIGGERED\", \"emotion\": \"Excite\", \"value\": 100, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_ANXIETY_TRIGGERED\", \"emotion\": \"Anxiety\", \"value\": 100, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_FEAR_TRIGGERED\", \"emotion\": \"Fear\", \"value\": 100, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_CURIOUS_TRIGGERED\", \"emotion\": \"Curious\", \"value\": 100, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "all_needs",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 100, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": true, \"urgent\": false, \"overflow\": true, \"level\": \"OVERFLOW\", \"levelEvent\": \"NEED_HUNGER_OVERFLOW\", \"levelActive\": true}, \"Bladder\": {\"value\": 100, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": true, \"urgent\": false, \"overflow\": false, \"level\": \"TRIGGERED\", \"levelEvent\": \"NEED_BLADDER_TRIGGERED\", \"levelActive\": true}, \"Sleepiness\": {\"value\": 100, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": true, \"urgent\": false, \"overflow\": true, \"level\": \"OVERFLOW\", \"levelEvent\": \"NEED_SLEEPINESS_OVERFLOW\", \"levelActive\": true}, \"Cleanliness\": {\"value\": 100, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": true, \"urgent\": false, \"overflow\": false, \"level\": \"TRIGGERED\", \"levelEvent\": \"NEED_CLEANLINESS_TRIGGERED\", \"levelActive\": true}, \"Energy\": {\"value\": 100, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": true, \"urgent\": false, \"overflow\": true, \"level\": \"OVERFLOW\", \"levelEvent\": \"NEED_ENERGY_OVERFLOW\", \"levelActive\": true}, \"Social\": {\"value\": 100, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": true, \"urgent\": true, \"overflow\": true, \"level\": \"OVERFLOW\", \"levelEvent\": \"NEED_SOCIAL_OVERFLOW\", \"levelActive\": true}, \"Exploration\": {\"value\": 100, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": true, \"urgent\": false, \"overflow\": false, \"level\": \"TRIGGERED\", \"levelEvent\": \"NEED_EXPLORATION_TRIGGERED\", \"levelActive\": true}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_OVERFLOW\", \"Bladder\": \"NEED_BLADDER_TRIGGERED\", \"Sleepiness\": \"NEED_SLEEPINESS_OVERFLOW\", \"Cleanliness\": \"NEED_CLEANLINESS_TRIGGERED\", \"Energy\": \"NEED_ENERGY_OVERFLOW\", \"Social\": \"NEED_SOCIAL_OVERFLOW\", \"Exploration\": \"NEED_EXPLORATION_TRIGGERED\"}, \"triggered\": [{\"type\": \"Hunger\", \"value\": 100, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"urgent\": false, \"overflow\": true}, {\"type\": \"Bladder\", \"value\": 100, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"urgent\": false, \"overflow\": false}, {\"type\": \"Sleepiness\", \"value\": 100, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"urgent\": false, \"overflow\": true}, {\"type\": \"Cleanliness\", \"value\": 100, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"urgent\": false, \"overflow\": false}, {\"type\": \"Energy\", \"value\": 100, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"urgent\": false, \"overflow\": true}, {\"type\": \"Social\", \"value\": 100, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"urgent\": true, \"overflow\": true}, {\"type\": \"Exploration\", \"value\": 100, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"urgent\": false, \"overflow\": false}], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"NEED_HUNGER_OVERFLOW\", \"demand\": \"Hunger\", \"value\": 100, \"level\": \"OVERFLOW\", \"previousLevel\": \"NORMAL\", \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"overflowOperator\": \"gt\", \"trigger\": \"LEVEL_CHANGED\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"NEED_BLADDER_TRIGGERED\", \"demand\": \"Bladder\", \"value\": 100, \"level\": \"TRIGGERED\", \"previousLevel\": \"NORMAL\", \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"overflowOperator\": null, \"trigger\": \"LEVEL_CHANGED\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"NEED_SLEEPINESS_OVERFLOW\", \"demand\": \"Sleepiness\", \"value\": 100, \"level\": \"OVERFLOW\", \"previousLevel\": \"NORMAL\", \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"overflowOperator\": \"gt\", \"trigger\": \"LEVEL_CHANGED\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"NEED_CLEANLINESS_TRIGGERED\", \"demand\": \"Cleanliness\", \"value\": 100, \"level\": \"TRIGGERED\", \"previousLevel\": \"NORMAL\", \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"overflowOperator\": null, \"trigger\": \"LEVEL_CHANGED\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"NEED_ENERGY_OVERFLOW\", \"demand\": \"Energy\", \"value\": 100, \"level\": \"OVERFLOW\", \"previousLevel\": \"NORMAL\", \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"overflowOperator\": \"gt\", \"trigger\": \"LEVEL_CHANGED\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"NEED_SOCIAL_OVERFLOW\", \"demand\": \"Social\", \"value\": 100, \"level\": \"OVERFLOW\", \"previousLevel\": \"NORMAL\", \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"overflowOperator\": \"gt\", \"trigger\": \"LEVEL_CHANGED\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"NEED_EXPLORATION_TRIGGERED\", \"demand\": \"Exploration\", \"value\": 100, \"level\": \"TRIGGERED\", \"previousLevel\": \"NORMAL\", \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"overflowOperator\": null, \"trigger\": \"LEVEL_CHANGED\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": true}}, \"triggered\": [{\"emotion\": \"Calm\", \"value\": 30, \"eventType\": \"EMO_CALM_TRIGGERED\", \"triggerThreshold\": 0, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Calm\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_CALM_TRIGGERED\", \"emotion\": \"Calm\", \"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "audio_to_state",
+    "batches": [
+      [
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_JOY_TRIGGERED\", \"emotion\": \"Joy\", \"value\": 36, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 65, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_HUNGER_RECOVERED\", \"levelActive\": false}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_RECOVERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 36, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": true}, \"Excite\": {\"value\": 24, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 36, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": false}}, \"triggered\": [{\"emotion\": \"Joy\", \"value\": 36, \"eventType\": \"EMO_JOY_TRIGGERED\", \"triggerThreshold\": 30, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Joy\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {\"eventName\": \"EVT_VOICE_PRAISE\", \"appliedDeltas\": {\"Joy\": 36, \"Excite\": 24, \"Calm\": 6}, \"metadataMultiplier\": 1.2, \"metadata\": {\"event_type\": \"EVT_VOICE_PRAISE\", \"masterId\": true}}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ],
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 65, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_HUNGER_RECOVERED\", \"levelActive\": false}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_RECOVERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 36, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": true}, \"Excite\": {\"value\": 24, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 36, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": false}}, \"triggered\": [{\"emotion\": \"Joy\", \"value\": 36, \"eventType\": \"EMO_JOY_TRIGGERED\", \"triggerThreshold\": 30, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Joy\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {\"eventName\": \"EVT_VOICE_PRAISE\", \"appliedDeltas\": {\"Joy\": 36, \"Excite\": 24, \"Calm\": 6}, \"metadataMultiplier\": 1.2, \"metadata\": {\"event_type\": \"EVT_VOICE_PRAISE\", \"masterId\": true}}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ],
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 65, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_HUNGER_RECOVERED\", \"levelActive\": false}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_RECOVERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 36, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": true}, \"Excite\": {\"value\": 24, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 36, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": false}}, \"triggered\": [{\"emotion\": \"Joy\", \"value\": 36, \"eventType\": \"EMO_JOY_TRIGGERED\", \"triggerThreshold\": 30, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Joy\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {\"eventName\": \"EVT_VOICE_PRAISE\", \"appliedDeltas\": {\"Joy\": 36, \"Excite\": 24, \"Calm\": 6}, \"metadataMultiplier\": 1.2, \"metadata\": {\"event_type\": \"EVT_VOICE_PRAISE\", \"masterId\": true}}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "state_alone_no_candidate",
+    "batches": [
+      [
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 100, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": true}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": false}}, \"triggered\": [{\"emotion\": \"Joy\", \"value\": 100, \"eventType\": \"EMO_JOY_TRIGGERED\", \"triggerThreshold\": 30, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Joy\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "need_state_alone",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 90, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": true, \"urgent\": false, \"overflow\": false, \"level\": \"TRIGGERED\", \"levelEvent\": \"NEED_HUNGER_TRIGGERED\", \"levelActive\": true}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_TRIGGERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [{\"type\": \"Hunger\", \"value\": 90, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"urgent\": false, \"overflow\": false}], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "duplicate_signals",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 90, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": true, \"urgent\": false, \"overflow\": false, \"level\": \"TRIGGERED\", \"levelEvent\": \"NEED_HUNGER_TRIGGERED\", \"levelActive\": true}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_TRIGGERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [{\"type\": \"Hunger\", \"value\": 90, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"urgent\": false, \"overflow\": false}], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"NEED_HUNGER_TRIGGERED\", \"demand\": \"Hunger\", \"value\": 90, \"level\": \"TRIGGERED\", \"previousLevel\": \"NORMAL\", \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"overflowOperator\": \"gt\", \"trigger\": \"LEVEL_CHANGED\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": true}}, \"triggered\": [{\"emotion\": \"Calm\", \"value\": 30, \"eventType\": \"EMO_CALM_TRIGGERED\", \"triggerThreshold\": 0, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Calm\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_CALM_TRIGGERED\", \"emotion\": \"Calm\", \"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ],
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 90, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": true, \"urgent\": false, \"overflow\": false, \"level\": \"TRIGGERED\", \"levelEvent\": \"NEED_HUNGER_TRIGGERED\", \"levelActive\": true}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_TRIGGERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [{\"type\": \"Hunger\", \"value\": 90, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"urgent\": false, \"overflow\": false}], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"NEED_HUNGER_TRIGGERED\", \"demand\": \"Hunger\", \"value\": 90, \"level\": \"TRIGGERED\", \"previousLevel\": \"NORMAL\", \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"overflowOperator\": \"gt\", \"trigger\": \"LEVEL_CHANGED\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": true}}, \"triggered\": [{\"emotion\": \"Calm\", \"value\": 30, \"eventType\": \"EMO_CALM_TRIGGERED\", \"triggerThreshold\": 0, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Calm\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_CALM_TRIGGERED\", \"emotion\": \"Calm\", \"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "emotion_signal_before_state",
+    "batches": [
+      [
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_JOY_TRIGGERED\", \"emotion\": \"Joy\", \"value\": 100, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ],
+      [
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 100, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": true}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": false}}, \"triggered\": [{\"emotion\": \"Joy\", \"value\": 100, \"eventType\": \"EMO_JOY_TRIGGERED\", \"triggerThreshold\": 30, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Joy\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "recovery_then_old_signal",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 65, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_HUNGER_RECOVERED\", \"levelActive\": false}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_RECOVERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 100, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": true}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": false}}, \"triggered\": [{\"emotion\": \"Joy\", \"value\": 100, \"eventType\": \"EMO_JOY_TRIGGERED\", \"triggerThreshold\": 30, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Joy\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_JOY_TRIGGERED\", \"emotion\": \"Joy\", \"value\": 100, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ],
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": 65, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_HUNGER_RECOVERED\", \"levelActive\": false}, \"Bladder\": {\"value\": 0, \"triggerThreshold\": 75, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_BLADDER_RECOVERED\", \"levelActive\": false}, \"Sleepiness\": {\"value\": 15, \"triggerThreshold\": 65, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SLEEPINESS_RECOVERED\", \"levelActive\": false}, \"Cleanliness\": {\"value\": 10, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_CLEANLINESS_RECOVERED\", \"levelActive\": false}, \"Energy\": {\"value\": 0, \"triggerThreshold\": 80, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": 90, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_ENERGY_RECOVERED\", \"levelActive\": false}, \"Social\": {\"value\": 20, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": 70, \"urgentOperator\": \"gt\", \"overflowThreshold\": 85, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_SOCIAL_RECOVERED\", \"levelActive\": false}, \"Exploration\": {\"value\": 10, \"triggerThreshold\": 60, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"overflowThreshold\": null, \"triggered\": false, \"urgent\": false, \"overflow\": false, \"level\": \"NORMAL\", \"levelEvent\": \"NEED_EXPLORATION_RECOVERED\", \"levelActive\": false}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_RECOVERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": true}}, \"triggered\": [{\"emotion\": \"Calm\", \"value\": 30, \"eventType\": \"EMO_CALM_TRIGGERED\", \"triggerThreshold\": 0, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Calm\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        },
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_CALM_TRIGGERED\", \"emotion\": \"Calm\", \"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ],
+      [
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"event_type\": \"EMO_JOY_TRIGGERED\", \"emotion\": \"Joy\", \"value\": 100, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "wrong_schema",
+    "batches": [
+      [
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": 2, \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 100, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": true}, \"Excite\": {\"value\": 0, \"triggerThreshold\": 40, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Anxiety\": {\"value\": 0, \"triggerThreshold\": 25, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Fear\": {\"value\": 0, \"triggerThreshold\": 30, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Curious\": {\"value\": 0, \"triggerThreshold\": 20, \"triggerOperator\": \"gte\", \"triggered\": false}, \"Calm\": {\"value\": 30, \"triggerThreshold\": 0, \"triggerOperator\": \"gte\", \"triggered\": false}}, \"triggered\": [{\"emotion\": \"Joy\", \"value\": 100, \"eventType\": \"EMO_JOY_TRIGGERED\", \"triggerThreshold\": 30, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Joy\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "string_demands",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": \"bad\", \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_TRIGGERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [{\"type\": \"Hunger\", \"value\": 90, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"urgent\": false, \"overflow\": false}], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "unknown_demand",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Unknown\": {\"value\": 90}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_TRIGGERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [{\"type\": \"Hunger\", \"value\": 90, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"urgent\": false, \"overflow\": false}], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "invalid_demand_value",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"demands\": {\"Hunger\": {\"value\": true}}, \"levelEvents\": {\"Hunger\": \"NEED_HUNGER_TRIGGERED\", \"Bladder\": \"NEED_BLADDER_RECOVERED\", \"Sleepiness\": \"NEED_SLEEPINESS_RECOVERED\", \"Cleanliness\": \"NEED_CLEANLINESS_RECOVERED\", \"Energy\": \"NEED_ENERGY_RECOVERED\", \"Social\": \"NEED_SOCIAL_RECOVERED\", \"Exploration\": \"NEED_EXPLORATION_RECOVERED\"}, \"triggered\": [{\"type\": \"Hunger\", \"value\": 90, \"triggerThreshold\": 70, \"triggerOperator\": \"gt\", \"urgentThreshold\": null, \"urgentOperator\": null, \"urgent\": false, \"overflow\": false}], \"sleep\": {\"isSleeping\": false, \"sleepDepth\": \"Shallow\", \"sleepDurationMinutes\": 0, \"shallowSleepTicksRemaining\": 0}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "partial_emotion",
+    "batches": [
+      [
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 1, \"triggered\": false}, \"Unknown\": {}}, \"triggered\": [{\"emotion\": \"Joy\", \"value\": 100, \"eventType\": \"EMO_JOY_TRIGGERED\", \"triggerThreshold\": 30, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Joy\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "numeric_trigger",
+    "batches": [
+      [
+        {
+          "topic": "/emotion/state",
+          "wire": "{\"schema_version\": \"2.0\", \"timestamp\": 1000.0, \"emotions\": {\"Joy\": {\"value\": 95, \"triggered\": 1}}, \"triggered\": [{\"emotion\": \"Joy\", \"value\": 100, \"eventType\": \"EMO_JOY_TRIGGERED\", \"triggerThreshold\": 30, \"triggerOperator\": \"gte\"}], \"dominantEmotion\": \"Joy\", \"personality\": {\"A\": 50, \"O\": 50, \"E\": 50, \"C\": 50}, \"lastEmotionEventResult\": {}, \"timeContext\": {\"mode\": \"standard_24h\", \"scale\": 1, \"revision\": 0, \"virtualStartDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualDateTime\": \"1970-01-01T06:00:00+00:00\", \"virtualTimestamp\": 21600.0, \"virtualElapsedSeconds\": 0.0, \"wallTimestamp\": 1000.0}}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "bad_json_emotion_state",
+    "batches": [
+      [
+        {
+          "topic": "/emotion/state",
+          "wire": "{"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "bad_json_emotion_signal_event",
+    "batches": [
+      [
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "bad_json_internal_need_state",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "bad_json_internal_need_signal_event",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "array_emotion_state",
+    "batches": [
+      [
+        {
+          "topic": "/emotion/state",
+          "wire": "[]"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "array_emotion_signal_event",
+    "batches": [
+      [
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "[]"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "array_internal_need_state",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "[]"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "array_internal_need_signal_event",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "[]"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "empty_emotion_state",
+    "batches": [
+      [
+        {
+          "topic": "/emotion/state",
+          "wire": "{}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "empty_emotion_signal_event",
+    "batches": [
+      [
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "{}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "empty_internal_need_state",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "{}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "empty_internal_need_signal_event",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "{}"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "null_emotion_state",
+    "batches": [
+      [
+        {
+          "topic": "/emotion/state",
+          "wire": "null"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "null_emotion_signal_event",
+    "batches": [
+      [
+        {
+          "topic": "/emotion/signal_event",
+          "wire": "null"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "null_internal_need_state",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/state",
+          "wire": "null"
+        }
+      ]
+    ]
+  },
+  {
+    "id": "null_internal_need_signal_event",
+    "batches": [
+      [
+        {
+          "topic": "/internal_need/signal_event",
+          "wire": "null"
+        }
+      ]
+    ]
+  }
+]

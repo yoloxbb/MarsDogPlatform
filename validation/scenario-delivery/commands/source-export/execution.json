@@ -1,0 +1,23 @@
+{
+  "command": [
+    "python3",
+    "-B",
+    "tools/source_handoff.py",
+    "create",
+    "--directory",
+    "out/handoff/source-bundle-scenarios-ccee303",
+    "--archive-dir",
+    "/home/elephant/MarsDog/migration/archives"
+  ],
+  "cwd": "/home/elephant/MarsDog/marsdog-platform",
+  "started_utc": "2026-09-30T10:42:08.230971+00:00",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "env": {
+    "UV_CACHE_DIR": "/home/elephant/MarsDog/migration/.cache/uv"
+  },
+  "source_commit": "ccee3033d71cbf4de4a19199d7bcc7cab7abd1f2",
+  "source_status": "",
+  "returncode": 0,
+  "duration_seconds": 2.279,
+  "status": "PASS"
+}

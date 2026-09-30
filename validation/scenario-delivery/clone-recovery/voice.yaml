@@ -1,0 +1,34 @@
+audio_debug:
+  enabled: false
+  output_dir: /tmp/voice_debug
+command_lexicon:
+  catalog: /home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/out/local/ros/install/marsdog_voice_interaction/share/marsdog_voice_interaction/config/command_catalog.yaml
+  enabled: false
+interaction:
+  hold_max_lease_sec: 30.0
+  idle_timeout_sec: 3.0
+  max_duration_sec: 0.0
+  refresh_on_any_speech: false
+logging:
+  console: true
+  dir: /home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/out/business-scenarios/20260930T104734955061Z/voice-log
+  event_trace: true
+  file: true
+  level: INFO
+mock:
+  enabled: true
+  event_interval_sec: 3600.0
+  mode: event
+  seed: 13
+object_target_routing:
+  catalog: /home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/out/local/ros/install/marsdog_voice_interaction/share/marsdog_voice_interaction/config/object_targets.yaml
+  enabled: true
+providers: {}
+speaker_api:
+  enabled: false
+storage:
+  root: /home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/out/business-scenarios/20260930T104734955061Z/voice-data
+topics:
+  audio_event: /perception/audio_event
+  enrollment_event: /perception/voice/enrollment_event
+  voice_task: /perception/voice/task

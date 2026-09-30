@@ -1,0 +1,37 @@
+{
+  "status": "PASS",
+  "scope": "pure real-module compatibility; no DDS/models/hardware",
+  "provenance": {
+    "voice": {
+      "stage": "voice",
+      "pid": 61488,
+      "python": "/home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/modules/voice/.venv/bin/python",
+      "prefix": "/home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/modules/voice/.venv",
+      "module_file": "/home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/modules/voice/marsdog_voice_interaction/messages/audio_event.py",
+      "foreign_business_modules": [],
+      "ros_importable": false
+    },
+    "behavior": {
+      "stage": "behavior",
+      "pid": 61492,
+      "python": "/home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/modules/behavior/.venv/bin/python",
+      "prefix": "/home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/modules/behavior/.venv",
+      "module_file": "/home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/modules/behavior/marsdog_behavior/ros_node.py",
+      "foreign_business_modules": [],
+      "ros_importable": false
+    },
+    "emotion": {
+      "stage": "emotion",
+      "pid": 62251,
+      "python": "/home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/modules/emotion/.venv/bin/python",
+      "prefix": "/home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/modules/emotion/.venv",
+      "module_file": "/home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/modules/emotion/marsdog_core/emotion_system.py",
+      "foreign_business_modules": [],
+      "ros_importable": false
+    }
+  },
+  "baseline_commit": "3f50614721419befddc4c59b218571ea95a5ddb1",
+  "baseline_sha256": "c051a50d94fa1b6626d11b82c9bd8569d2e91f4fa1de584202f395eedc5879d3",
+  "scenarios": 46,
+  "skipped": 0
+}

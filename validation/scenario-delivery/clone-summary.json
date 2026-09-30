@@ -1,0 +1,127 @@
+{
+  "status": "PASS",
+  "tested_source_commit": "ccee3033d71cbf4de4a19199d7bcc7cab7abd1f2",
+  "clone": "/home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303",
+  "main_status_before_evidence": "",
+  "clone_status_after_validation": "",
+  "platform_tests": 79,
+  "contracts": {
+    "audio": 46,
+    "visual": 33,
+    "state": 34,
+    "voice_task": 18,
+    "vision_task": 18,
+    "result": 25
+  },
+  "installed_recovery_cases": 7,
+  "ros_build_packages": 15,
+  "doctor": "PASS",
+  "default_smoke": "PASS",
+  "cancel_transport": "PASS",
+  "owned_processes_reaped": [
+    {
+      "name": "inputs",
+      "pid": 66626,
+      "returncode": 0,
+      "absent_in_proc": true
+    },
+    {
+      "name": "time",
+      "pid": 66685,
+      "returncode": 0,
+      "absent_in_proc": true
+    },
+    {
+      "name": "personality",
+      "pid": 66733,
+      "returncode": 0,
+      "absent_in_proc": true
+    },
+    {
+      "name": "needs",
+      "pid": 66781,
+      "returncode": 0,
+      "absent_in_proc": true
+    },
+    {
+      "name": "emotion",
+      "pid": 66813,
+      "returncode": 0,
+      "absent_in_proc": true
+    },
+    {
+      "name": "waypoint",
+      "pid": 66845,
+      "returncode": 0,
+      "absent_in_proc": true
+    },
+    {
+      "name": "action",
+      "pid": 66868,
+      "returncode": 0,
+      "absent_in_proc": true
+    },
+    {
+      "name": "vision",
+      "pid": 66885,
+      "returncode": 0,
+      "absent_in_proc": true
+    },
+    {
+      "name": "behavior",
+      "pid": 66915,
+      "returncode": 0,
+      "absent_in_proc": true
+    },
+    {
+      "name": "voice",
+      "pid": 66937,
+      "returncode": 0,
+      "absent_in_proc": true
+    },
+    {
+      "name": "probe",
+      "pid": 66964,
+      "returncode": 0,
+      "absent_in_proc": true
+    },
+    {
+      "name": "voice-1",
+      "pid": 66623,
+      "returncode": 0,
+      "absent_in_proc": true
+    },
+    {
+      "name": "vision-1",
+      "pid": 66624,
+      "returncode": 0,
+      "absent_in_proc": true
+    },
+    {
+      "name": "voice-2",
+      "pid": 67037,
+      "returncode": 0,
+      "absent_in_proc": true
+    },
+    {
+      "name": "vision-2",
+      "pid": 67084,
+      "returncode": 0,
+      "absent_in_proc": true
+    }
+  ],
+  "limits": [
+    "Mock perception and simulated I/O/navigation in default profile",
+    "No model precision, real camera, real robot or board acceptance",
+    "No Nav2/SLAM extended rebuild in this delivery",
+    "No repeated full module suites or wheel gates: unchanged runtime has frozen R2-R4 evidence",
+    "No hosted CI or external publication"
+  ],
+  "allowed_dependency_reuse": [
+    "existing system ROS Humble",
+    "locked uv/deb download caches"
+  ],
+  "environments_copied": false,
+  "build_install_copied": false,
+  "git_bundle_and_vendor_archives_verified": true
+}

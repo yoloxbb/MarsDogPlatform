@@ -1,6 +1,6 @@
 # MarsDog Architecture and Migration Proposal
 
-**版本：2.2 · 更新：2026-09-30 · 状态：P7 交付及五模块 R1–R4 兼容性重构均已完成。**
+**版本：2.3 · 更新：2026-09-30 · 状态：五模块重构、业务恢复验收、导航交接与新源码交付已完成。**
 
 本文是后续会话的执行计划，替代 v1 中“尚未实施、下一步 P1”的进度判断。
 用户的最终目标是：把多个模块仓库整合为一个长期可维护的主仓，统一架构和工程入口，
@@ -18,9 +18,11 @@ Windows 对应路径为 \\wsl.localhost\Ubuntu-22.04\home\elephant\MarsDog\marsd
 聚合目录不是第二个 Git 主仓；新增业务开发只在主仓完成。
 本文相对链接以主仓 docs/architecture 下的文件为基准，聚合目录副本同步正文。
 
-**当前新增工作：第 15.4 节的五模块 R1–R4 兼容性重构已完成。**
+**当前状态：第 15.4 节 R1–R4 重构和第 15.5 节场景/导航交接/源码交付均已完成。**
 Voice、Vision、Emotion、BT、Action 已拆分领域职责并统一契约查阅与测试入口；
-最新源码以 git log 为准，证据见 validation/compat-refactor/r2-r4。
+实测工程源码 ccee303，最新提交以 git log 为准；重构证据见 validation/compat-refactor/r2-r4，
+新增七项恢复场景及干净克隆证据见 validation/scenario-delivery/DELIVERY.md。
+当前最终交付目录为 out/handoff/source-bundle-scenarios-20260930-final。
 导航/避障内部、模型精度和实机验收未纳入本轮。
 [重构结果](COMPATIBILITY_REFACTOR.md) 记录具体组件、门禁和限制。
 
@@ -37,7 +39,7 @@ P7 阶段真实验证：新旧环境五模块测试，五模块独立 setup/干�
 [P7 冻结证据](../../validation/developer-platform/release-manifest.json)。
 
 源码基线包位于主仓 out/handoff/source-bundle-2468639；
-包含证据和最新文档的最终包位于 out/handoff/source-bundle-final，以包内 manifest 为准。
+包含当时证据和文档的 P7 最终包位于 out/handoff/source-bundle-final，以包内 manifest 为准。
 新克隆测试位置 /tmp/marsdog-developer-platform-2468639；
 只显式复用 uv/deb 下载缓存、已有系统 Humble 和包内 vendor 归档，不借旧源码 import。
 
@@ -344,10 +346,10 @@ Voice pure/Humble、契约/接口检查存在覆盖重叠，不加总为独立�
 Action 29 skip 为 20 个 ROS 依赖项和 9 个 PySide2 GUI 项；Vision 3 项需要 RGA 设备。
 总体验收为 PASS_WITH_EXPLICIT_LIMITS，不代表模型精度、实机或 hosted CI 通过。
 
-### 15.2 交付与新成员入口
+### 15.2 P7 历史交付与通用开发入口
 
 源码验收包：out/handoff/source-bundle-2468639。
-最终源码包：out/handoff/source-bundle-final，包含验收证据及最新交接；
+P7 最终包：out/handoff/source-bundle-final，包含当时验收证据及交接；
 源码内容与验收提交保持一致，文档/证据的提交号以包内 manifest 为准。
 两包均为内部本地交付，包含历史与固定 vendor 归档，不包含环境、模型或构建目录。
 
@@ -379,7 +381,7 @@ remote/owner/runner 确定后再配置 PR、CODEOWNERS、保护分支和 hosted 
 取得板端及真实设备事实后单独构建并逐步接入；不能复制 WSL 二进制冒充板端成果。
 未知协议、明显行为变化、不可恢复删除和对外分发仍按第 16 节处理。
 
-### 15.4 当前新切片：五模块兼容性重构
+### 15.4 五模块兼容性重构（已完成）
 
 用户于 2026-09-30 授权整合 Voice、Vision、Emotion、BT 和 Action，
 前提是不影响原始功能；导航/避障内部实现暂不处理，后续由负责人修改。
@@ -401,6 +403,39 @@ BT 状态/视觉/语音协调、Action 生命周期/执行/消息构造均按领
 本轮证据见 validation/compat-refactor/r2-r4；R1 与 P7 历史证据保持原样。
 完成的是授权的软件兼容性重构范围，不宣称所有算法重写、模型/实机或远端 CI 验收。
 P7 源码包仍对应原验收提交，不包含本轮新增源码。
+
+### 15.5 业务场景、导航交接与新源码交付（已完成）
+
+用户确认继续后，在 R1–R4 基线上完成三项工作：
+补齐真实进程恢复覆盖、整理导航负责人交接、重新导出并独立验证当前源码包。
+本轮工程源码为 ccee3033d71cbf4de4a19199d7bcc7cab7abd1f2；
+后续提交只追加文档和证据，最终包版本以其 manifest 为准。
+
+业务验收矩阵见 docs/development/BUSINESS_SCENARIOS.md。
+新增 check_business_scenarios.py：会话持有/续租、旧请求隔离、租约过期、
+Voice 重启重新发现、Vision 暂停缓存过期/超时、恢复后迟到回复隔离、
+重启产生新 epoch/target_id，共七项安装后 ROS 场景。
+原有唤醒选人、目标丢失、取消抢占、需求结算测试继续沿用，没有重复重写。
+平台测试增加到 79 项，含失败报告拒绝与暂停子进程清理。
+
+导航交接见 docs/development/NAVIGATION_HANDOFF.md，登记历史 VoiceTask 类型依赖、
+请求/反馈/取消/终态/恢复锁、当前航点与随机固定池、接手后的验证顺序。
+未修改导航/避障内部，也未改变五模块业务、IDL、生产配置、锁或运动门限；
+749 个保护范围文件与 6d75931 一致。
+
+已从 out/handoff/source-bundle-scenarios-ccee303 校验并创建独立克隆，
+重新准备五模块环境和默认 UWB/ROS 依赖；只复用下载缓存与系统 Humble。
+克隆完成 79 平台检查、声音 46/视觉 33/状态 34/任务每端 18/结果 25 契约、
+默认 15 个 ROS 包从零构建、doctor、完整 mock smoke、七场景恢复与取消 transport。
+所有记录的场景/整机进程正常退出，无强杀和 PID 残留。
+详见 validation/scenario-delivery/DELIVERY.md 和 delivery-manifest.json。
+
+最终交付目录为 out/handoff/source-bundle-scenarios-20260930-final，
+包含当前重构源码、导航交接与本轮证据；旧 P7 包保持历史身份。
+最终包只追加文档/证据，须 verify/clone 并与实测 ccee303 比较其余源码。
+不复制环境、模型或构建产物。完整交接步骤在 docs/deployment/SOURCE_HANDOFF.md。
+本轮没有重跑未变代码的全量五模块/wheel/SLAM 扩展门禁，其历史证据原样保留；
+mock 输入、模拟 I/O、真实相机/模型/板端/实机及远端 CI 的界限保持明确。
 
 ## 16. Human Confirmation and External Inputs
 

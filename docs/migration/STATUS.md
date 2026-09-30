@@ -1,6 +1,6 @@
 # 当前迁移状态 — 2026-09-30
 
-**当前目标：保留原功能，分步整合 Voice、Vision、Emotion、BT、Action 的契约与代码边界。**
+**当前状态：五模块兼容性重构、业务恢复验收、导航交接与新源码交付均已完成。**
 五模块/自研 ROS/历史迁移和既有本机软件集成已完成，不重新开始合仓。
 模型精度暂缓；实机、远端 CI 和板端构建分别作为后续外部阶段。
 最新执行计划见 [方案 v2](../architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md) 第 15 节。
@@ -12,6 +12,18 @@ Emotion 发布、BT 状态/视觉/语音协调、Action 生命周期/执行/消�
 路线见 [兼容性重构](../architecture/COMPATIBILITY_REFACTOR.md)，
 证据见 [R2–R4 验证](../../validation/compat-refactor/r2-r4/README.md)。
 R1 证据不覆盖；导航/避障内部和模型精度不在本轮范围。
+
+**业务恢复与新交付已完成。** 工程源码 ccee303；新增七项安装后 ROS 恢复场景，
+平台检查增至 79 项。导航负责人交接已整理，导航/避障内部未改。
+当前源码包已真实独立克隆，五套环境和默认 ROS 15 包从零建立；
+平台、所有音频/视觉/状态/任务/结果契约、doctor/smoke、恢复及取消 transport 通过。
+最终包为 out/handoff/source-bundle-scenarios-20260930-final，commit/SHA 以其 manifest 为准；
+后续提交仅增加文档/证据，其余源码与实测 ccee303 保持一致。
+[验收](../../validation/scenario-delivery/DELIVERY.md)、
+[业务矩阵](../development/BUSINESS_SCENARIOS.md)、
+[导航交接](../development/NAVIGATION_HANDOFF.md)。
+本轮主仓初始干净；749 个模块/导航/配置/IDL/依赖等保护文件未变。没有复制旧环境，
+没有新模型/实机/远端 CI 结论；R1–R4 与 P7 历史证据原样保留。
 
 **P7a/P7b 已完成（历史交付基线）。** 工程源码提交 2468639；后续证据/文档提交见 git log。
 本轮已核对保全初始 25 文件并修正 Vision CI 重复 run 键。

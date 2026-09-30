@@ -1,0 +1,59 @@
+debug_osd:
+  enabled: true
+  show_all_detections: true
+depth_fusion:
+  enabled: false
+  target_current_timeout_sec: 0.35
+face_api:
+  enabled: false
+logging:
+  dir: /home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/out/local/runs/20260930T104735Z-66456/vision-log
+  event_trace: true
+  level: INFO
+  timing_trace_interval_sec: 5.0
+providers:
+  face_recognition:
+    config: {}
+    enabled: true
+    type: mock
+  object:
+    config:
+      default_lease_sec: 3.0
+      inference_rate_hz: 0.0
+      max_inference_rate_hz: 5.0
+      max_lease_sec: 30.0
+      on_demand_rate_hz: 2.0
+      scheduler_rate_hz: 20.0
+      target_current_timeout_sec: 0.75
+      target_persistence_sec: 2.0
+    enabled: true
+    type: mock
+  vision:
+    config:
+      horizontal_fov_deg: 69.0
+      max_num_poses: 5
+    enabled: true
+    type: mock
+storage:
+  root: /home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/out/local/runs/20260930T104735Z-66456/vision-data
+stranger_emotion:
+  alert_emotions:
+  - Anxiety
+  - Fear
+  enabled: true
+  friend_emotions:
+  - Joy
+  - Excite
+  - Calm
+  state_timeout_sec: 2.5
+topics:
+  camera_image: /camera/mock_image_raw
+  camera_stale_timeout_sec: 0.5
+  emotion_state: /emotion/state
+  enrollment_event: /perception/vision/enrollment_event
+  gesture_debug: /perception/vision/gesture_debug
+  object_cache_timeout_sec: 2.0
+  object_detections: /perception/vision/object_detections
+  observation_rate_hz: 10.0
+  vision_task: /perception/vision/task
+  visual_event: /perception/visual_event

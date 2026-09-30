@@ -1,0 +1,6 @@
+[INFO] [1790765257.580881241] [waypoint_nav_dispatcher]: [32m地点文件已加载（5 个）: 卧室、充电桩、厨房、卫生间、客厅[0m
+[INFO] [1790765257.621126952] [waypoint_nav_dispatcher]: [32mVoiceTask 服务已就绪: waypoint_nav/task，支持 task_type: goto_place、cancel、query、release_recovery[0m
+[INFO] [1790765257.621430229] [waypoint_nav_dispatcher]: waypoint_nav_dispatcher 启动，地点文件: /home/elephant/MarsDog/marsdog-platform/out/scenario-delivery/clean-clone-ccee303/out/local/runs/20260930T104735Z-66456/waypoints.yaml
+[INFO] [1790765257.622409732] [waypoint_nav_dispatcher]: [32m点位已对当前 /map 校验通过[0m
+[INFO] [1790765257.624826148] [waypoint_nav_dispatcher]: 点位标记已发布到 waypoint_nav/markers（5 个地点）
+[INFO] [1790765267.495661414] [waypoint_nav_dispatcher]: [32m导航任务已持久化: action:cand_89de792643c3:waypoint -> A[0m

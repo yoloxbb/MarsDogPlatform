@@ -1,0 +1,7 @@
+{"phase": "ready", "endpoint": "/compat_action_a8bdbb478b4d45e7bd2fa7cbc63506aa"}
+{"phase": "goal_received", "goal_id": "p3-success"}
+{"phase": "execute", "goal_id": "p3-success"}
+{"phase": "result", "status": "SUCCESS"}
+{"phase": "goal_received", "goal_id": "p3-cancel"}
+{"phase": "execute", "goal_id": "p3-cancel"}
+{"phase": "result", "status": "CANCELED"}
