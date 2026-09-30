@@ -62,9 +62,7 @@ from .voice_interaction_session import (
     VoiceInteractionSession,
 )
 from .voice_session_client_adapter import VoiceSessionClientAdapter
-
-
-WAKE_ANGLE_FRAME_ID = "microphone_array"
+from .audio_contract import WAKE_ANGLE_FRAME_ID, validate_wake_event
 
 # ── 直驱式特殊音频事件（硬编码处理，不在 event_intent_map 白名单内）──────
 
@@ -1512,56 +1510,7 @@ class BehaviorTreeRosNode(NodeBase):
 
     def _validate_wake_event(self, data: dict) -> dict | None:
         """Validate the formal audio wake contract before any side effect."""
-        if not isinstance(data, dict):
-            return None
-        schema_version = data.get("schema_version")
-        if (
-            type(schema_version) is not int
-            or schema_version != 2
-            or data.get("event_type") != "EVT_VOICE_WAKEUP"
-        ):
-            self._logger.warn(
-                "Wake event rejected: expected schema_version=2 and "
-                "EVT_VOICE_WAKEUP"
-            )
-            return None
-        interaction_id = str(data.get("interaction_id", "")).strip()
-        header = data.get("header")
-        wake_frame_id = (
-            str(header.get("frame_id", "")).strip()
-            if isinstance(header, dict) else ""
-        )
-        try:
-            wake_angle = float(data["wake_angle"])
-            wake_confidence = float(data.get("wake_confidence", 0.0))
-            wake_stamp = float(
-                header.get("stamp", time.time())
-                if isinstance(header, dict) else time.time()
-            )
-        except (KeyError, TypeError, ValueError):
-            self._logger.warn("Wake event rejected: malformed numeric fields")
-            return None
-        if (
-            not interaction_id
-            or wake_frame_id != WAKE_ANGLE_FRAME_ID
-            or not all(math.isfinite(value) for value in (
-                wake_angle, wake_confidence, wake_stamp
-            ))
-        ):
-            self._logger.warn(
-                "Wake event rejected: missing id, invalid frame "
-                "(expected %s), or non-finite value"
-                % WAKE_ANGLE_FRAME_ID
-            )
-            return None
-        return {
-            "interaction_id": interaction_id,
-            "wake_id": str(data.get("wake_id", "")).strip(),
-            "wake_angle_deg": wake_angle,
-            "wake_confidence": max(0.0, min(1.0, wake_confidence)),
-            "wake_frame_id": wake_frame_id,
-            "wake_event_stamp": wake_stamp,
-        }
+        return validate_wake_event(data, logger=self._logger, now=time.time)
 
     def _audio_need_gate_allows(self, candidate) -> bool:
         """Apply a configured strict internal-need gate before side effects."""

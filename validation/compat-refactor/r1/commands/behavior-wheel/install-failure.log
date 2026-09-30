@@ -1,0 +1,10 @@
+["/home/elephant/MarsDog/migration/.tools/uv", "build", "--wheel", "--out-dir", "/home/elephant/MarsDog/marsdog-platform/out/behavior-install/check-ms49g59m/wheels", "/home/elephant/MarsDog/marsdog-platform/modules/behavior"]
+Building wheel...
+error: Failed to build `/home/elephant/MarsDog/marsdog-platform/modules/behavior`
+  cause: Failed to resolve requirements from `build-system.requires`
+  cause: No solution found when resolving: `setuptools==79.0.1`, `wheel==0.48.0`
+  cause: Request failed after 3 retries in 50.0s
+  cause: Failed to fetch: `https://pypi.org/simple/setuptools/`
+  cause: error sending request for url (https://pypi.org/simple/setuptools/)
+  cause: client error (Connect)
+  cause: operation timed out

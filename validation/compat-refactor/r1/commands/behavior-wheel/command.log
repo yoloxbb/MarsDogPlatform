@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/elephant/MarsDog/marsdog-platform/tools/check_behavior_install.py", line 82, in <module>
+    main()
+  File "/home/elephant/MarsDog/marsdog-platform/tools/check_behavior_install.py", line 44, in main
+    run([args.uv, "build", "--wheel", "--out-dir", str(work / "wheels"), str(source)])
+  File "/home/elephant/MarsDog/marsdog-platform/tools/check_behavior_install.py", line 41, in run
+    raise RuntimeError(f"Command failed ({process.returncode}); see {log}")
+RuntimeError: Command failed (2); see /home/elephant/MarsDog/marsdog-platform/out/behavior-install/commands.log

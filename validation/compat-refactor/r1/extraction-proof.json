@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "baseline_commit": "3f50614721419befddc4c59b218571ea95a5ddb1",
+  "extraction_proof": {
+    "validate_audio_contract": "identical AST body after logger/clock dependency substitution",
+    "validate_wake_event": "identical AST body after logger/clock dependency substitution"
+  },
+  "unchanged_lock_manifest_config_files": 68,
+  "modified_existing_module_files": [
+    "modules/behavior/marsdog_behavior/intent_mapper.py",
+    "modules/behavior/marsdog_behavior/ros_node.py"
+  ],
+  "protected_interface_config_robotics_vendor_diff": []
+}

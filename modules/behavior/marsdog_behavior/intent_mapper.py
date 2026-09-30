@@ -24,6 +24,7 @@ import yaml
 from bionic_dog_bt.logger import get_logger
 from bionic_dog_bt.constants import EMOTION_V2_EVENT_TO_NAME, EMOTION_PRIORITY
 from .config_paths import get_config_dir
+from .audio_contract import _VOICE_SLOT_KEYS, validate_audio_contract
 
 _log = get_logger("intent_mapper")
 
@@ -44,24 +45,6 @@ _EMOTION_NAME_TO_EVENT = {
     for event_type, name in EMOTION_V2_EVENT_TO_NAME.items()
 }
 
-_VOICE_SLOT_KEYS = {
-    "command_key",
-    "matched_phrase",
-    "catalog_phrase",
-    "command_catalog_version",
-    "match_strategy",
-    "expansion_profile",
-    "expansion_rule",
-    "catalog_source_rows",
-    "derived_axis",
-    "model_dispatch_policy",
-    "specific_dispatch",
-    "object_name",
-    "object_mention",
-    "object_matched_alias",
-    "object_match_source",
-    "object_catalog_version",
-}
 
 # ═══════════════════════════════════════════════════════════════════════════
 # BehaviorCandidate — structured with all required fields
@@ -809,118 +792,10 @@ class IntentMapper:
         intent_entry: dict,
         expected_dispatch_role: str = "specific_command",
     ) -> dict[str, str] | None:
-        if (
-            not isinstance(data, dict)
-            or type(data.get("schema_version")) is not int
-            or data["schema_version"] != 2
-            or data.get("event_type") != event_type
-        ):
-            _log.warning(
-                "Rejecting %s: expected matching schema-v2 event",
-                event_type,
-            )
-            return None
-
-        raw_slots = data.get("slots", [])
-        if not isinstance(raw_slots, list):
-            _log.warning("Rejecting %s: slots must be an array", event_type)
-            return None
-        voice_slots: dict[str, str] = {}
-        for item in raw_slots:
-            if not isinstance(item, dict):
-                _log.warning("Rejecting %s: malformed slot", event_type)
-                return None
-            key = str(item.get("key", "")).strip()
-            value = str(item.get("value", "")).strip()
-            if not key or key not in _VOICE_SLOT_KEYS:
-                continue
-            if key in voice_slots and voice_slots[key] != value:
-                _log.warning(
-                    "Rejecting %s: conflicting slot %s",
-                    event_type,
-                    key,
-                )
-                return None
-            voice_slots[key] = value
-
-        # Hardware wake is source-distinct from Model Intent CALL and catalog
-        # nickname events.  It is a lifecycle event, not an executable command.
-        is_hardware_wake = event_type == "EVT_VOICE_WAKEUP"
-        if is_hardware_wake:
-            return voice_slots
-
-        expected_command_id = str(
-            intent_entry.get("expected_command_id", "")
-        ).strip()
-        if not expected_command_id:
-            _log.error(
-                "Audio route %s has no expected_command_id",
-                event_type,
-            )
-            return None
-        if data.get("should_trigger_behavior_tree") is not True:
-            _log.warning(
-                "Rejecting %s: should_trigger_behavior_tree is not true",
-                event_type,
-            )
-            return None
-        if data.get("dispatch_role") != expected_dispatch_role:
-            _log.warning(
-                "Rejecting %s: dispatch_role is not %s",
-                event_type,
-                expected_dispatch_role,
-            )
-            return None
-        if str(data.get("command_id", "")).strip() != expected_command_id:
-            _log.warning(
-                "Rejecting %s: command_id does not match %s",
-                event_type,
-                expected_command_id,
-            )
-            return None
-        specific_event_type = str(
-            data.get("specific_event_type", "")
-        ).strip()
-        if specific_event_type != event_type:
-            _log.warning(
-                "Rejecting %s: specific_event_type mismatch",
-                event_type,
-            )
-            return None
-        interaction_id = str(data.get("interaction_id", "")).strip()
-        utterance_id = str(data.get("utterance_id", "")).strip()
-        if not interaction_id or not utterance_id:
-            _log.warning(
-                "Rejecting %s: interaction_id and utterance_id are required",
-                event_type,
-            )
-            return None
-        for required_key in intent_entry.get("required_voice_slots", []):
-            value = voice_slots.get(str(required_key), "")
-            if not value or value == "NONE":
-                _log.warning(
-                    "Rejecting %s: required slot %s is unavailable",
-                    event_type,
-                    required_key,
-                )
-                return None
-        allowed_values = intent_entry.get("allowed_voice_slot_values", {})
-        if isinstance(allowed_values, dict):
-            for key, values in allowed_values.items():
-                value = voice_slots.get(str(key), "")
-                if (
-                    value
-                    and isinstance(values, list)
-                    and value not in values
-                ):
-                    _log.warning(
-                        "Rejecting %s: unsupported slot %s=%r",
-                        event_type,
-                        key,
-                        value,
-                    )
-                    return None
-        return voice_slots
+        return validate_audio_contract(
+            event_type, data, logger=_log, intent_entry=intent_entry,
+            expected_dispatch_role=expected_dispatch_role,
+        )
 
     def _build_audio_candidate(self, event_type: str, data: dict,
                                intent_entry: dict,

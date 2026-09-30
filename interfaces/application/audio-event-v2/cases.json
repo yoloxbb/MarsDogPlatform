@@ -1,0 +1,650 @@
+{
+  "format_version": 1,
+  "baseline_commit": "3f50614721419befddc4c59b218571ea95a5ddb1",
+  "producers": {
+    "sit": {
+      "kind": "catalog",
+      "text": "坐下",
+      "context": {
+        "interaction_id": "interaction-1",
+        "utterance_id": "utterance-1"
+      }
+    },
+    "nickname": {
+      "kind": "catalog",
+      "text": "小宝贝",
+      "context": {
+        "interaction_id": "interaction-1",
+        "utterance_id": "utterance-1"
+      }
+    },
+    "praise_sit": {
+      "kind": "classification",
+      "classification": {
+        "social": "PRAISE",
+        "intent": "SIT",
+        "control": "DO",
+        "asr_text": "真乖，坐下",
+        "source": "rkllm",
+        "confidence": 0.8
+      },
+      "context": {
+        "interaction_id": "interaction-1",
+        "utterance_id": "utterance-1"
+      }
+    },
+    "negated_sit": {
+      "kind": "classification",
+      "classification": {
+        "social": "NONE",
+        "intent": "SIT",
+        "control": "DO",
+        "asr_text": "不要坐下",
+        "source": "rkllm",
+        "confidence": 0.8
+      },
+      "context": {
+        "interaction_id": "interaction-1",
+        "utterance_id": "utterance-1"
+      }
+    },
+    "wake": {
+      "kind": "normalize",
+      "payload": {
+        "event_type": "EVT_VOICE_WAKEUP",
+        "interaction_id": "interaction-1",
+        "wake_id": "wake-1",
+        "wake_angle": 35.0,
+        "wake_confidence": 0.9
+      }
+    },
+    "praise": {
+      "kind": "normalize",
+      "payload": {
+        "event_type": "EVT_VOICE_PRAISE"
+      }
+    },
+    "identity": {
+      "kind": "normalize",
+      "payload": {
+        "event_type": "EVT_VOICE_WAKE_SPEAKER_RESULT",
+        "interaction_id": "interaction-1",
+        "wake_id": "wake-1",
+        "speaker_role": "owner",
+        "speaker_status": "matched",
+        "speaker_id": "owner"
+      }
+    },
+    "idle": {
+      "kind": "normalize",
+      "payload": {
+        "event_type": "EVT_STATE_CHANGED",
+        "interaction_id": "interaction-1",
+        "state": "idle",
+        "state_reason": "fixture_idle"
+      }
+    },
+    "coercion": {
+      "kind": "normalize",
+      "payload": {
+        "event_type": "speech",
+        "schema_version": 1,
+        "is_executable": "false",
+        "should_trigger_behavior_tree": "false",
+        "unknown": "drop",
+        "wake_angle": "nan",
+        "wake_confidence": 2,
+        "wake_score_raw": "inf",
+        "slots": [
+          null,
+          {
+            "key": 7,
+            "value": false
+          }
+        ]
+      }
+    },
+    "empty": {
+      "kind": "normalize",
+      "payload": null
+    }
+  },
+  "scenarios": [
+    {
+      "id": "catalog_sit",
+      "steps": [
+        {
+          "source": "sit"
+        }
+      ]
+    },
+    {
+      "id": "catalog_nickname",
+      "steps": [
+        {
+          "source": "nickname"
+        }
+      ]
+    },
+    {
+      "id": "model_praise_and_sit",
+      "steps": [
+        {
+          "source": "praise_sit",
+          "index": 0
+        },
+        {
+          "source": "praise_sit",
+          "index": 1
+        },
+        {
+          "source": "praise_sit",
+          "index": 2
+        }
+      ]
+    },
+    {
+      "id": "model_negation",
+      "steps": [
+        {
+          "source": "negated_sit"
+        }
+      ]
+    },
+    {
+      "id": "voice_normalization",
+      "steps": [
+        {
+          "source": "coercion"
+        },
+        {
+          "source": "empty"
+        }
+      ]
+    },
+    {
+      "id": "command_deduplication",
+      "steps": [
+        {
+          "source": "sit"
+        },
+        {
+          "source": "sit"
+        }
+      ]
+    },
+    {
+      "id": "praise_deduplication",
+      "steps": [
+        {
+          "source": "praise"
+        },
+        {
+          "source": "praise"
+        }
+      ]
+    },
+    {
+      "id": "wake_deduplication",
+      "steps": [
+        {
+          "source": "wake"
+        },
+        {
+          "source": "wake"
+        }
+      ]
+    },
+    {
+      "id": "wake_then_command",
+      "steps": [
+        {
+          "source": "wake"
+        },
+        {
+          "source": "sit"
+        },
+        {
+          "source": "sit"
+        }
+      ]
+    },
+    {
+      "id": "stale_command",
+      "steps": [
+        {
+          "source": "wake"
+        },
+        {
+          "source": "sit",
+          "patch": {
+            "interaction_id": "old"
+          }
+        }
+      ]
+    },
+    {
+      "id": "new_wake_old_command",
+      "steps": [
+        {
+          "source": "wake"
+        },
+        {
+          "source": "wake",
+          "patch": {
+            "interaction_id": "interaction-2",
+            "wake_id": "wake-2"
+          }
+        },
+        {
+          "source": "sit"
+        }
+      ]
+    },
+    {
+      "id": "matching_idle",
+      "steps": [
+        {
+          "source": "wake"
+        },
+        {
+          "source": "idle"
+        }
+      ]
+    },
+    {
+      "id": "stale_idle",
+      "steps": [
+        {
+          "source": "wake"
+        },
+        {
+          "source": "idle",
+          "patch": {
+            "interaction_id": "old"
+          }
+        }
+      ]
+    },
+    {
+      "id": "matching_identity",
+      "steps": [
+        {
+          "source": "wake"
+        },
+        {
+          "source": "identity"
+        }
+      ]
+    },
+    {
+      "id": "stale_identity",
+      "steps": [
+        {
+          "source": "wake"
+        },
+        {
+          "source": "identity",
+          "patch": {
+            "wake_id": "old"
+          }
+        }
+      ]
+    },
+    {
+      "id": "invalid_identity",
+      "steps": [
+        {
+          "source": "wake"
+        },
+        {
+          "source": "identity",
+          "patch": {
+            "speaker_id": "stranger"
+          }
+        }
+      ]
+    },
+    {
+      "id": "schema_string",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "schema_version": "2"
+          }
+        }
+      ]
+    },
+    {
+      "id": "schema_bool",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "schema_version": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "schema_float",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "schema_version": 2.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "schema_old",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "schema_version": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "trigger_false",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "should_trigger_behavior_tree": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "trigger_string",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "should_trigger_behavior_tree": "true"
+          }
+        }
+      ]
+    },
+    {
+      "id": "trigger_number",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "should_trigger_behavior_tree": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "wrong_role",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "dispatch_role": "semantic_classification"
+          }
+        }
+      ]
+    },
+    {
+      "id": "wrong_command",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "command_id": "CMD_STAND_UP"
+          }
+        }
+      ]
+    },
+    {
+      "id": "wrong_specific",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "specific_event_type": "EVT_VOICE_COMMAND_STAND_UP"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing_interaction",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "interaction_id": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing_utterance",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "utterance_id": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "malformed_slots",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "slots": [
+              null
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "nonarray_slots",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "slots": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "conflicting_slots",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "slots": [
+              {
+                "key": "command_key",
+                "value": "SIT"
+              },
+              {
+                "key": "command_key",
+                "value": "STAND_UP"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "same_slots",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "slots": [
+              {
+                "key": "command_key",
+                "value": "SIT"
+              },
+              {
+                "key": "command_key",
+                "value": "SIT"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "executable_false_legacy",
+      "steps": [
+        {
+          "source": "sit",
+          "patch": {
+            "is_executable": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "wake_bad_frame",
+      "steps": [
+        {
+          "source": "wake",
+          "patch": {
+            "header": {
+              "stamp": 1000.0,
+              "frame_id": "camera"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "wake_nonfinite_angle",
+      "steps": [
+        {
+          "source": "wake",
+          "patch": {
+            "wake_angle": "nan"
+          }
+        }
+      ]
+    },
+    {
+      "id": "wake_bad_stamp",
+      "steps": [
+        {
+          "source": "wake",
+          "patch": {
+            "header": {
+              "stamp": "inf",
+              "frame_id": "microphone_array"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "wake_missing_id",
+      "steps": [
+        {
+          "source": "wake",
+          "patch": {
+            "interaction_id": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "wake_clamped_confidence",
+      "steps": [
+        {
+          "source": "wake",
+          "patch": {
+            "wake_confidence": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "wake_missing_angle",
+      "steps": [
+        {
+          "source": "wake",
+          "remove": [
+            "wake_angle"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "summary_cannot_authorize",
+      "steps": [
+        {
+          "source": "praise_sit",
+          "index": 2,
+          "patch": {
+            "should_trigger_behavior_tree": true,
+            "dispatch_role": "specific_command",
+            "is_executable": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "legacy_praise_owner",
+      "steps": [
+        {
+          "raw": "{\"event_type\": \"EVT_VOICE_PRAISE\", \"masterId\": true}"
+        }
+      ]
+    },
+    {
+      "id": "legacy_owner_presence",
+      "steps": [
+        {
+          "raw": "{\"event_type\": \"EVT_VOICE_MASTER_ID\"}"
+        }
+      ]
+    },
+    {
+      "id": "invalid_json",
+      "steps": [
+        {
+          "raw": "{"
+        }
+      ]
+    },
+    {
+      "id": "null",
+      "steps": [
+        {
+          "raw": "null"
+        }
+      ]
+    },
+    {
+      "id": "array",
+      "steps": [
+        {
+          "raw": "[]"
+        }
+      ]
+    },
+    {
+      "id": "empty_object",
+      "steps": [
+        {
+          "raw": "{}"
+        }
+      ]
+    }
+  ]
+}

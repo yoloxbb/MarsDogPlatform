@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "-B",
+    "tools/check_behavior_install.py",
+    "--uv",
+    "/home/elephant/MarsDog/migration/.tools/uv"
+  ],
+  "cwd": "/home/elephant/MarsDog/marsdog-platform",
+  "started_utc": "2026-09-30T07:04:40.598155+00:00",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "env": {
+    "UV_CACHE_DIR": "/home/elephant/MarsDog/migration/.cache/uv"
+  },
+  "source_commit": "3f50614721419befddc4c59b218571ea95a5ddb1",
+  "source_status": " M .github/workflows/result-contract.yml\n M docs/development/WORKFLOW.md\n M modules/behavior/marsdog_behavior/intent_mapper.py\n M modules/behavior/marsdog_behavior/ros_node.py\n?? docs/architecture/COMPATIBILITY_REFACTOR.md\n?? integration/contracts/\n?? integration/platform/tests/test_audio_contract_gate.py\n?? interfaces/application/audio-event-v2/\n?? modules/behavior/marsdog_behavior/audio_contract.py\n?? tools/check_audio_contracts.py\n",
+  "returncode": 1,
+  "duration_seconds": 50.212,
+  "status": "FAIL"
+}

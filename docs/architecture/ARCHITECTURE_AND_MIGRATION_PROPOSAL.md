@@ -372,6 +372,20 @@ remote/owner/runner 确定后再配置 PR、CODEOWNERS、保护分支和 hosted 
 取得板端及真实设备事实后单独构建并逐步接入；不能复制 WSL 二进制冒充板端成果。
 未知协议、明显行为变化、不可恢复删除和对外分发仍按第 16 节处理。
 
+### 15.4 当前新切片：五模块兼容性重构
+
+用户于 2026-09-30 授权整合 Voice、Vision、Emotion、BT 和 Action，
+前提是不影响原始功能；导航/避障内部实现暂不处理，后续由负责人修改。
+
+路线与边界见 docs/architecture/COMPATIBILITY_REFACTOR.md。先冻结跨模块契约，
+再提取无状态协议处理，最后按职责分步拆分节点；不创建承载业务的 common，
+不强行合并 Python 依赖或 ROS 类型，不做模型精度优化。
+
+首片 R1 已集中 audio v2 契约和 46 个生产/消费场景，提取 BT 声音校验；
+Voice→BT/Emotion 在独立环境运行并与重构前结果比较。实际验证见
+validation/compat-refactor/r1。后续依次处理视觉链路、状态/动作结果边界和节点职责拆分，
+不将 R1 记为五模块全部重构完成。P7 源码包仍对应原验收提交，不包含本片新增源码。
+
 ## 16. Human Confirmation and External Inputs
 
 无需再次询问普通目录、CLI、测试、文档、兼容性修复或本地提交。

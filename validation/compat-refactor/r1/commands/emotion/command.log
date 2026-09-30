@@ -1,0 +1,25 @@
++ /home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python -B -m pytest tests -q -p no:cacheprovider --junitxml=/home/elephant/MarsDog/marsdog-platform/out/compat-refactor/tests/emotion/junit.xml
+{
+  "status": "PASS",
+  "counts": {
+    "tests": 374,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "skips": [],
+  "command": [
+    "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+    "-B",
+    "-m",
+    "pytest",
+    "tests",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=/home/elephant/MarsDog/marsdog-platform/out/compat-refactor/tests/emotion/junit.xml"
+  ],
+  "scope": "Existing module unit suite, no hardware",
+  "module": "emotion",
+  "returncode": 0
+}

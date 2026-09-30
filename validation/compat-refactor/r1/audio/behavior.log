@@ -1,0 +1,242 @@
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: Audio event EVT_VOICE_COMMAND_CALL_NAME ignored_by_behavior_tree (owned by social/emotion/need consumers)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: Audio event EVT_VOICE_PRAISE ignored_by_behavior_tree (owned by social/emotion/need consumers)
+[behavior_tree_node] DEBUG: Audio event EVT_VOICE_COMMAND_KNOWN ignored_by_behavior_tree (owned by social/emotion/need consumers)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: Audio event EVT_VOICE_COMMAND_KNOWN ignored_by_behavior_tree (owned by social/emotion/need consumers)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: Audio event speech ignored_by_behavior_tree (owned by social/emotion/need consumers)
+[behavior_tree_node] DEBUG: audio_event rejected: event_type must be a non-empty string
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: Audio event EVT_VOICE_PRAISE ignored_by_behavior_tree (owned by social/emotion/need consumers)
+[behavior_tree_node] DEBUG: Audio event EVT_VOICE_PRAISE ignored_by_behavior_tree (owned by social/emotion/need consumers)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] PUB /behavior/attention_tracking: {"schema_version": 1, "header": {"stamp": 1000.0, "frame_id": "base_link"}, "interaction_id": "interaction-1", "enabled": false, "mode": "face_body_centering", "wake_angle": 0.0, "wake_confidence": 0.0, "reason": "behavior_tree_shutdown", "phase": "CLOSED", "target_ref": null}
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Voice session closed: id=interaction-1 reason=behavior_tree_shutdown queued_removed=0 running=False
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] PUB /behavior/attention_tracking: {"schema_version": 1, "header": {"stamp": 1000.0, "frame_id": "base_link"}, "interaction_id": "interaction-1", "enabled": false, "mode": "face_body_centering", "wake_angle": 0.0, "wake_confidence": 0.0, "reason": "behavior_tree_shutdown", "phase": "CLOSED", "target_ref": null}
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Voice session closed: id=interaction-1 reason=behavior_tree_shutdown queued_removed=0 running=False
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [WARNING] [bionic_dog_bt.bt_node   ] Voice command ignored: stale/missing interaction_id='old' current='interaction-1'
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] PUB /behavior/attention_tracking: {"schema_version": 1, "header": {"stamp": 1000.0, "frame_id": "base_link"}, "interaction_id": "interaction-1", "enabled": false, "mode": "face_body_centering", "wake_angle": 0.0, "wake_confidence": 0.0, "reason": "behavior_tree_shutdown", "phase": "CLOSED", "target_ref": null}
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Voice session closed: id=interaction-1 reason=behavior_tree_shutdown queued_removed=0 running=False
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] PUB /behavior/attention_tracking: {"schema_version": 1, "header": {"stamp": 1000.0, "frame_id": "base_link"}, "interaction_id": "interaction-1", "enabled": false, "mode": "face_body_centering", "wake_angle": 0.0, "wake_confidence": 0.0, "reason": "replaced_by_new_wake", "phase": "CLOSED", "target_ref": null}
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Voice session closed: id=interaction-1 reason=replaced_by_new_wake queued_removed=0 running=False
+08:16:40.000 [WARNING] [bionic_dog_bt.bt_node   ] Voice command ignored: stale/missing interaction_id='interaction-1' current='interaction-2'
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] PUB /behavior/attention_tracking: {"schema_version": 1, "header": {"stamp": 1000.0, "frame_id": "base_link"}, "interaction_id": "interaction-2", "enabled": false, "mode": "face_body_centering", "wake_angle": 0.0, "wake_confidence": 0.0, "reason": "behavior_tree_shutdown", "phase": "CLOSED", "target_ref": null}
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Voice session closed: id=interaction-2 reason=behavior_tree_shutdown queued_removed=0 running=False
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] PUB /behavior/attention_tracking: {"schema_version": 1, "header": {"stamp": 1000.0, "frame_id": "base_link"}, "interaction_id": "interaction-1", "enabled": false, "mode": "face_body_centering", "wake_angle": 0.0, "wake_confidence": 0.0, "reason": "fixture_idle", "phase": "CLOSED", "target_ref": null}
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Voice session closed: id=interaction-1 reason=fixture_idle queued_removed=0 running=False
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] PUB /behavior/attention_tracking: {"schema_version": 1, "header": {"stamp": 1000.0, "frame_id": "base_link"}, "interaction_id": "interaction-1", "enabled": false, "mode": "face_body_centering", "wake_angle": 0.0, "wake_confidence": 0.0, "reason": "behavior_tree_shutdown", "phase": "CLOSED", "target_ref": null}
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Voice session closed: id=interaction-1 reason=behavior_tree_shutdown queued_removed=0 running=False
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] PUB /behavior/attention_tracking: {"schema_version": 1, "header": {"stamp": 1000.0, "frame_id": "base_link"}, "interaction_id": "interaction-1", "enabled": false, "mode": "face_body_centering", "wake_angle": 0.0, "wake_confidence": 0.0, "reason": "behavior_tree_shutdown", "phase": "CLOSED", "target_ref": null}
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Voice session closed: id=interaction-1 reason=behavior_tree_shutdown queued_removed=0 running=False
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] PUB /behavior/attention_tracking: {"schema_version": 1, "header": {"stamp": 1000.0, "frame_id": "base_link"}, "interaction_id": "interaction-1", "enabled": false, "mode": "face_body_centering", "wake_angle": 0.0, "wake_confidence": 0.0, "reason": "behavior_tree_shutdown", "phase": "CLOSED", "target_ref": null}
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Voice session closed: id=interaction-1 reason=behavior_tree_shutdown queued_removed=0 running=False
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] PUB /behavior/attention_tracking: {"schema_version": 1, "header": {"stamp": 1000.0, "frame_id": "base_link"}, "interaction_id": "interaction-1", "enabled": false, "mode": "face_body_centering", "wake_angle": 0.0, "wake_confidence": 0.0, "reason": "behavior_tree_shutdown", "phase": "CLOSED", "target_ref": null}
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Voice session closed: id=interaction-1 reason=behavior_tree_shutdown queued_removed=0 running=False
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: audio_event rejected: expected object with schema_version=2
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: audio_event rejected: expected object with schema_version=2
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: audio_event rejected: expected object with schema_version=2
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: audio_event rejected: expected object with schema_version=2
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: audio_event ignored: event_type=EVT_VOICE_COMMAND_SIT is not an authorized specific command
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: audio_event ignored: event_type=EVT_VOICE_COMMAND_SIT is not an authorized specific command
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: audio_event ignored: event_type=EVT_VOICE_COMMAND_SIT is not an authorized specific command
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: audio_event ignored: event_type=EVT_VOICE_COMMAND_SIT is not an authorized specific command
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [WARNING] [bionic_dog_bt.intent_mapper] Rejecting EVT_VOICE_COMMAND_SIT: command_id does not match CMD_SIT
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [WARNING] [bionic_dog_bt.intent_mapper] Rejecting EVT_VOICE_COMMAND_SIT: specific_event_type mismatch
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [WARNING] [bionic_dog_bt.intent_mapper] Rejecting EVT_VOICE_COMMAND_SIT: interaction_id and utterance_id are required
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [WARNING] [bionic_dog_bt.intent_mapper] Rejecting EVT_VOICE_COMMAND_SIT: interaction_id and utterance_id are required
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [WARNING] [bionic_dog_bt.intent_mapper] Rejecting EVT_VOICE_COMMAND_SIT: malformed slot
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [WARNING] [bionic_dog_bt.intent_mapper] Rejecting EVT_VOICE_COMMAND_SIT: slots must be an array
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [WARNING] [bionic_dog_bt.intent_mapper] Rejecting EVT_VOICE_COMMAND_SIT: conflicting slot command_key
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [WARNING] [bionic_dog_bt.bt_node   ] Wake event rejected: missing id, invalid frame (expected microphone_array), or non-finite value
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [WARNING] [bionic_dog_bt.bt_node   ] Wake event rejected: missing id, invalid frame (expected microphone_array), or non-finite value
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [WARNING] [bionic_dog_bt.bt_node   ] Wake event rejected: missing id, invalid frame (expected microphone_array), or non-finite value
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [WARNING] [bionic_dog_bt.bt_node   ] Wake event rejected: missing id, invalid frame (expected microphone_array), or non-finite value
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] PUB /behavior/attention_tracking: {"schema_version": 1, "header": {"stamp": 1000.0, "frame_id": "base_link"}, "interaction_id": "interaction-1", "enabled": false, "mode": "face_body_centering", "wake_angle": 0.0, "wake_confidence": 0.0, "reason": "behavior_tree_shutdown", "phase": "CLOSED", "target_ref": null}
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Voice session closed: id=interaction-1 reason=behavior_tree_shutdown queued_removed=0 running=False
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [WARNING] [bionic_dog_bt.bt_node   ] Wake event rejected: malformed numeric fields
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: Audio event EVT_VOICE_COMMAND_KNOWN ignored_by_behavior_tree (owned by social/emotion/need consumers)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: audio_event rejected: expected object with schema_version=2
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: audio_event rejected: expected object with schema_version=2
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: audio_event rejected: expected object with schema_version=2
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: audio_event rejected: expected object with schema_version=2
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+08:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+[behavior_tree_node] DEBUG: audio_event rejected: expected object with schema_version=2

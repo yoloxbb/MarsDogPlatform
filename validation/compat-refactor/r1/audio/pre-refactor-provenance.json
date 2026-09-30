@@ -1,0 +1,29 @@
+{
+  "voice": {
+    "stage": "voice",
+    "pid": 9212,
+    "python": "/home/elephant/MarsDog/marsdog-platform/modules/voice/.venv/bin/python",
+    "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/voice/.venv",
+    "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/voice/marsdog_voice_interaction/messages/audio_event.py",
+    "foreign_business_modules": [],
+    "ros_importable": false
+  },
+  "behavior": {
+    "stage": "behavior",
+    "pid": 9213,
+    "python": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+    "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv",
+    "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/marsdog_behavior/ros_node.py",
+    "foreign_business_modules": [],
+    "ros_importable": false
+  },
+  "emotion": {
+    "stage": "emotion",
+    "pid": 9286,
+    "python": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+    "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv",
+    "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/marsdog_core/emotion_system.py",
+    "foreign_business_modules": [],
+    "ros_importable": false
+  }
+}

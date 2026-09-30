@@ -44,6 +44,7 @@ flowchart LR
 | --- | --- | --- |
 | 任意源码/工具 | dev.py check | 受影响模块 dev.py test |
 | Python 打包/资源/入口 | 模块单测 | check_<module>_install.py |
+| Voice→BT/Emotion 声音事件 | 三模块单测 | check_audio_contracts.py；固定 v2 样例与容错差异 |
 | Action→BT→Needs 结果/证据 | 三模块单测 | check_contracts.py |
 | ROS IDL / service / action | 架构和原 IDL 兼容检查 | 生产方/消费方测试、build、doctor、对应 DDS 测试 |
 | 进程组合/运行配置 | 平台测试 | 默认 smoke + check_local_lifecycle.py |

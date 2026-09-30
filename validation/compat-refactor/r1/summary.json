@@ -1,0 +1,76 @@
+{
+  "status": "PASS_WITH_EXPLICIT_LIMITS",
+  "baseline_commit": "3f50614721419befddc4c59b218571ea95a5ddb1",
+  "scope": "R1 compatible audio contract and stateless BT validation extraction",
+  "counts": {
+    "behavior": {
+      "tests": 533,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "emotion": {
+      "tests": 374,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "voice-humble": {
+      "tests": 430,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "result_contract": {
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "platform_tests": 57,
+  "audio_scenarios": 46,
+  "pre_and_post_observations_identical": true,
+  "ros": {
+    "build_packages": 15,
+    "doctor": "PASS",
+    "smoke": "PASS",
+    "all_processes_exited": true,
+    "forced_shutdowns": [],
+    "topic_counts": {
+      "/perception/audio_event": 2,
+      "/perception/visual_event": 111,
+      "/behavior/result_event": 0,
+      "/internal_need/state": 11,
+      "/emotion/state": 11,
+      "/waypoint_nav/status": 4,
+      "/development/nav2_events": 2,
+      "/development/lite3_io": 39,
+      "/debug/execute_behavior/goal": 3,
+      "/debug/execute_behavior/result": 3
+    }
+  },
+  "wheel": {
+    "status": "PASS",
+    "offline_cache": true,
+    "initial_online_attempt": "FAIL: PyPI connection timed out; retained separately"
+  },
+  "limits": [
+    "No model inference/quality or hardware acceptance",
+    "No hosted CI execution",
+    "R2 visual/R3 state-action/R4 node split remain future slices",
+    "Navigation/avoidance internal source unchanged",
+    "Action/Vision unit suites not rerun because their source/configs were unchanged; simulated integrated smoke covers installed modules"
+  ],
+  "tested_file_sha256": {
+    "modules/behavior/marsdog_behavior/audio_contract.py": "2862276653981002cc0ae84a9f50f3dc706190cf005edaa4d18afc7ebd57ea6f",
+    "modules/behavior/marsdog_behavior/intent_mapper.py": "4938f63a742800cba0b8c1f9a1f1917e645c86523b60164a985b8dc64e6ff1a6",
+    "modules/behavior/marsdog_behavior/ros_node.py": "105b0c99ce1ede08a66cf716a90a5f6b9800fbd942f5e959c39ee54a94d1b5c6",
+    "integration/contracts/audio_stage.py": "2e794950b07a5d8a3aee3c8955fb58669d301b1f7a2f2727b9cebad0544f081d",
+    "integration/platform/tests/test_audio_contract_gate.py": "ff07f57799e4590d199f01b3812408f61e2bc0eb0aa5d0067e18ae61f0d5951b",
+    "tools/check_audio_contracts.py": "83a535b291d74e37f844da60963fc7379bce341bf79fdd07cf47b4727991efc9",
+    "interfaces/application/audio-event-v2/cases.json": "ddcf819dacf96901b9f5c7ef1ae3861d53e928eee62b737a6db0ac181a795a30",
+    "interfaces/application/audio-event-v2/baseline.json": "c051a50d94fa1b6626d11b82c9bd8569d2e91f4fa1de584202f395eedc5879d3",
+    ".github/workflows/result-contract.yml": "17484b2edf0c2caa8b337050e11113f9de4f4ab80d1cfd071d6f2881564d668d"
+  }
+}

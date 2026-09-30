@@ -1,0 +1,83 @@
++ /usr/bin/python3 -B /home/elephant/MarsDog/marsdog-platform/tools/check_architecture.py
+{"status": "PASS", "errors": [], "ros_packages": 15, "interfaces": 21}
++ /usr/bin/python3 -B -m unittest discover -s integration/platform/tests -v
+test_exact_observation_passes (test_audio_contract_gate.AudioContractGateTests) ... ok
+test_installed_stale_copy_is_rejected (test_audio_contract_gate.AudioContractGateTests) ... ok
+test_mismatch_fails_without_updating_oracle (test_audio_contract_gate.AudioContractGateTests) ... ok
+test_missing_baseline_cannot_pass (test_audio_contract_gate.AudioContractGateTests) ... ok
+test_missing_environment_replaces_stale_success (test_audio_contract_gate.AudioContractGateTests) ... ok
+test_timeout_replaces_stale_success (test_audio_contract_gate.AudioContractGateTests) ... ok
+test_corrupt_model_never_starts_worker (test_cpu_intent_replay.CPUIntentReplayTests) ... {"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmp17qae3a_/runs/20260930T070357453130Z/result.json"}
+ok
+test_failed_model_report_is_retained (test_cpu_intent_replay.CPUIntentReplayTests) ... {"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmpgnpbd4ww/runs/20260930T070357456258Z/result.json"}
+ok
+test_incomplete_or_non_cpu_report_cannot_pass (test_cpu_intent_replay.CPUIntentReplayTests) ... {"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmp9awdd9ca/runs/20260930T070357460630Z/result.json"}
+{"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmp9awdd9ca/runs/20260930T070357462491Z/result.json"}
+{"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmp9awdd9ca/runs/20260930T070357464209Z/result.json"}
+{"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmp9awdd9ca/runs/20260930T070357465842Z/result.json"}
+ok
+test_source_drift_refuses_acceptance (test_cpu_intent_replay.CPUIntentReplayTests) ... {"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmpwl2sc9tz/runs/20260930T070357468504Z/result.json"}
+ok
+test_timeout_reaps_only_owned_group (test_cpu_intent_replay.CPUIntentReplayTests) ... {"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmp39783cst/runs/20260930T070357471586Z/result.json"}
+ok
+test_bad_hash_and_size_never_publish (test_cpu_model_assets.AssetIntegrityTests) ... ok
+test_existing_corrupt_file_is_preserved_and_rejected (test_cpu_model_assets.AssetIntegrityTests) ... ok
+test_extract_verified_bytes_and_reuse_without_fetch (test_cpu_model_assets.AssetIntegrityTests) ... ok
+test_interrupted_source_does_not_publish_or_leave_temporary_file (test_cpu_model_assets.AssetIntegrityTests) ... ok
+test_traversal_absolute_windows_and_symlink_escape_rejected (test_cpu_model_assets.AssetIntegrityTests) ... ok
+test_zip_duplicate_names_rejected (test_cpu_model_assets.AssetIntegrityTests) ... ok
+test_zip_traversal_and_symlinks_rejected_before_extraction (test_cpu_model_assets.AssetIntegrityTests) ... ok
+test_archives_never_default_to_sibling_legacy_tree (test_developer_workflow.DeveloperWorkflowTests) ... ok
+test_behavior_preserves_both_test_trees (test_developer_workflow.DeveloperWorkflowTests) ... ok
+test_environment_rejects_ambient_module_and_ros_overlays (test_developer_workflow.DeveloperWorkflowTests) ... ok
+test_failures_empty_suites_and_skips_are_not_full_passes (test_developer_workflow.DeveloperWorkflowTests) ... ok
+test_missing_environment_replaces_stale_pass_report (test_developer_workflow.DeveloperWorkflowTests) ... {
+  "status": "FAIL",
+  "module": "emotion",
+  "error": "Run tools/dev.py setup emotion first"
+}
+ok
+test_setup_has_one_module_and_locked_dependencies (test_developer_workflow.DeveloperWorkflowTests) ... ok
+test_voice_pure_and_humble_are_explicit (test_developer_workflow.DeveloperWorkflowTests) ... ok
+test_cmake_variable_relative_path_remains_relative (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_existing_view_is_idempotent_and_rejects_changes (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_relative_library_symlink_is_preserved (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_relocates_only_existing_absolute_payload_paths (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_generated_sql_stays_in_copy_and_other_edits_are_rejected (test_extended_ros_preparation.VendorBuildCopyTests) ... ok
+test_polluted_sealed_snapshot_is_rejected (test_extended_ros_preparation.VendorBuildCopyTests) ... ok
+test_changed_asset_during_run_refuses_acceptance (test_perception_replay.ReplayPreflightTests) ... {"status": "FAIL", "report": "/tmp/tmpio9uca8c/runs/20260930T070357528594Z-10365/result.json", "model_acceptance": false}
+ok
+test_check_only_and_blocked_never_invoke_module (test_perception_replay.ReplayPreflightTests) ... {"status": "READY", "report": "/tmp/tmpjd6nqvkq/runs/20260930T070357531547Z-10365/result.json", "model_acceptance": false}
+{"status": "BLOCKED_MISSING_ASSETS", "report": "/tmp/tmpjd6nqvkq/runs/20260930T070357533160Z-10365/result.json", "model_acceptance": false}
+ok
+test_cli_corrupt_manifest_records_failure (test_perception_replay.ReplayPreflightTests) ... {"status": "FAIL", "report": "/tmp/tmp37ya_ezu/runs/20260930T070357534929Z-10365/result.json", "model_acceptance": false}
+ok
+test_cpu_format_and_sha_required (test_perception_replay.ReplayPreflightTests) ... ok
+test_failed_inference_is_retained_and_other_module_still_runs (test_perception_replay.ReplayPreflightTests) ... {"status": "FAIL", "report": "/tmp/tmpko2b11m1/evidence/20260930T070357538826Z-10365/result.json", "model_acceptance": false}
+ok
+test_hashes_and_relative_paths (test_perception_replay.ReplayPreflightTests) ... ok
+test_interrupt_reaps_real_worker_and_records_failure (test_perception_replay.ReplayPreflightTests) ... ok
+test_missing_and_tampered_assets_are_distinct (test_perception_replay.ReplayPreflightTests) ... ok
+test_negative_image_needs_explicit_annotation (test_perception_replay.ReplayPreflightTests) ... ok
+test_rejects_accelerator_and_mock_settings (test_perception_replay.ReplayPreflightTests) ... ok
+test_requires_real_annotations_and_unique_ids (test_perception_replay.ReplayPreflightTests) ... ok
+test_subprocess_exit_and_missing_sample_cannot_report_pass (test_perception_replay.ReplayPreflightTests) ... ok
+test_timeout_kills_owned_process_group (test_perception_replay.ReplayPreflightTests) ... ok
+test_voice_default_catalog_has_recorded_hash (test_perception_replay.ReplayPreflightTests) ... ok
+test_dirty_source_and_existing_destination_fail_without_overwrite (test_source_handoff.SourceHandoffTests) ... ok
+test_roundtrip_preserves_history_and_tags_without_environment (test_source_handoff.SourceHandoffTests) ... ok
+test_tampered_bundle_fails (test_source_handoff.SourceHandoffTests) ... ok
+test_verify_rejects_manifest_path_escape (test_source_handoff.SourceHandoffTests) ... ok
+test_wrong_vendor_is_rejected_before_output_creation (test_source_handoff.SourceHandoffTests) ... ok
+test_behavior_chain_requires_its_own_navigation_and_safety_evidence (test_voice_cpu_ros.CPUROSReportTests) ... ok
+test_execution_violation_fails_both_gates (test_voice_cpu_ros.CPUROSReportTests) ... ok
+test_failed_observer_does_not_leave_a_real_descendant_running (test_voice_cpu_ros.CPUROSReportTests) ... ok
+test_flow_mode_cannot_hide_transport_failure (test_voice_cpu_ros.CPUROSReportTests) ... ok
+test_flow_mode_records_quality_failure_but_does_not_block_integration (test_voice_cpu_ros.CPUROSReportTests) ... ok
+test_mock_or_incomplete_evidence_cannot_pass (test_voice_cpu_ros.CPUROSReportTests) ... ok
+test_quality_failure_remains_distinct_from_real_transport (test_voice_cpu_ros.CPUROSReportTests) ... ok
+
+----------------------------------------------------------------------
+Ran 57 tests in 1.079s
+
+OK

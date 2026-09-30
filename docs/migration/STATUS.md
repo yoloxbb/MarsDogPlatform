@@ -1,11 +1,16 @@
 # 当前迁移状态 — 2026-09-30
 
-**当前目标：完成统一主仓的团队开发与源码交付闭环；先 WSL2，后开发板/Lite3。**
+**当前目标：保留原功能，分步整合 Voice、Vision、Emotion、BT、Action 的契约与代码边界。**
 五模块/自研 ROS/历史迁移和既有本机软件集成已完成，不重新开始合仓。
 模型精度暂缓；实机、远端 CI 和板端构建分别作为后续外部阶段。
 最新执行计划见 [方案 v2](../architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md) 第 15 节。
 
-**P7a/P7b 已完成。** 工程源码提交 2468639；后续证据/文档提交见 git log。
+**R1 声音兼容切片已落地。** 46 个冻结场景连接真实 Voice→BT/Emotion，
+BT 无状态协议校验已提取；不改变领域路由、会话、需求结算、IDL 和默认配置。
+路线见 [兼容性重构](../architecture/COMPATIBILITY_REFACTOR.md)，
+本片证据见 validation/compat-refactor/r1。R2–R4 尚待继续；导航/避障内部暂不处理。
+
+**P7a/P7b 已完成（历史交付基线）。** 工程源码提交 2468639；后续证据/文档提交见 git log。
 本轮已核对保全初始 25 文件并修正 Vision CI 重复 run 键。
 真实源码 bundle/独立克隆、五模块独立 setup/test/干净 wheel、51 平台测试、
 25 结果契约、四 vendor 重建全部通过。干净克隆完成默认 ROS 15 包从零构建、

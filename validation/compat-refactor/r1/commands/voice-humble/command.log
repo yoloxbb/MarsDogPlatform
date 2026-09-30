@@ -1,0 +1,27 @@
++ /usr/bin/python3 -B /home/elephant/MarsDog/marsdog-platform/tools/check_voice_tests.py --mode humble --output /home/elephant/MarsDog/marsdog-platform/out/compat-refactor/tests/voice-humble
+{
+  "status": "PASS",
+  "mode": "humble",
+  "scope": "Existing unit tests; no actual microphone/models/ROS transport",
+  "excluded_files": [],
+  "source": "/home/elephant/MarsDog/marsdog-platform/modules/voice",
+  "command": [
+    "/home/elephant/MarsDog/marsdog-platform/modules/voice/.venv/bin/python",
+    "-B",
+    "-m",
+    "pytest",
+    "tests",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=/home/elephant/MarsDog/marsdog-platform/out/compat-refactor/tests/voice-humble/junit.xml"
+  ],
+  "counts": {
+    "tests": 430,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "module": "voice",
+  "returncode": 0
+}

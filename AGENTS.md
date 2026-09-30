@@ -20,5 +20,5 @@
 - Human confirmation is needed for incompatible interfaces, robot behavior changes,
   unknown production-code retirement, irreversible history/data removal, or new
   motion-control/embedded protocols. Ordinary engineering fixes do not need approval.
-- Current priority: team development and portable source delivery on WSL, followed by board-specific builds.
+- Current priority: compatible Voice/Vision/Emotion/Behavior/Action contract and boundary refactoring; see docs/architecture/COMPATIBILITY_REFACTOR.md. Navigation/avoidance internals remain with their owner. P7 developer/source delivery is complete.
 - Model precision and absent hardware do not block software integration. Preserve honest acceptance limits.
