@@ -1,4 +1,6 @@
 # 产品交互词库的确定性事件路由。
+# action_name 是产品词库标签，behavior 是中文描述；均不是 Action Unit / BT 行为标识。
+# 保留这些兼容字段；实际执行映射见 Behavior 的 event_intent_map / intent_action_pool。
 # 附件共 116 条数据行（含表头共 117 行）。中文短语参与运行时精确匹配；
 # 英文列仅保留为参考元数据，避免跨类别歧义直接触发。
 version: "2026-09-22-play-alone-v6"

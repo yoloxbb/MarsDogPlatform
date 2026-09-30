@@ -8,10 +8,11 @@
 # The candidate spelling is case-sensitive and is passed through unchanged.
 
 behaviors:
+  # Shared authoring only: ConfigLoader isolates each template's mutable data.
   eatNormally:
     behavior_name: eatNormally
     success_condition: all_required_stages_completed
-    stages:
+    stages: &feeding_stages
       # 到达食盆点位后的固定仪式 (2026-09-18 定版): 低头 → 抬头 → 趴下 → 站立 →
       # 再低头 → 左右扭腰.  Every stage is a single-candidate random_one, so the
       # order above is the order the operator sees, while the contract shape
@@ -56,131 +57,17 @@ behaviors:
   seekFood:
     behavior_name: seekFood
     success_condition: all_required_stages_completed
-    stages:
-      # 到达食盆点位后的固定仪式 (2026-09-18 定版): 低头 → 抬头 → 趴下 → 站立 →
-      # 再低头 → 左右扭腰, 与 eatNormally 完全一致.
-      - stage_id: lower_head
-        order: 1
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD}
-      - stage_id: head_up
-        order: 2
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_RAISE_HEAD}
-      - stage_id: lie_down
-        order: 3
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_BASIC_LIE_DOWN}
-      - stage_id: stand_up
-        order: 4
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_BASIC_STAND}
-      - stage_id: lower_head_again
-        order: 5
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD}
-      - stage_id: waist_twist
-        order: 6
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_TWIST_WAIST_LEFT_RIGHT}
+    stages: *feeding_stages
 
   eatExcitedly:
     behavior_name: eatExcitedly
     success_condition: all_required_stages_completed
-    stages:
-      # 到达食盆点位后的固定仪式 (2026-09-18 定版): 低头 → 抬头 → 趴下 → 站立 →
-      # 再低头 → 左右扭腰, 与 eatNormally 完全一致.
-      - stage_id: lower_head
-        order: 1
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD}
-      - stage_id: head_up
-        order: 2
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_RAISE_HEAD}
-      - stage_id: lie_down
-        order: 3
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_BASIC_LIE_DOWN}
-      - stage_id: stand_up
-        order: 4
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_BASIC_STAND}
-      - stage_id: lower_head_again
-        order: 5
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD}
-      - stage_id: waist_twist
-        order: 6
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_TWIST_WAIST_LEFT_RIGHT}
+    stages: *feeding_stages
 
   seekFoodUrgently:
     behavior_name: seekFoodUrgently
     success_condition: all_required_stages_completed
-    stages:
-      # 到达食盆点位后的固定仪式 (2026-09-18 定版): 低头 → 抬头 → 趴下 → 站立 →
-      # 再低头 → 左右扭腰, 与 eatNormally 完全一致.
-      - stage_id: lower_head
-        order: 1
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD}
-      - stage_id: head_up
-        order: 2
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_RAISE_HEAD}
-      - stage_id: lie_down
-        order: 3
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_BASIC_LIE_DOWN}
-      - stage_id: stand_up
-        order: 4
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_BASIC_STAND}
-      - stage_id: lower_head_again
-        order: 5
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD}
-      - stage_id: waist_twist
-        order: 6
-        selection_policy: random_one
-        required: true
-        candidates:
-          - {unit_id: ACT_TWIST_WAIST_LEFT_RIGHT}
+    stages: *feeding_stages
 
   barkShortAlert:
     behavior_name: barkShortAlert

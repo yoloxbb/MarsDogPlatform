@@ -475,3 +475,17 @@ def test_legacy_names_and_aliases_are_rejected() -> None:
         assert not ctx.is_valid
         assert ctx.resolved_behavior_name == name
         assert ctx.error_reason == f"unsupported_behavior: {name!r}"
+
+
+def test_shared_stage_definitions_do_not_share_runtime_mutations() -> None:
+    loader = ConfigLoader(CONFIG_DIR)
+    loader.load_all()
+    first = loader.get_behavior_template("eatNormally")
+    second = loader.get_behavior_template("seekFood")
+    assert first["stages"] == second["stages"]
+    first["stages"][0]["candidates"][0]["unit_id"] = "ACT_TEST_MUTATION"
+    first["stages"].append({"stage_id": "test_only"})
+    for name in ("seekFood", "eatExcitedly", "seekFoodUrgently"):
+        stages = loader.get_behavior_template(name)["stages"]
+        assert len(stages) == 6
+        assert stages[0]["candidates"][0]["unit_id"] == "ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD"

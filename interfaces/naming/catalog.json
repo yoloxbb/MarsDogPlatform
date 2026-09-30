@@ -1,0 +1,4046 @@
+{
+  "schema_version": 1,
+  "source_sha256": {
+    "modules/behavior/config/event_intent_map.yaml": "0470603ef8e672e22dddb703b22876122a23c8765e66a4dd5d5e07196a5f58f5",
+    "modules/behavior/config/intent_action_pool.yaml": "c39d020be477fefbf98d77bb656fbc55e0b7e462d4da7b7e9a9d2cded4c49371",
+    "modules/behavior/config/behavior_categories.yaml": "ac877386c8e71aec0aec4ca93af227b7e6be9f9da769af40d70f50edd220ab10",
+    "modules/behavior/config/emotion_behavior_map.yaml": "2e6e4e83fed3a606fbbed43f0986eb94753a741105ca13d255b66ecbad5632be",
+    "modules/voice/config/command_catalog.yaml": "cd2db640a624fc6efeaf0b970d31ed9209874380aa125db9db96b0fad8fadcdf",
+    "modules/action/config/behavior_tree_actions.yaml": "59a5a4d28f62c3782441f725d689d05b6b7ec3b3fb963d9cf520854fa98629b1",
+    "modules/action/config/action_catalog.yaml": "57bb56d2bedc9329cdd5411f5dd885ac57f49363033f5196554b9ebbc38eca5a",
+    "tools/identifier_catalog.py": "2583dff7171e19a6bfd898098e6e4f90c3129af544de7ff8c275e2c5fcea42a4"
+  },
+  "categories": [
+    "emotion_expression",
+    "external_interaction",
+    "idle",
+    "normal_physiology",
+    "psychological_need",
+    "safety",
+    "urgent_physiology"
+  ],
+  "pools": {
+    "orient_to_sound": [
+      "respond_owner_call"
+    ],
+    "approach_wake_speaker": [
+      "approach_voice_caller"
+    ],
+    "command_walk": [
+      "walk_to_random_point"
+    ],
+    "command_play_alone": [
+      "play_alone"
+    ],
+    "command_go_out": [
+      "go_out_to_play"
+    ],
+    "command_go_home": [
+      "go_home"
+    ],
+    "command_approach": [
+      "approach_owner"
+    ],
+    "command_back_up": [
+      "back_up"
+    ],
+    "command_sit": [
+      "sit_down"
+    ],
+    "command_come_here": [
+      "come_to_owner"
+    ],
+    "command_follow": [
+      "follow_owner"
+    ],
+    "command_handshake": [
+      "give_paw"
+    ],
+    "command_high_five": [
+      "high_five"
+    ],
+    "command_roll": [
+      "roll_over"
+    ],
+    "command_spin": [
+      "spin_around"
+    ],
+    "command_retrieve": [
+      "return_to_owner"
+    ],
+    "command_spit_out": [
+      "drop_object"
+    ],
+    "command_play_dead": [
+      "play_dead"
+    ],
+    "command_stand_still": [
+      "stand_still"
+    ],
+    "command_hold_position": [
+      "hold_position"
+    ],
+    "command_quiet": [
+      "quiet"
+    ],
+    "command_toilet": [
+      "barkShortAlert"
+    ],
+    "command_clean": [
+      "lickPaws"
+    ],
+    "command_sleep": [
+      "sleepOnSide"
+    ],
+    "emergency_stop": [
+      "emergency_stop"
+    ],
+    "command_comfort_dont_be_afraid": [
+      "comfort_soothe"
+    ],
+    "command_comfort_reassure": [
+      "comfort_reassure"
+    ],
+    "command_ask_if_hurts": [
+      "care_inquire"
+    ],
+    "command_offer_head_for_pet": [
+      "pet_head"
+    ],
+    "command_seek_hug": [
+      "hug"
+    ],
+    "command_refuse": [
+      "refuse"
+    ],
+    "command_refuse_play": [
+      "refuse_play"
+    ],
+    "command_find_dad": [
+      "find_dad"
+    ],
+    "command_find_mom": [
+      "find_mom"
+    ],
+    "command_dance": [
+      "dance"
+    ],
+    "command_bring_to_me": [
+      "bring_to_me"
+    ],
+    "command_give_to_me": [
+      "give_me"
+    ],
+    "command_go_get_it": [
+      "go_fetch"
+    ],
+    "command_bring_it_back": [
+      "bring_back"
+    ],
+    "command_fetch_ball": [
+      "fetch_ball"
+    ],
+    "command_find_toy": [
+      "find_toy"
+    ],
+    "command_stay_home_alone": [
+      "stay_home"
+    ],
+    "command_wait_for_owner_return": [
+      "wait_return"
+    ],
+    "command_owner_going_out": [
+      "farewell_leave"
+    ],
+    "command_owner_returned": [
+      "greet_return"
+    ],
+    "command_bye_bye": [
+      "farewell_bye"
+    ],
+    "command_goodbye": [
+      "farewell_goodbye"
+    ],
+    "command_ask_what_doing": [
+      "report_activity"
+    ],
+    "command_ask_where_are_you": [
+      "report_location"
+    ],
+    "command_ask_whats_wrong": [
+      "report_state"
+    ],
+    "command_ask_what_thinking": [
+      "respond_thought"
+    ],
+    "command_ask_if_comfortable": [
+      "respond_comfort"
+    ],
+    "command_ask_if_likes": [
+      "respond_like"
+    ],
+    "command_ask_if_fun": [
+      "respond_fun"
+    ],
+    "command_ask_if_understands": [
+      "respond_understand"
+    ],
+    "command_ask_abilities": [
+      "show_skill"
+    ],
+    "command_ask_if_learned": [
+      "respond_learned"
+    ],
+    "command_express_miss_you": [
+      "miss_owner"
+    ],
+    "command_owner_tired": [
+      "tired"
+    ],
+    "command_owner_annoyed": [
+      "annoyed"
+    ],
+    "command_owner_unhappy": [
+      "unhappy"
+    ],
+    "command_owner_bad_day": [
+      "downcast"
+    ],
+    "command_owner_depressed": [
+      "depressed"
+    ],
+    "command_owner_stressed": [
+      "stressed"
+    ],
+    "command_owner_lonely": [
+      "lonely"
+    ],
+    "command_owner_unwell": [
+      "unwell"
+    ],
+    "command_owner_happy": [
+      "cheerful"
+    ],
+    "command_owner_very_happy": [
+      "happy"
+    ],
+    "command_owner_feeling_great": [
+      "great_form"
+    ],
+    "command_owner_feeling_excellent": [
+      "great"
+    ],
+    "command_owner_relaxed": [
+      "relaxed"
+    ],
+    "command_owner_wonderful_day": [
+      "wonderful_day"
+    ],
+    "command_owner_feeling_lucky": [
+      "lucky"
+    ],
+    "command_eat_meal": [
+      "eat_meal"
+    ],
+    "command_eat_snack": [
+      "eat_snack"
+    ],
+    "command_eat_canned_food": [
+      "eat_canned_food"
+    ],
+    "command_respond_food_preference_query": [
+      "respond_food_preference"
+    ],
+    "visual_fall_response": [
+      "respond_person_fall"
+    ],
+    "visual_stop_gesture_response": [
+      "respond_stop_gesture"
+    ],
+    "express_joy": [
+      "expressJoy"
+    ],
+    "comfort_owner": [
+      "expressJoy",
+      "expressCalm"
+    ],
+    "confused_response": [
+      "expressCuriosity",
+      "expressAnxiety"
+    ],
+    "command_lie_down": [
+      "lie_down"
+    ],
+    "command_stand_up": [
+      "stand_up"
+    ],
+    "command_wait": [
+      "wait_in_place"
+    ],
+    "command_bring": [
+      "bring_object"
+    ],
+    "command_fetch": [
+      "fetch_object"
+    ],
+    "eat_normal": [
+      "eatNormally"
+    ],
+    "eat_excited": [
+      "eatExcitedly"
+    ],
+    "seek_food": [
+      "seekFood"
+    ],
+    "seek_food_urgent": [
+      "seekFoodUrgently"
+    ],
+    "request_elimination": [
+      "barkShortAlert"
+    ],
+    "eliminate_now": [
+      "defecate"
+    ],
+    "settle_to_sleep": [
+      "sleepOnSide"
+    ],
+    "sleep_deep": [
+      "sleepNow"
+    ],
+    "groom_light": [
+      "lickPaws"
+    ],
+    "groom_thorough": [
+      "cleanSelf"
+    ],
+    "recover_energy": [
+      "restInPlace"
+    ],
+    "recharge_critical": [
+      "recharge"
+    ],
+    "social_seek": [
+      "seekHumanInteraction"
+    ],
+    "social_engage": [
+      "seekInteraction"
+    ],
+    "animal_boundary_test": [
+      "testAnimalBoundary"
+    ],
+    "animal_social_greet": [
+      "greetAnimal"
+    ],
+    "animal_play_invite": [
+      "inviteAnimalToPlay"
+    ],
+    "human_resource_interaction": [
+      "requestResourceFromHuman"
+    ],
+    "human_attention_interaction": [
+      "seekHumanInteraction"
+    ],
+    "human_play_invite": [
+      "inviteHumanToPlay"
+    ],
+    "explore_space": [
+      "exploreRoom"
+    ],
+    "explore_focused": [
+      "inspectObject"
+    ],
+    "inspect_generic_object": [
+      "inspectObject"
+    ],
+    "inspect_familiar_play_item": [
+      "inspectFamiliarPlayItem"
+    ],
+    "inspect_trash_can": [
+      "inspectTrashCan"
+    ],
+    "inspect_delivery_box": [
+      "inspectDeliveryBox"
+    ],
+    "inspect_tissue": [
+      "inspectTissuePaper"
+    ],
+    "inspect_door": [
+      "inspectDoor"
+    ],
+    "inspect_dog_food": [
+      "inspectDogFood"
+    ]
+  },
+  "routes": [
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_WAKEUP",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "orient_to_sound",
+      "selection": "intent_pool",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "respond_owner_call"
+      ],
+      "executor_behaviors": [
+        "respond_owner_call"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_WALK",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_walk",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_WALK",
+      "bt_behaviors": [
+        "walk_to_random_point"
+      ],
+      "executor_behaviors": [
+        "walk_to_random_point"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_PLAY_ALONE",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_play_alone",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_PLAY_ALONE",
+      "bt_behaviors": [
+        "play_alone"
+      ],
+      "executor_behaviors": [
+        "play_alone"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_GO_OUT",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_go_out",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_GO_OUT",
+      "bt_behaviors": [
+        "go_out_to_play"
+      ],
+      "executor_behaviors": [
+        "go_out_to_play"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_GO_HOME",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_go_home",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_GO_HOME",
+      "bt_behaviors": [
+        "go_home"
+      ],
+      "executor_behaviors": [
+        "go_home"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_APPROACH",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_approach",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_APPROACH",
+      "bt_behaviors": [
+        "approach_owner"
+      ],
+      "executor_behaviors": [
+        "approach_owner"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_BACK_UP",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_back_up",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_BACK_UP",
+      "bt_behaviors": [
+        "back_up"
+      ],
+      "executor_behaviors": [
+        "back_up"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_SIT",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_sit",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_SIT",
+      "bt_behaviors": [
+        "sit_down"
+      ],
+      "executor_behaviors": [
+        "sit_down"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_LIE_DOWN",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_lie_down",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_LIE_DOWN",
+      "bt_behaviors": [
+        "lie_down"
+      ],
+      "executor_behaviors": [
+        "lie_down"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_STAND_UP",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_stand_up",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_STAND_UP",
+      "bt_behaviors": [
+        "stand_up"
+      ],
+      "executor_behaviors": [
+        "stand_up"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_STAND_STILL",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_stand_still",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_STAND_STILL",
+      "bt_behaviors": [
+        "stand_still"
+      ],
+      "executor_behaviors": [
+        "stand_still"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_HOLD_POSITION",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_hold_position",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_HOLD_POSITION",
+      "bt_behaviors": [
+        "hold_position"
+      ],
+      "executor_behaviors": [
+        "hold_position"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_WAIT",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_wait",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_WAIT",
+      "bt_behaviors": [
+        "wait_in_place"
+      ],
+      "executor_behaviors": [
+        "wait_in_place"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_COME",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_come_here",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_COME_HERE",
+      "bt_behaviors": [
+        "come_to_owner"
+      ],
+      "executor_behaviors": [
+        "come_to_owner"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_SHAKE_HAND",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_handshake",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_HAND",
+      "bt_behaviors": [
+        "give_paw"
+      ],
+      "executor_behaviors": [
+        "give_paw"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_HIGH_FIVE",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_high_five",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_FIVE",
+      "bt_behaviors": [
+        "high_five"
+      ],
+      "executor_behaviors": [
+        "high_five"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_FOLLOW",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_follow",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_FOLLOW",
+      "bt_behaviors": [
+        "follow_owner"
+      ],
+      "executor_behaviors": [
+        "follow_owner"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_ROLL_OVER",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_roll",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_ROLL",
+      "bt_behaviors": [
+        "roll_over"
+      ],
+      "executor_behaviors": [
+        "roll_over"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_SPIN",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_spin",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_SPIN",
+      "bt_behaviors": [
+        "spin_around"
+      ],
+      "executor_behaviors": [
+        "spin_around"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_RETURN",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_retrieve",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_BACK",
+      "bt_behaviors": [
+        "return_to_owner"
+      ],
+      "executor_behaviors": [
+        "return_to_owner"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_DROP",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_spit_out",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_SPIT",
+      "bt_behaviors": [
+        "drop_object"
+      ],
+      "executor_behaviors": [
+        "drop_object"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_QUIET",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_quiet",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_QUIET",
+      "bt_behaviors": [
+        "quiet"
+      ],
+      "executor_behaviors": [
+        "quiet"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_TOILET",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_toilet",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_TOILET",
+      "bt_behaviors": [
+        "barkShortAlert"
+      ],
+      "executor_behaviors": [
+        "barkShortAlert"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_CLEAN",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_clean",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_CLEAN",
+      "bt_behaviors": [
+        "lickPaws"
+      ],
+      "executor_behaviors": [
+        "lickPaws"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_SLEEP",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_sleep",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_SLEEP",
+      "bt_behaviors": [
+        "sleepOnSide"
+      ],
+      "executor_behaviors": [
+        "sleepOnSide"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_PLAY_DEAD",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_play_dead",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_DEAD",
+      "bt_behaviors": [
+        "play_dead"
+      ],
+      "executor_behaviors": [
+        "play_dead"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_BRING",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_bring",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_BRING_OBJECT",
+      "bt_behaviors": [
+        "bring_object"
+      ],
+      "executor_behaviors": [
+        "bring_object"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_FETCH",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_fetch",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_FETCH_OBJECT",
+      "bt_behaviors": [
+        "fetch_object"
+      ],
+      "executor_behaviors": [
+        "fetch_object"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_STOP",
+      "context": "default",
+      "category": "safety",
+      "intent": "emergency_stop",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_STOP",
+      "bt_behaviors": [
+        "emergency_stop"
+      ],
+      "executor_behaviors": [
+        "emergency_stop"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_COMFORT_DONT_BE_AFRAID",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_comfort_dont_be_afraid",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_COMFORT_DONT_BE_AFRAID",
+      "bt_behaviors": [
+        "comfort_soothe"
+      ],
+      "executor_behaviors": [
+        "comfort_soothe"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_COMFORT_REASSURE",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_comfort_reassure",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_COMFORT_REASSURE",
+      "bt_behaviors": [
+        "comfort_reassure"
+      ],
+      "executor_behaviors": [
+        "comfort_reassure"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_ASK_IF_HURTS",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_ask_if_hurts",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_ASK_IF_HURTS",
+      "bt_behaviors": [
+        "care_inquire"
+      ],
+      "executor_behaviors": [
+        "care_inquire"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OFFER_HEAD_FOR_PET",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_offer_head_for_pet",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OFFER_HEAD_FOR_PET",
+      "bt_behaviors": [
+        "pet_head"
+      ],
+      "executor_behaviors": [
+        "pet_head"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_SEEK_HUG",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_seek_hug",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_SEEK_HUG",
+      "bt_behaviors": [
+        "hug"
+      ],
+      "executor_behaviors": [
+        "hug"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_REFUSE",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_refuse",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_REFUSE",
+      "bt_behaviors": [
+        "refuse"
+      ],
+      "executor_behaviors": [
+        "refuse"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_REFUSE_PLAY",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_refuse_play",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_REFUSE_PLAY",
+      "bt_behaviors": [
+        "refuse_play"
+      ],
+      "executor_behaviors": [
+        "refuse_play"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_FIND_DAD",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_find_dad",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_FIND_DAD",
+      "bt_behaviors": [
+        "find_dad"
+      ],
+      "executor_behaviors": [
+        "find_dad"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_FIND_MOM",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_find_mom",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_FIND_MOM",
+      "bt_behaviors": [
+        "find_mom"
+      ],
+      "executor_behaviors": [
+        "find_mom"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_DANCE",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_dance",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_DANCE",
+      "bt_behaviors": [
+        "dance"
+      ],
+      "executor_behaviors": [
+        "dance"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_BRING_TO_ME",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_bring_to_me",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_BRING_TO_ME",
+      "bt_behaviors": [
+        "bring_to_me"
+      ],
+      "executor_behaviors": [
+        "bring_to_me"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_GIVE_TO_ME",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_give_to_me",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_GIVE_TO_ME",
+      "bt_behaviors": [
+        "give_me"
+      ],
+      "executor_behaviors": [
+        "give_me"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_GO_GET_IT",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_go_get_it",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_GO_GET_IT",
+      "bt_behaviors": [
+        "go_fetch"
+      ],
+      "executor_behaviors": [
+        "go_fetch"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_BRING_IT_BACK",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_bring_it_back",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_BRING_IT_BACK",
+      "bt_behaviors": [
+        "bring_back"
+      ],
+      "executor_behaviors": [
+        "bring_back"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_FETCH_BALL",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_fetch_ball",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_FETCH_BALL",
+      "bt_behaviors": [
+        "fetch_ball"
+      ],
+      "executor_behaviors": [
+        "fetch_ball"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_FIND_TOY",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_find_toy",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_FIND_TOY",
+      "bt_behaviors": [
+        "find_toy"
+      ],
+      "executor_behaviors": [
+        "find_toy"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_STAY_HOME_ALONE",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_stay_home_alone",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_STAY_HOME_ALONE",
+      "bt_behaviors": [
+        "stay_home"
+      ],
+      "executor_behaviors": [
+        "stay_home"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_WAIT_FOR_OWNER_RETURN",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_wait_for_owner_return",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_WAIT_FOR_OWNER_RETURN",
+      "bt_behaviors": [
+        "wait_return"
+      ],
+      "executor_behaviors": [
+        "wait_return"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_GOING_OUT",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_going_out",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_GOING_OUT",
+      "bt_behaviors": [
+        "farewell_leave"
+      ],
+      "executor_behaviors": [
+        "farewell_leave"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_RETURNED",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_returned",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_RETURNED",
+      "bt_behaviors": [
+        "greet_return"
+      ],
+      "executor_behaviors": [
+        "greet_return"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_BYE_BYE",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_bye_bye",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_BYE_BYE",
+      "bt_behaviors": [
+        "farewell_bye"
+      ],
+      "executor_behaviors": [
+        "farewell_bye"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_GOODBYE",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_goodbye",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_GOODBYE",
+      "bt_behaviors": [
+        "farewell_goodbye"
+      ],
+      "executor_behaviors": [
+        "farewell_goodbye"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_ASK_WHAT_DOING",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_ask_what_doing",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_ASK_WHAT_DOING",
+      "bt_behaviors": [
+        "report_activity"
+      ],
+      "executor_behaviors": [
+        "report_activity"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_ASK_WHERE_ARE_YOU",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_ask_where_are_you",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_ASK_WHERE_ARE_YOU",
+      "bt_behaviors": [
+        "report_location"
+      ],
+      "executor_behaviors": [
+        "report_location"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_ASK_WHATS_WRONG",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_ask_whats_wrong",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_ASK_WHATS_WRONG",
+      "bt_behaviors": [
+        "report_state"
+      ],
+      "executor_behaviors": [
+        "report_state"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_ASK_WHAT_THINKING",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_ask_what_thinking",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_ASK_WHAT_THINKING",
+      "bt_behaviors": [
+        "respond_thought"
+      ],
+      "executor_behaviors": [
+        "respond_thought"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_ASK_IF_COMFORTABLE",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_ask_if_comfortable",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_ASK_IF_COMFORTABLE",
+      "bt_behaviors": [
+        "respond_comfort"
+      ],
+      "executor_behaviors": [
+        "respond_comfort"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_ASK_IF_LIKES",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_ask_if_likes",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_ASK_IF_LIKES",
+      "bt_behaviors": [
+        "respond_like"
+      ],
+      "executor_behaviors": [
+        "respond_like"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_ASK_IF_FUN",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_ask_if_fun",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_ASK_IF_FUN",
+      "bt_behaviors": [
+        "respond_fun"
+      ],
+      "executor_behaviors": [
+        "respond_fun"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_ASK_IF_UNDERSTANDS",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_ask_if_understands",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_ASK_IF_UNDERSTANDS",
+      "bt_behaviors": [
+        "respond_understand"
+      ],
+      "executor_behaviors": [
+        "respond_understand"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_ASK_ABILITIES",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_ask_abilities",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_ASK_ABILITIES",
+      "bt_behaviors": [
+        "show_skill"
+      ],
+      "executor_behaviors": [
+        "show_skill"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_ASK_IF_LEARNED",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_ask_if_learned",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_ASK_IF_LEARNED",
+      "bt_behaviors": [
+        "respond_learned"
+      ],
+      "executor_behaviors": [
+        "respond_learned"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_EXPRESS_MISS_YOU",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_express_miss_you",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_EXPRESS_MISS_YOU",
+      "bt_behaviors": [
+        "miss_owner"
+      ],
+      "executor_behaviors": [
+        "miss_owner"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_TIRED",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_tired",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_TIRED",
+      "bt_behaviors": [
+        "tired"
+      ],
+      "executor_behaviors": [
+        "tired"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_ANNOYED",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_annoyed",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_ANNOYED",
+      "bt_behaviors": [
+        "annoyed"
+      ],
+      "executor_behaviors": [
+        "annoyed"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_UNHAPPY",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_unhappy",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_UNHAPPY",
+      "bt_behaviors": [
+        "unhappy"
+      ],
+      "executor_behaviors": [
+        "unhappy"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_BAD_DAY",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_bad_day",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_BAD_DAY",
+      "bt_behaviors": [
+        "downcast"
+      ],
+      "executor_behaviors": [
+        "downcast"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_DEPRESSED",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_depressed",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_DEPRESSED",
+      "bt_behaviors": [
+        "depressed"
+      ],
+      "executor_behaviors": [
+        "depressed"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_STRESSED",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_stressed",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_STRESSED",
+      "bt_behaviors": [
+        "stressed"
+      ],
+      "executor_behaviors": [
+        "stressed"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_LONELY",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_lonely",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_LONELY",
+      "bt_behaviors": [
+        "lonely"
+      ],
+      "executor_behaviors": [
+        "lonely"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_UNWELL",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_unwell",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_UNWELL",
+      "bt_behaviors": [
+        "unwell"
+      ],
+      "executor_behaviors": [
+        "unwell"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_HAPPY",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_happy",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_HAPPY",
+      "bt_behaviors": [
+        "cheerful"
+      ],
+      "executor_behaviors": [
+        "cheerful"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_VERY_HAPPY",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_very_happy",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_VERY_HAPPY",
+      "bt_behaviors": [
+        "happy"
+      ],
+      "executor_behaviors": [
+        "happy"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_FEELING_GREAT",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_feeling_great",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_FEELING_GREAT",
+      "bt_behaviors": [
+        "great_form"
+      ],
+      "executor_behaviors": [
+        "great_form"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_FEELING_EXCELLENT",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_feeling_excellent",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_FEELING_EXCELLENT",
+      "bt_behaviors": [
+        "great"
+      ],
+      "executor_behaviors": [
+        "great"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_RELAXED",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_relaxed",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_RELAXED",
+      "bt_behaviors": [
+        "relaxed"
+      ],
+      "executor_behaviors": [
+        "relaxed"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_WONDERFUL_DAY",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_wonderful_day",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_WONDERFUL_DAY",
+      "bt_behaviors": [
+        "wonderful_day"
+      ],
+      "executor_behaviors": [
+        "wonderful_day"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_OWNER_FEELING_LUCKY",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_owner_feeling_lucky",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_OWNER_FEELING_LUCKY",
+      "bt_behaviors": [
+        "lucky"
+      ],
+      "executor_behaviors": [
+        "lucky"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_EAT_MEAL",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_eat_meal",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_EAT_MEAL",
+      "bt_behaviors": [
+        "eat_meal"
+      ],
+      "executor_behaviors": [
+        "eat_meal"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_EAT_SNACK",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_eat_snack",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_EAT_SNACK",
+      "bt_behaviors": [
+        "eat_snack"
+      ],
+      "executor_behaviors": [
+        "eat_snack"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_EAT_CANNED_FOOD",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_eat_canned_food",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_EAT_CANNED_FOOD",
+      "bt_behaviors": [
+        "eat_canned_food"
+      ],
+      "executor_behaviors": [
+        "eat_canned_food"
+      ]
+    },
+    {
+      "source": "audio_direct",
+      "event": "EVT_VOICE_COMMAND_RESPOND_FOOD_PREFERENCE_QUERY",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "command_respond_food_preference_query",
+      "selection": "intent_pool",
+      "expected_command_id": "CMD_RESPOND_FOOD_PREFERENCE_QUERY",
+      "bt_behaviors": [
+        "respond_food_preference"
+      ],
+      "executor_behaviors": [
+        "respond_food_preference"
+      ]
+    },
+    {
+      "source": "visual_direct",
+      "event": "EVT_VISION_FALL",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "visual_fall_response",
+      "selection": "intent_pool",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "respond_person_fall"
+      ],
+      "executor_behaviors": [
+        "respond_person_fall"
+      ]
+    },
+    {
+      "source": "visual_direct",
+      "event": "EVT_VISION_STOP_GESTURE",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "visual_stop_gesture_response",
+      "selection": "intent_pool",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "respond_stop_gesture"
+      ],
+      "executor_behaviors": [
+        "respond_stop_gesture"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_HUNGER_TRIGGERED",
+      "context": "dog_food",
+      "category": "normal_physiology",
+      "intent": "eat_normal",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "eatNormally"
+      ],
+      "executor_behaviors": [
+        "eatNormally"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_HUNGER_TRIGGERED",
+      "context": "no_dog_food",
+      "category": "normal_physiology",
+      "intent": "seek_food",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "seekFood"
+      ],
+      "executor_behaviors": [
+        "seekFood"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_HUNGER_OVERFLOW",
+      "context": "dog_food",
+      "category": "normal_physiology",
+      "intent": "eat_excited",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "eatExcitedly"
+      ],
+      "executor_behaviors": [
+        "eatExcitedly"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_HUNGER_OVERFLOW",
+      "context": "no_dog_food",
+      "category": "normal_physiology",
+      "intent": "seek_food_urgent",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "seekFoodUrgently"
+      ],
+      "executor_behaviors": [
+        "seekFood"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_BLADDER_TRIGGERED",
+      "context": "default",
+      "category": "urgent_physiology",
+      "intent": "request_elimination",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "barkShortAlert"
+      ],
+      "executor_behaviors": [
+        "barkShortAlert"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_SLEEPINESS_TRIGGERED",
+      "context": "default",
+      "category": "urgent_physiology",
+      "intent": "settle_to_sleep",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "sleepOnSide"
+      ],
+      "executor_behaviors": [
+        "sleepOnSide"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_SLEEPINESS_OVERFLOW",
+      "context": "default",
+      "category": "urgent_physiology",
+      "intent": "sleep_deep",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "sleepNow"
+      ],
+      "executor_behaviors": [
+        "sleepNow"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_CLEANLINESS_TRIGGERED",
+      "context": "default",
+      "category": "normal_physiology",
+      "intent": "groom_light",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "lickPaws"
+      ],
+      "executor_behaviors": [
+        "lickPaws"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_ENERGY_TRIGGERED",
+      "context": "default",
+      "category": "safety",
+      "intent": "recover_energy",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "restInPlace"
+      ],
+      "executor_behaviors": [
+        "restInPlace"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_ENERGY_OVERFLOW",
+      "context": "default",
+      "category": "safety",
+      "intent": "recharge_critical",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "recharge"
+      ],
+      "executor_behaviors": [
+        "recharge"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_SOCIAL_TRIGGERED",
+      "context": "human",
+      "category": "psychological_need",
+      "intent": "human_attention_interaction",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "seekHumanInteraction"
+      ],
+      "executor_behaviors": [
+        "seekHumanInteraction"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_SOCIAL_TRIGGERED",
+      "context": "animal",
+      "category": "psychological_need",
+      "intent": "animal_boundary_test",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "testAnimalBoundary"
+      ],
+      "executor_behaviors": [
+        "testAnimalBoundary"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_SOCIAL_URGENT",
+      "context": "human",
+      "category": "psychological_need",
+      "intent": "social_engage",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "seekInteraction"
+      ],
+      "executor_behaviors": [
+        "seekInteraction"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_SOCIAL_URGENT",
+      "context": "animal",
+      "category": "psychological_need",
+      "intent": "animal_social_greet",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "greetAnimal"
+      ],
+      "executor_behaviors": [
+        "greetAnimal"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_SOCIAL_OVERFLOW",
+      "context": "human",
+      "category": "psychological_need",
+      "intent": "human_play_invite",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "inviteHumanToPlay"
+      ],
+      "executor_behaviors": [
+        "inviteHumanToPlay"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_SOCIAL_OVERFLOW",
+      "context": "animal",
+      "category": "psychological_need",
+      "intent": "animal_play_invite",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "inviteAnimalToPlay"
+      ],
+      "executor_behaviors": [
+        "inviteAnimalToPlay"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_EXPLORATION_TRIGGERED",
+      "context": "play_item",
+      "category": "psychological_need",
+      "intent": "inspect_familiar_play_item",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "inspectFamiliarPlayItem"
+      ],
+      "executor_behaviors": [
+        "inspectFamiliarPlayItem"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_EXPLORATION_TRIGGERED",
+      "context": "trash_can",
+      "category": "psychological_need",
+      "intent": "inspect_trash_can",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "inspectTrashCan"
+      ],
+      "executor_behaviors": [
+        "inspectTrashCan"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_EXPLORATION_TRIGGERED",
+      "context": "delivery_box",
+      "category": "psychological_need",
+      "intent": "inspect_delivery_box",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "inspectDeliveryBox"
+      ],
+      "executor_behaviors": [
+        "inspectDeliveryBox"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_EXPLORATION_TRIGGERED",
+      "context": "tissue",
+      "category": "psychological_need",
+      "intent": "inspect_tissue",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "inspectTissuePaper"
+      ],
+      "executor_behaviors": [
+        "inspectTissuePaper"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_EXPLORATION_TRIGGERED",
+      "context": "door",
+      "category": "psychological_need",
+      "intent": "inspect_door",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "inspectDoor"
+      ],
+      "executor_behaviors": [
+        "inspectDoor"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_EXPLORATION_TRIGGERED",
+      "context": "dog_food",
+      "category": "psychological_need",
+      "intent": "inspect_dog_food",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "inspectDogFood"
+      ],
+      "executor_behaviors": [
+        "inspectDogFood"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_EXPLORATION_TRIGGERED",
+      "context": "unfamiliar_object",
+      "category": "psychological_need",
+      "intent": "inspect_generic_object",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "inspectObject"
+      ],
+      "executor_behaviors": [
+        "inspectObject"
+      ]
+    },
+    {
+      "source": "need",
+      "event": "NEED_EXPLORATION_TRIGGERED",
+      "context": "empty",
+      "category": "psychological_need",
+      "intent": "explore_space",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "exploreRoom"
+      ],
+      "executor_behaviors": [
+        "exploreRoom"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_CALM_TRIGGERED",
+      "context": "human",
+      "category": "emotion_expression",
+      "intent": "express_calm",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressCalmWithHuman"
+      ],
+      "executor_behaviors": [
+        "expressCalmWithHuman"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_CALM_TRIGGERED",
+      "context": "human/voice_waiting",
+      "category": "emotion_expression",
+      "intent": "express_calm",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressCalmInPlaceWithHuman"
+      ],
+      "executor_behaviors": [
+        "expressCalmInPlaceWithHuman"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_CALM_TRIGGERED",
+      "context": "solo",
+      "category": "emotion_expression",
+      "intent": "express_calm",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressCalmAlone"
+      ],
+      "executor_behaviors": [
+        "expressCalmAlone"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_JOY_TRIGGERED",
+      "context": "human",
+      "category": "emotion_expression",
+      "intent": "express_joy",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressJoyWithHuman"
+      ],
+      "executor_behaviors": [
+        "expressJoyWithHuman"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_JOY_TRIGGERED",
+      "context": "human/voice_waiting",
+      "category": "emotion_expression",
+      "intent": "express_joy",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressJoyInPlaceWithHuman"
+      ],
+      "executor_behaviors": [
+        "expressJoyInPlaceWithHuman"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_JOY_TRIGGERED",
+      "context": "solo",
+      "category": "emotion_expression",
+      "intent": "express_joy",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressJoyAlone"
+      ],
+      "executor_behaviors": [
+        "expressJoyAlone"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_EXCITE_TRIGGERED",
+      "context": "human",
+      "category": "emotion_expression",
+      "intent": "express_excitement",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressExcitementWithHuman"
+      ],
+      "executor_behaviors": [
+        "expressExcitementWithHuman"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_EXCITE_TRIGGERED",
+      "context": "human/voice_waiting",
+      "category": "emotion_expression",
+      "intent": "express_excitement",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressExcitementInPlaceWithHuman"
+      ],
+      "executor_behaviors": [
+        "expressExcitementInPlaceWithHuman"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_EXCITE_TRIGGERED",
+      "context": "solo",
+      "category": "emotion_expression",
+      "intent": "express_excitement",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressExcitementAlone"
+      ],
+      "executor_behaviors": [
+        "expressExcitementAlone"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_ANXIETY_TRIGGERED",
+      "context": "human",
+      "category": "emotion_expression",
+      "intent": "express_anxiety",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressAnxietyWithHuman"
+      ],
+      "executor_behaviors": [
+        "expressAnxietyWithHuman"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_ANXIETY_TRIGGERED",
+      "context": "human/voice_waiting",
+      "category": "emotion_expression",
+      "intent": "express_anxiety",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressAnxietyInPlaceWithHuman"
+      ],
+      "executor_behaviors": [
+        "expressAnxietyInPlaceWithHuman"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_ANXIETY_TRIGGERED",
+      "context": "solo",
+      "category": "emotion_expression",
+      "intent": "express_anxiety",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressAnxietyAlone"
+      ],
+      "executor_behaviors": [
+        "expressAnxietyAlone"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_FEAR_TRIGGERED",
+      "context": "human",
+      "category": "emotion_expression",
+      "intent": "express_fear",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressFearWithHuman"
+      ],
+      "executor_behaviors": [
+        "expressFearWithHuman"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_FEAR_TRIGGERED",
+      "context": "human/voice_waiting",
+      "category": "emotion_expression",
+      "intent": "express_fear",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressFearInPlaceWithHuman"
+      ],
+      "executor_behaviors": [
+        "expressFearInPlaceWithHuman"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_FEAR_TRIGGERED",
+      "context": "solo",
+      "category": "emotion_expression",
+      "intent": "express_fear",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressFearAlone"
+      ],
+      "executor_behaviors": [
+        "expressFearAlone"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_CURIOUS_TRIGGERED",
+      "context": "human",
+      "category": "emotion_expression",
+      "intent": "express_curiosity",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressCuriosityWithHuman"
+      ],
+      "executor_behaviors": [
+        "expressCuriosityWithHuman"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_CURIOUS_TRIGGERED",
+      "context": "human/voice_waiting",
+      "category": "emotion_expression",
+      "intent": "express_curiosity",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressCuriosityInPlaceWithHuman"
+      ],
+      "executor_behaviors": [
+        "expressCuriosityInPlaceWithHuman"
+      ]
+    },
+    {
+      "source": "emotion",
+      "event": "EMO_CURIOUS_TRIGGERED",
+      "context": "solo",
+      "category": "emotion_expression",
+      "intent": "express_curiosity",
+      "selection": "explicit_behavior",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "expressCuriosityAlone"
+      ],
+      "executor_behaviors": [
+        "expressCuriosityAlone"
+      ]
+    }
+  ],
+  "social_reactions": [
+    {
+      "event": "EVT_VOICE_COMMAND_PRAISE",
+      "intent": "audio_react_praise",
+      "category": "external_interaction",
+      "expected_command_id": "CMD_PRAISE",
+      "emotion_events": [
+        "EMO_JOY_TRIGGERED",
+        "EMO_EXCITE_TRIGGERED"
+      ]
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_SCOLD",
+      "intent": "audio_react_scold",
+      "category": "external_interaction",
+      "expected_command_id": "CMD_SCOLD",
+      "emotion_events": [
+        "EMO_ANXIETY_TRIGGERED",
+        "EMO_CURIOUS_TRIGGERED",
+        "EMO_FEAR_TRIGGERED"
+      ]
+    }
+  ],
+  "voice_commands": [
+    {
+      "command_key": "WALK",
+      "command_id": "CMD_WALK",
+      "event": "EVT_VOICE_COMMAND_WALK",
+      "product_action_label": "ACT_WALK"
+    },
+    {
+      "command_key": "COME",
+      "command_id": "CMD_COME_HERE",
+      "event": "EVT_VOICE_COMMAND_COME",
+      "product_action_label": "ACT_COME"
+    },
+    {
+      "command_key": "FOLLOW",
+      "command_id": "CMD_FOLLOW",
+      "event": "EVT_VOICE_COMMAND_FOLLOW",
+      "product_action_label": "ACT_FOLLOW"
+    },
+    {
+      "command_key": "GO_OUT",
+      "command_id": "CMD_GO_OUT",
+      "event": "EVT_VOICE_COMMAND_GO_OUT",
+      "product_action_label": "ACT_GO_OUT_TO_PLAY"
+    },
+    {
+      "command_key": "GO_HOME",
+      "command_id": "CMD_GO_HOME",
+      "event": "EVT_VOICE_COMMAND_GO_HOME",
+      "product_action_label": "ACT_GO_HOME"
+    },
+    {
+      "command_key": "APPROACH",
+      "command_id": "CMD_APPROACH",
+      "event": "EVT_VOICE_COMMAND_APPROACH",
+      "product_action_label": "ACT_COME_CLOSER"
+    },
+    {
+      "command_key": "BACK_UP",
+      "command_id": "CMD_BACK_UP",
+      "event": "EVT_VOICE_COMMAND_BACK_UP",
+      "product_action_label": "ACT_BACK_UP"
+    },
+    {
+      "command_key": "SIT",
+      "command_id": "CMD_SIT",
+      "event": "EVT_VOICE_COMMAND_SIT",
+      "product_action_label": "ACT_SIT"
+    },
+    {
+      "command_key": "LIE_DOWN",
+      "command_id": "CMD_LIE_DOWN",
+      "event": "EVT_VOICE_COMMAND_LIE_DOWN",
+      "product_action_label": "ACT_LIE_DOWN"
+    },
+    {
+      "command_key": "PLAY_DEAD",
+      "command_id": "CMD_DEAD",
+      "event": "EVT_VOICE_COMMAND_PLAY_DEAD",
+      "product_action_label": "ACT_PLAY_DEAD"
+    },
+    {
+      "command_key": "STAND_UP",
+      "command_id": "CMD_STAND_UP",
+      "event": "EVT_VOICE_COMMAND_STAND_UP",
+      "product_action_label": "ACT_STAND_UP"
+    },
+    {
+      "command_key": "STAND_STILL",
+      "command_id": "CMD_STAND_STILL",
+      "event": "EVT_VOICE_COMMAND_STAND_STILL",
+      "product_action_label": "ACT_STAND_STILL"
+    },
+    {
+      "command_key": "SHAKE_HAND",
+      "command_id": "CMD_HAND",
+      "event": "EVT_VOICE_COMMAND_SHAKE_HAND",
+      "product_action_label": "ACT_SHAKE_HAND"
+    },
+    {
+      "command_key": "HIGH_FIVE",
+      "command_id": "CMD_FIVE",
+      "event": "EVT_VOICE_COMMAND_HIGH_FIVE",
+      "product_action_label": "ACT_HIGH_FIVE"
+    },
+    {
+      "command_key": "SPIN",
+      "command_id": "CMD_SPIN",
+      "event": "EVT_VOICE_COMMAND_SPIN",
+      "product_action_label": "ACT_SPIN"
+    },
+    {
+      "command_key": "ROLL_OVER",
+      "command_id": "CMD_ROLL",
+      "event": "EVT_VOICE_COMMAND_ROLL_OVER",
+      "product_action_label": "ACT_ROLL_OVER"
+    },
+    {
+      "command_key": "HOLD_POSITION",
+      "command_id": "CMD_HOLD_POSITION",
+      "event": "EVT_VOICE_COMMAND_HOLD_POSITION",
+      "product_action_label": "ACT_HOLD_POSITION"
+    },
+    {
+      "command_key": "DROP",
+      "command_id": "CMD_SPIT",
+      "event": "EVT_VOICE_COMMAND_DROP",
+      "product_action_label": "ACT_DROP"
+    },
+    {
+      "command_key": "QUIET",
+      "command_id": "CMD_QUIET",
+      "event": "EVT_VOICE_COMMAND_QUIET",
+      "product_action_label": "ACT_QUIET"
+    },
+    {
+      "command_key": "CALL_NAME",
+      "command_id": "CMD_CALL_NAME",
+      "event": "EVT_VOICE_COMMAND_CALL_NAME",
+      "product_action_label": ""
+    },
+    {
+      "command_key": "PRAISE",
+      "command_id": "CMD_PRAISE",
+      "event": "EVT_VOICE_COMMAND_PRAISE",
+      "product_action_label": ""
+    },
+    {
+      "command_key": "SCOLD",
+      "command_id": "CMD_SCOLD",
+      "event": "EVT_VOICE_COMMAND_SCOLD",
+      "product_action_label": ""
+    },
+    {
+      "command_key": "COMFORT_DONT_BE_AFRAID",
+      "command_id": "CMD_COMFORT_DONT_BE_AFRAID",
+      "event": "EVT_VOICE_COMMAND_COMFORT_DONT_BE_AFRAID",
+      "product_action_label": "ACT_COMFORT_DONT_BE_AFRAID"
+    },
+    {
+      "command_key": "ASK_IF_HURTS",
+      "command_id": "CMD_ASK_IF_HURTS",
+      "event": "EVT_VOICE_COMMAND_ASK_IF_HURTS",
+      "product_action_label": "ACT_ASK_IF_HURTS"
+    },
+    {
+      "command_key": "COMFORT_REASSURE",
+      "command_id": "CMD_COMFORT_REASSURE",
+      "event": "EVT_VOICE_COMMAND_COMFORT_REASSURE",
+      "product_action_label": "ACT_COMFORT_REASSURE"
+    },
+    {
+      "command_key": "OFFER_HEAD_FOR_PET",
+      "command_id": "CMD_OFFER_HEAD_FOR_PET",
+      "event": "EVT_VOICE_COMMAND_OFFER_HEAD_FOR_PET",
+      "product_action_label": "ACT_OFFER_HEAD_FOR_PET"
+    },
+    {
+      "command_key": "SEEK_HUG",
+      "command_id": "CMD_SEEK_HUG",
+      "event": "EVT_VOICE_COMMAND_SEEK_HUG",
+      "product_action_label": "ACT_SEEK_HUG"
+    },
+    {
+      "command_key": "EAT_MEAL",
+      "command_id": "CMD_EAT_MEAL",
+      "event": "EVT_VOICE_COMMAND_EAT_MEAL",
+      "product_action_label": "ACT_EAT_MEAL"
+    },
+    {
+      "command_key": "EAT_SNACK",
+      "command_id": "CMD_EAT_SNACK",
+      "event": "EVT_VOICE_COMMAND_EAT_SNACK",
+      "product_action_label": "ACT_EAT_SNACK"
+    },
+    {
+      "command_key": "EAT_CANNED_FOOD",
+      "command_id": "CMD_EAT_CANNED_FOOD",
+      "event": "EVT_VOICE_COMMAND_EAT_CANNED_FOOD",
+      "product_action_label": "ACT_EAT_CANNED_FOOD"
+    },
+    {
+      "command_key": "RESPOND_HUNGRY_QUERY",
+      "command_id": "CMD_RESPOND_HUNGRY_QUERY",
+      "event": "EVT_VOICE_COMMAND_RESPOND_HUNGRY_QUERY",
+      "product_action_label": "ACT_RESPOND_HUNGRY_QUERY"
+    },
+    {
+      "command_key": "RESPOND_WANT_EAT_QUERY",
+      "command_id": "CMD_RESPOND_WANT_EAT_QUERY",
+      "event": "EVT_VOICE_COMMAND_RESPOND_WANT_EAT_QUERY",
+      "product_action_label": "ACT_RESPOND_WANT_EAT_QUERY"
+    },
+    {
+      "command_key": "RESPOND_EATING_QUERY",
+      "command_id": "CMD_RESPOND_EATING_QUERY",
+      "event": "EVT_VOICE_COMMAND_RESPOND_EATING_QUERY",
+      "product_action_label": "ACT_RESPOND_EATING_QUERY"
+    },
+    {
+      "command_key": "RESPOND_FOOD_PREFERENCE_QUERY",
+      "command_id": "CMD_RESPOND_FOOD_PREFERENCE_QUERY",
+      "event": "EVT_VOICE_COMMAND_RESPOND_FOOD_PREFERENCE_QUERY",
+      "product_action_label": "ACT_RESPOND_FOOD_PREFERENCE_QUERY"
+    },
+    {
+      "command_key": "TOILET",
+      "command_id": "CMD_TOILET",
+      "event": "EVT_VOICE_COMMAND_TOILET",
+      "product_action_label": ""
+    },
+    {
+      "command_key": "CLEAN",
+      "command_id": "CMD_CLEAN",
+      "event": "EVT_VOICE_COMMAND_CLEAN",
+      "product_action_label": ""
+    },
+    {
+      "command_key": "SLEEP",
+      "command_id": "CMD_SLEEP",
+      "event": "EVT_VOICE_COMMAND_SLEEP",
+      "product_action_label": ""
+    },
+    {
+      "command_key": "PLAY",
+      "command_id": "CMD_PLAY",
+      "event": "EVT_VOICE_COMMAND_PLAY",
+      "product_action_label": ""
+    },
+    {
+      "command_key": "REFUSE",
+      "command_id": "CMD_REFUSE",
+      "event": "EVT_VOICE_COMMAND_REFUSE",
+      "product_action_label": "ACT_REFUSE"
+    },
+    {
+      "command_key": "REFUSE_PLAY",
+      "command_id": "CMD_REFUSE_PLAY",
+      "event": "EVT_VOICE_COMMAND_REFUSE_PLAY",
+      "product_action_label": "ACT_REFUSE_PLAY"
+    },
+    {
+      "command_key": "FIND_DAD",
+      "command_id": "CMD_FIND_DAD",
+      "event": "EVT_VOICE_COMMAND_FIND_DAD",
+      "product_action_label": "ACT_FIND_DAD"
+    },
+    {
+      "command_key": "FIND_MOM",
+      "command_id": "CMD_FIND_MOM",
+      "event": "EVT_VOICE_COMMAND_FIND_MOM",
+      "product_action_label": "ACT_FIND_MOM"
+    },
+    {
+      "command_key": "DANCE",
+      "command_id": "CMD_DANCE",
+      "event": "EVT_VOICE_COMMAND_DANCE",
+      "product_action_label": "ACT_DANCE"
+    },
+    {
+      "command_key": "BRING_TO_ME",
+      "command_id": "CMD_BRING_TO_ME",
+      "event": "EVT_VOICE_COMMAND_BRING_TO_ME",
+      "product_action_label": "ACT_BRING_TO_ME"
+    },
+    {
+      "command_key": "GIVE_TO_ME",
+      "command_id": "CMD_GIVE_TO_ME",
+      "event": "EVT_VOICE_COMMAND_GIVE_TO_ME",
+      "product_action_label": "ACT_GIVE_TO_ME"
+    },
+    {
+      "command_key": "GO_GET_IT",
+      "command_id": "CMD_GO_GET_IT",
+      "event": "EVT_VOICE_COMMAND_GO_GET_IT",
+      "product_action_label": "ACT_GO_GET_IT"
+    },
+    {
+      "command_key": "BRING_IT_BACK",
+      "command_id": "CMD_BRING_IT_BACK",
+      "event": "EVT_VOICE_COMMAND_BRING_IT_BACK",
+      "product_action_label": "ACT_BRING_IT_BACK"
+    },
+    {
+      "command_key": "FETCH_BALL",
+      "command_id": "CMD_FETCH_BALL",
+      "event": "EVT_VOICE_COMMAND_FETCH_BALL",
+      "product_action_label": "ACT_FETCH_BALL"
+    },
+    {
+      "command_key": "FIND_TOY",
+      "command_id": "CMD_FIND_TOY",
+      "event": "EVT_VOICE_COMMAND_FIND_TOY",
+      "product_action_label": "ACT_FIND_TOY"
+    },
+    {
+      "command_key": "OWNER_GOING_OUT",
+      "command_id": "CMD_OWNER_GOING_OUT",
+      "event": "EVT_VOICE_COMMAND_OWNER_GOING_OUT",
+      "product_action_label": "ACT_OWNER_GOING_OUT"
+    },
+    {
+      "command_key": "STAY_HOME_ALONE",
+      "command_id": "CMD_STAY_HOME_ALONE",
+      "event": "EVT_VOICE_COMMAND_STAY_HOME_ALONE",
+      "product_action_label": "ACT_STAY_HOME_ALONE"
+    },
+    {
+      "command_key": "WAIT_FOR_OWNER_RETURN",
+      "command_id": "CMD_WAIT_FOR_OWNER_RETURN",
+      "event": "EVT_VOICE_COMMAND_WAIT_FOR_OWNER_RETURN",
+      "product_action_label": "ACT_WAIT_FOR_OWNER_RETURN"
+    },
+    {
+      "command_key": "BYE_BYE",
+      "command_id": "CMD_BYE_BYE",
+      "event": "EVT_VOICE_COMMAND_BYE_BYE",
+      "product_action_label": "ACT_BYE_BYE"
+    },
+    {
+      "command_key": "GOODBYE",
+      "command_id": "CMD_GOODBYE",
+      "event": "EVT_VOICE_COMMAND_GOODBYE",
+      "product_action_label": "ACT_GOODBYE"
+    },
+    {
+      "command_key": "OWNER_RETURNED",
+      "command_id": "CMD_OWNER_RETURNED",
+      "event": "EVT_VOICE_COMMAND_OWNER_RETURNED",
+      "product_action_label": "ACT_OWNER_RETURNED"
+    },
+    {
+      "command_key": "ASK_WHAT_DOING",
+      "command_id": "CMD_ASK_WHAT_DOING",
+      "event": "EVT_VOICE_COMMAND_ASK_WHAT_DOING",
+      "product_action_label": "ACT_ASK_WHAT_DOING"
+    },
+    {
+      "command_key": "ASK_WHERE_ARE_YOU",
+      "command_id": "CMD_ASK_WHERE_ARE_YOU",
+      "event": "EVT_VOICE_COMMAND_ASK_WHERE_ARE_YOU",
+      "product_action_label": "ACT_ASK_WHERE_ARE_YOU"
+    },
+    {
+      "command_key": "ASK_WHATS_WRONG",
+      "command_id": "CMD_ASK_WHATS_WRONG",
+      "event": "EVT_VOICE_COMMAND_ASK_WHATS_WRONG",
+      "product_action_label": "ACT_ASK_WHATS_WRONG"
+    },
+    {
+      "command_key": "ASK_WHAT_THINKING",
+      "command_id": "CMD_ASK_WHAT_THINKING",
+      "event": "EVT_VOICE_COMMAND_ASK_WHAT_THINKING",
+      "product_action_label": "ACT_ASK_WHAT_THINKING"
+    },
+    {
+      "command_key": "ASK_IF_COMFORTABLE",
+      "command_id": "CMD_ASK_IF_COMFORTABLE",
+      "event": "EVT_VOICE_COMMAND_ASK_IF_COMFORTABLE",
+      "product_action_label": "ACT_ASK_IF_COMFORTABLE"
+    },
+    {
+      "command_key": "ASK_IF_LIKES",
+      "command_id": "CMD_ASK_IF_LIKES",
+      "event": "EVT_VOICE_COMMAND_ASK_IF_LIKES",
+      "product_action_label": "ACT_ASK_IF_LIKES"
+    },
+    {
+      "command_key": "ASK_IF_FUN",
+      "command_id": "CMD_ASK_IF_FUN",
+      "event": "EVT_VOICE_COMMAND_ASK_IF_FUN",
+      "product_action_label": "ACT_ASK_IF_FUN"
+    },
+    {
+      "command_key": "ASK_IF_UNDERSTANDS",
+      "command_id": "CMD_ASK_IF_UNDERSTANDS",
+      "event": "EVT_VOICE_COMMAND_ASK_IF_UNDERSTANDS",
+      "product_action_label": "ACT_ASK_IF_UNDERSTANDS"
+    },
+    {
+      "command_key": "ASK_ABILITIES",
+      "command_id": "CMD_ASK_ABILITIES",
+      "event": "EVT_VOICE_COMMAND_ASK_ABILITIES",
+      "product_action_label": "ACT_ASK_ABILITIES"
+    },
+    {
+      "command_key": "ASK_IF_LEARNED",
+      "command_id": "CMD_ASK_IF_LEARNED",
+      "event": "EVT_VOICE_COMMAND_ASK_IF_LEARNED",
+      "product_action_label": "ACT_ASK_IF_LEARNED"
+    },
+    {
+      "command_key": "EXPRESS_MISS_YOU",
+      "command_id": "CMD_EXPRESS_MISS_YOU",
+      "event": "EVT_VOICE_COMMAND_EXPRESS_MISS_YOU",
+      "product_action_label": "ACT_EXPRESS_MISS_YOU"
+    },
+    {
+      "command_key": "OWNER_TIRED",
+      "command_id": "CMD_OWNER_TIRED",
+      "event": "EVT_VOICE_COMMAND_OWNER_TIRED",
+      "product_action_label": "ACT_OWNER_TIRED"
+    },
+    {
+      "command_key": "OWNER_ANNOYED",
+      "command_id": "CMD_OWNER_ANNOYED",
+      "event": "EVT_VOICE_COMMAND_OWNER_ANNOYED",
+      "product_action_label": "ACT_OWNER_ANNOYED"
+    },
+    {
+      "command_key": "OWNER_UNHAPPY",
+      "command_id": "CMD_OWNER_UNHAPPY",
+      "event": "EVT_VOICE_COMMAND_OWNER_UNHAPPY",
+      "product_action_label": "ACT_OWNER_UNHAPPY"
+    },
+    {
+      "command_key": "OWNER_BAD_DAY",
+      "command_id": "CMD_OWNER_BAD_DAY",
+      "event": "EVT_VOICE_COMMAND_OWNER_BAD_DAY",
+      "product_action_label": "ACT_OWNER_BAD_DAY"
+    },
+    {
+      "command_key": "OWNER_DEPRESSED",
+      "command_id": "CMD_OWNER_DEPRESSED",
+      "event": "EVT_VOICE_COMMAND_OWNER_DEPRESSED",
+      "product_action_label": "ACT_OWNER_DEPRESSED"
+    },
+    {
+      "command_key": "OWNER_STRESSED",
+      "command_id": "CMD_OWNER_STRESSED",
+      "event": "EVT_VOICE_COMMAND_OWNER_STRESSED",
+      "product_action_label": "ACT_OWNER_STRESSED"
+    },
+    {
+      "command_key": "OWNER_LONELY",
+      "command_id": "CMD_OWNER_LONELY",
+      "event": "EVT_VOICE_COMMAND_OWNER_LONELY",
+      "product_action_label": "ACT_OWNER_LONELY"
+    },
+    {
+      "command_key": "OWNER_UNWELL",
+      "command_id": "CMD_OWNER_UNWELL",
+      "event": "EVT_VOICE_COMMAND_OWNER_UNWELL",
+      "product_action_label": "ACT_OWNER_UNWELL"
+    },
+    {
+      "command_key": "OWNER_HAPPY",
+      "command_id": "CMD_OWNER_HAPPY",
+      "event": "EVT_VOICE_COMMAND_OWNER_HAPPY",
+      "product_action_label": "ACT_OWNER_HAPPY"
+    },
+    {
+      "command_key": "OWNER_VERY_HAPPY",
+      "command_id": "CMD_OWNER_VERY_HAPPY",
+      "event": "EVT_VOICE_COMMAND_OWNER_VERY_HAPPY",
+      "product_action_label": "ACT_OWNER_VERY_HAPPY"
+    },
+    {
+      "command_key": "OWNER_FEELING_GREAT",
+      "command_id": "CMD_OWNER_FEELING_GREAT",
+      "event": "EVT_VOICE_COMMAND_OWNER_FEELING_GREAT",
+      "product_action_label": "ACT_OWNER_FEELING_GREAT"
+    },
+    {
+      "command_key": "OWNER_FEELING_EXCELLENT",
+      "command_id": "CMD_OWNER_FEELING_EXCELLENT",
+      "event": "EVT_VOICE_COMMAND_OWNER_FEELING_EXCELLENT",
+      "product_action_label": "ACT_OWNER_FEELING_EXCELLENT"
+    },
+    {
+      "command_key": "OWNER_RELAXED",
+      "command_id": "CMD_OWNER_RELAXED",
+      "event": "EVT_VOICE_COMMAND_OWNER_RELAXED",
+      "product_action_label": "ACT_OWNER_RELAXED"
+    },
+    {
+      "command_key": "OWNER_WONDERFUL_DAY",
+      "command_id": "CMD_OWNER_WONDERFUL_DAY",
+      "event": "EVT_VOICE_COMMAND_OWNER_WONDERFUL_DAY",
+      "product_action_label": "ACT_OWNER_WONDERFUL_DAY"
+    },
+    {
+      "command_key": "OWNER_FEELING_LUCKY",
+      "command_id": "CMD_OWNER_FEELING_LUCKY",
+      "event": "EVT_VOICE_COMMAND_OWNER_FEELING_LUCKY",
+      "product_action_label": "ACT_OWNER_FEELING_LUCKY"
+    },
+    {
+      "command_key": "PLAY_ALONE",
+      "command_id": "CMD_PLAY_ALONE",
+      "event": "EVT_VOICE_COMMAND_PLAY_ALONE",
+      "product_action_label": "ACT_PLAY_ALONE"
+    }
+  ],
+  "behaviors": {
+    "eatNormally": [
+      {
+        "stage_id": "lower_head",
+        "units": [
+          "ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD"
+        ]
+      },
+      {
+        "stage_id": "head_up",
+        "units": [
+          "ACT_RAISE_HEAD"
+        ]
+      },
+      {
+        "stage_id": "lie_down",
+        "units": [
+          "ACT_BASIC_LIE_DOWN"
+        ]
+      },
+      {
+        "stage_id": "stand_up",
+        "units": [
+          "ACT_BASIC_STAND"
+        ]
+      },
+      {
+        "stage_id": "lower_head_again",
+        "units": [
+          "ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD"
+        ]
+      },
+      {
+        "stage_id": "waist_twist",
+        "units": [
+          "ACT_TWIST_WAIST_LEFT_RIGHT"
+        ]
+      }
+    ],
+    "seekFood": [
+      {
+        "stage_id": "lower_head",
+        "units": [
+          "ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD"
+        ]
+      },
+      {
+        "stage_id": "head_up",
+        "units": [
+          "ACT_RAISE_HEAD"
+        ]
+      },
+      {
+        "stage_id": "lie_down",
+        "units": [
+          "ACT_BASIC_LIE_DOWN"
+        ]
+      },
+      {
+        "stage_id": "stand_up",
+        "units": [
+          "ACT_BASIC_STAND"
+        ]
+      },
+      {
+        "stage_id": "lower_head_again",
+        "units": [
+          "ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD"
+        ]
+      },
+      {
+        "stage_id": "waist_twist",
+        "units": [
+          "ACT_TWIST_WAIST_LEFT_RIGHT"
+        ]
+      }
+    ],
+    "eatExcitedly": [
+      {
+        "stage_id": "lower_head",
+        "units": [
+          "ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD"
+        ]
+      },
+      {
+        "stage_id": "head_up",
+        "units": [
+          "ACT_RAISE_HEAD"
+        ]
+      },
+      {
+        "stage_id": "lie_down",
+        "units": [
+          "ACT_BASIC_LIE_DOWN"
+        ]
+      },
+      {
+        "stage_id": "stand_up",
+        "units": [
+          "ACT_BASIC_STAND"
+        ]
+      },
+      {
+        "stage_id": "lower_head_again",
+        "units": [
+          "ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD"
+        ]
+      },
+      {
+        "stage_id": "waist_twist",
+        "units": [
+          "ACT_TWIST_WAIST_LEFT_RIGHT"
+        ]
+      }
+    ],
+    "seekFoodUrgently": [
+      {
+        "stage_id": "lower_head",
+        "units": [
+          "ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD"
+        ]
+      },
+      {
+        "stage_id": "head_up",
+        "units": [
+          "ACT_RAISE_HEAD"
+        ]
+      },
+      {
+        "stage_id": "lie_down",
+        "units": [
+          "ACT_BASIC_LIE_DOWN"
+        ]
+      },
+      {
+        "stage_id": "stand_up",
+        "units": [
+          "ACT_BASIC_STAND"
+        ]
+      },
+      {
+        "stage_id": "lower_head_again",
+        "units": [
+          "ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD"
+        ]
+      },
+      {
+        "stage_id": "waist_twist",
+        "units": [
+          "ACT_TWIST_WAIST_LEFT_RIGHT"
+        ]
+      }
+    ],
+    "barkShortAlert": [
+      {
+        "stage_id": "circle",
+        "units": [
+          "ACT_SNIFF_AND_CIRCLE_AT_TOILET_SPOT"
+        ]
+      },
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_SQUAT_AND_ELIMINATE"
+        ]
+      },
+      {
+        "stage_id": "exit",
+        "units": [
+          "ACT_SCRATCH_SOIL_OR_GROUND",
+          "ACT_SNIFF_EXCREMENT",
+          "ACT_WALK_AWAY_OR_SHAKE_HEAD"
+        ]
+      },
+      {
+        "stage_id": "head_up",
+        "units": [
+          "ACT_RAISE_HEAD"
+        ]
+      }
+    ],
+    "lickPaws": [
+      {
+        "stage_id": "groom",
+        "units": [
+          "ACT_LICK_PAWS_OR_FUR",
+          "ACT_RUB_BODY_AGAINST_OBJECT",
+          "ACT_PAW_AT_MUZZLE",
+          "ACT_SHAKE_OFF_WATER",
+          "ACT_SCRATCH_EAR_WITH_HIND_LEG"
+        ]
+      }
+    ],
+    "sleepOnSide": [
+      {
+        "stage_id": "circle",
+        "units": [
+          "ACT_CIRCLE_AROUND"
+        ]
+      },
+      {
+        "stage_id": "prepare",
+        "units": [
+          "ACT_SCRATCH_BED_OR_GROUND",
+          "ACT_STRETCH_BODY",
+          "ACT_YAWN",
+          "ACT_SPLoot_LIE_DOWN",
+          "ACT_LICK_FUR_OR_PAWS"
+        ]
+      },
+      {
+        "stage_id": "sleep_pose",
+        "units": [
+          "ACT_SLEEP_CURLED_UP",
+          "ACT_SLEEP_ON_STOMACH",
+          "ACT_SLEEP_ON_SIDE_CURLED_UP"
+        ]
+      },
+      {
+        "stage_id": "sleeping",
+        "units": [
+          "ACT_FLIP_BODY",
+          "ACT_WHINE_SOFTLY",
+          "ACT_TWITCH_OR_KICK_LEGS"
+        ]
+      },
+      {
+        "stage_id": "wakeup",
+        "units": [
+          "ACT_GETUP_CRAWL",
+          "ACT_GETUP_ROLL",
+          "ACT_GETUP_BOUNCE",
+          "ACT_GETUP_STRETCH",
+          "ACT_GETUP_SIT",
+          "ACT_GETUP_CRAWL"
+        ]
+      }
+    ],
+    "sleepNow": [
+      {
+        "stage_id": "circle",
+        "units": [
+          "ACT_CIRCLE_AROUND"
+        ]
+      },
+      {
+        "stage_id": "prepare",
+        "units": [
+          "ACT_SCRATCH_BED_OR_GROUND",
+          "ACT_STRETCH_BODY",
+          "ACT_YAWN",
+          "ACT_SPLoot_LIE_DOWN",
+          "ACT_LICK_FUR_OR_PAWS"
+        ]
+      },
+      {
+        "stage_id": "sleep_pose",
+        "units": [
+          "ACT_SLEEP_ON_SIDE",
+          "ACT_SLEEP_ON_BACK"
+        ]
+      },
+      {
+        "stage_id": "sleeping",
+        "units": [
+          "ACT_FLIP_BODY",
+          "ACT_WHINE_SOFTLY",
+          "ACT_TWITCH_OR_KICK_LEGS"
+        ]
+      },
+      {
+        "stage_id": "wakeup",
+        "units": [
+          "ACT_GETUP_ROLL",
+          "ACT_GETUP_STRETCH",
+          "ACT_GETUP_SIT"
+        ]
+      }
+    ],
+    "restInPlace": [
+      {
+        "stage_id": "recover",
+        "units": [
+          "ACT_SLOW_DOWN_IN_RESPONSE_TO_OWNER",
+          "ACT_RETURN_TO_DOG_BED_FOR_CHARGING"
+        ]
+      }
+    ],
+    "recharge": [
+      {
+        "stage_id": "recharge",
+        "units": [
+          "ACT_RETURN_TO_CHARGER",
+          "ACT_BARK_AND_LIE_DOWN_IF_NO_CHARGER"
+        ]
+      }
+    ],
+    "testAnimalBoundary": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "express",
+        "units": [
+          "ACT_BARK_OR_WHINE_BRIEFLY",
+          "ACT_STOP_OBSERVE_AND_TILT_HEAD",
+          "ACT_SNIFF_TOWARD_OTHER_ANIMAL"
+        ]
+      }
+    ],
+    "greetAnimal": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "greet",
+        "units": [
+          "ACT_SNIFF_FACE_OR_EARS",
+          "ACT_SNIFF_BUTT_OR_TAIL",
+          "ACT_TOUCH_NOSE_OR_HEAD_GENTLY",
+          "ACT_APPROACH_SLOWLY_SIDEWAYS",
+          "ACT_LOWER_HEAD_FLOP_EARS_WAG_TAIL",
+          "ACT_LIE_BESIDE_OTHER_ANIMAL"
+        ]
+      }
+    ],
+    "inviteAnimalToPlay": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "invite",
+        "units": [
+          "ACT_RUN_AWAY_AND_LOOK_BACK",
+          "ACT_PLAY_BOW",
+          "ACT_BUMP_OTHER_GENTLY_WITH_RELAXED_BODY",
+          "ACT_POUNCE_OR_SIDE_HOP_GENTLY",
+          "ACT_RUN_IN_CIRCLES_OR_CHASE",
+          "ACT_PAW_GENTLY_AT_OTHER"
+        ]
+      }
+    ],
+    "seekHumanInteraction": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "interact",
+        "units": [
+          "ACT_PAW_AT_OWNER",
+          "ACT_GENTLY_MOUTH_PANTS_OR_HAND",
+          "ACT_RUN_IN_CIRCLES_OR_ZOOMIES",
+          "ACT_CARRY_TOY_AND_WAG_TAIL_IN_FRONT_OF_OWNER",
+          "ACT_PLAY_BOW",
+          "ACT_RUN_AWAY_AND_LOOK_BACK",
+          "ACT_SIDE_HOP_WITH_PLAY_POSTURE"
+        ]
+      }
+    ],
+    "seekInteraction": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "interact",
+        "units": [
+          "ACT_CARRY_LEASH_TO_OWNER",
+          "ACT_PAW_AT_BOWL_OR_TREAT_CABINET",
+          "ACT_WAIT_BY_BOWL_OR_TREAT_CABINET",
+          "ACT_NUDGE_OWNER_AND_LOOK_AT_FOOD_OR_DOOR",
+          "ACT_SIT_BY_DOOR_AND_LOOK_BACK_AT_OWNER",
+          "ACT_CIRCLE_EMPTY_BOWL_OR_WATER_DISH"
+        ]
+      }
+    ],
+    "inviteHumanToPlay": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "invite",
+        "units": [
+          "ACT_FOLLOW_AND_STAY_CLOSE_TO_OWNER",
+          "ACT_SIT_IN_FRONT_OF_OWNER_AND_LOOK_UP",
+          "ACT_PLACE_FRONT_PAWS_ON_OWNER_FOR_ATTENTION",
+          "ACT_WHINE_OR_VOCALIZE_SOFTLY",
+          "ACT_NUDGE_OR_RUB_AGAINST_OWNER_HAND",
+          "ACT_ROLL_OVER_FOR_BELLY_RUB",
+          "ACT_RUB_AGAINST_LEG_OR_LEAN_ON_OWNER"
+        ]
+      }
+    ],
+    "exploreRoom": [
+      {
+        "stage_id": "explore",
+        "units": [
+          "ACT_TROT_STOP_AND_SNIFF",
+          "ACT_WALK_SLOWLY_AND_SNIFF_GROUND",
+          "ACT_CRAWL_THROUGH_LOW_GAP",
+          "ACT_STAND_AND_SCRATCH_HIGH",
+          "ACT_PATROL_ALONG_WALL",
+          "ACT_FIND_PLACE_TO_LIE_DOWN"
+        ]
+      }
+    ],
+    "inspectObject": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "inspect",
+        "units": [
+          "ACT_SNIFF_OBJECT",
+          "ACT_PUSH_OBJECT_WITH_PAW",
+          "ACT_SCRATCH_OBJECT_GENTLY",
+          "ACT_CARRY_AND_HIDE_OBJECT",
+          "ACT_CARRY_AND_DROP_OBJECT_AGAIN",
+          "ACT_TOUCH_OR_CARRY_OBJECT_WITH_MOUTH",
+          "ACT_BARK_AT_OBJECT",
+          "ACT_KNOCK_OVER_OBJECT",
+          "ACT_NIBBLE_OBJECT"
+        ]
+      }
+    ],
+    "inspectFamiliarPlayItem": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "inspect",
+        "units": [
+          "ACT_IGNORE_SLIPPERS_SOCKS_OR_TOY",
+          "ACT_BITE_AND_SHAKE_SLIPPERS_SOCKS_OR_TOY",
+          "ACT_POUNCE_ON_SLIPPERS_SOCKS_OR_TOY",
+          "ACT_CARRY_SLIPPERS_SOCKS_OR_TOY_TO_OWNER",
+          "ACT_PAW_AT_SLIPPERS_SOCKS_OR_TOY",
+          "ACT_SNIFF_SLIPPERS_SOCKS_OR_TOY"
+        ]
+      }
+    ],
+    "inspectTrashCan": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "inspect",
+        "units": [
+          "ACT_IGNORE_TRASH_CAN",
+          "ACT_RUMMAGE_THROUGH_TRASH_CAN",
+          "ACT_SNIFF_TRASH_CAN"
+        ]
+      }
+    ],
+    "inspectDeliveryBox": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "inspect",
+        "units": [
+          "ACT_IGNORE_DELIVERY_BOX",
+          "ACT_SNIFF_DELIVERY_BOX",
+          "ACT_BITE_DELIVERY_BOX",
+          "ACT_CARRY_DELIVERY_BOX_TO_PERSON",
+          "ACT_SCRATCH_DELIVERY_BOX_WITH_PAW"
+        ]
+      }
+    ],
+    "inspectTissuePaper": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "inspect",
+        "units": [
+          "ACT_IGNORE_TISSUE",
+          "ACT_SNIFF_TISSUE",
+          "ACT_SCRATCH_TISSUE_WITH_PAW",
+          "ACT_CARRY_TISSUE_TO_PERSON"
+        ]
+      }
+    ],
+    "inspectDoor": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "inspect",
+        "units": [
+          "ACT_IGNORE_DOOR",
+          "ACT_LEAN_AGAINST_DOOR",
+          "ACT_LIE_BY_DOOR",
+          "ACT_SCRATCH_DOOR",
+          "ACT_SNIFF_AROUND_DOOR"
+        ]
+      }
+    ],
+    "inspectDogFood": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "lower_head",
+        "units": [
+          "ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD"
+        ]
+      },
+      {
+        "stage_id": "head_up",
+        "units": [
+          "ACT_RAISE_HEAD"
+        ]
+      },
+      {
+        "stage_id": "lie_down",
+        "units": [
+          "ACT_BASIC_LIE_DOWN"
+        ]
+      },
+      {
+        "stage_id": "stand_up",
+        "units": [
+          "ACT_BASIC_STAND"
+        ]
+      },
+      {
+        "stage_id": "lower_head_again",
+        "units": [
+          "ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD"
+        ]
+      },
+      {
+        "stage_id": "waist_twist",
+        "units": [
+          "ACT_TWIST_WAIST_LEFT_RIGHT"
+        ]
+      }
+    ],
+    "expressCalmWithHuman": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_CHECK_OWNER",
+          "ACT_SLEEP_BY_FEET"
+        ]
+      }
+    ],
+    "expressCalmAlone": [
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_GUARD_DOOR",
+          "ACT_YAWN",
+          "ACT_STRETCH",
+          "ACT_PATROL",
+          "ACT_SPLOOT"
+        ]
+      }
+    ],
+    "expressJoyWithHuman": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_NUZZLE_HEAD",
+          "ACT_NUZZLE_BODY",
+          "ACT_SHOW_BELLY",
+          "ACT_WINK",
+          "ACT_FETCH_TOY",
+          "ACT_LICK"
+        ]
+      }
+    ],
+    "expressJoyAlone": [
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_WAG_TAIL",
+          "ACT_COMFY_STRETCH",
+          "ACT_TROT_BOUNCE",
+          "ACT_PURR"
+        ]
+      }
+    ],
+    "expressCuriosityWithHuman": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_INTERACT_EXPLORE"
+        ]
+      }
+    ],
+    "expressCuriosityAlone": [
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_NON_INTERACT_EXPLORE"
+        ]
+      }
+    ],
+    "expressExcitementWithHuman": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_JUMP_PAW",
+          "ACT_SPIN_FRONT",
+          "ACT_NIP_PLAYFUL",
+          "ACT_PLAY_BOW",
+          "ACT_ZOOMIE_CIRCLE",
+          "ACT_ASK_CUDDLE"
+        ]
+      }
+    ],
+    "expressExcitementAlone": [
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_ZOOMIES",
+          "ACT_BONE_DANCE",
+          "ACT_BAT_TOY",
+          "ACT_SHAKE_TOY",
+          "ACT_CHASE_TAIL",
+          "ACT_FETCH_LEASH"
+        ]
+      }
+    ],
+    "expressAnxietyWithHuman": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_PAW_LEG",
+          "ACT_WHINE",
+          "ACT_SEEK_PETS"
+        ]
+      }
+    ],
+    "expressAnxietyAlone": [
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_HIDE_SHRINK",
+          "ACT_PACE",
+          "ACT_WHIMPER",
+          "ACT_LICK_SELF",
+          "ACT_LICK_FACE"
+        ]
+      }
+    ],
+    "expressFearWithHuman": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_HIDE_BEHIND",
+          "ACT_CLING_LEG"
+        ]
+      }
+    ],
+    "expressFearAlone": [
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_TUCK_TAIL",
+          "ACT_COVER_EYES",
+          "ACT_BARK_TENSE",
+          "ACT_FREEZE_SHAKE"
+        ]
+      }
+    ],
+    "expressCalmInPlaceWithHuman": [
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_CHECK_OWNER",
+          "ACT_SLEEP_BY_FEET"
+        ]
+      }
+    ],
+    "expressJoyInPlaceWithHuman": [
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_NUZZLE_HEAD",
+          "ACT_NUZZLE_BODY",
+          "ACT_SHOW_BELLY",
+          "ACT_WINK",
+          "ACT_FETCH_TOY",
+          "ACT_LICK"
+        ]
+      }
+    ],
+    "expressExcitementInPlaceWithHuman": [
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_JUMP_PAW",
+          "ACT_SPIN_FRONT",
+          "ACT_NIP_PLAYFUL",
+          "ACT_PLAY_BOW",
+          "ACT_ZOOMIE_CIRCLE",
+          "ACT_ASK_CUDDLE"
+        ]
+      }
+    ],
+    "expressAnxietyInPlaceWithHuman": [
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_PAW_LEG",
+          "ACT_WHINE",
+          "ACT_SEEK_PETS"
+        ]
+      }
+    ],
+    "expressFearInPlaceWithHuman": [
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_HIDE_BEHIND",
+          "ACT_CLING_LEG"
+        ]
+      }
+    ],
+    "expressCuriosityInPlaceWithHuman": [
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_INTERACT_EXPLORE"
+        ]
+      }
+    ],
+    "unhappy": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_OWNER_UNHAPPY"
+        ]
+      }
+    ],
+    "miss_owner": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_EXPRESS_MISS_YOU"
+        ]
+      }
+    ],
+    "farewell_leave": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_APPROACH_VISUAL_TARGET"
+        ]
+      },
+      {
+        "stage_id": "expression",
+        "units": [
+          "ACT_OWNER_GOING_OUT"
+        ]
+      }
+    ],
+    "respond_owner_call": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_INTERACT_RESPOND_CALL"
+        ]
+      }
+    ],
+    "approach_voice_caller": [
+      {
+        "stage_id": "target_approach",
+        "units": [
+          "ACT_INTERACT_APPROACH_VOICE_CALLER"
+        ]
+      }
+    ],
+    "respond_person_fall": [
+      {
+        "stage_id": "safety_stop",
+        "units": [
+          "ACT_PERCEPTION_RESPOND_PERSON_FALL"
+        ]
+      }
+    ],
+    "respond_stop_gesture": [
+      {
+        "stage_id": "safety_stop",
+        "units": [
+          "ACT_PERCEPTION_RESPOND_STOP_GESTURE"
+        ]
+      }
+    ],
+    "sit_down": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_BASIC_SIT"
+        ]
+      }
+    ],
+    "lie_down": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_BASIC_LIE_DOWN"
+        ]
+      }
+    ],
+    "stand_up": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_BASIC_STAND"
+        ]
+      }
+    ],
+    "play_alone": [
+      {
+        "stage_id": "uwb_roam",
+        "units": [
+          "ACT_UWB_RANDOM_ROAM"
+        ]
+      },
+      {
+        "stage_id": "play",
+        "units": [
+          "ACT_GUARD_DOOR",
+          "ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD",
+          "ACT_STRETCH"
+        ]
+      }
+    ],
+    "walk_to_random_point": [
+      {
+        "stage_id": "navigation",
+        "units": [
+          "ACT_NAV_WALK_RANDOM"
+        ]
+      }
+    ],
+    "go_out_to_play": [
+      {
+        "stage_id": "navigation",
+        "units": [
+          "ACT_NAV_GO_OUT_TO_PLAY"
+        ]
+      }
+    ],
+    "go_home": [
+      {
+        "stage_id": "navigation",
+        "units": [
+          "ACT_NAV_GO_HOME"
+        ]
+      }
+    ],
+    "approach_owner": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_INTERACT_APPROACH_OWNER_CLOSER"
+        ]
+      }
+    ],
+    "back_up": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_BASIC_BACK_UP"
+        ]
+      }
+    ],
+    "stand_still": [
+      {
+        "stage_id": "ensure_standing",
+        "units": [
+          "ACT_BASIC_STAND"
+        ]
+      },
+      {
+        "stage_id": "hold_standing",
+        "units": [
+          "ACT_CONTROL_HOLD_STANDING"
+        ]
+      }
+    ],
+    "hold_position": [
+      {
+        "stage_id": "hold_current_posture",
+        "units": [
+          "ACT_CONTROL_HOLD_POSITION"
+        ]
+      }
+    ],
+    "quiet": [
+      {
+        "stage_id": "stop_vocalization",
+        "units": [
+          "ACT_CONTROL_QUIET"
+        ]
+      }
+    ],
+    "wait_in_place": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_BASIC_WAIT"
+        ]
+      }
+    ],
+    "come_to_owner": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_INTERACT_APPROACH_OWNER"
+        ]
+      }
+    ],
+    "follow_owner": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_INTERACT_FOLLOW_OWNER"
+        ]
+      }
+    ],
+    "give_paw": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_INTERACT_GIVE_PAW"
+        ]
+      }
+    ],
+    "high_five": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_INTERACT_HIGH_FIVE"
+        ]
+      }
+    ],
+    "roll_over": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_TRICK_ROLL_OVER"
+        ]
+      }
+    ],
+    "spin_around": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_TRICK_SPIN"
+        ]
+      }
+    ],
+    "return_to_owner": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_INTERACT_RETURN_OWNER"
+        ]
+      }
+    ],
+    "drop_object": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_OBJECT_DROP"
+        ]
+      }
+    ],
+    "play_dead": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_TRICK_PLAY_DEAD"
+        ]
+      }
+    ],
+    "bring_object": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_OBJECT_BRING"
+        ]
+      }
+    ],
+    "fetch_object": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_OBJECT_FETCH"
+        ]
+      }
+    ],
+    "emergency_stop": [
+      {
+        "stage_id": "action",
+        "units": [
+          "ACT_SYSTEM_EMERGENCY_STOP"
+        ]
+      }
+    ]
+  },
+  "units": [
+    "ACT_APPROACH_SLOWLY_SIDEWAYS",
+    "ACT_APPROACH_VISUAL_TARGET",
+    "ACT_ASK_CUDDLE",
+    "ACT_BARK_AND_LIE_DOWN_IF_NO_CHARGER",
+    "ACT_BARK_AT_OBJECT",
+    "ACT_BARK_OR_WHINE_BRIEFLY",
+    "ACT_BARK_TENSE",
+    "ACT_BASIC_BACK_UP",
+    "ACT_BASIC_LIE_DOWN",
+    "ACT_BASIC_SIT",
+    "ACT_BASIC_STAND",
+    "ACT_BASIC_WAIT",
+    "ACT_BAT_TOY",
+    "ACT_BITE_AND_SHAKE_SLIPPERS_SOCKS_OR_TOY",
+    "ACT_BITE_DELIVERY_BOX",
+    "ACT_BONE_DANCE",
+    "ACT_BUMP_OTHER_GENTLY_WITH_RELAXED_BODY",
+    "ACT_CARRY_AND_DROP_OBJECT_AGAIN",
+    "ACT_CARRY_AND_HIDE_OBJECT",
+    "ACT_CARRY_DELIVERY_BOX_TO_PERSON",
+    "ACT_CARRY_LEASH_TO_OWNER",
+    "ACT_CARRY_SLIPPERS_SOCKS_OR_TOY_TO_OWNER",
+    "ACT_CARRY_TISSUE_TO_PERSON",
+    "ACT_CARRY_TOY_AND_WAG_TAIL_IN_FRONT_OF_OWNER",
+    "ACT_CHASE_TAIL",
+    "ACT_CHECK_OWNER",
+    "ACT_CIRCLE_AROUND",
+    "ACT_CIRCLE_EMPTY_BOWL_OR_WATER_DISH",
+    "ACT_CLING_LEG",
+    "ACT_COMFY_STRETCH",
+    "ACT_CONTROL_HOLD_POSITION",
+    "ACT_CONTROL_HOLD_STANDING",
+    "ACT_CONTROL_QUIET",
+    "ACT_COVER_EYES",
+    "ACT_CRAWL_THROUGH_LOW_GAP",
+    "ACT_EXPRESS_MISS_YOU",
+    "ACT_FETCH_LEASH",
+    "ACT_FETCH_TOY",
+    "ACT_FIND_PLACE_TO_LIE_DOWN",
+    "ACT_FLIP_BODY",
+    "ACT_FOLLOW_AND_STAY_CLOSE_TO_OWNER",
+    "ACT_FREEZE_SHAKE",
+    "ACT_GENTLY_MOUTH_PANTS_OR_HAND",
+    "ACT_GETUP_BOUNCE",
+    "ACT_GETUP_CRAWL",
+    "ACT_GETUP_ROLL",
+    "ACT_GETUP_SIT",
+    "ACT_GETUP_STRETCH",
+    "ACT_GUARD_DOOR",
+    "ACT_HIDE_BEHIND",
+    "ACT_HIDE_SHRINK",
+    "ACT_IGNORE_DELIVERY_BOX",
+    "ACT_IGNORE_DOOR",
+    "ACT_IGNORE_SLIPPERS_SOCKS_OR_TOY",
+    "ACT_IGNORE_TISSUE",
+    "ACT_IGNORE_TRASH_CAN",
+    "ACT_INTERACT_APPROACH_OWNER",
+    "ACT_INTERACT_APPROACH_OWNER_CLOSER",
+    "ACT_INTERACT_APPROACH_VOICE_CALLER",
+    "ACT_INTERACT_EXPLORE",
+    "ACT_INTERACT_FOLLOW_OWNER",
+    "ACT_INTERACT_GIVE_PAW",
+    "ACT_INTERACT_HIGH_FIVE",
+    "ACT_INTERACT_RESPOND_CALL",
+    "ACT_INTERACT_RETURN_OWNER",
+    "ACT_JUMP_PAW",
+    "ACT_KNOCK_OVER_OBJECT",
+    "ACT_LEAN_AGAINST_DOOR",
+    "ACT_LICK",
+    "ACT_LICK_FACE",
+    "ACT_LICK_FUR_OR_PAWS",
+    "ACT_LICK_PAWS_OR_FUR",
+    "ACT_LICK_SELF",
+    "ACT_LIE_BESIDE_OTHER_ANIMAL",
+    "ACT_LIE_BY_DOOR",
+    "ACT_LOWER_HEAD_FLOP_EARS_WAG_TAIL",
+    "ACT_NAV_GO_HOME",
+    "ACT_NAV_GO_OUT_TO_PLAY",
+    "ACT_NAV_WALK_RANDOM",
+    "ACT_NIBBLE_OBJECT",
+    "ACT_NIP_PLAYFUL",
+    "ACT_NON_INTERACT_EXPLORE",
+    "ACT_NUDGE_OR_RUB_AGAINST_OWNER_HAND",
+    "ACT_NUDGE_OWNER_AND_LOOK_AT_FOOD_OR_DOOR",
+    "ACT_NUZZLE_BODY",
+    "ACT_NUZZLE_HEAD",
+    "ACT_OBJECT_BRING",
+    "ACT_OBJECT_DROP",
+    "ACT_OBJECT_FETCH",
+    "ACT_OWNER_GOING_OUT",
+    "ACT_OWNER_UNHAPPY",
+    "ACT_PACE",
+    "ACT_PATROL",
+    "ACT_PATROL_ALONG_WALL",
+    "ACT_PAW_AT_BOWL_OR_TREAT_CABINET",
+    "ACT_PAW_AT_MUZZLE",
+    "ACT_PAW_AT_OWNER",
+    "ACT_PAW_AT_SLIPPERS_SOCKS_OR_TOY",
+    "ACT_PAW_GENTLY_AT_OTHER",
+    "ACT_PAW_LEG",
+    "ACT_PERCEPTION_RESPOND_PERSON_FALL",
+    "ACT_PERCEPTION_RESPOND_STOP_GESTURE",
+    "ACT_PLACE_FRONT_PAWS_ON_OWNER_FOR_ATTENTION",
+    "ACT_PLAY_BOW",
+    "ACT_POUNCE_ON_SLIPPERS_SOCKS_OR_TOY",
+    "ACT_POUNCE_OR_SIDE_HOP_GENTLY",
+    "ACT_PURR",
+    "ACT_PUSH_OBJECT_WITH_PAW",
+    "ACT_RAISE_HEAD",
+    "ACT_RETURN_TO_CHARGER",
+    "ACT_RETURN_TO_DOG_BED_FOR_CHARGING",
+    "ACT_ROLL_OVER_FOR_BELLY_RUB",
+    "ACT_RUB_AGAINST_LEG_OR_LEAN_ON_OWNER",
+    "ACT_RUB_BODY_AGAINST_OBJECT",
+    "ACT_RUMMAGE_THROUGH_TRASH_CAN",
+    "ACT_RUN_AWAY_AND_LOOK_BACK",
+    "ACT_RUN_IN_CIRCLES_OR_CHASE",
+    "ACT_RUN_IN_CIRCLES_OR_ZOOMIES",
+    "ACT_SCRATCH_BED_OR_GROUND",
+    "ACT_SCRATCH_DELIVERY_BOX_WITH_PAW",
+    "ACT_SCRATCH_DOOR",
+    "ACT_SCRATCH_EAR_WITH_HIND_LEG",
+    "ACT_SCRATCH_OBJECT_GENTLY",
+    "ACT_SCRATCH_SOIL_OR_GROUND",
+    "ACT_SCRATCH_TISSUE_WITH_PAW",
+    "ACT_SEEK_PETS",
+    "ACT_SHAKE_OFF_WATER",
+    "ACT_SHAKE_TOY",
+    "ACT_SHOW_BELLY",
+    "ACT_SIDE_HOP_WITH_PLAY_POSTURE",
+    "ACT_SIT_BY_DOOR_AND_LOOK_BACK_AT_OWNER",
+    "ACT_SIT_IN_FRONT_OF_OWNER_AND_LOOK_UP",
+    "ACT_SLEEP_BY_FEET",
+    "ACT_SLEEP_CURLED_UP",
+    "ACT_SLEEP_ON_BACK",
+    "ACT_SLEEP_ON_SIDE",
+    "ACT_SLEEP_ON_SIDE_CURLED_UP",
+    "ACT_SLEEP_ON_STOMACH",
+    "ACT_SLOW_DOWN_IN_RESPONSE_TO_OWNER",
+    "ACT_SNIFF_AND_CIRCLE_AT_TOILET_SPOT",
+    "ACT_SNIFF_AROUND_DOOR",
+    "ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD",
+    "ACT_SNIFF_BUTT_OR_TAIL",
+    "ACT_SNIFF_DELIVERY_BOX",
+    "ACT_SNIFF_EXCREMENT",
+    "ACT_SNIFF_FACE_OR_EARS",
+    "ACT_SNIFF_OBJECT",
+    "ACT_SNIFF_SLIPPERS_SOCKS_OR_TOY",
+    "ACT_SNIFF_TISSUE",
+    "ACT_SNIFF_TOWARD_OTHER_ANIMAL",
+    "ACT_SNIFF_TRASH_CAN",
+    "ACT_SPIN_FRONT",
+    "ACT_SPLOOT",
+    "ACT_SPLoot_LIE_DOWN",
+    "ACT_SQUAT_AND_ELIMINATE",
+    "ACT_STAND_AND_SCRATCH_HIGH",
+    "ACT_STOP_OBSERVE_AND_TILT_HEAD",
+    "ACT_STRETCH",
+    "ACT_STRETCH_BODY",
+    "ACT_SYSTEM_EMERGENCY_STOP",
+    "ACT_TOUCH_NOSE_OR_HEAD_GENTLY",
+    "ACT_TOUCH_OR_CARRY_OBJECT_WITH_MOUTH",
+    "ACT_TRICK_PLAY_DEAD",
+    "ACT_TRICK_ROLL_OVER",
+    "ACT_TRICK_SPIN",
+    "ACT_TROT_BOUNCE",
+    "ACT_TROT_STOP_AND_SNIFF",
+    "ACT_TUCK_TAIL",
+    "ACT_TWIST_WAIST_LEFT_RIGHT",
+    "ACT_TWITCH_OR_KICK_LEGS",
+    "ACT_UWB_RANDOM_ROAM",
+    "ACT_WAG_TAIL",
+    "ACT_WAIT_BY_BOWL_OR_TREAT_CABINET",
+    "ACT_WALK_AWAY_OR_SHAKE_HEAD",
+    "ACT_WALK_SLOWLY_AND_SNIFF_GROUND",
+    "ACT_WHIMPER",
+    "ACT_WHINE",
+    "ACT_WHINE_OR_VOCALIZE_SOFTLY",
+    "ACT_WHINE_SOFTLY",
+    "ACT_WINK",
+    "ACT_YAWN",
+    "ACT_ZOOMIES",
+    "ACT_ZOOMIE_CIRCLE"
+  ]
+}

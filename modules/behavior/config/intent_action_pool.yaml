@@ -1,7 +1,8 @@
-# intent_behavior_pool.yaml — intent → 候选 behavior_name 池
+# intent_action_pool.yaml — intent → 候选 behavior_name 池
 #
 # 注意：此文件中所有行为名均为语义 Behavior，不得出现 ACT_*。
 # ACT_* 动作选择由 marsdog_action_executor 根据 behavior_name + params 决定。
+# 兼容旧输入的别名只登记在 legacy_behavior_aliases.yaml；本池仅负责候选选择。
 
 # ═══════════════════════════════════════════════════════════════════════════
 # audio_direct intents
@@ -9,8 +10,6 @@
 
 orient_to_sound:
   candidates: [respond_owner_call]
-  aliases:
-    respond_owner_call: respond_owner_call
 
 # Internal session continuation created only after wake orientation succeeds
 # and BehaviorTree resolves one immutable visual target.
@@ -37,56 +36,33 @@ command_back_up:
 
 command_sit:
   candidates: [sit_down]
-  aliases:
-    respond_owner_call: sit_down
 
 command_come_here:
   candidates: [come_to_owner]
-  aliases:
-    respond_owner_call: come_to_owner
 
 command_follow:
   candidates: [follow_owner]
-  aliases:
-    respond_owner_call: follow_owner
 
 command_handshake:
   candidates: [give_paw]
-  aliases:
-    respond_touch_head: give_paw
 
 command_high_five:
   candidates: [high_five]
-  aliases:
-    respond_touch_head: high_five
 
 command_roll:
   candidates: [roll_over]
-  aliases:
-    rollOverShowBelly: roll_over
-    expressJoy: roll_over
 
 command_spin:
   candidates: [spin_around]
-  aliases:
-    spinInCircle: spin_around
-    expressJoy: spin_around
 
 command_retrieve:
   candidates: [return_to_owner]
-  aliases:
-    respond_owner_call: return_to_owner
 
 command_spit_out:
   candidates: [drop_object]
-  aliases:
-    emergency_stop: drop_object
 
 command_play_dead:
   candidates: [play_dead]
-  aliases:
-    restInPlace: play_dead
-    expressCalm: play_dead
 
 command_stand_still:
   candidates: [stand_still]
@@ -111,8 +87,6 @@ command_sleep:
 
 emergency_stop:
   candidates: [emergency_stop]
-  aliases:
-    emergency_stop: emergency_stop
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 直驱式短语 intents (direct-drive phrases)
@@ -296,45 +270,28 @@ visual_stop_gesture_response:
 
 express_joy:
   candidates: [expressJoy]
-  aliases:
-    express_happy: expressJoy
 
 comfort_owner:
   candidates: [expressJoy, expressCalm]
-  aliases:
-    express_happy: expressJoy
 
 confused_response:
   candidates: [expressCuriosity, expressAnxiety]
-  aliases:
-    headTilt: expressCuriosity
-    stareIntently: expressAnxiety
 
 # Voice command specific intents (EVT_VOICE_COMMAND_<ACTION>)
 command_lie_down:
   candidates: [lie_down]
-  aliases:
-    respond_owner_call: lie_down
 
 command_stand_up:
   candidates: [stand_up]
-  aliases:
-    respond_owner_call: stand_up
 
 command_wait:
   candidates: [wait_in_place]
-  aliases:
-    respond_owner_call: wait_in_place
 
 command_bring:
   candidates: [bring_object]
-  aliases:
-    respond_owner_call: bring_object
 
 command_fetch:
   candidates: [fetch_object]
-  aliases:
-    respond_owner_call: fetch_object
 
 # ═══════════════════════════════════════════════════════════════════════════
 # need intents
@@ -342,131 +299,87 @@ command_fetch:
 
 eat_normal:
   candidates: [eatNormally]
-  aliases:
-    seek_food_or_water: eatNormally
 
 eat_excited:
   candidates: [eatExcitedly]
-  aliases:
-    seek_food_or_water: eatExcitedly
 
 seek_food:
   candidates: [seekFood]
-  aliases:
-    seek_food_or_water: seekFood
 
 seek_food_urgent:
   candidates: [seekFoodUrgently]
-  aliases:
-    seek_food_or_water: seekFoodUrgently
 
 request_elimination:
   candidates: [barkShortAlert]
-  aliases: {}
 
 eliminate_now:
   candidates: [defecate]
-  aliases:
-    excretion_request: defecate
 
 settle_to_sleep:
   candidates: [sleepOnSide]
-  aliases:
-    sleep_request: sleepOnSide
 
 sleep_deep:
   candidates: [sleepNow]
-  aliases:
-    sleep_request: sleepNow
 
 groom_light:
   candidates: [lickPaws]
-  aliases:
-    clean_self: lickPaws
 
 groom_thorough:
   candidates: [cleanSelf]
-  aliases:
-    clean_self: cleanSelf
 
 recover_energy:
   candidates: [restInPlace]
-  aliases:
-    sleep_request: restInPlace
 
 recharge_critical:
   candidates: [recharge]
-  aliases:
-    sleep_request: recharge
 
 social_seek:
   candidates: [seekHumanInteraction]
-  aliases:
-    seek_social_interaction: seekHumanInteraction
 
 social_engage:
   candidates: [seekInteraction]
-  aliases: {}
 
 animal_boundary_test:
   candidates: [testAnimalBoundary]
-  aliases: {}
 
 animal_social_greet:
   candidates: [greetAnimal]
-  aliases: {}
 
 animal_play_invite:
   candidates: [inviteAnimalToPlay]
-  aliases: {}
 
 human_resource_interaction:
   candidates: [requestResourceFromHuman]
-  aliases: {}
 
 human_attention_interaction:
   candidates: [seekHumanInteraction]
-  aliases:
-    seek_social_interaction: seekHumanInteraction
 
 human_play_invite:
   candidates: [inviteHumanToPlay]
-  aliases: {}
 
 explore_space:
   candidates: [exploreRoom]
-  aliases:
-    explore_environment: exploreRoom
 
 explore_focused:
   candidates: [inspectObject]
-  aliases:
-    explore_environment: inspectObject
 
 inspect_generic_object:
   candidates: [inspectObject]
-  aliases: {}
 
 inspect_familiar_play_item:
   candidates: [inspectFamiliarPlayItem]
-  aliases: {}
 
 inspect_trash_can:
   candidates: [inspectTrashCan]
-  aliases: {}
 
 inspect_delivery_box:
   candidates: [inspectDeliveryBox]
-  aliases: {}
 
 inspect_tissue:
   candidates: [inspectTissuePaper]
-  aliases: {}
 
 inspect_door:
   candidates: [inspectDoor]
-  aliases: {}
 
 inspect_dog_food:
   candidates: [inspectDogFood]
-  aliases: {}

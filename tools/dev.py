@@ -59,6 +59,7 @@ def check():
     env = clean_environment()
     commands = [
         [sys.executable, "-B", str(ROOT / "tools/check_architecture.py")],
+        [sys.executable, "-B", str(ROOT / "tools/check_identifiers.py")],
         [sys.executable, "-B", "-m", "unittest", "discover",
          "-s", "integration/platform/tests", "-v"],
     ]

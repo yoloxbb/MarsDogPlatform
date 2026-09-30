@@ -5,11 +5,16 @@ import hashlib
 import json
 from pathlib import Path
 
-import pytest
 import xml.etree.ElementTree as ET
+
+import pytest
+import yaml
+
+from integration.naming.config_compatibility import FIXTURE, assert_reviewed_config
 
 REPO = Path(__file__).resolve().parents[3]
 BASELINE = json.loads((Path(__file__).resolve().parents[1] / "baseline/sources.json").read_text())
+REVIEWED_CONFIGS = json.loads(FIXTURE.read_text())["configs"]
 
 
 @pytest.mark.parametrize("module", ["emotion", "behavior", "action", "voice", "vision"])
@@ -40,6 +45,11 @@ def test_migration_preserves_wire_and_default_assets(module):
             actual.remove(added[0])
             normalize = lambda root: [(n.tag, n.attrib, (n.text or "").strip(), [(c.tag, (c.text or "").strip()) for c in n]) for n in root]
             assert normalize(actual) == normalize(original)
+        elif path.relative_to(REPO).as_posix() in REVIEWED_CONFIGS:
+            # Reviewed naming cleanup preserves effective defaults. Original
+            # migration hashes remain frozen; all other assets stay byte-exact.
+            review = REVIEWED_CONFIGS[path.relative_to(REPO).as_posix()]
+            assert_reviewed_config(yaml.safe_load(path.read_text()), review, record["sha256"])
         else:
             assert hashlib.sha256(path.read_bytes()).hexdigest() == record["sha256"], name
         actual_mode = "100755" if path.stat().st_mode & 0o111 else "100644"

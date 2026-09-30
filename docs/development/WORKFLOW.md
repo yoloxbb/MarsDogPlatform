@@ -27,6 +27,10 @@ flowchart LR
 当前运行链路、激活与抢占条件见 [事件到行为到动作详图](../architecture/EVENT_BEHAVIOR_ACTION.md)；
 逐项配置映射见 [事件行为动作索引](../architecture/EVENT_BEHAVIOR_ACTION_INDEX.md)。
 
+命名约定与已知映射缺口见 [标识规范及目录](../../interfaces/naming/README.md)。
+修改登记的配置后先运行 `check_identifiers.py --refresh --python modules/action/.venv/bin/python`，
+再运行 `dev.py check` 和受影响的契约测试；新缺口不会自动豁免。
+
 ## 开发示例：已有“回家”功能的扩展
 
 先确定是 Voice 识别/入口变化、BT 仲裁变化、Action 执行阶段变化，

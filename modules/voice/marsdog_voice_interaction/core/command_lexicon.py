@@ -451,7 +451,9 @@ class CommandLexicon:
         # lexicon never adds the generic COMMAND_KNOWN summary.
         emit_known_event = False
         emotion = str(item.get("emotion", "NONE")).strip().upper()
-        action_name = str(item.get("action_name", "")).strip().upper()
+        # Product vocabulary label, not an Action executor unit_id. Keep the
+        # catalog key and AudioEvent slot named action_name for compatibility.
+        product_action_label = str(item.get("action_name", "")).strip().upper()
         behavior = str(item.get("behavior", "")).strip()
         if not command_key or not command_id or not event_type:
             raise ValueError(
@@ -476,8 +478,8 @@ class CommandLexicon:
                 f"event_type {event_type!r}"
             )
         derived_event = (
-            f"EVT_VOICE_COMMAND_{action_name[4:]}"
-            if action_name.startswith("ACT_") else ""
+            f"EVT_VOICE_COMMAND_{product_action_label[4:]}"
+            if product_action_label.startswith("ACT_") else ""
         )
         if event_type not in _KNOWN_VOICE_EVENTS and event_type != derived_event:
             raise ValueError(
@@ -589,7 +591,7 @@ class CommandLexicon:
                 nlu_intent=nlu_intent,
                 nlu_control=nlu_control,
                 emotion=emotion,
-                action_name=action_name,
+                action_name=product_action_label,
                 behavior=behavior,
                 source_rows=source_rows,
                 slots=slots,

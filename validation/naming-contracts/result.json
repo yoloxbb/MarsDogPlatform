@@ -1,0 +1,135 @@
+{
+  "status": "PASS_WITH_KNOWN_GAPS_AND_ENVIRONMENT_LIMITS",
+  "baseline_commit": "0c97e42",
+  "branch": "refactor/naming-contracts",
+  "checks": {
+    "unit_action": {
+      "status": "PASS_WITH_EXPLICIT_LIMITS",
+      "passed": 424,
+      "skipped": 29
+    },
+    "unit_behavior": {
+      "status": "PASS",
+      "passed": 533,
+      "skipped": 0
+    },
+    "unit_voice": {
+      "status": "PASS",
+      "passed": 430,
+      "skipped": 0
+    },
+    "unit_emotion": {
+      "status": "PASS",
+      "passed": 374,
+      "skipped": 0
+    },
+    "platform": {
+      "status": "PASS",
+      "tests": 92,
+      "ros_packages": 15,
+      "interfaces": 21
+    },
+    "yaml": {
+      "status": "PASS",
+      "tests": 4
+    },
+    "audio": {
+      "status": "PASS",
+      "scenarios": 46,
+      "baseline_sha256": "c051a50d94fa1b6626d11b82c9bd8569d2e91f4fa1de584202f395eedc5879d3"
+    },
+    "state": {
+      "status": "PASS",
+      "scenarios": 34,
+      "baseline_sha256": "21eba8ee6041e0b1eddc6909ff7883b8f04cf75d076b1b2a4e05277db6251014"
+    },
+    "result_contracts": {
+      "status": "PASS",
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "action_callbacks": {
+      "status": "PASS",
+      "tests": 35,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "scope": "Humble types + real callbacks; fake collaborators; no node/hardware"
+    },
+    "install_action": {
+      "status": "PASS",
+      "scope": "clean locked Action wheel; no ROS/hardware; original config/media bytes"
+    },
+    "install_behavior": {
+      "status": "PASS",
+      "scope": "clean BT wheel; no ROS; unmodified config bytes"
+    },
+    "install_voice": {
+      "status": "PASS",
+      "scope": "Locked Python wheel; exact config/static bytes; HTTP schema only, no sockets; no ROS/node/hardware/models"
+    },
+    "ros_install": {
+      "status": "PASS",
+      "build_packages": 15,
+      "installed_modules": [
+        "action",
+        "behavior",
+        "emotion",
+        "vision",
+        "voice"
+      ],
+      "source_fingerprint": "6eca973647d16aa4e27a38d790fec5a8d6472ec2c868da18580f7e024a9e3f04"
+    },
+    "identifiers": {
+      "status": "PASS_WITH_KNOWN_GAPS",
+      "declared_event_routes": 125,
+      "voice_commands": 82,
+      "intent_pools": 116,
+      "action_templates": 74,
+      "action_units": 183,
+      "known_missing_template_routes": 49,
+      "voice_events_without_declared_route": 5,
+      "non_catalog_audio_routes": 5
+    },
+    "config_equivalence": {
+      "status": "PASS",
+      "action_templates": 74,
+      "action_config_semantically_equal": true,
+      "intent_pools": 116,
+      "intent_candidates_and_other_fields_equal": true,
+      "unused_alias_groups_removed": 49
+    }
+  },
+  "source_sha256": {
+    ".github/workflows/action.yml": "86eab49b9a155cab7b74d955b025f04e6a43c8bae8383cfb718691e2af0bfe47",
+    "README.md": "86f0930e43bb38b97e63b251f944f2cbfe86b1b47e298055abedac6992d423ef",
+    "docs/architecture/EVENT_BEHAVIOR_ACTION_INDEX.md": "803d7be935824fc602cf6a9b663dd9e98fb683f4a3fe1f30dddd7ecfb143b373",
+    "docs/development/WORKFLOW.md": "d4a235b023ab26450dfd739bfb16249a346734e9133f4de38412a66a0a95588e",
+    "integration/migration/tests/test_migrated_interfaces.py": "2feb07524f180dc2651d0601f4412e397d5f693939e92bd3a03623ceb47b4134",
+    "integration/naming/config_compatibility.json": "9322d5420756f6935557a83eef6e00eaf30bdcb172da637b72348fd5acab6f8f",
+    "integration/naming/config_compatibility.py": "d9db3ba11b57769ed7c2be09bade6bf34cfac329ee4bd77a0be2c30eae6df275",
+    "integration/naming/test_yaml_catalog.py": "6442e3970a270eab1fdc5e012e3abe2285de010272e6a365eacf978faa4e4b84",
+    "integration/platform/tests/test_identifier_contracts.py": "b38bb6244b437850bbd563aea59d97afd9dc7580dd59af9d43649e577692bf02",
+    "interfaces/application/README.md": "6d89d823dd0a0893c7017f22dd2c00f3746707bbcb4fc237df35b91c0e8d7cc3",
+    "interfaces/naming/README.md": "00dfd84cc7af6246c0db876f2e07a212ebf05ba48aaf349177fe6d0551893d3c",
+    "interfaces/naming/catalog.json": "483e01ff5d54ce2d8883d4fdb5822762cf8e69399bdaf37b5d31f9d4f1e04f89",
+    "interfaces/naming/compatibility_exceptions.json": "6a8db844606248b87df702877cae176ec162c2d3d1d01c8f80b99887a00a2a73",
+    "modules/action/config/behavior_tree_actions.yaml": "59a5a4d28f62c3782441f725d689d05b6b7ec3b3fb963d9cf520854fa98629b1",
+    "modules/action/marsdog_action_executor/config_loader.py": "4818dcf1ba50b11d5733c33c234dfc996d51238ec35508ef4f36735eeebe9a04",
+    "modules/action/tests/test_behavior_tree_action_contract.py": "a915994b5563b2571f926d38f1d653960c1354ffc2f7c33bc022b97b21750eff",
+    "modules/behavior/config/intent_action_pool.yaml": "c39d020be477fefbf98d77bb656fbc55e0b7e462d4da7b7e9a9d2cded4c49371",
+    "modules/behavior/docs/behavior_tree_architecture.md": "956da5f72f9b8c7e78d73baff0fc71d52e0d4812b70fd621b5b1b0428752a548",
+    "modules/voice/config/command_catalog.yaml": "cd2db640a624fc6efeaf0b970d31ed9209874380aa125db9db96b0fad8fadcdf",
+    "modules/voice/marsdog_voice_interaction/core/command_lexicon.py": "335cc045bf4590af0514f29af3d3dad6df1062dc39cdb03d89714e3326452632",
+    "tools/check_identifiers.py": "337fcbc622b7cbd00bacb9405de853cf2546be6ac822e7012b91faab650deb9f",
+    "tools/dev.py": "387b84aab19b6e852d92610f61aa3fa2247bfa6afb866db529902d138543b71a",
+    "tools/identifier_catalog.py": "2583dff7171e19a6bfd898098e6e4f90c3129af544de7ff8c275e2c5fcea42a4"
+  },
+  "limits": [
+    "49 existing routes lack Action templates; no replacement actions invented.",
+    "29 Action pure-test skips recorded separately; ROS callback suite passed, PySide2 GUI not tested.",
+    "No hardware, model accuracy, real ASR input, live DDS acceptance or remote CI run in this change."
+  ]
+}

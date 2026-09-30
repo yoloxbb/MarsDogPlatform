@@ -12,6 +12,7 @@ Startup validation catches:
 
 from __future__ import annotations
 
+from copy import deepcopy
 import logging
 import math
 import sys
@@ -176,6 +177,10 @@ class ConfigLoader:
                 if required:
                     self._errors.append(f"Invalid config structure in {filepath}: expected dict, got {type(data).__name__}")
                 return
+            if attr == "behavior_tree_templates":
+                # YAML anchors may share stages; runtime templates must not share
+                # mutable objects across distinct behavior identities.
+                data = {name: deepcopy(template) for name, template in data.items()}
             setattr(self, attr, data)
             logger.info("Loaded %s (%d entries)", filename, len(data))
         except Exception as exc:

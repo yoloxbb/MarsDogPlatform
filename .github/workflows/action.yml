@@ -25,6 +25,10 @@ jobs:
         run: python3 -B tools/bootstrap_uv.py
       - name: Locked independent module environment
         run: python3 -B tools/dev.py setup action --uv "$GITHUB_WORKSPACE/.tools/uv"
+      - name: Live identifier catalog and YAML regression checks
+        run: |
+          python3 -B tools/check_identifiers.py --live --python modules/action/.venv/bin/python
+          modules/action/.venv/bin/python -B -m unittest discover -s integration/naming -v
       - name: Existing and migration regressions
         run: python3 -B tools/dev.py test action
       - name: Clean wheel and media install away from source

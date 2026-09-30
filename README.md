@@ -18,6 +18,7 @@ acceptance/five-module-software-20260930。
 - 新功能、提交与合并：[贡献指南](CONTRIBUTING.md)
 - 模块边界与跨模块变更：[开发流程](docs/development/WORKFLOW.md)
 - 事件、行为、仲裁与动作：[当前系统详图](docs/architecture/EVENT_BEHAVIOR_ACTION.md)、[配置索引](docs/architecture/EVENT_BEHAVIOR_ACTION_INDEX.md)
+- 名称含义、兼容例外与自动检查：[标识规范及目录](interfaces/naming/README.md)
 - WSL 到开发板：[源码交付与板端接入](docs/deployment/SOURCE_HANDOFF.md)
 - 兼容性整合：[五模块重构路线](docs/architecture/COMPATIBILITY_REFACTOR.md)
 - 业务验收：[场景矩阵与恢复门禁](docs/development/BUSINESS_SCENARIOS.md)

@@ -947,7 +947,7 @@ action_executor Result
 | [config/behaviors.yaml](../config/behaviors.yaml) | 行为定义：优先级、动作序列、冷却、超时、风格 | behavior_name → ActionSequence |
 | [config/event_intent_map.yaml](../config/event_intent_map.yaml) | 事件到意图的映射 | audio_direct/need/emotion event → intent |
 | [config/emotion_behavior_map.yaml](../config/emotion_behavior_map.yaml) | 情绪事件到行为名 | EMO_* → behavior_name + variant |
-| [config/intent_action_pool.yaml](../config/intent_action_pool.yaml) | 意图到候选行为池 | intent → candidates[] + aliases |
+| [config/intent_action_pool.yaml](../config/intent_action_pool.yaml) | 意图到候选行为池 | intent → candidates[]（旧输入别名由独立表管理） |
 | [config/behavior_categories.yaml](../config/behavior_categories.yaml) | 7 层行为分类定义 | category → priority_level |
 | [config/legacy_behavior_aliases.yaml](../config/legacy_behavior_aliases.yaml) | 旧行为名到新语义名的别名 | old_name → new_name |
 
