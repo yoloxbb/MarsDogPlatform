@@ -15,6 +15,8 @@ MarsDog 的统一开发主仓：视觉、语音、Emotion/Needs、行为树、Ac
 - 模块边界与跨模块变更：[开发流程](docs/development/WORKFLOW.md)
 - WSL 到开发板：[源码交付与板端接入](docs/deployment/SOURCE_HANDOFF.md)
 - 兼容性整合：[五模块重构路线](docs/architecture/COMPATIBILITY_REFACTOR.md)
+- 业务验收：[场景矩阵与恢复门禁](docs/development/BUSINESS_SCENARIOS.md)
+- 导航协作：[负责人交接](docs/development/NAVIGATION_HANDOFF.md)
 - 当前事实：[迁移状态](docs/migration/STATUS.md)
 - Agent / 后续会话：[AGENTS.md](AGENTS.md)、[交接](HANDOFF_NEXT_SESSION.md)
 

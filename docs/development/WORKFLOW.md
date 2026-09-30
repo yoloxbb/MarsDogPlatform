@@ -51,6 +51,7 @@ flowchart LR
 | 执行/会话/取消协调组件 | 模块单测 + 对应契约 | 五模块安装检查含组件导入/源码哈希；Action 另跑 check_action_callbacks.py、check_action_transport.py、check_action_shutdown.py |
 | Action→BT→Needs 结果/证据 | 三模块单测 | check_contracts.py |
 | ROS IDL / service / action | 架构和原 IDL 兼容检查 | 生产方/消费方测试、build、doctor、对应 DDS 测试 |
+| 感知会话/缓存/进程恢复 | 受影响模块单测 + 对应契约 | check_business_scenarios.py；七项安装后 DDS 恢复场景 |
 | 进程组合/运行配置 | 平台测试 | 默认 smoke + check_local_lifecycle.py |
 | waypoint/Nav2 | 原导航契约 | 可选真实 Nav2 smoke、check_nav2_recovery.py |
 | C++/CMake/ROS package | package 依赖 DAG | check_robotics.py 或对应扩展 ROS build/runtime |
@@ -70,3 +71,6 @@ RTAB 的本地定制 fork 保留，不能用随手下载的 upstream 覆盖。
 
 五模块已完成的职责划分与全部门禁见 [兼容性重构](../architecture/COMPATIBILITY_REFACTOR.md)。
 跨领域协议入口见 [应用协议目录](../../interfaces/application/README.md)。
+
+业务场景与各门禁的覆盖关系见 [验收矩阵](BUSINESS_SCENARIOS.md)。
+导航/避障修改前先核对 [负责人交接](NAVIGATION_HANDOFF.md)，保留现有终态与恢复锁约束。

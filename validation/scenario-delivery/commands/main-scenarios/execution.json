@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "-B",
+    "tools/check_business_scenarios.py",
+    "--output",
+    "out/scenario-delivery/perception-recovery-final"
+  ],
+  "cwd": "/home/elephant/MarsDog/marsdog-platform",
+  "started_utc": "2026-09-30T10:37:33.501640+00:00",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "env": {
+    "UV_CACHE_DIR": "/home/elephant/MarsDog/migration/.cache/uv"
+  },
+  "source_commit": "6d759315222c0db0cca96f88f9049bb1e9e5f4d7",
+  "source_status": " M .github/workflows/platform.yml\n?? integration/platform/tests/test_business_scenarios.py\n?? integration/scenarios/\n?? tools/check_business_scenarios.py\n",
+  "returncode": 0,
+  "duration_seconds": 16.802,
+  "status": "PASS"
+}

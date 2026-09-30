@@ -16,7 +16,8 @@ modules/vision/marsdog_vision_interaction/messages/visual_event.py。
 | range_valid / distance_m / pose_3d | 原有距离有效性、深度和坐标；未知不能伪装为 0 距离 |
 
 BT 严格要求整数版本和字符串事件数组，再更新原场景缓存。
-直接事件 STRANGER/FALL/STOP_GESTURE 沿用出现边沿去重，缓存超时后重新判边；
+直接事件 EVT_VISION_FALL / EVT_VISION_STOP_GESTURE 沿用出现边沿去重，缓存超时后重新判边；
+STRANGER 不在当前 BT 的直接执行事件集合中。
 目标有效性和服务降级仍由原规则决定。消费者回调在缓存锁外调用。
 缺少 human_candidates 时只在 epoch 和有效 track_id 存在时构造兼容目标。
 

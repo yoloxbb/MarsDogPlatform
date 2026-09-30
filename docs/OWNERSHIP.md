@@ -9,7 +9,7 @@ tools、profile、契约和集成由 Platform maintainer 与受影响模块 owne
 interfaces/registry.json 中的生产者与消费者。修改原有 ROS 类型身份、字段、取消
 或结果语义时先做兼容性分析，不通过修改旧基线消除差异。
 
-AI Agent 先读 AGENTS.md、STATUS.md、模块迁移记录，再执行对应模块测试。
+AI Agent 先读 AGENTS.md、docs/migration/STATUS.md、模块迁移记录，再执行对应模块测试。
 运行 tools/check_architecture.py 检查导入边界、IDL 指纹和 package 依赖图；
 跨边界功能增加公开接口的集成测试。禁止通过共享业务 common 或兄弟目录
 私有 import 绕过接口。日志和进程编排工具只负责运行，不承担机器人决策。

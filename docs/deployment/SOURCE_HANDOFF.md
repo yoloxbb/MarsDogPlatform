@@ -38,12 +38,13 @@ bundle 保留主仓已有历史，不复制 .venv、out、.external、模型、�
 主仓的历史来源记录/commit maps 随版本保留；原始独立仓完整档案另行保管。
 源码 bundle 不是完整的离线依赖镜像；首次 Python/ROS 依赖下载仍需要网络或匹配的缓存。
 
-## 已完成的本轮验收
+## P7 历史交付验收
 
 源码 2468639 已经真实导出、校验、在独立目录克隆，并完成五模块独立环境/测试/
 干净 wheel、四 vendor 和默认 ROS 15 包从零构建及 doctor/smoke。
 本机源码验收包是 out/handoff/source-bundle-2468639；
-含最新证据和交接的最终包为 out/handoff/source-bundle-final，以 manifest 为准。
+含当时证据和交接的 P7 最终包为 out/handoff/source-bundle-final，以 manifest 为准。
+这两个 P7 包不包含后续五模块 R1–R4 重构与恢复场景，不能当作当前源码。
 详见 [P7 验收](../migration/P7_DEVELOPER_PLATFORM.md)。
 这些本机输出目录不进入 Git；接收方取得实际输出目录后按上文校验。
 

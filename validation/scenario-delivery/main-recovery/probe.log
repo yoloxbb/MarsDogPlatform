@@ -1,0 +1,3 @@
+[INFO] [1790764655.450480438] [marsdog_business_recovery_probe]: Vision service client ready: /perception/vision/task (marsdog_vision_interaction.srv.VisionTask)
+[INFO] [1790764655.450786315] [marsdog_business_recovery_probe]: PerceptionClientAdapter: audio_event + visual_event subscriptions ready
+[WARN] [1790764667.852111363] [marsdog_business_recovery_probe]: Vision task query_targets timed out after 0.40s: task_id=bt_ed6a3024; using visual-event cache

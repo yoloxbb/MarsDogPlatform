@@ -1,0 +1,19 @@
+{
+  "baseline": "6d759315222c0db0cca96f88f9049bb1e9e5f4d7",
+  "status": "PASS",
+  "protected_paths": [
+    "modules",
+    "robotics",
+    "config",
+    "interfaces/ros2",
+    "third_party",
+    "platform",
+    "tools/marsdog.py",
+    "tools/local_smoke.py"
+  ],
+  "tracked_file_count": 749,
+  "protected_worktree_diff": "",
+  "protected_untracked_files": [],
+  "initial_status": "",
+  "note": "No module, native robotics, configuration, IDL, dependency lock, vendor or runtime composition changes."
+}

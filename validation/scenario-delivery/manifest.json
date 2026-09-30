@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "phase": "main-worktree",
+  "baseline": "6d759315222c0db0cca96f88f9049bb1e9e5f4d7",
+  "files": {
+    "README.md": "580d8418b148e241c3e8654c4ab14ceeafa163dfee3e29c37d395cc0b63af350",
+    "commands/main-platform/command.log": "7a44d36a110ca7faaec1d25ebba57bcda939329cad88f46d9bf5902fe92eb414",
+    "commands/main-platform/execution.json": "161bb9b35296efabf3da18ab66a13a503b542c3ed0eb5c9759c2a43278aab096",
+    "commands/main-scenarios/command.log": "c7f2be5aea99710c0c085d24dcf1d78497c2ca95066baa586d79ce6e2f9bb2bc",
+    "commands/main-scenarios/execution.json": "d651dd34a159284970556632eea39adce9ca19d63203eabec7f3023a4d9f83dc",
+    "main-recovery/observation.json": "2f404c05afe7446fa930b6720bc23f3998b351e1de354cd8ea66cd87b1c132cc",
+    "main-recovery/probe.log": "bfd3855d58cc2edfa9dabec8ef85b2ef20297b5334cfde7594c8619239c847a2",
+    "main-recovery/result.json": "52ffce22b6a7841c84ae76492e4eed1840545028d44039374762b0d4346ccd97",
+    "main-recovery/vision-1-origin.json": "424649c3aa13556ce3d3f14a616253841ed209aeef88278334ab39d115f064af",
+    "main-recovery/vision-1.log": "a1b29d7062473c2a1d2b463d3b58dc4c6193c6b56911b842b05c9e1dd426bf71",
+    "main-recovery/vision-2-origin.json": "424649c3aa13556ce3d3f14a616253841ed209aeef88278334ab39d115f064af",
+    "main-recovery/vision-2.log": "cac55a73797565ab49eee292e33047a6ba38c9ce536d3d4c17771b7a1ed95fdd",
+    "main-recovery/vision.yaml": "84713e12cda0569ba4ee92e027682bcab10e1e98852e341fd995f69303a9643a",
+    "main-recovery/voice-1-origin.json": "31d9eccbcd175d515490987d92cdccbb91b1fd07aa50fb9907705f0a006c2887",
+    "main-recovery/voice-1.log": "63f908a8c37aa68d693c1b41daaa783aacb5587af7f661042a15f4d547c1f57e",
+    "main-recovery/voice-2-origin.json": "31d9eccbcd175d515490987d92cdccbb91b1fd07aa50fb9907705f0a006c2887",
+    "main-recovery/voice-2.log": "0ad778d814888d101c7f32168bf0df388b7bbd2082e91d2749ff4568909ce99b",
+    "main-recovery/voice.yaml": "b6f7b776c9df34c370fc912138b640d3d787dad73dcd5067d950dd7e3c97849e",
+    "protected-source.json": "28990f6166ee940f96ea4c17d8d3b1e9b06abda0f374799c07ee772df95f689a"
+  }
+}
