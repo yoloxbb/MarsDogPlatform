@@ -1,0 +1,49 @@
+20:50:41.449 [INFO ] [bionic_dog_bt.bt_node   ] ActionClientAdapter: waiting for /execute_behavior...
+20:50:41.450 [INFO ] [bionic_dog_bt.bt_node   ] Executor: ActionClientAdapter → /execute_behavior (via marsdog_interfaces.action)
+20:50:41.525 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+20:50:41.547 [INFO ] [bionic_dog_bt.bt_node   ] Vision service client ready: /perception/vision/task (marsdog_vision_interaction.srv.VisionTask)
+20:50:41.547 [INFO ] [bionic_dog_bt.bt_node   ] PerceptionClientAdapter: audio_event + visual_event subscriptions ready
+20:50:41.549 [INFO ] [bionic_dog_bt.bt_node   ] Voice session service ready: /perception/voice/task (marsdog_voice_interaction.srv.VoiceTask)
+20:50:41.553 [INFO ] [bionic_dog_bt.bt_node   ] ROS2 subscriptions ready: /emotion/state /emotion/signal_event /internal_need/state /internal_need/signal_event
+20:50:41.553 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+20:50:41.631 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_inject", "timestamp": 1790772641.6310036}
+20:50:41.655 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_select", "timestamp": 1790772641.6559088}
+20:50:41.656 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "mode": "interactive", "goal_id": "cand_d7a6560e5ffb", "event": "behavior_start", "timestamp": 1790772641.6566398}
+20:50:41.753 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmWithHuman", "status": "CONTROLLER_ERROR", "reward": -0.5, "event": "behavior_complete", "timestamp": 1790772641.7538486}
+20:50:41.831 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_inject", "timestamp": 1790772641.831888}
+20:50:51.832 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_inject", "timestamp": 1790772651.8327744}
+20:50:51.853 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_select", "timestamp": 1790772651.8538268}
+20:50:51.854 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "mode": "interactive", "goal_id": "cand_65d91fc18880", "event": "behavior_start", "timestamp": 1790772651.8544827}
+20:50:51.953 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmWithHuman", "status": "CONTROLLER_ERROR", "reward": -0.5, "event": "behavior_complete", "timestamp": 1790772651.9538777}
+20:50:52.031 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_inject", "timestamp": 1790772652.031947}
+20:51:02.033 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 35.0, "event": "candidate_inject", "timestamp": 1790772662.0331044}
+20:51:02.053 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 35.0, "event": "candidate_select", "timestamp": 1790772662.0538356}
+20:51:02.054 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "mode": "interactive", "goal_id": "cand_3134421df9f6", "event": "behavior_start", "timestamp": 1790772662.0545223}
+20:51:02.153 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmWithHuman", "status": "CONTROLLER_ERROR", "reward": -0.5, "event": "behavior_complete", "timestamp": 1790772662.153861}
+20:51:02.232 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 35.0, "event": "candidate_inject", "timestamp": 1790772662.232815}
+20:51:03.869 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "sit_down", "priority_level": 1, "value": 0.0, "event": "candidate_inject", "timestamp": 1790772663.8691545}
+20:51:03.953 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "sit_down", "priority_level": 1, "value": 0.0, "event": "candidate_select", "timestamp": 1790772663.9538057}
+20:51:03.954 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "sit_down", "priority_level": 1, "mode": "solo", "goal_id": "cand_6704a400a0d9", "event": "behavior_start", "timestamp": 1790772663.9545028}
+20:51:04.053 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "sit_down", "status": "FAILURE", "reward": -0.5, "event": "behavior_complete", "timestamp": 1790772664.053865}
+20:51:12.020 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "sit_down", "priority_level": 1, "value": 100.0, "event": "candidate_inject", "timestamp": 1790772672.0202255}
+20:51:12.053 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "sit_down", "priority_level": 1, "value": 100.0, "event": "candidate_select", "timestamp": 1790772672.0538063}
+20:51:12.054 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "sit_down", "priority_level": 1, "mode": "solo", "goal_id": "cand_f899ed3cc535", "event": "behavior_start", "timestamp": 1790772672.054437}
+20:51:12.153 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "sit_down", "status": "FAILURE", "reward": -0.5, "event": "behavior_complete", "timestamp": 1790772672.1539233}
+20:51:12.331 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 45.0, "event": "candidate_inject", "timestamp": 1790772672.3313847}
+20:51:12.353 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 45.0, "event": "candidate_select", "timestamp": 1790772672.3538358}
+20:51:12.354 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "mode": "interactive", "goal_id": "cand_331a05d2a6f9", "event": "behavior_start", "timestamp": 1790772672.3544538}
+20:51:12.453 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmWithHuman", "status": "CONTROLLER_ERROR", "reward": -0.5, "event": "behavior_complete", "timestamp": 1790772672.4538295}
+20:51:12.532 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 45.0, "event": "candidate_inject", "timestamp": 1790772672.5320551}
+20:51:21.022 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "sit_down", "priority_level": 1, "value": 100.0, "event": "candidate_inject", "timestamp": 1790772681.0221372}
+20:51:21.053 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "sit_down", "priority_level": 1, "value": 100.0, "event": "candidate_select", "timestamp": 1790772681.0537438}
+20:51:21.054 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "sit_down", "priority_level": 1, "mode": "solo", "goal_id": "cand_d41b9449d4b7", "event": "behavior_start", "timestamp": 1790772681.0543106}
+20:51:21.069 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "go_home", "priority_level": 1, "value": 100.0, "event": "candidate_inject", "timestamp": 1790772681.0693681}
+20:51:21.153 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "sit_down", "status": "FAILURE", "reward": -0.5, "event": "behavior_complete", "timestamp": 1790772681.1538363}
+20:51:21.253 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "go_home", "priority_level": 1, "value": 100.0, "event": "candidate_select", "timestamp": 1790772681.2538695}
+20:51:21.254 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "go_home", "priority_level": 1, "mode": "solo", "goal_id": "cand_49f4704a5a8f", "event": "behavior_start", "timestamp": 1790772681.254535}
+20:51:23.453 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "go_home", "status": "SUCCESS", "reward": 1.0, "event": "behavior_complete", "timestamp": 1790772683.4538238}
+20:51:23.456 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 45.0, "event": "candidate_inject", "timestamp": 1790772683.4568827}
+20:51:23.553 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 45.0, "event": "candidate_select", "timestamp": 1790772683.5536919}
+20:51:23.554 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "mode": "interactive", "goal_id": "cand_945b059a494c", "event": "behavior_start", "timestamp": 1790772683.5542781}
+20:51:23.653 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmWithHuman", "status": "CONTROLLER_ERROR", "reward": -0.5, "event": "behavior_complete", "timestamp": 1790772683.6538112}
+20:51:23.732 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 45.0, "event": "candidate_inject", "timestamp": 1790772683.7326236}

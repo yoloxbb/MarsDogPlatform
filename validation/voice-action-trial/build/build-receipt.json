@@ -1,0 +1,28 @@
+{
+  "source_sha256": "7f8ef438fbcf1c3d07b197e45bb33aa640008119a81157e09436463b9b693435",
+  "python": "3.10.12 (main, Aug 31 2026, 10:18:17) [GCC 11.4.0]",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "ros": "humble",
+  "install": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install",
+  "source_paths": [
+    "modules/emotion",
+    "modules/behavior",
+    "modules/action",
+    "modules/voice",
+    "modules/vision",
+    "interfaces/ros2/marsdog_interfaces",
+    "robotics/ros2/src/waypoint_nav",
+    ".external/uwb",
+    "robotics/ros2/src/stereo_v4l2_camera",
+    "robotics/ros2/src/wit_imu",
+    "robotics/ros2/src/person_3d_localization",
+    "robotics/ros2/src/robot_slam_bringup",
+    "robotics/ros2/src/stereo_slam_legacy_bringup",
+    "robotics/ros2/src/go2_uwb_local_follow",
+    "robotics/ros2/src/go2_uwb_behavior"
+  ],
+  "options": {
+    "BUILD_TESTING": "OFF",
+    "BUILD_UWB_VENDOR_DRIVER": "OFF"
+  }
+}

@@ -3,13 +3,16 @@
 当前优先级由用户明确为：先保证流程，模型精度暂不阻塞集成。保留原误分类证据，
 不继续调提示词或改标注。以下入口只对本机软件流程负责，不代表实机验收。
 
-## 一条命令验证完整链路
+## 运行已有 ASR 与动作分段回放
 
-当前 WSL Ubuntu-22.04 中，模型和环境已准备好：
+当前 WSL Ubuntu-22.04 中，模型和环境已准备好。此命令自动回放并退出，
+不监听麦克风：真实 WAV 是普通语句，动作命令另用文本注入。
+因此它验证 ASR 与后续动作链路的分段覆盖，尚不能证明用户录音口令直接到 Action。
 
 ~~~bash
 cd /home/elephant/MarsDog/marsdog-platform
-python3 tools/marsdog.py build
+python3 tools/marsdog.py doctor
+# 仅 doctor 报告安装陈旧时，先运行 python3 tools/marsdog.py build
 python3 tools/marsdog.py voice-cpu-ros --acceptance flow --with-behavior
 ~~~
 
@@ -84,3 +87,14 @@ model_acceptance 和 hardware_acceptance 保持 false，不影响本阶段软件
 导航、相机、Lite3 I/O 是显式模拟；真实麦克风/VAD/KWS、SLAM 传感器和 Lite3 设备
 仍需后续环境。默认整机启动仍可使用 python3 tools/marsdog.py up。
 后续继续扩大可复用的模块流程和故障恢复验证，精度优化暂缓。
+
+## 2026-09-30 试用复核
+
+当前主线试跑发现 Vision 在退出时遇到 context 已关闭的 wait-set 竞态：
+业务观察通过，但组件非零退出使整轮 FAIL。已加精确异常处理和八种回归，
+不吞掉活跃 context 或其他回调故障；重建后 CPU flow、感知恢复均 PASS。
+完整失败/成功证据见 [试用记录](../validation/voice-action-trial/README.md)。
+
+当前 WSL 的 sounddevice 导入报告 PortAudio library not found，PATH 也无 arecord。
+默认 up 使用 mock；已有声纹上传网页用于注册，不是语音动作入口。
+麦克风或用户 WAV 口令需独立接入，不把现有固定文本回放当作真实语音指令验收。

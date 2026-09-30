@@ -6,10 +6,15 @@
 最新执行计划见 [方案 v2](../architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md) 第 15 节。
 
 **本地主线已收口。** main 从 3f50614 快进接收已验收的 1835707，
-其后只有基线文档/证据更新。验收标签 acceptance/five-module-software-20260930；
+该次收口只有基线文档/证据更新。验收标签 acceptance/five-module-software-20260930；
 后续功能从 main 创建分支。原分支、旧包和原冻结证据保留；
 [收口记录](../../validation/mainline-acceptance/README.md)保存源码一致性依据。
 这是本地软件基线，没有新增硬件/模型或 hosted CI 结论。
+
+**基线后的试用修复。** ASR / Action 回放发现 Vision 关闭 context 时的 wait-set 竞态，
+已精确修复并保留真实运行错误；CPU flow 和七项恢复复测通过。
+[试用证据](../../validation/voice-action-trial/README.md)；
+原验收标签和包不移动。入口是普通 WAV 与文本命令的分段回放，麦克风口令闭环未验收。
 
 **R1–R4 五模块兼容性整合重构已完成。** 听觉会话/识别/任务、视觉快照/事件/任务、
 Emotion 发布、BT 状态/视觉/语音协调、Action 生命周期/执行/消息边界均已拆出。

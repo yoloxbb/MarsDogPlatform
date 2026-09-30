@@ -1,0 +1,1145 @@
+{
+  "status": "PASS",
+  "domain": 216,
+  "cases": [
+    {
+      "id": "voice-held-continuous-session",
+      "status": "PASS",
+      "interaction_id": "109a54481e3b49fcb8c870bdc56ff7e2",
+      "held_past_idle": true,
+      "renewed_same_token": true
+    },
+    {
+      "id": "voice-stop-stale-requests",
+      "status": "PASS",
+      "old_interaction": "109a54481e3b49fcb8c870bdc56ff7e2",
+      "new_interaction": "22263a52f26b408ea8f7eb5cc3a0e55c",
+      "old_requests_rejected": true,
+      "current_hold_preserved": true,
+      "release_idempotent": true,
+      "idle_received_by_bt": true
+    },
+    {
+      "id": "voice-lease-expiry",
+      "status": "PASS",
+      "expired_hold_removed": true,
+      "idle_timeout_recovered": true
+    },
+    {
+      "id": "voice-restart-rediscovery",
+      "status": "PASS",
+      "old_interaction": "4c29f18ce64444de87e95b7b9bdc3e6b",
+      "new_interaction": "ec71eaeed4e9484fbbe9dded9fed9e62",
+      "same_service_client_reconnected": true,
+      "old_hold_not_restored": true
+    },
+    {
+      "id": "vision-timeout-stale-cache",
+      "status": "PASS",
+      "stale_person_cleared": true,
+      "timed_out_target": null,
+      "callback_count": 1
+    },
+    {
+      "id": "vision-resume-late-response",
+      "status": "PASS",
+      "recovered_target": "a8b01341f547443ca0d3cd3310a6014a:human:1",
+      "epoch": "a8b01341f547443ca0d3cd3310a6014a",
+      "late_response_ignored": true,
+      "original_callback_count": 1
+    },
+    {
+      "id": "vision-restart-new-epoch",
+      "status": "PASS",
+      "old_epoch": "a8b01341f547443ca0d3cd3310a6014a",
+      "new_epoch": "7d0152f0ea4f4125ab23753e2c9cd1b5",
+      "selected_target": "7d0152f0ea4f4125ab23753e2c9cd1b5:human:1",
+      "old_target_ids_absent": true,
+      "same_service_client_reconnected": true
+    }
+  ],
+  "service_calls": [
+    {
+      "task": "start_listening",
+      "params": {},
+      "success": true,
+      "result": {
+        "ok": true,
+        "listening": true,
+        "interaction_id": "109a54481e3b49fcb8c870bdc56ff7e2"
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "start_listening",
+      "params": {
+        "expected_interaction_id": "109a54481e3b49fcb8c870bdc56ff7e2"
+      },
+      "success": true,
+      "result": {
+        "ok": true,
+        "listening": true,
+        "interaction_id": "109a54481e3b49fcb8c870bdc56ff7e2"
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "hold_interaction",
+      "params": {
+        "interaction_id": "109a54481e3b49fcb8c870bdc56ff7e2",
+        "hold_token": "scenario-token",
+        "lease_sec": 8.0,
+        "reason": "scenario test"
+      },
+      "success": true,
+      "result": {
+        "ok": true,
+        "interaction_id": "109a54481e3b49fcb8c870bdc56ff7e2",
+        "hold_token": "scenario-token",
+        "held": true,
+        "renewed": false,
+        "lease_sec": 8.0,
+        "expires_in_sec": 8.0
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "get_interaction_state",
+      "params": {},
+      "success": true,
+      "result": {
+        "ok": true,
+        "listening": true,
+        "interaction_active": true,
+        "interaction_id": "109a54481e3b49fcb8c870bdc56ff7e2",
+        "state": "attention",
+        "idle_timeout_sec": 3.0,
+        "refresh_on_any_speech": false,
+        "idle_elapsed_sec": 3.461035565000202,
+        "max_duration_sec": 0.0,
+        "active_elapsed_sec": 3.4913628560025245,
+        "last_activity_reason": "start_listening",
+        "hold_active": true,
+        "holds": [
+          {
+            "hold_token": "scenario-token",
+            "reason": "scenario test",
+            "expires_in_sec": 4.569669481999881
+          }
+        ]
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "hold_interaction",
+      "params": {
+        "interaction_id": "109a54481e3b49fcb8c870bdc56ff7e2",
+        "hold_token": "scenario-token",
+        "lease_sec": 8.0,
+        "reason": "scenario test"
+      },
+      "success": true,
+      "result": {
+        "ok": true,
+        "interaction_id": "109a54481e3b49fcb8c870bdc56ff7e2",
+        "hold_token": "scenario-token",
+        "held": true,
+        "renewed": true,
+        "lease_sec": 8.0,
+        "expires_in_sec": 8.0
+      },
+      "error": "",
+      "elapsed_seconds": 0.031
+    },
+    {
+      "task": "stop_listening",
+      "params": {},
+      "success": true,
+      "result": {
+        "ok": true,
+        "listening": false,
+        "ended": true
+      },
+      "error": "",
+      "elapsed_seconds": 0.031
+    },
+    {
+      "task": "start_listening",
+      "params": {},
+      "success": true,
+      "result": {
+        "ok": true,
+        "listening": true,
+        "interaction_id": "22263a52f26b408ea8f7eb5cc3a0e55c"
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "hold_interaction",
+      "params": {
+        "interaction_id": "22263a52f26b408ea8f7eb5cc3a0e55c",
+        "hold_token": "scenario-token",
+        "lease_sec": 8.0,
+        "reason": "scenario test"
+      },
+      "success": true,
+      "result": {
+        "ok": true,
+        "interaction_id": "22263a52f26b408ea8f7eb5cc3a0e55c",
+        "hold_token": "scenario-token",
+        "held": true,
+        "renewed": false,
+        "lease_sec": 8.0,
+        "expires_in_sec": 8.0
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "start_listening",
+      "params": {
+        "expected_interaction_id": "109a54481e3b49fcb8c870bdc56ff7e2"
+      },
+      "success": false,
+      "result": {
+        "ok": false,
+        "error": "expected_interaction_id mismatch"
+      },
+      "error": "expected_interaction_id mismatch",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "hold_interaction",
+      "params": {
+        "interaction_id": "109a54481e3b49fcb8c870bdc56ff7e2",
+        "hold_token": "scenario-token",
+        "lease_sec": 8.0,
+        "reason": "scenario test"
+      },
+      "success": false,
+      "result": {
+        "ok": false,
+        "error": "interaction_id mismatch"
+      },
+      "error": "interaction_id mismatch",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "release_interaction_hold",
+      "params": {
+        "interaction_id": "109a54481e3b49fcb8c870bdc56ff7e2",
+        "hold_token": "scenario-token",
+        "lease_sec": 8.0,
+        "reason": "scenario test"
+      },
+      "success": false,
+      "result": {
+        "ok": false,
+        "error": "interaction_id mismatch"
+      },
+      "error": "interaction_id mismatch",
+      "elapsed_seconds": 0.031
+    },
+    {
+      "task": "get_interaction_state",
+      "params": {},
+      "success": true,
+      "result": {
+        "ok": true,
+        "listening": true,
+        "interaction_active": true,
+        "interaction_id": "22263a52f26b408ea8f7eb5cc3a0e55c",
+        "state": "attention",
+        "idle_timeout_sec": 3.0,
+        "refresh_on_any_speech": false,
+        "idle_elapsed_sec": 0.1528586489985173,
+        "max_duration_sec": 0.0,
+        "active_elapsed_sec": 0.1528586489985173,
+        "last_activity_reason": "interaction_start",
+        "hold_active": true,
+        "holds": [
+          {
+            "hold_token": "scenario-token",
+            "reason": "scenario test",
+            "expires_in_sec": 7.87803211299979
+          }
+        ]
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "release_interaction_hold",
+      "params": {
+        "interaction_id": "22263a52f26b408ea8f7eb5cc3a0e55c",
+        "hold_token": "scenario-token",
+        "reset_idle_timer": true
+      },
+      "success": true,
+      "result": {
+        "ok": true,
+        "interaction_id": "22263a52f26b408ea8f7eb5cc3a0e55c",
+        "hold_token": "scenario-token",
+        "held": false,
+        "released": true,
+        "idle_timer_reset": true
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "release_interaction_hold",
+      "params": {
+        "interaction_id": "22263a52f26b408ea8f7eb5cc3a0e55c",
+        "hold_token": "scenario-token",
+        "reset_idle_timer": true
+      },
+      "success": true,
+      "result": {
+        "ok": true,
+        "interaction_id": "22263a52f26b408ea8f7eb5cc3a0e55c",
+        "hold_token": "scenario-token",
+        "held": false,
+        "released": false,
+        "idle_timer_reset": false
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "hold_interaction",
+      "params": {
+        "interaction_id": "22263a52f26b408ea8f7eb5cc3a0e55c",
+        "hold_token": "scenario-token",
+        "lease_sec": 0.8,
+        "reason": "scenario test"
+      },
+      "success": true,
+      "result": {
+        "ok": true,
+        "interaction_id": "22263a52f26b408ea8f7eb5cc3a0e55c",
+        "hold_token": "scenario-token",
+        "held": true,
+        "renewed": false,
+        "lease_sec": 0.8,
+        "expires_in_sec": 0.8
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "get_interaction_state",
+      "params": {},
+      "success": true,
+      "result": {
+        "ok": true,
+        "listening": true,
+        "interaction_active": true,
+        "interaction_id": "22263a52f26b408ea8f7eb5cc3a0e55c",
+        "state": "attention",
+        "idle_timeout_sec": 3.0,
+        "refresh_on_any_speech": false,
+        "idle_elapsed_sec": 1.1918890300003113,
+        "max_duration_sec": 0.0,
+        "active_elapsed_sec": 1.3755376570006774,
+        "last_activity_reason": "interaction_hold_release",
+        "hold_active": false,
+        "holds": []
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "get_interaction_state",
+      "params": {},
+      "success": true,
+      "result": {
+        "ok": true,
+        "listening": false,
+        "interaction_active": false,
+        "interaction_id": "",
+        "state": "idle",
+        "idle_timeout_sec": 3.0,
+        "refresh_on_any_speech": false,
+        "idle_elapsed_sec": 0.0,
+        "max_duration_sec": 0.0,
+        "active_elapsed_sec": 0.0,
+        "last_activity_reason": "interaction_hold_release",
+        "hold_active": false,
+        "holds": []
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "start_listening",
+      "params": {},
+      "success": true,
+      "result": {
+        "ok": true,
+        "listening": true,
+        "interaction_id": "4c29f18ce64444de87e95b7b9bdc3e6b"
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "hold_interaction",
+      "params": {
+        "interaction_id": "4c29f18ce64444de87e95b7b9bdc3e6b",
+        "hold_token": "scenario-token",
+        "lease_sec": 8.0,
+        "reason": "scenario test"
+      },
+      "success": true,
+      "result": {
+        "ok": true,
+        "interaction_id": "4c29f18ce64444de87e95b7b9bdc3e6b",
+        "hold_token": "scenario-token",
+        "held": true,
+        "renewed": false,
+        "lease_sec": 8.0,
+        "expires_in_sec": 8.0
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "get_interaction_state",
+      "params": {},
+      "success": true,
+      "result": {
+        "ok": true,
+        "listening": false,
+        "interaction_active": false,
+        "interaction_id": "",
+        "state": "idle",
+        "idle_timeout_sec": 3.0,
+        "refresh_on_any_speech": false,
+        "idle_elapsed_sec": 0.0,
+        "max_duration_sec": 0.0,
+        "active_elapsed_sec": 0.0,
+        "last_activity_reason": "",
+        "hold_active": false,
+        "holds": []
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "start_listening",
+      "params": {},
+      "success": true,
+      "result": {
+        "ok": true,
+        "listening": true,
+        "interaction_id": "ec71eaeed4e9484fbbe9dded9fed9e62"
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "hold_interaction",
+      "params": {
+        "interaction_id": "4c29f18ce64444de87e95b7b9bdc3e6b",
+        "hold_token": "scenario-token",
+        "lease_sec": 8.0,
+        "reason": "scenario test"
+      },
+      "success": false,
+      "result": {
+        "ok": false,
+        "error": "interaction_id mismatch"
+      },
+      "error": "interaction_id mismatch",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "release_interaction_hold",
+      "params": {
+        "interaction_id": "4c29f18ce64444de87e95b7b9bdc3e6b",
+        "hold_token": "scenario-token",
+        "lease_sec": 8.0,
+        "reason": "scenario test"
+      },
+      "success": false,
+      "result": {
+        "ok": false,
+        "error": "interaction_id mismatch"
+      },
+      "error": "interaction_id mismatch",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "get_interaction_state",
+      "params": {},
+      "success": true,
+      "result": {
+        "ok": true,
+        "listening": true,
+        "interaction_active": true,
+        "interaction_id": "ec71eaeed4e9484fbbe9dded9fed9e62",
+        "state": "attention",
+        "idle_timeout_sec": 3.0,
+        "refresh_on_any_speech": false,
+        "idle_elapsed_sec": 0.09131694600000628,
+        "max_duration_sec": 0.0,
+        "active_elapsed_sec": 0.09131694600000628,
+        "last_activity_reason": "interaction_start",
+        "hold_active": false,
+        "holds": []
+      },
+      "error": "",
+      "elapsed_seconds": 0.03
+    },
+    {
+      "task": "query_targets",
+      "params": {
+        "target_types": [
+          "human"
+        ]
+      },
+      "success": true,
+      "result": {
+        "ok": true,
+        "schema_version": 1,
+        "header": {
+          "stamp": 1790772664.460028,
+          "frame_id": "camera_link"
+        },
+        "vision_epoch": "a8b01341f547443ca0d3cd3310a6014a",
+        "sequence": 95,
+        "snapshot_id": "a8b01341f547443ca0d3cd3310a6014a:95",
+        "snapshot_age_ms": 99.1,
+        "targets": [
+          {
+            "vision_epoch": "a8b01341f547443ca0d3cd3310a6014a",
+            "target_id": "a8b01341f547443ca0d3cd3310a6014a:human:1",
+            "target_type": "human",
+            "track_id": 1,
+            "face_track_id": -1,
+            "identity": "unknown",
+            "identity_confidence": 0.0,
+            "identity_state": "unverified",
+            "speaker_id": "unknown",
+            "is_speaking": false,
+            "is_registered": false,
+            "bbox": [
+              0.25,
+              0.1,
+              0.4,
+              0.8
+            ],
+            "face_bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "face_center": [
+              0.0,
+              0.0
+            ],
+            "body_center": [
+              0.45,
+              0.5
+            ],
+            "pose_state": "standing",
+            "pose_action": "",
+            "pose_action_label": "",
+            "keypoint_format": "mediapipe_33",
+            "keypoints": [],
+            "confidence": 0.8,
+            "detection_confidence": 0.8,
+            "face_confidence": 0.0,
+            "speaker_confidence": 0.0,
+            "selection_reason": "largest visual target",
+            "tracking_state": "tracking",
+            "last_seen_age_ms": 99.5,
+            "range_valid": false,
+            "distance_m": null,
+            "pose_3d": {
+              "valid": false,
+              "frame_id": "",
+              "x": null,
+              "y": null,
+              "z": null
+            },
+            "center": [
+              0.45,
+              0.5
+            ],
+            "bearing_deg": -3.45,
+            "bearing_valid": true,
+            "bearing_source": "configured_hfov",
+            "range_source": "none",
+            "depth_sync_delta_ms": null,
+            "held_object": {
+              "state": "inactive",
+              "action": "",
+              "action_label": "",
+              "candidate_action": "",
+              "object_label": "",
+              "object_track_id": -1,
+              "hand_source": "",
+              "association_score": 0.0,
+              "wrist_distance_ratio": null,
+              "evidence_hits": 0,
+              "required_hits": 2,
+              "last_positive_age_ms": null,
+              "object_result_sequence": 18,
+              "rejection_reason": "no_valid_wrist",
+              "evaluated_object_label": "",
+              "evaluated_object_confidence": 0.0,
+              "pose_object_sync_delta_ms": null,
+              "valid_wrist_count": 0,
+              "evaluated_wrist_distance_ratio": null,
+              "wrist_distance_threshold_ratio": 0.16
+            }
+          }
+        ],
+        "human_candidates": [
+          {
+            "vision_epoch": "a8b01341f547443ca0d3cd3310a6014a",
+            "target_id": "a8b01341f547443ca0d3cd3310a6014a:human:1",
+            "target_type": "human",
+            "track_id": 1,
+            "face_track_id": -1,
+            "identity": "unknown",
+            "identity_confidence": 0.0,
+            "identity_state": "unverified",
+            "speaker_id": "unknown",
+            "is_speaking": false,
+            "is_registered": false,
+            "bbox": [
+              0.25,
+              0.1,
+              0.4,
+              0.8
+            ],
+            "face_bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "face_center": [
+              0.0,
+              0.0
+            ],
+            "body_center": [
+              0.45,
+              0.5
+            ],
+            "pose_state": "standing",
+            "pose_action": "",
+            "pose_action_label": "",
+            "keypoint_format": "mediapipe_33",
+            "keypoints": [],
+            "confidence": 0.8,
+            "detection_confidence": 0.8,
+            "face_confidence": 0.0,
+            "speaker_confidence": 0.0,
+            "selection_reason": "largest visual target",
+            "tracking_state": "tracking",
+            "last_seen_age_ms": 99.5,
+            "range_valid": false,
+            "distance_m": null,
+            "pose_3d": {
+              "valid": false,
+              "frame_id": "",
+              "x": null,
+              "y": null,
+              "z": null
+            },
+            "center": [
+              0.45,
+              0.5
+            ],
+            "bearing_deg": -3.45,
+            "bearing_valid": true,
+            "bearing_source": "configured_hfov",
+            "range_source": "none",
+            "depth_sync_delta_ms": null,
+            "held_object": {
+              "state": "inactive",
+              "action": "",
+              "action_label": "",
+              "candidate_action": "",
+              "object_label": "",
+              "object_track_id": -1,
+              "hand_source": "",
+              "association_score": 0.0,
+              "wrist_distance_ratio": null,
+              "evidence_hits": 0,
+              "required_hits": 2,
+              "last_positive_age_ms": null,
+              "object_result_sequence": 18,
+              "rejection_reason": "no_valid_wrist",
+              "evaluated_object_label": "",
+              "evaluated_object_confidence": 0.0,
+              "pose_object_sync_delta_ms": null,
+              "valid_wrist_count": 0,
+              "evaluated_wrist_distance_ratio": null,
+              "wrist_distance_threshold_ratio": 0.16
+            }
+          }
+        ],
+        "animal_candidates": [],
+        "object_candidates": [],
+        "active_target": {
+          "vision_epoch": "a8b01341f547443ca0d3cd3310a6014a",
+          "target_id": "a8b01341f547443ca0d3cd3310a6014a:human:1",
+          "target_type": "human",
+          "track_id": 1,
+          "face_track_id": -1,
+          "identity": "unknown",
+          "identity_confidence": 0.0,
+          "identity_state": "unverified",
+          "speaker_id": "unknown",
+          "is_speaking": false,
+          "is_registered": false,
+          "bbox": [
+            0.25,
+            0.1,
+            0.4,
+            0.8
+          ],
+          "face_bbox": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "face_center": [
+            0.0,
+            0.0
+          ],
+          "body_center": [
+            0.45,
+            0.5
+          ],
+          "pose_state": "standing",
+          "pose_action": "",
+          "pose_action_label": "",
+          "keypoint_format": "mediapipe_33",
+          "keypoints": [],
+          "confidence": 0.8,
+          "detection_confidence": 0.8,
+          "face_confidence": 0.0,
+          "speaker_confidence": 0.0,
+          "selection_reason": "largest visual target",
+          "tracking_state": "tracking",
+          "last_seen_age_ms": 99.5,
+          "range_valid": false,
+          "distance_m": null,
+          "pose_3d": {
+            "valid": false,
+            "frame_id": "",
+            "x": null,
+            "y": null,
+            "z": null
+          },
+          "center": [
+            0.45,
+            0.5
+          ],
+          "bearing_deg": -3.45,
+          "bearing_valid": true,
+          "bearing_source": "configured_hfov",
+          "range_source": "none",
+          "depth_sync_delta_ms": null,
+          "held_object": {
+            "state": "inactive",
+            "action": "",
+            "action_label": "",
+            "candidate_action": "",
+            "object_label": "",
+            "object_track_id": -1,
+            "hand_source": "",
+            "association_score": 0.0,
+            "wrist_distance_ratio": null,
+            "evidence_hits": 0,
+            "required_hits": 2,
+            "last_positive_age_ms": null,
+            "object_result_sequence": 18,
+            "rejection_reason": "no_valid_wrist",
+            "evaluated_object_label": "",
+            "evaluated_object_confidence": 0.0,
+            "pose_object_sync_delta_ms": null,
+            "valid_wrist_count": 0,
+            "evaluated_wrist_distance_ratio": null,
+            "wrist_distance_threshold_ratio": 0.16
+          }
+        }
+      },
+      "error": "",
+      "elapsed_seconds": 0.031
+    },
+    {
+      "task": "query_targets",
+      "params": {
+        "target_types": [
+          "human"
+        ]
+      },
+      "success": true,
+      "result": {
+        "ok": true,
+        "schema_version": 1,
+        "header": {
+          "stamp": 1790772667.474995,
+          "frame_id": "camera_link"
+        },
+        "vision_epoch": "7d0152f0ea4f4125ab23753e2c9cd1b5",
+        "sequence": 1,
+        "snapshot_id": "7d0152f0ea4f4125ab23753e2c9cd1b5:1",
+        "snapshot_age_ms": 23.1,
+        "targets": [
+          {
+            "vision_epoch": "7d0152f0ea4f4125ab23753e2c9cd1b5",
+            "target_id": "7d0152f0ea4f4125ab23753e2c9cd1b5:human:1",
+            "target_type": "human",
+            "track_id": 1,
+            "face_track_id": -1,
+            "identity": "unknown",
+            "identity_confidence": 0.0,
+            "identity_state": "unverified",
+            "speaker_id": "unknown",
+            "is_speaking": false,
+            "is_registered": false,
+            "bbox": [
+              0.25,
+              0.1,
+              0.4,
+              0.8
+            ],
+            "face_bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "face_center": [
+              0.0,
+              0.0
+            ],
+            "body_center": [
+              0.45,
+              0.5
+            ],
+            "pose_state": "standing",
+            "pose_action": "",
+            "pose_action_label": "",
+            "keypoint_format": "mediapipe_33",
+            "keypoints": [],
+            "confidence": 0.8,
+            "detection_confidence": 0.8,
+            "face_confidence": 0.0,
+            "speaker_confidence": 0.0,
+            "selection_reason": "largest visual target",
+            "tracking_state": "tracking",
+            "last_seen_age_ms": 23.6,
+            "range_valid": false,
+            "distance_m": null,
+            "pose_3d": {
+              "valid": false,
+              "frame_id": "",
+              "x": null,
+              "y": null,
+              "z": null
+            },
+            "center": [
+              0.45,
+              0.5
+            ],
+            "bearing_deg": -3.45,
+            "bearing_valid": true,
+            "bearing_source": "configured_hfov",
+            "range_source": "none",
+            "depth_sync_delta_ms": null,
+            "held_object": {
+              "state": "inactive",
+              "action": "",
+              "action_label": "",
+              "candidate_action": "",
+              "object_label": "",
+              "object_track_id": -1,
+              "hand_source": "",
+              "association_score": 0.0,
+              "wrist_distance_ratio": null,
+              "evidence_hits": 0,
+              "required_hits": 2,
+              "last_positive_age_ms": null,
+              "object_result_sequence": 0,
+              "rejection_reason": "not_evaluated",
+              "evaluated_object_label": "",
+              "evaluated_object_confidence": 0.0,
+              "pose_object_sync_delta_ms": null,
+              "valid_wrist_count": 0,
+              "evaluated_wrist_distance_ratio": null,
+              "wrist_distance_threshold_ratio": 0.16
+            }
+          }
+        ],
+        "human_candidates": [
+          {
+            "vision_epoch": "7d0152f0ea4f4125ab23753e2c9cd1b5",
+            "target_id": "7d0152f0ea4f4125ab23753e2c9cd1b5:human:1",
+            "target_type": "human",
+            "track_id": 1,
+            "face_track_id": -1,
+            "identity": "unknown",
+            "identity_confidence": 0.0,
+            "identity_state": "unverified",
+            "speaker_id": "unknown",
+            "is_speaking": false,
+            "is_registered": false,
+            "bbox": [
+              0.25,
+              0.1,
+              0.4,
+              0.8
+            ],
+            "face_bbox": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "face_center": [
+              0.0,
+              0.0
+            ],
+            "body_center": [
+              0.45,
+              0.5
+            ],
+            "pose_state": "standing",
+            "pose_action": "",
+            "pose_action_label": "",
+            "keypoint_format": "mediapipe_33",
+            "keypoints": [],
+            "confidence": 0.8,
+            "detection_confidence": 0.8,
+            "face_confidence": 0.0,
+            "speaker_confidence": 0.0,
+            "selection_reason": "largest visual target",
+            "tracking_state": "tracking",
+            "last_seen_age_ms": 23.6,
+            "range_valid": false,
+            "distance_m": null,
+            "pose_3d": {
+              "valid": false,
+              "frame_id": "",
+              "x": null,
+              "y": null,
+              "z": null
+            },
+            "center": [
+              0.45,
+              0.5
+            ],
+            "bearing_deg": -3.45,
+            "bearing_valid": true,
+            "bearing_source": "configured_hfov",
+            "range_source": "none",
+            "depth_sync_delta_ms": null,
+            "held_object": {
+              "state": "inactive",
+              "action": "",
+              "action_label": "",
+              "candidate_action": "",
+              "object_label": "",
+              "object_track_id": -1,
+              "hand_source": "",
+              "association_score": 0.0,
+              "wrist_distance_ratio": null,
+              "evidence_hits": 0,
+              "required_hits": 2,
+              "last_positive_age_ms": null,
+              "object_result_sequence": 0,
+              "rejection_reason": "not_evaluated",
+              "evaluated_object_label": "",
+              "evaluated_object_confidence": 0.0,
+              "pose_object_sync_delta_ms": null,
+              "valid_wrist_count": 0,
+              "evaluated_wrist_distance_ratio": null,
+              "wrist_distance_threshold_ratio": 0.16
+            }
+          }
+        ],
+        "animal_candidates": [],
+        "object_candidates": [],
+        "active_target": {
+          "vision_epoch": "7d0152f0ea4f4125ab23753e2c9cd1b5",
+          "target_id": "7d0152f0ea4f4125ab23753e2c9cd1b5:human:1",
+          "target_type": "human",
+          "track_id": 1,
+          "face_track_id": -1,
+          "identity": "unknown",
+          "identity_confidence": 0.0,
+          "identity_state": "unverified",
+          "speaker_id": "unknown",
+          "is_speaking": false,
+          "is_registered": false,
+          "bbox": [
+            0.25,
+            0.1,
+            0.4,
+            0.8
+          ],
+          "face_bbox": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "face_center": [
+            0.0,
+            0.0
+          ],
+          "body_center": [
+            0.45,
+            0.5
+          ],
+          "pose_state": "standing",
+          "pose_action": "",
+          "pose_action_label": "",
+          "keypoint_format": "mediapipe_33",
+          "keypoints": [],
+          "confidence": 0.8,
+          "detection_confidence": 0.8,
+          "face_confidence": 0.0,
+          "speaker_confidence": 0.0,
+          "selection_reason": "largest visual target",
+          "tracking_state": "tracking",
+          "last_seen_age_ms": 23.7,
+          "range_valid": false,
+          "distance_m": null,
+          "pose_3d": {
+            "valid": false,
+            "frame_id": "",
+            "x": null,
+            "y": null,
+            "z": null
+          },
+          "center": [
+            0.45,
+            0.5
+          ],
+          "bearing_deg": -3.45,
+          "bearing_valid": true,
+          "bearing_source": "configured_hfov",
+          "range_source": "none",
+          "depth_sync_delta_ms": null,
+          "held_object": {
+            "state": "inactive",
+            "action": "",
+            "action_label": "",
+            "candidate_action": "",
+            "object_label": "",
+            "object_track_id": -1,
+            "hand_source": "",
+            "association_score": 0.0,
+            "wrist_distance_ratio": null,
+            "evidence_hits": 0,
+            "required_hits": 2,
+            "last_positive_age_ms": null,
+            "object_result_sequence": 0,
+            "rejection_reason": "not_evaluated",
+            "evaluated_object_label": "",
+            "evaluated_object_confidence": 0.0,
+            "pose_object_sync_delta_ms": null,
+            "valid_wrist_count": 0,
+            "evaluated_wrist_distance_ratio": null,
+            "wrist_distance_threshold_ratio": 0.16
+          }
+        }
+      },
+      "error": "",
+      "elapsed_seconds": 0.031
+    }
+  ],
+  "processes": [
+    {
+      "name": "voice-1",
+      "pid": 91160,
+      "returncode": 0,
+      "reaped": true,
+      "forced": false
+    },
+    {
+      "name": "vision-1",
+      "pid": 91161,
+      "returncode": 0,
+      "reaped": true,
+      "forced": false
+    },
+    {
+      "name": "voice-2",
+      "pid": 91246,
+      "returncode": 0,
+      "reaped": true,
+      "forced": false
+    },
+    {
+      "name": "vision-2",
+      "pid": 91295,
+      "returncode": 0,
+      "reaped": true,
+      "forced": false
+    }
+  ],
+  "provenance": {
+    "behavior": {
+      "installed": true,
+      "module": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/perception_client_adapter.py",
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python"
+    },
+    "voice-1": {
+      "installed": true,
+      "module": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_voice_interaction/lib/python3.10/site-packages/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/voice/.venv/bin/python"
+    },
+    "vision-1": {
+      "installed": true,
+      "module": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_vision_interaction/lib/python3.10/site-packages/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/bin/python"
+    },
+    "voice-2": {
+      "installed": true,
+      "module": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_voice_interaction/lib/python3.10/site-packages/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/voice/.venv/bin/python"
+    },
+    "vision-2": {
+      "installed": true,
+      "module": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_vision_interaction/lib/python3.10/site-packages/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/bin/python"
+    }
+  },
+  "config_sha256": {
+    "voice": "f4e612c3ccf25fdb229f8eec725a9782d5616c6fc83afa97224efb905403ccd5",
+    "vision": "b65f67e32231e8b6aa7264635e218da9943b93f4917897b689c8d8a8ed81aec8"
+  },
+  "real_bt_adapter": true,
+  "no_hardware_publishers": true,
+  "run_directory": "/home/elephant/MarsDog/marsdog-platform/out/voice-action-trial/recovery-after/20260930T125054136582Z",
+  "source_sha256": "7f8ef438fbcf1c3d07b197e45bb33aa640008119a81157e09436463b9b693435",
+  "probe_returncode": 0,
+  "command": [
+    "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+    "-B",
+    "/home/elephant/MarsDog/marsdog-platform/integration/scenarios/perception_recovery_probe.py",
+    "--output",
+    "/home/elephant/MarsDog/marsdog-platform/out/voice-action-trial/recovery-after/20260930T125054136582Z",
+    "--install",
+    "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install"
+  ],
+  "scope": "Installed Voice/Vision mock nodes and real BT perception adapter; ROS DDS and services; no hardware/models/full BT arbitration"
+}

@@ -2573,6 +2573,8 @@ class VisionInteractionNode(Node):
 
 
 def main(args: list[str] | None = None) -> None:
+    from rclpy._rclpy_pybind11 import RCLError
+
     rclpy.init(args=args)
     node = VisionInteractionNode()
     executor = MultiThreadedExecutor(num_threads=4)
@@ -2581,6 +2583,12 @@ def main(args: list[str] | None = None) -> None:
         executor.spin()
     except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
         pass
+    except RCLError as exc:
+        # Humble's signal handler can close the context after the executor's
+        # readiness check but before its next native wait-set construction.
+        # Preserve all live-context errors and unrelated callback failures.
+        if rclpy.ok() or "failed to initialize wait set: the given context is not valid" not in str(exc):
+            raise
     finally:
         executor.shutdown(timeout_sec=2.0)
         node.destroy_node()

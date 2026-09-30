@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "-B",
+    "tools/marsdog.py",
+    "build"
+  ],
+  "cwd": "/home/elephant/MarsDog/marsdog-platform",
+  "started_utc": "2026-09-30T12:50:01.674985+00:00",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "env": {
+    "UV_CACHE_DIR": "/home/elephant/MarsDog/migration/.cache/uv"
+  },
+  "source_commit": "ef5c35d1836bed5a5a6aa7682745423f0bef6062",
+  "source_status": " M modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py\n?? modules/vision/tests/test_node_shutdown.py\n",
+  "returncode": 0,
+  "duration_seconds": 8.64,
+  "status": "PASS"
+}

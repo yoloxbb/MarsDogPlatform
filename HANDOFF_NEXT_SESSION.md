@@ -10,7 +10,7 @@ P7、五模块兼容性重构 R1–R4，以及后续业务恢复/导航交接/�
 - 唯一主仓：/home/elephant/MarsDog/marsdog-platform（WSL Ubuntu-22.04）。
 - P7 工程源码：2468639054763398882366bad7869236c0d2e68e；交付基线 3f50614。
 - 当前开发主线：main；软件验收基线标签 acceptance/five-module-software-20260930。
-  main 已快进接收 1835707，随后只追加主线文档和证据。原 refactor/audio-contracts
+  main 收口时快进接收 1835707，只追加主线文档和证据；之后的 Vision 退出修复见下。原 refactor/audio-contracts
   保留在 1835707；收口证据在 validation/mainline-acceptance。R1 提交与证据以 git log 和
   validation/compat-refactor/r1 为准；R2–R4 证据在 validation/compat-refactor/r2-r4，
   最新提交以 git log 为准。不能将旧 P7 bundle 当作最新源码。
@@ -83,6 +83,20 @@ Vision 暂停超时/陈旧缓存、恢复后迟到回复不重复完成、重启
 本轮业务模块、导航/避障、IDL、生产配置、依赖锁和运动门限未改。
 不把 mock 进程暂停描述为真实相机断流，不把 source package 作为完整离线依赖镜像。
 已准备好导航负责人交接文档，没有发送外部消息。
+
+## 最近 ASR / Action 试用
+
+用户试用时发现原 CPU flow 在 Vision 退出阶段触发 Humble wait-set / context 竞态。
+已精确处理仅发生在 context 关闭后的对应 RCLError；其他运行错误仍失败。
+八种回归从 1 fail / 7 pass 到全通过；Vision 297 pass / 3 RGA skip，
+平台/视觉/任务/wheel/build、真实 CPU flow 与七项恢复通过。证据：
+validation/voice-action-trial/README.md。原 mainline 标签和旧包固定不变，
+此修复是基线之后的普通功能分支增量，不能再声称最新 main 只有文档变化。
+
+当前启动说明见 docs/CPU_SOFTWARE_FLOW.md。已有入口为固定分段回放：
+一条真实普通 WAV + 明确文本命令，回家文本可到 Action 并模拟导航成功；
+尚未验证真实麦克风/用户音频口令到动作。WSL 缺 PortAudio，PATH 无 arecord；
+设备探测未录音，没有放宽 Lite3 动作限制。
 
 ## 后续工作
 

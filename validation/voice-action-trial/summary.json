@@ -1,0 +1,50 @@
+{
+  "status": "PASS",
+  "baseline_commit": "ef5c35d1836bed5a5a6aa7682745423f0bef6062",
+  "source_sha256": {
+    "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py": "869efb0ae894e4451a488b86332ebd9de26d18eab5e4932522b301a7f4cc8109",
+    "modules/vision/tests/test_node_shutdown.py": "f51dc2594c87127e71f676cb4eb526c1426b95fe4864d6f8281ac6a73760e113"
+  },
+  "before": {
+    "status": "FAIL",
+    "pipeline_observer": "PASS",
+    "failure": "Vision shutdown RCLError, invalid context during wait-set creation",
+    "exit_code": 1
+  },
+  "after": {
+    "status": "PASS",
+    "real_asr_wavs": 1,
+    "explicit_text_inputs": 7,
+    "navigation_command": "text fixture: 回家",
+    "action_result": "go_home SUCCESS with simulated navigation",
+    "component_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "all_recorded_pids_gone": true
+  },
+  "regressions": {
+    "before_fix": "1 failed, 7 passed",
+    "vision_after": "297 passed, 3 RGA skips",
+    "platform": 79,
+    "visual_contracts": 33,
+    "task_contracts_per_module": 18,
+    "recovery_scenarios": 7,
+    "vision_wheel": "PASS"
+  },
+  "hardware_acceptance": false,
+  "model_acceptance": false,
+  "microphone_probe": {
+    "sounddevice_import": "PortAudio library not found",
+    "arecord_in_path": false,
+    "recording_started": false
+  },
+  "audio_command_end_to_end_verified": false
+}

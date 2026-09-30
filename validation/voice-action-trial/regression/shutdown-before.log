@@ -1,0 +1,68 @@
+F.......                                                                 [100%]
+=================================== FAILURES ===================================
+____ test_shutdown_only_accepts_closed_context_wait_set[False-error0-None] _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x779b26756800>
+context_ok = False
+error = RCLError('failed to initialize wait set: the given context is not valid, either rcl_init() was not called or rcl_shutdown() was called., at ./src/rcl/wait.c:130')
+expected = None
+
+    @pytest.mark.parametrize(
+        "context_ok,error,expected",
+        [
+            (False, RCLError(WAIT_SET_CLOSED), None),
+            (True, RCLError(WAIT_SET_CLOSED), RCLError),
+            (False, RCLError("publisher failed"), RCLError),
+            (True, RCLError("publisher failed"), RCLError),
+            (False, RuntimeError("callback failed"), RuntimeError),
+            (True, RuntimeError("callback failed"), RuntimeError),
+            (False, ExternalShutdownException(), None),
+            (True, KeyboardInterrupt(), None),
+        ],
+    )
+    def test_shutdown_only_accepts_closed_context_wait_set(monkeypatch, context_ok, error, expected):
+        node = Mock()
+        executor = Mock()
+        executor.spin.side_effect = error
+        init = Mock()
+        shutdown = Mock()
+        monkeypatch.setattr(entry, "VisionInteractionNode", Mock(return_value=node))
+        monkeypatch.setattr(entry, "MultiThreadedExecutor", Mock(return_value=executor))
+        monkeypatch.setattr(entry.rclpy, "init", init)
+        monkeypatch.setattr(entry.rclpy, "ok", Mock(return_value=context_ok))
+        monkeypatch.setattr(entry.rclpy, "shutdown", shutdown)
+        if expected:
+            with pytest.raises(expected) as caught:
+                entry.main(args=[])
+            assert caught.value is error
+        else:
+>           entry.main(args=[])
+
+tests/test_node_shutdown.py:45: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+marsdog_vision_interaction/nodes/vision_interaction_node.py:2581: in main
+    executor.spin()
+/usr/lib/python3.10/unittest/mock.py:1114: in __call__
+    return self._mock_call(*args, **kwargs)
+/usr/lib/python3.10/unittest/mock.py:1118: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Mock name='mock.spin' id='131508248861504'>, args = (), kwargs = {}
+effect = RCLError('failed to initialize wait set: the given context is not valid, either rcl_init() was not called or rcl_shutdown() was called., at ./src/rcl/wait.c:130')
+
+    def _execute_mock_call(self, /, *args, **kwargs):
+        # separate from _increment_mock_call so that awaited functions are
+        # executed separately from their call, also AsyncMock overrides this method
+    
+        effect = self.side_effect
+        if effect is not None:
+            if _is_exception(effect):
+>               raise effect
+E               rclpy._rclpy_pybind11.RCLError: failed to initialize wait set: the given context is not valid, either rcl_init() was not called or rcl_shutdown() was called., at ./src/rcl/wait.c:130
+
+/usr/lib/python3.10/unittest/mock.py:1173: RCLError
+- generated xml file: /home/elephant/MarsDog/marsdog-platform/out/voice-action-trial/shutdown-before.xml -
+=========================== short test summary info ============================
+FAILED tests/test_node_shutdown.py::test_shutdown_only_accepts_closed_context_wait_set[False-error0-None]
+1 failed, 7 passed in 0.31s

@@ -1,0 +1,52 @@
+{
+  "status": "PASS",
+  "scope": "real module compatibility; pure test transport, no hardware",
+  "baseline_commit": "66c7eaa",
+  "baseline_sha256": "292771052ba781b640148449860c1838226b9b3595edc5ee5d537517a37d15bb",
+  "provenance": {
+    "vision": {
+      "stage": "vision",
+      "pid": 89380,
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/bin/python",
+      "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv",
+      "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/vision/marsdog_vision_interaction/messages/visual_event.py",
+      "foreign_business_modules": [],
+      "ros_importable": false
+    },
+    "behavior": {
+      "stage": "behavior",
+      "pid": 89408,
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+      "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv",
+      "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/marsdog_behavior/ros_node.py",
+      "foreign_business_modules": [],
+      "ros_importable": false
+    },
+    "emotion": {
+      "stage": "emotion",
+      "pid": 90476,
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+      "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv",
+      "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/marsdog_core/emotion_system.py",
+      "foreign_business_modules": [],
+      "ros_importable": false
+    },
+    "action": {
+      "stage": "action",
+      "pid": 90507,
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/action/.venv/bin/python",
+      "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/action/.venv",
+      "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/action/marsdog_action_executor/ros_node.py",
+      "foreign_business_modules": [],
+      "ros_importable": false
+    }
+  },
+  "scenarios": 33,
+  "stage_observations": {
+    "vision": 7,
+    "behavior": 33,
+    "emotion": 33,
+    "action": 33
+  },
+  "skipped": 0
+}
