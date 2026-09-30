@@ -1,0 +1,30 @@
+{
+  "commit": "3bf529ec9c3ddbccfeef4cd3bfefaebb7f260adf",
+  "files": {
+    ".github/pull_request_template.md": "50526cb56ff420df5a0050d63178d1ff616adadf425fccf1542f0a01635c56cf",
+    ".github/workflows/action.yml": "76135929255cde88f99f57796c11085f940fc03e0b82744bde07a7eda04d11b4",
+    ".github/workflows/behavior.yml": "672744c5c2efcfba2d8e10111f1f28b3013a0cae99bc793d634e978cbe813f46",
+    ".github/workflows/emotion.yml": "92e64afacc75031960e5e2bb011ce5fad5cf8f1fadcfdf9bfd62bcab9a0fc181",
+    ".github/workflows/platform.yml": "bcd39b75b9cf0ecc642c7ba991f168ad186d902243c7850babe30f83d0bce3b5",
+    ".github/workflows/vision.yml": "f9f4e3c8b9a58ba9eb594c947cd1ddc9e0ea730c905544300539cc4d82fa53cc",
+    ".github/workflows/voice.yml": "e68f576a3a827f199597a4dad1c43e4c2cf54e6de5509a5a32f3d4f458a1b3d6",
+    "AGENTS.md": "5291e8a6cf84fbaf654cbec04ac2de70684b6806d709f6cf09dad687c7826a64",
+    "CONTRIBUTING.md": "df10206b5996ca3298cd1ed83703ef3e4aa0a49aa305756ccd2eb055e9de6073",
+    "HANDOFF_NEXT_SESSION.md": "7dc215a995e769f66189051bdc0967c366f3128d6958e60692fdfd14075cb544",
+    "README.md": "c82c50e4ef245f8918637a75c1ffff036cf1de2feeca583a1924d76b8f0e75e4",
+    "docs/architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md": "25559da4b685d438f0dc00aaeb86cbe92a2b62317318eeb249ed476922f8431c",
+    "docs/deployment/SOURCE_HANDOFF.md": "6920d2b8743742682b57bd1a2a48fc30c6630ecd96d7654b3ad738c8d2f2a4f7",
+    "docs/development/QUICKSTART.md": "e07fe023c1a00dbb0d7a4a96ab7e119db1ea542cba42ae504c02d5a0164d3717",
+    "docs/development/WORKFLOW.md": "b5a2149ad7508b6123a9e0d17d7b62726cd93252f35bcfe3a55fad427e0db55f",
+    "docs/migration/STATUS.md": "dcb0b2a4f6e873b17ff31da5c6b1cbef5f6b387ecbdf39df7dd1f41c4ccfd1aa",
+    "integration/platform/tests/test_developer_workflow.py": "907efcdebf0cab5ce706bda2057405a82961c6fcd6159a9a510f2134b4b41131",
+    "integration/platform/tests/test_source_handoff.py": "4d125205a693b36f5a2b6b8529b0e3d40aa4cf7ee62ec57fe025a45d990f8a4b",
+    "platform/modules.json": "392411bc144223bf7bae7a7d2ed6c5d8cf811a94cb637a19185406c11d92e9fa",
+    "tools/check_extended_ros_build.py": "b2fe80db1bcdba1c2a5715b15177ed4ef01c626122ebdbe39ffff784435f6a14",
+    "tools/dev.py": "5e297b845c7e47170df6ff365f9ca8a4c3da51deccd50a62cd87552f076e119f",
+    "tools/marsdog.py": "3918715826f4d0ac2d8870b51755aabe9e0acf39ae8432be170448aa7eb119d7",
+    "tools/materialize_vendors.py": "79fc72947d37481004c8ec8f93da6c8a4ec78b245a6ff0df7fe8c418cf4157c7",
+    "tools/runtime_environment.py": "e1efbbfc52fb478569f69f5a98f09032eaccc8d98f74dade37ad8ad37008832f",
+    "tools/source_handoff.py": "59d62b3d94799927968dd20f75e82ee10f3bc963b39463867c26eb488ddefffd"
+  }
+}

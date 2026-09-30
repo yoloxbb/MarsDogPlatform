@@ -1,0 +1,144 @@
+[
+  {
+    "name": "inputs",
+    "pid": 746292,
+    "command": [
+      "/tmp/marsdog-developer-platform-2468639/platform/humble-build-tools/.venv/bin/python",
+      "-B",
+      "/tmp/marsdog-developer-platform-2468639/tools/local_inputs.py"
+    ]
+  },
+  {
+    "name": "time",
+    "pid": 746306,
+    "command": [
+      "/tmp/marsdog-developer-platform-2468639/modules/emotion/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_ros2.time_controller_node import main; main()",
+      "--ros-args",
+      "-p",
+      "time_scale:=1",
+      "-p",
+      "virtual_start_time:=10:00"
+    ]
+  },
+  {
+    "name": "personality",
+    "pid": 746331,
+    "command": [
+      "/tmp/marsdog-developer-platform-2468639/modules/emotion/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_ros2.personality_node import main; main()"
+    ]
+  },
+  {
+    "name": "needs",
+    "pid": 746364,
+    "command": [
+      "/tmp/marsdog-developer-platform-2468639/modules/emotion/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_ros2.internal_need_node import main; main()"
+    ]
+  },
+  {
+    "name": "emotion",
+    "pid": 746388,
+    "command": [
+      "/tmp/marsdog-developer-platform-2468639/modules/emotion/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_ros2.emotion_engine_node import main; main()"
+    ]
+  },
+  {
+    "name": "waypoint",
+    "pid": 746411,
+    "command": [
+      "/tmp/marsdog-developer-platform-2468639/platform/humble-build-tools/.venv/bin/python",
+      "-B",
+      "-c",
+      "from waypoint_nav.waypoint_nav_dispatcher import main; main()",
+      "--ros-args",
+      "-p",
+      "waypoints_file:=/tmp/marsdog-developer-platform-2468639/out/local/runs/20260929T151954Z-746159/waypoints.yaml",
+      "-p",
+      "task_store_file:=/tmp/marsdog-developer-platform-2468639/out/local/runs/20260929T151954Z-746159/tasks.sqlite3"
+    ]
+  },
+  {
+    "name": "action",
+    "pid": 746440,
+    "command": [
+      "/tmp/marsdog-developer-platform-2468639/modules/action/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_action_executor.ros_node import main; main()",
+      "--ros-args",
+      "-p",
+      "config_dir:=/tmp/marsdog-developer-platform-2468639/out/local/runs/20260929T151954Z-746159/action-config",
+      "-p",
+      "chassis_type:=lite3",
+      "-p",
+      "lite3_enabled:=true",
+      "-p",
+      "go2_enabled:=false",
+      "-p",
+      "lite3_simulated_io:=true",
+      "-p",
+      "lite3_allow_proxies:=true",
+      "-p",
+      "lite3_allow_unverified:=false",
+      "-p",
+      "uwb_follow_enabled:=false",
+      "-p",
+      "wake_orientation_enabled:=false",
+      "-p",
+      "attention_tracking_enabled:=false",
+      "-p",
+      "target_approach_enabled:=false",
+      "-p",
+      "navigation_enabled:=true"
+    ]
+  },
+  {
+    "name": "vision",
+    "pid": 746457,
+    "command": [
+      "/tmp/marsdog-developer-platform-2468639/modules/vision/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_vision_interaction.nodes.vision_interaction_node import main; main()",
+      "--ros-args",
+      "-p",
+      "config_path:=/tmp/marsdog-developer-platform-2468639/out/local/runs/20260929T151954Z-746159/vision.yaml",
+      "-p",
+      "log_dir:=/tmp/marsdog-developer-platform-2468639/out/local/runs/20260929T151954Z-746159/vision-log"
+    ]
+  },
+  {
+    "name": "behavior",
+    "pid": 746493,
+    "command": [
+      "/tmp/marsdog-developer-platform-2468639/modules/behavior/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_behavior.ros_node import main; main()"
+    ]
+  },
+  {
+    "name": "voice",
+    "pid": 746509,
+    "command": [
+      "/tmp/marsdog-developer-platform-2468639/modules/voice/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_voice_interaction.nodes.voice_interaction_node import main; main()",
+      "--ros-args",
+      "-p",
+      "config_path:=/tmp/marsdog-developer-platform-2468639/out/local/runs/20260929T151954Z-746159/voice.yaml"
+    ]
+  }
+]

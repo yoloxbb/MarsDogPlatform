@@ -1,15 +1,19 @@
-# 当前迁移状态 — 2026-09-29
+# 当前迁移状态 — 2026-09-30
 
 **当前目标：完成统一主仓的团队开发与源码交付闭环；先 WSL2，后开发板/Lite3。**
 五模块/自研 ROS/历史迁移和既有本机软件集成已完成，不重新开始合仓。
 模型精度暂缓；实机、远端 CI 和板端构建分别作为后续外部阶段。
 最新执行计划见 [方案 v2](../architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md) 第 15 节。
 
-**本轮未提交工作：** 开发 CLI、源码 bundle 工具、显式归档路径、开发/协作/交付文档和 CI 复用。
-已运行 dev.py check：架构通过、平台 51 tests / OK；
-日志 out/developer-platform/dev-check-initial.log。
-新 CLI 的各模块真实测试、实际主仓 bundle、独立克隆/交付验收尚待执行。
-Git 基线仍为 3bf529e；以 git status 识别并保留工作区修改。
+**P7a/P7b 已完成。** 工程源码提交 2468639；后续证据/文档提交见 git log。
+本轮已核对保全初始 25 文件并修正 Vision CI 重复 run 键。
+真实源码 bundle/独立克隆、五模块独立 setup/test/干净 wheel、51 平台测试、
+25 结果契约、四 vendor 重建全部通过。干净克隆完成默认 ROS 15 包从零构建、
+doctor/smoke；原 WSL prepare/doctor/smoke/生命周期门禁通过。
+详见 [P7 验收](P7_DEVELOPER_PLATFORM.md) 与
+[冻结证据](../../validation/developer-platform/release-manifest.json)。
+源码验收包 out/handoff/source-bundle-2468639；最终包 out/handoff/source-bundle-final。
+没有业务/锁/IDL/默认配置变更，没有模型精度优化或实机验收。
 
 以下表格是阶段累计记录，其中“本轮”指对应历史阶段，不代表本次全部重新运行。
 统一入口为 tools/marsdog.py。默认配置见 ../LOCAL_LITE3_CPU.md；
@@ -34,7 +38,7 @@ Git 基线仍为 3bf529e；以 git status 识别并保留工作区修改。
 | P6 CPU 软件流程 | 按用户要求不以精度阻塞；真实 Voice→BT→Action、模拟导航及推理中取消恢复已验证 | P6_CPU_FLOW.md、validation/cpu-flow |
 | P6 工程门禁 | 当前软件范围通过 | 25 契约/基线检查；15 ROS manifest DAG、21 登记接口；6 项构建隔离测试 |
 | P6 生产发布 / 远端 CI | 未验收 / 未配置 | 缺完整感知质量验收、原 RKLLM 等价性证据、设备、SLAM 输入、生产配置、远端和 owner 身份 |
-| P7a 团队开发 / P7b 源码交付 | 本轮实现中、未提交；仅平台 51 测试已跑 | 方案 v2 第 15 节、out/developer-platform/dev-check-initial.log |
+| P7a 团队开发 / P7b 源码交付 | 完成；五环境/五wheel、真实bundle/独立克隆、四vendor、默认ROS从零构建与smoke | 2468639；P7_DEVELOPER_PLATFORM.md、validation/developer-platform |
 | P7 旧代码退役 | 未进行 | 不确定生产用途的代码/launch/脚本保留，未删除原仓 |
 
 两套运行配置共用公开接口：
@@ -51,11 +55,12 @@ go_home 按原规则不产生 Needs 结算；不存在伪造的 BMS 电量生产
 
 当前优先级：用户明确需要可协作开发、易上手、可交付到开发板的统一主仓。
 模型精度与没有硬件均不阻塞本阶段软件目标。
-下一步是复核并验证本轮开发入口/CI/交付工具、提交源码、完成干净克隆验收和冻结证据，
-详见方案 v2 第 15 节及 HANDOFF_NEXT_SESSION.md。
+本轮开发入口/CI本地命令/实际源码交付与干净克隆验收已完成，证据已冻结。
+后续按实际功能需求开发，或在外部信息明确后配置远端治理、板端与设备验收。
 硬件、传感器、remote/owner/许可按外部条件推进，不猜测缺失实现、不退役未知入口。
 
-最新流程证据见 validation/cpu-flow/release-manifest.json。Qwen SIT 被原 Lite3 门限拒绝，
+最新工程/交付证据见 validation/developer-platform/release-manifest.json。
+此前 CPU 流程证据见 validation/cpu-flow/release-manifest.json。Qwen SIT 被原 Lite3 门限拒绝，
 词库 GO_HOME 完成模拟导航；二者不能混称为所有动作执行成功。
 最新输入传递修复见 validation/cpu-input-text/release-manifest.json，固定 ROS 五场景已通过，整体模型质量仍未通过。
 此前 CPU Voice ROS 切片见 validation/cpu-voice-ros/release-manifest.json，旧否定失败保留。

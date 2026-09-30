@@ -1,0 +1,42 @@
+[INFO] [1790695196.441673018] [action_executor_node]: ROS transport: domain_id=210, rmw=rmw_cyclonedds_cpp, localhost_only=1
+[INFO] [1790695196.442455923] [action_executor_node]: Loading configs from: /tmp/marsdog-developer-platform-2468639/out/local/runs/20260929T151954Z-746159/action-config
+[INFO] [1790695196.661883103] [action_executor_node]: Strict behavior-tree contract loaded: 74 behaviors, 183 actions
+[WARN] [1790695196.669173123] [action_executor_node]: SIMULATED Lite3 I/O: no hardware command publishers; status is synthetic
+[INFO] [1790695196.669519729] [action_executor_node]: Lite3 chassis backend enabled: cmd_vel=/cmd_vel, simple_cmd=/simple_cmd, status=/robot_status, mapped_actions=169, enabled_actions=9, navigation_settle=5 samples/2.0s
+[INFO] [1790695196.671480515] [action_executor_node]: Wake orientation adapter disabled
+[INFO] [1790695196.762732485] [action_executor_node]: Navigation adapter enabled: fixed_service=/waypoint_nav/task, random_place=K, random_pool=A,B,C,D,E,frame=map, waypoints=5, routed_behaviors=12, random_nav_behaviors=8, mapped_stage_actions=39
+[INFO] [1790695196.771114101] [action_executor_node]: Accepted behavior-tree names: 74
+[INFO] [1790695196.776178092] [action_executor_node]: Action Server /execute_behavior started (action from marsdog_interfaces).
+[INFO] [1790695196.776425931] [action_executor_node]: ActionExecutorNode (v2) started — sole /execute_behavior server. Ensure no other marsdog_action_executor instance is running.
+[INFO] [1790695197.342409708] [action_executor_node]: Accepted goal: cand_750c04e02c9b -> expressCalmWithHuman (priority=5)
+[INFO] [1790695197.346282910] [action_executor_node]: [cand_750c04e02c9b] Executing: expressCalmWithHuman
+[INFO] [1790695197.346735183] [action_executor_node]: [cand_750c04e02c9b] Validated: expressCalmWithHuman
+[INFO] [1790695197.346888422] [action_executor_node]: [cand_750c04e02c9b] Plan: expressCalmWithHuman -> 2 stages
+[INFO] [1790695197.347056429] [action_executor_node]: [cand_750c04e02c9b] Stage 1/2: target_approach
+Unit ACT_APPROACH_VISUAL_TARGET requires a real controller; route=visual_target_approach is unavailable
+[WARN] [1790695197.347755153] [action_executor_node]: [cand_750c04e02c9b] Stage target_approach failed: controller_required:visual_target_approach (policy=abort, required=True)
+[INFO] [1790695197.347914924] [action_executor_node]: [cand_750c04e02c9b] Result: controller_error (success=False, stages=[], units=[], duration=0.0s)
+[INFO] [1790695202.345155710] [action_executor_node]: Accepted goal: cand_34c5372e657b -> respond_owner_call (priority=1)
+[INFO] [1790695202.347917740] [action_executor_node]: [cand_34c5372e657b] Executing: respond_owner_call
+[INFO] [1790695202.348417662] [action_executor_node]: [cand_34c5372e657b] Validated: respond_owner_call
+[INFO] [1790695202.350054425] [action_executor_node]: [cand_34c5372e657b] Plan: respond_owner_call -> 1 stages
+[INFO] [1790695202.350306590] [action_executor_node]: [cand_34c5372e657b] Stage 1/1: action
+Unit ACT_INTERACT_RESPOND_CALL requires a real controller; route=wake_orientation is unavailable
+[WARN] [1790695202.350879275] [action_executor_node]: [cand_34c5372e657b] Stage action failed: controller_required:wake_orientation (policy=abort, required=True)
+[INFO] [1790695202.351039698] [action_executor_node]: [cand_34c5372e657b] Result: controller_error (success=False, stages=[], units=[], duration=0.0s)
+[INFO] [1790695202.544512859] [action_executor_node]: Accepted goal: cand_f3ee346c0c1c -> expressCalmInPlaceWithHuman (priority=5)
+[INFO] [1790695202.547658219] [action_executor_node]: [cand_f3ee346c0c1c] Executing: expressCalmInPlaceWithHuman
+[INFO] [1790695202.548098121] [action_executor_node]: [cand_f3ee346c0c1c] Validated: expressCalmInPlaceWithHuman
+[INFO] [1790695202.551283556] [action_executor_node]: [cand_f3ee346c0c1c] Plan: expressCalmInPlaceWithHuman -> 1 stages
+[INFO] [1790695202.552298686] [action_executor_node]: [cand_f3ee346c0c1c] Stage 1/1: expression
+Lite3 failure: lite3_action_gated:unit_id=ACT_CHECK_OWNER,fidelity=proxy,verified=False
+Unit ACT_CHECK_OWNER failed: failure (lite3_action_gated:unit_id=ACT_CHECK_OWNER,fidelity=proxy,verified=False)
+[WARN] [1790695202.553503340] [action_executor_node]: [cand_f3ee346c0c1c] Stage expression failed: lite3_action_gated:unit_id=ACT_CHECK_OWNER,fidelity=proxy,verified=False (policy=abort, required=True)
+[INFO] [1790695202.553721838] [action_executor_node]: [cand_f3ee346c0c1c] Result: failure (success=False, stages=[], units=[], duration=0.0s)
+[INFO] [1790695206.443239304] [action_executor_node]: Accepted goal: cand_0a910a841934 -> go_home (priority=1)
+[INFO] [1790695206.446792742] [action_executor_node]: [cand_0a910a841934] Executing: go_home
+[INFO] [1790695206.447725029] [action_executor_node]: [cand_0a910a841934] Validated: go_home
+[INFO] [1790695206.448356983] [action_executor_node]: [cand_0a910a841934] Plan: go_home -> 1 stages
+[INFO] [1790695206.448580091] [action_executor_node]: [cand_0a910a841934] Navigation: go_home -> waypoint A (timeout=60s)
+[INFO] [1790695207.785901945] [action_executor_node]: [cand_0a910a841934] Stage 1/1: navigation
+[INFO] [1790695208.788480195] [action_executor_node]: [cand_0a910a841934] Result: success (success=True, stages=['navigation'], units=['ACT_NAV_GO_HOME'], duration=2.3s)

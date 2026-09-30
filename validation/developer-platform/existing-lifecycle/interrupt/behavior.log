@@ -1,0 +1,13 @@
+23:08:52.841 [INFO ] [bionic_dog_bt.bt_node   ] ActionClientAdapter: waiting for /execute_behavior...
+23:08:52.842 [INFO ] [bionic_dog_bt.bt_node   ] Executor: ActionClientAdapter → /execute_behavior (via marsdog_interfaces.action)
+23:08:52.914 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+23:08:52.934 [INFO ] [bionic_dog_bt.bt_node   ] Vision service client ready: /perception/vision/task (marsdog_vision_interaction.srv.VisionTask)
+23:08:52.934 [INFO ] [bionic_dog_bt.bt_node   ] PerceptionClientAdapter: audio_event + visual_event subscriptions ready
+23:08:52.936 [INFO ] [bionic_dog_bt.bt_node   ] Voice session service ready: /perception/voice/task (marsdog_voice_interaction.srv.VoiceTask)
+23:08:52.939 [INFO ] [bionic_dog_bt.bt_node   ] ROS2 subscriptions ready: /emotion/state /emotion/signal_event /internal_need/state /internal_need/signal_event
+23:08:52.939 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+23:08:53.028 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_inject", "timestamp": 1790694533.0285482}
+23:08:53.040 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_select", "timestamp": 1790694533.0400543}
+23:08:53.041 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "mode": "interactive", "goal_id": "cand_745c99905030", "event": "behavior_start", "timestamp": 1790694533.0412014}
+23:08:53.140 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmWithHuman", "status": "CONTROLLER_ERROR", "reward": -0.5, "event": "behavior_complete", "timestamp": 1790694533.139985}
+23:08:53.227 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_inject", "timestamp": 1790694533.2272081}

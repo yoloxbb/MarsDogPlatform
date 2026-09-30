@@ -1,0 +1,22 @@
+{
+  "command": [
+    "python3",
+    "-B",
+    "tools/dev.py",
+    "test",
+    "emotion",
+    "--output",
+    "out/dev/fresh-emotion"
+  ],
+  "cwd": "/tmp/marsdog-developer-platform-2468639",
+  "started_utc": "2026-09-29T15:12:25.414203+00:00",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "env": {
+    "UV_CACHE_DIR": "/home/elephant/MarsDog/migration/.cache/uv"
+  },
+  "source_commit": "2468639054763398882366bad7869236c0d2e68e",
+  "source_status": "",
+  "returncode": 0,
+  "duration_seconds": 4.951,
+  "status": "PASS"
+}

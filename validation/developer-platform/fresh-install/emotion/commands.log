@@ -1,0 +1,302 @@
+["/home/elephant/MarsDog/migration/.tools/uv", "build", "--wheel", "--out-dir", "/tmp/marsdog-developer-platform-2468639/out/emotion-install/check-0j8zlqx6/wheels", "/tmp/marsdog-developer-platform-2468639/modules/emotion"]
+Building wheel...
+/home/elephant/MarsDog/migration/.cache/uv/builds-v0/.tmpU5cX8v/lib/python3.10/site-packages/setuptools/_distutils/dist.py:289: UserWarning: Unknown distribution option: 'tests_require'
+  warnings.warn(msg)
+/home/elephant/MarsDog/migration/.cache/uv/builds-v0/.tmpU5cX8v/lib/python3.10/site-packages/setuptools/config/_apply_pyprojecttoml.py:75: _MissingDynamic: `maintainers` defined outside of `pyproject.toml` is ignored.
+!!
+
+        ********************************************************************************
+        The following seems to be defined outside of `pyproject.toml`:
+
+        `maintainers = 'Marsdog Team'`
+
+        According to the spec (see the link below), however, setuptools CANNOT
+        consider this value unless `maintainers` is listed as `dynamic`.
+
+        https://packaging.python.org/en/latest/specifications/pyproject-toml/#declaring-project-metadata-the-project-table
+
+        To prevent this problem, you can list `maintainers` under `dynamic` or alternatively
+        remove the `[project]` table from your file and rely entirely on other means of
+        configuration.
+        ********************************************************************************
+
+!!
+  _handle_missing_dynamic(dist, project_table)
+/home/elephant/MarsDog/migration/.cache/uv/builds-v0/.tmpU5cX8v/lib/python3.10/site-packages/setuptools/config/_apply_pyprojecttoml.py:82: SetuptoolsWarning: `install_requires` overwritten in `pyproject.toml` (dependencies)
+  corresp(dist, value, root_dir)
+/home/elephant/MarsDog/migration/.cache/uv/builds-v0/.tmpU5cX8v/lib/python3.10/site-packages/setuptools/config/_apply_pyprojecttoml.py:82: SetuptoolsWarning: `license` overwritten by `pyproject.toml`
+  corresp(dist, value, root_dir)
+running egg_info
+writing marsdog_need_emotion.egg-info/PKG-INFO
+writing dependency_links to marsdog_need_emotion.egg-info/dependency_links.txt
+writing entry points to marsdog_need_emotion.egg-info/entry_points.txt
+writing requirements to marsdog_need_emotion.egg-info/requires.txt
+writing top-level names to marsdog_need_emotion.egg-info/top_level.txt
+reading manifest file 'marsdog_need_emotion.egg-info/SOURCES.txt'
+writing manifest file 'marsdog_need_emotion.egg-info/SOURCES.txt'
+/home/elephant/MarsDog/migration/.cache/uv/builds-v0/.tmpU5cX8v/lib/python3.10/site-packages/setuptools/_distutils/dist.py:289: UserWarning: Unknown distribution option: 'tests_require'
+  warnings.warn(msg)
+/home/elephant/MarsDog/migration/.cache/uv/builds-v0/.tmpU5cX8v/lib/python3.10/site-packages/setuptools/config/_apply_pyprojecttoml.py:75: _MissingDynamic: `maintainers` defined outside of `pyproject.toml` is ignored.
+!!
+
+        ********************************************************************************
+        The following seems to be defined outside of `pyproject.toml`:
+
+        `maintainers = 'Marsdog Team'`
+
+        According to the spec (see the link below), however, setuptools CANNOT
+        consider this value unless `maintainers` is listed as `dynamic`.
+
+        https://packaging.python.org/en/latest/specifications/pyproject-toml/#declaring-project-metadata-the-project-table
+
+        To prevent this problem, you can list `maintainers` under `dynamic` or alternatively
+        remove the `[project]` table from your file and rely entirely on other means of
+        configuration.
+        ********************************************************************************
+
+!!
+  _handle_missing_dynamic(dist, project_table)
+/home/elephant/MarsDog/migration/.cache/uv/builds-v0/.tmpU5cX8v/lib/python3.10/site-packages/setuptools/config/_apply_pyprojecttoml.py:82: SetuptoolsWarning: `install_requires` overwritten in `pyproject.toml` (dependencies)
+  corresp(dist, value, root_dir)
+/home/elephant/MarsDog/migration/.cache/uv/builds-v0/.tmpU5cX8v/lib/python3.10/site-packages/setuptools/config/_apply_pyprojecttoml.py:82: SetuptoolsWarning: `license` overwritten by `pyproject.toml`
+  corresp(dist, value, root_dir)
+running bdist_wheel
+running build
+running build_py
+copying marsdog_ros2/midnight_test_node.py -> build/lib/marsdog_ros2
+copying marsdog_ros2/one1000_tactile_node.py -> build/lib/marsdog_ros2
+copying marsdog_ros2/time_controller_node.py -> build/lib/marsdog_ros2
+copying marsdog_ros2/perception_adapter.py -> build/lib/marsdog_ros2
+copying marsdog_ros2/emotion_engine_node.py -> build/lib/marsdog_ros2
+copying marsdog_ros2/time_state_adapter.py -> build/lib/marsdog_ros2
+copying marsdog_ros2/personality_node.py -> build/lib/marsdog_ros2
+copying marsdog_ros2/personality_adapter.py -> build/lib/marsdog_ros2
+copying marsdog_ros2/__init__.py -> build/lib/marsdog_ros2
+copying marsdog_ros2/internal_need_node.py -> build/lib/marsdog_ros2
+copying marsdog_ros2/behavior_result_adapter.py -> build/lib/marsdog_ros2
+copying marsdog_ros2/time_context.py -> build/lib/marsdog_ros2
+copying marsdog_core/battery_observation.py -> build/lib/marsdog_core
+copying marsdog_core/demand_lifecycle.py -> build/lib/marsdog_core
+copying marsdog_core/sleepiness_behavior.py -> build/lib/marsdog_core
+copying marsdog_core/hunger_behavior.py -> build/lib/marsdog_core
+copying marsdog_core/cleanliness_behavior.py -> build/lib/marsdog_core
+copying marsdog_core/state.py -> build/lib/marsdog_core
+copying marsdog_core/rules.py -> build/lib/marsdog_core
+copying marsdog_core/types.py -> build/lib/marsdog_core
+copying marsdog_core/config_loader.py -> build/lib/marsdog_core
+copying marsdog_core/personality_system.py -> build/lib/marsdog_core
+copying marsdog_core/time_controller.py -> build/lib/marsdog_core
+copying marsdog_core/one1000_protocol.py -> build/lib/marsdog_core
+copying marsdog_core/energy_behavior.py -> build/lib/marsdog_core
+copying marsdog_core/behavior_result.py -> build/lib/marsdog_core
+copying marsdog_core/need_system.py -> build/lib/marsdog_core
+copying marsdog_core/exploration_behavior.py -> build/lib/marsdog_core
+copying marsdog_core/emotion_system.py -> build/lib/marsdog_core
+copying marsdog_core/personality_api.py -> build/lib/marsdog_core
+copying marsdog_core/__init__.py -> build/lib/marsdog_core
+copying marsdog_core/bladder_behavior.py -> build/lib/marsdog_core
+copying marsdog_core/social_behavior.py -> build/lib/marsdog_core
+copying marsdog_core/demand_api.py -> build/lib/marsdog_core
+copying marsdog_core/emotion_api.py -> build/lib/marsdog_core
+copying marsdog_ros2/common/qos.py -> build/lib/marsdog_ros2/common
+copying marsdog_ros2/common/calculation_time.py -> build/lib/marsdog_ros2/common
+copying marsdog_ros2/common/parameters.py -> build/lib/marsdog_ros2/common
+copying marsdog_ros2/common/json_message.py -> build/lib/marsdog_ros2/common
+copying marsdog_ros2/common/__init__.py -> build/lib/marsdog_ros2/common
+running egg_info
+writing marsdog_need_emotion.egg-info/PKG-INFO
+writing dependency_links to marsdog_need_emotion.egg-info/dependency_links.txt
+writing entry points to marsdog_need_emotion.egg-info/entry_points.txt
+writing requirements to marsdog_need_emotion.egg-info/requires.txt
+writing top-level names to marsdog_need_emotion.egg-info/top_level.txt
+reading manifest file 'marsdog_need_emotion.egg-info/SOURCES.txt'
+writing manifest file 'marsdog_need_emotion.egg-info/SOURCES.txt'
+/home/elephant/MarsDog/migration/.cache/uv/builds-v0/.tmpU5cX8v/lib/python3.10/site-packages/setuptools/command/build_py.py:212: _Warning: Package 'marsdog_ros2.launch' is absent from the `packages` configuration.
+!!
+
+        ********************************************************************************
+        ############################
+        # Package would be ignored #
+        ############################
+        Python recognizes 'marsdog_ros2.launch' as an importable package[^1],
+        but it is absent from setuptools' `packages` configuration.
+
+        This leads to an ambiguous overall configuration. If you want to distribute this
+        package, please make sure that 'marsdog_ros2.launch' is explicitly added
+        to the `packages` configuration field.
+
+        Alternatively, you can also rely on setuptools' discovery methods
+        (for example by using `find_namespace_packages(...)`/`find_namespace:`
+        instead of `find_packages(...)`/`find:`).
+
+        You can read more about "package discovery" on setuptools documentation page:
+
+        - https://setuptools.pypa.io/en/latest/userguide/package_discovery.html
+
+        If you don't want 'marsdog_ros2.launch' to be distributed and are
+        already explicitly excluding 'marsdog_ros2.launch' via
+        `find_namespace_packages(...)/find_namespace` or `find_packages(...)/find`,
+        you can try to use `exclude_package_data`, or `include-package-data=False` in
+        combination with a more fine grained `package-data` configuration.
+
+        You can read more about "package data files" on setuptools documentation page:
+
+        - https://setuptools.pypa.io/en/latest/userguide/datafiles.html
+
+
+        [^1]: For Python, any directory (with suitable naming) can be imported,
+              even if it does not contain any `.py` files.
+              On the other hand, currently there is no concept of package data
+              directory, all directories are treated like packages.
+        ********************************************************************************
+
+!!
+  check.warn(importable)
+copying marsdog_ros2/launch/internal_need_emotion.launch.py -> build/lib/marsdog_ros2/launch
+copying marsdog_ros2/launch/midnight_test.launch.py -> build/lib/marsdog_ros2/launch
+copying marsdog_ros2/launch/one1000_tactile.launch.py -> build/lib/marsdog_ros2/launch
+warning: build_py: byte-compiling is disabled, skipping.
+
+installing to build/bdist.linux-x86_64/wheel
+running install
+running install_lib
+creating build/bdist.linux-x86_64/wheel
+creating build/bdist.linux-x86_64/wheel/marsdog_ros2
+copying build/lib/marsdog_ros2/midnight_test_node.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2
+copying build/lib/marsdog_ros2/one1000_tactile_node.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2
+copying build/lib/marsdog_ros2/time_controller_node.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2
+copying build/lib/marsdog_ros2/perception_adapter.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2
+copying build/lib/marsdog_ros2/emotion_engine_node.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2
+copying build/lib/marsdog_ros2/time_state_adapter.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2
+creating build/bdist.linux-x86_64/wheel/marsdog_ros2/common
+copying build/lib/marsdog_ros2/common/qos.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2/common
+copying build/lib/marsdog_ros2/common/calculation_time.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2/common
+copying build/lib/marsdog_ros2/common/parameters.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2/common
+copying build/lib/marsdog_ros2/common/json_message.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2/common
+copying build/lib/marsdog_ros2/common/__init__.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2/common
+copying build/lib/marsdog_ros2/personality_node.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2
+copying build/lib/marsdog_ros2/personality_adapter.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2
+copying build/lib/marsdog_ros2/__init__.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2
+creating build/bdist.linux-x86_64/wheel/marsdog_ros2/launch
+copying build/lib/marsdog_ros2/launch/midnight_test.launch.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2/launch
+copying build/lib/marsdog_ros2/launch/internal_need_emotion.launch.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2/launch
+copying build/lib/marsdog_ros2/launch/one1000_tactile.launch.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2/launch
+copying build/lib/marsdog_ros2/internal_need_node.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2
+copying build/lib/marsdog_ros2/behavior_result_adapter.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2
+copying build/lib/marsdog_ros2/time_context.py -> build/bdist.linux-x86_64/wheel/./marsdog_ros2
+creating build/bdist.linux-x86_64/wheel/marsdog_core
+copying build/lib/marsdog_core/battery_observation.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/demand_lifecycle.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/sleepiness_behavior.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/hunger_behavior.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/cleanliness_behavior.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/state.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/rules.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/types.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/config_loader.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/personality_system.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/time_controller.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/one1000_protocol.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/energy_behavior.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/behavior_result.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/need_system.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/exploration_behavior.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/emotion_system.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/personality_api.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/__init__.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/bladder_behavior.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/social_behavior.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/demand_api.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+copying build/lib/marsdog_core/emotion_api.py -> build/bdist.linux-x86_64/wheel/./marsdog_core
+running install_data
+warning: install_lib: byte-compiling is disabled, skipping.
+
+creating build/bdist.linux-x86_64/wheel/marsdog_need_emotion-0.1.0.data/data
+creating build/bdist.linux-x86_64/wheel/marsdog_need_emotion-0.1.0.data/data/share/ament_index/resource_index/packages
+copying resource/marsdog_need_emotion -> build/bdist.linux-x86_64/wheel/marsdog_need_emotion-0.1.0.data/data/share/ament_index/resource_index/packages
+creating build/bdist.linux-x86_64/wheel/marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion
+copying package.xml -> build/bdist.linux-x86_64/wheel/marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion
+creating build/bdist.linux-x86_64/wheel/marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion/configs
+copying configs/emotions.yaml -> build/bdist.linux-x86_64/wheel/marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion/configs
+copying configs/personality.yaml -> build/bdist.linux-x86_64/wheel/marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion/configs
+copying configs/demands.yaml -> build/bdist.linux-x86_64/wheel/marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion/configs
+creating build/bdist.linux-x86_64/wheel/marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion/launch
+copying marsdog_ros2/launch/midnight_test.launch.py -> build/bdist.linux-x86_64/wheel/marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion/launch
+copying marsdog_ros2/launch/internal_need_emotion.launch.py -> build/bdist.linux-x86_64/wheel/marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion/launch
+copying marsdog_ros2/launch/one1000_tactile.launch.py -> build/bdist.linux-x86_64/wheel/marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion/launch
+running install_egg_info
+Copying marsdog_need_emotion.egg-info to build/bdist.linux-x86_64/wheel/./marsdog_need_emotion-0.1.0-py3.10.egg-info
+running install_scripts
+creating build/bdist.linux-x86_64/wheel/marsdog_need_emotion-0.1.0.dist-info/WHEEL
+creating '/tmp/marsdog-developer-platform-2468639/out/emotion-install/check-0j8zlqx6/wheels/.tmp-dh4a0b44/marsdog_need_emotion-0.1.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+adding 'marsdog_core/__init__.py'
+adding 'marsdog_core/battery_observation.py'
+adding 'marsdog_core/behavior_result.py'
+adding 'marsdog_core/bladder_behavior.py'
+adding 'marsdog_core/cleanliness_behavior.py'
+adding 'marsdog_core/config_loader.py'
+adding 'marsdog_core/demand_api.py'
+adding 'marsdog_core/demand_lifecycle.py'
+adding 'marsdog_core/emotion_api.py'
+adding 'marsdog_core/emotion_system.py'
+adding 'marsdog_core/energy_behavior.py'
+adding 'marsdog_core/exploration_behavior.py'
+adding 'marsdog_core/hunger_behavior.py'
+adding 'marsdog_core/need_system.py'
+adding 'marsdog_core/one1000_protocol.py'
+adding 'marsdog_core/personality_api.py'
+adding 'marsdog_core/personality_system.py'
+adding 'marsdog_core/rules.py'
+adding 'marsdog_core/sleepiness_behavior.py'
+adding 'marsdog_core/social_behavior.py'
+adding 'marsdog_core/state.py'
+adding 'marsdog_core/time_controller.py'
+adding 'marsdog_core/types.py'
+adding 'marsdog_need_emotion-0.1.0.data/data/share/ament_index/resource_index/packages/marsdog_need_emotion'
+adding 'marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion/package.xml'
+adding 'marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion/configs/demands.yaml'
+adding 'marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion/configs/emotions.yaml'
+adding 'marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion/configs/personality.yaml'
+adding 'marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion/launch/internal_need_emotion.launch.py'
+adding 'marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion/launch/midnight_test.launch.py'
+adding 'marsdog_need_emotion-0.1.0.data/data/share/marsdog_need_emotion/launch/one1000_tactile.launch.py'
+adding 'marsdog_ros2/__init__.py'
+adding 'marsdog_ros2/behavior_result_adapter.py'
+adding 'marsdog_ros2/emotion_engine_node.py'
+adding 'marsdog_ros2/internal_need_node.py'
+adding 'marsdog_ros2/midnight_test_node.py'
+adding 'marsdog_ros2/one1000_tactile_node.py'
+adding 'marsdog_ros2/perception_adapter.py'
+adding 'marsdog_ros2/personality_adapter.py'
+adding 'marsdog_ros2/personality_node.py'
+adding 'marsdog_ros2/time_context.py'
+adding 'marsdog_ros2/time_controller_node.py'
+adding 'marsdog_ros2/time_state_adapter.py'
+adding 'marsdog_ros2/common/__init__.py'
+adding 'marsdog_ros2/common/calculation_time.py'
+adding 'marsdog_ros2/common/json_message.py'
+adding 'marsdog_ros2/common/parameters.py'
+adding 'marsdog_ros2/common/qos.py'
+adding 'marsdog_ros2/launch/internal_need_emotion.launch.py'
+adding 'marsdog_ros2/launch/midnight_test.launch.py'
+adding 'marsdog_ros2/launch/one1000_tactile.launch.py'
+adding 'marsdog_need_emotion-0.1.0.dist-info/METADATA'
+adding 'marsdog_need_emotion-0.1.0.dist-info/WHEEL'
+adding 'marsdog_need_emotion-0.1.0.dist-info/entry_points.txt'
+adding 'marsdog_need_emotion-0.1.0.dist-info/top_level.txt'
+adding 'marsdog_need_emotion-0.1.0.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
+Successfully built wheels/marsdog_need_emotion-0.1.0-py3-none-any.whl
+["/home/elephant/MarsDog/migration/.tools/uv", "venv", "--python", "/usr/bin/python3.10", "/tmp/marsdog-developer-platform-2468639/out/emotion-install/check-0j8zlqx6/venv"]
+Using CPython 3.10.12 interpreter at: /usr/bin/python3.10
+Creating virtual environment at: venv
+Activate with: source venv/bin/activate
+["/home/elephant/MarsDog/migration/.tools/uv", "pip", "install", "--python", "/tmp/marsdog-developer-platform-2468639/out/emotion-install/check-0j8zlqx6/venv/bin/python", "/tmp/marsdog-developer-platform-2468639/out/emotion-install/check-0j8zlqx6/wheels/marsdog_need_emotion-0.1.0-py3-none-any.whl"]
+Using Python 3.10.12 environment at: venv
+Resolved 2 packages in 6ms
+Prepared 1 package in 9ms
+Installed 2 packages in 9ms
+ + marsdog-need-emotion==0.1.0 (from file:///tmp/marsdog-developer-platform-2468639/out/emotion-install/check-0j8zlqx6/wheels/marsdog_need_emotion-0.1.0-py3-none-any.whl)
+ + setuptools==84.0.0
+["/tmp/marsdog-developer-platform-2468639/out/emotion-install/check-0j8zlqx6/venv/bin/python", "-B", "-c", "\nimport hashlib, json, pathlib, sys, importlib.metadata\nfrom marsdog_core.need_system import MarsdogNeedSystem\nfrom marsdog_core import config_loader\nsystem = MarsdogNeedSystem()\nconfig_dir = config_loader._GetDefaultConfigDir()\nprint(json.dumps({\n 'module_file': config_loader.__file__,\n 'config_dir': str(config_dir),\n 'config_hashes': {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in config_dir.glob('*.yaml')},\n 'scripts': {e.name:e.value for e in importlib.metadata.distribution('marsdog-need-emotion').entry_points if e.group=='console_scripts'},\n 'demands': sorted(system.state.demands),\n 'yaml_installed': __import__('importlib.util', fromlist=['find_spec']).find_spec('yaml') is not None,\n 'rclpy_installed': __import__('importlib.util', fromlist=['find_spec']).find_spec('rclpy') is not None\n}))\n"]
+{"module_file": "/tmp/marsdog-developer-platform-2468639/out/emotion-install/check-0j8zlqx6/venv/lib/python3.10/site-packages/marsdog_core/config_loader.py", "config_dir": "/tmp/marsdog-developer-platform-2468639/out/emotion-install/check-0j8zlqx6/venv/share/marsdog_need_emotion/configs", "config_hashes": {"emotions.yaml": "f7c6918d524cdc09c02cc952758cf39b33bf06d8062673ee09aaec9b66fe9d1c", "personality.yaml": "4656d4d6a1fb83c0f7795ef3f7e7b5991ae6a8b2979bf651cf20d3066038b6f9", "demands.yaml": "99c50b9557e2e3b31ead7c81ea498e74d5ac4b804a221218fabe8aa9b28b8919"}, "scripts": {"emotion_engine_node": "marsdog_ros2.emotion_engine_node:main", "internal_need_node": "marsdog_ros2.internal_need_node:main", "midnight_test_node": "marsdog_ros2.midnight_test_node:main", "one1000_tactile_node": "marsdog_ros2.one1000_tactile_node:main", "personality_node": "marsdog_ros2.personality_node:main", "time_controller_node": "marsdog_ros2.time_controller_node:main"}, "demands": ["Bladder", "Cleanliness", "Energy", "Exploration", "Hunger", "Sleepiness", "Social"], "yaml_installed": false, "rclpy_installed": false}

@@ -1,0 +1,21 @@
++ /home/elephant/MarsDog/migration/.tools/uv sync --project /tmp/marsdog-developer-platform-2468639/modules/behavior --locked --python /usr/bin/python3.10 --no-editable
+Using CPython 3.10.12 interpreter at: /usr/bin/python3.10
+Creating virtual environment at: modules/behavior/.venv
+Resolved 15 packages in 1ms
+   Building marsdog-behavior @ file:///tmp/marsdog-developer-platform-2468639/modules/behavior
+      Built marsdog-behavior @ file:///tmp/marsdog-developer-platform-2468639/modules/behavior
+Prepared 1 package in 651ms
+Installed 13 packages in 16ms
+ + exceptiongroup==1.3.1
+ + iniconfig==2.3.0
+ + markdown-it-py==4.2.0
+ + marsdog-behavior==0.2.0 (from file:///tmp/marsdog-developer-platform-2468639/modules/behavior)
+ + mdurl==0.1.2
+ + packaging==26.2
+ + pluggy==1.6.0
+ + pygments==2.20.0
+ + pytest==9.1.1
+ + pyyaml==6.0.3
+ + rich==15.0.0
+ + tomli==2.4.1
+ + typing-extensions==4.15.0

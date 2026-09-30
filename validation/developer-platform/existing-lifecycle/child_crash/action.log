@@ -1,0 +1,18 @@
+[INFO] [1790694542.073766757] [action_executor_node]: ROS transport: domain_id=210, rmw=rmw_cyclonedds_cpp, localhost_only=1
+[INFO] [1790694542.074467255] [action_executor_node]: Loading configs from: /home/elephant/MarsDog/marsdog-platform/out/local/runs/20260929T150900Z-732717/action-config
+[INFO] [1790694542.312989909] [action_executor_node]: Strict behavior-tree contract loaded: 74 behaviors, 183 actions
+[WARN] [1790694542.320550531] [action_executor_node]: SIMULATED Lite3 I/O: no hardware command publishers; status is synthetic
+[INFO] [1790694542.320955002] [action_executor_node]: Lite3 chassis backend enabled: cmd_vel=/cmd_vel, simple_cmd=/simple_cmd, status=/robot_status, mapped_actions=169, enabled_actions=9, navigation_settle=5 samples/2.0s
+[INFO] [1790694542.322780433] [action_executor_node]: Wake orientation adapter disabled
+[INFO] [1790694542.412498430] [action_executor_node]: Navigation adapter enabled: fixed_service=/waypoint_nav/task, random_place=K, random_pool=A,B,C,D,E,frame=map, waypoints=5, routed_behaviors=12, random_nav_behaviors=8, mapped_stage_actions=39
+[INFO] [1790694542.421663089] [action_executor_node]: Accepted behavior-tree names: 74
+[INFO] [1790694542.427048994] [action_executor_node]: Action Server /execute_behavior started (action from marsdog_interfaces).
+[INFO] [1790694542.427615624] [action_executor_node]: ActionExecutorNode (v2) started — sole /execute_behavior server. Ensure no other marsdog_action_executor instance is running.
+[INFO] [1790694542.953491688] [action_executor_node]: Accepted goal: cand_41f6fb57bd15 -> expressCalmWithHuman (priority=5)
+[INFO] [1790694542.955249441] [action_executor_node]: [cand_41f6fb57bd15] Executing: expressCalmWithHuman
+[INFO] [1790694542.955786559] [action_executor_node]: [cand_41f6fb57bd15] Validated: expressCalmWithHuman
+[INFO] [1790694542.956295318] [action_executor_node]: [cand_41f6fb57bd15] Plan: expressCalmWithHuman -> 2 stages
+[INFO] [1790694542.956513634] [action_executor_node]: [cand_41f6fb57bd15] Stage 1/2: target_approach
+Unit ACT_APPROACH_VISUAL_TARGET requires a real controller; route=visual_target_approach is unavailable
+[WARN] [1790694542.957185354] [action_executor_node]: [cand_41f6fb57bd15] Stage target_approach failed: controller_required:visual_target_approach (policy=abort, required=True)
+[INFO] [1790694542.957353960] [action_executor_node]: [cand_41f6fb57bd15] Result: controller_error (success=False, stages=[], units=[], duration=0.0s)

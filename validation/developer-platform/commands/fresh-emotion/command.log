@@ -1,0 +1,25 @@
++ /tmp/marsdog-developer-platform-2468639/modules/emotion/.venv/bin/python -B -m pytest tests -q -p no:cacheprovider --junitxml=/tmp/marsdog-developer-platform-2468639/out/dev/fresh-emotion/junit.xml
+{
+  "status": "PASS",
+  "counts": {
+    "tests": 374,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "skips": [],
+  "command": [
+    "/tmp/marsdog-developer-platform-2468639/modules/emotion/.venv/bin/python",
+    "-B",
+    "-m",
+    "pytest",
+    "tests",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=/tmp/marsdog-developer-platform-2468639/out/dev/fresh-emotion/junit.xml"
+  ],
+  "scope": "Existing module unit suite, no hardware",
+  "module": "emotion",
+  "returncode": 0
+}

@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "-B",
+    "tools/check_behavior_install.py",
+    "--uv",
+    "/home/elephant/MarsDog/migration/.tools/uv"
+  ],
+  "cwd": "/tmp/marsdog-developer-platform-2468639",
+  "started_utc": "2026-09-29T15:13:09.896817+00:00",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "env": {
+    "UV_CACHE_DIR": "/home/elephant/MarsDog/migration/.cache/uv"
+  },
+  "source_commit": "2468639054763398882366bad7869236c0d2e68e",
+  "source_status": "",
+  "returncode": 0,
+  "duration_seconds": 1.724,
+  "status": "PASS"
+}

@@ -1,0 +1,29 @@
+23:19:57.135 [INFO ] [bionic_dog_bt.bt_node   ] ActionClientAdapter: waiting for /execute_behavior...
+23:19:57.135 [INFO ] [bionic_dog_bt.bt_node   ] Executor: ActionClientAdapter → /execute_behavior (via marsdog_interfaces.action)
+23:19:57.211 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+23:19:57.232 [INFO ] [bionic_dog_bt.bt_node   ] Vision service client ready: /perception/vision/task (marsdog_vision_interaction.srv.VisionTask)
+23:19:57.232 [INFO ] [bionic_dog_bt.bt_node   ] PerceptionClientAdapter: audio_event + visual_event subscriptions ready
+23:19:57.234 [INFO ] [bionic_dog_bt.bt_node   ] Voice session service ready: /perception/voice/task (marsdog_voice_interaction.srv.VoiceTask)
+23:19:57.237 [INFO ] [bionic_dog_bt.bt_node   ] ROS2 subscriptions ready: /emotion/state /emotion/signal_event /internal_need/state /internal_need/signal_event
+23:19:57.238 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+23:19:57.258 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_inject", "timestamp": 1790695197.2582378}
+23:19:57.338 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_select", "timestamp": 1790695197.3385367}
+23:19:57.339 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "mode": "interactive", "goal_id": "cand_750c04e02c9b", "event": "behavior_start", "timestamp": 1790695197.3395712}
+23:19:57.438 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmWithHuman", "status": "CONTROLLER_ERROR", "reward": -0.5, "event": "behavior_complete", "timestamp": 1790695197.4385836}
+23:19:57.458 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_inject", "timestamp": 1790695197.4580538}
+23:20:02.302 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "respond_owner_call", "priority_level": 1, "value": 0.0, "event": "candidate_inject", "timestamp": 1790695202.302559}
+23:20:02.339 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "respond_owner_call", "priority_level": 1, "value": 0.0, "event": "candidate_select", "timestamp": 1790695202.3389463}
+23:20:02.340 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "respond_owner_call", "priority_level": 1, "mode": "solo", "goal_id": "cand_34c5372e657b", "event": "behavior_start", "timestamp": 1790695202.3401275}
+23:20:02.438 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "respond_owner_call", "status": "CONTROLLER_ERROR", "reward": -0.5, "event": "behavior_complete", "timestamp": 1790695202.4388034}
+23:20:02.439 [INFO ] [bionic_dog_bt.bt_node   ] Voice session waiting: id=2d29b1d0d122414498061594fd31e09c reason=wake_orientation_controller_error target=none
+23:20:02.443 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmInPlaceWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_inject", "timestamp": 1790695202.443641}
+23:20:02.538 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmInPlaceWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_select", "timestamp": 1790695202.5388772}
+23:20:02.540 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmInPlaceWithHuman", "priority_level": 5, "mode": "interactive", "goal_id": "cand_f3ee346c0c1c", "event": "behavior_start", "timestamp": 1790695202.5401506}
+23:20:02.639 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "expressCalmInPlaceWithHuman", "status": "FAILURE", "reward": -0.5, "event": "behavior_complete", "timestamp": 1790695202.638974}
+23:20:02.660 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmInPlaceWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_inject", "timestamp": 1790695202.6602707}
+23:20:06.351 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "go_home", "priority_level": 1, "value": 100.0, "event": "candidate_inject", "timestamp": 1790695206.3510284}
+23:20:06.438 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "go_home", "priority_level": 1, "value": 100.0, "event": "candidate_select", "timestamp": 1790695206.4386854}
+23:20:06.439 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "go_home", "priority_level": 1, "mode": "solo", "goal_id": "cand_0a910a841934", "event": "behavior_start", "timestamp": 1790695206.4396112}
+23:20:08.838 [INFO ] [bionic_dog_bt.actions   ] {"behavior_name": "go_home", "status": "SUCCESS", "reward": 1.0, "event": "behavior_complete", "timestamp": 1790695208.838883}
+23:20:08.843 [INFO ] [bionic_dog_bt.candidate_pool] {"behavior_name": "expressCalmInPlaceWithHuman", "priority_level": 5, "value": 30.0, "event": "candidate_inject", "timestamp": 1790695208.8439398}
+23:20:09.167 [INFO ] [bionic_dog_bt.bt_node   ] Voice session closed: id=2d29b1d0d122414498061594fd31e09c reason=behavior_tree_shutdown queued_removed=1 running=False

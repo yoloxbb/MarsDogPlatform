@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "scope": "Internal source/history transfer, not a hardware release",
+  "source": {
+    "commit": "2468639054763398882366bad7869236c0d2e68e",
+    "branch": "main",
+    "refs": [
+      "2468639054763398882366bad7869236c0d2e68e refs/heads/main",
+      "43240200c062c745442066ba2a7dd0b331099806 refs/migration/action/import",
+      "0da13a7a623512d748ace5751937475e599e919c refs/migration/behavior/import",
+      "8d3ef94d23ac1bf8823406418cb6c27624dd6c22 refs/migration/robot/import",
+      "8ffa13ed21c5399b61ad34454e4e10d7f2f6bfea refs/migration/vision/import",
+      "2f9b0023fc4ede90ba14fb4382a6831f0b626ba5 refs/migration/voice/import"
+    ]
+  },
+  "files": {
+    "marsdog-platform.bundle": "a2176efed3da2aa17c0a9e223101e8a8745f019c967a47ff43cf2b06002414c4",
+    "vendor-archives/robot-7dd357f-all-refs.bundle": "d5a015faf17eb558ab365fa925a8c8029011085793d3bdfa867799693793caf8",
+    "vendor-archives/rtabmap-91faa21-all-refs.bundle": "88b65a50e1aae713637a832283f802f111dafb7c0228fbb5fe98b8003eddcbf3"
+  },
+  "required_vendor_archives": {
+    "robot-7dd357f-all-refs.bundle": "d5a015faf17eb558ab365fa925a8c8029011085793d3bdfa867799693793caf8",
+    "rtabmap-91faa21-all-refs.bundle": "88b65a50e1aae713637a832283f802f111dafb7c0228fbb5fe98b8003eddcbf3"
+  },
+  "vendors_included": true,
+  "excluded": [
+    "untracked and ignored files",
+    "models",
+    "Python environments",
+    "ROS build/install",
+    "download caches",
+    "host device configuration"
+  ],
+  "target_board": "UNKNOWN; rebuild for the board OS/ABI, never copy WSL binaries"
+}

@@ -1,0 +1,82 @@
+{
+  "status": "PASS",
+  "source_commit": "2468639054763398882366bad7869236c0d2e68e",
+  "initial_base_commit": "3bf529ec9c3ddbccfeef4cd3bfefaebb7f260adf",
+  "initial_uncommitted_files": 25,
+  "only_changed_inherited_file": [
+    ".github/workflows/vision.yml"
+  ],
+  "unchanged_protected_trees": [
+    "modules",
+    "interfaces",
+    "config",
+    "robotics",
+    "third_party"
+  ],
+  "fresh_checkout": "/tmp/marsdog-developer-platform-2468639",
+  "isolated_python": {
+    "emotion": {
+      "executable": "/tmp/marsdog-developer-platform-2468639/modules/emotion/.venv/bin/python",
+      "prefix": "/tmp/marsdog-developer-platform-2468639/modules/emotion/.venv",
+      "path": [
+        "/usr/lib/python310.zip",
+        "/usr/lib/python3.10",
+        "/usr/lib/python3.10/lib-dynload",
+        "/tmp/marsdog-developer-platform-2468639/modules/emotion/.venv/lib/python3.10/site-packages"
+      ]
+    },
+    "behavior": {
+      "executable": "/tmp/marsdog-developer-platform-2468639/modules/behavior/.venv/bin/python",
+      "prefix": "/tmp/marsdog-developer-platform-2468639/modules/behavior/.venv",
+      "path": [
+        "/usr/lib/python310.zip",
+        "/usr/lib/python3.10",
+        "/usr/lib/python3.10/lib-dynload",
+        "/tmp/marsdog-developer-platform-2468639/modules/behavior/.venv/lib/python3.10/site-packages"
+      ]
+    },
+    "action": {
+      "executable": "/tmp/marsdog-developer-platform-2468639/modules/action/.venv/bin/python",
+      "prefix": "/tmp/marsdog-developer-platform-2468639/modules/action/.venv",
+      "path": [
+        "/usr/lib/python310.zip",
+        "/usr/lib/python3.10",
+        "/usr/lib/python3.10/lib-dynload",
+        "/tmp/marsdog-developer-platform-2468639/modules/action/.venv/lib/python3.10/site-packages"
+      ]
+    },
+    "voice": {
+      "executable": "/tmp/marsdog-developer-platform-2468639/modules/voice/.venv/bin/python",
+      "prefix": "/tmp/marsdog-developer-platform-2468639/modules/voice/.venv",
+      "path": [
+        "/usr/lib/python310.zip",
+        "/usr/lib/python3.10",
+        "/usr/lib/python3.10/lib-dynload",
+        "/tmp/marsdog-developer-platform-2468639/modules/voice/.venv/lib/python3.10/site-packages"
+      ]
+    },
+    "vision": {
+      "executable": "/tmp/marsdog-developer-platform-2468639/modules/vision/.venv/bin/python",
+      "prefix": "/tmp/marsdog-developer-platform-2468639/modules/vision/.venv",
+      "path": [
+        "/usr/lib/python310.zip",
+        "/usr/lib/python3.10",
+        "/usr/lib/python3.10/lib-dynload",
+        "/tmp/marsdog-developer-platform-2468639/modules/vision/.venv/lib/python3.10/site-packages"
+      ]
+    }
+  },
+  "python": "3.10.12 (main, Aug 31 2026, 10:18:17) [GCC 11.4.0]",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "shared_download_inputs": [
+    "/home/elephant/MarsDog/migration/.cache/uv",
+    "/home/elephant/MarsDog/marsdog-platform/out/ros-deps/*.deb"
+  ],
+  "existing_host_prerequisites": [
+    "Ubuntu 22.04 x86_64",
+    "/usr/bin/python3.10",
+    "/opt/ros/humble",
+    "/home/elephant/MarsDog/migration/.tools/uv"
+  ],
+  "notes": "No old source/environment/build/install copied. uv/deb cache and supplied vendor archives are explicit inputs."
+}

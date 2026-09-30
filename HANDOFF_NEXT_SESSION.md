@@ -1,91 +1,62 @@
-# MarsDog 平台会话交接 — 2026-09-29
+# MarsDog 平台会话交接 — 2026-09-30
 
-## 最新目标与执行入口
+第 15 节的团队开发与源码交付软件切片已完成。不要重新合仓、重复验收已通过的
+同一源码，也不要继续模型精度优化。普通工程决策可直接推进。
 
-用户最终目标：统一主仓与架构，使跨模块功能开发、提交合并、新成员上手更容易；
-当前在 WSL2，无硬件，后续在开发板重新构建并接入 Lite3。模型精度暂不阻塞。
-用户已授权普通工程决策直接执行，无需逐项确认。用户自行创建新会话。
+## 真实位置与版本
 
-先读：
-[当前正式方案](docs/architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md)；
-用户指定的同步文件为 /home/elephant/MarsDog/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md。
-**按该方案第 15 节接着完成，不要重做 P1/合仓或回到模型准确率优化。**
+- 唯一主仓：/home/elephant/MarsDog/marsdog-platform（WSL Ubuntu-22.04）。
+- 工程源码：2468639054763398882366bad7869236c0d2e68e；后续提交只更新证据/文档。
+- 继续前核对 git status --short 和 git log -3 --oneline，保留任何新出现的用户改动。
+- 初始 25 个未提交文件已备份、复核并纳入源码提交；仅修正 Vision CI 重复 run 键。
+  备份在 out/developer-platform/initial-worktree，保全证明随验收证据冻结。
+- 原仓/归档/映射保留；没有第二主仓，没有远端，没有真实 CODEOWNERS 账号。
 
-## 真实工作区
+## 已实际验证
 
-- WSL Ubuntu-22.04，主仓 /home/elephant/MarsDog/marsdog-platform。
-- 客户端 C:\home\elephant\MarsDog 并非实际 Linux 主仓位置。
-- 原仓聚合 /home/elephant/MarsDog；原仓保持只读。
-- 历史归档 /home/elephant/MarsDog/migration/archives。
-- uv /home/elephant/MarsDog/migration/.tools/uv。
-- 下载缓存 /home/elephant/MarsDog/migration/.cache/uv（允许显式复用）。
-- Python /usr/bin/python3.10；ROS /opt/ros/humble。
-- 当前 main 已提交 HEAD 3bf529e；没有 remote。
-- 本轮新增与修改文件尚未提交，git status 为准，禁止覆盖、丢弃或另建主仓。
+见 [验收说明](docs/migration/P7_DEVELOPER_PLATFORM.md) 和
+[证据清单](validation/developer-platform/release-manifest.json)。
 
-## 已完成的基础
+原环境和干净克隆五模块测试一致：
+Emotion 218 tests + 156 subtests；BT 533；Action 423 pass / 29 skip；
+Voice pure 253（排除 5 个 ROS 文件）、Humble 430 / 0 skip；
+Vision 289 pass / 3 RGA skip。平台 51 tests，结果契约 25 tests。
+模块覆盖重叠和 subtests 不盲目相加，skip 不算 pass。
 
-五个 Python 模块 + 八个自研 ROS package、公共 marsdog_interfaces、waypoint_nav
-已迁入；原始历史/归档/commit maps 保留。RTAB/OpenVINS/VINS/UWB 固定外部快照。
-模块独立锁与环境；接口登记、依赖 DAG、结果契约和独立安装检查已建立。
+干净克隆已完成五套独立 setup、五个干净 wheel 安装检查、四个固定 vendor 重建，
+以及默认 ROS 组合 15 包从零构建、doctor/smoke。构建/运行位于
+/tmp/marsdog-developer-platform-2468639，仅复用 uv/deb 下载缓存和已有系统 Humble。
+原 WSL 的显式归档 prepare（保留 Voice CPU extra）、doctor/smoke、生命周期也通过。
+没有复制旧 .venv、源码 import、build/install；SLAM 扩展此次没有重编。
 
-统一本机入口 tools/marsdog.py prepare/build/doctor/up/smoke。
-默认 lite3-local-cpu（domain210）、可选 lite3-nav2-cpu（domain212）已有软件证据。
-Nav2 是真实进程，但定位/地图/运动/Lite3 仍为模拟；两 profile 感知默认 mock。
-独立真实 CPU Voice 流程已有证据，原 RKLLM 保留，不调模型精度。
-Qwen SIT 被原动作门限拒绝、词库 GO_HOME 模拟导航成功，不能说成实机坐下成功。
+两套默认 profile 的感知仍为 mock；本轮只回归默认 lite3-local-cpu。
+既有 CPU Voice/Nav2/模型失败证据全部保留，不改写为实机或模型通过。
+业务模块、依赖锁、IDL、生产 YAML、默认 profile 与行为门限未变。
 
-最近冻结证据 validation/cpu-flow/release-manifest.json，
-对应源修复 f102172、证据提交 3bf529e。旧模型质量失败记录保持，不能改写成通过。
+## 开发与交付
 
-## 本轮进行中：开发与交付闭环
+新成员先读 README、CONTRIBUTING、AGENTS、docs/development/QUICKSTART.md。
+日常：python3 tools/dev.py check；setup/test 一次选一个模块；
+跨模块结果修改另跑 python3 tools/check_contracts.py。
 
-已写但尚待真实端到端验证与提交：
+源码验收包：out/handoff/source-bundle-2468639。
+最终源码包：out/handoff/source-bundle-final（含本轮证据及最新交接）。
+用可信 tools/source_handoff.py verify 后克隆，以 manifest 的 commit/哈希为准。
+没有复制模型、虚拟环境、构建输出；包不是完整离线依赖镜像。
 
-- tools/dev.py 和 platform/modules.json development recipes：独立 setup/test、统一 check。
-- tools/source_handoff.py：干净 Git 历史 bundle、refs/哈希、可选固定 vendor 归档。
-- 归档查找改为 --archive-dir → MARSDOG_ARCHIVE_DIR → .cache/vendor-archives，
-  活动工具不默认依赖旁边的旧 migration 目录。
-- README、CONTRIBUTING、AGENTS、docs/development、docs/deployment、PR 模板。
-- 六个 workflow 复用开发命令；原安装检查保留。
-- 两个新平台测试文件验证环境/报告/真实 Git 往返和破坏保护。
-- 架构方案、STATUS 与本交接更新。
+本机工具参考：uv /home/elephant/MarsDog/migration/.tools/uv；
+显式缓存 /home/elephant/MarsDog/migration/.cache/uv；
+原归档 /home/elephant/MarsDog/migration/archives。
+新开发者可配置自己的路径，不要求原仓位于旁边。
+已有 Voice 带 CPU extra；以后同步必须明确 --intent-cpu / --voice-intent-cpu。
 
-已实际运行 python3 -B tools/dev.py check：架构检查通过，平台 51 tests / OK。
-日志 out/developer-platform/dev-check-initial.log。
-**尚未用新 CLI 跑完各模块真实测试，尚未实际主仓导出或干净克隆验收。**
-不要把工具单测里的 Git fixture 往返当作实际交付包验收。
+## 后续工作
 
-业务模块源码、五套依赖锁、公开 IDL、生产 YAML、默认 profile 本轮未改。
-没有新增运行业务 common 或硬件协议。
+当前软件目标已完成。按真实需求在主仓开发一个可评审变更，保留领域边界和独立环境。
+只有以下外部事实到位后才做对应工作：remote URL/公开范围、真实 owner/runner，
+板端 OS/ABI/NPU/SDK，Lite3/传感器设备，以及部分厂商资料的对外分发许可。
+没有硬件不阻塞普通开发，不虚构协议、账号或验收结论。
 
-## 下一步执行顺序
-
-1. 读取 git diff/新增文件，复核 setup/test recipes 与原命令等价；
-   注意 BT 两棵测试目录、Voice optional extras、跳过/失败报告和退出码。
-2. 用新 CLI 实际测试 emotion/behavior/action/voice（pure 和 Humble）/vision。
-   不意外重同步已有 Voice CPU extra；需要时明确 --intent-cpu 或 --voice-intent-cpu。
-3. 验证工作流与本地命令一致、受影响安装/契约门禁，修复真实问题。
-4. 审查后提交源码切片；工具要求 dirty 工作树不得导出正式 bundle。
-5. 导出实际主仓、验证、在不依赖旧源码的位置干净克隆；
-   显式复用下载缓存可以，借用旧仓 import 不可以。
-6. 新克隆至少验证平台检查、Emotion/BT/Action 独立 setup/test/结果契约和 vendor materialize；
-   按资源扩大安装与本机整机验证，精确记录 fresh build 或已有构建回归的范围。
-7. 原 WSL 执行 doctor/默认 smoke，检查准备工具显式归档路径。
-8. 冻结新证据 validation/developer-platform，更新状态并提交。
-   不覆盖 validation/cpu-flow 等既有快照。
-
-具体命令、验收定义与风险见正式方案第 15 节。
-当前支持 WSL x86_64；源码交付不含模型、环境、build/install，
-不能直接将这些二进制文件复制到未知开发板。
-
-## 尚需外部条件
-
-remote URL/公开范围、真实 owner 账号、板端 OS/ABI/NPU/SDK、Lite3/传感器设备、
-部分厂商内容分发许可 UNKNOWN。它们不阻塞当前软件主仓开发。
-不得虚构 hosted CI、板端成功或缺失运控/嵌入式实现。
-明显机器人行为改变、不兼容协议、不可恢复历史/数据删除、未知生产入口退役，
-才需要相应明确决策。普通工程实施继续自主完成。
-
-本文件此前的逐轮模型实验叙述保留在 Git 历史：
-git show 3bf529e:HANDOFF_NEXT_SESSION.md。其旧“下一步”不代表当前计划。
+正式方案：docs/architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md 第 15 节；
+聚合目录 /home/elephant/MarsDog/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md 同步维护。
+历史阶段叙述保留在 Git，旧“下一步”不代表当前待办。

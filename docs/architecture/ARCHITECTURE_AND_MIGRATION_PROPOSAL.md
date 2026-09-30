@@ -1,6 +1,6 @@
 # MarsDog Architecture and Migration Proposal
 
-**版本：2.0 · 更新：2026-09-29 · 状态：主仓迁移已落地，正在完成团队开发与源码交付闭环。**
+**版本：2.1 · 更新：2026-09-30 · 状态：主仓开发入口、独立克隆与源码交付闭环已验证。**
 
 本文是后续会话的执行计划，替代 v1 中“尚未实施、下一步 P1”的进度判断。
 用户的最终目标是：把多个模块仓库整合为一个长期可维护的主仓，统一架构和工程入口，
@@ -11,46 +11,32 @@
 也不要把工作重新收敛到提示词、准确率或缺失硬件的调试。
 用户自行创建后续会话；执行者不需要创建、发送或管理其他会话。
 
-## 0. 新会话先读：事实、当前位置和第一步
+## 0. 新会话先读：当前事实与开发入口
 
-实际开发仓库在 WSL 的：
+实际主仓是 /home/elephant/MarsDog/marsdog-platform，WSL Ubuntu-22.04。
+Windows 对应路径为 \\wsl.localhost\Ubuntu-22.04\home\elephant\MarsDog\marsdog-platform。
+聚合目录不是第二个 Git 主仓；新增业务开发只在主仓完成。
 
-~~~text
-/home/elephant/MarsDog/marsdog-platform
-~~~
+**第 15 节的软件切片已完成。** 工程源码提交为
+2468639054763398882366bad7869236c0d2e68e；后续提交仅冻结验收与更新文档。
+初始 25 个未提交文件已核对、备份并纳入该提交，只修正了 Vision CI 重复 run 键；
+其余 24 个文件原内容保留。未修改业务模块、五套锁、IDL、默认运行配置或旧验证快照。
 
-Windows 客户端可能显示 C:\home\elephant\MarsDog，这不是当前实际 Linux 源码位置。
-WSL 发行版 Ubuntu-22.04；项目挂载路径可为：
-\\wsl.localhost\Ubuntu-22.04\home\elephant\MarsDog。
+本轮真实验证：新旧环境五模块测试，五模块独立 setup/干净 wheel 安装，
+51 项平台测试、25 项结果契约、四个固定 vendor 重建。独立克隆还从零完成
+默认组合的 15 包 ROS 构建、doctor 和 smoke；原 WSL 的 prepare/doctor/smoke
+及生命周期门禁也通过。具体计数、skip、命令、环境和源码 commit 见
+[本轮验收](marsdog-platform/docs/migration/P7_DEVELOPER_PLATFORM.md)、
+[冻结证据](marsdog-platform/validation/developer-platform/release-manifest.json)。
 
-本文件位于聚合目录，不意味着聚合目录本身是 Git 主仓。
-唯一新增业务开发位置是 marsdog-platform，不能在聚合目录再初始化第二个主仓。
+源码基线包位于主仓 out/handoff/source-bundle-2468639；
+包含证据和最新文档的最终包位于 out/handoff/source-bundle-final，以包内 manifest 为准。
+新克隆测试位置 /tmp/marsdog-developer-platform-2468639；
+只显式复用 uv/deb 下载缓存、已有系统 Humble 和包内 vendor 归档，不借旧源码 import。
 
-交接时已提交基线：**main / 3bf529e**，之前源码修复提交 f102172。
-本轮有**尚未提交**的开发体验、CI、源码交付工具和文档修改；保留并复核，不覆盖或重做。
-截至本文更新，已实际运行 `python3 -B tools/dev.py check`：
-架构检查通过，平台 **51 tests / OK**。日志：
-`marsdog-platform/out/developer-platform/dev-check-initial.log`。
-这只证明当前工具/架构门禁通过，**尚未验证新 CLI 的所有模块真实执行、完整干净克隆或实际交付包**。
-
-新会话立即执行：
-
-~~~bash
-cd /home/elephant/MarsDog/marsdog-platform
-git status --short
-git log -3 --oneline
-git diff --stat
-python3 -B tools/dev.py check
-~~~
-
-然后按第 15 节完成当前切片。先读：
-[AGENTS](../../AGENTS.md)、
-[贡献指南](../../CONTRIBUTING.md)、
-[当前状态](../../docs/migration/STATUS.md)、
-[开发流程](../../docs/development/WORKFLOW.md)。
-
-历史证据在 validation/*；本文中“此前通过”不等于本轮重新运行。
-后续任何更新都应写清来源 commit、命令、执行环境、PASS/FAIL/SKIP/UNKNOWN 和证据位置。
+后续会话先读 AGENTS、CONTRIBUTING、STATUS、WORKFLOW 并核对 git status / git log。
+普通新功能直接按统一入口开发；不要重新执行已完成的合仓或模型调优。
+remote/真实 owner、开发板 OS/ABI/SDK、实际设备和对外分发许可仍是外部待办。
 
 ## 1. Current Architecture
 
@@ -104,18 +90,18 @@ Qwen SIT 被既有 Lite3 门限拒绝，词库 GO_HOME 导航成功；二者不�
 模型失败记录保留，当前不继续做精度优化。
 没有硬件、真实传感器、真实板端性能或 hosted CI 验收。
 
-## 2. Major Problems
+## 2. Major Problems — 本轮关闭与外部待办
 
-当前主要问题已从“源码散落七仓”转为“主仓是否真正便于开发和交付”：
+主仓散落、日常命令分散、活动工具默认依赖旧目录、缺少真实源码交付验收等问题，
+已由开发 CLI、开发文档、CI 命令复用、显式归档路径和独立克隆验证处理。
+审查发现的 Vision workflow 重复 run 键已修正；全部工作流经过重复键拒绝和 shell 语法检查。
+本地通过不代表 hosted CI 已上线。
 
-1. 旧 README/交接长期堆积迁移与模型实验记录，新成员难以辨认日常入口。
-2. 本地测试与 CI 命令分散，易漏 BT 的第二测试目录或误把 Voice 纯子集算全量。
-3. 部分活动工具默认查主仓旁的 migration/archives，降低克隆后的独立性。
-4. 缺少可验证的源码交付流程，容易把 WSL .venv/build/install 当板端部署产物。
-5. 没有真实 remote、owner 身份和 runner；CI 文件存在不能被当作已上线。
-6. 板端 OS/ABI/厂商 runtime 未知；合并 Python 环境或直接复制 x86 二进制会制造问题。
-
-本轮已经写入对应工具/文档修订，仍需执行验证和提交，见第 15 节。
+当前未完成项：
+1. remote URL、访问范围、真实 owner 和 runner 未提供，不能配置真实远端治理。
+2. 板端 OS/ABI/厂商 runtime 未知，不能把 WSL 环境和二进制当作板端部署产物。
+3. 实际 Lite3、传感器和模型质量验收仍独立保留；本阶段不做精度优化。
+4. 部分第三方/厂商资料对外分发许可未知，当前只做本地内部源码交付。
 
 ## 3. Target Architecture
 
@@ -246,11 +232,11 @@ RTAB 生成源码文件的构建副本继续放 out，不放宽 sealed snapshot 
 主要历史迁移已经完成，**不重新 filter、reset 或导入原仓**。
 原仓、原始 bundle、commit maps 均保留；主仓导入后的 SHA 与原 SHA 映射按记录解释。
 
-本轮新增 tools/source_handoff.py：
+已实现并验证 tools/source_handoff.py：
 要求主仓 clean，通过 git bundle --all 导出历史并登记 refs/commit/哈希；
 可显式附带两份锁定 vendor bundle，拒绝覆盖已有输出目录。
-这项工具目前通过小型真实 Git 往返与破坏校验测试，
-**实际主仓导出/独立克隆尚待执行，不能提前标完成**。
+该工具的真实 Git 往返/破坏校验与实际主仓导出、独立克隆均已通过。
+源码验收基线 2468639，证据见 validation/developer-platform。
 
 不纳入主仓或源码包的工作数据：
 .venv、build/install/log、.external、模型、缓存、录音/人脸/声纹/地图数据库、
@@ -276,7 +262,8 @@ Vision 完整单测依赖 Humble；RGA 缺设备跳过须保留。Action 既有�
 ## 12. CI Strategy
 
 保留模块独立 jobs，不建立根大环境。
-本轮修改 workflow 复用 dev.py setup/test/check，减少本地与 CI 命令漂移。
+已修改 workflow 复用 dev.py setup/test/check，减少本地与 CI 命令漂移；
+本轮完成 YAML 重复键检查、shell 语法验证及本地对应命令验收。
 干净 wheel 检查保留；Vision 的普通 hosted job 不冒充 Humble 全量单测。
 ROS/扩展构建仅在明确配置的 localhost 专用 runner 手动触发。
 
@@ -293,8 +280,8 @@ ROS/扩展构建仅在明确配置的 localhost 专用 runner 手动触发。
 | P2–P4 五模块历史/包/接口迁移 | 已完成 | 在主仓做普通功能开发，不再搬迁 |
 | P5 自研 ROS + 接口/航点 + vendor | 软件迁移与所选 CPU 构建完成 | 按实际需求验证更多配置，设备项另列 |
 | P6 WSL 本机组合与流程 | 默认组合、真实 Nav2 模拟输入、CPU Voice 流程已有证据 | 保留为跨模块回归基线 |
-| P7a 团队开发入口 | **本轮实现中，未提交** | 审查新 CLI/文档/CI、运行真实模块门禁 |
-| P7b 独立克隆与源码交付 | **工具已写，实际交付待验证** | 干净历史 bundle、独立环境和固定 vendor 验证 |
+| P7a 团队开发入口 | **完成；2468639** | 五模块新入口、CI 本地等价命令、独立安装已验证 |
+| P7b 独立克隆与源码交付 | **完成；validation/developer-platform** | 实际 bundle/独立克隆、五环境、四 vendor、默认 ROS 从零构建与 smoke 通过 |
 | P7c 团队远端治理 | 外部信息未配置 | URL/owner 确定后配置权限、CI/保护分支 |
 | P8 开发板/Lite3 | 无设备与板端环境 | 板端事实确认后单独构建、逐步接入 |
 | 旧代码退役 | 不在当前必做范围 | 用途证据及确认后单独处理 |
@@ -321,48 +308,48 @@ ROS/扩展构建仅在明确配置的 localhost 专用 runner 手动触发。
 - 第三方保持来源隔离，没有当作自研算法重写。
 - 所有功能在同一主仓提交，契约/集成与代码同 PR，减少跨仓人工协调。
 - 不新增复杂插件框架、自动影响分析服务或板端虚假 ready 状态。
-- 本轮仍需检查工程包装是否遗漏原测试/环境选项，不能只看新增测试数。
+- 已验证 BT 两棵测试目录、Voice 可选依赖与纯/Humble 范围、跳过原因、失败退出和归档路径。
 
-## 15. Current Migration Slice — 新会话按此执行
+## 15. Current Migration Slice — 已完成与后续使用
 
-### 15.1 本轮已写入，尚未提交
+### 15.1 本轮完成
 
-- tools/dev.py：info/check/setup/test；platform/modules.json 增加 development recipes。
-- tools/source_handoff.py：历史 bundle 导出/哈希/refs 校验，可附固定 vendor 归档。
-- tools/runtime_environment.py、marsdog.py、materialize_vendors.py、
-  check_extended_ros_build.py：显式归档路径与本仓默认缓存，移除活动工具的隐式旧目录依赖。
-- integration/platform/tests/test_developer_workflow.py、test_source_handoff.py：
-  锁/单模块/双测试目录/skip 报告/环境隔离，真实 Git 往返/脏仓拒绝/篡改拒绝等。
-- README、CONTRIBUTING、AGENTS、docs/development、docs/deployment、PR 模板与六个 workflow。
-- 本文、主仓方案副本、STATUS、HANDOFF 的进度与目标更新。
+代码提交：2468639054763398882366bad7869236c0d2e68e。
+验收在 2026-09-29 UTC 执行，文档/交接于 2026-09-30 收尾；
+完整证据位于 validation/developer-platform，旧验证快照保持不变。
 
-git status 是完整清单的权威。当前未改业务模块、五套锁、公开 IDL、生产 YAML 或默认 profile。
-若新会话发现其他改动，先辨认来源，不覆盖。
+- 保全并审查原有 25 个未提交工程文件；修复 Vision CI 重复 run 键。
+- 开发 CLI 保留单模块锁/环境、BT 双测试目录、Voice extras、纯/Humble 区分与 skip 报告。
+- 原环境和干净克隆均通过架构/51 项平台测试与 25 项结果契约。
+- 两处模块测试结果一致：Emotion 218 tests + 156 subtests、BT 533、
+  Action 423 pass / 29 skip、Voice pure 253（明确排除 5 文件）、
+  Voice Humble 430 / 0 skip、Vision 289 pass / 3 RGA skip。
+- 干净克隆通过五模块独立 setup 和五个干净 wheel 安装检查。
+- 实际源码 bundle 校验 commit/refs/哈希，附两个锁定 vendor bundle；
+  新克隆重建 OpenVINS、VINS、UWB、RTAB 四个固定源码树。
+- 原 WSL 的显式归档 prepare（保留 Voice CPU extra）、doctor、默认 smoke、
+  中断/崩溃传播/重复启动与 PID 回收门禁通过。
+- 新克隆在已有 Humble 主机上从零构建默认组合 15 包，并通过 doctor/smoke；
+  没有复制旧 .venv、build/install，没有重编本轮不涉及的 SLAM 扩展。
 
-### 15.2 实施与验收顺序
+Emotion 的 374 JUnit entries 包含 156 subtests，不能另算为 374 个顶层测试。
+Voice pure/Humble、契约/接口检查存在覆盖重叠，不加总为独立功能数。
+Action 29 skip 为 20 个 ROS 依赖项和 9 个 PySide2 GUI 项；Vision 3 项需要 RGA 设备。
+总体验收为 PASS_WITH_EXPLICIT_LIMITS，不代表模型精度、实机或 hosted CI 通过。
 
-1. 阅读 diff 与新增文件，确认包装命令与原脚本等价；
-   特别检查 BT 两棵测试目录、Voice extras、skip 计数、归档参数和失败退出。
-2. 用新入口实际执行受影响的模块测试。已有主仓环境可复用，
-   不为验证 setup 而把带 CPU extra 的 Voice 环境意外同步掉。
-3. 验证 CI YAML 和本地同命令；按需验证干净 wheel/install。
-   未改模块源码/IDL不要求无理由全量重编所有 SLAM，但所有变更涉及的路径须验证。
-4. 审查并提交当前切片，得到干净、可追溯的源码 commit。不得导出 dirty 工作树当正式源码包。
-5. 导出实际主仓 bundle（附显式 vendor archive-dir），验证，再克隆到全新位置。
-   克隆位置不能靠旧源码目录补 import；可以明确共享下载缓存。
-6. 在新克隆运行 dev.py check，至少完成 Emotion/BT/Action 独立 setup/test 和结果契约；
-   验证固定 vendor materialize。按实际资源条件扩大五模块安装及本机 prepare/build/smoke。
-   若完整 fresh ROS 构建未运行，明确写“仅已有构建回归”，不能叫全新安装整机验收。
-7. 因本轮改了启动准备相关默认值，在已有 WSL 运行 doctor/默认 smoke，
-   验证显式归档路径工作；保留原 runtime 配置、取消与行为门限。
-8. 将命令、环境、源码 commit、结果、局限冻结到新的 validation/developer-platform
-   （不要覆盖 validation/cpu-flow 等旧快照）；更新 STATUS/HANDOFF 后提交。
-9. 最终汇报新成员入口、开发命令、源码交付位置、Git commit、真实验证结果，
-   以及 remote/owner/板端等外部待办。完成当前软件目标后不无目的扩大到模型调优。
+### 15.2 交付与新成员入口
 
-具体命令参考：
+源码验收包：out/handoff/source-bundle-2468639。
+最终源码包：out/handoff/source-bundle-final，包含验收证据及最新交接；
+源码内容与验收提交保持一致，文档/证据的提交号以包内 manifest 为准。
+两包均为内部本地交付，包含历史与固定 vendor 归档，不包含环境、模型或构建目录。
+
+在本仓根目录使用：
 
 ~~~bash
+python3 tools/dev.py info
+python3 tools/dev.py check
+python3 tools/dev.py setup emotion --uv /absolute/path/to/uv
 python3 tools/dev.py test emotion
 python3 tools/dev.py test behavior
 python3 tools/dev.py test action
@@ -370,19 +357,20 @@ python3 tools/dev.py test voice
 python3 tools/dev.py test voice --ros
 python3 tools/dev.py test vision
 python3 tools/check_contracts.py
-
-# 审查、完成必要修正并提交之后；输出目录必须不存在
-python3 tools/source_handoff.py create --directory out/handoff/source-bundle \
-  --archive-dir /home/elephant/MarsDog/migration/archives
-python3 tools/source_handoff.py verify --directory out/handoff/source-bundle
-git clone /absolute/path/to/marsdog-platform.bundle /new/isolated/marsdog-platform
 ~~~
 
-这些是后续动作，**截至本次交接尚未全部执行**。
-参考当前 uv：/home/elephant/MarsDog/migration/.tools/uv；
-缓存：/home/elephant/MarsDog/migration/.cache/uv；
-Python：/usr/bin/python3.10；ROS：/opt/ros/humble。
-新文档面向普通开发者时用可配置路径，不把当前个人绝对路径写成必要依赖。
+具体准备、命令范围和安装门禁见 docs/development/QUICKSTART.md。
+交付包复制后先 verify，再 clone；完整命令见 docs/deployment/SOURCE_HANDOFF.md。
+可显式共享下载缓存；运行时不通过旧源码目录补 import。
+原 WSL Voice 含 CPU extra，后续同步需继续显式选 --intent-cpu / --voice-intent-cpu。
+
+### 15.3 后续边界
+
+本阶段软件目标已经完成，按真实功能需求在主仓继续开发即可。
+不要重做合仓，不继续无目标的 SLAM 全量重编或模型精度优化。
+remote/owner/runner 确定后再配置 PR、CODEOWNERS、保护分支和 hosted CI。
+取得板端及真实设备事实后单独构建并逐步接入；不能复制 WSL 二进制冒充板端成果。
+未知协议、明显行为变化、不可恢复删除和对外分发仍按第 16 节处理。
 
 ## 16. Human Confirmation and External Inputs
 

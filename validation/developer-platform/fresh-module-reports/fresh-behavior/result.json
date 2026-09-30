@@ -1,0 +1,25 @@
+{
+  "status": "PASS",
+  "counts": {
+    "tests": 533,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "skips": [],
+  "command": [
+    "/tmp/marsdog-developer-platform-2468639/modules/behavior/.venv/bin/python",
+    "-B",
+    "-m",
+    "pytest",
+    "tests",
+    "marsdog_behavior/tests",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=/tmp/marsdog-developer-platform-2468639/out/dev/fresh-behavior/junit.xml"
+  ],
+  "scope": "Existing module unit suite, no hardware",
+  "module": "behavior",
+  "returncode": 0
+}

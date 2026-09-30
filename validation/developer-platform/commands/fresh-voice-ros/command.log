@@ -1,0 +1,27 @@
++ /usr/bin/python3 -B /tmp/marsdog-developer-platform-2468639/tools/check_voice_tests.py --mode humble --output /tmp/marsdog-developer-platform-2468639/out/dev/fresh-voice-ros
+{
+  "status": "PASS",
+  "mode": "humble",
+  "scope": "Existing unit tests; no actual microphone/models/ROS transport",
+  "excluded_files": [],
+  "source": "/tmp/marsdog-developer-platform-2468639/modules/voice",
+  "command": [
+    "/tmp/marsdog-developer-platform-2468639/modules/voice/.venv/bin/python",
+    "-B",
+    "-m",
+    "pytest",
+    "tests",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=/tmp/marsdog-developer-platform-2468639/out/dev/fresh-voice-ros/junit.xml"
+  ],
+  "counts": {
+    "tests": 430,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "module": "voice",
+  "returncode": 0
+}

@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "scope": "clean BT wheel; no ROS; unmodified config bytes",
+  "observation": {
+    "module_file": "/tmp/marsdog-developer-platform-2468639/out/behavior-install/check-fx_34ysu/venv/lib/python3.10/site-packages/marsdog_behavior/config_paths.py",
+    "config_dir": "/tmp/marsdog-developer-platform-2468639/out/behavior-install/check-fx_34ysu/venv/share/marsdog_behavior/config",
+    "config_hashes": {
+      "voice_engagement.yaml": "2607a051038aa0d6b59e40256da28331aa93d830da0da407a134c247bca168ba",
+      "event_intent_map.yaml": "0470603ef8e672e22dddb703b22876122a23c8765e66a4dd5d5e07196a5f58f5",
+      "behavior_categories.yaml": "ac877386c8e71aec0aec4ca93af227b7e6be9f9da769af40d70f50edd220ab10",
+      "intent_action_pool.yaml": "d2becbfe959c4a857d71f43325497201e77e754a24da1a51f0d584936bd46c69",
+      "legacy_behavior_aliases.yaml": "7c6580f8c8dd6816e24265950c25dddb2a18a887446e6e879a4cf7f890823f13",
+      "behaviors.yaml": "e1ae475cabcedcb54af6d7bf604aa1f5c5b36a74f8df80af02c24dcac6ebca13",
+      "emotion_behavior_map.yaml": "2e6e4e83fed3a606fbbed43f0986eb94753a741105ca13d255b66ecbad5632be"
+    },
+    "scripts": {
+      "behavior-tree-demo": "bionic_dog_bt.demo:main",
+      "behavior_tree_node": "marsdog_behavior.ros_node:main",
+      "marsdog-standalone": "marsdog_behavior.standalone_demo:main"
+    },
+    "behavior_count": 106,
+    "rclpy_installed": false
+  }
+}

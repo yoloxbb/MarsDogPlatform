@@ -1,0 +1,33 @@
++ /home/elephant/MarsDog/migration/.tools/uv sync --project /home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools --locked --python /usr/bin/python3.10
+Resolved 53 packages in 2ms
+Checked 47 packages in 52ms
++ /home/elephant/MarsDog/migration/.tools/uv sync --project /home/elephant/MarsDog/marsdog-platform/modules/emotion --locked --python /usr/bin/python3.10 --no-editable --extra ros
+Resolved 13 packages in 2ms
+Checked 12 packages in 1ms
++ /home/elephant/MarsDog/migration/.tools/uv sync --project /home/elephant/MarsDog/marsdog-platform/modules/behavior --locked --python /usr/bin/python3.10 --no-editable --extra ros
+Resolved 15 packages in 1ms
+Checked 14 packages in 8ms
++ /home/elephant/MarsDog/migration/.tools/uv sync --project /home/elephant/MarsDog/marsdog-platform/modules/action --locked --python /usr/bin/python3.10 --no-editable
+Resolved 14 packages in 1ms
+Checked 11 packages in 1ms
++ /home/elephant/MarsDog/migration/.tools/uv sync --project /home/elephant/MarsDog/marsdog-platform/modules/voice --locked --python /usr/bin/python3.10 --no-install-project --extra dev --extra intent-cpu
+Resolved 55 packages in 1ms
+Checked 53 packages in 55ms
++ /home/elephant/MarsDog/migration/.tools/uv sync --project /home/elephant/MarsDog/marsdog-platform/modules/vision --locked --python /usr/bin/python3.10 --no-install-project --extra dev --extra models
+Resolved 97 packages in 1ms
+Checked 93 packages in 65ms
++ /usr/bin/python3 -B /home/elephant/MarsDog/marsdog-platform/tools/prepare_ros_deps.py
+ros-humble-nav2-msgs: 1.1.20-1jammy.20260907.223327
+ros-humble-rmw-cyclonedds-cpp: 1.3.5-1jammy.20260907.205235
+ros-humble-cyclonedds: 0.10.5-2jammy.20260226.013234
+ros-humble-iceoryx-binding-c: 2.0.5-1jammy.20260226.012512
+ros-humble-iceoryx-posh: 2.0.5-1jammy.20260226.011738
+ros-humble-iceoryx-hoofs: 2.0.5-1jammy.20260226.011054
++ /usr/bin/python3 -B /home/elephant/MarsDog/marsdog-platform/tools/materialize_vendors.py --archive-dir /home/elephant/MarsDog/migration/archives --only uwb
+{
+  "uwb": {
+    "status": "VERIFIED",
+    "path": "/home/elephant/MarsDog/marsdog-platform/.external/uwb",
+    "files": 14
+  }
+}

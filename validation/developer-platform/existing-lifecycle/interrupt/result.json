@@ -1,0 +1,177 @@
+{
+  "status": "PASS",
+  "profile": {
+    "schema_version": 1,
+    "name": "lite3-local-cpu",
+    "robot": "lite3",
+    "execution": "local_development_simulation",
+    "ros_distribution": "humble",
+    "ros_domain_id": 210,
+    "rmw": "rmw_cyclonedds_cpp",
+    "voice_mock_seed": 46,
+    "voice_event_interval_sec": 4.0,
+    "explicit_limits": [
+      "Voice uses the original mock event provider, not microphone/ASR inference",
+      "Vision uses original mock providers and a synthetic image, not model inference",
+      "Lite3 backend uses simulated I/O and never publishes hardware commands",
+      "Nav2 action server and map are development simulations, not mapping or planning",
+      "No synthetic battery observation is published for Needs settlement"
+    ]
+  },
+  "run_directory": "/home/elephant/MarsDog/marsdog-platform/out/local/runs/20260929T150850Z-732157",
+  "processes": [
+    {
+      "name": "inputs",
+      "pid": 732290,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+        "-B",
+        "/home/elephant/MarsDog/marsdog-platform/tools/local_inputs.py"
+      ]
+    },
+    {
+      "name": "time",
+      "pid": 732304,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_ros2.time_controller_node import main; main()",
+        "--ros-args",
+        "-p",
+        "time_scale:=1",
+        "-p",
+        "virtual_start_time:=10:00"
+      ]
+    },
+    {
+      "name": "personality",
+      "pid": 732326,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_ros2.personality_node import main; main()"
+      ]
+    },
+    {
+      "name": "needs",
+      "pid": 732357,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_ros2.internal_need_node import main; main()"
+      ]
+    },
+    {
+      "name": "emotion",
+      "pid": 732386,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_ros2.emotion_engine_node import main; main()"
+      ]
+    },
+    {
+      "name": "waypoint",
+      "pid": 732409,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+        "-B",
+        "-c",
+        "from waypoint_nav.waypoint_nav_dispatcher import main; main()",
+        "--ros-args",
+        "-p",
+        "waypoints_file:=/home/elephant/MarsDog/marsdog-platform/out/local/runs/20260929T150850Z-732157/waypoints.yaml",
+        "-p",
+        "task_store_file:=/home/elephant/MarsDog/marsdog-platform/out/local/runs/20260929T150850Z-732157/tasks.sqlite3"
+      ]
+    },
+    {
+      "name": "action",
+      "pid": 732438,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/action/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_action_executor.ros_node import main; main()",
+        "--ros-args",
+        "-p",
+        "config_dir:=/home/elephant/MarsDog/marsdog-platform/out/local/runs/20260929T150850Z-732157/action-config",
+        "-p",
+        "chassis_type:=lite3",
+        "-p",
+        "lite3_enabled:=true",
+        "-p",
+        "go2_enabled:=false",
+        "-p",
+        "lite3_simulated_io:=true",
+        "-p",
+        "lite3_allow_proxies:=true",
+        "-p",
+        "lite3_allow_unverified:=false",
+        "-p",
+        "uwb_follow_enabled:=false",
+        "-p",
+        "wake_orientation_enabled:=false",
+        "-p",
+        "attention_tracking_enabled:=false",
+        "-p",
+        "target_approach_enabled:=false",
+        "-p",
+        "navigation_enabled:=true"
+      ]
+    },
+    {
+      "name": "vision",
+      "pid": 732455,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_vision_interaction.nodes.vision_interaction_node import main; main()",
+        "--ros-args",
+        "-p",
+        "config_path:=/home/elephant/MarsDog/marsdog-platform/out/local/runs/20260929T150850Z-732157/vision.yaml",
+        "-p",
+        "log_dir:=/home/elephant/MarsDog/marsdog-platform/out/local/runs/20260929T150850Z-732157/vision-log"
+      ]
+    },
+    {
+      "name": "behavior",
+      "pid": 732491,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_behavior.ros_node import main; main()"
+      ]
+    },
+    {
+      "name": "voice",
+      "pid": 732515,
+      "returncode": 0,
+      "command": [
+        "/home/elephant/MarsDog/marsdog-platform/modules/voice/.venv/bin/python",
+        "-B",
+        "-c",
+        "from marsdog_voice_interaction.nodes.voice_interaction_node import main; main()",
+        "--ros-args",
+        "-p",
+        "config_path:=/home/elephant/MarsDog/marsdog-platform/out/local/runs/20260929T150850Z-732157/voice.yaml"
+      ]
+    }
+  ],
+  "forced_shutdowns": []
+}

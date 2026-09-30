@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/node.py", line 175, in __init__
+    self.__node = _rclpy.Node(
+rclpy._rclpy_pybind11.RCLError: error creating node: the given context is not valid, either rcl_init() was not called or rcl_shutdown() was called., at ./src/rcl/guard_condition.c:67
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_voice_interaction/lib/python3.10/site-packages/marsdog_voice_interaction/nodes/voice_interaction_node.py", line 2832, in main
+    node = VoiceInteractionNode()
+  File "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_voice_interaction/lib/python3.10/site-packages/marsdog_voice_interaction/nodes/voice_interaction_node.py", line 104, in __init__
+    super().__init__("voice_interaction")
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/node.py", line 175, in __init__
+    self.__node = _rclpy.Node(
+KeyboardInterrupt

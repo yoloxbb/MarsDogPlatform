@@ -43,6 +43,8 @@ bootstrap 使用现有锁定 Linux x86_64 uv，下载需网络；已经有 uv �
 test 的 JSON、JUnit、日志默认保存在 out/dev/<module>；Voice --ros 使用 voice-ros。
 失败非零退出；PASS_WITH_EXPLICIT_LIMITS 表示有单独列出的跳过，不能算全部覆盖。
 Voice 纯子集列出排除的文件，不冒充完整套件。Vision 的 RGA 硬件测试跳过原样保留。
+JSON counts 来自 JUnit；Emotion 当前 374 entries 包含 218 tests 和 156 subtests。
+不要把 subtests、重叠的 Voice pure/Humble 或契约门禁加总为独立测试数。
 
 ## 安装与跨模块验证
 

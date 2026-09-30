@@ -1,0 +1,22 @@
+{
+  "openvins": {
+    "status": "MATERIALIZED",
+    "path": "/tmp/marsdog-developer-platform-2468639/.external/openvins",
+    "files": 329
+  },
+  "vins-fusion": {
+    "status": "MATERIALIZED",
+    "path": "/tmp/marsdog-developer-platform-2468639/.external/vins-fusion",
+    "files": 312
+  },
+  "uwb": {
+    "status": "MATERIALIZED",
+    "path": "/tmp/marsdog-developer-platform-2468639/.external/uwb",
+    "files": 14
+  },
+  "rtabmap": {
+    "status": "MATERIALIZED",
+    "path": "/tmp/marsdog-developer-platform-2468639/.external/rtabmap",
+    "files": 1738
+  }
+}

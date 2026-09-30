@@ -1,0 +1,141 @@
+{
+  "status": "PASS_WITH_EXPLICIT_LIMITS",
+  "counts": {
+    "tests": 452,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 29
+  },
+  "skips": [
+    {
+      "case": "tests.test_emotion_display.test_short_fall_result_keeps_warning_visible_and_debug_result_exact",
+      "reason": "PySide2 is not installed"
+    },
+    {
+      "case": "tests.test_emotion_display.test_stale_result_does_not_reset_preempting_goal",
+      "reason": "PySide2 is not installed"
+    },
+    {
+      "case": "tests.test_emotion_display.test_feedback_recovers_a_goal_missed_by_late_display_start",
+      "reason": "PySide2 is not installed"
+    },
+    {
+      "case": "tests.test_emotion_display.test_unclassified_active_behavior_is_not_labeled_ready",
+      "reason": "PySide2 is not installed"
+    },
+    {
+      "case": "tests.test_emotion_display.test_normal_mode_hides_engineering_fields_and_debug_key_reveals_overlay",
+      "reason": "PySide2 is not installed"
+    },
+    {
+      "case": "tests.test_emotion_display.test_feedback_drives_friendly_copy_face_cue_and_debug_state",
+      "reason": "PySide2 is not installed"
+    },
+    {
+      "case": "tests.test_emotion_display.test_intensity_changes_bounded_facial_shape_and_motion_targets",
+      "reason": "PySide2 is not installed"
+    },
+    {
+      "case": "tests.test_emotion_display.test_gaze_and_blink_remain_bounded_and_use_staggered_lids",
+      "reason": "PySide2 is not installed"
+    },
+    {
+      "case": "tests.test_emotion_display.test_classic_pet_face_renders_key_expressions_offscreen",
+      "reason": "PySide2 is not installed"
+    },
+    {
+      "case": "tests.test_long_goal_arbitration.test_cancel_pending_rejects_same_event_and_safety_replacement",
+      "reason": "rclpy unavailable"
+    },
+    {
+      "case": "tests.test_long_goal_arbitration.test_uwb_terminal_unknown_rejects_replacement",
+      "reason": "rclpy unavailable"
+    },
+    {
+      "case": "tests.test_long_goal_arbitration.test_lease_is_keyed_by_goal_and_behavior_id",
+      "reason": "rclpy unavailable"
+    },
+    {
+      "case": "tests.test_long_goal_arbitration.test_voice_idle_does_not_stop_goal_owned_uwb",
+      "reason": "rclpy unavailable"
+    },
+    {
+      "case": "tests.test_long_goal_runtime.test_follow_starts_once_and_returns_canceled_after_controller_stop",
+      "reason": "rclpy unavailable"
+    },
+    {
+      "case": "tests.test_long_goal_runtime.test_play_completes_two_full_cycles_in_one_goal",
+      "reason": "rclpy unavailable"
+    },
+    {
+      "case": "tests.test_long_goal_runtime.test_play_failure_does_not_begin_next_cycle",
+      "reason": "rclpy unavailable"
+    },
+    {
+      "case": "tests.test_ros_goal_params_boundary.test_goal_callback_rejects_invalid_params_before_accept[{source:visual_direct,trigger_event:EVT_VISION_PERSON_FALL}]",
+      "reason": "rclpy is not installed"
+    },
+    {
+      "case": "tests.test_ros_goal_params_boundary.test_goal_callback_rejects_invalid_params_before_accept[[]]",
+      "reason": "rclpy is not installed"
+    },
+    {
+      "case": "tests.test_ros_goal_params_boundary.test_goal_callback_rejects_invalid_params_before_accept[true]",
+      "reason": "rclpy is not installed"
+    },
+    {
+      "case": "tests.test_ros_goal_params_boundary.test_goal_callback_rejects_invalid_params_before_accept[false]",
+      "reason": "rclpy is not installed"
+    },
+    {
+      "case": "tests.test_ros_goal_params_boundary.test_goal_callback_rejects_invalid_params_before_accept[null]",
+      "reason": "rclpy is not installed"
+    },
+    {
+      "case": "tests.test_ros_goal_params_boundary.test_goal_callback_rejects_invalid_params_before_accept[17]",
+      "reason": "rclpy is not installed"
+    },
+    {
+      "case": "tests.test_ros_goal_params_boundary.test_goal_callback_accepts_valid_json_object",
+      "reason": "rclpy is not installed"
+    },
+    {
+      "case": "tests.test_ros_goal_params_boundary.test_accepted_callback_never_throws_for_invalid_params[{source:visual_direct,trigger_event:EVT_VISION_PERSON_FALL}]",
+      "reason": "rclpy is not installed"
+    },
+    {
+      "case": "tests.test_ros_goal_params_boundary.test_accepted_callback_never_throws_for_invalid_params[[]]",
+      "reason": "rclpy is not installed"
+    },
+    {
+      "case": "tests.test_ros_goal_params_boundary.test_accepted_callback_never_throws_for_invalid_params[true]",
+      "reason": "rclpy is not installed"
+    },
+    {
+      "case": "tests.test_ros_goal_params_boundary.test_accepted_callback_never_throws_for_invalid_params[false]",
+      "reason": "rclpy is not installed"
+    },
+    {
+      "case": "tests.test_ros_goal_params_boundary.test_accepted_callback_never_throws_for_invalid_params[null]",
+      "reason": "rclpy is not installed"
+    },
+    {
+      "case": "tests.test_ros_goal_params_boundary.test_accepted_callback_never_throws_for_invalid_params[17]",
+      "reason": "rclpy is not installed"
+    }
+  ],
+  "command": [
+    "/tmp/marsdog-developer-platform-2468639/modules/action/.venv/bin/python",
+    "-B",
+    "-m",
+    "pytest",
+    "tests",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=/tmp/marsdog-developer-platform-2468639/out/dev/fresh-action/junit.xml"
+  ],
+  "scope": "Existing module unit suite, no hardware",
+  "module": "action",
+  "returncode": 0
+}

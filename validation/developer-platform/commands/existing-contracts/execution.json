@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "-B",
+    "tools/check_contracts.py",
+    "--output",
+    "out/developer-platform/reports/existing-contracts"
+  ],
+  "cwd": "/home/elephant/MarsDog/marsdog-platform",
+  "started_utc": "2026-09-29T15:06:17.820014+00:00",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "env": {
+    "UV_CACHE_DIR": "/home/elephant/MarsDog/migration/.cache/uv"
+  },
+  "source_commit": "3bf529ec9c3ddbccfeef4cd3bfefaebb7f260adf",
+  "source_status": " M .github/workflows/action.yml\n M .github/workflows/behavior.yml\n M .github/workflows/emotion.yml\n M .github/workflows/platform.yml\n M .github/workflows/vision.yml\n M .github/workflows/voice.yml\n M AGENTS.md\n M HANDOFF_NEXT_SESSION.md\n M README.md\n M docs/architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md\n M docs/migration/STATUS.md\n M platform/modules.json\n M tools/check_extended_ros_build.py\n M tools/marsdog.py\n M tools/materialize_vendors.py\n M tools/runtime_environment.py\n?? .github/pull_request_template.md\n?? CONTRIBUTING.md\n?? docs/deployment/\n?? docs/development/\n?? integration/platform/tests/test_developer_workflow.py\n?? integration/platform/tests/test_source_handoff.py\n?? tools/dev.py\n?? tools/source_handoff.py\n",
+  "returncode": 0,
+  "duration_seconds": 4.288,
+  "status": "PASS"
+}

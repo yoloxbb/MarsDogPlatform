@@ -1,0 +1,208 @@
+["/home/elephant/MarsDog/migration/.tools/uv", "build", "--wheel", "--out-dir", "/tmp/marsdog-developer-platform-2468639/out/behavior-install/check-fx_34ysu/wheels", "/tmp/marsdog-developer-platform-2468639/modules/behavior"]
+Building wheel...
+running egg_info
+writing marsdog_behavior.egg-info/PKG-INFO
+writing dependency_links to marsdog_behavior.egg-info/dependency_links.txt
+writing entry points to marsdog_behavior.egg-info/entry_points.txt
+writing requirements to marsdog_behavior.egg-info/requires.txt
+writing top-level names to marsdog_behavior.egg-info/top_level.txt
+reading manifest file 'marsdog_behavior.egg-info/SOURCES.txt'
+writing manifest file 'marsdog_behavior.egg-info/SOURCES.txt'
+running bdist_wheel
+running build
+running build_py
+copying marsdog_behavior/interaction_resolver.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/interfaces.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/ros2_compat.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/voice_session_client_adapter.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/candidate_pool.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/ros_node.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/standalone_demo.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/action_client_adapter.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/voice_interaction_session.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/behavior_selector.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/perception_client_adapter.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/relevance_checker.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/intent_mapper.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/result_event_mapper.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/lifecycle.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/__init__.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/runtime.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/config_paths.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/execution_manager.py -> build/lib/marsdog_behavior
+copying marsdog_behavior/mock_action_executor_node.py -> build/lib/marsdog_behavior
+copying bionic_dog_bt/need_module.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/datatypes.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/actions.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/blackboard.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/mock_action_executor.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/mock_input_provider.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/behavior_tree_node.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/arbitration.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/mock_perception_client.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/yaml_loader.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/conditions.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/demo.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/__init__.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/tree_builder.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/visual_context.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/decorators.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/emotion_module.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/logger.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/action_catalog.py -> build/lib/bionic_dog_bt
+copying bionic_dog_bt/constants.py -> build/lib/bionic_dog_bt
+running egg_info
+writing marsdog_behavior.egg-info/PKG-INFO
+writing dependency_links to marsdog_behavior.egg-info/dependency_links.txt
+writing entry points to marsdog_behavior.egg-info/entry_points.txt
+writing requirements to marsdog_behavior.egg-info/requires.txt
+writing top-level names to marsdog_behavior.egg-info/top_level.txt
+reading manifest file 'marsdog_behavior.egg-info/SOURCES.txt'
+writing manifest file 'marsdog_behavior.egg-info/SOURCES.txt'
+warning: build_py: byte-compiling is disabled, skipping.
+
+installing to build/bdist.linux-x86_64/wheel
+running install
+running install_lib
+creating build/bdist.linux-x86_64/wheel
+creating build/bdist.linux-x86_64/wheel/marsdog_behavior
+copying build/lib/marsdog_behavior/interaction_resolver.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/interfaces.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/ros2_compat.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/voice_session_client_adapter.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/candidate_pool.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/ros_node.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/standalone_demo.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/action_client_adapter.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/voice_interaction_session.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/behavior_selector.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/perception_client_adapter.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/relevance_checker.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/intent_mapper.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/result_event_mapper.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/lifecycle.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/__init__.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/runtime.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/config_paths.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/execution_manager.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+copying build/lib/marsdog_behavior/mock_action_executor_node.py -> build/bdist.linux-x86_64/wheel/./marsdog_behavior
+creating build/bdist.linux-x86_64/wheel/bionic_dog_bt
+copying build/lib/bionic_dog_bt/need_module.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/datatypes.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/actions.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/blackboard.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/mock_action_executor.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/mock_input_provider.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/behavior_tree_node.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/arbitration.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/mock_perception_client.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/yaml_loader.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/conditions.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/demo.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/__init__.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/tree_builder.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/visual_context.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/decorators.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/emotion_module.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/logger.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/action_catalog.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+copying build/lib/bionic_dog_bt/constants.py -> build/bdist.linux-x86_64/wheel/./bionic_dog_bt
+warning: install_lib: byte-compiling is disabled, skipping.
+
+running install_data
+creating build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.data/data
+creating build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.data/data/share/marsdog_behavior
+copying package.xml -> build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.data/data/share/marsdog_behavior
+creating build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/launch
+copying launch/behavior_tree.launch.py -> build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/launch
+creating build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/config
+copying config/behaviors.yaml -> build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/config
+copying config/behavior_categories.yaml -> build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/config
+copying config/event_intent_map.yaml -> build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/config
+copying config/intent_action_pool.yaml -> build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/config
+copying config/emotion_behavior_map.yaml -> build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/config
+copying config/legacy_behavior_aliases.yaml -> build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/config
+copying config/voice_engagement.yaml -> build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/config
+creating build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.data/data/share/ament_index/resource_index/packages
+copying resource/marsdog_behavior -> build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.data/data/share/ament_index/resource_index/packages
+running install_egg_info
+Copying marsdog_behavior.egg-info to build/bdist.linux-x86_64/wheel/./marsdog_behavior-0.2.0-py3.10.egg-info
+running install_scripts
+creating build/bdist.linux-x86_64/wheel/marsdog_behavior-0.2.0.dist-info/WHEEL
+creating '/tmp/marsdog-developer-platform-2468639/out/behavior-install/check-fx_34ysu/wheels/.tmp-2xsmx5wg/marsdog_behavior-0.2.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+adding 'bionic_dog_bt/__init__.py'
+adding 'bionic_dog_bt/action_catalog.py'
+adding 'bionic_dog_bt/actions.py'
+adding 'bionic_dog_bt/arbitration.py'
+adding 'bionic_dog_bt/behavior_tree_node.py'
+adding 'bionic_dog_bt/blackboard.py'
+adding 'bionic_dog_bt/conditions.py'
+adding 'bionic_dog_bt/constants.py'
+adding 'bionic_dog_bt/datatypes.py'
+adding 'bionic_dog_bt/decorators.py'
+adding 'bionic_dog_bt/demo.py'
+adding 'bionic_dog_bt/emotion_module.py'
+adding 'bionic_dog_bt/logger.py'
+adding 'bionic_dog_bt/mock_action_executor.py'
+adding 'bionic_dog_bt/mock_input_provider.py'
+adding 'bionic_dog_bt/mock_perception_client.py'
+adding 'bionic_dog_bt/need_module.py'
+adding 'bionic_dog_bt/tree_builder.py'
+adding 'bionic_dog_bt/visual_context.py'
+adding 'bionic_dog_bt/yaml_loader.py'
+adding 'marsdog_behavior/__init__.py'
+adding 'marsdog_behavior/action_client_adapter.py'
+adding 'marsdog_behavior/behavior_selector.py'
+adding 'marsdog_behavior/candidate_pool.py'
+adding 'marsdog_behavior/config_paths.py'
+adding 'marsdog_behavior/execution_manager.py'
+adding 'marsdog_behavior/intent_mapper.py'
+adding 'marsdog_behavior/interaction_resolver.py'
+adding 'marsdog_behavior/interfaces.py'
+adding 'marsdog_behavior/lifecycle.py'
+adding 'marsdog_behavior/mock_action_executor_node.py'
+adding 'marsdog_behavior/perception_client_adapter.py'
+adding 'marsdog_behavior/relevance_checker.py'
+adding 'marsdog_behavior/result_event_mapper.py'
+adding 'marsdog_behavior/ros2_compat.py'
+adding 'marsdog_behavior/ros_node.py'
+adding 'marsdog_behavior/runtime.py'
+adding 'marsdog_behavior/standalone_demo.py'
+adding 'marsdog_behavior/voice_interaction_session.py'
+adding 'marsdog_behavior/voice_session_client_adapter.py'
+adding 'marsdog_behavior-0.2.0.data/data/share/ament_index/resource_index/packages/marsdog_behavior'
+adding 'marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/package.xml'
+adding 'marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/config/behavior_categories.yaml'
+adding 'marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/config/behaviors.yaml'
+adding 'marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/config/emotion_behavior_map.yaml'
+adding 'marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/config/event_intent_map.yaml'
+adding 'marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/config/intent_action_pool.yaml'
+adding 'marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/config/legacy_behavior_aliases.yaml'
+adding 'marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/config/voice_engagement.yaml'
+adding 'marsdog_behavior-0.2.0.data/data/share/marsdog_behavior/launch/behavior_tree.launch.py'
+adding 'marsdog_behavior-0.2.0.dist-info/METADATA'
+adding 'marsdog_behavior-0.2.0.dist-info/WHEEL'
+adding 'marsdog_behavior-0.2.0.dist-info/entry_points.txt'
+adding 'marsdog_behavior-0.2.0.dist-info/top_level.txt'
+adding 'marsdog_behavior-0.2.0.dist-info/zip-safe'
+adding 'marsdog_behavior-0.2.0.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
+Successfully built wheels/marsdog_behavior-0.2.0-py3-none-any.whl
+["/home/elephant/MarsDog/migration/.tools/uv", "venv", "--python", "/usr/bin/python3.10", "/tmp/marsdog-developer-platform-2468639/out/behavior-install/check-fx_34ysu/venv"]
+Using CPython 3.10.12 interpreter at: /usr/bin/python3.10
+Creating virtual environment at: venv
+Activate with: source venv/bin/activate
+["/home/elephant/MarsDog/migration/.tools/uv", "pip", "install", "--python", "/tmp/marsdog-developer-platform-2468639/out/behavior-install/check-fx_34ysu/venv/bin/python", "/tmp/marsdog-developer-platform-2468639/out/behavior-install/check-fx_34ysu/wheels/marsdog_behavior-0.2.0-py3-none-any.whl"]
+Using Python 3.10.12 environment at: venv
+Resolved 6 packages in 592ms
+Prepared 1 package in 13ms
+Installed 6 packages in 9ms
+ + markdown-it-py==4.2.0
+ + marsdog-behavior==0.2.0 (from file:///tmp/marsdog-developer-platform-2468639/out/behavior-install/check-fx_34ysu/wheels/marsdog_behavior-0.2.0-py3-none-any.whl)
+ + mdurl==0.1.2
+ + pygments==2.21.0
+ + pyyaml==6.0.3
+ + rich==15.0.0
+["/tmp/marsdog-developer-platform-2468639/out/behavior-install/check-fx_34ysu/venv/bin/python", "-B", "-c", "\nimport hashlib,json,importlib.metadata,importlib.util\nfrom marsdog_behavior import config_paths\nfrom marsdog_behavior.intent_mapper import IntentMapper\nfrom bionic_dog_bt.yaml_loader import YAMLLoader\nconfigs=config_paths.get_config_dir()\nspecs=YAMLLoader(str(configs/'behaviors.yaml')).get_all_specs()\nmapper=IntentMapper()\nscripts={e.name:e for e in importlib.metadata.distribution('marsdog-behavior').entry_points if e.group=='console_scripts'}\nfor entry in scripts.values():\n    assert callable(entry.load()), entry\nprint(json.dumps({\n 'module_file':config_paths.__file__, 'config_dir':str(configs),\n 'config_hashes':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in configs.glob('*.yaml')},\n 'scripts':{k:v.value for k,v in scripts.items()}, 'behavior_count':len(specs),\n 'rclpy_installed':importlib.util.find_spec('rclpy') is not None\n}))\n"]
+{"module_file": "/tmp/marsdog-developer-platform-2468639/out/behavior-install/check-fx_34ysu/venv/lib/python3.10/site-packages/marsdog_behavior/config_paths.py", "config_dir": "/tmp/marsdog-developer-platform-2468639/out/behavior-install/check-fx_34ysu/venv/share/marsdog_behavior/config", "config_hashes": {"voice_engagement.yaml": "2607a051038aa0d6b59e40256da28331aa93d830da0da407a134c247bca168ba", "event_intent_map.yaml": "0470603ef8e672e22dddb703b22876122a23c8765e66a4dd5d5e07196a5f58f5", "behavior_categories.yaml": "ac877386c8e71aec0aec4ca93af227b7e6be9f9da769af40d70f50edd220ab10", "intent_action_pool.yaml": "d2becbfe959c4a857d71f43325497201e77e754a24da1a51f0d584936bd46c69", "legacy_behavior_aliases.yaml": "7c6580f8c8dd6816e24265950c25dddb2a18a887446e6e879a4cf7f890823f13", "behaviors.yaml": "e1ae475cabcedcb54af6d7bf604aa1f5c5b36a74f8df80af02c24dcac6ebca13", "emotion_behavior_map.yaml": "2e6e4e83fed3a606fbbed43f0986eb94753a741105ca13d255b66ecbad5632be"}, "scripts": {"behavior-tree-demo": "bionic_dog_bt.demo:main", "behavior_tree_node": "marsdog_behavior.ros_node:main", "marsdog-standalone": "marsdog_behavior.standalone_demo:main"}, "behavior_count": 106, "rclpy_installed": false}
+23:13:11.473 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
