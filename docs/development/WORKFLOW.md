@@ -24,6 +24,9 @@ flowchart LR
 [已落地架构自审](../architecture/PLATFORM_IMPLEMENTATION_REVIEW.md) 为准。
 工具只装配进程、环境和测试，不新增运行时业务总线或所有模块共同依赖的业务 common。
 
+当前运行链路、激活与抢占条件见 [事件到行为到动作详图](../architecture/EVENT_BEHAVIOR_ACTION.md)；
+逐项配置映射见 [事件行为动作索引](../architecture/EVENT_BEHAVIOR_ACTION_INDEX.md)。
+
 ## 开发示例：已有“回家”功能的扩展
 
 先确定是 Voice 识别/入口变化、BT 仲裁变化、Action 执行阶段变化，
