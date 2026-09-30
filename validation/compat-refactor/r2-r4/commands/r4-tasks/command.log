@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "scope": "real module compatibility; pure test transport, no hardware",
+  "baseline_commit": "66c7eaa",
+  "baseline_sha256": "ebae33f75e42223bab9b50b380caf0e6a3b064fdfd1cebdd428e4288823fa170",
+  "provenance": {
+    "voice": {
+      "stage": "voice",
+      "pid": 24232,
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/voice/.venv/bin/python",
+      "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/voice/.venv",
+      "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "foreign_business_modules": [],
+      "ros_importable": true
+    },
+    "vision": {
+      "stage": "vision",
+      "pid": 24293,
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/bin/python",
+      "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv",
+      "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+      "foreign_business_modules": [],
+      "ros_importable": true
+    }
+  },
+  "scenarios": 18,
+  "skipped": 0
+}

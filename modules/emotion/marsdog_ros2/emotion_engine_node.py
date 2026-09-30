@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from marsdog_ros2.common.state_publication import PublishStateValue, PublishSignalEventsValue
+
 import json
 import time
 from datetime import datetime
@@ -229,29 +231,18 @@ class EmotionEngineNode(Node):
         self._timeSynchronized = True
 
     def PublishState(self, virtualDateTime: datetime | None = None) -> None:
-        """发布情绪状态。"""
-        currentVirtualTime = virtualDateTime or self.timeController.GetVirtualDateTimeValue()
-        payload = GetMessageWithTimeContextValue(
-            self.system.GetEmotionStateValue(),
-            self.timeController,
-            currentVirtualTime,
+        PublishStateValue(
+            self.system.GetEmotionStateValue, self.timeController,
+            self.statePublisher, String, GetMessageWithTimeContextValue,
+            virtualDateTime,
         )
-        message = String()
-        message.data = json.dumps(payload, ensure_ascii=False)
-        self.statePublisher.publish(message)
 
     def PublishSignalEvents(self, virtualDateTime: datetime | None = None) -> None:
-        """发布普通情绪上升沿事件或持续的 Calm 兜底事件。"""
-        currentVirtualTime = virtualDateTime or self.timeController.GetVirtualDateTimeValue()
-        for signalEvent in self.system.GetEmotionSignalEventsValue():
-            payload = GetMessageWithTimeContextValue(
-                signalEvent,
-                self.timeController,
-                currentVirtualTime,
-            )
-            message = String()
-            message.data = json.dumps(payload, ensure_ascii=False)
-            self.signalPublisher.publish(message)
+        PublishSignalEventsValue(
+            self.system.GetEmotionSignalEventsValue, self.timeController,
+            self.signalPublisher, String, GetMessageWithTimeContextValue,
+            virtualDateTime,
+        )
 
 
 def main(args=None) -> None:

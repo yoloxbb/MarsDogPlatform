@@ -1,0 +1,97 @@
+{
+  "baseline_commit": "66c7eaa",
+  "cases": [
+    {
+      "id": "object",
+      "params_json": "{\"text\":\"中文\",\"count\":2}"
+    },
+    {
+      "id": "empty",
+      "params_json": ""
+    },
+    {
+      "id": "list",
+      "params_json": "[{\"key\":\"name\",\"value\":\"owner\"},{\"key\":\"name\",\"value\":\"new\"},4]"
+    },
+    {
+      "id": "null",
+      "params_json": "null"
+    },
+    {
+      "id": "number",
+      "params_json": "12"
+    },
+    {
+      "id": "string",
+      "params_json": "\"str\""
+    },
+    {
+      "id": "bool",
+      "params_json": "true"
+    },
+    {
+      "id": "invalid_json",
+      "params_json": "{"
+    },
+    {
+      "id": "empty_array",
+      "params_json": "[]"
+    },
+    {
+      "id": "success",
+      "params_json": "{}",
+      "result": {
+        "ok": true
+      }
+    },
+    {
+      "id": "missing_ok",
+      "params_json": "{}",
+      "result": {
+        "text": "done"
+      }
+    },
+    {
+      "id": "failure",
+      "params_json": "{}",
+      "result": {
+        "ok": false,
+        "error": "expected failure"
+      }
+    },
+    {
+      "id": "failure_default",
+      "params_json": "{}",
+      "result": {
+        "ok": false
+      }
+    },
+    {
+      "id": "string_ok",
+      "params_json": "{}",
+      "result": {
+        "ok": "false"
+      }
+    },
+    {
+      "id": "empty_result",
+      "params_json": "{}",
+      "result": {}
+    },
+    {
+      "id": "none_result",
+      "params_json": "{}",
+      "result": null
+    },
+    {
+      "id": "array_result",
+      "params_json": "{}",
+      "result": []
+    },
+    {
+      "id": "task_raises",
+      "params_json": "{}",
+      "raise": "task failed before result"
+    }
+  ]
+}

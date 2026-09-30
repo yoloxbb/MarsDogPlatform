@@ -1,0 +1,1484 @@
+{
+  "baseline_commit": "66c7eaa",
+  "observed": {
+    "voice": {
+      "object": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {
+              "text": "中文",
+              "count": 2
+            }
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "",
+              "task_result": {
+                "ok": true,
+                "text": "完成"
+              }
+            }
+          }
+        ]
+      },
+      "empty": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "",
+              "task_result": {
+                "ok": true,
+                "text": "完成"
+              }
+            }
+          }
+        ]
+      },
+      "list": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {
+              "name": "new"
+            }
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "",
+              "task_result": {
+                "ok": true,
+                "text": "完成"
+              }
+            }
+          }
+        ]
+      },
+      "null": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "",
+              "task_result": {
+                "ok": true,
+                "text": "完成"
+              }
+            }
+          }
+        ]
+      },
+      "number": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "",
+              "task_result": {
+                "ok": true,
+                "text": "完成"
+              }
+            }
+          }
+        ]
+      },
+      "string": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "",
+              "task_result": {
+                "ok": true,
+                "text": "完成"
+              }
+            }
+          }
+        ]
+      },
+      "bool": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "",
+              "task_result": {
+                "ok": true,
+                "text": "完成"
+              }
+            }
+          }
+        ]
+      },
+      "invalid_json": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": false,
+          "result_json": "",
+          "error_message": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+          "latency_ms": 125.0
+        },
+        "calls": [],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "failure",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+              "task_result": {}
+            }
+          }
+        ]
+      },
+      "empty_array": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "",
+              "task_result": {
+                "ok": true,
+                "text": "完成"
+              }
+            }
+          }
+        ]
+      },
+      "success": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "",
+              "task_result": {
+                "ok": true
+              }
+            }
+          }
+        ]
+      },
+      "missing_ok": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"text\": \"done\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "",
+              "task_result": {
+                "text": "done"
+              }
+            }
+          }
+        ]
+      },
+      "failure": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": false,
+          "result_json": "{\"ok\": false, \"error\": \"expected failure\"}",
+          "error_message": "expected failure",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "failure",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "expected failure",
+              "task_result": {
+                "ok": false,
+                "error": "expected failure"
+              }
+            }
+          }
+        ]
+      },
+      "failure_default": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": false,
+          "result_json": "{\"ok\": false}",
+          "error_message": "task failed",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "failure",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "task failed",
+              "task_result": {
+                "ok": false
+              }
+            }
+          }
+        ]
+      },
+      "string_ok": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": \"false\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "",
+              "task_result": {
+                "ok": "false"
+              }
+            }
+          }
+        ]
+      },
+      "empty_result": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "",
+              "task_result": {}
+            }
+          }
+        ]
+      },
+      "none_result": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": false,
+          "result_json": "",
+          "error_message": "'NoneType' object has no attribute 'get'",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "failure",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "'NoneType' object has no attribute 'get'",
+              "task_result": {}
+            }
+          }
+        ]
+      },
+      "array_result": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": false,
+          "result_json": "",
+          "error_message": "'list' object has no attribute 'get'",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "failure",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "'list' object has no attribute 'get'",
+              "task_result": {}
+            }
+          }
+        ]
+      },
+      "task_raises": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": false,
+          "result_json": "",
+          "error_message": "task failed before result",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "service_complete"
+            ],
+            "fields": {
+              "result": "failure",
+              "service": "/perception/voice/task",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "interaction_id": "interaction-current",
+              "latency_ms": 125.0,
+              "error": "task failed before result",
+              "task_result": {}
+            }
+          }
+        ]
+      }
+    },
+    "vision": {
+      "object": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {
+              "text": "中文",
+              "count": 2
+            }
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "",
+              "error": ""
+            }
+          }
+        ]
+      },
+      "empty": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "",
+              "error": ""
+            }
+          }
+        ]
+      },
+      "list": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {
+              "name": "new"
+            }
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "",
+              "error": ""
+            }
+          }
+        ]
+      },
+      "null": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "",
+              "error": ""
+            }
+          }
+        ]
+      },
+      "number": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "",
+              "error": ""
+            }
+          }
+        ]
+      },
+      "string": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "",
+              "error": ""
+            }
+          }
+        ]
+      },
+      "bool": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "",
+              "error": ""
+            }
+          }
+        ]
+      },
+      "invalid_json": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": false,
+          "result_json": "",
+          "error_message": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+          "latency_ms": 125.0
+        },
+        "calls": [],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "failure",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "task_failed",
+              "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+            }
+          }
+        ]
+      },
+      "empty_array": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true, \"text\": \"完成\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "",
+              "error": ""
+            }
+          }
+        ]
+      },
+      "success": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": true}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "",
+              "error": ""
+            }
+          }
+        ]
+      },
+      "missing_ok": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"text\": \"done\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "",
+              "error": ""
+            }
+          }
+        ]
+      },
+      "failure": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": false,
+          "result_json": "{\"ok\": false, \"error\": \"expected failure\"}",
+          "error_message": "expected failure",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "failure",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "task_failed",
+              "error": "expected failure"
+            }
+          }
+        ]
+      },
+      "failure_default": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": false,
+          "result_json": "{\"ok\": false}",
+          "error_message": "task failed",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "failure",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "task_failed",
+              "error": "task failed"
+            }
+          }
+        ]
+      },
+      "string_ok": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{\"ok\": \"false\"}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "",
+              "error": ""
+            }
+          }
+        ]
+      },
+      "empty_result": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": true,
+          "result_json": "{}",
+          "error_message": "",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "success",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "",
+              "error": ""
+            }
+          }
+        ]
+      },
+      "none_result": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": false,
+          "result_json": "",
+          "error_message": "'NoneType' object has no attribute 'get'",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "failure",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "task_failed",
+              "error": "'NoneType' object has no attribute 'get'"
+            }
+          }
+        ]
+      },
+      "array_result": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": false,
+          "result_json": "",
+          "error_message": "'list' object has no attribute 'get'",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "failure",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "task_failed",
+              "error": "'list' object has no attribute 'get'"
+            }
+          }
+        ]
+      },
+      "task_raises": {
+        "response": {
+          "task_id": "task-1",
+          "task_type": "fixture_task",
+          "success": false,
+          "result_json": "",
+          "error_message": "task failed before result",
+          "latency_ms": 125.0
+        },
+        "calls": [
+          {
+            "task_type": "fixture_task",
+            "params": {}
+          }
+        ],
+        "traces": [
+          {
+            "args": [
+              "stage_start"
+            ],
+            "fields": {
+              "result": "started",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task"
+            }
+          },
+          {
+            "args": [
+              "stage_complete"
+            ],
+            "fields": {
+              "result": "failure",
+              "node": "vision_interaction",
+              "module": "vision_task",
+              "stage": "service",
+              "task_id": "task-1",
+              "task_type": "fixture_task",
+              "latency_ms": 125.0,
+              "reason_code": "task_failed",
+              "error": "task failed before result"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,1 @@
+{"status": "PASS", "counts": {"/perception/audio_event": 2, "/perception/visual_event": 109, "/behavior/result_event": 0, "/internal_need/state": 11, "/emotion/state": 11, "/waypoint_nav/status": 4, "/development/nav2_events": 2, "/development/lite3_io": 39, "/debug/execute_behavior/goal": 3, "/debug/execute_behavior/result": 3}}

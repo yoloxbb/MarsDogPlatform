@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "-B",
+    "tools/dev.py",
+    "check"
+  ],
+  "cwd": "/home/elephant/MarsDog/marsdog-platform",
+  "started_utc": "2026-09-30T08:02:01.390157+00:00",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "env": {
+    "UV_CACHE_DIR": "/home/elephant/MarsDog/migration/.cache/uv"
+  },
+  "source_commit": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21",
+  "source_status": " M .github/workflows/platform.yml\n M .github/workflows/result-contract.yml\n M AGENTS.md\n M HANDOFF_NEXT_SESSION.md\n M docs/architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md\n M docs/architecture/COMPATIBILITY_REFACTOR.md\n M docs/development/WORKFLOW.md\n M docs/migration/STATUS.md\n M modules/action/marsdog_action_executor/ros_node.py\n M modules/behavior/marsdog_behavior/perception_client_adapter.py\n M modules/behavior/marsdog_behavior/ros_node.py\n M modules/emotion/marsdog_ros2/emotion_engine_node.py\n M modules/emotion/marsdog_ros2/internal_need_node.py\n M modules/emotion/tests/test_ros2_package.py\n M modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py\n M modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py\n M tools/check_action_install.py\n M tools/check_behavior_install.py\n M tools/check_emotion_install.py\n M tools/check_vision_install.py\n M tools/check_voice_install.py\n?? integration/contracts/state_stage.py\n?? integration/contracts/task_stage.py\n?? integration/contracts/visual_stage.py\n?? integration/contracts/worker_support.py\n?? integration/platform/tests/test_contract_harness.py\n?? interfaces/application/README.md\n?? interfaces/application/execute-behavior/\n?? interfaces/application/perception-task/\n?? interfaces/application/state-v2/\n?? interfaces/application/visual-event-v1/\n?? modules/action/marsdog_action_executor/action_messages.py\n?? modules/action/marsdog_action_executor/goal_contract.py\n?? modules/action/marsdog_action_executor/goal_execution.py\n?? modules/action/marsdog_action_executor/goal_lifecycle.py\n?? modules/action/marsdog_action_executor/perception_dispatch.py\n?? modules/behavior/marsdog_behavior/state_subscriptions.py\n?? modules/behavior/marsdog_behavior/visual_event_consumer.py\n?? modules/behavior/marsdog_behavior/voice_engagement.py\n?? modules/emotion/marsdog_ros2/common/state_publication.py\n?? modules/vision/marsdog_vision_interaction/core/task_router.py\n?? modules/vision/marsdog_vision_interaction/core/visual_snapshot.py\n?? modules/vision/marsdog_vision_interaction/messages/task_service.py\n?? modules/vision/marsdog_vision_interaction/messages/visual_event_derivation.py\n?? modules/voice/marsdog_voice_interaction/core/interaction_session.py\n?? modules/voice/marsdog_voice_interaction/core/speech_pipeline.py\n?? modules/voice/marsdog_voice_interaction/core/task_router.py\n?? modules/voice/marsdog_voice_interaction/messages/task_service.py\n?? tools/check_action_callbacks.py\n?? tools/check_action_transport.py\n?? tools/check_state_contracts.py\n?? tools/check_task_contracts.py\n?? tools/check_visual_contracts.py\n?? tools/component_inventory.py\n?? tools/contract_harness.py\n",
+  "returncode": 0,
+  "duration_seconds": 1.877,
+  "status": "PASS"
+}

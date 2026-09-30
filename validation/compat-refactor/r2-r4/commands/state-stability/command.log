@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "scope": "real module compatibility; pure test transport, no hardware",
+  "baseline_commit": "66c7eaa",
+  "baseline_sha256": "21eba8ee6041e0b1eddc6909ff7883b8f04cf75d076b1b2a4e05277db6251014",
+  "provenance": {
+    "emotion": {
+      "stage": "emotion",
+      "pid": 21274,
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+      "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv",
+      "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/marsdog_ros2/emotion_engine_node.py",
+      "foreign_business_modules": [],
+      "ros_importable": false
+    },
+    "behavior": {
+      "stage": "behavior",
+      "pid": 21287,
+      "python": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+      "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv",
+      "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/marsdog_behavior/ros_node.py",
+      "foreign_business_modules": [],
+      "ros_importable": false
+    }
+  },
+  "scenarios": 34,
+  "skipped": 0
+}

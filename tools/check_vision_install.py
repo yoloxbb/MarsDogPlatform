@@ -1,5 +1,6 @@
 """Verify a locked Vision wheel with CPU math and installed resources, no cameras/models."""
 import argparse
+from component_inventory import check_installed_components
 import hashlib
 import json
 import os
@@ -82,6 +83,7 @@ print(json.dumps({'module_file':str(root),'scripts':scripts,'assets':assets,'web
  'versions':{n:importlib.metadata.version(n) for n in ['numpy','opencv-python','opencv-contrib-python','torch','mediapipe','protobuf','pydantic']}}))
 """
             observation = json.loads(run([str(python), "-B", "-c", probe]))
+            observation["components"] = check_installed_components(run, python, source)
             if (source / "marsdog_vision_interaction/replay.py").is_file():
                 replay_code = (
                     "import hashlib,json,pathlib;import marsdog_vision_interaction.replay as replay;"

@@ -1,0 +1,12 @@
+........................................................................ [ 24%]
+........................................................................ [ 49%]
+......sss............................................................... [ 73%]
+........................................................................ [ 98%]
+....                                                                     [100%]
+=============================== warnings summary ===============================
+tests/test_hand_model_integration.py::test_provider_starts_and_releases_rknn_hand_backend_once
+  FutureWarning: The `ByteTrack` was deprecated since v0.28.0. It will be removed in v0.30.0.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /home/elephant/MarsDog/marsdog-platform/out/compat-refactor/full/tests/final-vision/junit.xml -
+289 passed, 3 skipped, 1 warning in 5.63s

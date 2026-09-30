@@ -1,0 +1,22 @@
+{
+  "command": [
+    "python3",
+    "-B",
+    "tools/dev.py",
+    "test",
+    "behavior",
+    "--output",
+    "out/compat-refactor/full/tests/r2-behavior"
+  ],
+  "cwd": "/home/elephant/MarsDog/marsdog-platform",
+  "started_utc": "2026-09-30T07:37:21.172291+00:00",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "env": {
+    "UV_CACHE_DIR": "/home/elephant/MarsDog/migration/.cache/uv"
+  },
+  "source_commit": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21",
+  "source_status": " M modules/action/marsdog_action_executor/ros_node.py\n M modules/behavior/marsdog_behavior/perception_client_adapter.py\n M modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py\n?? integration/contracts/state_stage.py\n?? integration/contracts/task_stage.py\n?? integration/contracts/visual_stage.py\n?? integration/contracts/worker_support.py\n?? interfaces/application/perception-task/\n?? interfaces/application/state-v2/\n?? interfaces/application/visual-event-v1/\n?? modules/action/marsdog_action_executor/perception_dispatch.py\n?? modules/behavior/marsdog_behavior/visual_event_consumer.py\n?? modules/vision/marsdog_vision_interaction/core/visual_snapshot.py\n?? modules/vision/marsdog_vision_interaction/messages/visual_event_derivation.py\n?? tools/check_action_callbacks.py\n?? tools/check_state_contracts.py\n?? tools/check_task_contracts.py\n?? tools/check_visual_contracts.py\n?? tools/contract_harness.py\n",
+  "returncode": 0,
+  "duration_seconds": 78.86,
+  "status": "PASS"
+}

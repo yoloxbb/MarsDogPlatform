@@ -1,0 +1,10 @@
+[INFO] [1790754891.195716337] [action_executor_node]: ROS transport: domain_id=214, rmw=rmw_cyclonedds_cpp, localhost_only=1
+[INFO] [1790754891.196644578] [action_executor_node]: Loading configs from: /home/elephant/MarsDog/marsdog-platform/out/compat-refactor/full/action-shutdown/SIGINT-1790754890691575423/action-config
+[INFO] [1790754891.461779915] [action_executor_node]: Strict behavior-tree contract loaded: 74 behaviors, 183 actions
+[WARN] [1790754891.467067297] [action_executor_node]: SIMULATED Lite3 I/O: no hardware command publishers; status is synthetic
+[INFO] [1790754891.467429911] [action_executor_node]: Lite3 chassis backend enabled: cmd_vel=/cmd_vel, simple_cmd=/simple_cmd, status=/robot_status, mapped_actions=169, enabled_actions=9, navigation_settle=5 samples/2.0s
+[INFO] [1790754891.469101099] [action_executor_node]: Wake orientation adapter disabled
+[INFO] [1790754891.561127512] [action_executor_node]: Navigation adapter enabled: fixed_service=/waypoint_nav/task, random_place=K, random_pool=A,B,C,D,E,frame=map, waypoints=5, routed_behaviors=12, random_nav_behaviors=8, mapped_stage_actions=39
+[INFO] [1790754891.566163966] [action_executor_node]: Accepted behavior-tree names: 74
+[INFO] [1790754891.569194076] [action_executor_node]: Action Server /execute_behavior started (action from marsdog_interfaces).
+[INFO] [1790754891.569399816] [action_executor_node]: ActionExecutorNode (v2) started — sole /execute_behavior server. Ensure no other marsdog_action_executor instance is running.

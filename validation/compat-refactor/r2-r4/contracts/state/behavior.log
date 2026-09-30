@@ -1,0 +1,161 @@
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] NEED_SOCIAL_URGENT suppressed: vision found no eligible target
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] NEED_SOCIAL_OVERFLOW suppressed: vision found no eligible target
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] NEED_SOCIAL_OVERFLOW suppressed: vision found no eligible target
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /emotion/state: unsupported emotion schema_version 2; expected '2.0'
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /internal_need/state: demands must be an object
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /internal_need/state: unknown demand 'Unknown'
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /internal_need/state: demands.Hunger.value must be numeric
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /emotion/state: unknown emotion 'Unknown'
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /emotion/state: emotions.Joy.triggered must be boolean
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /emotion/state: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /emotion/signal_event: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /internal_need/state: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /internal_need/signal_event: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /emotion/state: 'list' object has no attribute 'get'
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /emotion/signal_event: 'list' object has no attribute 'get'
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /internal_need/state: 'list' object has no attribute 'get'
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /internal_need/signal_event: 'list' object has no attribute 'get'
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /emotion/state: unsupported emotion schema_version None; expected '2.0'
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /emotion/signal_event: unsupported emotion schema_version None; expected '2.0'
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /internal_need/state: unsupported internal need schema_version None; expected '2.0'
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /internal_need/signal_event: unsupported internal need schema_version None; expected '2.0'
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /emotion/state: 'NoneType' object has no attribute 'get'
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /emotion/signal_event: 'NoneType' object has no attribute 'get'
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /internal_need/state: 'NoneType' object has no attribute 'get'
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] Executor: MockActionExecutor (standalone/fallback mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.intent_mapper] IntentMapper loaded: audio=81 reactions=2 visual=2 need=12 emotion=6 aliases=65
+[behavior_tree_node] INFO: PerceptionClientAdapter: using MockPerceptionClient (standalone mode)
+00:16:40.000 [INFO ] [bionic_dog_bt.bt_node   ] BehaviorTreeRosNode started (tick=0.1s)
+00:16:40.000 [ERROR] [bionic_dog_bt.bt_node   ] Failed to parse /internal_need/signal_event: 'NoneType' object has no attribute 'get'

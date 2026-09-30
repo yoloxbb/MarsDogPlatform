@@ -1,7 +1,6 @@
 # MarsDog 平台会话交接 — 2026-09-30
 
-P7 团队开发与源码交付已完成。当前正在按用户授权进行五模块兼容性重构，
-首片 R1 声音契约与 BT 无状态校验提取已落地，见
+P7 团队开发与源码交付已完成。用户授权的五模块兼容性重构 R1–R4 也已完成，见
 [当前路线](docs/architecture/COMPATIBILITY_REFACTOR.md)。
 不要重新迁移，不做模型精度优化；导航/避障内部实现留给其负责人。
 普通工程决策可直接推进。
@@ -11,7 +10,8 @@ P7 团队开发与源码交付已完成。当前正在按用户授权进行五�
 - 唯一主仓：/home/elephant/MarsDog/marsdog-platform（WSL Ubuntu-22.04）。
 - P7 工程源码：2468639054763398882366bad7869236c0d2e68e；交付基线 3f50614。
 - 当前新源码分支：refactor/audio-contracts；R1 提交与证据以 git log 和
-  validation/compat-refactor/r1 为准，不能将旧 P7 bundle 当作最新源码。
+  validation/compat-refactor/r1 为准；R2–R4 证据在 validation/compat-refactor/r2-r4，
+  最新提交以 git log 为准。不能将旧 P7 bundle 当作最新源码。
 - 继续前核对 git status --short 和 git log -3 --oneline，保留任何新出现的用户改动。
 - 初始 25 个未提交文件已备份、复核并纳入源码提交；仅修正 Vision CI 重复 run 键。
   备份在 out/developer-platform/initial-worktree，保全证明随验收证据冻结。
@@ -57,11 +57,15 @@ Vision 289 pass / 3 RGA skip。平台 51 tests，结果契约 25 tests。
 
 ## 后续工作
 
-R1 已有 46 个声音跨进程兼容场景、BT 无状态校验模块和 CI 门禁；
-重构前基线固定在 interfaces/application/audio-event-v2/baseline.json，
-测试不得自动刷新基线。继续 R2 视觉链路，再处理 R3 状态/动作结果与 R4 节点职责拆分，
-每片先冻结行为再改代码，保留领域边界和独立环境。R2–R4 尚未完成。
-新门禁：python3 tools/check_audio_contracts.py；已有结果门禁继续保留。
+R1–R4 已完成，不再把视觉、状态/动作和节点拆分列为待办。
+统一入口 interfaces/application/README.md；组件职责见当前路线。
+本轮平台 71 项、Voice 430、Vision 289 + 3 skip、Emotion 218 + 156 subtests、
+BT 533、Action 423 + 29 skip；另有 35 ROS 动作回调 0 skip。
+音频 46、视觉 33、状态 34、任务 18 × 2、结果 25 契约通过；
+五个 wheel / 18 组件、默认 ROS 构建和 smoke、DDS 取消归属及退出清理均通过。
+跳过、硬件、模型和远端 CI 限制见 validation/compat-refactor/r2-r4/README.md。
+正常测试只读冻结 baseline.json，禁止为消除差异自动刷新。
+后续在本仓按实际功能需求开发，不建立新的跨领域业务 common。
 只有以下外部事实到位后才做对应工作：remote URL/公开范围、真实 owner/runner，
 板端 OS/ABI/NPU/SDK，Lite3/传感器设备，以及部分厂商资料的对外分发许可。
 没有硬件不阻塞普通开发，不虚构协议、账号或验收结论。

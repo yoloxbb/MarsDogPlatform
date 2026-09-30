@@ -1,0 +1,557 @@
+{
+  "format_version": 1,
+  "baseline_commit": "66c7eaa",
+  "producers": {
+    "default": [
+      {}
+    ],
+    "hunger_cycle": [
+      {
+        "demands": {
+          "Hunger": 90
+        }
+      },
+      {
+        "demands": {
+          "Hunger": 90
+        }
+      },
+      {
+        "demands": {
+          "Hunger": 0
+        }
+      }
+    ],
+    "social_levels": [
+      {
+        "demands": {
+          "Social": 60
+        }
+      },
+      {
+        "demands": {
+          "Social": 80
+        }
+      },
+      {
+        "demands": {
+          "Social": 100
+        }
+      },
+      {
+        "demands": {
+          "Social": 0
+        }
+      }
+    ],
+    "joy_cycle": [
+      {
+        "emotions": {
+          "Joy": 100
+        }
+      },
+      {
+        "emotions": {
+          "Joy": 100
+        }
+      },
+      {
+        "emotions": {
+          "Joy": 0
+        }
+      }
+    ],
+    "all_emotions": [
+      {
+        "emotions": {
+          "Joy": 100,
+          "Excite": 100,
+          "Anxiety": 100,
+          "Fear": 100,
+          "Curious": 100,
+          "Calm": 100
+        }
+      }
+    ],
+    "all_needs": [
+      {
+        "demands": {
+          "Hunger": 100,
+          "Bladder": 100,
+          "Sleepiness": 100,
+          "Cleanliness": 100,
+          "Energy": 100,
+          "Social": 100,
+          "Exploration": 100
+        }
+      }
+    ],
+    "audio_to_state": [
+      {
+        "audio": [
+          {
+            "event_type": "EVT_VOICE_PRAISE",
+            "masterId": true
+          }
+        ]
+      },
+      {},
+      {
+        "audio": [
+          {
+            "event_type": "EVT_VOICE_PRAISE",
+            "masterId": true
+          }
+        ]
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "default",
+      "steps": [
+        {
+          "source": "default",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "id": "hunger_cycle",
+      "steps": [
+        {
+          "source": "hunger_cycle",
+          "index": 0
+        },
+        {
+          "source": "hunger_cycle",
+          "index": 1
+        },
+        {
+          "source": "hunger_cycle",
+          "index": 2
+        }
+      ]
+    },
+    {
+      "id": "social_levels",
+      "steps": [
+        {
+          "source": "social_levels",
+          "index": 0
+        },
+        {
+          "source": "social_levels",
+          "index": 1
+        },
+        {
+          "source": "social_levels",
+          "index": 2
+        },
+        {
+          "source": "social_levels",
+          "index": 3
+        }
+      ]
+    },
+    {
+      "id": "joy_cycle",
+      "steps": [
+        {
+          "source": "joy_cycle",
+          "index": 0
+        },
+        {
+          "source": "joy_cycle",
+          "index": 1
+        },
+        {
+          "source": "joy_cycle",
+          "index": 2
+        }
+      ]
+    },
+    {
+      "id": "all_emotions",
+      "steps": [
+        {
+          "source": "all_emotions",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "id": "all_needs",
+      "steps": [
+        {
+          "source": "all_needs",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "id": "audio_to_state",
+      "steps": [
+        {
+          "source": "audio_to_state",
+          "index": 0
+        },
+        {
+          "source": "audio_to_state",
+          "index": 1
+        },
+        {
+          "source": "audio_to_state",
+          "index": 2
+        }
+      ]
+    },
+    {
+      "id": "state_alone_no_candidate",
+      "steps": [
+        {
+          "source": "joy_cycle",
+          "topics": [
+            "/emotion/state"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "need_state_alone",
+      "steps": [
+        {
+          "source": "hunger_cycle",
+          "topics": [
+            "/internal_need/state"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "duplicate_signals",
+      "steps": [
+        {
+          "source": "hunger_cycle"
+        },
+        {
+          "source": "hunger_cycle"
+        }
+      ]
+    },
+    {
+      "id": "emotion_signal_before_state",
+      "steps": [
+        {
+          "source": "joy_cycle",
+          "topics": [
+            "/emotion/signal_event"
+          ]
+        },
+        {
+          "source": "joy_cycle",
+          "topics": [
+            "/emotion/state"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "recovery_then_old_signal",
+      "steps": [
+        {
+          "source": "joy_cycle"
+        },
+        {
+          "source": "joy_cycle",
+          "index": 2
+        },
+        {
+          "source": "joy_cycle",
+          "topics": [
+            "/emotion/signal_event"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wrong_schema",
+      "steps": [
+        {
+          "source": "joy_cycle",
+          "topics": [
+            "/emotion/state"
+          ],
+          "patch": {
+            "schema_version": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "string_demands",
+      "steps": [
+        {
+          "source": "hunger_cycle",
+          "topics": [
+            "/internal_need/state"
+          ],
+          "patch": {
+            "demands": "bad"
+          }
+        }
+      ]
+    },
+    {
+      "id": "unknown_demand",
+      "steps": [
+        {
+          "source": "hunger_cycle",
+          "topics": [
+            "/internal_need/state"
+          ],
+          "patch": {
+            "demands": {
+              "Unknown": {
+                "value": 90
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "invalid_demand_value",
+      "steps": [
+        {
+          "source": "hunger_cycle",
+          "topics": [
+            "/internal_need/state"
+          ],
+          "patch": {
+            "demands": {
+              "Hunger": {
+                "value": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "partial_emotion",
+      "steps": [
+        {
+          "source": "joy_cycle",
+          "topics": [
+            "/emotion/state"
+          ],
+          "patch": {
+            "emotions": {
+              "Joy": {
+                "value": 1,
+                "triggered": false
+              },
+              "Unknown": {}
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "numeric_trigger",
+      "steps": [
+        {
+          "source": "joy_cycle",
+          "topics": [
+            "/emotion/state"
+          ],
+          "patch": {
+            "emotions": {
+              "Joy": {
+                "value": 95,
+                "triggered": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "bad_json_emotion_state",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/emotion/state",
+            "wire": "{"
+          }
+        }
+      ]
+    },
+    {
+      "id": "bad_json_emotion_signal_event",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/emotion/signal_event",
+            "wire": "{"
+          }
+        }
+      ]
+    },
+    {
+      "id": "bad_json_internal_need_state",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/internal_need/state",
+            "wire": "{"
+          }
+        }
+      ]
+    },
+    {
+      "id": "bad_json_internal_need_signal_event",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/internal_need/signal_event",
+            "wire": "{"
+          }
+        }
+      ]
+    },
+    {
+      "id": "array_emotion_state",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/emotion/state",
+            "wire": "[]"
+          }
+        }
+      ]
+    },
+    {
+      "id": "array_emotion_signal_event",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/emotion/signal_event",
+            "wire": "[]"
+          }
+        }
+      ]
+    },
+    {
+      "id": "array_internal_need_state",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/internal_need/state",
+            "wire": "[]"
+          }
+        }
+      ]
+    },
+    {
+      "id": "array_internal_need_signal_event",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/internal_need/signal_event",
+            "wire": "[]"
+          }
+        }
+      ]
+    },
+    {
+      "id": "empty_emotion_state",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/emotion/state",
+            "wire": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "empty_emotion_signal_event",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/emotion/signal_event",
+            "wire": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "empty_internal_need_state",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/internal_need/state",
+            "wire": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "empty_internal_need_signal_event",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/internal_need/signal_event",
+            "wire": "{}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "null_emotion_state",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/emotion/state",
+            "wire": "null"
+          }
+        }
+      ]
+    },
+    {
+      "id": "null_emotion_signal_event",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/emotion/signal_event",
+            "wire": "null"
+          }
+        }
+      ]
+    },
+    {
+      "id": "null_internal_need_state",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/internal_need/state",
+            "wire": "null"
+          }
+        }
+      ]
+    },
+    {
+      "id": "null_internal_need_signal_event",
+      "steps": [
+        {
+          "raw": {
+            "topic": "/internal_need/signal_event",
+            "wire": "null"
+          }
+        }
+      ]
+    }
+  ]
+}

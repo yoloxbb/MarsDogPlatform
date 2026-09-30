@@ -1,0 +1,98 @@
+{
+  "visual": {
+    "baseline_commit": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21",
+    "baseline_sha256": "292771052ba781b640148449860c1838226b9b3595edc5ee5d537517a37d15bb",
+    "captured_observation_sha256": "102099ca85bc3abdb72e0089d99f7f67529b1db9268cb7ce3489eb820e5ee85b",
+    "matches_frozen_baseline": true,
+    "provenance": {
+      "vision": {
+        "stage": "vision",
+        "pid": 18545,
+        "python": "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/bin/python",
+        "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv",
+        "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/vision/marsdog_vision_interaction/messages/visual_event.py",
+        "foreign_business_modules": [],
+        "ros_importable": false
+      },
+      "behavior": {
+        "stage": "behavior",
+        "pid": 18559,
+        "python": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+        "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv",
+        "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/marsdog_behavior/ros_node.py",
+        "foreign_business_modules": [],
+        "ros_importable": false
+      },
+      "emotion": {
+        "stage": "emotion",
+        "pid": 18617,
+        "python": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+        "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv",
+        "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/marsdog_core/emotion_system.py",
+        "foreign_business_modules": [],
+        "ros_importable": false
+      },
+      "action": {
+        "stage": "action",
+        "pid": 18624,
+        "python": "/home/elephant/MarsDog/marsdog-platform/modules/action/.venv/bin/python",
+        "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/action/.venv",
+        "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/action/marsdog_action_executor/ros_node.py",
+        "foreign_business_modules": [],
+        "ros_importable": false
+      }
+    }
+  },
+  "state": {
+    "baseline_commit": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21",
+    "baseline_sha256": "21eba8ee6041e0b1eddc6909ff7883b8f04cf75d076b1b2a4e05277db6251014",
+    "captured_observation_sha256": "f6ba67f4f4a8e736e2597d99141b01b6165a3a0e5cf4abeb1df97eacbedd3514",
+    "matches_frozen_baseline": true,
+    "provenance": {
+      "emotion": {
+        "stage": "emotion",
+        "pid": 19574,
+        "python": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+        "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv",
+        "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/emotion/marsdog_ros2/emotion_engine_node.py",
+        "foreign_business_modules": [],
+        "ros_importable": false
+      },
+      "behavior": {
+        "stage": "behavior",
+        "pid": 19575,
+        "python": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+        "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv",
+        "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/behavior/marsdog_behavior/ros_node.py",
+        "foreign_business_modules": [],
+        "ros_importable": false
+      }
+    }
+  },
+  "task": {
+    "baseline_commit": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21",
+    "baseline_sha256": "ebae33f75e42223bab9b50b380caf0e6a3b064fdfd1cebdd428e4288823fa170",
+    "captured_observation_sha256": "f55936ee0e74a58b6e123c6994cac1407ae4a2f4131f04767df793d29a2c933a",
+    "matches_frozen_baseline": true,
+    "provenance": {
+      "voice": {
+        "stage": "voice",
+        "pid": 19963,
+        "python": "/home/elephant/MarsDog/marsdog-platform/modules/voice/.venv/bin/python",
+        "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/voice/.venv",
+        "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+        "foreign_business_modules": [],
+        "ros_importable": true
+      },
+      "vision": {
+        "stage": "vision",
+        "pid": 20010,
+        "python": "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/bin/python",
+        "prefix": "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv",
+        "module_file": "/home/elephant/MarsDog/marsdog-platform/modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+        "foreign_business_modules": [],
+        "ros_importable": true
+      }
+    }
+  }
+}

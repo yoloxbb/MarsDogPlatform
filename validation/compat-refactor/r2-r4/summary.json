@@ -1,0 +1,286 @@
+{
+  "status": "PASS_WITH_EXPLICIT_LIMITS",
+  "date": "2026-09-30",
+  "baseline_commit": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21",
+  "scope": "Completed R1–R4 compatibility boundaries for Voice/Vision/Emotion/Behavior/Action",
+  "initial_worktree_clean": true,
+  "module_tests": {
+    "voice": {
+      "tests": 430,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "vision": {
+      "tests": 292,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3
+    },
+    "emotion": {
+      "tests": 374,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "behavior": {
+      "tests": 533,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "action": {
+      "tests": 452,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 29
+    }
+  },
+  "platform_tests": 71,
+  "contracts": {
+    "audio": {
+      "scenarios": 46,
+      "stage_observations": null,
+      "skipped": 0
+    },
+    "visual": {
+      "scenarios": 33,
+      "stage_observations": {
+        "vision": 7,
+        "behavior": 33,
+        "emotion": 33,
+        "action": 33
+      },
+      "skipped": 0
+    },
+    "state": {
+      "scenarios": 34,
+      "stage_observations": {
+        "emotion": 7,
+        "behavior": 34
+      },
+      "skipped": 0
+    },
+    "task": {
+      "scenarios": 18,
+      "stage_observations": {
+        "voice": 18,
+        "vision": 18
+      },
+      "skipped": 0
+    },
+    "results": {
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "action_callbacks": {
+    "tests": 35,
+    "skipped": 0
+  },
+  "wheel_modules": [
+    "voice",
+    "vision",
+    "emotion",
+    "behavior",
+    "action"
+  ],
+  "installed_components": 18,
+  "extracted_function_bodies": 60,
+  "protected_files": 286,
+  "execution_reports": {
+    "r4-tasks": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 1.83
+    },
+    "workflows": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 0.166
+    },
+    "action-transport": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 1.94
+    },
+    "final-action-callbacks": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 1.123
+    },
+    "final-state-contracts": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 8.065
+    },
+    "wheel-vision": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 7.409
+    },
+    "ros-build": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 15.037
+    },
+    "r3-emotion-fixed": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 4.337
+    },
+    "ros-smoke": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 17.488
+    },
+    "r3-emotion": {
+      "status": "FAIL",
+      "returncode": 1,
+      "duration_seconds": 4.133
+    },
+    "final-voice": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 16.444
+    },
+    "state-stability": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 8.001
+    },
+    "action-callbacks-before": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 2.532
+    },
+    "final-vision": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 7.807
+    },
+    "final-task-contracts": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 2.129
+    },
+    "platform-final": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 2.126
+    },
+    "final-results": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 4.033
+    },
+    "r2-action": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 39.99
+    },
+    "final-behavior": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 75.628
+    },
+    "platform-complete": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 1.877
+    },
+    "wheel-emotion": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 0.818
+    },
+    "final-visual-contracts": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 9.66
+    },
+    "r3-state": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 7.414
+    },
+    "r2-visual": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 9.61
+    },
+    "ros-doctor": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 2.99
+    },
+    "r2-behavior": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 78.86
+    },
+    "r3-results": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 3.981
+    },
+    "wheel-voice": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 2.274
+    },
+    "r3-action-callbacks": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 1.422
+    },
+    "r2-vision": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 7.998
+    },
+    "action-shutdown": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 3.55
+    },
+    "wheel-behavior": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 1.723
+    },
+    "wheel-action": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 1.973
+    },
+    "final-action": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 39.236
+    },
+    "local-lifecycle": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 16.122
+    },
+    "final-audio-contracts": {
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 12.922
+    }
+  },
+  "runtime_source_fingerprint_file": "tested-module-hashes.json",
+  "installed_runtime_hash_file": "ros/installed-source-hashes.json",
+  "limits": [
+    "Vision: 3 RGA hardware tests skipped",
+    "Action pure suite: 20 ROS cases and 9 PySide2 GUI cases skipped; 20 ROS cases covered by separate 35-case Humble callback gate",
+    "Emotion JUnit 374 includes 218 tests and 156 subtests",
+    "Default ROS profile uses mock perception, simulated navigation and Lite3 I/O",
+    "No model precision, hardware, ARM/NPU, extended Nav2/SLAM or hosted CI acceptance in this refactor",
+    "Existing P7 bundles remain historical, not regenerated"
+  ],
+  "intermediate_failure": "r3-emotion source-string occurrence test expected inline time wrapper calls. Replaced by actual state/signal publishing assertions; full suite then passed."
+}

@@ -1,0 +1,38 @@
+{
+  "status": "PASS",
+  "scope": "clean wheel; no ROS/no PyYAML; original config bytes",
+  "observation": {
+    "module_file": "/home/elephant/MarsDog/marsdog-platform/out/emotion-install/check-gi4ztrm7/venv/lib/python3.10/site-packages/marsdog_core/config_loader.py",
+    "config_dir": "/home/elephant/MarsDog/marsdog-platform/out/emotion-install/check-gi4ztrm7/venv/share/marsdog_need_emotion/configs",
+    "config_hashes": {
+      "emotions.yaml": "f7c6918d524cdc09c02cc952758cf39b33bf06d8062673ee09aaec9b66fe9d1c",
+      "personality.yaml": "4656d4d6a1fb83c0f7795ef3f7e7b5991ae6a8b2979bf651cf20d3066038b6f9",
+      "demands.yaml": "99c50b9557e2e3b31ead7c81ea498e74d5ac4b804a221218fabe8aa9b28b8919"
+    },
+    "scripts": {
+      "emotion_engine_node": "marsdog_ros2.emotion_engine_node:main",
+      "internal_need_node": "marsdog_ros2.internal_need_node:main",
+      "midnight_test_node": "marsdog_ros2.midnight_test_node:main",
+      "one1000_tactile_node": "marsdog_ros2.one1000_tactile_node:main",
+      "personality_node": "marsdog_ros2.personality_node:main",
+      "time_controller_node": "marsdog_ros2.time_controller_node:main"
+    },
+    "demands": [
+      "Bladder",
+      "Cleanliness",
+      "Energy",
+      "Exploration",
+      "Hunger",
+      "Sleepiness",
+      "Social"
+    ],
+    "yaml_installed": false,
+    "rclpy_installed": false,
+    "components": {
+      "marsdog_ros2.common.state_publication": {
+        "module_file": "/home/elephant/MarsDog/marsdog-platform/out/emotion-install/check-gi4ztrm7/venv/lib/python3.10/site-packages/marsdog_ros2/common/state_publication.py",
+        "sha256": "18686beebc2c4a42117c0a7765d5286d5fa5756030a1de45d8c343425228b9b8"
+      }
+    }
+  }
+}

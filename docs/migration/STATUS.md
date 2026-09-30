@@ -5,10 +5,13 @@
 模型精度暂缓；实机、远端 CI 和板端构建分别作为后续外部阶段。
 最新执行计划见 [方案 v2](../architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md) 第 15 节。
 
-**R1 声音兼容切片已落地。** 46 个冻结场景连接真实 Voice→BT/Emotion，
-BT 无状态协议校验已提取；不改变领域路由、会话、需求结算、IDL 和默认配置。
+**R1–R4 五模块兼容性整合重构已完成。** 听觉会话/识别/任务、视觉快照/事件/任务、
+Emotion 发布、BT 状态/视觉/语音协调、Action 生命周期/执行/消息边界均已拆出。
+统一应用契约目录与独立进程门禁已建立；原函数入口、领域权威、IDL、配置和取消结算保持。
+平台 71、五模块全量回归、五个独立 wheel、全部契约与默认 ROS/退出门禁通过。
 路线见 [兼容性重构](../architecture/COMPATIBILITY_REFACTOR.md)，
-本片证据见 validation/compat-refactor/r1。R2–R4 尚待继续；导航/避障内部暂不处理。
+证据见 [R2–R4 验证](../../validation/compat-refactor/r2-r4/README.md)。
+R1 证据不覆盖；导航/避障内部和模型精度不在本轮范围。
 
 **P7a/P7b 已完成（历史交付基线）。** 工程源码提交 2468639；后续证据/文档提交见 git log。
 本轮已核对保全初始 25 文件并修正 Vision CI 重复 run 键。
@@ -64,7 +67,8 @@ go_home 按原规则不产生 Needs 结算；不存在伪造的 BMS 电量生产
 后续按实际功能需求开发，或在外部信息明确后配置远端治理、板端与设备验收。
 硬件、传感器、remote/owner/许可按外部条件推进，不猜测缺失实现、不退役未知入口。
 
-最新工程/交付证据见 validation/developer-platform/release-manifest.json。
+最新重构证据见 validation/compat-refactor/r2-r4/manifest.json。
+历史工程/交付证据见 validation/developer-platform/release-manifest.json。
 此前 CPU 流程证据见 validation/cpu-flow/release-manifest.json。Qwen SIT 被原 Lite3 门限拒绝，
 词库 GO_HOME 完成模拟导航；二者不能混称为所有动作执行成功。
 最新输入传递修复见 validation/cpu-input-text/release-manifest.json，固定 ROS 五场景已通过，整体模型质量仍未通过。

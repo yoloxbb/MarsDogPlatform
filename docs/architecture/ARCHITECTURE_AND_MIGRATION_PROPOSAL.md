@@ -1,6 +1,6 @@
 # MarsDog Architecture and Migration Proposal
 
-**版本：2.1 · 更新：2026-09-30 · 状态：主仓开发入口、独立克隆与源码交付闭环已验证。**
+**版本：2.2 · 更新：2026-09-30 · 状态：P7 交付及五模块 R1–R4 兼容性重构均已完成。**
 
 本文是后续会话的执行计划，替代 v1 中“尚未实施、下一步 P1”的进度判断。
 用户的最终目标是：把多个模块仓库整合为一个长期可维护的主仓，统一架构和工程入口，
@@ -16,18 +16,25 @@
 实际主仓是 /home/elephant/MarsDog/marsdog-platform，WSL Ubuntu-22.04。
 Windows 对应路径为 \\wsl.localhost\Ubuntu-22.04\home\elephant\MarsDog\marsdog-platform。
 聚合目录不是第二个 Git 主仓；新增业务开发只在主仓完成。
+本文相对链接以主仓 docs/architecture 下的文件为基准，聚合目录副本同步正文。
 
-**第 15 节的软件切片已完成。** 工程源码提交为
-2468639054763398882366bad7869236c0d2e68e；后续提交仅冻结验收与更新文档。
+**当前新增工作：第 15.4 节的五模块 R1–R4 兼容性重构已完成。**
+Voice、Vision、Emotion、BT、Action 已拆分领域职责并统一契约查阅与测试入口；
+最新源码以 git log 为准，证据见 validation/compat-refactor/r2-r4。
+导航/避障内部、模型精度和实机验收未纳入本轮。
+[重构结果](COMPATIBILITY_REFACTOR.md) 记录具体组件、门禁和限制。
+
+以下为 P7 历史交付基线，不能当作包含新重构的源码包。P7 工程源码提交为
+2468639054763398882366bad7869236c0d2e68e。
 初始 25 个未提交文件已核对、备份并纳入该提交，只修正了 Vision CI 重复 run 键；
-其余 24 个文件原内容保留。未修改业务模块、五套锁、IDL、默认运行配置或旧验证快照。
+其余 24 个文件原内容保留。该历史交付阶段未修改业务模块、五套锁、IDL、默认运行配置或旧验证快照。
 
-本轮真实验证：新旧环境五模块测试，五模块独立 setup/干净 wheel 安装，
+P7 阶段真实验证：新旧环境五模块测试，五模块独立 setup/干净 wheel 安装，
 51 项平台测试、25 项结果契约、四个固定 vendor 重建。独立克隆还从零完成
 默认组合的 15 包 ROS 构建、doctor 和 smoke；原 WSL 的 prepare/doctor/smoke
 及生命周期门禁也通过。具体计数、skip、命令、环境和源码 commit 见
-[本轮验收](marsdog-platform/docs/migration/P7_DEVELOPER_PLATFORM.md)、
-[冻结证据](marsdog-platform/validation/developer-platform/release-manifest.json)。
+[P7 验收](../migration/P7_DEVELOPER_PLATFORM.md)、
+[P7 冻结证据](../../validation/developer-platform/release-manifest.json)。
 
 源码基线包位于主仓 out/handoff/source-bundle-2468639；
 包含证据和最新文档的最终包位于 out/handoff/source-bundle-final，以包内 manifest 为准。
@@ -381,10 +388,19 @@ remote/owner/runner 确定后再配置 PR、CODEOWNERS、保护分支和 hosted 
 再提取无状态协议处理，最后按职责分步拆分节点；不创建承载业务的 common，
 不强行合并 Python 依赖或 ROS 类型，不做模型精度优化。
 
-首片 R1 已集中 audio v2 契约和 46 个生产/消费场景，提取 BT 声音校验；
-Voice→BT/Emotion 在独立环境运行并与重构前结果比较。实际验证见
-validation/compat-refactor/r1。后续依次处理视觉链路、状态/动作结果边界和节点职责拆分，
-不将 R1 记为五模块全部重构完成。P7 源码包仍对应原验收提交，不包含本片新增源码。
+R1–R4 已全部完成：audio v2、visual v1、state v2、任务服务和 ExecuteBehavior
+形成统一应用协议目录；Voice 会话/识别/任务、Vision 快照/事件/任务、Emotion 发布、
+BT 状态/视觉/语音协调、Action 生命周期/执行/消息构造均按领域拆出，旧方法入口保留。
+
+声音 46、视觉 33、状态 34、任务每端 18、原结果 25 契约全部与冻结行为一致；
+五模块全量回归、平台 71 项、五个独立 wheel 与 18 个组件安装哈希检查通过。
+当前安装的默认 ROS 15 包增量构建、doctor/smoke、35 项真实动作回调、DDS 取消 ACK
+到终态的归属保持、SIGINT/SIGTERM 停止后退出以及 supervisor 故障清理均通过。
+源码 AST 等价与 286 个配置/锁/IDL/模型适配器/导航等保护文件字节一致性已核实。
+
+本轮证据见 validation/compat-refactor/r2-r4；R1 与 P7 历史证据保持原样。
+完成的是授权的软件兼容性重构范围，不宣称所有算法重写、模型/实机或远端 CI 验收。
+P7 源码包仍对应原验收提交，不包含本轮新增源码。
 
 ## 16. Human Confirmation and External Inputs
 

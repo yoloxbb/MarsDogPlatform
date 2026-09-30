@@ -1,0 +1,274 @@
+{
+  "status": "PASS",
+  "cases": [
+    {
+      "signal": "SIGINT",
+      "status": "PASS",
+      "returncode": 0,
+      "zero_commands": [
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        }
+      ],
+      "pid_reaped": true
+    },
+    {
+      "signal": "SIGTERM",
+      "status": "PASS",
+      "returncode": 0,
+      "zero_commands": [
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        },
+        {
+          "simulated": true,
+          "kind": "twist",
+          "linear_x": 0.0,
+          "linear_y": 0.0,
+          "angular_z": 0.0
+        }
+      ],
+      "pid_reaped": true
+    }
+  ],
+  "scope": "Installed Action and real ROS transport; simulated Lite3 I/O only"
+}

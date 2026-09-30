@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from component_inventory import check_installed_components
 import hashlib
 import json
 import os
@@ -96,6 +97,7 @@ print(json.dumps({
 }))
 """
             observation = json.loads(run([str(python), "-B", "-c", probe]))
+            observation["components"] = check_installed_components(run, python, source)
             if (source / "marsdog_voice_interaction/replay.py").is_file():
                 replay_code = (
                     "import hashlib,json,pathlib;import marsdog_voice_interaction.replay as replay;"

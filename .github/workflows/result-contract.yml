@@ -50,3 +50,25 @@ jobs:
           python3 -B tools/dev.py setup emotion
       - name: Audio production, authority and state compatibility
         run: python3 -B tools/check_audio_contracts.py
+
+
+  visual-state-contract:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: python3 -B tools/bootstrap_uv.py
+      - name: Independent producer and consumer environments
+        run: |
+          python3 -B tools/dev.py setup vision
+          python3 -B tools/dev.py setup behavior
+          python3 -B tools/dev.py setup emotion
+          python3 -B tools/dev.py setup action
+      - name: Visual and authoritative state compatibility
+        run: |
+          python3 -B tools/check_visual_contracts.py
+          python3 -B tools/check_state_contracts.py

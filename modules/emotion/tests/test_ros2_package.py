@@ -195,16 +195,56 @@ class Ros2PackageTest(unittest.TestCase):
         self.assertIn("self.OnEmotionDecayTimer", emotionNodeText)
 
     def test_calculation_nodes_publish_time_context(self):
-        """四类状态与事件输出都应通过统一时间上下文包装。"""
-        needNodeText = (PROJECT_ROOT / "marsdog_ros2" / "internal_need_node.py").read_text(
-            encoding="utf-8"
-        )
-        emotionNodeText = (PROJECT_ROOT / "marsdog_ros2" / "emotion_engine_node.py").read_text(
-            encoding="utf-8"
-        )
+        """Verify all four real publish paths, timestamps, order and no mutation."""
+        import json
+        from datetime import datetime, timezone
+        from types import SimpleNamespace
+        from unittest.mock import Mock, patch
+        from marsdog_ros2 import emotion_engine_node, internal_need_node
 
-        self.assertEqual(needNodeText.count("GetMessageWithTimeContextValue("), 2)
-        self.assertEqual(emotionNodeText.count("GetMessageWithTimeContextValue("), 2)
+        selected = datetime(2025, 1, 1, 6, tzinfo=timezone.utc)
+        for module, nodeClass, stateGetter, eventGetter, automaticSignals in (
+            (internal_need_node, internal_need_node.InternalNeedNode,
+             "GetInternalNeedStateValue", "GetDemandSignalEventsValue", True),
+            (emotion_engine_node, emotion_engine_node.EmotionEngineNode,
+             "GetEmotionStateValue", "GetEmotionSignalEventsValue", False),
+        ):
+            state = {"timestamp": 321, "label": "状态"}
+            event = {"timestamp": 322, "label": "事件"}
+            messages = []
+            node = nodeClass.__new__(nodeClass)
+            node.system = SimpleNamespace(**{
+                stateGetter: lambda: state,
+                eventGetter: lambda: [event],
+            })
+            currentTime = Mock(return_value=selected)
+            node.timeController = SimpleNamespace(
+                GetVirtualDateTimeValue=currentTime,
+                GetTimeContextValue=lambda virtualDateTime, wallTimestamp: {
+                    "virtualDateTime": virtualDateTime.isoformat(),
+                    "wallTimestamp": wallTimestamp,
+                },
+            )
+            node.statePublisher = SimpleNamespace(
+                publish=lambda message: messages.append(("state", message.data)))
+            node.signalPublisher = SimpleNamespace(
+                publish=lambda message: messages.append(("signal", message.data)))
+            with patch.object(module, "String", SimpleNamespace):
+                node.PublishState()
+                self.assertEqual(len(messages), 2 if automaticSignals else 1)
+                if not automaticSignals:
+                    node.PublishSignalEvents(selected)
+            currentTime.assert_called_once_with()
+            self.assertEqual([kind for kind, _ in messages], ["state", "signal"])
+            for (_, wire), expected in zip(messages, (state, event)):
+                self.assertIn(expected["label"], wire)
+                payload = json.loads(wire)
+                self.assertEqual(payload, {
+                    **expected,
+                    "timeContext": {"virtualDateTime": selected.isoformat(),
+                                    "wallTimestamp": float(expected["timestamp"])},
+                })
+                self.assertNotIn("timeContext", expected)
 
     def test_calculation_nodes_shutdown_cleanly(self):
         """计算节点应容忍 launch 触发的外部关闭，避免重复 shutdown。"""

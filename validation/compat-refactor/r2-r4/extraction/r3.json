@@ -1,0 +1,177 @@
+[
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._on_emotion_state_ros2",
+    "destination": "modules/behavior/marsdog_behavior/state_subscriptions.py",
+    "function": "on_emotion_state_ros2",
+    "lines": 90,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._on_emotion_signal_ros2",
+    "destination": "modules/behavior/marsdog_behavior/state_subscriptions.py",
+    "function": "on_emotion_signal_ros2",
+    "lines": 68,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._on_need_state_ros2",
+    "destination": "modules/behavior/marsdog_behavior/state_subscriptions.py",
+    "function": "on_need_state_ros2",
+    "lines": 155,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._on_need_signal_ros2",
+    "destination": "modules/behavior/marsdog_behavior/state_subscriptions.py",
+    "function": "on_need_signal_ros2",
+    "lines": 125,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "symbol": "_normalise_goal_timeout",
+    "destination": "modules/action/marsdog_action_executor/goal_contract.py",
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "symbol": "_outer_runtime_deadline",
+    "destination": "modules/action/marsdog_action_executor/goal_contract.py",
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "symbol": "_navigation_cancel_won",
+    "destination": "modules/action/marsdog_action_executor/goal_contract.py",
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "symbol": "_debug_goal_from_request",
+    "destination": "modules/action/marsdog_action_executor/goal_contract.py",
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "method": "_make_result",
+    "destination": "modules/action/marsdog_action_executor/action_messages.py",
+    "function": "make_result",
+    "lines": 41,
+    "dependency_substitutions": {
+      "_ExecuteBehavior": "action_type"
+    },
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "method": "ActionExecutorNode._publish_feedback",
+    "destination": "modules/action/marsdog_action_executor/action_messages.py",
+    "function": "publish_feedback",
+    "lines": 30,
+    "dependency_substitutions": {
+      "_ExecuteBehavior": "action_type"
+    },
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "method": "ActionExecutorNode._on_goal",
+    "destination": "modules/action/marsdog_action_executor/goal_lifecycle.py",
+    "function": "on_goal",
+    "lines": 93,
+    "dependency_substitutions": {
+      "GoalResponse.": "goal_response."
+    },
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "method": "ActionExecutorNode._on_cancel",
+    "destination": "modules/action/marsdog_action_executor/goal_lifecycle.py",
+    "function": "on_cancel",
+    "lines": 44,
+    "dependency_substitutions": {
+      "CancelResponse.": "cancel_response."
+    },
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "method": "ActionExecutorNode._on_accepted",
+    "destination": "modules/action/marsdog_action_executor/goal_lifecycle.py",
+    "function": "on_accepted",
+    "lines": 15,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "method": "ActionExecutorNode._on_goal_lease",
+    "destination": "modules/action/marsdog_action_executor/goal_lifecycle.py",
+    "function": "on_goal_lease",
+    "lines": 17,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "method": "ActionExecutorNode._lease_expired",
+    "destination": "modules/action/marsdog_action_executor/goal_lifecycle.py",
+    "function": "lease_expired",
+    "lines": 7,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "method": "ActionExecutorNode._on_execute",
+    "destination": "modules/action/marsdog_action_executor/goal_execution.py",
+    "function": "on_execute",
+    "lines": 60,
+    "dependency_substitutions": {
+      "_make_result(": "make_result("
+    },
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "method": "ActionExecutorNode._execute_behavior",
+    "destination": "modules/action/marsdog_action_executor/goal_execution.py",
+    "function": "execute_behavior",
+    "lines": 507,
+    "dependency_substitutions": {
+      "_make_result(": "make_result("
+    },
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "method": "ActionExecutorNode._execute_long_behavior",
+    "destination": "modules/action/marsdog_action_executor/goal_execution.py",
+    "function": "execute_long_behavior",
+    "lines": 182,
+    "dependency_substitutions": {
+      "_make_result(": "make_result("
+    },
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "method": "ActionExecutorNode._execute_emergency_stop",
+    "destination": "modules/action/marsdog_action_executor/goal_execution.py",
+    "function": "execute_emergency_stop",
+    "lines": 57,
+    "dependency_substitutions": {
+      "_make_result(": "make_result("
+    },
+    "body_ast_equivalent": true
+  }
+]

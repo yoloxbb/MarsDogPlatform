@@ -1,0 +1,105 @@
+{
+  "status": "PASS",
+  "files": {
+    "modules/voice/marsdog_voice_interaction/core/interaction_session.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_voice_interaction/lib/python3.10/site-packages/marsdog_voice_interaction/core/interaction_session.py",
+      "sha256": "9536343cf77683dbe484bd42830f58afbfb5fa6efcaccd9cbe25fe537e438bb2"
+    },
+    "modules/voice/marsdog_voice_interaction/core/speech_pipeline.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_voice_interaction/lib/python3.10/site-packages/marsdog_voice_interaction/core/speech_pipeline.py",
+      "sha256": "bfdcf499386a5bd321379460ee2f7b992b6d8db36b8d72181eeff8ae2abc768c"
+    },
+    "modules/voice/marsdog_voice_interaction/core/task_router.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_voice_interaction/lib/python3.10/site-packages/marsdog_voice_interaction/core/task_router.py",
+      "sha256": "edbb4bbbf9cbaf2f64503ca510f851b61487f4a2f348bf4ae2aaddac47cba80a"
+    },
+    "modules/voice/marsdog_voice_interaction/messages/task_service.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_voice_interaction/lib/python3.10/site-packages/marsdog_voice_interaction/messages/task_service.py",
+      "sha256": "a59a250ec44021d61a8ae61686d27e0bcb1561d465ee3fe4699b81f857cc17a7"
+    },
+    "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_voice_interaction/lib/python3.10/site-packages/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "sha256": "9198f80397266881fce05fcaeef1f62e3139a0ccac7dbe3455d0da4f9b630cda"
+    },
+    "modules/vision/marsdog_vision_interaction/core/visual_snapshot.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_vision_interaction/lib/python3.10/site-packages/marsdog_vision_interaction/core/visual_snapshot.py",
+      "sha256": "821a65ea9a1cd8b579780bfa9c1d88d79df359c73c8ff23f6fec4ce69c43940d"
+    },
+    "modules/vision/marsdog_vision_interaction/core/task_router.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_vision_interaction/lib/python3.10/site-packages/marsdog_vision_interaction/core/task_router.py",
+      "sha256": "89bfeca7c2198d88d78679cb5404b6060f2155f66e93fda341ca9d5b9a5a830d"
+    },
+    "modules/vision/marsdog_vision_interaction/messages/visual_event_derivation.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_vision_interaction/lib/python3.10/site-packages/marsdog_vision_interaction/messages/visual_event_derivation.py",
+      "sha256": "bb8bc249053fdbcf1f8ee0df24877a6618b6d839dba6f4319bc7119deeba57e1"
+    },
+    "modules/vision/marsdog_vision_interaction/messages/task_service.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_vision_interaction/lib/python3.10/site-packages/marsdog_vision_interaction/messages/task_service.py",
+      "sha256": "45edb152ca1d284ca43de66927cf15f9da2fe9c3dab954baeedea9aeba78dc9a"
+    },
+    "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_vision_interaction/lib/python3.10/site-packages/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+      "sha256": "9b6dcdf85793518196434fb4521254f9cd3857bb4f1bd524e622b20c52c4cb95"
+    },
+    "modules/emotion/marsdog_ros2/common/state_publication.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_need_emotion/lib/python3.10/site-packages/marsdog_ros2/common/state_publication.py",
+      "sha256": "18686beebc2c4a42117c0a7765d5286d5fa5756030a1de45d8c343425228b9b8"
+    },
+    "modules/emotion/marsdog_ros2/emotion_engine_node.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_need_emotion/lib/python3.10/site-packages/marsdog_ros2/emotion_engine_node.py",
+      "sha256": "7e9d4cceb8136c9e319a29dc3659029482a2587d6798293ce5c058ec18a07909"
+    },
+    "modules/emotion/marsdog_ros2/internal_need_node.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_need_emotion/lib/python3.10/site-packages/marsdog_ros2/internal_need_node.py",
+      "sha256": "4e3af6c907f87fa925923e682816c2015074a461d9bc1cb1faa2211b383bc689"
+    },
+    "modules/behavior/marsdog_behavior/audio_contract.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/audio_contract.py",
+      "sha256": "2862276653981002cc0ae84a9f50f3dc706190cf005edaa4d18afc7ebd57ea6f"
+    },
+    "modules/behavior/marsdog_behavior/visual_event_consumer.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/visual_event_consumer.py",
+      "sha256": "17550a193df8b68ec74e92b04c1adaf4705f5f2489bfb5a665ca8adde5497c09"
+    },
+    "modules/behavior/marsdog_behavior/state_subscriptions.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/state_subscriptions.py",
+      "sha256": "bba2f0d7c64f8480e90d71c9cf85f2146222db0daa1c95431a69709a9cd019c9"
+    },
+    "modules/behavior/marsdog_behavior/voice_engagement.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/voice_engagement.py",
+      "sha256": "031c85de34231e64e7a6c7b4b106c3b6a5137f2f8c5803960a812f7832d4de5e"
+    },
+    "modules/behavior/marsdog_behavior/perception_client_adapter.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/perception_client_adapter.py",
+      "sha256": "3e850f43d3143e9e9eb376001abf7978870ee40b15a4cadc478df167a74a9549"
+    },
+    "modules/behavior/marsdog_behavior/ros_node.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/ros_node.py",
+      "sha256": "f618948e658249168ccff1194642de67a597ea06540cf18a556827274ce63859"
+    },
+    "modules/action/marsdog_action_executor/perception_dispatch.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/perception_dispatch.py",
+      "sha256": "c929daca07cab9f0132337c8cbb02062cb6aa761524f06607c7aa3876c0e2e28"
+    },
+    "modules/action/marsdog_action_executor/goal_contract.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/goal_contract.py",
+      "sha256": "d5699fa94c43299a9bfde0b72937db3dcf2ae3be163605959bd34f214426616c"
+    },
+    "modules/action/marsdog_action_executor/action_messages.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/action_messages.py",
+      "sha256": "1fb590dfbf36c669f8fbf9012b8c574fc214a37d04e9199945373b6e85f7e909"
+    },
+    "modules/action/marsdog_action_executor/goal_lifecycle.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/goal_lifecycle.py",
+      "sha256": "e94dc7e3865f846e1e336753291a874e808ec4460911227daa1de7fba972bd88"
+    },
+    "modules/action/marsdog_action_executor/goal_execution.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/goal_execution.py",
+      "sha256": "26bfeb202c26e5a7f083aad1b08107d78aba43865439fd1912737a3240106481"
+    },
+    "modules/action/marsdog_action_executor/ros_node.py": {
+      "installed_file": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/ros_node.py",
+      "sha256": "243d9fc23c78aa16d5f34140c2f7897187a280d7defc4a5c459ea993ba625b4b"
+    }
+  }
+}

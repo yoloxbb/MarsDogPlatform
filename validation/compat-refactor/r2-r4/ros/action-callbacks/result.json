@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "counts": {
+    "tests": 35,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "skips": [],
+  "command": [
+    "/home/elephant/MarsDog/marsdog-platform/modules/action/.venv/bin/python",
+    "-B",
+    "-m",
+    "pytest",
+    "tests/test_long_goal_arbitration.py",
+    "tests/test_long_goal_runtime.py",
+    "tests/test_ros_goal_params_boundary.py",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=/home/elephant/MarsDog/marsdog-platform/out/compat-refactor/full/final-action-callbacks/junit.xml"
+  ],
+  "scope": "Humble types + real callbacks; fake collaborators; no node/hardware"
+}

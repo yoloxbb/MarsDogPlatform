@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from marsdog_ros2.common.state_publication import PublishStateValue, PublishSignalEventsValue
+
 import json
 from datetime import datetime
 
@@ -227,30 +229,19 @@ class InternalNeedNode(Node):
         self._timeSynchronized = True
 
     def PublishState(self, virtualDateTime: datetime | None = None) -> None:
-        """发布内部需求状态。"""
-        currentVirtualTime = virtualDateTime or self.timeController.GetVirtualDateTimeValue()
-        payload = GetMessageWithTimeContextValue(
-            self.system.GetInternalNeedStateValue(),
-            self.timeController,
-            currentVirtualTime,
+        currentVirtualTime = PublishStateValue(
+            self.system.GetInternalNeedStateValue, self.timeController,
+            self.statePublisher, String, GetMessageWithTimeContextValue,
+            virtualDateTime,
         )
-        message = String()
-        message.data = json.dumps(payload, ensure_ascii=False)
-        self.statePublisher.publish(message)
         self.PublishSignalEvents(currentVirtualTime)
 
     def PublishSignalEvents(self, virtualDateTime: datetime | None = None) -> None:
-        """发布需求等级变化事件，未变化时不发布。"""
-        currentVirtualTime = virtualDateTime or self.timeController.GetVirtualDateTimeValue()
-        for signalEvent in self.system.GetDemandSignalEventsValue():
-            payload = GetMessageWithTimeContextValue(
-                signalEvent,
-                self.timeController,
-                currentVirtualTime,
-            )
-            message = String()
-            message.data = json.dumps(payload, ensure_ascii=False)
-            self.signalPublisher.publish(message)
+        PublishSignalEventsValue(
+            self.system.GetDemandSignalEventsValue, self.timeController,
+            self.signalPublisher, String, GetMessageWithTimeContextValue,
+            virtualDateTime,
+        )
 
     def _IsMorningStart(self, startDateTime: datetime) -> bool:
         """判断虚拟起点是否为完整一天测试的 06:00。"""

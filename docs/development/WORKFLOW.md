@@ -45,6 +45,10 @@ flowchart LR
 | 任意源码/工具 | dev.py check | 受影响模块 dev.py test |
 | Python 打包/资源/入口 | 模块单测 | check_<module>_install.py |
 | Voice→BT/Emotion 声音事件 | 三模块单测 | check_audio_contracts.py；固定 v2 样例与容错差异 |
+| Vision→BT/Emotion/Action 视觉事件 | 受影响模块单测 | check_visual_contracts.py；固定 v1 样例与缓存/边沿 |
+| Emotion/Needs→BT 状态/信号 | 两模块单测 | check_state_contracts.py；权威/恢复/阈值 |
+| VoiceTask/VisionTask envelope 或任务分发 | 各自全量单测 | Humble 下 check_task_contracts.py；保持 ROS 类型身份 |
+| 执行/会话/取消协调组件 | 模块单测 + 对应契约 | 五模块安装检查含组件导入/源码哈希；Action 另跑 check_action_callbacks.py、check_action_transport.py、check_action_shutdown.py |
 | Action→BT→Needs 结果/证据 | 三模块单测 | check_contracts.py |
 | ROS IDL / service / action | 架构和原 IDL 兼容检查 | 生产方/消费方测试、build、doctor、对应 DDS 测试 |
 | 进程组合/运行配置 | 平台测试 | 默认 smoke + check_local_lifecycle.py |
@@ -63,3 +67,6 @@ Humble 集成仅在手动触发的专用 localhost runner 上运行，默认不�
 所有新代码以本仓为权威。third_party 管理来源/固定提交，.external 是可重建输出；
 RTAB 的本地定制 fork 保留，不能用随手下载的 upstream 覆盖。
 模型/构建输出/虚拟环境/设备私有配置不跟随功能 PR 提交。
+
+五模块已完成的职责划分与全部门禁见 [兼容性重构](../architecture/COMPATIBILITY_REFACTOR.md)。
+跨领域协议入口见 [应用协议目录](../../interfaces/application/README.md)。

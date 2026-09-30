@@ -26,6 +26,11 @@ Internal delegation:
 
 from __future__ import annotations
 
+from . import voice_engagement
+
+from . import state_subscriptions
+from .state_subscriptions import _is_json_number, _need_level_event, _need_level_from_value, _parse_need_thresholds
+
 import json
 import math
 import time
@@ -110,122 +115,12 @@ _OWNER_NAV_AUDIO_BEHAVIORS = frozenset({
 })
 
 
-def _is_json_number(value) -> bool:
-    return not isinstance(value, bool) and isinstance(value, (int, float))
 
 
-def _need_level_event(demand: str, level: str) -> str:
-    suffix = "RECOVERED" if level == NEED_LEVEL_NORMAL else level
-    return f"NEED_{demand.upper()}_{suffix}"
 
 
-def _need_level_from_value(
-    value: float,
-    *,
-    trigger_threshold: float,
-    urgent_threshold: float | None,
-    overflow_threshold: float | None,
-) -> str:
-    """Derive a V2 need level; every V2 comparison is strict ``gt``."""
-    if overflow_threshold is not None and value > overflow_threshold:
-        return NEED_LEVEL_OVERFLOW
-    if urgent_threshold is not None and value > urgent_threshold:
-        return NEED_LEVEL_URGENT
-    if value > trigger_threshold:
-        return "TRIGGERED"
-    return NEED_LEVEL_NORMAL
 
 
-def _parse_need_thresholds(
-    payload: dict,
-    context: str,
-    *,
-    require_overflow_operator: bool,
-) -> tuple[float, str, float | None, str | None, float | None, str | None]:
-    """Validate and return the V2 threshold metadata."""
-    required_fields = {
-        "triggerThreshold",
-        "triggerOperator",
-        "urgentThreshold",
-        "urgentOperator",
-        "overflowThreshold",
-    }
-    if require_overflow_operator:
-        required_fields.add("overflowOperator")
-    missing = sorted(required_fields - payload.keys())
-    if missing:
-        raise ValueError(
-            f"{context} missing V2 threshold fields: {', '.join(missing)}"
-        )
-
-    trigger_threshold = payload.get("triggerThreshold")
-    trigger_operator = payload.get("triggerOperator")
-    if not _is_json_number(trigger_threshold):
-        raise ValueError(f"{context}.triggerThreshold must be numeric")
-    if trigger_operator != "gt":
-        raise ValueError(f"{context}.triggerOperator must be 'gt'")
-
-    urgent_threshold = payload.get("urgentThreshold")
-    urgent_operator = payload.get("urgentOperator")
-    if urgent_threshold is None and urgent_operator is None:
-        pass
-    elif (
-        not _is_json_number(urgent_threshold)
-        or urgent_operator != "gt"
-    ):
-        raise ValueError(
-            f"{context}.urgentThreshold/urgentOperator must be null/null "
-            "or numeric/'gt'"
-        )
-
-    overflow_threshold = payload.get("overflowThreshold")
-    overflow_operator = payload.get("overflowOperator")
-    if overflow_threshold is None:
-        if overflow_operator is not None:
-            raise ValueError(
-                f"{context}.overflowOperator requires overflowThreshold"
-            )
-    else:
-        if not _is_json_number(overflow_threshold):
-            raise ValueError(f"{context}.overflowThreshold must be numeric or null")
-        if overflow_operator is None and not require_overflow_operator:
-            overflow_operator = "gt"
-        if overflow_operator != "gt":
-            raise ValueError(f"{context}.overflowOperator must be 'gt'")
-
-    normalized_trigger = float(trigger_threshold)
-    normalized_urgent = (
-        float(urgent_threshold) if urgent_threshold is not None else None
-    )
-    normalized_overflow = (
-        float(overflow_threshold) if overflow_threshold is not None else None
-    )
-    if (
-        normalized_urgent is not None
-        and normalized_urgent <= normalized_trigger
-    ):
-        raise ValueError(f"{context}.urgentThreshold must exceed triggerThreshold")
-    previous_threshold = (
-        normalized_urgent
-        if normalized_urgent is not None
-        else normalized_trigger
-    )
-    if (
-        normalized_overflow is not None
-        and normalized_overflow <= previous_threshold
-    ):
-        raise ValueError(
-            f"{context}.overflowThreshold must exceed earlier thresholds"
-        )
-
-    return (
-        normalized_trigger,
-        trigger_operator,
-        normalized_urgent,
-        urgent_operator,
-        normalized_overflow,
-        overflow_operator,
-    )
 
 
 class BehaviorTreeRosNode(NodeBase):
@@ -476,446 +371,16 @@ class BehaviorTreeRosNode(NodeBase):
     # ── ROS2 Callbacks ───────────────────────────────────────────────────
 
     def _on_emotion_state_ros2(self, msg):
-        """Handle /emotion/state (periodic, 1Hz).
-
-        V2 state is authoritative for both current values and recovery. It
-        never generates candidates; only /emotion/signal_event does that.
-        """
-        try:
-            data = json.loads(msg.data)
-            if data.get("schema_version") != "2.0":
-                raise ValueError(
-                    "unsupported emotion schema_version "
-                    f"{data.get('schema_version')!r}; expected '2.0'"
-                )
-
-            emotions = data.get("emotions")
-            if not isinstance(emotions, dict):
-                raise ValueError("emotions must be an object")
-
-            # Validate the entire snapshot before mutating the blackboard.
-            updates = []
-            for name, emotion_info in emotions.items():
-                if name not in EMOTION_V2_EVENT_TO_NAME.values():
-                    raise ValueError(f"unknown emotion {name!r}")
-                if not isinstance(emotion_info, dict):
-                    raise ValueError(f"emotions.{name} must be an object")
-
-                value = emotion_info.get("value")
-                triggered = emotion_info.get("triggered")
-                if isinstance(value, bool) or not isinstance(value, (int, float)):
-                    raise ValueError(f"emotions.{name}.value must be numeric")
-                if not isinstance(triggered, bool):
-                    raise ValueError(f"emotions.{name}.triggered must be boolean")
-
-                trigger_threshold = emotion_info.get("triggerThreshold")
-                if (
-                    trigger_threshold is not None
-                    and (
-                        isinstance(trigger_threshold, bool)
-                        or not isinstance(trigger_threshold, (int, float))
-                    )
-                ):
-                    raise ValueError(
-                        f"emotions.{name}.triggerThreshold must be numeric"
-                    )
-                trigger_operator = emotion_info.get("triggerOperator")
-                if trigger_operator is not None and not isinstance(
-                    trigger_operator, str
-                ):
-                    raise ValueError(
-                        f"emotions.{name}.triggerOperator must be a string"
-                    )
-                updates.append(
-                    (
-                        name,
-                        float(value),
-                        triggered,
-                        trigger_threshold,
-                        trigger_operator,
-                    )
-                )
-
-            for update in updates:
-                self._blackboard.emotion_module.update_state(*update)
-                emotion_name, _, triggered, _, _ = update
-                if not triggered:
-                    self._invalidate_emotion_visual_request(emotion_name)
-                    self._candidate_pool.discard_emotion(emotion_name)
-                    self._stop_emotion_continuation(emotion_name)
-                    self._pending_emotion_edges.pop(emotion_name, None)
-                    self._pending_emotion_retry_at.pop(emotion_name, None)
-
-            emotion_names = (
-                "Joy", "Excite", "Anxiety", "Fear", "Curious", "Calm",
-            )
-            log_state = tuple(
-                (
-                    name,
-                    self._blackboard.emotion_module.is_triggered(name),
-                )
-                for name in emotion_names
-            )
-            if log_state != self._last_logged_emotion_state:
-                states = ", ".join(
-                    f"{name}={'on' if triggered else 'off'}"
-                    for name, triggered in log_state
-                )
-                self._logger.debug(f"/emotion/state changed: [{states}]")
-                self._last_logged_emotion_state = log_state
-        except Exception as e:
-            self._logger.error(f"Failed to parse /emotion/state: {e}")
+        return state_subscriptions.on_emotion_state_ros2(self, msg)
 
     def _on_emotion_signal_ros2(self, msg):
-        """Handle /emotion/signal_event (event-driven).
-
-        Accepts only V2 single-threshold upward-edge events.
-        """
-        try:
-            data = json.loads(msg.data)
-            if data.get("schema_version") != "2.0":
-                raise ValueError(
-                    "unsupported emotion schema_version "
-                    f"{data.get('schema_version')!r}; expected '2.0'"
-                )
-
-            event_type = data.get("event_type")
-            expected_emotion = EMOTION_V2_EVENT_TO_NAME.get(event_type)
-            if expected_emotion is None:
-                raise ValueError(f"unsupported V2 emotion event {event_type!r}")
-
-            emotion_name = data.get("emotion")
-            if emotion_name != expected_emotion:
-                raise ValueError(
-                    f"event {event_type} requires emotion={expected_emotion!r}, "
-                    f"got {emotion_name!r}"
-                )
-
-            signal_value = data.get("value")
-            if (
-                isinstance(signal_value, bool)
-                or not isinstance(signal_value, (int, float))
-            ):
-                raise ValueError("emotion signal value must be numeric")
-            trigger_threshold = data.get("triggerThreshold")
-            if (
-                trigger_threshold is not None
-                and (
-                    isinstance(trigger_threshold, bool)
-                    or not isinstance(trigger_threshold, (int, float))
-                )
-            ):
-                raise ValueError("emotion signal triggerThreshold must be numeric")
-            trigger_operator = data.get("triggerOperator")
-            if trigger_operator is not None and not isinstance(
-                trigger_operator,
-                str,
-            ):
-                raise ValueError("emotion signal triggerOperator must be a string")
-
-            # candidate_inject/select/start are the INFO-level audit trail. The
-            # raw ingress record remains available at DEBUG for contract checks.
-            self._logger.debug(f"/emotion/signal_event: {event_type}")
-
-            # Bridge the gap before the next 1Hz state snapshot. Recovery is
-            # still authoritative from /emotion/state.triggered=false.
-            self._blackboard.emotion_module.update_state(
-                emotion_name,
-                float(signal_value),
-                True,
-                trigger_threshold,
-                trigger_operator,
-            )
-            self._start_emotion_continuation(emotion_name)
-            self._invalidate_emotion_visual_request(emotion_name)
-            self._request_contextual_emotion_candidate(
-                emotion_name,
-                trigger_event=event_type,
-            )
-        except Exception as e:
-            self._logger.error(f"Failed to parse /emotion/signal_event: {e}")
+        return state_subscriptions.on_emotion_signal_ros2(self, msg)
 
     def _on_need_state_ros2(self, msg):
-        """Handle authoritative ``/internal_need/state`` V2 snapshots."""
-        try:
-            data = json.loads(msg.data)
-            if data.get("schema_version") != "2.0":
-                raise ValueError(
-                    "unsupported internal need schema_version "
-                    f"{data.get('schema_version')!r}; expected '2.0'"
-                )
-
-            demands = data.get("demands")
-            if not isinstance(demands, dict):
-                raise ValueError("demands must be an object")
-
-            updates = []
-            for need_name, need_info in demands.items():
-                if need_name not in NEED_V2_ACTIVE_LEVELS:
-                    raise ValueError(f"unknown demand {need_name!r}")
-                if not isinstance(need_info, dict):
-                    raise ValueError(f"demands.{need_name} must be an object")
-
-                context = f"demands.{need_name}"
-                value = need_info.get("value")
-                if not _is_json_number(value):
-                    raise ValueError(f"{context}.value must be numeric")
-                if not 0 <= float(value) <= 100:
-                    raise ValueError(f"{context}.value must be within 0..100")
-
-                thresholds = _parse_need_thresholds(
-                    need_info,
-                    context,
-                    require_overflow_operator=False,
-                )
-                (
-                    trigger_threshold,
-                    trigger_operator,
-                    urgent_threshold,
-                    urgent_operator,
-                    overflow_threshold,
-                    overflow_operator,
-                ) = thresholds
-
-                level = need_info.get("level")
-                allowed_levels = (
-                    {NEED_LEVEL_NORMAL}
-                    | set(NEED_V2_ACTIVE_LEVELS[need_name])
-                )
-                if level not in allowed_levels:
-                    raise ValueError(
-                        f"{context}.level {level!r} is not configured"
-                    )
-                computed_level = _need_level_from_value(
-                    float(value),
-                    trigger_threshold=trigger_threshold,
-                    urgent_threshold=urgent_threshold,
-                    overflow_threshold=overflow_threshold,
-                )
-                if level != computed_level:
-                    raise ValueError(
-                        f"{context}.level must be {computed_level!r} "
-                        f"for value {value!r}"
-                    )
-
-                expected_event = _need_level_event(need_name, level)
-                level_event = need_info.get("levelEvent")
-                if level_event != expected_event:
-                    raise ValueError(
-                        f"{context}.levelEvent must be {expected_event!r}"
-                    )
-
-                expected_triggered = level != NEED_LEVEL_NORMAL
-                expected_urgent = (
-                    urgent_threshold is not None
-                    and level in (NEED_LEVEL_URGENT, NEED_LEVEL_OVERFLOW)
-                )
-                expected_overflow = level == NEED_LEVEL_OVERFLOW
-                flags = {
-                    "triggered": expected_triggered,
-                    "urgent": expected_urgent,
-                    "overflow": expected_overflow,
-                    "levelActive": expected_triggered,
-                }
-                for field, expected in flags.items():
-                    actual = need_info.get(field)
-                    if not isinstance(actual, bool) or actual is not expected:
-                        raise ValueError(
-                            f"{context}.{field} must be {expected!r}"
-                        )
-
-                # A configured level and its threshold metadata must agree.
-                has_urgent_level = NEED_LEVEL_URGENT in NEED_V2_ACTIVE_LEVELS[
-                    need_name
-                ]
-                has_overflow_level = (
-                    NEED_LEVEL_OVERFLOW in NEED_V2_ACTIVE_LEVELS[need_name]
-                )
-                if has_urgent_level != (urgent_threshold is not None):
-                    raise ValueError(
-                        f"{context} urgent threshold configuration mismatch"
-                    )
-                if has_overflow_level != (overflow_threshold is not None):
-                    raise ValueError(
-                        f"{context} overflow threshold configuration mismatch"
-                    )
-
-                updates.append({
-                    "name": need_name,
-                    "value": float(value),
-                    "trigger_threshold": trigger_threshold,
-                    "trigger_operator": trigger_operator,
-                    "urgent_threshold": urgent_threshold,
-                    "urgent_operator": urgent_operator,
-                    "overflow_threshold": overflow_threshold,
-                    "overflow_operator": overflow_operator,
-                    "triggered": expected_triggered,
-                    "urgent": expected_urgent,
-                    "overflow": expected_overflow,
-                    "level": level,
-                    "level_event": level_event,
-                    "level_active": expected_triggered,
-                })
-
-            # Validate the full snapshot before applying any entry.
-            for update in updates:
-                existing = self._blackboard.need_module.get_need(update["name"])
-                existing_event = existing.level_event if existing else None
-                self._blackboard.need_module.update_state(**update)
-                if existing_event != update["level_event"]:
-                    self._invalidate_need_visual_request(update["name"])
-                self._candidate_pool.discard_need_except(
-                    update["name"],
-                    update["level_event"],
-                )
-
-            need_names = (
-                "Hunger", "Bladder", "Sleepiness", "Cleanliness",
-                "Energy", "Social", "Exploration",
-            )
-            log_state = tuple(
-                (
-                    name,
-                    self._blackboard.need_module.level_events.get(name, "?"),
-                )
-                for name in need_names
-            )
-            if log_state != self._last_logged_need_state:
-                events = ", ".join(
-                    f"{name}={event}" for name, event in log_state
-                )
-                self._logger.debug(
-                    f"/internal_need/state changed: [{events}]"
-                )
-                self._last_logged_need_state = log_state
-        except Exception as e:
-            self._logger.error(f"Failed to parse /internal_need/state: {e}")
+        return state_subscriptions.on_need_state_ros2(self, msg)
 
     def _on_need_signal_ros2(self, msg):
-        """Handle exact V2 need level-change events."""
-        try:
-            data = json.loads(msg.data)
-            if data.get("schema_version") != "2.0":
-                raise ValueError(
-                    "unsupported internal need schema_version "
-                    f"{data.get('schema_version')!r}; expected '2.0'"
-                )
-
-            event_type = data.get("event_type")
-            expected_state = NEED_V2_EVENT_TO_STATE.get(event_type)
-            if expected_state is None:
-                raise ValueError(f"unsupported V2 need event {event_type!r}")
-
-            demand = data.get("demand")
-            level = data.get("level")
-            expected_demand, expected_level = expected_state
-            if demand != expected_demand or level != expected_level:
-                raise ValueError(
-                    f"event {event_type} requires demand={expected_demand!r}, "
-                    f"level={expected_level!r}; got {demand!r}/{level!r}"
-                )
-
-            value = data.get("value")
-            if not _is_json_number(value):
-                raise ValueError("need signal value must be numeric")
-            if not 0 <= float(value) <= 100:
-                raise ValueError("need signal value must be within 0..100")
-
-            previous_level = data.get("previousLevel")
-            if previous_level not in {
-                NEED_LEVEL_NORMAL,
-                *NEED_V2_ACTIVE_LEVELS[demand],
-            }:
-                raise ValueError(
-                    f"invalid previousLevel {previous_level!r} for {demand}"
-                )
-            if previous_level == level:
-                raise ValueError(
-                    "need signal previousLevel must differ from current level"
-                )
-            if data.get("trigger") != "LEVEL_CHANGED":
-                raise ValueError("need signal trigger must be 'LEVEL_CHANGED'")
-
-            thresholds = _parse_need_thresholds(
-                data,
-                "need signal",
-                require_overflow_operator=True,
-            )
-            (
-                trigger_threshold,
-                trigger_operator,
-                urgent_threshold,
-                urgent_operator,
-                overflow_threshold,
-                overflow_operator,
-            ) = thresholds
-
-            has_urgent_level = NEED_LEVEL_URGENT in NEED_V2_ACTIVE_LEVELS[demand]
-            has_overflow_level = (
-                NEED_LEVEL_OVERFLOW in NEED_V2_ACTIVE_LEVELS[demand]
-            )
-            if has_urgent_level != (urgent_threshold is not None):
-                raise ValueError("need signal urgent threshold configuration mismatch")
-            if has_overflow_level != (overflow_threshold is not None):
-                raise ValueError("need signal overflow threshold configuration mismatch")
-            computed_level = _need_level_from_value(
-                float(value),
-                trigger_threshold=trigger_threshold,
-                urgent_threshold=urgent_threshold,
-                overflow_threshold=overflow_threshold,
-            )
-            if level != computed_level:
-                raise ValueError(
-                    f"need signal level must be {computed_level!r} "
-                    f"for value {value!r}"
-                )
-
-            self._logger.debug(
-                f"/internal_need/signal_event: {event_type} demand={demand} level={level}")
-
-            triggered = level != NEED_LEVEL_NORMAL
-            urgent = (
-                urgent_threshold is not None
-                and level in (NEED_LEVEL_URGENT, NEED_LEVEL_OVERFLOW)
-            )
-            overflow = level == NEED_LEVEL_OVERFLOW
-            self._blackboard.need_module.update_state(
-                demand,
-                value=float(value),
-                trigger_threshold=trigger_threshold,
-                trigger_operator=trigger_operator,
-                urgent_threshold=urgent_threshold,
-                urgent_operator=urgent_operator,
-                overflow_threshold=overflow_threshold,
-                overflow_operator=overflow_operator,
-                triggered=triggered,
-                urgent=urgent,
-                overflow=overflow,
-                level=level,
-                level_event=event_type,
-                level_active=triggered,
-                previous_level=previous_level,
-            )
-            self._invalidate_need_visual_request(demand)
-            self._candidate_pool.discard_need_except(demand, event_type)
-
-            if triggered:
-                if demand in ("Hunger", "Social", "Exploration"):
-                    self._request_contextual_need_candidate(
-                        demand,
-                        float(value),
-                        trigger_event=event_type,
-                        level=level,
-                    )
-                else:
-                    self._generate_need_candidate(
-                        demand,
-                        float(value),
-                        trigger_event=event_type,
-                        level=level,
-                    )
-        except Exception as e:
-            self._logger.error(f"Failed to parse /internal_need/signal_event: {e}")
+        return state_subscriptions.on_need_signal_ros2(self, msg)
 
     # ── Audio Direct Handler ──────────────────────────────────────────────
 
@@ -1286,27 +751,7 @@ class BehaviorTreeRosNode(NodeBase):
         self._perception.request_emotion_context(_resolved)
 
     def _consume_voice_session_turn(self, session, kind: str) -> None:
-        """Give one accepted command/reaction ownership of the voice turn."""
-        session.consume_turn(kind)
-        session.metadata["command_goal_terminal"] = False
-        session.generation += 1
-        self._voice_session_generation = max(
-            self._voice_session_generation,
-            session.generation,
-        )
-        interaction_id = session.interaction_id
-        self._defer_queued_voice_emotions(interaction_id)
-        self._candidate_pool.discard_where(
-            lambda queued: (
-                queued.get("params", {}).get("interaction_id")
-                == interaction_id
-                and queued.get("params", {}).get("session_role") in {
-                    "wake_approach",
-                    "voice_waiting_emotion",
-                }
-            )
-        )
-        self._release_voice_hold(session, reset_idle_timer=False)
+        return voice_engagement.consume_voice_session_turn(self, session, kind)
 
     def _emit_social_emotion(self, emotion_name: str, trigger_event: str) -> None:
         """按视觉路由生成情绪候选（不污染情绪 state）。"""
@@ -1595,157 +1040,19 @@ class BehaviorTreeRosNode(NodeBase):
         # An empty token is the local tombstone written by
         # _release_voice_hold().  Once an explicit voice command supersedes
         # wake engagement, that released lease must never be recreated.
-        if (
-            self._voice_session is not session
-            or not session.active
-            or session.hold_request_pending
-            or session.command_received
-            or session.phase not in (
-                ORIENTING, AWAITING_IDENTITY, ACQUIRING_TARGET, APPROACHING
-            )
-            or not str(session.hold_token).strip()
-        ):
-            return
-        lease_sec = float(self._voice_engagement.get("hold_lease_sec", 6.0))
-        generation = session.generation
-        interaction_id = session.interaction_id
-        hold_token = str(session.hold_token).strip()
-        session.hold_request_pending = True
-        session.last_hold_attempted_at = time.monotonic()
-
-        def _held(result: dict | None) -> None:
-            current = self._voice_session
-            hold_succeeded = bool(
-                isinstance(result, dict) and result.get("ok", True)
-            )
-            request_is_current = bool(
-                current is session
-                and current.matches(interaction_id, generation)
-                and not current.command_received
-                and current.hold_request_pending
-                and str(current.hold_token).strip() == hold_token
-                and current.phase in (
-                    ORIENTING, ACQUIRING_TARGET, APPROACHING
-                )
-            )
-            if not request_is_current:
-                # The release that ended wake engagement may have reached
-                # Voice before this older hold request.  If the older request
-                # then succeeds, release the captured token once more so a
-                # stale lease cannot delay the session's idle transition.
-                if hold_succeeded:
-                    reset_idle_timer = bool(
-                        current is session
-                        and current.phase == WAITING
-                        and not current.command_received
-                    )
-                    if not self._voice_session_client.release(
-                        interaction_id,
-                        hold_token,
-                        reset_idle_timer=reset_idle_timer,
-                    ):
-                        self._logger.warn(
-                            "Late Voice hold cleanup unavailable: "
-                            "interaction_id=%s" % interaction_id
-                        )
-                return
-            current.hold_request_pending = False
-            current.hold_active = hold_succeeded
-            if current.hold_active:
-                current.last_hold_renewed_at = time.monotonic()
-            else:
-                self._logger.warn(
-                    "Voice hold rejected: interaction_id=%s"
-                    % current.interaction_id
-                )
-
-        scheduled = self._voice_session_client.hold(
-            interaction_id,
-            hold_token,
-            lease_sec=lease_sec,
-            callback=_held,
-        )
-        if not scheduled:
-            session.hold_request_pending = False
-            session.hold_active = False
-            self._logger.warn(
-                "Voice hold unavailable: interaction_id=%s"
-                % session.interaction_id
-            )
+        return voice_engagement.request_voice_hold(self, session)
 
     def _renew_voice_hold_if_due(self) -> None:
-        session = self._voice_session
-        if (
-            session is None
-            or not session.active
-            or session.command_received
-            or not str(session.hold_token).strip()
-            or session.phase not in (
-                ORIENTING, ACQUIRING_TARGET, APPROACHING
-            )
-        ):
-            return
-        interval = float(
-            self._voice_engagement.get("hold_renew_interval_sec", 2.0)
-        )
-        last_attempt_or_success = max(
-            session.last_hold_attempted_at,
-            session.last_hold_renewed_at,
-        )
-        if (
-            not session.hold_request_pending
-            and time.monotonic() - last_attempt_or_success >= interval
-        ):
-            self._request_voice_hold(session)
+        return voice_engagement.renew_voice_hold_if_due(self)
 
     def _expire_wake_target_query_if_due(self) -> None:
-        """Fail a hung visual query closed and resume the voice idle timer."""
-        session = self._voice_session
-        if session is None or session.phase != ACQUIRING_TARGET:
-            return
-        started_at = session.metadata.get("target_query_started_at")
-        if not isinstance(started_at, (int, float)):
-            return
-        timeout_sec = max(
-            0.1,
-            float(self._voice_engagement.get("acquire_timeout_sec", 2.0)),
-        )
-        if time.monotonic() - float(started_at) < timeout_sec:
-            return
-
-        # Invalidate the captured service callback before changing phase.  A
-        # late Vision response must not enqueue motion after we started
-        # waiting for speech.
-        session.generation += 1
-        self._voice_session_generation = max(
-            self._voice_session_generation,
-            session.generation,
-        )
-        session.metadata.pop("target_query_started_at", None)
-        self._enter_voice_waiting(session, reason="visual_query_timeout")
+        return voice_engagement.expire_wake_target_query_if_due(self)
 
     def _expire_wake_identity_if_due(self) -> None:
-        session = self._voice_session
-        if session is None or session.phase != AWAITING_IDENTITY:
-            return
-        started_at = session.metadata.get("identity_wait_started_at")
-        if not isinstance(started_at, (int, float)):
-            return
-        timeout_sec = max(0.1, float(
-            self._voice_engagement.get("wake_identity_timeout_sec", 3.0)
-        ))
-        if time.monotonic() - float(started_at) >= timeout_sec:
-            self._enter_voice_waiting(session, reason="wake_identity_timeout")
+        return voice_engagement.expire_wake_identity_if_due(self)
 
     def _continue_wake_after_identity(self, session: VoiceInteractionSession) -> None:
-        if session.phase != AWAITING_IDENTITY or session.command_received:
-            return
-        role = session.metadata.get("wake_speaker_role")
-        status = session.metadata.get("wake_speaker_status")
-        if role in ("owner", "family") and status == "matched":
-            self._request_wake_speaker(session)
-        elif status != "pending":
-            self._enter_voice_waiting(session, reason="wake_identity_%s" % status)
+        return voice_engagement.continue_wake_after_identity(self, session)
 
     def _release_voice_hold(
         self,
@@ -1753,51 +1060,10 @@ class BehaviorTreeRosNode(NodeBase):
         *,
         reset_idle_timer: bool,
     ) -> None:
-        if not session.hold_token:
-            return
-        hold_token = session.hold_token
-        session.hold_token = ""
-        session.hold_active = False
-        session.hold_request_pending = False
-        if not self._voice_session_client.release(
-            session.interaction_id,
-            hold_token,
-            reset_idle_timer=reset_idle_timer,
-        ):
-            self._logger.warn(
-                "Voice hold release unavailable: interaction_id=%s"
-                % session.interaction_id
-            )
+        return voice_engagement.release_voice_hold(self, session, reset_idle_timer=reset_idle_timer)
 
     def _close_voice_session(self, interaction_id: str, *, reason: str) -> None:
-        session = self._voice_session
-        if session is None or not session.matches(interaction_id):
-            return
-        session.phase = CLOSED
-        session.generation += 1
-        self._voice_session_generation = max(
-            self._voice_session_generation, session.generation
-        )
-        self._release_voice_hold(session, reset_idle_timer=False)
-        self._defer_queued_voice_emotions(interaction_id)
-        removed = self._candidate_pool.discard_session(interaction_id)
-        self._runtime.discard_pending_interaction(interaction_id)
-        canceled = self._runtime.cancel_current_interaction(
-            interaction_id,
-            reason="voice_session_closed:%s" % reason,
-        )
-        self._publish_attention_control(False, {
-            "interaction_id": interaction_id,
-            "state_reason": reason,
-        })
-        self._attention_interaction_id = ""
-        self._attention_mode = "face_body_centering"
-        self._pending_emotion_retry_at.clear()
-        self._flush_pending_emotions()
-        self._logger.info(
-            "Voice session closed: id=%s reason=%s queued_removed=%d running=%s"
-            % (interaction_id, reason, removed, bool(canceled))
-        )
+        return voice_engagement.close_voice_session(self, interaction_id, reason=reason)
 
     def _enter_voice_waiting(
         self,
@@ -1805,73 +1071,13 @@ class BehaviorTreeRosNode(NodeBase):
         *,
         reason: str,
     ) -> None:
-        current = self._voice_session
-        if current is None or not current.matches(
-            session.interaction_id, session.generation
-        ):
-            return
-        current.phase = WAITING
-        # Unknown and stranger wakes remain stationary after the sound turn.
-        approach_finished = reason == "arrived"
-        self._attention_interaction_id = (
-            current.interaction_id if approach_finished else ""
-        )
-        self._attention_mode = "face_body_centering"
-        self._publish_attention_control(approach_finished, {
-            "interaction_id": current.interaction_id,
-            # respond_owner_call already consumed the microphone bearing.  A
-            # second fallback turn here would rotate the chassis twice.
-            "wake_angle": 0.0,
-            "wake_confidence": current.wake_confidence,
-            "state_reason": reason,
-        })
-        self._release_voice_hold(current, reset_idle_timer=True)
-        self._pending_emotion_retry_at.clear()
-        self._flush_pending_emotions()
-        self._logger.info(
-            "Voice session waiting: id=%s reason=%s target=%s"
-            % (
-                current.interaction_id,
-                reason,
-                (
-                    current.selected_target.get("target_id")
-                    if isinstance(current.selected_target, dict) else "none"
-                ),
-            )
-        )
+        return voice_engagement.enter_voice_waiting(self, session, reason=reason)
 
     def _request_wake_speaker(
         self,
         session: VoiceInteractionSession,
     ) -> None:
-        session.phase = ACQUIRING_TARGET
-        session.metadata["target_query_started_at"] = time.monotonic()
-        generation = session.generation
-        self._perception.request_wake_speaker(
-            lambda target: self._on_wake_speaker_resolved(
-                session.interaction_id,
-                generation,
-                target,
-            ),
-            # respond_owner_call already turned the camera toward the source.
-            reference_bearing_deg=0.0,
-            min_confidence=float(
-                self._voice_engagement.get("target_min_confidence", 0.3)
-            ),
-            max_age_ms=float(
-                self._voice_engagement.get("target_max_age_ms", 300.0)
-            ),
-            max_bearing_error_deg=float(
-                self._voice_engagement.get(
-                    "target_max_bearing_error_deg", 25.0
-                )
-            ),
-            max_snapshot_age_ms=float(
-                self._voice_engagement.get(
-                    "snapshot_max_age_ms", 500.0
-                )
-            ),
-        )
+        return voice_engagement.request_wake_speaker(self, session)
 
     def _on_wake_speaker_resolved(
         self,
@@ -1879,115 +1085,14 @@ class BehaviorTreeRosNode(NodeBase):
         generation: int,
         target: dict | None,
     ) -> None:
-        session = self._voice_session
-        if (
-            session is None
-            or not session.matches(interaction_id, generation)
-            or session.phase != ACQUIRING_TARGET
-            or session.command_received
-        ):
-            return
-        session.metadata.pop("target_query_started_at", None)
-        if not isinstance(target, dict):
-            self._enter_voice_waiting(session, reason="no_visual_target")
-            return
-
-        session.selected_target = dict(target)
-        target_id = str(target.get("target_id", ""))
-        if (target.get("target_type") != "human"
-                or not str(target.get("vision_epoch", ""))
-                or not target_id.startswith(str(target["vision_epoch"]) + ":human:")):
-            self._enter_voice_waiting(session, reason="invalid_visual_target")
-            return
-        # Existing Vision identity can veto a definite contradiction.  An
-        # unknown face remains eligible because Vision confirmation is optional.
-        if target.get("identity_state") == "confirmed_known":
-            visual_identity = str(target.get("identity", ""))
-            if visual_identity != session.metadata.get("wake_speaker_id"):
-                self._enter_voice_waiting(session, reason="identity_conflict")
-                return
-
-        candidate = self._intent_mapper.build_voice_approach_candidate(
-            interaction_id=interaction_id,
-            target=target,
-            wake_id=str(session.metadata.get("wake_id", "")),
-            speaker_id=str(session.metadata.get("wake_speaker_id", "")),
-            speaker_role=str(session.metadata.get("wake_speaker_role", "")),
-            speaker_status=str(session.metadata.get("wake_speaker_status", "")),
-            stand_off_distance_m=float(
-                self._voice_engagement.get("stand_off_distance_m", 1.5)
-            ),
-            timeout_sec=float(
-                self._voice_engagement.get("approach_timeout_sec", 160.0)
-            ),
-            ttl_sec=float(
-                self._voice_engagement.get(
-                    "approach_candidate_ttl_sec", 3.0
-                )
-            ),
-        )
-        if self._add_candidate(candidate):
-            session.phase = APPROACHING
-        else:
-            self._enter_voice_waiting(
-                session, reason="approach_candidate_suppressed"
-            )
+        return voice_engagement.on_wake_speaker_resolved(self, interaction_id, generation, target)
 
     def _handle_voice_behavior_terminal(
         self,
         active,
         completed,
     ) -> None:
-        session = self._voice_session
-        if session is None or not session.active:
-            return
-        interaction_id = str(active.params.get("interaction_id", "")).strip()
-        active_wake_id = str(active.params.get("wake_id", ""))
-        current_wake_id = str(session.metadata.get("wake_id", ""))
-        if (active.behavior_name == "respond_owner_call"
-                and (interaction_id != session.interaction_id
-                     or active_wake_id != current_wake_id)):
-            replacement = session.metadata.pop("pending_wake_candidate", None)
-            if replacement is not None and session.phase == ORIENTING:
-                self._add_candidate(replacement)
-            return
-        if not session.matches(interaction_id):
-            return
-        if (active.behavior_name in ("respond_owner_call", "approach_voice_caller")
-                and active_wake_id != current_wake_id):
-            return
-        if active.params.get("session_role") in {
-            "voice_command", "voice_social_reaction",
-        }:
-            session.metadata["command_goal_terminal"] = True
-            self._pending_emotion_retry_at.clear()
-            self._flush_pending_emotions()
-        status = str(getattr(completed, "status", "")).upper()
-        if active.behavior_name == "respond_owner_call":
-            if session.command_received:
-                return
-            if status in ("SUCCESS", "COMPLETED"):
-                session.phase = AWAITING_IDENTITY
-                session.metadata["identity_wait_started_at"] = time.monotonic()
-                self._continue_wake_after_identity(session)
-            else:
-                self._enter_voice_waiting(
-                    session, reason="wake_orientation_%s" % status.lower()
-                )
-        elif active.behavior_name == "approach_voice_caller":
-            if session.command_received:
-                return
-            reason = str(getattr(completed, "reason", "")).strip()
-            self._enter_voice_waiting(
-                session,
-                reason=(
-                    "arrived" if status in ("SUCCESS", "COMPLETED")
-                    else "approach_%s%s" % (
-                        status.lower(),
-                        ":%s" % reason if reason else "",
-                    )
-                ),
-            )
+        return voice_engagement.handle_voice_behavior_terminal(self, active, completed)
 
     # ── Candidate Generation (via intent_mapper) ──────────────────────────
 

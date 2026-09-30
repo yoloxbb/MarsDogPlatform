@@ -1,0 +1,17 @@
+{
+  "commands/r3-emotion/command.log": {
+    "raw_archive": "commands/r3-emotion/command.log.gz",
+    "raw_sha256": "f930547bda14e1633a0ec9e26c56a62afe19a6207bfeb32f1070edfc602851c9",
+    "display_sha256": "2d1b458b90e2836fe2dd493df20dbbda3a7a7e9b2ee8ffb050ce796c0136820f"
+  },
+  "intermediate/emotion-before-test-update/junit.xml": {
+    "raw_archive": "intermediate/emotion-before-test-update/junit.xml.gz",
+    "raw_sha256": "585af0987ab501a0887da13aeeb1d07fca7dd49b7ece3ac6d0491eca776f3bc1",
+    "display_sha256": "08d15ff898b8b5302ab81d4cb55aa20ddf1d250f95db44e1e9a32dcad983b243"
+  },
+  "intermediate/emotion-before-test-update/runner.log": {
+    "raw_archive": "intermediate/emotion-before-test-update/runner.log.gz",
+    "raw_sha256": "c6a39de858e358ddff3fd697946a094abb5efe775b85c3801925d56c995f73b9",
+    "display_sha256": "5928c9a2e60dd62808bb44e3657ff0b220a0ae7db6df0b8d3c76b360d6bcbb5f"
+  }
+}

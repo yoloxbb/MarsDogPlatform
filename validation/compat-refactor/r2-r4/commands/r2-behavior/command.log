@@ -1,0 +1,26 @@
++ /home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python -B -m pytest tests marsdog_behavior/tests -q -p no:cacheprovider --junitxml=/home/elephant/MarsDog/marsdog-platform/out/compat-refactor/full/tests/r2-behavior/junit.xml
+{
+  "status": "PASS",
+  "counts": {
+    "tests": 533,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "skips": [],
+  "command": [
+    "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+    "-B",
+    "-m",
+    "pytest",
+    "tests",
+    "marsdog_behavior/tests",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=/home/elephant/MarsDog/marsdog-platform/out/compat-refactor/full/tests/r2-behavior/junit.xml"
+  ],
+  "scope": "Existing module unit suite, no hardware",
+  "module": "behavior",
+  "returncode": 0
+}

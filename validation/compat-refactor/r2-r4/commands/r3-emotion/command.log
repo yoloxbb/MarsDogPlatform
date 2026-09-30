@@ -1,0 +1,50 @@
++ /home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python -B -m pytest tests -q -p no:cacheprovider --junitxml=/home/elephant/MarsDog/marsdog-platform/out/compat-refactor/full/tests/r3-emotion/junit.xml
+.......................................................................................................................................... [ 63%]
+.....................F............................................ [ 93%]
+..............                                                           [100%]
+=================================== FAILURES ===================================
+_________ Ros2PackageTest.test_calculation_nodes_publish_time_context __________
+
+self = <test_ros2_package.Ros2PackageTest testMethod=test_calculation_nodes_publish_time_context>
+
+    def test_calculation_nodes_publish_time_context(self):
+        """四类状态与事件输出都应通过统一时间上下文包装。"""
+        needNodeText = (PROJECT_ROOT / "marsdog_ros2" / "internal_need_node.py").read_text(
+            encoding="utf-8"
+        )
+        emotionNodeText = (PROJECT_ROOT / "marsdog_ros2" / "emotion_engine_node.py").read_text(
+            encoding="utf-8"
+        )
+
+>       self.assertEqual(needNodeText.count("GetMessageWithTimeContextValue("), 2)
+E       AssertionError: 0 != 2
+
+tests/test_ros2_package.py:206: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_ros2_package.py::Ros2PackageTest::test_calculation_nodes_publish_time_context
+1 failed, 217 passed, 156 subtests passed in 3.80s
+
+{
+  "status": "FAIL",
+  "counts": {
+    "tests": 374,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0
+  },
+  "skips": [],
+  "command": [
+    "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+    "-B",
+    "-m",
+    "pytest",
+    "tests",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=/home/elephant/MarsDog/marsdog-platform/out/compat-refactor/full/tests/r3-emotion/junit.xml"
+  ],
+  "scope": "Existing module unit suite, no hardware",
+  "module": "emotion",
+  "returncode": 1
+}

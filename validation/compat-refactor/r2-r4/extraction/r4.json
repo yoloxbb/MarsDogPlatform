@@ -1,0 +1,277 @@
+[
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._begin_interaction",
+    "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+    "function": "begin_interaction",
+    "lines": 27,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._refresh_interaction_activity",
+    "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+    "function": "refresh_interaction_activity",
+    "lines": 12,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._is_interaction_active",
+    "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+    "function": "is_interaction_active",
+    "lines": 3,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._prune_interaction_holds_locked",
+    "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+    "function": "prune_interaction_holds_locked",
+    "lines": 16,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._timeout_interaction_id",
+    "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+    "function": "timeout_interaction_id",
+    "lines": 17,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._hold_interaction",
+    "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+    "function": "hold_interaction",
+    "lines": 52,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._release_interaction_hold",
+    "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+    "function": "release_interaction_hold",
+    "lines": 40,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._interaction_state",
+    "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+    "function": "interaction_state",
+    "lines": 50,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._process_speech",
+    "destination": "modules/voice/marsdog_voice_interaction/core/speech_pipeline.py",
+    "function": "process_speech",
+    "lines": 316,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._complete_intent",
+    "destination": "modules/voice/marsdog_voice_interaction/core/speech_pipeline.py",
+    "function": "complete_intent",
+    "lines": 127,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._select_kws_candidate",
+    "destination": "modules/voice/marsdog_voice_interaction/core/speech_pipeline.py",
+    "function": "select_kws_candidate",
+    "lines": 53,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._is_short_asr_text",
+    "destination": "modules/voice/marsdog_voice_interaction/core/speech_pipeline.py",
+    "function": "is_short_asr_text",
+    "lines": 17,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._publish_selected_kws_candidate",
+    "destination": "modules/voice/marsdog_voice_interaction/core/speech_pipeline.py",
+    "function": "publish_selected_kws_candidate",
+    "lines": 102,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._parse_intent",
+    "destination": "modules/voice/marsdog_voice_interaction/core/speech_pipeline.py",
+    "function": "parse_intent",
+    "lines": 23,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._run_task",
+    "destination": "modules/voice/marsdog_voice_interaction/core/task_router.py",
+    "function": "run_task",
+    "lines": 95,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+    "method": "VoiceInteractionNode._handle_task",
+    "destination": "modules/voice/marsdog_voice_interaction/messages/task_service.py",
+    "function": "handle_task",
+    "lines": 46,
+    "dependency_substitutions": {
+      "time.perf_counter()": "clock()"
+    },
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+    "method": "VisionInteractionNode._run_task",
+    "destination": "modules/vision/marsdog_vision_interaction/core/task_router.py",
+    "function": "run_task",
+    "lines": 111,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+    "method": "VisionInteractionNode._handle_task",
+    "destination": "modules/vision/marsdog_vision_interaction/messages/task_service.py",
+    "function": "handle_task",
+    "lines": 46,
+    "dependency_substitutions": {
+      "time.perf_counter()": "clock()",
+      "vision_trace(": "trace("
+    },
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._request_voice_hold",
+    "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+    "function": "request_voice_hold",
+    "lines": 81,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._renew_voice_hold_if_due",
+    "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+    "function": "renew_voice_hold_if_due",
+    "lines": 24,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._expire_wake_target_query_if_due",
+    "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+    "function": "expire_wake_target_query_if_due",
+    "lines": 25,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._expire_wake_identity_if_due",
+    "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+    "function": "expire_wake_identity_if_due",
+    "lines": 12,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._continue_wake_after_identity",
+    "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+    "function": "continue_wake_after_identity",
+    "lines": 9,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._release_voice_hold",
+    "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+    "function": "release_voice_hold",
+    "lines": 21,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._close_voice_session",
+    "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+    "function": "close_voice_session",
+    "lines": 29,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._enter_voice_waiting",
+    "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+    "function": "enter_voice_waiting",
+    "lines": 40,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._request_wake_speaker",
+    "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+    "function": "request_wake_speaker",
+    "lines": 32,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._on_wake_speaker_resolved",
+    "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+    "function": "on_wake_speaker_resolved",
+    "lines": 59,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._handle_voice_behavior_terminal",
+    "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+    "function": "handle_voice_behavior_terminal",
+    "lines": 55,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/ros_node.py",
+    "method": "BehaviorTreeRosNode._consume_voice_session_turn",
+    "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+    "function": "consume_voice_session_turn",
+    "lines": 22,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  }
+]

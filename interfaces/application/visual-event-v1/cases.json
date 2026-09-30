@@ -1,0 +1,781 @@
+{
+  "format_version": 1,
+  "baseline_commit": "66c7eaa",
+  "producers": {
+    "owner": {
+      "vision_epoch": "epoch-1",
+      "snapshot_id": "epoch-1:1",
+      "sequence": 1,
+      "header": {
+        "stamp": 1000,
+        "frame_id": "camera"
+      },
+      "active_target": {
+        "vision_epoch": "epoch-1",
+        "target_id": "epoch-1:human:7",
+        "track_id": 7,
+        "target_type": "human",
+        "identity": "owner",
+        "identity_state": "confirmed_known",
+        "tracking_state": "tracking",
+        "last_seen_age_ms": 0,
+        "confidence": 0.9,
+        "is_registered": true,
+        "bearing_deg": 15,
+        "bearing_valid": true,
+        "pose_3d": {
+          "valid": true,
+          "frame_id": "camera",
+          "x": 1,
+          "y": 2,
+          "z": 3
+        },
+        "range_valid": true,
+        "distance_m": 2.0
+      },
+      "human_candidates": [
+        {
+          "vision_epoch": "epoch-1",
+          "target_id": "epoch-1:human:7",
+          "track_id": 7,
+          "target_type": "human",
+          "identity": "owner",
+          "identity_state": "confirmed_known",
+          "tracking_state": "tracking",
+          "last_seen_age_ms": 0,
+          "confidence": 0.9,
+          "is_registered": true,
+          "bearing_deg": 15,
+          "bearing_valid": true,
+          "pose_3d": {
+            "valid": true,
+            "frame_id": "camera",
+            "x": 1,
+            "y": 2,
+            "z": 3
+          },
+          "range_valid": true,
+          "distance_m": 2.0
+        }
+      ],
+      "humans": [
+        {
+          "track_id": 7,
+          "confidence": 0.9
+        }
+      ],
+      "events": [
+        "EVT_VISION_MASTER",
+        "EVT_VISION_MASTER_HAPPY"
+      ]
+    },
+    "empty": {},
+    "fall": {
+      "vision_epoch": "epoch-1",
+      "snapshot_id": "epoch-1:1",
+      "sequence": 1,
+      "header": {
+        "stamp": 1000,
+        "frame_id": "camera"
+      },
+      "active_target": {
+        "vision_epoch": "epoch-1",
+        "target_id": "epoch-1:human:7",
+        "track_id": 7,
+        "target_type": "human",
+        "identity": "owner",
+        "identity_state": "confirmed_known",
+        "tracking_state": "tracking",
+        "last_seen_age_ms": 0,
+        "confidence": 0.9,
+        "is_registered": true,
+        "bearing_deg": 15,
+        "bearing_valid": true,
+        "pose_3d": {
+          "valid": true,
+          "frame_id": "camera",
+          "x": 1,
+          "y": 2,
+          "z": 3
+        },
+        "range_valid": true,
+        "distance_m": 2.0
+      },
+      "human_candidates": [
+        {
+          "vision_epoch": "epoch-1",
+          "target_id": "epoch-1:human:7",
+          "track_id": 7,
+          "target_type": "human",
+          "identity": "owner",
+          "identity_state": "confirmed_known",
+          "tracking_state": "tracking",
+          "last_seen_age_ms": 0,
+          "confidence": 0.9,
+          "is_registered": true,
+          "bearing_deg": 15,
+          "bearing_valid": true,
+          "pose_3d": {
+            "valid": true,
+            "frame_id": "camera",
+            "x": 1,
+            "y": 2,
+            "z": 3
+          },
+          "range_valid": true,
+          "distance_m": 2.0
+        }
+      ],
+      "humans": [
+        {
+          "track_id": 7,
+          "confidence": 0.9
+        }
+      ],
+      "events": [
+        "EVT_VISION_FALL"
+      ]
+    },
+    "stop": {
+      "vision_epoch": "epoch-1",
+      "snapshot_id": "epoch-1:1",
+      "sequence": 1,
+      "header": {
+        "stamp": 1000,
+        "frame_id": "camera"
+      },
+      "active_target": {
+        "vision_epoch": "epoch-1",
+        "target_id": "epoch-1:human:7",
+        "track_id": 7,
+        "target_type": "human",
+        "identity": "owner",
+        "identity_state": "confirmed_known",
+        "tracking_state": "tracking",
+        "last_seen_age_ms": 0,
+        "confidence": 0.9,
+        "is_registered": true,
+        "bearing_deg": 15,
+        "bearing_valid": true,
+        "pose_3d": {
+          "valid": true,
+          "frame_id": "camera",
+          "x": 1,
+          "y": 2,
+          "z": 3
+        },
+        "range_valid": true,
+        "distance_m": 2.0
+      },
+      "human_candidates": [
+        {
+          "vision_epoch": "epoch-1",
+          "target_id": "epoch-1:human:7",
+          "track_id": 7,
+          "target_type": "human",
+          "identity": "owner",
+          "identity_state": "confirmed_known",
+          "tracking_state": "tracking",
+          "last_seen_age_ms": 0,
+          "confidence": 0.9,
+          "is_registered": true,
+          "bearing_deg": 15,
+          "bearing_valid": true,
+          "pose_3d": {
+            "valid": true,
+            "frame_id": "camera",
+            "x": 1,
+            "y": 2,
+            "z": 3
+          },
+          "range_valid": true,
+          "distance_m": 2.0
+        }
+      ],
+      "humans": [
+        {
+          "track_id": 7,
+          "confidence": 0.9
+        }
+      ],
+      "events": [
+        "EVT_VISION_STOP_GESTURE"
+      ]
+    },
+    "mixed": {
+      "vision_epoch": "epoch-1",
+      "snapshot_id": "epoch-1:1",
+      "sequence": 1,
+      "header": {
+        "stamp": 1000,
+        "frame_id": "camera"
+      },
+      "active_target": {
+        "vision_epoch": "epoch-1",
+        "target_id": "epoch-1:human:7",
+        "track_id": 7,
+        "target_type": "human",
+        "identity": "owner",
+        "identity_state": "confirmed_known",
+        "tracking_state": "tracking",
+        "last_seen_age_ms": 0,
+        "confidence": 0.9,
+        "is_registered": true,
+        "bearing_deg": 15,
+        "bearing_valid": true,
+        "pose_3d": {
+          "valid": true,
+          "frame_id": "camera",
+          "x": 1,
+          "y": 2,
+          "z": 3
+        },
+        "range_valid": true,
+        "distance_m": 2.0
+      },
+      "human_candidates": [
+        {
+          "vision_epoch": "epoch-1",
+          "target_id": "epoch-1:human:7",
+          "track_id": 7,
+          "target_type": "human",
+          "identity": "owner",
+          "identity_state": "confirmed_known",
+          "tracking_state": "tracking",
+          "last_seen_age_ms": 0,
+          "confidence": 0.9,
+          "is_registered": true,
+          "bearing_deg": 15,
+          "bearing_valid": true,
+          "pose_3d": {
+            "valid": true,
+            "frame_id": "camera",
+            "x": 1,
+            "y": 2,
+            "z": 3
+          },
+          "range_valid": true,
+          "distance_m": 2.0
+        }
+      ],
+      "humans": [
+        {
+          "track_id": 7,
+          "confidence": 0.9
+        }
+      ],
+      "events": [
+        "EVT_VISION_STOP_GESTURE",
+        "EVT_VISION_FALL",
+        "EVT_VISION_STOP_GESTURE",
+        "UNKNOWN"
+      ]
+    },
+    "object": {
+      "vision_epoch": "epoch-1",
+      "tracked_objects": [
+        {
+          "label": "toy",
+          "track_id": 5,
+          "source_sequence": 8,
+          "source_snapshot_id": "epoch-1:8",
+          "confidence": 0.9
+        }
+      ]
+    },
+    "coercion": {
+      "sequence": "4",
+      "active_target": {
+        "identity": 7,
+        "is_registered": "true",
+        "keypoint_format": "unknown-format",
+        "keypoints": [
+          [
+            1,
+            2,
+            3
+          ]
+        ]
+      },
+      "events": [
+        7,
+        true
+      ],
+      "debug_humans": [
+        null,
+        {
+          "track_id": "4"
+        }
+      ]
+    }
+  },
+  "scenarios": [
+    {
+      "id": "owner",
+      "steps": [
+        {
+          "source": "owner"
+        }
+      ]
+    },
+    {
+      "id": "empty",
+      "steps": [
+        {
+          "source": "empty"
+        }
+      ]
+    },
+    {
+      "id": "fall",
+      "steps": [
+        {
+          "source": "fall"
+        }
+      ]
+    },
+    {
+      "id": "stop",
+      "steps": [
+        {
+          "source": "stop"
+        }
+      ]
+    },
+    {
+      "id": "mixed",
+      "steps": [
+        {
+          "source": "mixed"
+        }
+      ]
+    },
+    {
+      "id": "object",
+      "steps": [
+        {
+          "source": "object"
+        }
+      ]
+    },
+    {
+      "id": "coercion",
+      "steps": [
+        {
+          "source": "coercion"
+        }
+      ]
+    },
+    {
+      "id": "direct_edge_dedup",
+      "steps": [
+        {
+          "source": "fall"
+        },
+        {
+          "source": "fall",
+          "advance": 0.1
+        },
+        {
+          "source": "empty",
+          "advance": 0.1
+        },
+        {
+          "source": "fall",
+          "advance": 0.1
+        }
+      ]
+    },
+    {
+      "id": "direct_edge_after_gap",
+      "steps": [
+        {
+          "source": "fall"
+        },
+        {
+          "source": "fall",
+          "advance": 0.51
+        }
+      ]
+    },
+    {
+      "id": "cache_expires",
+      "steps": [
+        {
+          "source": "owner"
+        },
+        {
+          "advance": 0.5
+        },
+        {
+          "advance": 0.001
+        }
+      ]
+    },
+    {
+      "id": "emotion_event_window",
+      "steps": [
+        {
+          "source": "owner"
+        },
+        {
+          "source": "owner",
+          "advance": 1
+        },
+        {
+          "source": "owner",
+          "advance": 10
+        }
+      ]
+    },
+    {
+      "id": "target_disappears",
+      "steps": [
+        {
+          "source": "owner"
+        },
+        {
+          "source": "empty"
+        }
+      ]
+    },
+    {
+      "id": "epoch_changes",
+      "steps": [
+        {
+          "source": "owner"
+        },
+        {
+          "source": "owner",
+          "patch": {
+            "vision_epoch": "epoch-2",
+            "snapshot_id": "epoch-2:1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "legacy_target_reference",
+      "steps": [
+        {
+          "source": "owner",
+          "remove": [
+            "human_candidates"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "schema_string",
+      "steps": [
+        {
+          "source": "owner",
+          "patch": {
+            "schema_version": "1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "schema_float",
+      "steps": [
+        {
+          "source": "owner",
+          "patch": {
+            "schema_version": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "schema_bool",
+      "steps": [
+        {
+          "source": "owner",
+          "patch": {
+            "schema_version": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "events_string",
+      "steps": [
+        {
+          "source": "owner",
+          "patch": {
+            "events": "EVT_VISION_FALL"
+          }
+        }
+      ]
+    },
+    {
+      "id": "events_nonstring",
+      "steps": [
+        {
+          "source": "owner",
+          "patch": {
+            "events": [
+              true
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "stale_target",
+      "steps": [
+        {
+          "source": "owner",
+          "patch": {
+            "active_target": {
+              "vision_epoch": "epoch-1",
+              "target_id": "epoch-1:human:7",
+              "track_id": 7,
+              "target_type": "human",
+              "identity": "owner",
+              "identity_state": "confirmed_known",
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 501,
+              "confidence": 0.9,
+              "is_registered": true,
+              "bearing_deg": 15,
+              "bearing_valid": true,
+              "pose_3d": {
+                "valid": true,
+                "frame_id": "camera",
+                "x": 1,
+                "y": 2,
+                "z": 3
+              },
+              "range_valid": true,
+              "distance_m": 2.0
+            },
+            "humans": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "lost_target",
+      "steps": [
+        {
+          "source": "owner",
+          "patch": {
+            "active_target": {
+              "vision_epoch": "epoch-1",
+              "target_id": "epoch-1:human:7",
+              "track_id": 7,
+              "target_type": "human",
+              "identity": "owner",
+              "identity_state": "confirmed_known",
+              "tracking_state": "lost",
+              "last_seen_age_ms": 0,
+              "confidence": 0.9,
+              "is_registered": true,
+              "bearing_deg": 15,
+              "bearing_valid": true,
+              "pose_3d": {
+                "valid": true,
+                "frame_id": "camera",
+                "x": 1,
+                "y": 2,
+                "z": 3
+              },
+              "range_valid": true,
+              "distance_m": 2.0
+            },
+            "humans": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "nonhuman_target",
+      "steps": [
+        {
+          "source": "owner",
+          "patch": {
+            "active_target": {
+              "vision_epoch": "epoch-1",
+              "target_id": "epoch-1:human:7",
+              "track_id": 7,
+              "target_type": "object",
+              "identity": "owner",
+              "identity_state": "confirmed_known",
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0,
+              "confidence": 0.9,
+              "is_registered": true,
+              "bearing_deg": 15,
+              "bearing_valid": true,
+              "pose_3d": {
+                "valid": true,
+                "frame_id": "camera",
+                "x": 1,
+                "y": 2,
+                "z": 3
+              },
+              "range_valid": true,
+              "distance_m": 2.0
+            },
+            "humans": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "identity_unknown",
+      "steps": [
+        {
+          "source": "owner",
+          "patch": {
+            "active_target": {
+              "vision_epoch": "epoch-1",
+              "target_id": "epoch-1:human:7",
+              "track_id": 7,
+              "target_type": "human",
+              "identity": "unknown",
+              "identity_state": "unverified",
+              "tracking_state": "tracking",
+              "last_seen_age_ms": 0,
+              "confidence": 0.9,
+              "is_registered": true,
+              "bearing_deg": 15,
+              "bearing_valid": true,
+              "pose_3d": {
+                "valid": true,
+                "frame_id": "camera",
+                "x": 1,
+                "y": 2,
+                "z": 3
+              },
+              "range_valid": true,
+              "distance_m": 2.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "empty_target",
+      "steps": [
+        {
+          "source": "owner",
+          "patch": {
+            "active_target": {},
+            "humans": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "empty_candidates",
+      "steps": [
+        {
+          "source": "owner",
+          "patch": {
+            "human_candidates": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "bad_target_age",
+      "steps": [
+        {
+          "source": "owner",
+          "patch": {
+            "active_target": {
+              "vision_epoch": "epoch-1",
+              "target_id": "epoch-1:human:7",
+              "track_id": 7,
+              "target_type": "human",
+              "identity": "owner",
+              "identity_state": "confirmed_known",
+              "tracking_state": "tracking",
+              "last_seen_age_ms": "bad",
+              "confidence": 0.9,
+              "is_registered": true,
+              "bearing_deg": 15,
+              "bearing_valid": true,
+              "pose_3d": {
+                "valid": true,
+                "frame_id": "camera",
+                "x": 1,
+                "y": 2,
+                "z": 3
+              },
+              "range_valid": true,
+              "distance_m": 2.0
+            },
+            "humans": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "no_epoch",
+      "steps": [
+        {
+          "source": "owner",
+          "patch": {
+            "vision_epoch": "",
+            "human_candidates": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "bad_humans",
+      "steps": [
+        {
+          "source": "owner",
+          "patch": {
+            "humans": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "legacy_emotion_event",
+      "steps": [
+        {
+          "raw": "{\"events\": [\"EVT_VISION_MASTER_HAPPY\"]}"
+        }
+      ]
+    },
+    {
+      "id": "invalid_json",
+      "steps": [
+        {
+          "raw": "{"
+        }
+      ]
+    },
+    {
+      "id": "null",
+      "steps": [
+        {
+          "raw": "null"
+        }
+      ]
+    },
+    {
+      "id": "array",
+      "steps": [
+        {
+          "raw": "[]"
+        }
+      ]
+    },
+    {
+      "id": "empty_wire_object",
+      "steps": [
+        {
+          "raw": "{}"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,144 @@
+[
+  {
+    "name": "inputs",
+    "pid": 28718,
+    "command": [
+      "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+      "-B",
+      "/home/elephant/MarsDog/marsdog-platform/tools/local_inputs.py"
+    ]
+  },
+  {
+    "name": "time",
+    "pid": 28732,
+    "command": [
+      "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_ros2.time_controller_node import main; main()",
+      "--ros-args",
+      "-p",
+      "time_scale:=1",
+      "-p",
+      "virtual_start_time:=10:00"
+    ]
+  },
+  {
+    "name": "personality",
+    "pid": 28761,
+    "command": [
+      "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_ros2.personality_node import main; main()"
+    ]
+  },
+  {
+    "name": "needs",
+    "pid": 28785,
+    "command": [
+      "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_ros2.internal_need_node import main; main()"
+    ]
+  },
+  {
+    "name": "emotion",
+    "pid": 28808,
+    "command": [
+      "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_ros2.emotion_engine_node import main; main()"
+    ]
+  },
+  {
+    "name": "waypoint",
+    "pid": 28831,
+    "command": [
+      "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+      "-B",
+      "-c",
+      "from waypoint_nav.waypoint_nav_dispatcher import main; main()",
+      "--ros-args",
+      "-p",
+      "waypoints_file:=/home/elephant/MarsDog/marsdog-platform/out/local/runs/20260930T075542Z-28615/waypoints.yaml",
+      "-p",
+      "task_store_file:=/home/elephant/MarsDog/marsdog-platform/out/local/runs/20260930T075542Z-28615/tasks.sqlite3"
+    ]
+  },
+  {
+    "name": "action",
+    "pid": 28855,
+    "command": [
+      "/home/elephant/MarsDog/marsdog-platform/modules/action/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_action_executor.ros_node import main; main()",
+      "--ros-args",
+      "-p",
+      "config_dir:=/home/elephant/MarsDog/marsdog-platform/out/local/runs/20260930T075542Z-28615/action-config",
+      "-p",
+      "chassis_type:=lite3",
+      "-p",
+      "lite3_enabled:=true",
+      "-p",
+      "go2_enabled:=false",
+      "-p",
+      "lite3_simulated_io:=true",
+      "-p",
+      "lite3_allow_proxies:=true",
+      "-p",
+      "lite3_allow_unverified:=false",
+      "-p",
+      "uwb_follow_enabled:=false",
+      "-p",
+      "wake_orientation_enabled:=false",
+      "-p",
+      "attention_tracking_enabled:=false",
+      "-p",
+      "target_approach_enabled:=false",
+      "-p",
+      "navigation_enabled:=true"
+    ]
+  },
+  {
+    "name": "vision",
+    "pid": 28878,
+    "command": [
+      "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_vision_interaction.nodes.vision_interaction_node import main; main()",
+      "--ros-args",
+      "-p",
+      "config_path:=/home/elephant/MarsDog/marsdog-platform/out/local/runs/20260930T075542Z-28615/vision.yaml",
+      "-p",
+      "log_dir:=/home/elephant/MarsDog/marsdog-platform/out/local/runs/20260930T075542Z-28615/vision-log"
+    ]
+  },
+  {
+    "name": "behavior",
+    "pid": 28901,
+    "command": [
+      "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_behavior.ros_node import main; main()"
+    ]
+  },
+  {
+    "name": "voice",
+    "pid": 28924,
+    "command": [
+      "/home/elephant/MarsDog/marsdog-platform/modules/voice/.venv/bin/python",
+      "-B",
+      "-c",
+      "from marsdog_voice_interaction.nodes.voice_interaction_node import main; main()",
+      "--ros-args",
+      "-p",
+      "config_path:=/home/elephant/MarsDog/marsdog-platform/out/local/runs/20260930T075542Z-28615/voice.yaml"
+    ]
+  }
+]

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from component_inventory import check_installed_components
 import hashlib
 import json
 import os
@@ -20,6 +21,7 @@ def main():
     source = ROOT / "modules/action"
     output = ROOT / "out/action-install"
     output.mkdir(parents=True, exist_ok=True)
+    (output / "result.json").write_text('{"status":"RUNNING"}\n')
     env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1", UV_PYTHON_DOWNLOADS="never")
     env.setdefault("UV_CACHE_DIR", str(ROOT / ".cache/uv"))
     for name in list(env):
@@ -72,6 +74,7 @@ print(json.dumps({
 }))
 """
         observation = json.loads(run([str(python), "-B", "-c", probe]))
+        observation["components"] = check_installed_components(run, python, source)
         assert set(observation["scripts"]) == {"marsdog-action-demo", "action_executor_node", "emotion_display"}
         assert Path(observation["module_file"]).is_relative_to(work / "venv")
         expected = {str(p.relative_to(source / "config")): hashlib.sha256(p.read_bytes()).hexdigest()

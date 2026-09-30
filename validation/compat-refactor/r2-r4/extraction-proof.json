@@ -1,0 +1,610 @@
+{
+  "base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21",
+  "status": "PASS",
+  "extractions": [
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "symbol": "_dispatch_visual_event",
+      "destination": "modules/action/marsdog_action_executor/perception_dispatch.py",
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "symbol": "_dispatch_object_detection",
+      "destination": "modules/action/marsdog_action_executor/perception_dispatch.py",
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/perception_client_adapter.py",
+      "method": "PerceptionClientAdapter._on_visual_ros2",
+      "destination": "modules/behavior/marsdog_behavior/visual_event_consumer.py",
+      "function": "consume_visual_event",
+      "lines": 189,
+      "dependency_substitutions": {
+        "_DIRECT_VISUAL_EVENTS": "direct_events"
+      },
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+      "method": "VisionInteractionNode._pose_event_identity_confirmed",
+      "destination": "modules/vision/marsdog_vision_interaction/messages/visual_event_derivation.py",
+      "function": "pose_event_identity_confirmed",
+      "lines": 7,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+      "method": "VisionInteractionNode._derive_events",
+      "destination": "modules/vision/marsdog_vision_interaction/messages/visual_event_derivation.py",
+      "function": "derive_events",
+      "lines": 28,
+      "dependency_substitutions": {
+        "VisionInteractionNode._pose_event_identity_confirmed(active)": "identity_confirmed(active)"
+      },
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+      "method": "VisionInteractionNode._build_visual_snapshot",
+      "destination": "modules/vision/marsdog_vision_interaction/core/visual_snapshot.py",
+      "function": "build_visual_snapshot",
+      "lines": 122,
+      "dependency_substitutions": {
+        "VisionInteractionNode._finite_positive": "finite_positive",
+        "VisionInteractionNode._fuse_human_depth": "fuse_human_depth",
+        "time.time()": "now()"
+      },
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+      "method": "VisionInteractionNode._query_targets",
+      "destination": "modules/vision/marsdog_vision_interaction/core/visual_snapshot.py",
+      "function": "query_targets",
+      "lines": 143,
+      "dependency_substitutions": {
+        "VisionInteractionNode._object_candidates_locked": "object_candidates",
+        "VisionInteractionNode._finite_nonnegative": "finite_nonnegative",
+        "time.monotonic()": "now()"
+      },
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._on_emotion_state_ros2",
+      "destination": "modules/behavior/marsdog_behavior/state_subscriptions.py",
+      "function": "on_emotion_state_ros2",
+      "lines": 90,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._on_emotion_signal_ros2",
+      "destination": "modules/behavior/marsdog_behavior/state_subscriptions.py",
+      "function": "on_emotion_signal_ros2",
+      "lines": 68,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._on_need_state_ros2",
+      "destination": "modules/behavior/marsdog_behavior/state_subscriptions.py",
+      "function": "on_need_state_ros2",
+      "lines": 155,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._on_need_signal_ros2",
+      "destination": "modules/behavior/marsdog_behavior/state_subscriptions.py",
+      "function": "on_need_signal_ros2",
+      "lines": 125,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "symbol": "_normalise_goal_timeout",
+      "destination": "modules/action/marsdog_action_executor/goal_contract.py",
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "symbol": "_outer_runtime_deadline",
+      "destination": "modules/action/marsdog_action_executor/goal_contract.py",
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "symbol": "_navigation_cancel_won",
+      "destination": "modules/action/marsdog_action_executor/goal_contract.py",
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "symbol": "_debug_goal_from_request",
+      "destination": "modules/action/marsdog_action_executor/goal_contract.py",
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "method": "_make_result",
+      "destination": "modules/action/marsdog_action_executor/action_messages.py",
+      "function": "make_result",
+      "lines": 41,
+      "dependency_substitutions": {
+        "_ExecuteBehavior": "action_type"
+      },
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "method": "ActionExecutorNode._publish_feedback",
+      "destination": "modules/action/marsdog_action_executor/action_messages.py",
+      "function": "publish_feedback",
+      "lines": 30,
+      "dependency_substitutions": {
+        "_ExecuteBehavior": "action_type"
+      },
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "method": "ActionExecutorNode._on_goal",
+      "destination": "modules/action/marsdog_action_executor/goal_lifecycle.py",
+      "function": "on_goal",
+      "lines": 93,
+      "dependency_substitutions": {
+        "GoalResponse.": "goal_response."
+      },
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "method": "ActionExecutorNode._on_cancel",
+      "destination": "modules/action/marsdog_action_executor/goal_lifecycle.py",
+      "function": "on_cancel",
+      "lines": 44,
+      "dependency_substitutions": {
+        "CancelResponse.": "cancel_response."
+      },
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "method": "ActionExecutorNode._on_accepted",
+      "destination": "modules/action/marsdog_action_executor/goal_lifecycle.py",
+      "function": "on_accepted",
+      "lines": 15,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "method": "ActionExecutorNode._on_goal_lease",
+      "destination": "modules/action/marsdog_action_executor/goal_lifecycle.py",
+      "function": "on_goal_lease",
+      "lines": 17,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "method": "ActionExecutorNode._lease_expired",
+      "destination": "modules/action/marsdog_action_executor/goal_lifecycle.py",
+      "function": "lease_expired",
+      "lines": 7,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "method": "ActionExecutorNode._on_execute",
+      "destination": "modules/action/marsdog_action_executor/goal_execution.py",
+      "function": "on_execute",
+      "lines": 60,
+      "dependency_substitutions": {
+        "_make_result(": "make_result("
+      },
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "method": "ActionExecutorNode._execute_behavior",
+      "destination": "modules/action/marsdog_action_executor/goal_execution.py",
+      "function": "execute_behavior",
+      "lines": 507,
+      "dependency_substitutions": {
+        "_make_result(": "make_result("
+      },
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "method": "ActionExecutorNode._execute_long_behavior",
+      "destination": "modules/action/marsdog_action_executor/goal_execution.py",
+      "function": "execute_long_behavior",
+      "lines": 182,
+      "dependency_substitutions": {
+        "_make_result(": "make_result("
+      },
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/action/marsdog_action_executor/ros_node.py",
+      "method": "ActionExecutorNode._execute_emergency_stop",
+      "destination": "modules/action/marsdog_action_executor/goal_execution.py",
+      "function": "execute_emergency_stop",
+      "lines": 57,
+      "dependency_substitutions": {
+        "_make_result(": "make_result("
+      },
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._begin_interaction",
+      "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+      "function": "begin_interaction",
+      "lines": 27,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._refresh_interaction_activity",
+      "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+      "function": "refresh_interaction_activity",
+      "lines": 12,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._is_interaction_active",
+      "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+      "function": "is_interaction_active",
+      "lines": 3,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._prune_interaction_holds_locked",
+      "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+      "function": "prune_interaction_holds_locked",
+      "lines": 16,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._timeout_interaction_id",
+      "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+      "function": "timeout_interaction_id",
+      "lines": 17,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._hold_interaction",
+      "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+      "function": "hold_interaction",
+      "lines": 52,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._release_interaction_hold",
+      "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+      "function": "release_interaction_hold",
+      "lines": 40,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._interaction_state",
+      "destination": "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+      "function": "interaction_state",
+      "lines": 50,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._process_speech",
+      "destination": "modules/voice/marsdog_voice_interaction/core/speech_pipeline.py",
+      "function": "process_speech",
+      "lines": 316,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._complete_intent",
+      "destination": "modules/voice/marsdog_voice_interaction/core/speech_pipeline.py",
+      "function": "complete_intent",
+      "lines": 127,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._select_kws_candidate",
+      "destination": "modules/voice/marsdog_voice_interaction/core/speech_pipeline.py",
+      "function": "select_kws_candidate",
+      "lines": 53,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._is_short_asr_text",
+      "destination": "modules/voice/marsdog_voice_interaction/core/speech_pipeline.py",
+      "function": "is_short_asr_text",
+      "lines": 17,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._publish_selected_kws_candidate",
+      "destination": "modules/voice/marsdog_voice_interaction/core/speech_pipeline.py",
+      "function": "publish_selected_kws_candidate",
+      "lines": 102,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._parse_intent",
+      "destination": "modules/voice/marsdog_voice_interaction/core/speech_pipeline.py",
+      "function": "parse_intent",
+      "lines": 23,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._run_task",
+      "destination": "modules/voice/marsdog_voice_interaction/core/task_router.py",
+      "function": "run_task",
+      "lines": 95,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/voice/marsdog_voice_interaction/nodes/voice_interaction_node.py",
+      "method": "VoiceInteractionNode._handle_task",
+      "destination": "modules/voice/marsdog_voice_interaction/messages/task_service.py",
+      "function": "handle_task",
+      "lines": 46,
+      "dependency_substitutions": {
+        "time.perf_counter()": "clock()"
+      },
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+      "method": "VisionInteractionNode._run_task",
+      "destination": "modules/vision/marsdog_vision_interaction/core/task_router.py",
+      "function": "run_task",
+      "lines": 111,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+      "method": "VisionInteractionNode._handle_task",
+      "destination": "modules/vision/marsdog_vision_interaction/messages/task_service.py",
+      "function": "handle_task",
+      "lines": 46,
+      "dependency_substitutions": {
+        "time.perf_counter()": "clock()",
+        "vision_trace(": "trace("
+      },
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._request_voice_hold",
+      "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+      "function": "request_voice_hold",
+      "lines": 81,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._renew_voice_hold_if_due",
+      "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+      "function": "renew_voice_hold_if_due",
+      "lines": 24,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._expire_wake_target_query_if_due",
+      "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+      "function": "expire_wake_target_query_if_due",
+      "lines": 25,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._expire_wake_identity_if_due",
+      "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+      "function": "expire_wake_identity_if_due",
+      "lines": 12,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._continue_wake_after_identity",
+      "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+      "function": "continue_wake_after_identity",
+      "lines": 9,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._release_voice_hold",
+      "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+      "function": "release_voice_hold",
+      "lines": 21,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._close_voice_session",
+      "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+      "function": "close_voice_session",
+      "lines": 29,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._enter_voice_waiting",
+      "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+      "function": "enter_voice_waiting",
+      "lines": 40,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._request_wake_speaker",
+      "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+      "function": "request_wake_speaker",
+      "lines": 32,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._on_wake_speaker_resolved",
+      "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+      "function": "on_wake_speaker_resolved",
+      "lines": 59,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._handle_voice_behavior_terminal",
+      "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+      "function": "handle_voice_behavior_terminal",
+      "lines": 55,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "method": "BehaviorTreeRosNode._consume_voice_session_turn",
+      "destination": "modules/behavior/marsdog_behavior/voice_engagement.py",
+      "function": "consume_voice_session_turn",
+      "lines": 22,
+      "dependency_substitutions": {},
+      "body_ast_equivalent": true,
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21"
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "symbol": "_is_json_number",
+      "destination": "modules/behavior/marsdog_behavior/state_subscriptions.py",
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21",
+      "body_ast_equivalent": true
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "symbol": "_need_level_event",
+      "destination": "modules/behavior/marsdog_behavior/state_subscriptions.py",
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21",
+      "body_ast_equivalent": true
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "symbol": "_need_level_from_value",
+      "destination": "modules/behavior/marsdog_behavior/state_subscriptions.py",
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21",
+      "body_ast_equivalent": true
+    },
+    {
+      "source": "modules/behavior/marsdog_behavior/ros_node.py",
+      "symbol": "_parse_need_thresholds",
+      "destination": "modules/behavior/marsdog_behavior/state_subscriptions.py",
+      "verified_against_git_base": "66c7eaa70da810bf1e0a19ab4475c2bd65267e21",
+      "body_ast_equivalent": true
+    }
+  ],
+  "note": "60 original function bodies match after listed dependency injection substitutions; Emotion publication separately verified by fixed state corpus and functional publishing test."
+}

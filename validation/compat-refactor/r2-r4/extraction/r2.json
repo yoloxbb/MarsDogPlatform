@@ -1,0 +1,71 @@
+[
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "symbol": "_dispatch_visual_event",
+    "destination": "modules/action/marsdog_action_executor/perception_dispatch.py",
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/action/marsdog_action_executor/ros_node.py",
+    "symbol": "_dispatch_object_detection",
+    "destination": "modules/action/marsdog_action_executor/perception_dispatch.py",
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/behavior/marsdog_behavior/perception_client_adapter.py",
+    "method": "PerceptionClientAdapter._on_visual_ros2",
+    "destination": "modules/behavior/marsdog_behavior/visual_event_consumer.py",
+    "function": "consume_visual_event",
+    "lines": 189,
+    "dependency_substitutions": {
+      "_DIRECT_VISUAL_EVENTS": "direct_events"
+    },
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+    "method": "VisionInteractionNode._pose_event_identity_confirmed",
+    "destination": "modules/vision/marsdog_vision_interaction/messages/visual_event_derivation.py",
+    "function": "pose_event_identity_confirmed",
+    "lines": 7,
+    "dependency_substitutions": {},
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+    "method": "VisionInteractionNode._derive_events",
+    "destination": "modules/vision/marsdog_vision_interaction/messages/visual_event_derivation.py",
+    "function": "derive_events",
+    "lines": 28,
+    "dependency_substitutions": {
+      "VisionInteractionNode._pose_event_identity_confirmed(active)": "identity_confirmed(active)"
+    },
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+    "method": "VisionInteractionNode._build_visual_snapshot",
+    "destination": "modules/vision/marsdog_vision_interaction/core/visual_snapshot.py",
+    "function": "build_visual_snapshot",
+    "lines": 122,
+    "dependency_substitutions": {
+      "VisionInteractionNode._finite_positive": "finite_positive",
+      "VisionInteractionNode._fuse_human_depth": "fuse_human_depth",
+      "time.time()": "now()"
+    },
+    "body_ast_equivalent": true
+  },
+  {
+    "source": "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+    "method": "VisionInteractionNode._query_targets",
+    "destination": "modules/vision/marsdog_vision_interaction/core/visual_snapshot.py",
+    "function": "query_targets",
+    "lines": 143,
+    "dependency_substitutions": {
+      "VisionInteractionNode._object_candidates_locked": "object_candidates",
+      "VisionInteractionNode._finite_nonnegative": "finite_nonnegative",
+      "time.monotonic()": "now()"
+    },
+    "body_ast_equivalent": true
+  }
+]

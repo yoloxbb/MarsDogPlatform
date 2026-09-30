@@ -1,0 +1,62 @@
+{
+  "status": "PASS",
+  "scope": "All workflow YAML parsed with duplicate-key rejection; run steps checked with bash -n. Hosted runner not executed.",
+  "workflows": {
+    "action.yml": [
+      "python3 -B tools/bootstrap_uv.py",
+      "python3 -B tools/dev.py setup action --uv \"$GITHUB_WORKSPACE/.tools/uv\"",
+      "python3 -B tools/dev.py test action",
+      "python3 -B tools/check_action_install.py --uv \"$GITHUB_WORKSPACE/.tools/uv\""
+    ],
+    "behavior.yml": [
+      "python3 -B tools/bootstrap_uv.py",
+      "python3 -B tools/dev.py setup behavior --uv \"$GITHUB_WORKSPACE/.tools/uv\"",
+      "python3 -B tools/dev.py test behavior",
+      "python3 -B tools/check_behavior_install.py --uv \"$GITHUB_WORKSPACE/.tools/uv\""
+    ],
+    "emotion.yml": [
+      "python3 -B tools/bootstrap_uv.py",
+      "python3 -B tools/dev.py setup emotion --uv \"$GITHUB_WORKSPACE/.tools/uv\"",
+      "python3 -B tools/dev.py test emotion",
+      "python3 -B tools/check_emotion_install.py --uv \"$GITHUB_WORKSPACE/.tools/uv\""
+    ],
+    "platform.yml": [
+      "python3 -B tools/dev.py check",
+      "python3 -B tools/marsdog.py prepare --archive-dir \"$MARSDOG_ARCHIVE_DIR\"",
+      "python3 -B tools/marsdog.py build",
+      "python3 -B tools/marsdog.py smoke",
+      "python3 -B tools/check_local_lifecycle.py",
+      "python3 -B tools/check_action_shutdown.py",
+      "python3 -B tools/check_contracts.py",
+      "python3 -B tools/check_task_contracts.py",
+      "python3 -B tools/check_action_callbacks.py",
+      "python3 -B tools/check_action_transport.py",
+      "python3 -B tools/check_robotics.py --uwb-source .external/uwb --output out/robotics-ci",
+      "python3 -B tools/prepare_extended_ros.py\npython3 -B tools/materialize_vendors.py --archive-dir \"$MARSDOG_ARCHIVE_DIR\" --only openvins rtabmap\npython3 -B tools/check_extended_ros_build.py nav2-plugin openvins rtabmap --archive-dir \"$MARSDOG_ARCHIVE_DIR\"\npython3 -B tools/check_extended_ros_runtime.py\npython3 -B tools/marsdog.py smoke --profile lite3-nav2-cpu\npython3 -B tools/check_nav2_recovery.py\npython3 -B tools/check_local_lifecycle.py --profile lite3-nav2-cpu\n"
+    ],
+    "result-contract.yml": [
+      "python3 -B tools/bootstrap_uv.py",
+      ".tools/uv sync --project modules/action --locked --no-editable --python /usr/bin/python3.10\n.tools/uv sync --project modules/behavior --locked --python /usr/bin/python3.10\n.tools/uv sync --project modules/emotion --locked --python /usr/bin/python3.10\n",
+      "modules/emotion/.venv/bin/python -B -m pytest integration/migration/tests -q -p no:cacheprovider",
+      "python3 -B tools/bootstrap_uv.py",
+      "python3 -B tools/dev.py setup voice\npython3 -B tools/dev.py setup behavior\npython3 -B tools/dev.py setup emotion\n",
+      "python3 -B tools/check_audio_contracts.py",
+      "python3 -B tools/bootstrap_uv.py",
+      "python3 -B tools/dev.py setup vision\npython3 -B tools/dev.py setup behavior\npython3 -B tools/dev.py setup emotion\npython3 -B tools/dev.py setup action\n",
+      "python3 -B tools/check_visual_contracts.py\npython3 -B tools/check_state_contracts.py\n"
+    ],
+    "vision.yml": [
+      "python3 -B tools/bootstrap_uv.py",
+      "python3 -B tools/dev.py setup vision --uv \"$GITHUB_WORKSPACE/.tools/uv\"",
+      "python3 -B tools/check_vision_install.py --uv \"$GITHUB_WORKSPACE/.tools/uv\"",
+      "modules/vision/.venv/bin/python -B -m pytest integration/migration/tests/test_migrated_interfaces.py -q -p no:cacheprovider"
+    ],
+    "voice.yml": [
+      "python3 -B tools/bootstrap_uv.py",
+      "python3 -B tools/dev.py setup voice --uv \"$GITHUB_WORKSPACE/.tools/uv\"",
+      "python3 -B tools/dev.py test voice",
+      "python3 -B tools/check_voice_install.py --uv \"$GITHUB_WORKSPACE/.tools/uv\"",
+      "modules/voice/.venv/bin/python -B -m pytest integration/migration/tests/test_migrated_interfaces.py -q -p no:cacheprovider"
+    ]
+  }
+}
