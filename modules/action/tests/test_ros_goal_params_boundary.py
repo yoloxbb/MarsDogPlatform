@@ -200,3 +200,60 @@ def test_accepted_callback_never_throws_for_invalid_params(raw: str) -> None:
         "recorded params as an empty object" in message
         for message in node.logger.messages
     )
+
+
+@pytest.mark.skipif(not HAS_ROS2, reason="rclpy is not installed")
+def test_execution_logging_keeps_result_identity_and_context_without_debug_dependency(monkeypatch, tmp_path):
+    import asyncio
+    import json
+    from marsdog_observability import configure, shutdown
+    from marsdog_action_executor import ros_node
+    monkeypatch.setenv("MARSDOG_LOG_DISABLED", "0")
+    monkeypatch.setenv("MARSDOG_LOG_DIR", str(tmp_path))
+    monkeypatch.setenv("MARSDOG_LOG_LEVEL", "INFO")
+    result = SimpleNamespace(goal_id="goal-visual-1", behavior_id="behavior-visual-1",
+                             behavior_name="respond_person_fall", status="FAILED", result="", reason="busy")
+    async def execute(*args, **kwargs):
+        return result
+    monkeypatch.setattr(ros_node.goal_execution, "on_execute", execute)
+    shutdown()
+    configure("action")
+    try:
+        handle = _GoalHandle(_request('{"interaction_id":"session","utterance_id":"turn"}'))
+        assert asyncio.run(ActionExecutorNode._on_execute(object(), handle)) is result
+    finally:
+        shutdown()
+    rows = [json.loads(line) for f in tmp_path.glob("*.jsonl") for line in f.read_text().splitlines()]
+    completed = [r for r in rows if r["event_name"] == "action.execution.completed"]
+    assert len(completed) == 1
+    assert completed[0]["context"]["utterance_id"] == "turn"
+    assert completed[0]["fields"]["reason"] == "busy"
+    assert completed[0]["kind"] == "lifecycle"
+
+
+@pytest.mark.skipif(not HAS_ROS2, reason="rclpy is not installed")
+def test_execution_exception_is_logged_and_same_exception_propagates(monkeypatch, tmp_path):
+    import asyncio
+    import json
+    from marsdog_observability import configure, shutdown
+    from marsdog_action_executor import ros_node
+    monkeypatch.setenv("MARSDOG_LOG_DISABLED", "0")
+    monkeypatch.setenv("MARSDOG_LOG_DIR", str(tmp_path))
+    monkeypatch.setenv("MARSDOG_LOG_LEVEL", "INFO")
+    failure = RuntimeError("callback failure")
+    async def execute(*args, **kwargs):
+        raise failure
+    monkeypatch.setattr(ros_node.goal_execution, "on_execute", execute)
+    shutdown()
+    configure("action")
+    try:
+        with pytest.raises(RuntimeError) as caught:
+            asyncio.run(ActionExecutorNode._on_execute(object(), _GoalHandle(_request("{}"))))
+        assert caught.value is failure
+    finally:
+        shutdown()
+    rows = [json.loads(line) for f in tmp_path.glob("*.jsonl") for line in f.read_text().splitlines()]
+    crashed = [r for r in rows if r["event_name"] == "action.execution.crashed"]
+    assert len(crashed) == 1
+    assert "RuntimeError: callback failure" in crashed[0]["exception"]
+    assert not any(r["event_name"] == "action.execution.completed" for r in rows)

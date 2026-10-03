@@ -51,7 +51,7 @@ from bionic_dog_bt.constants import (
     NEED_V2_EVENT_TO_STATE,
     STATUS_RUNNING,
 )
-from bionic_dog_bt.logger import init_logging, get_logger
+from bionic_dog_bt.logger import get_logger
 
 from .ros2_compat import NodeBase, HAS_ROS2, is_ros2_ready
 from .config_paths import get_config_file
@@ -159,7 +159,6 @@ class BehaviorTreeRosNode(NodeBase):
             _MockNode.__init__(self, node_name)
 
         configure("behavior")
-        init_logging(ros2_node=self if HAS_ROS2 else None)
         self._logger = get_logger("bt_node")
 
         # ── Internal runtime ─────────────────────────────────────────────

@@ -162,8 +162,6 @@ def main(argv=None, *, trial=None):
             prepare_logging(env, directory)
             env.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1", TOKENIZERS_PARALLELISM="false",
                        ROS_LOG_DIR=str(directory / "ros-log"))
-            if trial is not None:
-                env["MARSDOG_DECISION_TRACE_DIR"] = str(directory / "decisions")
             if args.with_behavior:
                 from marsdog import BUILD_TOOLS, process_specs
                 env.update(MARSDOG_LOCAL_SIMULATION="1",

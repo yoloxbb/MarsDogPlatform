@@ -24,9 +24,11 @@ def iter_records(directory, errors):
                 try:
                     row = json.loads(line)
                     strings = ("timestamp", "component", "instance_id", "level", "event_name")
-                    if (not isinstance(row, dict) or row.get("log_schema_version") != 1
+                    if (not isinstance(row, dict) or row.get("log_schema_version") != 2
                             or any(not isinstance(row.get(k), str) for k in strings)
                             or not isinstance(row.get("fields"), dict)
+                            or not isinstance(row.get("context"), dict)
+                            or row.get("kind") not in {"event", "lifecycle", "diagnostic", "metric"}
                             or not isinstance(row.get("sequence"), int)
                             or not isinstance(row.get("monotonic_ns", 0), int)):
                         raise ValueError("unsupported log record")
@@ -44,11 +46,11 @@ def read_records(directory):
 
 
 def value(row, key):
-    result = row.get(key) or row.get("fields", {}).get(key)
+    result = row.get("context", {}).get(key)
     return result if isinstance(result, str) and result else None
 
 
-def selector(rows, *, interaction=None, utterance=None, goal=None, component=None, level="DEBUG", event=None):
+def selector(rows, *, interaction=None, utterance=None, goal=None, component=None, level="DEBUG", event=None, kind=None):
     # Typed keys avoid conflating a goal UUID with an unrelated candidate UUID.
     identities = {("goal_id", goal)} if goal else set()
     def seed(row):
@@ -68,7 +70,7 @@ def selector(rows, *, interaction=None, utterance=None, goal=None, component=Non
         if (interaction or utterance or goal) and not correlated:
             return False
         owner = row.get("fields", {}).get("source_component", row.get("component"))
-        return (not component or owner == component) and (
+        return (not kind or row.get("kind") == kind) and (not component or owner == component) and (
             LEVELS.get(row.get("level", ""), 0) >= LEVELS[level.upper()]) and (
             not event or row.get("event_name", "").startswith(event))
     return matches
@@ -115,6 +117,7 @@ def main(argv=None):
     parser.add_argument("--component")
     parser.add_argument("--level", choices=tuple(k.lower() for k in LEVELS), default="debug")
     parser.add_argument("--event")
+    parser.add_argument("--kind", choices=("event", "lifecycle", "diagnostic", "metric"))
     parser.add_argument("--limit", type=int, default=100)
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--health", action="store_true")
@@ -142,15 +145,16 @@ def main(argv=None):
             return 0
         selected, errors = query_records(directory, limit=args.limit, interaction=args.interaction,
                                          utterance=args.utterance, goal=args.goal, component=args.component,
-                                         level=args.level, event=args.event)
+                                         level=args.level, event=args.event, kind=args.kind)
         for row in selected:
             if args.json:
                 print(json.dumps(row, ensure_ascii=False))
             else:
-                fields = row.get("fields", {})
+                details = {**row.get("fields", {}), **row.get("context", {})}
                 print(f'{row["timestamp"]} {row["level"]:7} {row["component"]:9} {row["event_name"]} '
-                      + json.dumps({"goal_id": row.get("goal_id"), "message": row.get("message"),
-                                    "reason": fields.get("reason"), "status": fields.get("status")}, ensure_ascii=False))
+                      + row.get("message", "") + (" " + json.dumps(details, ensure_ascii=False) if details else ""))
+                if row.get("exception"):
+                    print(row["exception"])
         if errors:
             print(json.dumps({"log_read_errors": errors}, ensure_ascii=False), file=sys.stderr)
         if not selected:

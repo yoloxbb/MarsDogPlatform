@@ -69,7 +69,7 @@ python3 -B tools/marsdog.py trial \
 取消请求、Action 接受/终态和 BT 终态。重复等待原因合并，原因变化仍记录。
 ASR 毫秒数是预切分音频的处理耗时，不包含录音/VAD，不代表实机整段交互延迟。
 部分唤醒专用分支仅有原节点日志；不能把缺少某条诊断当作该动作没有发生。
-诊断格式见 [decision trace v1](../../interfaces/application/decision-trace-v1/README.md)。
+诊断格式见 [统一日志 v2](../../interfaces/observability/README.md)。
 
 ## 已验证范围
 

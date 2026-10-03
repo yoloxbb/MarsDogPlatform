@@ -1,0 +1,313 @@
+{
+  "status": "PASS",
+  "schema": 2,
+  "library_version": "0.2.0",
+  "source_sha256": "681f5331999808d2348708230698c290fec142a015065551cb59f49376a717a4",
+  "base_commit": "487a1b27fe309135d782ed58a586e4ef284b82c2",
+  "checks": {
+    "voice": {
+      "path": "out/logging-v2/voice/result.json",
+      "sha256": "56aaf11d1591572efe82618685453e9c753bd8bdeb8e2a23054b8f41cf6e1cc8",
+      "status": "PASS",
+      "counts": {
+        "tests": 430,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "scope": "Existing unit tests; no actual microphone/models/ROS transport"
+    },
+    "vision": {
+      "path": "out/logging-v2/vision/result.json",
+      "sha256": "bbec995f8f6f2638369c3627b09ea286616815a31962209c46d66e0c6ecc20b4",
+      "status": "PASS_WITH_EXPLICIT_LIMITS",
+      "counts": {
+        "tests": 297,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 3
+      },
+      "scope": "Original unit suite on CPU; no camera/model/NPU hardware validation"
+    },
+    "emotion": {
+      "path": "out/logging-v2/emotion/result.json",
+      "sha256": "b74d15daedcf0970ed2cbccca3707dde324c56016cc04024fc87f45f6097e779",
+      "status": "PASS",
+      "counts": {
+        "tests": 374,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "scope": "Existing module unit suite, no hardware"
+    },
+    "behavior": {
+      "path": "out/logging-v2/behavior/result.json",
+      "sha256": "67c5f306776d8a1b461be1e7a13c1ace3b9127c15a8cd7ab003737e62600b779",
+      "status": "PASS",
+      "counts": {
+        "tests": 538,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "scope": "Existing module unit suite, no hardware"
+    },
+    "action": {
+      "path": "out/logging-v2/action/result.json",
+      "sha256": "02c16f57d2e6f06030226ee931e9d5aae508c1854712eb3fa89597da33bd79c4",
+      "status": "PASS_WITH_EXPLICIT_LIMITS",
+      "counts": {
+        "tests": 460,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 31
+      },
+      "scope": "Existing module unit suite, no hardware"
+    },
+    "audio-contracts": {
+      "path": "out/logging-v2/audio-contracts/result.json",
+      "sha256": "73e9e8fc3c9512745ae271c590c592d481472fbdeb29a16aa66efc47df2568ca",
+      "status": "PASS",
+      "scenarios": 46,
+      "scope": "pure real-module compatibility; no DDS/models/hardware"
+    },
+    "visual-contracts": {
+      "path": "out/logging-v2/visual-contracts/result.json",
+      "sha256": "921770fb96e919a8943fb4830299374005b2f924d72dfad88699f0ac6c730062",
+      "status": "PASS",
+      "scenarios": 33,
+      "scope": "real module compatibility; pure test transport, no hardware"
+    },
+    "state-contracts": {
+      "path": "out/logging-v2/state-contracts/result.json",
+      "sha256": "df3705ded3bf804c686f1f59b01a105772518a1999383d12ef6c2edb4fa044b9",
+      "status": "PASS",
+      "scenarios": 34,
+      "scope": "real module compatibility; pure test transport, no hardware"
+    },
+    "task-contracts": {
+      "path": "out/logging-v2/task-contracts/result.json",
+      "sha256": "08e1b3d95d85f5dd6f67c253b00a07e4caebdf91d8d60a8917c9306a7167e4ba",
+      "status": "PASS",
+      "scenarios": 18,
+      "scope": "real module compatibility; pure test transport, no hardware"
+    },
+    "action-callbacks": {
+      "path": "out/logging-v2/action-callbacks/result.json",
+      "sha256": "de80b044bf3ed5601ea312c7ec7d23995df969526bab1b0eef8327453ae97613",
+      "status": "PASS",
+      "counts": {
+        "tests": 37,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "scope": "Humble types + real callbacks; fake collaborators; no node/hardware"
+    },
+    "action-transport": {
+      "path": "out/logging-v2/action-transport/result.json",
+      "sha256": "0bd530a5c65dc3dc1c01ca20830d62b694f7a2faa29e00439e4c66d84114437d",
+      "status": "PASS",
+      "scope": "Real installed BT adapter and generated original IDL; fake Action server; no hardware"
+    },
+    "action-shutdown": {
+      "path": "out/logging-v2/action-shutdown/result.json",
+      "sha256": "3b28c308eb9e4f2d4970b60cedea403e791631f87e623a9fed8c50c23af99381",
+      "status": "PASS",
+      "scope": "Installed Action and real ROS transport; simulated Lite3 I/O only",
+      "case_count": 2
+    },
+    "logging-runtime": {
+      "path": "out/logging-v2/logging-runtime/result.json",
+      "sha256": "bbe046b07f7c99c51e1f0a82f4663a809670ecc5d99c3ee07bc03d5c01f8dc76",
+      "status": "PASS"
+    },
+    "decision-scenarios": {
+      "path": "out/logging-v2/decision-scenarios/result.json",
+      "sha256": "f7b1c061bb5500b54c676859b85270c3b787c2296c8b0468dd2c3ee90dd58f64",
+      "status": "PASS",
+      "scope": "Installed full BT and Action; protocol/state/visual fixtures, DDS and simulated Lite3/Nav2; no hardware/models",
+      "case_count": 5
+    },
+    "business-scenarios": {
+      "path": "out/logging-v2/business-scenarios/result.json",
+      "sha256": "727e77f8e6b4180d3f3e4492435d03438e0e36b9129e443fcbaa25787f1d22e5",
+      "status": "PASS",
+      "scope": "Installed Voice/Vision mock nodes and real BT perception adapter; ROS DDS and services; no hardware/models/full BT arbitration",
+      "case_count": 7
+    },
+    "voice-wheel": {
+      "path": "out/voice-install/result.json",
+      "sha256": "724528f3093b1bed57139368436f20fde90cd28b766d9c404286be860de10dfc",
+      "status": "PASS",
+      "wheel_sha256": "88219d431681bb97304a2b0ce4f455c9f4725fdb072bf6b6db48adcfb8d3872a"
+    },
+    "vision-wheel": {
+      "path": "out/vision-install/result.json",
+      "sha256": "9a8445d7b9ee62851303eea0cc7daebe96ed1ee92a42a2e941d70af080b47807",
+      "status": "PASS",
+      "wheel_sha256": null
+    },
+    "emotion-wheel": {
+      "path": "out/emotion-install/result.json",
+      "sha256": "6393e365b4dee67cf45f70a56a8a8a22aee9638ce4eb5a2e0865bd45d38d6561",
+      "status": "PASS",
+      "wheel_sha256": null
+    },
+    "behavior-wheel": {
+      "path": "out/behavior-install/result.json",
+      "sha256": "4b96a85c0c03f30c23d7ae4004fc1967fda0b83b3eaafde069247a45e5832d3c",
+      "status": "PASS",
+      "wheel_sha256": null
+    },
+    "action-wheel": {
+      "path": "out/action-install/result.json",
+      "sha256": "b62f4a6711c1a0bd8550dfe7d6abb05dc34de9082ee497f0132bbc4b03aac058",
+      "status": "PASS",
+      "wheel_sha256": null
+    },
+    "result-contracts": {
+      "path": "out/logging-v2/result-contracts/contracts.xml",
+      "sha256": "519dc0859fe962f70b34bf30f29e7d15047142f9f1579d24458b4e28f2fa0163",
+      "status": "PASS",
+      "counts": {
+        "tests": 25,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "platform": {
+      "path": "out/logging-v2/platform.log",
+      "sha256": "8cce6c2e5017f3658e388cede6cd145125afdd9111eae3c0d21f65b415a1e525",
+      "status": "PASS",
+      "platform_tests": 115,
+      "observability_tests": 13
+    },
+    "lifecycle": {
+      "path": "out/local-lifecycle/result.json",
+      "sha256": "56cf5f6de6e6a463d733e6526ac118d48755140343c969a063ef754f4b1050d6",
+      "status": "PASS",
+      "case_count": 3
+    },
+    "smoke": {
+      "path": "out/local/runs/20261003T190600Z-453009/result.json",
+      "sha256": "aa320267afbf1038fbaf870329b4a45e4444faf51c1547d91024d14ffb6dd35f",
+      "status": "PASS"
+    }
+  },
+  "runs": {
+    "trial-home": {
+      "path": "out/logging-v2/trial-home/20261003T190713723886Z/result.json",
+      "sha256": "0dc9e00e7be20d258b93ba55ce0faf071296b1ea0824cb3418f4f2e15e3cbe32",
+      "run_directory": "out/logging-v2/trial-home/20261003T190713723886Z",
+      "status": "PASS",
+      "integration_acceptance": true,
+      "model_acceptance": false,
+      "outcome": "success",
+      "real_asr_cases": 1,
+      "text_fixture_cases": 0,
+      "records": 915,
+      "components": {
+        "ros": 43,
+        "action": 36,
+        "vision": 424,
+        "emotion": 200,
+        "behavior": 182,
+        "voice": 30
+      },
+      "instances": 9,
+      "healthy": true,
+      "unique_action_completions": {
+        "cand_95b5ebad4c48": 1,
+        "cand_e9d8b9e4a9d8": 1,
+        "cand_a4756db4d84d": 1
+      },
+      "command_terminals": [
+        {
+          "goal_id": "cand_a4756db4d84d",
+          "behavior_name": "go_home",
+          "status": "SUCCESS",
+          "reason": "behavior completed"
+        }
+      ]
+    },
+    "trial-sit": {
+      "path": "out/logging-v2/trial-sit/20261003T190736679297Z/result.json",
+      "sha256": "0ba2c5af0cee8a6d28dd684cec6772b7bc8b8f6ecd50d610793a8b194ebca6da",
+      "run_directory": "out/logging-v2/trial-sit/20261003T190736679297Z",
+      "status": "PASS",
+      "integration_acceptance": true,
+      "model_acceptance": false,
+      "outcome": "action_failed_or_canceled",
+      "real_asr_cases": 1,
+      "text_fixture_cases": 0,
+      "records": 759,
+      "components": {
+        "vision": 348,
+        "ros": 42,
+        "emotion": 149,
+        "action": 33,
+        "behavior": 157,
+        "voice": 30
+      },
+      "instances": 9,
+      "healthy": true,
+      "unique_action_completions": {
+        "cand_2c3d6cc370d0": 1,
+        "cand_1b0c9c6a4246": 1,
+        "cand_1617c6ca3068": 1
+      },
+      "command_terminals": [
+        {
+          "goal_id": "cand_1b0c9c6a4246",
+          "behavior_name": "sit_down",
+          "status": "FAILURE",
+          "reason": "lite3_action_gated:unit_id=ACT_BASIC_SIT,fidelity=proxy,verified=False"
+        }
+      ]
+    },
+    "cpu-flow": {
+      "path": "out/logging-v2/cpu-flow/20261003T190753749601Z/result.json",
+      "sha256": "67459cfcf56738dc23d8ab683b1fef1d2efb0e303eb43c5a9b56d41a53674eb7",
+      "run_directory": "out/logging-v2/cpu-flow/20261003T190753749601Z",
+      "status": "PASS",
+      "integration_acceptance": true,
+      "model_acceptance": false,
+      "outcome": null,
+      "real_asr_cases": 1,
+      "text_fixture_cases": 7,
+      "records": 2801,
+      "components": {
+        "ros": 85,
+        "emotion": 577,
+        "action": 75,
+        "vision": 1347,
+        "behavior": 587,
+        "voice": 130
+      },
+      "instances": 9,
+      "healthy": true,
+      "unique_action_completions": {
+        "cand_4beff0d87ff3": 1,
+        "cand_1ae72b3854d9": 1,
+        "cand_30da781258b5": 1,
+        "cand_799fa38e1ca3": 1,
+        "cand_3fdb7b72d12a": 1,
+        "cand_79a35f00bd71": 1,
+        "cand_3f6905e7c16a": 1,
+        "cand_b62c4f01c679": 1,
+        "cand_89899a39d428": 1
+      },
+      "command_terminals": []
+    }
+  },
+  "limits": [
+    "Localhost DDS and simulated Lite3/navigation only; no physical robot or microphone acceptance",
+    "Home/sit WAV fixtures use previously generated Microsoft Huihui TTS, not user recordings",
+    "No model quality acceptance or optimization; CPU flow has 1 real ASR and 7 explicit text fixtures",
+    "Vision has 3 explicit hardware skips; Action pure tests have 31 ROS skips, with 37 actual Humble callback cases separately passed",
+    "Historical v1 logs retained but unsupported by v2 readers"
+  ]
+}

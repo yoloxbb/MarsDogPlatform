@@ -70,7 +70,6 @@ from marsdog_voice_interaction.utils.logging_utils import (
     get_log_file_path,
     get_logger,
     log_trace,
-    setup_logging,
 )
 from marsdog_voice_interaction.utils.text_normalization import (
     normalize_chinese_numbers,
@@ -119,7 +118,6 @@ class VoiceInteractionNode(Node):
         try:
             self._config = load_config(config_path)
         except Exception as exc:
-            setup_logging(node="voice_interaction")
             configure("voice", log_dir="log", level="INFO")
             logger.error("Cannot load voice config %s: %s", config_path, exc)
             self._config = {}
@@ -131,13 +129,6 @@ class VoiceInteractionNode(Node):
             logging_config.get("level", "INFO")
         )
         log_dir = log_dir_override or str(logging_config.get("dir", "log"))
-        setup_logging(
-            log_dir=log_dir,
-            level=log_level,
-            node="voice_interaction",
-            console=bool(logging_config.get("console", True)),
-            file=bool(logging_config.get("file", True)),
-        )
         configure("voice", log_dir=log_dir, level=log_level)
         self._event_trace_enabled = bool(
             logging_config.get("event_trace", True)

@@ -14,5 +14,5 @@ def ApplyBehaviorResultMessage(system: Any, message: object) -> bool:
     if not payload or not hasattr(system, "OnBehaviorResultEvent"):
         return False
     applied = bool(system.OnBehaviorResultEvent(payload))
-    emit("emotion.result.processed", {**payload, "applied": applied})
+    emit("emotion.result.processed", {**payload, "applied": applied}, kind="lifecycle")
     return applied

@@ -1,187 +1,45 @@
-"""Unified logging for MarsDog perception nodes.
-
-Provides structured logging with optional module tags and file output.
-Uses Python's standard logging with a custom logger that supports key=value kwargs.
-"""
-
-from __future__ import annotations
-
-from marsdog_observability import StructuredLogger, BoundedFileHandler
-
+"""Vision event vocabulary and sampling; all persistence belongs to observability."""
 import logging
-from logging.handlers import RotatingFileHandler
-import json
 import os
-import sys
-from datetime import datetime
-from pathlib import Path
 import threading
 from typing import Any
+from marsdog_observability import get_logger as project_logger, set_level as set_log_level
 
-
-_log_initialized: bool = False
-_log_dir: str = "log"
-_trace_enabled: bool = False
-_trace_context: dict[str, str] = {"run_id": "", "case_id": ""}
-_trace_logger = logging.getLogger("vision.trace")
-_trace_handler: logging.Handler | None = None
-_trace_lock = threading.Lock()
-_timing_trace_interval_ms: float = 5000.0
-_timing_trace_last_ms: dict[tuple[str, str, str], float] = {}
+_trace_enabled = True
+_trace_context = {}
+_trace_logger = project_logger("marsdog_vision_interaction.events")
+_timing_trace_interval_ms = 5000.0
+_timing_trace_last_ms = {}
 _timing_trace_lock = threading.Lock()
-_LOG_MAX_BYTES = 20 * 1024 * 1024
-_LOG_BACKUP_COUNT = 4  # Five files total, including the active file.
+_EVENTS = {"runtime_start": "providers.ready", "runtime_stop": "providers.stopped",
+           "stage_complete": "stage.completed", "event_publish": "event.published",
+           "event_suppressed": "event.suppressed"}
 
 
-class _BoundedFileHandler(BoundedFileHandler):
-    """Compatibility constructor; rotation implementation belongs to the shared package."""
-    def __init__(self, filename):
-        super().__init__(filename, max_bytes=_LOG_MAX_BYTES, backups=_LOG_BACKUP_COUNT,
-                         oversized_message='VISION_TRACE {"record":"log_record_omitted","reason":"exceeds_file_limit"}')
+def get_logger(name, module=""):
+    return project_logger(name, area=module) if module else project_logger(name)
 
 
-# ── Set custom logger class at import time ─────────────────────────
-# This MUST happen before any module-level `logger = getLogger(...)` call,
-# otherwise those loggers will be plain logging.Logger instances and
-# fail when called with key=value kwargs like logger.info("msg", key=val).
-
-
-# Register the custom logger class globally at import time.
-# This ensures ALL loggers (including module-level ones created before
-# setup_logging() is called) support key=value structured logging.
-logging.setLoggerClass(StructuredLogger)
-
-
-def setup_logging(
-    log_dir: str = "log",
-    level: str = "INFO",
-    node: str = "marsdog",
-    console: bool = True,
-    file: bool = True,
-) -> None:
-    """Initialize logging for a node.
-
-    Sets StructuredLogger as the default logger class so all loggers
-    created via getLogger() support key=value structured logging.
-
-    Args:
-        log_dir: Directory for log files.
-        level: Log level name (DEBUG, INFO, WARNING, ERROR).
-        node: Node name for log file prefix.
-        console: Enable console output.
-        file: Enable file output.
-    """
-    global _log_initialized, _log_dir
-    _log_dir = log_dir
-    level = os.environ.get("MARSDOG_LOG_LEVEL", level)
-
-    root = logging.getLogger()
-    root.setLevel(getattr(logging, level.upper(), logging.INFO))
-
-    # Avoid duplicate handlers
-    if _log_initialized:
-        return
-
-    fmt = logging.Formatter(
-        "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-
-    if console:
-        ch = logging.StreamHandler(sys.stdout)
-        ch.setLevel(getattr(logging, level.upper(), logging.INFO))
-        ch.setFormatter(fmt)
-        root.addHandler(ch)
-
-    if file:
-        Path(log_dir).mkdir(parents=True, exist_ok=True)
-        fh = _BoundedFileHandler(Path(log_dir) / f"{node}.log")
-        fh.setLevel(logging.DEBUG)
-        fh.setFormatter(fmt)
-        root.addHandler(fh)
-
-    _log_initialized = True
-
-
-def set_log_level(level: str) -> None:
-    """Change the root logger level at runtime.
-
-    Args:
-        level: Log level name (DEBUG, INFO, WARNING, ERROR).
-    """
-    logging.getLogger().setLevel(getattr(logging, level.upper(), logging.INFO))
-
-
-def get_logger(name: str, module: str = "") -> logging.Logger:
-    """Get a logger with optional module tag.
-
-    Args:
-        name: Logger name (usually __name__).
-        module: Optional module tag for filtering.
-
-    Returns:
-        Configured StructuredLogger instance.
-    """
-    if module:
-        return logging.getLogger(f"{module}.{name}")
-    return logging.getLogger(name)
-
-
-def configure_event_trace(
-    *,
-    enabled: bool = True,
-    log_dir: str = "log",
-    run_id: str = "",
-    case_id: str = "",
-    timing_interval_sec: float = 5.0,
-) -> None:
-    """Configure machine-readable ``VISION_TRACE`` JSONL records.
-
-    Trace records also propagate to the normal runtime log.  The dedicated
-    file contains only trace lines so QA tooling does not need to parse ROS or
-    Python log prefixes.
-    """
-    global _trace_enabled, _trace_context, _trace_handler
-    global _timing_trace_interval_ms, _timing_trace_last_ms
+def configure_event_trace(*, enabled=True, run_id="", case_id="", timing_interval_sec=5.0):
+    """Configure domain sampling only; no handlers or files are created here."""
+    global _trace_enabled, _trace_context, _timing_trace_interval_ms
     _trace_enabled = bool(enabled)
+    _trace_context = {"test_run_id": str(run_id or os.environ.get("MARSDOG_TEST_RUN_ID", "")),
+                      "case_id": str(case_id or os.environ.get("MARSDOG_TEST_CASE_ID", ""))}
     _timing_trace_interval_ms = max(0.0, float(timing_interval_sec)) * 1000.0
     with _timing_trace_lock:
-        _timing_trace_last_ms = {}
-    _trace_context = {
-        "run_id": str(run_id or os.environ.get("MARSDOG_TEST_RUN_ID", "")),
-        "case_id": str(case_id or os.environ.get("MARSDOG_TEST_CASE_ID", "")),
-    }
-    if _trace_handler is not None:
-        _trace_logger.removeHandler(_trace_handler)
-        _trace_handler.close()
-        _trace_handler = None
-    if not _trace_enabled:
-        return
-    Path(log_dir).mkdir(parents=True, exist_ok=True)
-    _trace_handler = _BoundedFileHandler(Path(log_dir) / "vision_trace_current.jsonl")
-    _trace_handler.setFormatter(logging.Formatter("%(message)s"))
-    _trace_logger.addHandler(_trace_handler)
-    _trace_logger.setLevel(logging.INFO)
-    _trace_logger.propagate = True
+        _timing_trace_last_ms.clear()
 
 
-def vision_trace(record: str, **fields: Any) -> None:
-    """Emit one correlated, single-line JSON record for test evidence."""
+def vision_trace(record, **fields):
     if not _trace_enabled:
         return
-    payload: dict[str, Any] = {
-        "schema_version": 1,
-        "record": str(record),
-        "timestamp": datetime.now().astimezone().isoformat(timespec="milliseconds"),
-        "monotonic_ms": round(time_monotonic_ms(), 3),
-        **_trace_context,
-    }
-    payload.update(fields)
-    line = "VISION_TRACE " + json.dumps(
-        payload, ensure_ascii=False, separators=(",", ":"), default=str
-    )
-    with _trace_lock:
-        _trace_logger.info(line, extra={"marsdog_event": "vision." + str(record), "marsdog_fields": payload})
+    level = logging.WARNING if fields.get("result") in {"failure", "error", "timeout"} else logging.INFO
+    if record == "event_suppressed":
+        level = logging.DEBUG
+    kind = "metric" if record == "stage_complete" else "event"
+    _trace_logger.event("vision." + _EVENTS.get(record, record.replace("_", ".")),
+                        level=level, kind=kind, **{**_trace_context, **fields})
 
 
 def vision_timing_trace(

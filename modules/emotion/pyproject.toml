@@ -7,7 +7,7 @@ name = "marsdog-need-emotion"
 version = "0.1.0"
 description = "Marsdog internal need, emotion, personality and virtual time ROS2 nodes."
 requires-python = ">=3.10"
-dependencies = ["setuptools", "marsdog-observability==0.1.0"]
+dependencies = ["setuptools", "marsdog-observability==0.2.0"]
 license = "Apache-2.0"
 
 [project.scripts]

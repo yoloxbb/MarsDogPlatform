@@ -29,8 +29,9 @@ Run via::
 
 from __future__ import annotations
 
-from marsdog_observability import configure, bind_context, emit
+from marsdog_observability import configure, bind_context, emit, get_logger
 
+from .telemetry import goal_fields
 from . import goal_execution
 
 from . import goal_lifecycle
@@ -1688,7 +1689,10 @@ if HAS_ROS2:
         # ── Action Server callbacks ─────────────────────────────────────
 
         def _on_goal(self, goal_request) -> GoalResponse:
-            return goal_lifecycle.on_goal(self, goal_request, goal_response=GoalResponse)
+            decision = goal_lifecycle.on_goal(self, goal_request, goal_response=GoalResponse)
+            emit("action.goal.responded", {**goal_fields(goal_request),
+                 "accepted": decision == GoalResponse.ACCEPT}, kind="lifecycle")
+            return decision
 
         def _on_goal_lease(self, message) -> None:
             return goal_lifecycle.on_goal_lease(self, message)
@@ -1831,17 +1835,29 @@ if HAS_ROS2:
                 self._behavior_execution_lock.release()
 
         def _on_cancel(self, goal_handle) -> CancelResponse:
-            return goal_lifecycle.on_cancel(self, goal_handle, cancel_response=CancelResponse)
+            decision = goal_lifecycle.on_cancel(self, goal_handle, cancel_response=CancelResponse)
+            emit("action.cancel.responded", {"goal_id": goal_handle.request.goal_id,
+                                            "accepted": decision == CancelResponse.ACCEPT})
+            return decision
 
         def _on_accepted(self, goal_handle) -> None:
             return goal_lifecycle.on_accepted(self, goal_handle)
 
         async def _on_execute(self, goal_handle):
-            with bind_context(goal_id=goal_handle.request.goal_id):
-                result = await goal_execution.on_execute(self, goal_handle, make_result=_make_result)
+            with bind_context(**goal_fields(goal_handle.request)):
+                started = time.monotonic()
+                emit("action.execution.started", goal_fields(goal_handle.request), kind="lifecycle")
+                try:
+                    result = await goal_execution.on_execute(self, goal_handle, make_result=_make_result)
+                except Exception:
+                    get_logger(__name__).exception("Action execution callback raised",
+                        extra={"marsdog_event": "action.execution.crashed", "marsdog_kind": "lifecycle"})
+                    raise
                 # Includes early validation/busy returns that have no debug-result publication.
-                emit("action.callback.result", {key: getattr(result, key, None) for key in
-                     ("goal_id", "behavior_id", "behavior_name", "status", "result", "reason")})
+                emit("action.execution.completed", {key: getattr(result, key, None) for key in
+                     ("goal_id", "behavior_id", "behavior_name", "status", "result", "reason")},
+                     duration_ms=round((time.monotonic() - started) * 1000, 3), kind="lifecycle",
+                     level=logging.INFO if getattr(result, "status", "") == "SUCCESS" else logging.WARNING)
                 return result
 
         async def _execute_behavior(self, goal_handle):
@@ -1871,7 +1887,11 @@ if HAS_ROS2:
             behavior_name: str, progress: float, stage: str,
             action: str, safe: bool, message: str,
         ) -> None:
-            return action_messages.publish_feedback(self, goal_handle, gid, behavior_id, behavior_name, progress, stage, action, safe, message, action_type=_ExecuteBehavior)
+            result = action_messages.publish_feedback(self, goal_handle, gid, behavior_id, behavior_name, progress, stage, action, safe, message, action_type=_ExecuteBehavior)
+            emit("action.stage.feedback", {"goal_id": gid, "behavior_id": behavior_id,
+                 "behavior_name": behavior_name, "progress": progress, "stage": stage,
+                 "action_id": action, "safe_to_interrupt": safe, "message": message}, repeat_key=gid)
+            return result
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

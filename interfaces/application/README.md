@@ -24,6 +24,6 @@ cases.json 记录固定输入及负例；baseline.json 是重构前真实实现�
 新功能应在所属模块修改实现，并同时审查生产、消费、取消和结算。
 刻意改变容错或产品语义需要单独决策，不能夹带在目录整理中。
 
-可选的 [本地 decision trace v1](decision-trace-v1/README.md) 用于排障；它不是线上 ROS 协议，不改变上述身份和版本。
+排障使用 [统一日志 v2](../observability/README.md) 的 behavior.* 观察；它不是线上 ROS 协议，不改变上述身份和版本。
 
 事件、意图、行为、动作及端点的命名和跨配置引用门禁见 [标识规范及目录](../naming/README.md)。

@@ -32,7 +32,7 @@ from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CameraInfo, Image
 
-from marsdog_vision_interaction.utils.logging_utils import get_logger, setup_logging
+from marsdog_vision_interaction.utils.logging_utils import get_logger
 from marsdog_vision_interaction.utils.time_utils import now_stamp
 
 logger = get_logger(__name__, module="camera")
@@ -89,7 +89,6 @@ class CameraDriverNode(Node):
         super().__init__("camera_driver")
 
         # Init unified logging
-        setup_logging(log_dir="log", level="INFO", node="camera_driver")
         configure("vision", log_dir="log", level="INFO")
 
         # ── Parameters ─────────────────────────────────────────

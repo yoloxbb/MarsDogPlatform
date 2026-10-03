@@ -125,14 +125,25 @@ BT 533、Action 423 + 29 skip；另有 35 ROS 动作回调 0 skip。
 接手前核对工作区，不重复实现本节。验收见 validation/recording-diagnostics-p2。
 
 - P0：marsdog.py trial --wav 接任意合规预切分 WAV，通过真实 CPU ASR 和安装节点 DDS，
-  输出 HTML / JSON 时间线。BT 诊断默认关闭，使用原会话/语句/Goal 身份，不新增 wire 字段。
+  输出 HTML / JSON 时间线。BT 诊断现由统一日志 v2 采集，使用原会话/语句/Goal 身份，不新增 wire 字段。
 - P1：capabilities 由现有词库/映射及 Action 自身策略生成；125 路由中 49 条缺失模板照实保留。
   check_decision_scenarios.py 五场景通过，覆盖去重、排队、停止抢占、目标过期、Needs/Emotion 仲裁。
 - P2：new-feature 生成未激活草稿、配置落点、三侧契约测试与 NOT_RUN 验收清单；
   未实现的 Voice/BT 正向模板已实测会失败，不是空断言。
 
 文档：docs/development/RECORDING_TRIAL.md、FEATURE_WORKFLOW.md；
-诊断定义：interfaces/application/decision-trace-v1/README.md。
+诊断定义：interfaces/observability/README.md（v2 已替代原 decision trace）。
 本机合成“回家”音频可经真实 ASR 完成模拟导航；“坐下”正确保留原 Lite3 门限拒绝。
 没有用户麦克风/实机/模型精度验收，没有改默认配置、IDL、依赖、需求结算或导航避障内部。
 本次新增开发工具与已完成迁移/重构是不同层次的增量，不要再做迁移。
+
+
+## 日志系统 v2
+
+在 refactor/unified-logging 上继续重构，用户授权放弃旧日志格式。
+公共包 0.2.0 / envelope v2：一个进程一个异步 JSONL 写入器，context 独立保存身份；
+不再维护 Voice/Vision TRACE、BT JSON 或 decision-trace 文件。
+Action 正式执行回调负责唯一 completed 记录，异常原样传播并记录 crashed。
+ROS 原生日志经独立 /rosout 收集器归一化；业务协议、动作门限与导航内部不变。
+使用说明 docs/development/UNIFIED_LOGGING.md；验收 validation/logging-v2。
+旧 validation/unified-logging 是 0.1.0 历史结果，不代表现行格式。

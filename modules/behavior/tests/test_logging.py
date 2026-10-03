@@ -18,13 +18,13 @@ def test_successful_relevance_check_is_debug(caplog):
 
     [record] = caplog.records
     assert record.levelno == logging.DEBUG
-    assert json.loads(record.message)["event"] == "relevance_pass"
+    assert record.marsdog_event == "behavior.internal.relevance.pass"
 
 
-def test_candidate_lifecycle_event_remains_info(caplog):
+def test_internal_candidate_detail_is_debug_while_decision_lifecycle_has_own_event(caplog):
     logger = BTLogger("bionic_dog_bt.test_logging.lifecycle")
 
-    with caplog.at_level(logging.INFO, logger=logger.logger.name):
+    with caplog.at_level(logging.DEBUG, logger=logger.logger.name):
         logger.event(
             LogEvent.CANDIDATE_INJECT,
             behavior_name="expressJoyAlone",
@@ -32,5 +32,5 @@ def test_candidate_lifecycle_event_remains_info(caplog):
         )
 
     [record] = caplog.records
-    assert record.levelno == logging.INFO
-    assert json.loads(record.message)["event"] == "candidate_inject"
+    assert record.levelno == logging.DEBUG
+    assert record.marsdog_event == "behavior.internal.candidate.inject"

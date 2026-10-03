@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 from marsdog_observability import bind_context, configure, emit, get_stats, shutdown, wrap_context
 from marsdog_observability.runtime import Session
-from marsdog_observability.formatting import BoundedFileHandler, StructuredLogger
+from marsdog_observability import get_logger, set_level
 
 
 class LogTests(unittest.TestCase):
@@ -61,9 +61,9 @@ class LogTests(unittest.TestCase):
         emit("outside")
         shutdown()
         rows = {r["event_name"]: r for r in self.rows()}
-        self.assertEqual(rows["callback"]["interaction_id"], "one")
-        self.assertEqual(rows["main"]["goal_id"], "new")
-        self.assertNotIn("goal_id", rows["outside"])
+        self.assertEqual(rows["callback"]["context"]["interaction_id"], "one")
+        self.assertEqual(rows["main"]["context"]["goal_id"], "new")
+        self.assertNotIn("goal_id", rows["outside"]["context"])
 
     def test_async_contexts_do_not_leak(self):
         configure("voice")
@@ -75,7 +75,7 @@ class LogTests(unittest.TestCase):
             await asyncio.gather(work("one"), work("two"))
         asyncio.run(run())
         shutdown()
-        self.assertEqual({r["utterance_id"] for r in self.rows() if r["event_name"] == "async"}, {"one", "two"})
+        self.assertEqual({r["context"]["utterance_id"] for r in self.rows() if r["event_name"] == "async"}, {"one", "two"})
 
     def test_restart_changes_instance_but_preserves_run(self):
         one = configure("action").instance_id
@@ -101,9 +101,31 @@ class LogTests(unittest.TestCase):
             for i in range(100):
                 session.record("telemetry", {"index": i})
             self.assertLess(time.monotonic() - started, 0.5)
-            self.assertTrue(session.record("action.terminal", {"goal_id": "one"}))
+            self.assertTrue(session.record("action.execution.completed", {"goal_id": "one"}, kind="lifecycle"))
             self.assertGreater(session.snapshot()["dropped"], 0)
             self.assertLessEqual(session.snapshot()["pending"], 4)
+        finally:
+            release.set()
+            self.assertTrue(session.close())
+
+    def test_queue_overflow_does_not_suppress_retry_of_same_transition(self):
+        entered, release = threading.Event(), threading.Event()
+        class Sink:
+            def emit(self, record):
+                entered.set()
+                release.wait(3)
+            def close(self):
+                pass
+        session = Session("behavior", self.path, "retry", capacity=1, sink=Sink())
+        try:
+            session.record("first")
+            self.assertTrue(entered.wait(1))
+            self.assertTrue(session.record("filler"))
+            self.assertFalse(session.record("waiting", {"reason": "cancel"}, repeat_key="goal"))
+            session.normal.get_nowait()
+            session.normal.task_done()
+            self.assertTrue(session.record("waiting", {"reason": "cancel"}, repeat_key="goal"))
+            self.assertEqual(session.snapshot()["coalesced"], 0)
         finally:
             release.set()
             self.assertTrue(session.close())
@@ -130,7 +152,7 @@ class LogTests(unittest.TestCase):
         self.assertLessEqual(len(paths), 3)
         self.assertTrue(all(p.stat().st_size <= 4096 for p in paths))
         self.assertTrue(self.rows())
-        self.assertTrue(all(r.get("log_schema_version") == 1 for r in self.rows()))
+        self.assertTrue(all(r.get("log_schema_version") == 2 for r in self.rows()))
         self.assertGreater(session.snapshot()["oversized"], 0)
 
     def test_repeat_reason_changes_and_secret_fields(self):
@@ -144,16 +166,45 @@ class LogTests(unittest.TestCase):
         self.assertEqual(len(rows), 2)
         self.assertNotIn("secret", json.dumps(rows))
 
-    def test_standard_logging_kwargs_and_legacy_text_survive(self):
-        logger = StructuredLogger("compat")
+    def test_fields_are_not_repeated_in_message_and_standard_kwargs_survive(self):
+        logger = get_logger("compat")
+        logger.setLevel(logging.INFO)
         records = []
         handler = logging.Handler()
         handler.emit = records.append
-        logger.addHandler(handler)
+        logger.logger.addHandler(handler)
         logger.info("item %s", "one", stage="asr", extra={"other": True})
-        self.assertEqual(records[0].getMessage(), "item one  stage='asr'")
+        self.assertEqual(records[0].getMessage(), "item one")
         self.assertTrue(records[0].other)
         self.assertEqual(records[0].marsdog_fields["stage"], "asr")
+
+    def test_adapter_does_not_change_global_logger_class_and_record_is_single_copy(self):
+        original = logging.getLoggerClass()
+        logger = get_logger("domain").bind(goal_id="goal")
+        configure("action")
+        logger.event("action.execution.completed", kind="lifecycle", status="SUCCESS")
+        shutdown()
+        self.assertIs(logging.getLoggerClass(), original)
+        rows = [r for r in self.rows() if r["event_name"] == "action.execution.completed"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["context"], {"goal_id": "goal"})
+        self.assertEqual(rows[0]["fields"], {"status": "SUCCESS"})
+        self.assertEqual(rows[0]["message"], "")
+        self.assertEqual(rows[0]["kind"], "lifecycle")
+        self.assertIn("line", rows[0]["source"])
+        self.assertEqual(Path(rows[0]["source"]["file"]).name, "test_runtime.py")
+        self.assertEqual(rows[0]["source"]["function"], self._testMethodName)
+
+    def test_runtime_level_updates_explicit_events_and_python_diagnostics(self):
+        configure("voice")
+        set_level("ERROR")
+        emit("voice.ignored")
+        get_logger("voice").info("ignored")
+        get_logger("voice").error("failure")
+        shutdown()
+        rows = self.rows()
+        self.assertFalse(any(r["event_name"] == "voice.ignored" for r in rows))
+        self.assertEqual([r["message"] for r in rows if r["event_name"] == "log.message"], ["failure"])
 
     def test_disabled_mode_has_no_files(self):
         with patch.dict("os.environ", {"MARSDOG_LOG_DISABLED": "1"}):

@@ -150,20 +150,13 @@ ros2 launch marsdog_vision_interaction vision_debug.launch.py \
   tee "test-evidence/$TEST_RUN_ID/vision-launch.log"
 ```
 
-`logging.event_trace=true` 时，节点同时生成
-`vision_trace_current.jsonl`。其中每行均以 `VISION_TRACE ` 开头，后接单行
-JSON；`run_id/case_id` 来自上述 launch 参数，也可分别使用环境变量
-`MARSDOG_TEST_RUN_ID/MARSDOG_TEST_CASE_ID` 注入。
-
-普通日志为 `vision_interaction.log`；普通日志与 trace 分别按 20 MiB
-（20 × 1024 × 1024 字节）轮转。每组保留当前文件和 `.1` 至 `.4`
-四个备份，共 5 个文件，`.1` 最新；最旧备份自动删除。重启沿用同一组文件。
-单条超限记录替换为 `log_record_omitted` JSON 提示，避免破坏 JSONL 格式。
-两组合计最多 200 MiB；独立相机驱动的 `camera_driver.log` 另有一组。
-同时运行多个视觉实例时必须指定不同 `log_dir`，不支持多进程共同轮转同一文件。
-旧版带日期/PID 的日志不会自动删除，应先归档测试证据再人工清理。
-ROS launch 自身日志、终端 `tee` 文件和系统日志不受此上限控制。
-系统侧配置见 [日志容量管理](LOG_STORAGE.md)。
+`logging.event_trace=true` 时，领域观察与普通诊断一起进入
+`log_dir/structured/vision-<instance_id>.jsonl`，使用统一 envelope v2，无文本前缀。
+`context.test_run_id/context.case_id` 来自 launch 参数或 MARSDOG_TEST_RUN_ID/MARSDOG_TEST_CASE_ID；
+顶层 run_id 由启动器管理。关联身份位于 context，其余领域属性位于 fields。
+每进程默认 20 MiB × 5 个文件，独立实例不会争用文件；旧 TRACE/文本写入器已移除。
+环境变量、查询与清理见 [平台日志指南](../../../docs/development/UNIFIED_LOGGING.md)，
+系统容量管理见 [日志容量管理](LOG_STORAGE.md)。
 
 ## 3. 启动与基础健康检查
 
@@ -432,11 +425,11 @@ Visual state changed: track=<id> tracking=<state> identity=<name> identity_state
 | 2. 稳定识别 | `recognized_actions[name=<精确名>]` | 经过动作自己的窗口、支持率和滞回后成立 | 证明 GesturePose 确实识别了该精确动作 |
 | 3. 主动作 | `primary_action/primary_priority` | 同帧多个稳定动作中按 P0～P4 选出的最高优先动作 | 证明本帧展示主结果；不能替代完整 `recognized_actions[]` |
 | 4. 兼容输出 | `legacy_pose_action/legacy_hand_actions[]`；正式包中的 `active_target.pose_action/hands[].hand_action` | 折叠给既有下游的公开动作名称 | 证明精确动作已正确折叠；多个精确动作可能共用同一个值 |
-| 5. 正式事件 | `/perception/visual_event.events[]` 和 `VISION_TRACE event_publish` | 身份门禁后的正式 Vision 事件 | 证明 Vision 已发布；不能证明 Tree 已选择或 Action 已执行 |
+| 5. 正式事件 | `/perception/visual_event.events[]` 和 `统一日志 v2 vision.event.published` | 身份门禁后的正式 Vision 事件 | 证明 Vision 已发布；不能证明 Tree 已选择或 Action 已执行 |
 
 一条正例只有第2～5层都符合下表预期，才能判“识别与 Vision 路由 PASS”。若第2层
 成功，但人物不是固定人脸库中的 `confirmed_known + tracking`，应看到
-`event_suppressed`，该用例只能判“动作识别 PASS、身份门禁 PASS”，不能要求正式姿态
+`vision.event.suppressed`，该用例只能判“动作识别 PASS、身份门禁 PASS”，不能要求正式姿态
 事件。`raw_scores` 单帧升高但始终没有进入 `recognized_actions[]`，动作识别仍是 FAIL。
 
 #### 5.6.2 25 个精确动作逐项测试对齐表
@@ -540,7 +533,7 @@ Vision 事件路由正确率 = 门禁打开且期望事件正确次数 / 门禁�
 
 每一次动作至少保存：动作起止时间和录像时间码、`primary_action/primary_priority`、
 对应 `raw_scores[]` 条目、`recognized_actions[]` 条目、`support_ratio/duration_s`、兼容
-动作、`pose_event_gate`、最终 `events[]` 和同一时段的 `VISION_TRACE`。测试表建议直接
+动作、`pose_event_gate`、最终 `events[]` 和同一时段的 统一日志 v2。测试表建议直接
 使用以下列：
 
 | Case ID | 身份/门禁 | 表演动作 | 期望精确名 | 实际精确名 | 期望兼容字段 | 实际兼容字段 | 期望事件 | 实际事件 | 识别结论 | 路由结论 | 证据路径 |
@@ -572,7 +565,7 @@ Vision 事件路由正确率 = 门禁打开且期望事件正确次数 / 门禁�
 上述“下发”只表示 Vision 已把字符串写入正式 Topic。状态保持期间，同一个事件可能随
 约10 Hz状态流重复出现；Viewer 的 `ENTER/ACTIVE/EXIT` 是对状态流的页面压缩记录。
 需要验证行为树和动作执行时，必须继续关联 Tree 的候选注入/选择日志以及 Action 的
-goal/result，不能用 Vision `event_publish` 代替端到端成功。
+goal/result，不能用 Vision `vision.event.published` 代替端到端成功。
 
 #### 5.6.8 单次动作的最小证据链示例
 
@@ -593,8 +586,8 @@ goal/result，不能用 Vision `event_publish` 代替端到端成功。
   active_target.pose_action=jump
   events[]=EVT_VISION_MASTER_HAPPY
 
-VISION_TRACE
-  record=event_publish
+日志字段投影（省略 envelope）
+  event_name=vision.event.published
   event_type=EVT_VISION_MASTER_HAPPY
   track_id=46
   identity_state=confirmed_known
@@ -607,7 +600,7 @@ VISION_TRACE
 ```text
 /perception/visual_event events[]=EVT_VISION_STRANGER_ALERT|FRIEND
 # 情绪状态无效时回退 EVT_VISION_STRANGER
-VISION_TRACE record=event_suppressed reason_code=identity_not_confirmed
+日志字段投影 event_name=vision.event.suppressed reason_code=identity_not_confirmed
   pose_action=jump pose_event_gate=blocked
 ```
 
@@ -860,7 +853,7 @@ ros2 topic echo /perception/visual_event --once
 | `events[]` | 当前成立的状态事件，可跨多个包重复 |
 | 页面 `ENTER` | 事件首次出现 |
 | 页面 `ACTIVE` | 同一事件持续，含 `repeat_count/duration_ms` |
-| 页面 `EXIT` | 事件消失；`reason=event_cleared` 或 `vision_epoch_changed` |
+| 页面 `EXIT` | 事件消失；`reason=vision.event.cleared` 或 `vision_epoch_changed` |
 
 点击“导出 JSON”会生成 `marsdog-vision-events-<时间>.json`，内容含
 `active_events` 和 `history`。历史记录重点字段为：
@@ -1033,39 +1026,40 @@ Lite/Full A/B 必须在相同相机、站位、光照、人物和动作下，各
 
 ## 6. 关键日志与字段速查
 
-### 6.0 `VISION_TRACE` 测试追踪
+### 6.0 统一日志 v2 测试追踪
 
-测试判定优先使用机器可解析的 `VISION_TRACE`，普通控制台日志用于人工排障，ROS
+下表以 event_name 筛选记录；领域字段省略 fields 前缀，身份字段省略 context 前缀。
+
+测试判定优先使用机器可解析的 统一日志 v2，普通控制台日志用于人工排障，ROS
 Topic/Service 原文用于证明实际接口结果。当前追踪记录包括：
 
-| `record` | 模块/阶段 | 关键字段 |
+| `event_name` | 模块/阶段 | 关键字段 |
 |---|---|---|
-| `runtime_start` | 节点启动 | `result,node,vision_epoch,camera_topic,visual_topic,service,timing_trace_interval_sec` |
-| `stage_start/stage_complete` | VisionTask | `task_id,task_type,result,latency_ms,error` |
-| `stage_complete` | 物体推理 | `source,session_id,sequence,latency_ms,object_count` |
-| `stage_complete` | `continuous_vision/pipeline` | `inference_sequence,latency_ms,face_count,human_count,hand_count` |
-| `stage_complete` | `face_detection/yunet_inference` | `inference_sequence,latency_ms,detection_count` |
-| `stage_complete` | `face_tracking/bytetrack_update` | `inference_sequence,latency_ms,detection_count,track_count` |
-| `stage_complete` | `face_recognition/sface_inference` | `inference_sequence,track_id,latency_ms,identity,confidence,reason_code` |
-| `stage_complete` | `face_recognition/sface_task_recognize` | `latency_ms,identity,confidence,reason_code,template_identity_count` |
-| `stage_complete` | `pose_landmarker/pose_rknn/inference` | `inference_sequence,latency_ms,detection_count,model_variant,backend` |
-| `stage_complete` | `hand_landmarker/inference` | `inference_sequence,latency_ms,detection_count` |
-| `stage_complete` | `gesture_pose/feature_extraction` | `inference_sequence,track_id,latency_ms` |
-| `stage_complete` | `gesture_pose/action_recognition` | `inference_sequence,track_id,latency_ms,primary_action` |
-| `stage_complete` | `depth_fusion/aligned_depth_range` | `observation_stamp,latency_ms,candidate_count,fused_count` |
-| `stage_complete` | `visual_event/event_publish` | `sequence,latency_ms,event_count,events[]` |
-| `event_publish` | 正式视觉事件首次出现 | `event_type,vision_epoch,sequence,track_id,identity_state` |
-| `event_cleared` | 正式事件退出 | 同上 |
-| `event_suppressed` | 姿态候选被身份门控 | `reason_code,pose_event_gate,identity_state,tracking_state` |
+| `vision.providers.ready` | 节点启动 | `result,node,vision_epoch,camera_topic,visual_topic,service,timing_trace_interval_sec` |
+| `vision.stage.start/vision.stage.completed` | VisionTask | `task_id,task_type,result,latency_ms,error` |
+| `vision.stage.completed` | 物体推理 | `source,session_id,sequence,latency_ms,object_count` |
+| `vision.stage.completed` | `continuous_vision/pipeline` | `inference_sequence,latency_ms,face_count,human_count,hand_count` |
+| `vision.stage.completed` | `face_detection/yunet_inference` | `inference_sequence,latency_ms,detection_count` |
+| `vision.stage.completed` | `face_tracking/bytetrack_update` | `inference_sequence,latency_ms,detection_count,track_count` |
+| `vision.stage.completed` | `face_recognition/sface_inference` | `inference_sequence,track_id,latency_ms,identity,confidence,reason_code` |
+| `vision.stage.completed` | `face_recognition/sface_task_recognize` | `latency_ms,identity,confidence,reason_code,template_identity_count` |
+| `vision.stage.completed` | `pose_landmarker/pose_rknn/inference` | `inference_sequence,latency_ms,detection_count,model_variant,backend` |
+| `vision.stage.completed` | `hand_landmarker/inference` | `inference_sequence,latency_ms,detection_count` |
+| `vision.stage.completed` | `gesture_pose/feature_extraction` | `inference_sequence,track_id,latency_ms` |
+| `vision.stage.completed` | `gesture_pose/action_recognition` | `inference_sequence,track_id,latency_ms,primary_action` |
+| `vision.stage.completed` | `depth_fusion/aligned_depth_range` | `observation_stamp,latency_ms,candidate_count,fused_count` |
+| `vision.stage.completed` | `visual_event/vision.event.published` | `sequence,latency_ms,event_count,events[]` |
+| `vision.event.published` | 正式视觉事件首次出现 | `event_type,vision_epoch,sequence,track_id,identity_state` |
+| `vision.event.cleared` | 正式事件退出 | 同上 |
+| `vision.event.suppressed`（DEBUG） | 姿态候选被身份门控 | `reason_code,pose_event_gate,identity_state,tracking_state` |
 
-提取某一轮或某一用例：
+从主仓提取某轮日志；用例身份在 context.case_id：
 
 ```bash
-rg 'VISION_TRACE' "test-evidence/$TEST_RUN_ID" | \
-  rg '"case_id":"STOP-01-r1"'
+python3 tools/marsdog.py logs --run "test-evidence/$TEST_RUN_ID" --component vision --json
 ```
 
-`event_publish` 是相对上一视觉状态首次出现的边沿证据；不要用约 10 Hz
+`vision.event.published` 是相对上一视觉状态首次出现的边沿证据；不要用约 10 Hz
 `/perception/visual_event` 包数量代替物理事件次数。`latency_ms` 的语义由
 `module/stage` 限定：Service 是完整回调耗时，物体阶段是推理耗时，两者不可混算。
 
@@ -1081,7 +1075,7 @@ VisionTask 是按需任务，仍然逐次记录。
 - `pose_landmarker`、`hand_landmarker`、`face_*`：各模型或子阶段自身耗时。
 - `gesture_pose/*`：关键点结果之后的特征提取和规则判断，不包含模型推理。
 - `depth_fusion`：深度匹配、取样和反投影；`depth_sync_delta_ms` 是时间戳差，不是计算耗时。
-- `visual_event/event_publish`：JSON 序列化和 ROS Publisher 调用耗时，不是相机输入到动作执行的端到端耗时。
+- `visual_event/vision.event.published`：JSON 序列化和 ROS Publisher 调用耗时，不是相机输入到动作执行的端到端耗时。
 - `vision_task/service`：完整 Service 回调耗时，可能包含其中调用的物体推理。
 
 ### 6.1 控制台日志

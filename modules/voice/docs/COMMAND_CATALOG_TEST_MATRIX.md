@@ -36,7 +36,7 @@
 
 | 日志位置 | 重点字段 | 用途 |
 |---|---|---|
-| 所有 `VOICE_TRACE` | `record/interaction_id/utterance_id` | `utterance_id` 是单句主键；不得把相邻两句话的阶段或事件拼在一起。 |
+| 统一日志 v2 | `event_name/context.interaction_id/context.utterance_id` | `utterance_id` 是单句主键；不得把相邻两句话的阶段或事件拼在一起。 |
 | `stage_complete stage=command_lexicon` | `result/command_key/event_type/match_strategy/catalog_phrase/matched_phrase/core/emit_known_event/source_rows` | 判断是否命中确定性词库、命中标准词还是受控扩展；当前所有词库项的 `emit_known_event` 均为 `false`。 |
 | `stage_complete stage=kws` | `result/command_key/event_type/candidate_count/published_event_types` | `result=candidate` 只表示缓存候选；此时 `published_event_types=[]`，不能据此判定业务事件已发布。 |
 | `stage_complete stage=recognition_arbitration` | `result/selected_source/reason/kws_candidate_count/catalog_event_type` | 判断本句最终由 KWS 还是 ASR 链路取得业务结果；这是区分“候选”和“最终来源”的依据。 |

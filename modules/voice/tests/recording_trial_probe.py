@@ -99,12 +99,16 @@ def observer(request, directory):
                         and g.get("params", {}).get("utterance_id") == uid]
             def rejections():
                 rows = []
-                for path in (directory / "decisions").glob("*.jsonl"):
+                for path in (directory / "structured").glob("behavior-*.jsonl*"):
                     for line in path.read_text().splitlines():
                         try:
-                            row = json.loads(line)
+                            entry = json.loads(line)
                         except ValueError:
-                            continue  # A writer may still be appending the final line.
+                            continue
+                        if entry.get("log_schema_version") != 2:
+                            continue
+                        row = {**entry["fields"], **entry["context"],
+                               "stage": entry["event_name"].removeprefix("behavior.").replace(".", "_")}
                         if row.get("interaction_id") == identity and row.get("utterance_id") == uid:
                             rows.append(row)
                 return [r for r in rows if r.get("stage") in (

@@ -2,16 +2,14 @@
 
 ## 项目日志
 
-每个日志组单文件上限 20 MiB，当前文件加 4 个备份共 5 个文件。
-`vision_interaction.log` 和 `vision_trace_current.jsonl` 各自最多 100 MiB。
-备份后缀 `.1` 最新、`.4` 最旧。重启继续追加固定名称，避免每日或每次启动新增一组。
-独立相机驱动使用 `camera_driver.log`，同样最多 100 MiB。
-单条记录超过上限时，文件中写入 `log_record_omitted` JSON 提示；终端仍保留原记录。
+视觉节点、相机节点均使用 [公共日志写入器](../../../docs/development/UNIFIED_LOGGING.md)。
+每进程只有一组 `structured/vision-<instance_id>.jsonl`，包含诊断、事件和耗时；
+不再分别生成 vision_interaction.log、vision_trace_current.jsonl 或 camera_driver.log。
+默认单文件 20 MiB，四份备份，每进程约 100 MiB。实例重启产生新身份，不覆盖旧证据。
+容量与跨运行清理统一由 MARSDOG_LOG_* 配置和 marsdog.py logs --prune 管理。
 
-部署新代码并重启节点后生效。历史日期/PID 文件保留，需取证归档后人工清理。
-不同并发视觉实例必须使用不同 `log_dir`；同一组文件仅支持一个进程写入。
-新日志上限不包含 ROS launch 日志、`tee` 输出、旧版文件或不同测试目录的累计占用。
-需要长期留存时，应定期将测试证据转移至外部存储。
+历史文件不自动改写/删除；ROS 原生输出、终端 tee 和系统日志由其运行环境管理。
+以下系统配置为既有设备指南，本轮未修改或应用系统配置。
 
 ## 系统日志：同时限制两套存储
 

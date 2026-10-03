@@ -13,9 +13,9 @@
 3. ROS2 接口原文：`/perception/audio_event`、注册 Topic 或 VoiceTask 返回值。
 4. 结论：预期、实际、PASS/FAIL、最早异常时间和关联 ID。
 
-Topic/Service 原文是接口结果的权威证据，`VOICE_TRACE` 用于定位链路和耗时；不能
+Topic/Service 原文是接口结果的权威证据，统一日志 用于定位链路和耗时；不能
 只凭一条普通描述日志判定功能成功。跨模块问题按
-`Voice event_publish → Tree candidate_inject/select → Action goal/result` 继续追踪，
+`Voice voice.event.published → Tree candidate_inject/select → Action goal/result` 继续追踪，
 Voice 日志不能证明动作已经执行。
 
 所有语音链路按下面两个 ID 关联：
@@ -94,12 +94,12 @@ Voice 日志不能证明动作已经执行。
 | 1 | 以 `command_catalog.yaml` 中 `core=true` 的 19 组为核心清单，每组代表短语播放 20 次，并补测全部别名。 | 同一句依次出现 ASR、`command_lexicon`、`recognition_arbitration` 和预期具体事件；检查 `dispatch_role/specific_event_type/raw_nlu_tag`，并确认无 KNOWN 摘要。 | 每组代表短语至少 17/20，且 19/19 均有结果。每句只发布预期具体事件且只有一个识别来源；出现非预期或重复的 `EVT_VOICE_*` 即失败。只有现成 Tree/Action 映射的组可判端到端 PASS。 |
 | 2 | 以产品表 116 条数据及新增“自己去玩吧”、共 156 条标准中文词/句和每条 10 个受控扩展执行覆盖测试。不再要求测试方另外提供“117 组”清单。 | 记录 `command_lexicon` 的 `matched/command_key/event_type/match_strategy/catalog_phrase/matched_phrase/expansion_profile/expansion_rule`，并复核事件 payload/slots；只有未命中时才记录模型来源。 | 标准词/句每条测试 10 次时，85% 门限至少 **9/10**；扩展规则自动验收 `1560/1560`，人工按五个 profile 和 19 组核心抽样。同时报告源数据 `116/116`、路由组 `82/82`、标准词/句 `156/156`、变体 `70/70`、总入口 `1786`；下游未映射项不得判端到端 PASS。 |
 | 3 | 使用唤醒词启动正式会话，并分别播放一条目录内指令和一条目录外语义文本。 | 两条都应有 ASR；目录内指令随后 `command_lexicon result=matched` 且不出现该句 `stage=intent`；目录外文本 `result=no_match` 后才出现 `stage=intent`。 | 同一 `interaction_id` 内两条链路各自完整且无 ERROR。仅有唤醒事件不能证明后续模块已工作。 |
-| 4 | 机播已知文本，对照 `speech` 事件中的 `asr_text` 和完整 `payload`。 | `stage_complete stage=asr result=ok`；`event_publish event_type=speech`；完整 ROS2 原文。 | `asr_text` 与期望文本一致或符合用例允许的等价转写；JSON 字段符合当前 ROS2 契约。测试表里的 `action/target` 不作为格式标准。 |
+| 4 | 机播已知文本，对照 `speech` 事件中的 `asr_text` 和完整 `payload`。 | `voice.stage.completed stage=asr result=ok`；`voice.event.published event_type=speech`；完整 ROS2 原文。 | `asr_text` 与期望文本一致或符合用例允许的等价转写；JSON 字段符合当前 ROS2 契约。测试表里的 `action/target` 不作为格式标准。 |
 | 5 | 对编号 4 的同一 `utterance_id` 检查最终路由结果。 | 目录命中看 `stage=command_lexicon`；目录未命中才看 `stage=intent` 的 `social/intent/control/event_types`。 | 目录命中必须只得到指定具体事件且无 KNOWN 摘要；模型结果必须符合三轴组合约束。模型具体动作还必须有 `model_action_gate=accepted`；只有具体动作可执行。 |
 | 6 | 对已有中英文 KWS 逐条执行，并对完整中文 ASR 标准词/句与扩展分层执行；两类覆盖率分开报告。 | KWS 先看 `stage=kws result=candidate`，再看 `recognition_arbitration selected_source/reason` 及最终事件来源；目录看 `intent_source=command_lexicon` 和 `match_strategy`。 | KWS 按 39 条配置逐条验收。普通短指令必须由 ASR 词库确认同一事件；冲突、未确认和空 ASR 不执行 KWS。只有 `吃罐罐→去滚罐` 的精确组合可优先（`去拿→去哪` 已于 2026-09-18 移除，`去哪` 现由同音兜底直接命中 GO_GET_IT）。两条链路不得同时发布业务结果。目录按 156 条标准入口及 1560 条自动扩展验收。 |
-| 7 | 在一个会话内连续播放 3 条指令，每条之间保留正常句尾静音；既测试三条不同指令，也测试同一指令连续 3 次。 | 一个 `interaction_id` 下出现 3 个不同 `utterance_id`；逐句检查 `recognition_arbitration`、`utterance_complete`、目录匹配和最终事件。 | 三句均正确；每句只允许 KWS 或 ASR 链路中的一个来源发布一个具体业务事件，不得附带 KNOWN 摘要。 |
+| 7 | 在一个会话内连续播放 3 条指令，每条之间保留正常句尾静音；既测试三条不同指令，也测试同一指令连续 3 次。 | 一个 `interaction_id` 下出现 3 个不同 `utterance_id`；逐句检查 `recognition_arbitration`、`voice.utterance.completed`、目录匹配和最终事件。 | 三句均正确；每句只允许 KWS 或 ASR 链路中的一个来源发布一个具体业务事件，不得附带 KNOWN 摘要。 |
 | 8 | 使用相似音、否定反转和未配置的前后缀探索拒识，例如“官过来”“你要不要过来”“不要坐下”。 | 记录 KWS、ASR、`command_lexicon matched/no_match`、`match_strategy`、模型门控和任何可执行事件。 | 目录只能命中标准词/句或配置明确生成的扩展；“请你坐下”应命中，但“不要坐下”不得命中 SIT。未被 ASR 同事件确认的 KWS 必须拒绝；RKLLM 否定或缺少对应动作证据时不得发布具体动作。 |
-| 9 | 播放陌生词，随后持续静音，并按正式配置的 `idle_timeout_sec`（20 秒）等待。 | 先看到 `command_lexicon result=no_match`，再看 Model Intent 三轴及 `event_types`，最后出现同会话 idle 和 `interaction_end`。 | 合法 OOS `NONE|NONE|NONE` 发布不可执行的 `EVT_VOICE_NEUTRAL`；非空 ASR 仍刷新空闲计时，只有模型与规则均无有效协议结果才发 `EVT_VOICE_COMMAND_UNKNOWN`。不发布可执行动作、不崩溃，并在最后一次非空 ASR 后 20 秒静默时待机。 |
+| 9 | 播放陌生词，随后持续静音，并按正式配置的 `idle_timeout_sec`（20 秒）等待。 | 先看到 `command_lexicon result=no_match`，再看 Model Intent 三轴及 `event_types`，最后出现同会话 idle 和 `voice.interaction.ended`。 | 合法 OOS `NONE|NONE|NONE` 发布不可执行的 `EVT_VOICE_NEUTRAL`；非空 ASR 仍刷新空闲计时，只有模型与规则均无有效协议结果才发 `EVT_VOICE_COMMAND_UNKNOWN`。不发布可执行动作、不崩溃，并在最后一次非空 ASR 后 20 秒静默时待机。 |
 
 ### ASR 同音误识别与 KWS 安全仲裁如何记分
 
@@ -107,12 +107,12 @@ ASR 转写准确率与最终命令功能必须分项统计。普通 KWS 候选�
 同音错误；例如用户说“击掌”但 `speech.asr_text=机长` 时，必须拒绝动作：
 
 ```text
-stage_complete stage=kws result=candidate
+voice.stage.completed stage=kws result=candidate
   command_key=HIGH_FIVE event_type=EVT_VOICE_COMMAND_HIGH_FIVE
-stage_complete stage=asr result=ok
+voice.stage.completed stage=asr result=ok
   speech.asr_text=机长
-stage_complete stage=command_lexicon result=no_match
-stage_complete stage=recognition_arbitration result=asr_selected
+voice.stage.completed stage=command_lexicon result=no_match
+voice.stage.completed stage=recognition_arbitration result=asr_selected
   selected_source=asr_pipeline reason=short_asr_unconfirmed_kws
 # 不发布 EVT_VOICE_COMMAND_HIGH_FIVE
 ```
@@ -134,19 +134,19 @@ stage_complete stage=recognition_arbitration result=asr_selected
 中文描述：
 
 ```text
-VOICE_TRACE {"record":"runtime_start"...}
-VOICE_TRACE {"record":"interaction_start"...}
-VOICE_TRACE {"record":"stage_start","stage":"vad_capture"...}
-VOICE_TRACE {"record":"stage_complete","stage":"asr"...}
-VOICE_TRACE {"record":"stage_complete","stage":"command_lexicon"...}
-VOICE_TRACE {"record":"stage_complete","stage":"recognition_arbitration"...}
-VOICE_TRACE {"record":"stage_complete","stage":"intent"...}
-VOICE_TRACE {"record":"event_publish"...}
-VOICE_TRACE {"record":"utterance_complete"...}
-VOICE_TRACE {"record":"interaction_end"...}
+{"event_name":"voice.providers.ready"...}
+{"event_name":"voice.interaction.started"...}
+{"event_name":"voice.stage.started","stage":"vad_capture"...}
+{"event_name":"voice.stage.completed","stage":"asr"...}
+{"event_name":"voice.stage.completed","stage":"command_lexicon"...}
+{"event_name":"voice.stage.completed","stage":"recognition_arbitration"...}
+{"event_name":"voice.stage.completed","stage":"intent"...}
+{"event_name":"voice.event.published"...}
+{"event_name":"voice.utterance.completed"...}
+{"event_name":"voice.interaction.ended"...}
 ```
 
-每个 `event_publish` 都带完整的 `payload`，可直接从日志复核 ROS2 JSON；正式验收仍
+每个 `voice.event.published` 都带完整的 `payload`，可直接从日志复核 ROS2 JSON；正式验收仍
 应同时保存 `/perception/audio_event` 原文，防止只验证了日志而没有验证传输接口。
 
 确定性词库建议使用以下逐条记录格式；核心用例使用 `CORE-*`，全量词库用例另使用
@@ -174,7 +174,7 @@ KWS 被选中时不应再发布 `command_lexicon` 或 Model Intent 的业务事�
 | Event Mock | `config/voice.mock.yaml` | 否 | 直接生成完整 ROS2 事件，验证 Topic 契约和下游消费 |
 | Pipeline Mock | `config/voice.pipeline.mock.yaml` | 否 | 走 Mock 唤醒、录音、ASR、声纹和规则意图，验证节点编排与耗时日志 |
 
-`runtime_start.runtime_mode` 是所选模式；`runtime_start.providers` 才是本次进程
+`voice.providers.ready.runtime_mode` 是所选模式；`voice.providers.ready.providers` 才是本次进程
 实际加载的 Provider。正式配置中部分模型 Provider 不可用时，当前实现可能回退到
 Mock Provider，因此真机用例必须确认 `providers` 中没有意外的 `Mock*Provider`。
 发现意外回退时，该用例记为环境/启动失败，不能作为真机 PASS 证据。
@@ -207,7 +207,7 @@ interaction:
 确认已生效的三处独立证据：
 
 1. 启动日志出现 `WARNING`：`interaction.refresh_on_any_speech is ON (test mode)…`
-2. `VOICE_TRACE` 的 `runtime_start` 记录中 `refresh_on_any_speech=true`
+2. 统一日志 的 `voice.providers.ready` 记录中 `refresh_on_any_speech=true`
 3. `get_interaction_state` 返回体同名字段为 `true`
 
 ⚠️ **风险**：测试模式且不设上限时，只要环境持续有噪声或人声，**会话不会自动结束**，
@@ -233,17 +233,16 @@ interaction:
 |---|---:|---|
 | `level` | `INFO` | `INFO` 保留测试证据；`DEBUG` 增加轮询、VAD 和 Provider 细节 |
 | `dir` | `../log` | 相对于当前 YAML 文件目录解析后的文件输出目录 |
-| `console` | `true` | 同时输出到终端 |
-| `file` | `true` | 写入独立进程日志文件 |
-| `event_trace` | `true` | 输出固定格式的测试追踪记录 |
+| `console` / `file` | 旧配置保留 | 现由公共日志策略管理，不再创建独立 handler |
+| `event_trace` | `true` | 启用领域观察；统一写入 v2 日志 |
 
 每次启动创建一个文件：
 
 ```text
-<log_dir>/voice_interaction_YYYYMMDD_HHMMSS_<pid>.log
+<log_dir>/structured/voice-<instance_id>.jsonl
 ```
 
-启动时的 `runtime_start.log_file` 会给出本次准确路径。Launch 参数
+启动时的 `voice.providers.ready` 的 fields.log_file 会给出本次准确路径。Launch 参数
 `log_level`、`log_dir` 可覆盖配置，例如：
 
 ```bash
@@ -253,52 +252,50 @@ ros2 launch marsdog_voice_interaction voice.launch.py \
   log_dir:=/tmp/marsdog_voice_qa/VOICE-001
 ```
 
-日志分两类：
+日志统一为 envelope v2 JSONL，位于 `log_dir/structured/voice-<instance_id>.jsonl`。
+普通诊断和领域事件写入同一文件，终端显示只是可选视图；不再生成前缀 TRACE 或独立文本文件。
+`timestamp` 是 UTC 时间，`monotonic_ns` 供同机排序；会话/语句身份位于 `context`，
+阶段、结果和耗时位于 `fields`。格式、轮转、环境变量见
+[平台统一日志](../../../docs/development/UNIFIED_LOGGING.md)。
+下文表格中的领域字段省略 fields 前缀，关联 ID 省略 context 前缀。
 
-- 普通日志：便于人阅读的 Provider 启停、模型错误、串口/VAD/ASR信息。
-- `VOICE_TRACE {JSON}`：字段稳定、每条一行，测试记录和自动提取只依赖这一类。
+示例只展示事件名和领域字段；真实记录使用 context/fields 分组，完整 envelope 见平台规范。
 
-每条 `VOICE_TRACE` 都包含 `timestamp_ms`，表示记录生成时的 13 位 Unix 毫秒时间戳；
-VAD、KWS、ASR、声纹、仲裁、词库、意图和事件发布等模块可据此进行跨阶段排序与关联。
+## 4. 统一日志 记录表
 
-## 4. `VOICE_TRACE` 记录表
-
-| `record` | 产生时机 | 核心字段 | 测试用途 |
+| `event_name` | 产生时机 | 核心字段 | 测试用途 |
 |---|---|---|---|
-| `runtime_start` | 节点就绪 | `runtime_mode/providers/command_lexicon/object_target_routing/kws_arbitration/speaker_api/config_path/log_file` | 确认模式、配置、指令目录、目标物目录、KWS 仲裁策略、真实 Provider 和 API 状态 |
-| `interaction_start` | 会话开始 | `source/interaction_id/state` | 确认唤醒或 Service 建立会话 |
-| `stage_start` | 开始收音 | `stage/interaction_id/utterance_id` | 确认一句话的计时起点 |
-| `stage_complete` | 阶段结束 | `stage/result/latency_ms` | VAD、KWS、ASR、声纹、确定性目录、意图耗时与结果 |
-| `event_publish` | 发布音频事件 | `event_type/interaction_id/utterance_id/state/payload` | 用完整 payload 对照 Topic 原文和下游入口 |
-| `utterance_complete` | 整句处理结束 | `result/event_type/selected_source/latency_ms` | 判断最终路由、发布来源和整句结果 |
-| `service_complete` | VoiceTask 返回 | `task_id/task_type/result/latency_ms/task_result` | Service 成败与耗时 |
-| `interaction_hold` | 租约申请、续租、释放或到期 | `operation/result/hold_token/reason` | 验证保持租约生命周期 |
-| `enrollment_publish` | 发布注册进度 | `result/speaker_id/latency_ms` | 声纹注册阶段结果 |
-| `speaker_api_upload` | 单文件或批量文件进入声纹业务处理后结束 | `operation/result/speaker_name/sample_id/sample_ids/code/source_sample_rate/stored_sample_rate/conflicting_speaker/similarity/latency_ms` | 判断 WAV、VAD、16 kHz 归一化、声纹冲突校验和落盘结果；不代表完整 HTTP 请求耗时 |
-| `speaker_management` | 查询或样本/身份删除变更 | `operation/result/speaker_name/sample_id/shots/deleted_count/latency_ms` | 复核样本 CRUD、身份级删除、全库删除、centroid 和运行时索引同步 |
-| `interaction_end` | 会话结束 | `reason/interaction_id/state` | 确认超时或手动停止 |
+| `voice.providers.ready` | 节点就绪 | `runtime_mode/providers/command_lexicon/object_target_routing/kws_arbitration/speaker_api/config_path/log_file` | 确认模式、配置、指令目录、目标物目录、KWS 仲裁策略、真实 Provider 和 API 状态 |
+| `voice.interaction.started` | 会话开始 | `source/interaction_id/state` | 确认唤醒或 Service 建立会话 |
+| `voice.stage.started` | 开始收音 | `stage/interaction_id/utterance_id` | 确认一句话的计时起点 |
+| `voice.stage.completed` | 阶段结束 | `stage/result/latency_ms` | VAD、KWS、ASR、声纹、确定性目录、意图耗时与结果 |
+| `voice.event.published` | 发布音频事件 | `event_type/interaction_id/utterance_id/state/payload` | 用完整 payload 对照 Topic 原文和下游入口 |
+| `voice.utterance.completed` | 整句处理结束 | `result/event_type/selected_source/latency_ms` | 判断最终路由、发布来源和整句结果 |
+| `voice.service.complete` | VoiceTask 返回 | `task_id/task_type/result/latency_ms/task_result` | Service 成败与耗时 |
+| `voice.interaction.hold` | 租约申请、续租、释放或到期 | `operation/result/hold_token/reason` | 验证保持租约生命周期 |
+| `voice.enrollment.publish` | 发布注册进度 | `result/speaker_id/latency_ms` | 声纹注册阶段结果 |
+| `voice.speaker.api.upload` | 单文件或批量文件进入声纹业务处理后结束 | `operation/result/speaker_name/sample_id/sample_ids/code/source_sample_rate/stored_sample_rate/conflicting_speaker/similarity/latency_ms` | 判断 WAV、VAD、16 kHz 归一化、声纹冲突校验和落盘结果；不代表完整 HTTP 请求耗时 |
+| `voice.speaker.management` | 查询或样本/身份删除变更 | `operation/result/speaker_name/sample_id/shots/deleted_count/latency_ms` | 复核样本 CRUD、身份级删除、全库删除、centroid 和运行时索引同步 |
+| `voice.interaction.ended` | 会话结束 | `reason/interaction_id/state` | 确认超时或手动停止 |
 
 ### 4.1 通用字段
 
 | 字段 | 类型 | 含义和判定方法 |
 |---|---|---|
-| `record` | string | 追踪记录类型，是筛选日志的第一关键字。 |
-| `result` | string | 本次记录的结果。值由不同 `record/stage` 定义，不能跨阶段混用。 |
+| `event_name` | string | 追踪记录类型，是筛选日志的第一关键字。 |
+| `result` | string | 本次记录的结果。值由不同 `event_name/stage` 定义，不能跨阶段混用。 |
 | `interaction_id` | string | 会话关联 ID；同一轮唤醒到待机期间保持不变。 |
 | `utterance_id` | string | 单句关联 ID；同一句的 VAD、KWS、ASR、声纹、意图和事件应一致。 |
 | `latency_ms` | number | 当前记录定义范围内的墙钟耗时，单位毫秒；不同记录的起止点见下表。 |
 | `error` | string | 失败原因。成功时通常为空并被日志层省略。 |
 | `payload` | object | 完整业务对象；用于复核 Topic 或注册结果的原始字段。 |
 
-`VOICE_TRACE` 为减少日志长度，会省略值等于空字符串的可选字段。因此顶层没有
-`error/asr_text/speaker_id` 不一定表示日志结构错误，应先结合 `record/result` 判断。
-`event_publish.payload` 始终包含完整的 v1 音频事件模板，即使某些字段使用空字符串、
-`0.0`、`false` 或空数组作为默认值。
+Voice 事件省略值为空字符串的可选字段。`fields` 缺少 error/asr_text/speaker_id
+不一定表示结构错误，应结合 event_name 和 fields.result 判断。
+`fields.payload` 保持业务音频事件对象；其 header.stamp 是 ROS 事件时间，
+不同于日志的观察时间 timestamp。字段裁剪或队列丢弃时，应回到实际 Topic/Service 证据。
 
-日志行前缀中的 `YYYY-MM-DD HH:MM:SS` 是事件写日志的墙钟时间，用于跨记录计算时序；
-JSON 内的 `header.stamp` 是 ROS2 事件时间戳，用于与 Topic、rosbag 和下游事件对齐。
-
-### 4.2 `runtime_start` 字段
+### 4.2 `voice.providers.ready` 字段
 
 | 字段 | 类型 | 含义和判定方法 |
 |---|---|---|
@@ -317,7 +314,7 @@ JSON 内的 `header.stamp` 是 ROS2 事件时间戳，用于与 Topic、rosbag �
 | `kws_arbitration` | object | 实际仲裁策略。当前必须为 `publish_mode=deferred/arbitration_mode=exclusive`；默认 `asr_long_text_wins=true/kws_fallback_on_asr_empty=false/short_requires_asr_agreement=true`；优先命令还必须命中 `priority_asr_aliases` 的精确错写。 |
 | `speaker_api` | object | `enabled/ready/address/docs`；启动失败时包含 `error`。 |
 
-### 4.3 `stage_complete` 字段和耗时边界
+### 4.3 `voice.stage.completed` 字段和耗时边界
 
 | `stage` | `result` 可能值 | 阶段专属字段 | `latency_ms` 的准确范围 |
 |---|---|---|---|
@@ -350,7 +347,7 @@ JSON 内的 `header.stamp` 是 ROS2 事件时间戳，用于与 Topic、rosbag �
   mock Provider 的固定值不能用于声纹阈值标定。声纹是否通过仍以 `result`、
   `speaker_id` 和身份事件为准。
 
-### 4.4 `event_publish` 顶层字段
+### 4.4 `voice.event.published` 顶层字段
 
 | 字段 | 类型 | 含义和判定方法 |
 |---|---|---|
@@ -381,42 +378,42 @@ JSON 内的 `header.stamp` 是 ROS2 事件时间戳，用于与 Topic、rosbag �
 
 ### 4.5 其他记录的专属字段
 
-| `record` | 字段 | 含义和判定方法 |
+| `event_name` | 字段 | 含义和判定方法 |
 |---|---|---|
-| `interaction_start` | `source/state` | 会话来源和进入状态；`source` 常见为 `wakeup/service`。 |
-| `utterance_complete` | `result/event_type/event_types/published_event_types/selected_source/latency_ms` | KWS 被选中为 `published_kws_selected`；ASR 目录可执行事件为 `published_direct_command`；合法 OOS 发布 NEUTRAL 后为 `published`。 |
-| `service_complete` | `service/task_id/task_type/task_result/error/latency_ms` | 一次 VoiceTask 回调总耗时和完整返回对象。`result=success/failure`。 |
-| `interaction_hold` | `operation/hold_token/reason/lease_sec/idle_timer_reset` | `operation=acquire/renew/release/expire`；不同操作只输出适用字段。 |
-| `enrollment_publish` | `topic/speaker_id/payload/latency_ms` | 一次录音注册样本的 embedding、进度处理和发布耗时；最终样本还包含落盘及运行时同步。`result=progress/complete`。 |
-| `speaker_api_upload` | `operation/speaker_name/shots/sample_id/sample_ids/code/source_sample_rate/stored_sample_rate/conflicting_speaker/similarity/error/latency_ms` | 单文件无 `operation`，批量为 `batch_add`。业务 Handler 总耗时含 WAV、VAD、embedding、冲突校验、落盘和同步；不含 multipart 和网络上传。 |
-| `speaker_management` | `operation/speaker_name/sample_id/sample_ids/shots/speaker_removed/deleted_count/deleted_speaker_count/deleted_sample_count/error/latency_ms` | `operation=list/sample_list/sample_get/sample_replace/sample_delete/speaker_delete_all_samples/delete_all_speakers`；变更成功时同步已完成，但运行时识别仍需实际验证。 |
-| `interaction_end` | `reason/state/idle_elapsed_sec/idle_timeout_sec/last_activity_reason` | 会话结束原因、单调时钟计算的静默时长及最后活动来源；`reason` 常见为 `interaction_timeout/stop_listening`。 |
+| `voice.interaction.started` | `source/state` | 会话来源和进入状态；`source` 常见为 `wakeup/service`。 |
+| `voice.utterance.completed` | `result/event_type/event_types/published_event_types/selected_source/latency_ms` | KWS 被选中为 `published_kws_selected`；ASR 目录可执行事件为 `published_direct_command`；合法 OOS 发布 NEUTRAL 后为 `published`。 |
+| `voice.service.complete` | `service/task_id/task_type/task_result/error/latency_ms` | 一次 VoiceTask 回调总耗时和完整返回对象。`result=success/failure`。 |
+| `voice.interaction.hold` | `operation/hold_token/reason/lease_sec/idle_timer_reset` | `operation=acquire/renew/release/expire`；不同操作只输出适用字段。 |
+| `voice.enrollment.publish` | `topic/speaker_id/payload/latency_ms` | 一次录音注册样本的 embedding、进度处理和发布耗时；最终样本还包含落盘及运行时同步。`result=progress/complete`。 |
+| `voice.speaker.api.upload` | `operation/speaker_name/shots/sample_id/sample_ids/code/source_sample_rate/stored_sample_rate/conflicting_speaker/similarity/error/latency_ms` | 单文件无 `operation`，批量为 `batch_add`。业务 Handler 总耗时含 WAV、VAD、embedding、冲突校验、落盘和同步；不含 multipart 和网络上传。 |
+| `voice.speaker.management` | `operation/speaker_name/sample_id/sample_ids/shots/speaker_removed/deleted_count/deleted_speaker_count/deleted_sample_count/error/latency_ms` | `operation=list/sample_list/sample_get/sample_replace/sample_delete/speaker_delete_all_samples/delete_all_speakers`；变更成功时同步已完成，但运行时识别仍需实际验证。 |
+| `voice.interaction.ended` | `reason/state/idle_elapsed_sec/idle_timeout_sec/last_activity_reason` | 会话结束原因、单调时钟计算的静默时长及最后活动来源；`reason` 常见为 `interaction_timeout/stop_listening`。 |
 
 ### 4.6 总耗时的正确计算
 
-`event_publish.latency_ms` 是产生该事件的决策阶段耗时；ASR 目录具体事件应等于
+`voice.event.published.latency_ms` 是产生该事件的决策阶段耗时；ASR 目录具体事件应等于
 同句 `command_lexicon.latency_ms`，Model Intent 大类、白名单具体事件和 KNOWN 摘要应等于
 同句 `intent.latency_ms`。
 KWS 被选中时，事件的 `latency_ms` 是从 VAD 返回后进入处理到最终仲裁发布的耗时；
 首次 KWS 候选耗时看事件 slot `kws_candidate_latency_ms` 或同句 `stage=kws`。
-`utterance_complete.latency_ms` 是
+`voice.utterance.completed.latency_ms` 是
 **VAD 返回后的处理总耗时**，两者都不是从开始收音到最终结果的完整端到端耗时。
 当前真正端到端耗时需要在同一 `utterance_id` 下，用日志行墙钟时间计算：
 
 ```text
-端到端耗时 = utterance_complete 日志时间 - stage_start(vad_capture) 日志时间
+端到端耗时 = voice.utterance.completed 日志时间 - voice.stage.started(vad_capture) 日志时间
 ```
 
-若只统计模型/规则阶段，应分别使用同一句的 `stage_complete`：
+若只统计模型/规则阶段，应分别使用同一句的 `voice.stage.completed`：
 
 ```text
-ASR 处理耗时     = stage_complete(stage=asr).latency_ms
-声纹处理耗时    = stage_complete(stage=speaker).latency_ms
-目录匹配耗时    = stage_complete(stage=command_lexicon).latency_ms
-识别仲裁耗时    = stage_complete(stage=recognition_arbitration).latency_ms
-意图处理耗时    = stage_complete(stage=intent).latency_ms
-VAD 收音阶段耗时 = stage_complete(stage=vad_capture).latency_ms
-KWS 首次命中耗时 = stage_complete(stage=kws).latency_ms
+ASR 处理耗时     = voice.stage.completed(stage=asr).latency_ms
+声纹处理耗时    = voice.stage.completed(stage=speaker).latency_ms
+目录匹配耗时    = voice.stage.completed(stage=command_lexicon).latency_ms
+识别仲裁耗时    = voice.stage.completed(stage=recognition_arbitration).latency_ms
+意图处理耗时    = voice.stage.completed(stage=intent).latency_ms
+VAD 收音阶段耗时 = voice.stage.completed(stage=vad_capture).latency_ms
+KWS 首次命中耗时 = voice.stage.completed(stage=kws).latency_ms
 ```
 
 所有 `latency_ms` 单位均为毫秒。目录命中的句子没有意图处理耗时，因为模型/规则没有
@@ -427,8 +424,8 @@ KWS 首次命中耗时 = stage_complete(stage=kws).latency_ms
 示例：
 
 ```text
-VOICE_TRACE {"record":"stage_complete","stage":"asr","result":"ok","interaction_id":"...","utterance_id":"...","latency_ms":86.42,"language":"zh","text_length":2}
-VOICE_TRACE {"record":"event_publish","result":"published","event_type":"EVT_VOICE_COMMAND_SIT","interaction_id":"...","utterance_id":"...","asr_text":"坐下","action":"SIT","control":"DO","should_trigger_behavior_tree":true}
+{"event_name":"voice.stage.completed","stage":"asr","result":"ok","interaction_id":"...","utterance_id":"...","latency_ms":86.42,"language":"zh","text_length":2}
+{"event_name":"voice.event.published","result":"published","event_type":"EVT_VOICE_COMMAND_SIT","interaction_id":"...","utterance_id":"...","asr_text":"坐下","action":"SIT","control":"DO","should_trigger_behavior_tree":true}
 ```
 
 ## 5. 测试执行步骤
@@ -509,9 +506,9 @@ ros2 topic info -v /perception/audio_event
 ros2 service type /perception/voice/task
 ```
 
-同时在本次日志目录中找到唯一一条 `record=runtime_start`，并按模式检查：
+同时在本次日志目录中找到唯一一条 `record=voice.providers.ready`，并按模式检查：
 
-| 启动模式 | `runtime_start.runtime_mode` | 必须检查的内容 |
+| 启动模式 | `voice.providers.ready.runtime_mode` | 必须检查的内容 |
 |---|---|---|
 | 正式链路 | `production` | 所需 Provider 的 `available=true`；`command_lexicon.ready=true/command_count=82/core_command_count=19/phrase_count=156/expanded_phrase_count=1560/total_match_phrase_count=1786/variant_phrase_count=70/fuzzy_matching=true/source_row_count=116/covered_source_row_count=116`；`speaker_api.enabled=true/ready=true` |
 | Event Mock | `mock_event` | `mock_event.class=MockEventProvider` 且 `available=true`，`speaker_api.enabled=false` |
@@ -555,7 +552,7 @@ ros2 topic echo /perception/voice/enrollment_event
 ```
 
 声纹文件上传用例直接调用 FastAPI，并保存 HTTP 请求参数、响应 JSON 和同一时段的
-`speaker_api_upload` 日志：
+`voice.speaker.api.upload` 日志：
 
 ```bash
 curl -sS -X POST http://127.0.0.1:8091/api/v1/speakers/owner/samples \
@@ -614,11 +611,11 @@ curl -sS -X DELETE \
 |---|---|---|
 | Uvicorn access log | 客户端地址、HTTP 方法、路径和最终状态码 | VAD、embedding 和落盘是否正确 |
 | HTTP 响应 JSON | 成功时的 `request_id/ok/name/speaker_role/shots/path/duration`，失败时的 `detail` | ROS 运行时声纹索引是否能实际命中 |
-| `speaker_api_upload` | Handler 内 WAV 解析、VAD、embedding、落盘及同步调用结果 | multipart/网络上传耗时，以及 FastAPI 在进入 Handler 前拒绝的请求 |
-| `speaker_management` | 人员列表及样本级 GET/PUT/DELETE 业务操作结果 | FastAPI 路径、multipart 或请求体校验阶段直接拒绝的请求 |
+| `voice.speaker.api.upload` | Handler 内 WAV 解析、VAD、embedding、落盘及同步调用结果 | multipart/网络上传耗时，以及 FastAPI 在进入 Handler 前拒绝的请求 |
+| `voice.speaker.management` | 人员列表及样本级 GET/PUT/DELETE 业务操作结果 | FastAPI 路径、multipart 或请求体校验阶段直接拒绝的请求 |
 
 以下情况由 FastAPI 在调用声纹业务 Handler 前直接返回，因此通常只有 access log 和
-HTTP 响应，**没有** `speaker_api_upload/speaker_management`：
+HTTP 响应，**没有** `voice.speaker.api.upload/voice.speaker.management`：
 
 - 缺少 `audio` 或身份路径不在固定枚举：HTTP `422`；
 - 空上传文件：HTTP `400`；
@@ -627,10 +624,10 @@ HTTP 响应，**没有** `speaker_api_upload/speaker_management`：
 - 身份路径参数本身不符合接口约束：HTTP `422`。
 
 进入业务 Handler 后发生的 WAV 内容损坏、VAD 无语音、声纹提取失败等，才会同时
-看到 `speaker_api_upload result=failure`。业务失败响应采用
+看到 `voice.speaker.api.upload result=failure`。业务失败响应采用
 `{"detail":{"code":"稳定错误码","error":"错误原因",...}}`；FastAPI 自身的路径或
 字段校验仍使用标准 `detail[]`。当前 HTTP 成功响应的
-`request_id` 没有写入 `VOICE_TRACE`，只能使用请求时间、客户端地址、人员名称和
+`request_id` 没有写入 统一日志，只能使用请求时间、客户端地址、人员名称和
 Uvicorn access log 关联；不得声称已经通过 `request_id` 完成日志关联。
 
 同时执行以下异常和管理用例：
@@ -668,8 +665,8 @@ Uvicorn access log 关联；不得声称已经通过 `request_id` 完成日志�
 | 未注册/未匹配人员 | `unknown` | `EVT_VOICE_UNMASTER_ID` |
 
 新运行时不得再发布 `EVT_VOICE_STRANGER_ID`。仅看到
-`stage_complete stage=speaker result=matched` 还不够，必须检查同一
-`utterance_id` 的 `event_publish.event_type` 和 Topic 原文。
+`voice.stage.completed stage=speaker result=matched` 还不够，必须检查同一
+`utterance_id` 的 `voice.event.published.event_type` 和 Topic 原文。
 
 需要跨项目复现或时序分析时，额外录制 rosbag：
 
@@ -679,35 +676,37 @@ ros2 bag record /perception/audio_event /perception/voice/enrollment_event
 
 ### 5.4 提取测试追踪
 
+从主仓根目录执行：
+
 ```bash
-rg 'VOICE_TRACE' /tmp/marsdog_voice_qa/VOICE-MOCK-001
-rg '"record":"event_publish"' /tmp/marsdog_voice_qa/VOICE-MOCK-001
-rg '"record":"stage_complete"' /tmp/marsdog_voice_qa/VOICE-MOCK-001
-rg '\[ERROR\]|\[WARNING\]' /tmp/marsdog_voice_qa/VOICE-MOCK-001
+python3 tools/marsdog.py logs --run /tmp/marsdog_voice_qa/VOICE-MOCK-001 --component voice --json
+python3 tools/marsdog.py logs --run /tmp/marsdog_voice_qa/VOICE-MOCK-001 --event voice.event.published
+python3 tools/marsdog.py logs --run /tmp/marsdog_voice_qa/VOICE-MOCK-001 --event voice.stage.completed
+python3 tools/marsdog.py logs --run /tmp/marsdog_voice_qa/VOICE-MOCK-001 --level warning
 ```
 
 ## 6. 功能判定清单
 
 | 功能 | 必须看到的结果 | 必须关联/检查的耗时 |
 |---|---|---|
-| 节点启动 | `runtime_start result=ready`，Topic/Service 正确 | 各 Provider `available=true` |
-| 唤醒 | `interaction_start` 后发布 `EVT_VOICE_WAKEUP` | 唤醒事件的角度、置信度；硬件响应时间由外部操作时间对照 |
-| VAD | `stage_complete stage=vad_capture result=voice` | `latency_ms`、`audio_duration_ms` |
-| KWS 候选 | 命中时只缓存、不发布业务事件；最终选中 KWS 后才发布结果组 | `stage_complete stage=kws result=candidate latency_ms/candidate_count` |
-| ASR | 发布 `speech`，`asr_text` 与实说内容对照 | `stage_complete stage=asr latency_ms` |
-| 声纹识别 | `owner` 发布 MASTER，`family_member_*` 发布 FOLK，未匹配/历史名称发布 UNMASTER | `stage_complete stage=speaker latency_ms/speaker_id/speaker_confidence`；正式 Sherpa 模式下该分数为最佳模板余弦值 |
+| 节点启动 | `voice.providers.ready result=ready`，Topic/Service 正确 | 各 Provider `available=true` |
+| 唤醒 | `voice.interaction.started` 后发布 `EVT_VOICE_WAKEUP` | 唤醒事件的角度、置信度；硬件响应时间由外部操作时间对照 |
+| VAD | `voice.stage.completed stage=vad_capture result=voice` | `latency_ms`、`audio_duration_ms` |
+| KWS 候选 | 命中时只缓存、不发布业务事件；最终选中 KWS 后才发布结果组 | `voice.stage.completed stage=kws result=candidate latency_ms/candidate_count` |
+| ASR | 发布 `speech`，`asr_text` 与实说内容对照 | `voice.stage.completed stage=asr latency_ms` |
+| 声纹识别 | `owner` 发布 MASTER，`family_member_*` 发布 FOLK，未匹配/历史名称发布 UNMASTER | `voice.stage.completed stage=speaker latency_ms/speaker_id/speaker_confidence`；正式 Sherpa 模式下该分数为最佳模板余弦值 |
 | 完整确定性词库 | 所有项只发布目录具体特殊事件，不附带 KNOWN 摘要；该句不执行 Intent | `command_lexicon matched/latency_ms`，并检查唯一 `dispatch_role=specific_command` 和 `specific_event_type` |
 | 目录外意图 | 三轴及事件顺序符合契约；仅白名单具体动作可执行 | `command_lexicon no_match` 后检查 `stage=intent social/intent/control/event_types/latency_ms`；找物类还要检查 `stage=object_target` |
-| KWS/ASR 仲裁 | 普通短指令只有 ASR 词库确认同一事件时 KWS 才胜出；冲突、未确认、空 ASR 和多个候选均不得由 KWS 单独执行；精确错写白名单除外 | `stage_complete stage=recognition_arbitration result/selected_source/reason/kws_candidate_count` |
-| 空闲超时/主动结束 | 静默超过 `idle_timeout_sec`（正式配置 20 秒）后自动结束；`stop_listening` 发布匹配 ID 的 idle 并关闭采集 | `idle_timeout_sec=20`、`max_duration_sec=0`；`interaction_end reason=interaction_timeout` 或 `stop_listening` |
-| 手动监听 | VoiceTask 返回成功并带当前 ID | `service_complete latency_ms/task_result` |
-| 会话保持 | hold 后不超时；release/租约到期后恢复超时 | Service 结果、`interaction_hold`、结束时间 |
-| 声纹注册 | 注册 Topic 连续进度，最终 `done=true` | `enrollment_publish result=complete/latency_ms` |
-| 声纹 API 上传 | `runtime_start.speaker_api.ready=true`，HTTP 201，`audio_valid/has_effective_speech=true`，VAD 后 WAV/embedding/centroid 均落盘 | `speaker_api_upload result=success` 及源音频/有效语音/总耗时 |
-| 声纹 16 kHz 归一化 | 上传 8/44.1/48 kHz PCM16 WAV 后均返回 `stored_sample_rate=16000`，下载 WAV 实测为 16 kHz 单声道 PCM16 | HTTP 响应、下载 WAV 元数据和 `speaker_api_upload source_sample_rate/stored_sample_rate` |
+| KWS/ASR 仲裁 | 普通短指令只有 ASR 词库确认同一事件时 KWS 才胜出；冲突、未确认、空 ASR 和多个候选均不得由 KWS 单独执行；精确错写白名单除外 | `voice.stage.completed stage=recognition_arbitration result/selected_source/reason/kws_candidate_count` |
+| 空闲超时/主动结束 | 静默超过 `idle_timeout_sec`（正式配置 20 秒）后自动结束；`stop_listening` 发布匹配 ID 的 idle 并关闭采集 | `idle_timeout_sec=20`、`max_duration_sec=0`；`voice.interaction.ended reason=interaction_timeout` 或 `stop_listening` |
+| 手动监听 | VoiceTask 返回成功并带当前 ID | `voice.service.complete latency_ms/task_result` |
+| 会话保持 | hold 后不超时；release/租约到期后恢复超时 | Service 结果、`voice.interaction.hold`、结束时间 |
+| 声纹注册 | 注册 Topic 连续进度，最终 `done=true` | `voice.enrollment.publish result=complete/latency_ms` |
+| 声纹 API 上传 | `voice.providers.ready.speaker_api.ready=true`，HTTP 201，`audio_valid/has_effective_speech=true`，VAD 后 WAV/embedding/centroid 均落盘 | `voice.speaker.api.upload result=success` 及源音频/有效语音/总耗时 |
+| 声纹 16 kHz 归一化 | 上传 8/44.1/48 kHz PCM16 WAV 后均返回 `stored_sample_rate=16000`，下载 WAV 实测为 16 kHz 单声道 PCM16 | HTTP 响应、下载 WAV 元数据和 `voice.speaker.api.upload source_sample_rate/stored_sample_rate` |
 | 跨身份防重复注册 | owner 已注册时，同人音频注册 family 返回 409 和 `speaker_identity_conflict`，无新文件；现场注册遵守同样规则 | HTTP `detail.conflicting_speaker/similarity/similarity_threshold` 和失败 trace |
 | 同身份样本一致性 | 同身份追加、批量上传及有其他样本的替换，低于一致性阈值返回 `speaker_sample_inconsistent`，不改旧样本 | HTTP 409、失败样本编号和相似度 |
-| 模型故障拒识 | 声纹模型不可用时返回 `unknown/unavailable`，不得因库中存在 owner 而产生模拟匹配 | `stage_complete stage=speaker reason=unavailable` |
+| 模型故障拒识 | 声纹模型不可用时返回 `unknown/unavailable`，不得因库中存在 owner 而产生模拟匹配 | `voice.stage.completed stage=speaker reason=unavailable` |
 | 身份模糊拒识 | 第一、第二身份分差不足或同分时返回 `unknown/ambiguous_identity` | `reason/score_margin`；真实录音分别统计误识与拒识 |
 | 有效语音时长 | 250 ms 的 VAD 片段即使添加 500 ms 前后音频也应拒绝注册 | HTTP 422；`speech_duration_ms` 不计额外补音和段间静音 |
 | 连续说话采集 | 上一句识别时第二句仍进入有界音频缓存；逐句 ID 与 KWS 候选分开 | 两句不同的 `utterance_id`，第二句 raw/VAD/ASR 输入完整 |
@@ -715,17 +714,17 @@ rg '\[ERROR\]|\[WARNING\]' /tmp/marsdog_voice_qa/VOICE-MOCK-001
 | 音频缓存异常 | 溢出、过期或录音丢帧时丢弃受影响句子，并等静音边界后恢复 | `capture_end_reason=audio_gap/audio_resync_timeout`；不发布残句命令 |
 | 无数据与取消 | sounddevice/arecord 无数据能超时退出；取消关闭设备并清空待处理音频 | 后端超时日志；新会话不出现旧音频或旧 KWS 候选 |
 | ROS 上传识别 | 1 秒双声道按 1 秒单声道处理；非 PCM16、空数据、无语音不使用上一条音频 | `verify_speaker` 的错误与识别结果 |
-| 批量新增/批量删除 | 多文件全部通过才统一落盘；单身份全删和带确认的全库删除后目录、注册表及运行时索引一致 | `speaker_api_upload operation=batch_add`、`speaker_management operation=speaker_delete_all_samples/delete_all_speakers` |
-| 声纹身份限制与管理 | 固定 5 个身份槽位；自由名称返回 422；列表和样本删除与目录及运行时索引一致 | HTTP 状态码和 `speaker_management operation/result/latency_ms` |
+| 批量新增/批量删除 | 多文件全部通过才统一落盘；单身份全删和带确认的全库删除后目录、注册表及运行时索引一致 | `voice.speaker.api.upload operation=batch_add`、`voice.speaker.management operation=speaker_delete_all_samples/delete_all_speakers` |
+| 声纹身份限制与管理 | 固定 5 个身份槽位；自由名称返回 422；列表和样本删除与目录及运行时索引一致 | HTTP 状态码和 `voice.speaker.management operation/result/latency_ms` |
 | 单人样本限制 | 每人最多 5 个；第 6 次同名上传返回 409 且无 `006` 文件 | HTTP 状态码、列表 `shots/max_samples_per_speaker` 和目录文件数 |
-| 单条声纹样本 CRUD | 稳定 ID 查询/WAV 下载正确；替换或删除后 centroid、注册表和运行时索引同步；删最后一条释放身份 | HTTP 状态码及 `speaker_management operation=sample_list/sample_get/sample_replace/sample_delete` |
+| 单条声纹样本 CRUD | 稳定 ID 查询/WAV 下载正确；替换或删除后 centroid、注册表和运行时索引同步；删最后一条释放身份 | HTTP 状态码及 `voice.speaker.management operation=sample_list/sample_get/sample_replace/sample_delete` |
 
 判定时遵守以下规则：
 
-- 预期事件没有出现在 `event_publish` 和 Topic 原文中，就是 Voice 未发布；不要用
+- 预期事件没有出现在 `voice.event.published` 和 Topic 原文中，就是 Voice 未发布；不要用
   Provider 的“detected/matched”普通日志代替发布结果。
-- `event_publish` 已出现但动作未执行，继续查行为树和动作项目，不判 Voice 失败。
-- `stage_complete result=error/empty`、意外 Mock Provider 或任意未解释的 ERROR，
+- `voice.event.published` 已出现但动作未执行，继续查行为树和动作项目，不判 Voice 失败。
+- `voice.stage.completed result=error/empty`、意外 Mock Provider 或任意未解释的 ERROR，
   该用例不能判 PASS。
 - 性能门限由测试计划或产品指标给出。尚未给定门限时只记录原始值、P50/P95 和
   样本量，不临时发明合格线。
@@ -739,8 +738,8 @@ rg '\[ERROR\]|\[WARNING\]' /tmp/marsdog_voice_qa/VOICE-MOCK-001
 代码版本：<git commit 或明确写 working tree>
 日期/设备/环境：
 运行模式和配置：production / config/voice.yaml
-实际 Provider：<复制 runtime_start.providers>
-词库版本与统计：<复制 runtime_start.command_lexicon>
+实际 Provider：<复制 voice.providers.ready.providers>
+词库版本与统计：<复制 voice.providers.ready.command_lexicon>
 源数据行 / 路由组 / 标准词句 / 扩展 / 变体 / 总入口：116/116 / 82/82 / 156/156 / 1560/1560 / 70/70 / 1786
 目标指令数 / 已实现数 / 缺失数：
 功能覆盖率：

@@ -1,147 +1,19 @@
-"""Unified logging for MarsDog perception nodes.
-
-Provides structured logging with optional module tags and file output.
-Uses Python's standard logging with a custom logger that supports key=value kwargs.
-"""
-
-from __future__ import annotations
-
-from marsdog_observability import StructuredLogger, BoundedFileHandler
-
-import json
+"""Voice event vocabulary; storage, formatting and logger configuration are shared."""
 import logging
-import os
-import sys
-from datetime import datetime
-from pathlib import Path
-from typing import Any
+from marsdog_observability import get_logger as project_logger
+from marsdog_observability import current_log_path as get_log_file_path, set_level as set_log_level
 
-from marsdog_voice_interaction.utils.time_utils import now_ms
-
-
-_log_initialized: bool = False
-_log_dir: str = "log"
-_log_file_path: str = ""
-
-_STANDARD_LOG_KWARGS = {
-    "exc_info",
-    "extra",
-    "stack_info",
-    "stacklevel",
-}
+_EVENTS = {"runtime_start": "providers.ready", "runtime_stop": "providers.stopped",
+           "interaction_start": "interaction.started", "interaction_end": "interaction.ended",
+           "stage_start": "stage.started", "stage_complete": "stage.completed",
+           "event_publish": "event.published", "utterance_complete": "utterance.completed"}
 
 
-# ── Set custom logger class at import time ─────────────────────────
-# This MUST happen before any module-level `logger = getLogger(...)` call,
-# otherwise those loggers will be plain logging.Logger instances and
-# fail when called with key=value kwargs like logger.info("msg", key=val).
+def get_logger(name, module=""):
+    return project_logger(name, area=module) if module else project_logger(name)
 
 
-# Register the custom logger class globally at import time.
-# This ensures ALL loggers (including module-level ones created before
-# setup_logging() is called) support key=value structured logging.
-logging.setLoggerClass(StructuredLogger)
-
-
-def setup_logging(
-    log_dir: str = "log",
-    level: str = "INFO",
-    node: str = "marsdog",
-    console: bool = True,
-    file: bool = True,
-) -> None:
-    """Initialize logging for a node.
-
-    Sets StructuredLogger as the default logger class so all loggers
-    created via getLogger() support key=value structured logging.
-
-    Args:
-        log_dir: Directory for log files.
-        level: Log level name (DEBUG, INFO, WARNING, ERROR).
-        node: Node name for log file prefix.
-        console: Enable console output.
-        file: Enable file output.
-    """
-    global _log_file_path, _log_initialized, _log_dir
-    _log_dir = log_dir
-    level = os.environ.get("MARSDOG_LOG_LEVEL", level)
-
-    root = logging.getLogger()
-    root.setLevel(getattr(logging, level.upper(), logging.INFO))
-
-    # Avoid duplicate handlers
-    if _log_initialized:
-        return
-
-    fmt = logging.Formatter(
-        "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-
-    if console:
-        ch = logging.StreamHandler(sys.stdout)
-        ch.setLevel(getattr(logging, level.upper(), logging.INFO))
-        ch.setFormatter(fmt)
-        root.addHandler(ch)
-
-    if file:
-        Path(log_dir).mkdir(parents=True, exist_ok=True)
-        run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-        _log_file_path = str(
-            Path(log_dir) / f"{node}_{run_id}_{os.getpid()}.log"
-        )
-        fh = BoundedFileHandler(_log_file_path)
-        fh.setLevel(logging.DEBUG)
-        fh.setFormatter(fmt)
-        root.addHandler(fh)
-
-    _log_initialized = True
-
-
-def get_log_file_path() -> str:
-    """Return the active process log file path, or an empty string."""
-    return _log_file_path
-
-
-def log_trace(
-    logger: logging.Logger,
-    record: str,
-    **fields: Any,
-) -> None:
-    """Write one stable, machine-readable QA trace record.
-
-    The human-readable prefix makes the records easy to grep, while the JSON
-    object keeps field names and values unambiguous for test evidence parsers.
-    Empty optional values are omitted to keep one event on one concise line.
-    """
-    payload = {"record": record, "timestamp_ms": now_ms()}
-    payload.update({key: value for key, value in fields.items() if value != ""})
-    logger.info(
-        "VOICE_TRACE %s",
-        json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
-        extra={"marsdog_event": "voice." + record, "marsdog_fields": payload},
-    )
-
-
-def set_log_level(level: str) -> None:
-    """Change the root logger level at runtime.
-
-    Args:
-        level: Log level name (DEBUG, INFO, WARNING, ERROR).
-    """
-    logging.getLogger().setLevel(getattr(logging, level.upper(), logging.INFO))
-
-
-def get_logger(name: str, module: str = "") -> logging.Logger:
-    """Get a logger with optional module tag.
-
-    Args:
-        name: Logger name (usually __name__).
-        module: Optional module tag for filtering.
-
-    Returns:
-        Configured StructuredLogger instance.
-    """
-    if module:
-        return logging.getLogger(f"{module}.{name}")
-    return logging.getLogger(name)
+def log_trace(logger, record, **fields):
+    event = _EVENTS.get(record, record.replace("_", "."))
+    level = logging.WARNING if fields.get("result") in {"error", "failure", "timeout"} else logging.INFO
+    logger.event("voice." + event, level=level, **{k: v for k, v in fields.items() if v != ""})

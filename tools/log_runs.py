@@ -17,9 +17,9 @@ def prepare_logging(env, directory):
     directory = Path(directory).resolve()
     directory.mkdir(parents=True, exist_ok=True)
     run_id = directory.name + "-" + uuid.uuid4().hex[:8]
-    env.update(MARSDOG_RUN_ID=run_id, MARSDOG_LOG_DIR=str(directory / "structured"),
+    env.update(MARSDOG_LOG_CONSOLE=env.get("MARSDOG_LOG_CONSOLE", "0"), MARSDOG_RUN_ID=run_id, MARSDOG_LOG_DIR=str(directory / "structured"),
                MARSDOG_LOG_COMPONENT_MAP=json.dumps(COMPONENT_MAP))
-    manifest = {"log_manifest_version": 1, "run_id": run_id, "started_at": datetime.now(timezone.utc).isoformat(),
+    manifest = {"log_manifest_version": 1, "log_schema_version": 2, "run_id": run_id, "started_at": datetime.now(timezone.utc).isoformat(),
                 "state": "active", "directory": str(directory), "components": COMPONENT_MAP,
                 "managed_log_directories": ["structured", "ros-log", "voice-log", "vision-log"],
                 "managed_root_logs": True,

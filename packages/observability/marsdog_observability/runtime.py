@@ -17,14 +17,15 @@ import threading
 import time
 import uuid
 
-from .formatting import BoundedFileHandler
+from .sinks import BoundedFileHandler
+from .formatting import render_record
 
 _context = ContextVar("marsdog_log_context", default={})
 _session = None
 _handler = None
 _config_lock = threading.RLock()
 _IDS = ("interaction_id", "utterance_id", "wake_id", "candidate_id", "goal_id",
-        "behavior_id", "target_id", "vision_epoch")
+        "behavior_id", "target_id", "vision_epoch", "request_id", "case_id", "test_run_id")
 _SECRET = {"password", "authorization", "api_key", "access_token", "refresh_token"}
 
 
@@ -76,7 +77,8 @@ class _Sink(BoundedFileHandler):
 
 class Session:
     def __init__(self, component, directory, run_id, level=logging.INFO, capacity=1024,
-                 priority_capacity=128, max_bytes=20 * 1024 * 1024, backups=4, sink=None):
+                 priority_capacity=128, max_bytes=20 * 1024 * 1024, backups=4, sink=None, console=False):
+        self.console = console
         self.component, self.directory, self.run_id, self.level = component, Path(directory), str(run_id)[:128], level
         self.pid, self.instance_id = os.getpid(), uuid.uuid4().hex
         self.host = socket.gethostname()
@@ -95,30 +97,22 @@ class Session:
         self.thread = threading.Thread(target=self._run, name="marsdog-log-writer", daemon=True)
         self.thread.start()
 
-    def record(self, event_name, fields=None, *, level=logging.INFO, message="", logger="", repeat_key=None, exception=None):
+    def record(self, event_name, fields=None, *, level=logging.INFO, message="", logger="", repeat_key=None, exception=None, kind="event", source=None):
         if self.stop.is_set() or level < self.level:
             return False
         try:
             fields = _safe({**_context.get(), **(fields or {})})
-            if repeat_key is not None:
-                key = (event_name, str(repeat_key))
-                signature = json.dumps(fields, sort_keys=True, ensure_ascii=False)
-                with self.lock:
-                    if self.last.get(key) == signature:
-                        self.stats["coalesced"] += 1
-                        return True
-                    if len(self.last) >= 4096:
-                        self.last.pop(next(iter(self.last)))
-                    self.last[key] = signature
-            row = {"log_schema_version": 1, "timestamp": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
+            key = (event_name, str(repeat_key)) if repeat_key is not None else None
+            signature = json.dumps(fields, sort_keys=True, ensure_ascii=False) if key else None
+            context = {key: fields.pop(key) for key in _IDS if key in fields}
+            row = {"log_schema_version": 2, "timestamp": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
                    "monotonic_ns": time.monotonic_ns(), "host": self.host, "run_id": self.run_id,
                    "component": self.component, "instance_id": self.instance_id, "pid": self.pid,
                    "sequence": next(self.sequence), "level": logging.getLevelName(level),
-                   "event_name": str(event_name)[:128], "logger": str(logger)[:256], "message": str(message)[:4096],
-                   "fields": fields}
-            for key in _IDS:
-                if isinstance(fields.get(key), str) and fields[key]:
-                    row[key] = fields[key]
+                   "kind": kind, "event_name": str(event_name)[:128], "logger": str(logger)[:256], "message": str(message)[:4096],
+                   "context": context, "fields": fields}
+            if source:
+                row["source"] = _safe(source)
             if exception:
                 row["exception"] = str(exception)[:8192]
             line = json.dumps(row, ensure_ascii=False, allow_nan=False)
@@ -128,23 +122,31 @@ class Session:
                 row["message"], row["fields"] = "[oversized log record]", {"reason": "record_size_limit"}
                 row.pop("exception", None)
                 # Identity values themselves may be large; bound the fallback too.
-                for key in _IDS:
-                    if key in row:
-                        row[key] = row[key].encode("utf-8")[:64].decode("utf-8", errors="ignore")
+                row["context"] = {key: str(value).encode("utf-8")[:64].decode("utf-8", errors="ignore")
+                                  for key, value in context.items()}
+                row.pop("source", None)
                 for key in ("run_id", "logger", "event_name"):
                     row[key] = row[key].encode("utf-8")[:128].decode("utf-8", errors="ignore")
                 line = json.dumps(row, ensure_ascii=False)
-            important = level >= logging.WARNING or any(word in str(event_name) for word in ("terminal", "stopped", "result"))
+            important = level >= logging.WARNING or kind == "lifecycle"
             destination = self.priority if important else self.normal
             with self.lock:
                 if self.stop.is_set():
                     return False
+                if key and self.last.get(key) == signature:
+                    self.stats["coalesced"] += 1
+                    return True
                 try:
                     destination.put_nowait((row, line))
                 except queue.Full:
                     self.stats["priority_dropped" if important else "dropped"] += 1
                     self.wake.set()
                     return False
+                # Only accepted records suppress repeats; a full queue must allow retry.
+                if key:
+                    if len(self.last) >= 4096 and key not in self.last:
+                        self.last.pop(next(iter(self.last)))
+                    self.last[key] = signature
             self.wake.set()
             return True
         except Exception:
@@ -163,6 +165,11 @@ class Session:
 
     def _write(self, line):
         try:
+            if self.console:
+                try:
+                    sys.stderr.write(render_record(json.loads(line)) + "\n")
+                except Exception:
+                    pass
             if self.sink is None:
                 self.directory.mkdir(parents=True, exist_ok=True)
                 self.sink = _Sink(self.path, max_bytes=self.max_bytes, backups=self.backups)
@@ -241,12 +248,15 @@ class _Handler(logging.Handler):
             exception = logging.Formatter().formatException(record.exc_info) if record.exc_info else None
             session.record(getattr(record, "marsdog_event", "log.message"),
                            getattr(record, "marsdog_fields", {}), level=record.levelno,
-                           logger=record.name, message=record.getMessage(), exception=exception)
+                           logger=record.name, message=record.getMessage(), exception=exception,
+                           kind=getattr(record, "marsdog_kind", "diagnostic"),
+                           repeat_key=getattr(record, "marsdog_repeat_key", None),
+                           source={"file": record.pathname, "line": record.lineno, "function": record.funcName})
         except Exception:
             pass
 
 
-def configure(component, log_dir=None, *, level=None):
+def configure(component, log_dir=None, *, level=None, console=None, node=None):
     """Idempotent per process. Explicit env overrides node-local defaults."""
     global _session, _handler
     if os.environ.get("MARSDOG_LOG_DISABLED") == "1":
@@ -266,41 +276,43 @@ def configure(component, log_dir=None, *, level=None):
                                _integer("MARSDOG_LOG_QUEUE_SIZE", 1024, 8, 8192),
                                _integer("MARSDOG_LOG_PRIORITY_QUEUE_SIZE", 128, 8, 1024),
                                _integer("MARSDOG_LOG_MAX_BYTES", 20*1024*1024, 4096, 100*1024*1024),
-                               _integer("MARSDOG_LOG_BACKUPS", 4, 1, 20))
+                               _integer("MARSDOG_LOG_BACKUPS", 4, 1, 20),
+                               console=(os.environ.get("MARSDOG_LOG_CONSOLE") == "1" if "MARSDOG_LOG_CONSOLE" in os.environ
+                                        else (sys.stderr.isatty() if console is None else console)))
             root = logging.getLogger()
             if _handler is not None:
                 root.removeHandler(_handler)
             _handler = _Handler()
             root.addHandler(_handler)
             root.setLevel(numeric)
-            _session.record("runtime.started", {"library_version": "0.1.0"})
+            _session.record("runtime.started", {"library_version": "0.2.0", "node": node}, kind="lifecycle")
             return _session
         except Exception:
             return None
+
+
+def set_level(level):
+    numeric = getattr(logging, str(level).upper(), logging.INFO)
+    if not isinstance(numeric, int):
+        numeric = logging.INFO
+    logging.getLogger().setLevel(numeric)
+    if _session is not None:
+        _session.level = numeric
+
+
+def current_log_path():
+    return str(_session.path) if enabled() else ""
 
 
 def enabled():
     return _session is not None and not _session.stop.is_set()
 
 
-def emit(event_name, fields=None, *, level=logging.INFO, repeat_key=None, **details):
+def emit(event_name, fields=None, *, level=logging.INFO, repeat_key=None, kind="event", **details):
     if not enabled():
         return False
     try:
-        return _session.record(event_name, {**(fields or {}), **details}, level=level, repeat_key=repeat_key)
-    except Exception:
-        return False
-
-
-def emit_json(event_name, data, *, context_field=None, repeat_key=None):
-    """Observe already serialized JSON without adding exceptions to its publisher."""
-    try:
-        payload = json.loads(data)
-        if not isinstance(payload, dict):
-            return False
-        context = payload.get(context_field, {}) if context_field else {}
-        fields = {**(context if isinstance(context, dict) else {}), **payload}
-        return emit(event_name, fields, repeat_key=repeat_key)
+        return _session.record(event_name, {**(fields or {}), **details}, level=level, repeat_key=repeat_key, kind=kind)
     except Exception:
         return False
 
@@ -318,7 +330,7 @@ def shutdown(timeout=3):
             _handler = None
         if session is None:
             return True
-        session.record("runtime.stopped")
+        session.record("runtime.stopped", kind="lifecycle")
         return session.close(timeout)
 
 

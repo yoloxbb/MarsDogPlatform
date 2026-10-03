@@ -13,7 +13,7 @@ maintainers = [
   { name = "MarsDog Vision Team", email = "noreply@marsdog.dev" },
 ]
 dependencies = [
-    "marsdog-observability==0.1.0",
+    "marsdog-observability==0.2.0",
   "fastapi>=0.115,<1",
   "numpy>=1.26,<2",
   "opencv-contrib-python>=4.10,<5",

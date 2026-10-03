@@ -55,7 +55,7 @@ def probe(directory):
         collector.wait(timeout=8)
         assert collector.returncode == 0
         assert {r["fields"]["source_component"] for r in observed} == {"probe"}
-        assert all(r["fields"]["file"] and r["fields"]["line"] > 0 for r in observed)
+        assert all(r["source"]["file"] and r["source"]["line"] > 0 for r in observed)
         assert {r["level"] for r in observed if r["message"] == "normal-warning"} == {"WARNING"}
         rows, errors = read_records(directory)
         assert not errors

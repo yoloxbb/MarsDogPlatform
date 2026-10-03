@@ -17,9 +17,9 @@ def main():
     def receive(message):
         if session is not None:
             session.record("ros.message", {"source_component": mapping.get(message.name, "external"),
-                "source_logger": message.name, "source_timestamp_ns": message.stamp.sec * 1000000000 + message.stamp.nanosec,
-                "file": message.file, "function": message.function, "line": message.line},
-                level=int(message.level), message=message.msg, logger=message.name)
+                "source_timestamp_ns": message.stamp.sec * 1000000000 + message.stamp.nanosec},
+                level=int(message.level), message=message.msg, logger=message.name, kind="diagnostic",
+                source={"file": message.file, "function": message.function, "line": message.line, "transport": "rosout"})
     # Humble exposes this profile in rcl/logging_rosout.h, not rclpy.qos.
     qos = QoSProfile(depth=1000, reliability=ReliabilityPolicy.RELIABLE,
                      durability=DurabilityPolicy.TRANSIENT_LOCAL, lifespan=Duration(seconds=10))

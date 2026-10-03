@@ -116,13 +116,20 @@ class RecordingTrialTests(unittest.TestCase):
         value["worker"]["asr"][0].update(started_monotonic_ns=10, finished_monotonic_ns=20, elapsed_ms=0.01)
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp)
-            (directory / "decisions").mkdir()
+            (directory / "structured").mkdir()
             rows = [
                 {"interaction_id": "session", "utterance_id": "turn", "goal_id": "goal", "stage": "goal_dispatch", "monotonic_ns": 30},
                 {"goal_id": "goal", "stage": "action_terminal", "monotonic_ns": 40},
                 {"interaction_id": "other", "utterance_id": "other", "goal_id": "unrelated", "stage": "goal_dispatch", "monotonic_ns": 35},
             ]
-            (directory / "decisions/behavior-1.jsonl").write_text("\n".join(json.dumps(r) for r in rows))
+            records = [{"log_schema_version": 2, "timestamp": "2026-10-04T00:00:00Z",
+                        "component": "behavior", "instance_id": "one", "sequence": index,
+                        "level": "INFO", "kind": "lifecycle", "fields": {},
+                        "event_name": "behavior." + row["stage"].replace("_", "."),
+                        "monotonic_ns": row["monotonic_ns"],
+                        "context": {key: value for key, value in row.items() if key.endswith("_id")}}
+                       for index, row in enumerate(rows)]
+            (directory / "structured/behavior-1.jsonl").write_text("\n".join(json.dumps(r) for r in records))
             report = {"status": "PASS", "probe": value}
             write_trial_report(directory, report)
             trace = json.loads((directory / "trace.json").read_text())

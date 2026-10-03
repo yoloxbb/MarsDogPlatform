@@ -1,30 +1,32 @@
-# MarsDog observability
+# MarsDog observability 0.2
 
-Pure Python 3.10+ infrastructure with no runtime third-party dependencies. Install the fixed
-0.1.0 distribution independently in each module environment; colcon also installs the same
-source as marsdog_observability. No business module imports, source-path injection or ROS
-imports on ordinary package import.
+Standard-library-only infrastructure for Python 3.10+. Each business module installs the
+fixed 0.2.0 wheel in its independent environment; colcon installs the same source as
+marsdog_observability. Imports do not start threads, create files or import ROS/models.
 
-Public API: configure(component, log_dir=None, level=None), emit, emit_json, bind_context,
-wrap_context, get_stats and shutdown. StructuredLogger and BoundedFileHandler preserve
-the existing readable logger interfaces. The optional marsdog_observability.ros.main entry
-observes /rosout without changing native ROS filters or call sites.
+Public API: configure, get_logger, emit, bind_context, wrap_context, set_level,
+current_log_path, enabled, get_stats, shutdown. get_logger returns an explicit
+LoggerAdapter; no global Logger subclass replacement. Ordinary stdlib logging is
+captured by the same root handler after configure. No legacy text/TRACE/BT JSON sink.
 
-Records use UTC millisecond timestamps, monotonic_ns, run_id, process instance UUID,
-component, PID, sequence, severity, event_name, logger, message and a fields object.
-Existing interaction/utterance/candidate/goal/target identities are promoted when present;
-they are never synthesized from a behavior name. Fields retain owner-specific meanings.
+One bounded asynchronous writer owns each process's canonical JSONL file and rotation.
+Console output is a view of the same records. lifecycle and warning/error records use a
+reserved bounded queue. Queue/sink failures do not fail business operations; health
+counters and rate-limited stderr warnings expose loss. Defaults: 20 MiB, four backups,
+16 KiB maximum record, shutdown drain up to three seconds. The optional ros.main
+collector adapts native /rosout without wrapping RcutilsLogger or changing call sites.
 
-Normal and important records use separately bounded queues. File writes occur on one
-daemon worker per process. Priority is reserved for warning/error and terminal/result
-records; even this queue may overflow and exposes its own loss counter. Shutdown drains
-with a bounded wait; abrupt termination or a stuck filesystem cannot guarantee delivery.
-Health JSON and stderr degradation notices make failures visible without failing behavior.
+```python
+from marsdog_observability import configure, get_logger, bind_context, shutdown
 
-Each UTF-8 JSONL file defaults to 20 MiB with four backups. Each normalized record is
-bounded to 16 KiB; oversized records retain bounded identities and an explicit omission
-reason. Sensitive-key redaction covers a small declared set, not arbitrary message text.
-Legacy text/trace outputs remain separate compatibility artifacts.
+configure("action")  # once, in the process entrypoint
+log = get_logger(__name__)
+with bind_context(goal_id="existing-goal"):
+    log.event("action.execution.started", kind="lifecycle", behavior_name="sit_down")
+    log.info("Waiting for adapter", adapter="chassis")
+shutdown()
+```
 
-Run tests: python3 -B -m unittest discover -s tests -v from this directory.
-Operational configuration, query and retention: ../../docs/development/UNIFIED_LOGGING.md.
+[Protocol v2](../../interfaces/observability/README.md) ·
+[operation, configuration and extension](../../docs/development/UNIFIED_LOGGING.md).
+Run `python3 -B -m unittest discover -s tests -v` from this directory.

@@ -13,7 +13,7 @@ maintainers = [
     { name = "MarsDog Team", email = "dev@marsdog.local" },
 ]
 dependencies = [
-    "marsdog-observability==0.1.0",
+    "marsdog-observability==0.2.0",
     "pyyaml>=6.0.3",
     "rich>=15.0.0",
 ]

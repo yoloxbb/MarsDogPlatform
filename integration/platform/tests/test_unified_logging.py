@@ -14,9 +14,12 @@ from log_runs import prepare_logging, finish_logging, retention_plan, apply_rete
 
 class UnifiedLogToolsTests(unittest.TestCase):
     def row(self, component, **extra):
-        return {"log_schema_version": 1, "timestamp": "2026-10-04T00:00:00+00:00",
+        context = {key: extra.pop(key) for key in tuple(extra)
+                   if key in {"interaction_id", "utterance_id", "goal_id", "candidate_id", "behavior_id"}}
+        return {"log_schema_version": 2, "timestamp": "2026-10-04T00:00:00+00:00",
                 "component": component, "instance_id": component, "sequence": 1,
-                "level": "INFO", "event_name": "test", "fields": {}, **extra}
+                "level": "INFO", "event_name": "test", "kind": "event", "context": context, "fields": {}, **extra}
+
 
     def test_session_query_links_goal_only_terminal_without_matching_other_turn(self):
         rows = [self.row("voice", interaction_id="one", utterance_id="u"),

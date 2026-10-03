@@ -126,7 +126,7 @@ class BehaviorRelevanceCondition(Node):
                     _log.event(LogEvent.RELEVANCE_FAIL,
                                behavior_name=active.behavior_name,
                                need=need_name,
-                               level=bb.need_module.get_level(need_name))
+                               need_level=bb.need_module.get_level(need_name))
                     bb.active_behavior = None  # Clear stale candidate
                     return Status.FAILURE
                 _log.event(LogEvent.RELEVANCE_PASS,

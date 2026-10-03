@@ -36,7 +36,7 @@ def main():
     previous = signal.signal(signal.SIGTERM, interrupt)
     rclpy.init()
     try:
-        env = dict(os.environ, MARSDOG_DECISION_TRACE_DIR=str(directory / "decisions"))
+        env = dict(os.environ)
         subprocess.run([str(BUILD_TOOLS / "python"), "-B", str(ROOT / "tools/prepare_local_configs.py"),
                         "--run", str(directory), "--install", str(install)], env=env, check=True, timeout=30,
                        capture_output=True)
@@ -82,14 +82,8 @@ def main():
         def publish(topic, payload):
             publishers[topic].publish(String(data=json.dumps(payload)))
         def traces():
-            records = []
-            for path in (directory / "decisions").glob("*.jsonl"):
-                for line in path.read_text().splitlines():
-                    try:
-                        records.append(json.loads(line))
-                    except ValueError:
-                        pass
-            return records
+            from trial_report import decision_observations
+            return decision_observations(directory)
         base = json.loads((ROOT / "interfaces/application/audio-event-v2/baseline.json").read_text())["observed"]["voice"]["sit"][0]
         def audio(event, command_id, uid):
             data = deepcopy(base)

@@ -1,4 +1,8 @@
-# 本地决策诊断 v1
+# 本地决策诊断 v1（历史）
+
+本格式已由 [统一日志 v2](../../observability/README.md) 替代。下文只解释历史证据，
+当前节点不再读取 MARSDOG_DECISION_TRACE_DIR，也不再写独立 decision trace。
+当前行为观察使用 behavior.* 事件，录音报告从统一日志生成时间线。
 
 这是可选的本地 JSONL 诊断，不是新的 ROS 消息或跨模块业务协议。
 默认关闭；设置 `MARSDOG_DECISION_TRACE_DIR=/absolute/path` 后，

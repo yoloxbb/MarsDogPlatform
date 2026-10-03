@@ -448,24 +448,16 @@ Mock 有两种模式：
 
 ## 日志和测试取证
 
-节点在终端和独立文件中输出日志。每次运行的文件名为
-`voice_interaction_YYYYMMDD_HHMMSS_<pid>.log`，准确路径记录在启动时的
-`runtime_start.log_file`。`logging.level/dir/console/file/event_trace` 由配置文件
-控制，也可以在 launch 时覆盖级别和目录：
+节点使用统一日志 v2，在 `log_dir/structured/voice-<instance_id>.jsonl` 中保存诊断、
+Provider、会话、ASR/声纹/意图阶段、事件和任务结果；不再输出旧 TRACE 格式。
+关联身份位于 context，领域字段位于 fields。生产配置和 launch 的 log_dir/log_level
+作为默认值，统一环境变量优先，详见 [平台日志指南](../../docs/development/UNIFIED_LOGGING.md)。
+
+从主仓查询：
 
 ```bash
-ros2 launch marsdog_voice_interaction voice.launch.py \
-  config_path:=/home/cat/xbb/MarsDogVoiceInteraction/config/voice.mock.yaml \
-  log_level:=DEBUG \
-  log_dir:=/tmp/marsdog_voice_qa/VOICE-MOCK-001
-```
-
-测试证据使用单行 JSON `VOICE_TRACE`。它覆盖实际 Provider、会话起止、VAD/KWS/
-ASR/声纹/意图阶段耗时、每次 Topic 发布、VoiceTask 返回和注册进度；通过
-`interaction_id` 与 `utterance_id` 串联一条完整时间线：
-
-```bash
-rg 'VOICE_TRACE' /tmp/marsdog_voice_qa/VOICE-MOCK-001
+python3 tools/marsdog.py logs --run latest --component voice --json
+python3 tools/marsdog.py logs --run latest --utterance YOUR_UTTERANCE_ID
 ```
 
 完整字段、功能判定、证据包内容和测试报告模板见

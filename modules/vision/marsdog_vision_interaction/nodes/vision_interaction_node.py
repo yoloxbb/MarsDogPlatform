@@ -94,7 +94,6 @@ from marsdog_vision_interaction.utils.config_loader import (
 from marsdog_vision_interaction.utils.logging_utils import (
     configure_event_trace,
     get_logger,
-    setup_logging,
     vision_timing_trace,
     vision_trace,
 )
@@ -142,11 +141,6 @@ class VisionInteractionNode(Node):
         self.declare_parameter("face_api_host", "")
         self.declare_parameter("face_api_port", 0)
         config_path = self.get_parameter("config_path").value
-        setup_logging(
-            log_dir=str(self.get_parameter("log_dir").value),
-            level=str(self.get_parameter("log_level").value),
-            node="vision_interaction",
-        )
         configure("vision", log_dir=str(self.get_parameter('log_dir').value), level=str(self.get_parameter('log_level').value))
         try:
             self._config = load_config(str(config_path))
@@ -166,7 +160,6 @@ class VisionInteractionNode(Node):
         )
         configure_event_trace(
             enabled=bool(logging_config.get("event_trace", True)),
-            log_dir=str(self.get_parameter("log_dir").value),
             run_id=str(self.get_parameter("test_run_id").value),
             case_id=str(self.get_parameter("test_case_id").value),
             timing_interval_sec=self._timing_trace_interval_sec,

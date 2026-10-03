@@ -48,15 +48,17 @@ def evaluate_trial(data, code):
         return False, False
 
 
+def decision_observations(directory):
+    from log_query import read_records
+    rows, _ = read_records(directory)
+    return [{**row["fields"], **row["context"], "stage": row["event_name"].removeprefix("behavior.").replace(".", "_"),
+             "monotonic_ns": row["monotonic_ns"]} for row in rows
+            if row["component"] == "behavior" and row["event_name"].startswith("behavior.") and row["kind"] != "diagnostic"]
+
+
 def write_trial_report(directory, report):
     data = report.get("probe", {})
-    rows = []
-    for path in sorted((directory / "decisions").glob("*.jsonl")):
-        for line in path.read_text().splitlines():
-            try:
-                rows.append(json.loads(line))
-            except ValueError:
-                rows.append({"stage": "trace_read_error", "path": str(path)})
+    rows = decision_observations(directory)
     interaction, utterance = data.get("interaction_id"), data.get("utterance_id")
     linked = [r for r in rows if interaction and r.get("interaction_id") == interaction
               and r.get("utterance_id") == utterance]

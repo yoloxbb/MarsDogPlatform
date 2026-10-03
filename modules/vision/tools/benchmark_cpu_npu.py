@@ -12,7 +12,7 @@ Examples::
         --output-dir test-evidence/cpu
     uv run python tools/benchmark_cpu_npu.py --live-camera --label cpu \
         --duration 120 --output-dir test-evidence/cpu \
-        --trace log/vision_trace_current.jsonl
+        --trace log/structured/vision-INSTANCE.jsonl
     uv run python tools/benchmark_cpu_npu.py --compare \
         test-evidence/cpu/cpu-*.json test-evidence/npu/npu-*.json
 """
@@ -390,13 +390,12 @@ def _parse_trace(path: Path, start_epoch: float) -> dict[str, Any]:
     except (OSError, UnicodeError):
         return {}
     for line in lines:
-        if not line.startswith("VISION_TRACE "):
-            continue
         try:
-            payload = json.loads(line.removeprefix("VISION_TRACE "))
+            payload = json.loads(line)
             stamp = datetime.fromisoformat(str(payload["timestamp"])).timestamp()
-            if stamp < start_epoch or payload.get("record") != "stage_complete":
+            if stamp < start_epoch or payload.get("log_schema_version") != 2 or payload.get("event_name") != "vision.stage.completed":
                 continue
+            payload = payload["fields"]
             key = f"{payload.get('module', '')}:{payload.get('stage', '')}"
             values[key].append(float(payload["latency_ms"]))
         except (KeyError, TypeError, ValueError, json.JSONDecodeError):
@@ -664,7 +663,7 @@ def _parser() -> argparse.ArgumentParser:
         default="/sys/class/devfreq/fdab0000.npu",
         help="Optional devfreq directory used for current NPU frequency",
     )
-    parser.add_argument("--trace", default="", help="Existing vision_trace_current.jsonl path")
+    parser.add_argument("--trace", default="", help="Canonical vision JSONL file")
     parser.add_argument("--live-camera", action="store_true", help="Explicitly document that input is live camera")
     parser.add_argument("--prepare-config", choices=("cpu", "npu"))
     parser.add_argument("--config-source", type=Path, default=Path("config/vision.yaml"))

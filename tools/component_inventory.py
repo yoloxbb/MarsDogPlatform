@@ -30,6 +30,7 @@ COMPONENTS = {
         "marsdog_action_executor.action_messages",
         "marsdog_action_executor.goal_lifecycle",
         "marsdog_action_executor.goal_execution",
+        "marsdog_action_executor.telemetry",
     ],
 }
 
@@ -37,7 +38,8 @@ COMPONENTS = {
 def check_installed_components(run, python, source):
     """Import wheel components without source/ROS; compare exact installed bytes."""
     names = COMPONENTS[source.name] + ["marsdog_observability", "marsdog_observability.runtime",
-                                        "marsdog_observability.formatting", "marsdog_observability.ros"]
+                                        "marsdog_observability.formatting", "marsdog_observability.ros",
+                                        "marsdog_observability.logger", "marsdog_observability.sinks"]
     probe = """
 import hashlib,importlib,importlib.util,json,pathlib,sys
 assert importlib.util.find_spec('rclpy') is None

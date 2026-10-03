@@ -458,7 +458,7 @@ wheels = [
 
 [[package]]
 name = "marsdog-observability"
-version = "0.1.0"
+version = "0.2.0"
 source = { directory = "../../packages/observability" }
 
 [[package]]
