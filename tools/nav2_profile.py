@@ -31,7 +31,7 @@ def specs(directory, base_specs, python, navigation_only=False):
         nodes.append((executable, [str(VIEW / "opt/ros/humble/lib" / package / executable),
             "--ros-args", "--params-file", str(directory / "nav2.yaml"),
             "-r", "cmd_vel:=/development/nav2/cmd_vel"]))
-    original = base_specs(directory)[1:]  # Replace only the synthetic Nav2 server/input process.
+    original = [(n, c) for n, c in base_specs(directory) if n != "inputs"]  # Keep auxiliary observers.
     if navigation_only:
         original = [(n, c) for n, c in original if n == "waypoint"]
     return nodes + original

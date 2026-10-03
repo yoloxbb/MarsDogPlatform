@@ -1,6 +1,7 @@
 """Opt-in local decision evidence. Never participates in behavior decisions."""
 from __future__ import annotations
 import json
+from marsdog_observability import emit as observe, enabled
 import logging
 import os
 from pathlib import Path
@@ -22,7 +23,7 @@ def emit(stage, item=None, *, repeat_key=None, **details):
     open, and repeated wait reasons are coalesced without changing the queue.
     """
     directory = os.environ.get("MARSDOG_DECISION_TRACE_DIR")
-    if not directory:
+    if not directory and not enabled():
         return
     global _WARNED
     try:
@@ -38,10 +39,12 @@ def emit(stage, item=None, *, repeat_key=None, **details):
             if repeat_key is not None and _LAST.get(key) == signature:
                 return
             record.update(timestamp=time.time(), monotonic_ns=time.monotonic_ns())
-            path = Path(directory)
-            path.mkdir(parents=True, exist_ok=True)
-            with (path / ("behavior-" + str(os.getpid()) + ".jsonl")).open("a", encoding="utf-8") as stream:
-                stream.write(json.dumps(record, ensure_ascii=False, allow_nan=False) + "\n")
+            observe("behavior." + stage, record)
+            if directory:
+                path = Path(directory)
+                path.mkdir(parents=True, exist_ok=True)
+                with (path / ("behavior-" + str(os.getpid()) + ".jsonl")).open("a", encoding="utf-8") as stream:
+                    stream.write(json.dumps(record, ensure_ascii=False, allow_nan=False) + "\n")
             if repeat_key is not None:
                 if len(_LAST) >= 4096:
                     _LAST.pop(next(iter(_LAST)))

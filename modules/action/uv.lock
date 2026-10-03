@@ -42,6 +42,7 @@ name = "marsdog-action-executor"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "marsdog-observability" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
     { name = "numpy", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -51,6 +52,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "marsdog-observability", directory = "../../packages/observability" },
     { name = "numpy", specifier = ">=2.2.6" },
     { name = "pytest", specifier = ">=9.0" },
     { name = "pyyaml", specifier = ">=6.0" },
@@ -428,3 +430,8 @@ sdist = { url = "https://files.pythonhosted.org/packages/f6/cc/6253133b5bb138fc3
 wheels = [
     { url = "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl", hash = "sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8", size = 45571, upload-time = "2026-07-02T08:40:04.659Z" },
 ]
+
+[[package]]
+name = "marsdog-observability"
+version = "0.1.0"
+source = { directory = "../../packages/observability" }

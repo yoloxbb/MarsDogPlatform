@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from marsdog_observability import configure
+
 from marsdog_voice_interaction.messages import task_service
 
 from marsdog_voice_interaction.core import task_router
@@ -118,6 +120,7 @@ class VoiceInteractionNode(Node):
             self._config = load_config(config_path)
         except Exception as exc:
             setup_logging(node="voice_interaction")
+            configure("voice", log_dir="log", level="INFO")
             logger.error("Cannot load voice config %s: %s", config_path, exc)
             self._config = {}
 
@@ -135,6 +138,7 @@ class VoiceInteractionNode(Node):
             console=bool(logging_config.get("console", True)),
             file=bool(logging_config.get("file", True)),
         )
+        configure("voice", log_dir=log_dir, level=log_level)
         self._event_trace_enabled = bool(
             logging_config.get("event_trace", True)
         )

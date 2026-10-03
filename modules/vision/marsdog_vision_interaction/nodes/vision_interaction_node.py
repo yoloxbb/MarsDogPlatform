@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from marsdog_observability import configure
+
 from marsdog_vision_interaction.messages import task_service
 
 from marsdog_vision_interaction.core import task_router
@@ -145,6 +147,7 @@ class VisionInteractionNode(Node):
             level=str(self.get_parameter("log_level").value),
             node="vision_interaction",
         )
+        configure("vision", log_dir=str(self.get_parameter('log_dir').value), level=str(self.get_parameter('log_level').value))
         try:
             self._config = load_config(str(config_path))
         except Exception as exc:

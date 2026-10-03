@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from marsdog_observability import configure
+
 import copy
 import json
 import os
@@ -540,6 +542,7 @@ class One1000TactileNode(Node):
                 "Please run this node inside a ROS2 environment."
             )
         super().__init__("one1000_tactile_node")
+        configure("emotion")
         self._DeclareParametersValue()
         serialPort = str(self.get_parameter("serial_port").value)
         self._detectionMode = _NormalizeDetectionModeValue(

@@ -26,6 +26,8 @@ Internal delegation:
 
 from __future__ import annotations
 
+from marsdog_observability import configure
+
 from . import voice_engagement
 
 from . import state_subscriptions
@@ -156,6 +158,7 @@ class BehaviorTreeRosNode(NodeBase):
             from .ros2_compat import _MockNode
             _MockNode.__init__(self, node_name)
 
+        configure("behavior")
         init_logging(ros2_node=self if HAS_ROS2 else None)
         self._logger = get_logger("bt_node")
 

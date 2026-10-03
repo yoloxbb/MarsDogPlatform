@@ -16,13 +16,13 @@ def main():
     parser.add_argument("--profile", choices=("lite3-local-cpu", "lite3-nav2-cpu"), default="lite3-local-cpu")
     args = parser.parse_args()
     local = ROOT / ("out/nav2-local" if args.profile == "lite3-nav2-cpu" else "out/local")
-    expected_count = 15 if args.profile == "lite3-nav2-cpu" else 10
+    expected_count = 16 if args.profile == "lite3-nav2-cpu" else 11
     command = [sys.executable, "-B", str(ROOT / "tools/marsdog.py"), "up", "--profile", args.profile]
     out = ROOT / ("out/nav2-lifecycle" if args.profile == "lite3-nav2-cpu" else "out/local-lifecycle")
     out.mkdir(parents=True, exist_ok=True)
     (local / "runs").mkdir(parents=True, exist_ok=True)
     results = []
-    for case in ("interrupt", "child_crash"):
+    for case in ("interrupt", "child_crash", "collector_crash"):
         before = set((local / "runs").iterdir())
         with (out / (case + ".log")).open("w") as log:
             proc = subprocess.Popen(command,
@@ -53,16 +53,27 @@ def main():
                                                text=True, capture_output=True, timeout=20)
                     assert duplicate.returncode != 0 and "already running" in duplicate.stderr
                     proc.send_signal(signal.SIGTERM)
+                elif case == "collector_crash":
+                    collector = next(e for e in entries if e["name"] == "logs")
+                    os.kill(collector["pid"], signal.SIGKILL)
+                    time.sleep(1)
+                    assert proc.poll() is None, "Collector failure stopped the business supervisor"
+                    for entry in entries:
+                        if entry["name"] != "logs":
+                            os.kill(entry["pid"], 0)
+                    proc.send_signal(signal.SIGTERM)
                 else:
                     action = next(e for e in entries if e["name"] == "action")
                     os.kill(action["pid"], signal.SIGKILL)
                 code = proc.wait(timeout=40)
                 report = json.loads((record.parent / "result.json").read_text())
-                assert report["status"] == ("PASS" if case == "interrupt" else "FAIL"), report
-                assert (code == 0) == (case == "interrupt")
+                assert report["status"] == ("FAIL" if case == "child_crash" else "PASS"), report
+                assert (code == 0) == (case != "child_crash")
                 assert not report["forced_shutdowns"]
                 if case == "child_crash":
                     assert "action exited unexpectedly" in report["error"]
+                if case == "collector_crash":
+                    assert "collector exited" in report["logging_degraded"]
                 for entry in report["processes"]:
                     try:
                         os.kill(entry["pid"], 0)

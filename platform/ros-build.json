@@ -12,6 +12,7 @@
     "go2_uwb_behavior"
   ],
   "local_inputs": [
+    "packages/observability",
     ".external/uwb",
     "interfaces/ros2/marsdog_interfaces",
     "modules/emotion",

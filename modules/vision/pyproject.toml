@@ -13,6 +13,7 @@ maintainers = [
   { name = "MarsDog Vision Team", email = "noreply@marsdog.dev" },
 ]
 dependencies = [
+    "marsdog-observability==0.1.0",
   "fastapi>=0.115,<1",
   "numpy>=1.26,<2",
   "opencv-contrib-python>=4.10,<5",
@@ -50,3 +51,6 @@ marsdog_vision_interaction = ["web/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.uv.sources]
+marsdog-observability = { path = "../../packages/observability" }

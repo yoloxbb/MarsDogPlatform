@@ -19,6 +19,8 @@ Parameters:
 
 from __future__ import annotations
 
+from marsdog_observability import configure
+
 from array import array
 import time
 from typing import Optional
@@ -88,6 +90,7 @@ class CameraDriverNode(Node):
 
         # Init unified logging
         setup_logging(log_dir="log", level="INFO", node="camera_driver")
+        configure("vision", log_dir="log", level="INFO")
 
         # ── Parameters ─────────────────────────────────────────
         self.declare_parameter("device", "0")

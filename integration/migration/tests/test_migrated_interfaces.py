@@ -32,13 +32,20 @@ def test_migration_preserves_wire_and_default_assets(module):
     for name, record in protected.items():
         path = source / name
         assert path.is_file(), name
+        actual_bytes = path.read_bytes()
+        if name == "package.xml":
+            # Logging refactor permits exactly this public infrastructure dependency.
+            # Removing the one literal addition must recover every frozen byte/XML element.
+            addition = b"  <exec_depend>marsdog_observability</exec_depend>\n"
+            assert actual_bytes.count(addition) == 1
+            actual_bytes = actual_bytes.replace(addition, b"", 1)
         if module == "action" and name == "package.xml":
             # The sole approved manifest change declares the already preferred
             # public action type. Compare every other XML element to baseline.
             frozen_xml = (REPO / "integration/migration/fixtures/action-package-original.xml").read_bytes()
             assert hashlib.sha256(frozen_xml).hexdigest() == record["sha256"]
             original = ET.fromstring(frozen_xml)
-            actual = ET.fromstring(path.read_text())
+            actual = ET.fromstring(actual_bytes)
             assert actual.tag == original.tag and actual.attrib == original.attrib
             added = [n for n in actual if n.tag == "exec_depend" and n.text == "marsdog_interfaces"]
             assert len(added) == 1
@@ -51,7 +58,7 @@ def test_migration_preserves_wire_and_default_assets(module):
             review = REVIEWED_CONFIGS[path.relative_to(REPO).as_posix()]
             assert_reviewed_config(yaml.safe_load(path.read_text()), review, record["sha256"])
         else:
-            assert hashlib.sha256(path.read_bytes()).hexdigest() == record["sha256"], name
+            assert hashlib.sha256(actual_bytes).hexdigest() == record["sha256"], name
         actual_mode = "100755" if path.stat().st_mode & 0o111 else "100644"
         assert actual_mode == record["working_mode"], name
 

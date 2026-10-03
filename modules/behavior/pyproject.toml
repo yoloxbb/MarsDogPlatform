@@ -13,6 +13,7 @@ maintainers = [
     { name = "MarsDog Team", email = "dev@marsdog.local" },
 ]
 dependencies = [
+    "marsdog-observability==0.1.0",
     "pyyaml>=6.0.3",
     "rich>=15.0.0",
 ]
@@ -33,3 +34,6 @@ Repository = "https://github.com/yoloxbb/20260702_MarsDogTree"
 [project.optional-dependencies]
 # Humble generated message modules import NumPy; core-only installs remain small.
 ros = ["numpy==1.26.4"]
+
+[tool.uv.sources]
+marsdog-observability = { path = "../../packages/observability" }

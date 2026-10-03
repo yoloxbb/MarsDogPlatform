@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from marsdog_observability import configure
+
 import json
 import time
 from datetime import datetime, timedelta
@@ -121,6 +123,7 @@ class MidnightTestNode(Node):
             )
 
         super().__init__("midnight_test_node")
+        configure("emotion")
         self._DeclareParameters()
         self.scenarioDurationSeconds = float(
             self.get_parameter("scenario_duration_seconds").value

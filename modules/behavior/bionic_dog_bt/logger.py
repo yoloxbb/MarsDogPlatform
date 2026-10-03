@@ -21,6 +21,7 @@ Configure:
 from __future__ import annotations
 
 import logging
+from marsdog_observability import BoundedFileHandler
 import os
 import sys
 import time
@@ -124,7 +125,8 @@ class BTLogger:
             if event_type in _DEBUG_EVENTS
             else self.logger.info
         )
-        log(json.dumps(kwargs, ensure_ascii=False, default=str))
+        log(json.dumps(kwargs, ensure_ascii=False, default=str),
+            extra={"marsdog_event": "behavior." + event_type.value.lower(), "marsdog_fields": kwargs})
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -150,7 +152,7 @@ def init_logging(level: str = None, log_file: str = None,
         return
 
     if level is None:
-        level = os.environ.get("LOG_LEVEL", "INFO")
+        level = os.environ.get("MARSDOG_LOG_LEVEL", os.environ.get("LOG_LEVEL", "INFO"))
     if log_file is None:
         log_file = os.environ.get("LOG_FILE", None)
 
@@ -174,7 +176,7 @@ def init_logging(level: str = None, log_file: str = None,
 
     # File handler (optional)
     if log_file:
-        file_handler = logging.FileHandler(log_file)
+        file_handler = BoundedFileHandler(log_file)
         file_handler.setFormatter(fmt)
         root.addHandler(file_handler)
         root.info(f"Logging to file: {log_file}")

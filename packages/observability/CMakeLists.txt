@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.8)
+project(marsdog_observability)
+find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
+ament_python_install_package(marsdog_observability)
+ament_package()

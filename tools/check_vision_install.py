@@ -1,6 +1,7 @@
 """Verify a locked Vision wheel with CPU math and installed resources, no cameras/models."""
 import argparse
 from component_inventory import check_installed_components
+from observability_install import copy_source
 import hashlib
 import json
 import os
@@ -45,8 +46,9 @@ def main():
                     raise RuntimeError(f"Exit {r.returncode}: {cmd}; see {log}")
                 return r.stdout
             run([a.uv, "build", "--wheel", "--out-dir", str(work / "wheels"), str(source)])
-            project = work / "runtime"
-            project.mkdir()
+            copy_source(work)
+            project = work / "modules" / source.name
+            project.mkdir(parents=True)
             for n in ("pyproject.toml", "uv.lock"):
                 shutil.copy2(source / n, project / n)
             run([a.uv, "sync", "--project", str(project), "--locked", "--no-dev", "--extra", "models",

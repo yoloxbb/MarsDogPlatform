@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from marsdog_observability import configure
+
 from marsdog_ros2.common.state_publication import PublishStateValue, PublishSignalEventsValue
 
 import json
@@ -59,6 +61,7 @@ class EmotionEngineNode(Node):
             raise RuntimeError("ROS2 runtime is not available. Please run this node inside a ROS2 environment.")
 
         super().__init__("emotion_engine_node")
+        configure("emotion")
         DeclareCalculationTimeParametersValue(self)
         timeScale = self.get_parameter("time_scale").value
         virtualStartTime = self.get_parameter("virtual_start_time").value

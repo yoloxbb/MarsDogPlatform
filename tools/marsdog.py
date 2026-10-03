@@ -73,7 +73,7 @@ def source_fingerprint():
     names = subprocess.check_output([
         "git", "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--",
         "modules", "interfaces/ros2", "robotics/ros2/src", "third_party/*.json",
-        "platform/humble-build-tools"], cwd=ROOT).decode().split("\0")
+        "platform/humble-build-tools", "packages/observability"], cwd=ROOT).decode().split("\0")
     digest = hashlib.sha256()
     for name in sorted(set(filter(None, names))):
         path = ROOT / name
@@ -88,7 +88,7 @@ def build(_args):
     env.update(CMAKE_BUILD_PARALLEL_LEVEL="2",
                COLCON_EXTENSION_BLOCKLIST="colcon_core.event_handler.desktop_notification")
     paths = [ROOT / "modules" / m for m in MODULES]
-    paths += [ROOT / "interfaces/ros2/marsdog_interfaces",
+    paths += [ROOT / "packages/observability", ROOT / "interfaces/ros2/marsdog_interfaces",
               ROOT / "robotics/ros2/src/waypoint_nav", ROOT / ".external/uwb"]
     paths += [ROOT / "robotics/ros2/src" / n for n in NATIVE]
     assert all(p.is_dir() for p in paths), "Prepare pinned sources first"
@@ -119,12 +119,14 @@ def doctor(_args):
         python = ROOT / "modules" / module / ".venv/bin/python"
         code = ("import importlib,json,sys;from pathlib import Path;"
                 "m=importlib.import_module(" + repr(entry) + ");"
+                "o=importlib.import_module('marsdog_observability.runtime');"
+                "assert Path(o.__file__).resolve().is_relative_to(Path(" + repr(str(INSTALL)) + "));"
                 "assert callable(m.main);"
                 "assert Path(m.__file__).resolve().is_relative_to(Path(" + repr(str(INSTALL)) + "));"
                 "from marsdog_interfaces.action import ExecuteBehavior;"
                 "from marsdog_voice_interaction.srv import VoiceTask;"
                 "from marsdog_vision_interaction.srv import VisionTask;"
-                "from rclpy.node import Node;import rclpy;print(json.dumps({'python':sys.executable,'module':m.__file__}))")
+                "from rclpy.node import Node;import rclpy;print(json.dumps({'python':sys.executable,'module':m.__file__,'observability':o.__file__}))")
         result = subprocess.run([str(python), "-B", "-c", code], cwd=LOCAL, env=env,
                                 text=True, capture_output=True, timeout=45)
         if result.returncode:
@@ -145,11 +147,19 @@ def command(module, entry, params=None):
         for key, value in params.items():
             value = str(value).lower() if isinstance(value, bool) else str(value)
             cmd += ["-p", key + ":=" + value]
+    # All Python ROS entrypoints, including trial children, share the explicit override.
+    level = os.environ.get("MARSDOG_LOG_LEVEL")
+    if level:
+        native = {"warning": "warn", "critical": "fatal"}.get(level.lower(), level.lower())
+        if "--ros-args" not in cmd:
+            cmd.append("--ros-args")
+        cmd += ["--log-level", native]
     return cmd
 
 
 def process_specs(directory):
     return [
+        ("logs", command(None, "marsdog_observability.ros")),
         ("inputs", [str(BUILD_TOOLS / "python"), "-B", str(ROOT / "tools/local_inputs.py")]),
         ("time", command("emotion", "marsdog_ros2.time_controller_node",
                          {"time_scale": 1, "virtual_start_time": "10:00"})),
@@ -182,6 +192,7 @@ def supervise(args, *, profile=PROFILE, local=LOCAL, specs=process_specs,
     local.mkdir(parents=True, exist_ok=True)
     directory = local / "runs" / (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + str(os.getpid()))
     directory.mkdir(parents=True)
+    from log_runs import prepare_logging, finish_logging
     env.update(MARSDOG_LOCAL_SIMULATION="1", ROS_LOG_DIR=str(directory / "ros-log"),
                MARSDOG_VISION_PROJECT_DIR=str(INSTALL / "marsdog_vision_interaction/share/marsdog_vision_interaction"),
                MARSDOG_VISION_MODEL_DIR=str(directory / "absent-models"),
@@ -204,6 +215,7 @@ def supervise(args, *, profile=PROFILE, local=LOCAL, specs=process_specs,
     error = None
     probe = None
     try:
+        prepare_logging(env, directory)
         for name, cmd in specs(directory):
             if stopping:
                 break
@@ -211,8 +223,15 @@ def supervise(args, *, profile=PROFILE, local=LOCAL, specs=process_specs,
             streams.append(stream)
             child_env = dict(env)
             child_env["MARSDOG_PYTHON"] = cmd[0]
-            proc = subprocess.Popen(cmd, cwd=directory, env=child_env, stdout=stream,
-                                    stderr=subprocess.STDOUT, start_new_session=True)
+            try:
+                proc = subprocess.Popen(cmd, cwd=directory, env=child_env, stdout=stream,
+                                        stderr=subprocess.STDOUT, start_new_session=True)
+            except OSError as exc:
+                if name != "logs":
+                    raise
+                data["logging_degraded"] = str(exc)
+                print("ROS log collector unavailable; business processes continue", flush=True)
+                continue
             children.append((name, proc, cmd))
             (directory / "processes.json").write_text(json.dumps([
                 {"name": n, "pid": p.pid, "command": c} for n, p, c in children], indent=2) + "\n")
@@ -231,6 +250,11 @@ def supervise(args, *, profile=PROFILE, local=LOCAL, specs=process_specs,
         while not stopping:
             for name, proc, _ in children:
                 code = proc.poll()
+                if name == "logs" and code is not None:
+                    if "logging_degraded" not in data:
+                        data["logging_degraded"] = "collector exited: " + str(code)
+                        print("ROS log collector exited; business processes continue", flush=True)
+                    continue
                 if name == "probe" and code is not None:
                     if code != 0:
                         raise RuntimeError("Integrated smoke failed; see " + str(directory / "probe.log"))
@@ -281,11 +305,13 @@ def supervise(args, *, profile=PROFILE, local=LOCAL, specs=process_specs,
         data["processes"] = [{"name": n, "pid": p.pid, "returncode": p.returncode, "command": c}
                              for n, p, c in children]
         data["forced_shutdowns"] = forced
-        bad_exits = [n for n, p, _ in children if p.returncode != 0]
+        bad_exits = [n for n, p, _ in children if p.returncode != 0 and n != "logs"]
         if bad_exits and error is None:
             error = RuntimeError("Nonzero shutdown exits: " + ", ".join(bad_exits))
             data.update(status="FAIL", error=str(error))
-        if forced:
+        if "logs" in forced:
+            data["logging_degraded"] = "collector required forced shutdown"
+        if any(n != "logs" for n in forced):
             data.update(status="FAIL", error="Processes required forced shutdown: " + ", ".join(forced))
             error = error or RuntimeError(data["error"])
         for stream in streams:
@@ -294,6 +320,7 @@ def supervise(args, *, profile=PROFILE, local=LOCAL, specs=process_specs,
             signal.signal(sig, handler)
         (directory / "result.json").write_text(json.dumps(data, indent=2) + "\n")
         (local / "latest-run.json").write_text(json.dumps(data, indent=2) + "\n")
+        finish_logging(directory, data["status"])
         fcntl.flock(lock, fcntl.LOCK_UN)
         lock.close()
     print(json.dumps({"status": data["status"], "report": str(directory / "result.json")}))
@@ -303,13 +330,13 @@ def supervise(args, *, profile=PROFILE, local=LOCAL, specs=process_specs,
 
 def main():
     # Specialized developer tools own their flags; keep the original launch CLI stable.
-    if len(sys.argv) > 1 and sys.argv[1] in {"trial", "capabilities", "new-feature"}:
+    if len(sys.argv) > 1 and sys.argv[1] in {"trial", "capabilities", "new-feature", "logs"}:
         import importlib
         module = {"trial": "recording_trial", "capabilities": "capabilities",
-                  "new-feature": "new_feature"}[sys.argv[1]]
+                  "new-feature": "new_feature", "logs": "log_query"}[sys.argv[1]]
         raise SystemExit(importlib.import_module(module).main(sys.argv[2:]))
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("prepare", "build", "doctor", "up", "smoke", "replay", "models", "intent-replay", "voice-cpu-ros", "trial", "capabilities", "new-feature"))
+    parser.add_argument("command", choices=("prepare", "build", "doctor", "up", "smoke", "replay", "models", "intent-replay", "voice-cpu-ros", "trial", "capabilities", "new-feature", "logs"))
     parser.add_argument("--profile", choices=("lite3-local-cpu", "lite3-nav2-cpu"), default="lite3-local-cpu")
     parser.add_argument("--uv", default="uv")
     parser.add_argument("--archive-dir", type=Path, default=vendor_archive_directory())

@@ -13,6 +13,7 @@ maintainers = [
   { name = "MarsDog Voice Team", email = "noreply@marsdog.dev" },
 ]
 dependencies = [
+    "marsdog-observability==0.1.0",
   "fastapi>=0.115,<1",
   "numpy>=1.26,<2",
   "pyserial>=3.5,<4",
@@ -56,4 +57,5 @@ url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [tool.uv.sources]
+marsdog-observability = { path = "../../packages/observability" }
 torch = { index = "pytorch-cpu" }

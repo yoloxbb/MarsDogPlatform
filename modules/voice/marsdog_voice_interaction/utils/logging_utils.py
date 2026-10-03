@@ -6,6 +6,8 @@ Uses Python's standard logging with a custom logger that supports key=value kwar
 
 from __future__ import annotations
 
+from marsdog_observability import StructuredLogger, BoundedFileHandler
+
 import json
 import logging
 import os
@@ -35,48 +37,6 @@ _STANDARD_LOG_KWARGS = {
 # fail when called with key=value kwargs like logger.info("msg", key=val).
 
 
-class StructuredLogger(logging.Logger):
-    """Logger subclass that supports key=value structured logging.
-
-    Usage:
-        logger.info("camera_init", device="/dev/video0", width=640)
-        # → "camera_init  device='/dev/video0'  width=640"
-    """
-
-    def _log_with_kwargs(
-        self,
-        level: int,
-        msg: str,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        standard = {
-            key: kwargs.pop(key)
-            for key in tuple(kwargs)
-            if key in _STANDARD_LOG_KWARGS
-        }
-        if kwargs:
-            parts = [f"{k}={v!r}" for k, v in kwargs.items()]
-            msg = f"{msg}  " + "  ".join(parts)
-        self._log(level, msg, args, **standard)
-
-    def debug(self, msg: str, *args: Any, **kwargs: Any) -> None:
-        if self.isEnabledFor(logging.DEBUG):
-            self._log_with_kwargs(logging.DEBUG, msg, *args, **kwargs)
-
-    def info(self, msg: str, *args: Any, **kwargs: Any) -> None:
-        if self.isEnabledFor(logging.INFO):
-            self._log_with_kwargs(logging.INFO, msg, *args, **kwargs)
-
-    def warning(self, msg: str, *args: Any, **kwargs: Any) -> None:
-        if self.isEnabledFor(logging.WARNING):
-            self._log_with_kwargs(logging.WARNING, msg, *args, **kwargs)
-
-    def error(self, msg: str, *args: Any, **kwargs: Any) -> None:
-        if self.isEnabledFor(logging.ERROR):
-            self._log_with_kwargs(logging.ERROR, msg, *args, **kwargs)
-
-
 # Register the custom logger class globally at import time.
 # This ensures ALL loggers (including module-level ones created before
 # setup_logging() is called) support key=value structured logging.
@@ -104,6 +64,7 @@ def setup_logging(
     """
     global _log_file_path, _log_initialized, _log_dir
     _log_dir = log_dir
+    level = os.environ.get("MARSDOG_LOG_LEVEL", level)
 
     root = logging.getLogger()
     root.setLevel(getattr(logging, level.upper(), logging.INFO))
@@ -129,10 +90,7 @@ def setup_logging(
         _log_file_path = str(
             Path(log_dir) / f"{node}_{run_id}_{os.getpid()}.log"
         )
-        fh = logging.FileHandler(
-            _log_file_path,
-            encoding="utf-8",
-        )
+        fh = BoundedFileHandler(_log_file_path)
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(fmt)
         root.addHandler(fh)
@@ -161,6 +119,7 @@ def log_trace(
     logger.info(
         "VOICE_TRACE %s",
         json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+        extra={"marsdog_event": "voice." + record, "marsdog_fields": payload},
     )
 
 

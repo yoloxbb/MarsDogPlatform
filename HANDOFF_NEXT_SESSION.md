@@ -1,5 +1,7 @@
 # MarsDog 平台会话交接 — 2026-10-03
 
+日志重构已接入五模块：入口、配置、诊断与扩展见 [统一日志](docs/development/UNIFIED_LOGGING.md)，验收见 [日志重构记录](validation/unified-logging/README.md)。公共包在 packages/observability；所有模块独立锁/环境保持，ROS 构建现在含 16 个包。
+
 P7、五模块兼容性重构 R1–R4，以及后续业务恢复/导航交接/新源码交付均已完成。见
 [当前路线](docs/architecture/COMPATIBILITY_REFACTOR.md)。
 不要重新迁移，不做模型精度优化；导航/避障内部实现留给其负责人。

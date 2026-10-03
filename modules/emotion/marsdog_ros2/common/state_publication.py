@@ -1,6 +1,7 @@
 """Shared Emotion/Needs publication mechanics; state authority stays in the core."""
 from __future__ import annotations
 import json
+from marsdog_observability import emit
 from typing import Any, Callable
 
 
@@ -38,3 +39,4 @@ def PublishSignalEventsValue(
     for signalEvent in getSignalEventsValue():
         payload = withTimeContext(signalEvent, timeController, currentVirtualTime)
         _PublishPayloadValue(payload, publisher, messageFactory)
+        emit("emotion.signal.published", payload)

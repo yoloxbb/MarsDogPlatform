@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from marsdog_observability import configure
+
 import json
 from typing import Any
 
@@ -38,6 +40,7 @@ class PersonalityNode(Node):
             raise RuntimeError("ROS2 runtime is not available. Please run this node inside a ROS2 environment.")
 
         super().__init__("personality_node")
+        configure("emotion")
         self.system = MarsdogPersonalitySystem()
         self._syncingParameters = False
         self._pendingParameterSync = False

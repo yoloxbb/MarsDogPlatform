@@ -100,12 +100,20 @@
       "path": "interfaces/ros2",
       "namespaces": [],
       "owner_role": "Platform + affected producer/consumer maintainers"
+    },
+    "observability": {
+      "path": "packages/observability",
+      "namespaces": [
+        "marsdog_observability"
+      ],
+      "owner_role": "Platform logging infrastructure maintainer"
     }
   },
   "allowed_cross_imports": [
     "marsdog_action_executor.action",
     "marsdog_vision_interaction.srv",
-    "marsdog_voice_interaction.srv"
+    "marsdog_voice_interaction.srv",
+    "marsdog_observability"
   ],
   "legacy_import_exceptions": [
     {

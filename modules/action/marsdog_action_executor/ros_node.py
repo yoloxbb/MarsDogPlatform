@@ -29,6 +29,8 @@ Run via::
 
 from __future__ import annotations
 
+from marsdog_observability import configure, bind_context, emit
+
 from . import goal_execution
 
 from . import goal_lifecycle
@@ -263,6 +265,7 @@ if HAS_ROS2:
 
         def __init__(self) -> None:
             super().__init__("action_executor_node")
+            configure("action")
             self.get_logger().info(
                 "ROS transport: "
                 f"domain_id={os.environ.get('ROS_DOMAIN_ID', '0')}, "
@@ -1834,7 +1837,12 @@ if HAS_ROS2:
             return goal_lifecycle.on_accepted(self, goal_handle)
 
         async def _on_execute(self, goal_handle):
-            return await goal_execution.on_execute(self, goal_handle, make_result=_make_result)
+            with bind_context(goal_id=goal_handle.request.goal_id):
+                result = await goal_execution.on_execute(self, goal_handle, make_result=_make_result)
+                # Includes early validation/busy returns that have no debug-result publication.
+                emit("action.callback.result", {key: getattr(result, key, None) for key in
+                     ("goal_id", "behavior_id", "behavior_name", "status", "result", "reason")})
+                return result
 
         async def _execute_behavior(self, goal_handle):
             return await goal_execution.execute_behavior(self, goal_handle, make_result=_make_result)

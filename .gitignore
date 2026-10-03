@@ -7,3 +7,7 @@ out/
 *.pyc
 .tools/
 .cache/
+
+# Public Python package build output
+packages/*/build/
+packages/*/dist/

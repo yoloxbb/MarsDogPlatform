@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 from component_inventory import check_installed_components
+from observability_install import build_wheel
 import hashlib
 import json
 import os
@@ -50,7 +51,8 @@ def main():
         assert len(wheels) == 1
         run([args.uv, "venv", "--python", args.python, str(work / "venv")])
         python = work / "venv/bin/python"
-        run([args.uv, "pip", "install", "--python", str(python), str(wheels[0])])
+        observability_wheel = build_wheel(run, args.uv, work)
+        run([args.uv, "pip", "install", "--python", str(python), str(wheels[0]), observability_wheel])
         probe = """
 import hashlib, json, pathlib, sys, importlib.metadata
 from marsdog_core.need_system import MarsdogNeedSystem

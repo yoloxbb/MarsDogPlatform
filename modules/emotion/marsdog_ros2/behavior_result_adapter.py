@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from marsdog_observability import emit
 
 from marsdog_ros2.common.json_message import NormalizeJsonMessageValue
 
@@ -12,4 +13,6 @@ def ApplyBehaviorResultMessage(system: Any, message: object) -> bool:
     payload = NormalizeJsonMessageValue(message)
     if not payload or not hasattr(system, "OnBehaviorResultEvent"):
         return False
-    return bool(system.OnBehaviorResultEvent(payload))
+    applied = bool(system.OnBehaviorResultEvent(payload))
+    emit("emotion.result.processed", {**payload, "applied": applied})
+    return applied

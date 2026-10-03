@@ -21,6 +21,8 @@ removed in a future release.
 
 from __future__ import annotations
 
+from marsdog_observability import emit_json
+
 import json
 import os
 
@@ -108,18 +110,21 @@ class DebugPublishers:
     def publish_goal(self, goal: BehaviorGoal) -> None:
         """Publish goal to debug topic(s)."""
         data = goal.to_json()
+        emit_json("action.goal", data, context_field="params")
         self._pub(self._goal_pub, data)
         self._pub(self._legacy_goal_pub, data)
 
     def publish_feedback(self, fb: ExecutionFeedback) -> None:
         """Publish feedback to debug topic(s)."""
         data = fb.to_json()
+        emit_json("action.feedback", data, repeat_key=fb.goal_id)
         self._pub(self._fb_pub, data)
         self._pub(self._legacy_fb_pub, data)
 
     def publish_result(self, result: ExecutionResult) -> None:
         """Publish result to debug topic(s)."""
         data = result.to_json()
+        emit_json("action.terminal", data)
         self._pub(self._result_pub, data)
         self._pub(self._legacy_result_pub, data)
 

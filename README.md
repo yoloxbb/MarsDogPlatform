@@ -19,6 +19,7 @@ acceptance/five-module-software-20260930。
 - 模块边界与跨模块变更：[开发流程](docs/development/WORKFLOW.md)
 - 事件、行为、仲裁与动作：[当前系统详图](docs/architecture/EVENT_BEHAVIOR_ACTION.md)、[配置索引](docs/architecture/EVENT_BEHAVIOR_ACTION_INDEX.md)
 - 真实录音到动作：[WAV 试用与诊断](docs/development/RECORDING_TRIAL.md)
+- 五模块日志与会话查询：[统一日志使用说明](docs/development/UNIFIED_LOGGING.md)
 - 能力缺口与新增功能：[能力清单和功能草稿](docs/development/FEATURE_WORKFLOW.md)
 - 名称含义、兼容例外与自动检查：[标识规范及目录](interfaces/naming/README.md)
 - WSL 到开发板：[源码交付与板端接入](docs/deployment/SOURCE_HANDOFF.md)

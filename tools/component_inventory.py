@@ -36,7 +36,8 @@ COMPONENTS = {
 
 def check_installed_components(run, python, source):
     """Import wheel components without source/ROS; compare exact installed bytes."""
-    names = COMPONENTS[source.name]
+    names = COMPONENTS[source.name] + ["marsdog_observability", "marsdog_observability.runtime",
+                                        "marsdog_observability.formatting", "marsdog_observability.ros"]
     probe = """
 import hashlib,importlib,importlib.util,json,pathlib,sys
 assert importlib.util.find_spec('rclpy') is None
@@ -52,6 +53,10 @@ print(json.dumps(observed))
     observed = json.loads(run([str(python), "-B", "-c", probe]))
     assert set(observed) == set(names)
     for name in names:
-        expected = hashlib.sha256((source / (name.replace(".", "/") + ".py")).read_bytes()).hexdigest()
+        base = source.parents[1] / "packages/observability" if name.startswith("marsdog_observability") else source
+        path = base / (name.replace(".", "/") + ".py")
+        if not path.is_file():
+            path = base / name.replace(".", "/") / "__init__.py"
+        expected = hashlib.sha256(path.read_bytes()).hexdigest()
         assert observed[name]["sha256"] == expected, "Stale or missing component: " + name
     return observed

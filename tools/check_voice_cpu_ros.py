@@ -158,6 +158,8 @@ def main(argv=None, *, trial=None):
             tool_hash = sha256(Path(__file__))
             report.update(assets_sha256=assets, source_fingerprint=before, tool_sha256=tool_hash)
             env = ros_environment(INSTALL, 215)
+            from log_runs import prepare_logging
+            prepare_logging(env, directory)
             env.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1", TOKENIZERS_PARALLELISM="false",
                        ROS_LOG_DIR=str(directory / "ros-log"))
             if trial is not None:
@@ -211,7 +213,7 @@ def main(argv=None, *, trial=None):
                 raise RuntimeError("Model/audio/manifest changed during probe")
             if source_fingerprint() != before or sha256(Path(__file__)) != tool_hash:
                 raise RuntimeError("Source changed during probe")
-            if any(child.poll() is not None for _, child, _ in components):
+            if any(child.poll() is not None for name, child, _ in components if name != "logs"):
                 raise RuntimeError("A behavior-chain component exited before validation completed")
             if trial is None:
                 integration, quality = evaluate_report(data, code, with_behavior=args.with_behavior)
@@ -236,7 +238,9 @@ def main(argv=None, *, trial=None):
                 report.update(status="FAIL", integration_acceptance=False, cleanup_error=str(exc))
             report["components"].append({"name": name, "pid": child.pid, "command": cmd,
                                          "shutdown_returncode": child.returncode})
-            if child.returncode != 0:
+            if name == "logs" and child.returncode != 0:
+                report["logging_degraded"] = "collector exited: " + str(child.returncode)
+            elif child.returncode != 0:
                 report.update(status="FAIL", integration_acceptance=False,
                               component_shutdown_error=f"{name}: {child.returncode}")
         for stream in component_logs:
@@ -250,6 +254,8 @@ def main(argv=None, *, trial=None):
                 write_trial_report(directory, report)
             except Exception as exc:
                 report.update(status="FAIL", diagnostics_error=str(exc))
+        from log_runs import finish_logging
+        finish_logging(directory, report["status"])
         (directory / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     print(json.dumps({k: report[k] for k in ("status", "integration_acceptance", "model_acceptance", "run_directory")}))
     return 0 if report["status"] == "PASS" else 1

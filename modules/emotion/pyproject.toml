@@ -7,7 +7,7 @@ name = "marsdog-need-emotion"
 version = "0.1.0"
 description = "Marsdog internal need, emotion, personality and virtual time ROS2 nodes."
 requires-python = ">=3.10"
-dependencies = ["setuptools"]
+dependencies = ["setuptools", "marsdog-observability==0.1.0"]
 license = "Apache-2.0"
 
 [project.scripts]
@@ -27,3 +27,6 @@ testpaths = ["tests"]
 [project.optional-dependencies]
 # Humble generated message modules import NumPy; core-only installs remain small.
 ros = ["numpy==1.26.4"]
+
+[tool.uv.sources]
+marsdog-observability = { path = "../../packages/observability" }

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from marsdog_observability import configure
+
 import json
 import time
 from datetime import datetime, timedelta
@@ -52,6 +54,7 @@ class TimeControllerNode(Node):
             )
 
         super().__init__("time_controller_node")
+        configure("emotion")
         self._DeclareTimeParameters()
         self.timeController = MarsdogTimeController(
             self.get_parameter("time_scale").value,

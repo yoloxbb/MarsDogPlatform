@@ -64,6 +64,8 @@ def check():
          "-s", "integration/platform/tests", "-v"],
     ]
     results = [run(command, cwd=ROOT, env=env).returncode for command in commands]
+    results.append(run([sys.executable, "-B", "-m", "unittest", "discover", "-s", "tests", "-v"],
+                       cwd=ROOT / "packages/observability", env=env).returncode)
     return int(any(results))
 
 def test(name, output, ros):
@@ -78,7 +80,7 @@ def test(name, output, ros):
             raise RuntimeError("Full ROS unit tests need an existing Humble host")
         command, cwd = test_command(name, output, ros)
         env = clean_environment()
-        env.update(PYTEST_DISABLE_PLUGIN_AUTOLOAD="1", QT_QPA_PLATFORM="offscreen")
+        env.update(PYTEST_DISABLE_PLUGIN_AUTOLOAD="1", QT_QPA_PLATFORM="offscreen", MARSDOG_LOG_DISABLED="1")
         # Full Voice/Vision runners scope ROS themselves. Other unit suites remain pure.
         with (output / "runner.log").open("w") as log:
             result = run(command, cwd=cwd, env=env, stdout=log,

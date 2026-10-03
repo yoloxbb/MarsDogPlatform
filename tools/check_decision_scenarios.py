@@ -72,6 +72,8 @@ def main(argv=None):
             if receipt["source_sha256"] != fingerprint:
                 raise RuntimeError("Install is stale; run tools/marsdog.py build")
             env = ros_environment(INSTALL, domain=217)
+            from log_runs import prepare_logging
+            prepare_logging(env, directory)
             env.update(MARSDOG_LOCAL_SIMULATION="1", ROS_LOG_DIR=str(directory / "ros-log"),
                        MARSDOG_VISION_PROJECT_DIR=str(INSTALL / "marsdog_vision_interaction/share/marsdog_vision_interaction"),
                        MARSDOG_VISION_MODEL_DIR=str(directory / "absent-models"),
@@ -101,6 +103,8 @@ def main(argv=None):
             stop_owned_group(process)
         for sig, handler in handlers.items():
             signal.signal(sig, handler)
+        from log_runs import finish_logging
+        finish_logging(directory, report["status"])
         (directory / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
         (output / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     print(json.dumps({"status": report["status"], "report": str(directory / "result.json"),

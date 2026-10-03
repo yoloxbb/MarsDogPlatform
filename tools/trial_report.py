@@ -113,6 +113,15 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eef2f7;padding:16px}
                          ("Action Goal", data.get("command_goals", [])),
                          ("Action 终态（接受 Goal 不等于执行成功）", data.get("command_terminals", []))):
         page += "<section><h2>" + title + "</h2><pre>" + pretty(value) + "</pre></section>"
+    from log_query import read_records, select_records, read_health
+    unified, read_errors = read_records(directory)
+    selected = select_records(unified, interaction=interaction, utterance=utterance) if interaction else []
+    health = read_health(directory)
+    (directory / "unified-trace.json").write_text(json.dumps(selected, ensure_ascii=False, indent=2) + "\n")
+    page += "<section><h2>五模块统一日志</h2><p>按会话、语句和 Goal 关联；原始记录保留在 structured。</p><pre>" + pretty(selected) + "</pre></section>"
+    page += "<section><h2>日志健康（丢弃/写入错误不等于业务成功或失败）</h2><pre>" + pretty({"processes": health, "read_errors": read_errors}) + "</pre></section>"
+    report["unified_logging"] = {"records": len(selected), "trace": str(directory / "unified-trace.json"),
+                                  "health": health, "read_errors": read_errors}
     (directory / "report.html").write_text(page + "</html>")
     report["diagnostics"] = {"html": str(directory / "report.html"),
                              "trace": str(directory / "trace.json"), "trace_records": len(linked)}

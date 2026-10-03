@@ -457,10 +457,16 @@ wheels = [
 ]
 
 [[package]]
+name = "marsdog-observability"
+version = "0.1.0"
+source = { directory = "../../packages/observability" }
+
+[[package]]
 name = "marsdog-vision-interaction"
 version = "0.1.1"
 source = { editable = "." }
 dependencies = [
+    { name = "marsdog-observability" },
     { name = "fastapi" },
     { name = "numpy" },
     { name = "opencv-contrib-python" },
@@ -483,6 +489,7 @@ models = [
 
 [package.metadata]
 requires-dist = [
+    { name = "marsdog-observability", directory = "../../packages/observability" },
     { name = "fastapi", specifier = ">=0.115,<1" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27,<1" },
     { name = "mediapipe", marker = "extra == 'models'", specifier = "==0.10.18" },

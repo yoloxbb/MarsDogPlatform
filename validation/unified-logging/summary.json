@@ -1,0 +1,282 @@
+{
+  "status": "PASS",
+  "date": "2026-10-04",
+  "base_commit": "9ac868d2e7579bfd25d79fdb48c53ddac1585e1c",
+  "source_sha256": "c0594d34b12906d2bbef89409544101257bc769dbcf0f7524b49dcafe323fcbd",
+  "scope": "WSL Ubuntu 22.04 / Python 3.10 / Humble / localhost only; no hardware or model-quality acceptance",
+  "modules": {
+    "voice": {
+      "counts": {
+        "tests": 430,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "status": "PASS",
+      "result": "out/unified-logging/voice/result.json",
+      "wheel_install": "PASS",
+      "wheel_report": "out/voice-install/result.json",
+      "wheel_report_sha256": "65eb20fa75389f306b3d2c06f4807e964f674fa64acf909e5106b88722c7d4f6"
+    },
+    "vision": {
+      "counts": {
+        "tests": 300,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 3
+      },
+      "status": "PASS_WITH_EXPLICIT_LIMITS",
+      "result": "out/unified-logging/vision/result.json",
+      "wheel_install": "PASS",
+      "wheel_report": "out/vision-install/result.json",
+      "wheel_report_sha256": "302b648dd4c595347cb4bc43ecfb8952447b41e72fcd9be6d681864da478de6b"
+    },
+    "emotion": {
+      "counts": {
+        "tests": 374,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "status": "PASS",
+      "result": "out/unified-logging/emotion/result.json",
+      "wheel_install": "PASS",
+      "wheel_report": "out/emotion-install/result.json",
+      "wheel_report_sha256": "565f01747b435b314ae4cb87e403881dae47b2793a7795c6b41bd3823a687544"
+    },
+    "behavior": {
+      "counts": {
+        "tests": 538,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "status": "PASS",
+      "result": "out/unified-logging/behavior/result.json",
+      "wheel_install": "PASS",
+      "wheel_report": "out/behavior-install/result.json",
+      "wheel_report_sha256": "658e19c461b40c924a89f1dbef185621779ff5962aa12a02f019fcc6d35884c1"
+    },
+    "action": {
+      "counts": {
+        "tests": 458,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 29
+      },
+      "status": "PASS_WITH_EXPLICIT_LIMITS",
+      "result": "out/unified-logging/action/result.json",
+      "wheel_install": "PASS",
+      "wheel_report": "out/action-install/result.json",
+      "wheel_report_sha256": "a3ba57f2167779834710a98699de17cf854d4eef64ce3ff77f465135ba1fc916"
+    }
+  },
+  "checks": {
+    "audio_contracts": {
+      "status": "PASS",
+      "report": "out/unified-logging/audio_contracts/result.json",
+      "sha256": "627f7b04772ebb939df9488ea9f1fdbd11f98ec5025b841e409881b96dd55ec5",
+      "scenarios": 46
+    },
+    "visual_contracts": {
+      "status": "PASS",
+      "report": "out/unified-logging/visual_contracts/result.json",
+      "sha256": "b9707c4330cc108afbc925765fd3997e6a07b9a2255fb925e5b66913f85d74dc",
+      "scenarios": 33,
+      "stage_observations": {
+        "vision": 7,
+        "behavior": 33,
+        "emotion": 33,
+        "action": 33
+      }
+    },
+    "state_contracts": {
+      "status": "PASS",
+      "report": "out/unified-logging/state_contracts/result.json",
+      "sha256": "fab8ed4fa7338f6a78dcb8b509f9f4e345818b6f93a7597e71c51d036e12158a",
+      "scenarios": 34,
+      "stage_observations": {
+        "emotion": 7,
+        "behavior": 34
+      }
+    },
+    "task_contracts": {
+      "status": "PASS",
+      "report": "out/unified-logging/task_contracts/result.json",
+      "sha256": "b729ec209e351ef74180929a65708ef2cde3880c1c9a88157694df1b0ac22c9a",
+      "scenarios": 18,
+      "stage_observations": {
+        "voice": 18,
+        "vision": 18
+      }
+    },
+    "action-callbacks": {
+      "status": "PASS",
+      "report": "out/unified-logging/action-callbacks/result.json",
+      "sha256": "e60425cbc73c8489f0ef3b4667c3cc69079be1a1e7afc60d95ca7f53fe86ac8f",
+      "counts": {
+        "tests": 35,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "action-transport": {
+      "status": "PASS",
+      "report": "out/unified-logging/action-transport/result.json",
+      "sha256": "0bd530a5c65dc3dc1c01ca20830d62b694f7a2faa29e00439e4c66d84114437d"
+    },
+    "action-shutdown": {
+      "status": "PASS",
+      "report": "out/unified-logging/action-shutdown/result.json",
+      "sha256": "3b28c308eb9e4f2d4970b60cedea403e791631f87e623a9fed8c50c23af99381",
+      "cases": 2
+    },
+    "decision": {
+      "status": "PASS",
+      "report": "out/unified-logging/decision/result.json",
+      "sha256": "6372e0333995844b59b409f9bca2d7093858d0242ee65bb588c28f4df7a9c510",
+      "cases": 5
+    },
+    "recovery": {
+      "status": "PASS",
+      "report": "out/unified-logging/recovery/result.json",
+      "sha256": "ae2ea1a498d426a7931306411792ec55168017cada5df054f8c7515fa7c11e5a",
+      "cases": 7
+    },
+    "logging-runtime": {
+      "status": "PASS",
+      "report": "out/unified-logging/logging-runtime/result.json",
+      "sha256": "942323ac16de67c98b9f2e12dd7e37f65dd8856949490a9968c3a39d7d89003b"
+    },
+    "result_contracts": {
+      "status": "PASS",
+      "tests": 25,
+      "sha256": "13afad5b11a0faec330160c26aaa26cf1fb72ce2f837efeab3cf48e9a26c4d4c"
+    },
+    "platform": {
+      "status": "PASS",
+      "platform_tests": 115,
+      "observability_tests": 10,
+      "sha256": "e898a2b91b3af93afa3ec1e0d8a759a450467a2a9648c8996ba73fb3c352e470"
+    },
+    "lifecycle": {
+      "status": "PASS",
+      "cases": [
+        {
+          "case": "interrupt",
+          "status": "PASS",
+          "run": "/home/elephant/MarsDog/marsdog-platform/out/local/runs/20261003T180940Z-400605",
+          "observed_supervisor_status": "PASS",
+          "returncode": 0,
+          "all_owned_pids_reaped": true
+        },
+        {
+          "case": "child_crash",
+          "status": "PASS",
+          "run": "/home/elephant/MarsDog/marsdog-platform/out/local/runs/20261003T180950Z-401202",
+          "observed_supervisor_status": "FAIL",
+          "returncode": 1,
+          "all_owned_pids_reaped": true
+        },
+        {
+          "case": "collector_crash",
+          "status": "PASS",
+          "run": "/home/elephant/MarsDog/marsdog-platform/out/local/runs/20261003T180958Z-401664",
+          "observed_supervisor_status": "PASS",
+          "returncode": 0,
+          "all_owned_pids_reaped": true
+        }
+      ],
+      "sha256": "fc3fe68fba67b73fb0c76b7b283cfec7d9ee33f08fd0d877ce77b84afe0e659e"
+    },
+    "smoke": {
+      "status": "PASS",
+      "report": "out/local/runs/20261003T182054Z-412981/result.json",
+      "processes": 12,
+      "sha256": "e8337f882c3ba6c32e8508b4c797594a9976a7c02748d35ae3a5d1700e116927"
+    },
+    "build": {
+      "status": "PASS",
+      "packages": 16,
+      "receipt_sha256": "9a38e5d6416f12bdf01c029fa9780fdaca6a6f38182e5ada0e8e8810b6d84028"
+    },
+    "cpu_flow": {
+      "status": "PASS",
+      "acceptance": "flow",
+      "integration_acceptance": true,
+      "model_acceptance": false,
+      "report": "out/unified-logging/cpu-flow/20261003T182147325729Z/result.json",
+      "sha256": "107152305cf799e4855bbb851a63a9ded8f39b4d7555b09aa46af84f6b39ac67"
+    }
+  },
+  "trials": {
+    "trial-home": {
+      "status": "PASS",
+      "record_count": 796,
+      "linked_records": 29,
+      "five_modules_and_ros_present": true,
+      "shared_run_id": true,
+      "instances": 9,
+      "all_writers_closed": true,
+      "all_drop_error_pending_counters_zero": true,
+      "outcome": "success",
+      "action_result": {
+        "goal_id": "cand_c7616696b51e",
+        "behavior_id": "cand_c7616696b51e",
+        "behavior_name": "go_home",
+        "status": "SUCCESS",
+        "result": "completed",
+        "reason": "behavior completed"
+      },
+      "report": "out/unified-logging/trial-home/20261003T182111090055Z/result.json",
+      "sha256": "0e8169ba1b9b0c1b9aa4011279675af4a39aa00c5da5812a9617989a3b350084",
+      "input_origin": "Existing synthetic Microsoft Huihui Desktop WAV; not user recording"
+    },
+    "trial-sit": {
+      "status": "PASS",
+      "record_count": 774,
+      "linked_records": 26,
+      "five_modules_and_ros_present": true,
+      "shared_run_id": true,
+      "instances": 9,
+      "all_writers_closed": true,
+      "all_drop_error_pending_counters_zero": true,
+      "outcome": "action_failed_or_canceled",
+      "action_result": {
+        "goal_id": "cand_3bcec4258bc4",
+        "behavior_id": "cand_3bcec4258bc4",
+        "behavior_name": "sit_down",
+        "status": "FAILURE",
+        "result": "failed",
+        "reason": "lite3_action_gated:unit_id=ACT_BASIC_SIT,fidelity=proxy,verified=False"
+      },
+      "report": "out/unified-logging/trial-sit/20261003T182130136596Z/result.json",
+      "sha256": "3434e6f197e6b1747c6e3a4fb64713670777f68555680296a51fd7ddad85d1e8",
+      "input_origin": "Existing synthetic Microsoft Huihui Desktop WAV; not user recording"
+    }
+  },
+  "dependency_changes": {
+    "voice": {
+      "added": "marsdog-observability==0.1.0",
+      "changed_third_party_versions": []
+    },
+    "vision": {
+      "added": "marsdog-observability==0.1.0",
+      "changed_third_party_versions": []
+    },
+    "behavior": {
+      "added": "marsdog-observability==0.1.0",
+      "changed_third_party_versions": []
+    },
+    "action": {
+      "added": "marsdog-observability==0.1.0",
+      "changed_third_party_versions": []
+    },
+    "emotion": {
+      "added": "marsdog-observability==0.1.0",
+      "changed_third_party_versions": []
+    }
+  },
+  "build_outputs_excluded_from_source_fingerprint": true
+}

@@ -5,6 +5,7 @@ terminal result publication and resource cleanup retain their original ordering.
 """
 from __future__ import annotations
 import json
+from marsdog_observability import wrap_context
 import threading
 import time
 from .execution_context import ExecutionContext
@@ -628,7 +629,7 @@ def execute_long_behavior(self, goal_handle, ctx: ExecutionContext, stages: list
                 f"lease={'expired' if lease_lost.is_set() else 'active'}",
             )
 
-    thread = threading.Thread(target=tick, name=f"goal-feedback-{gid}", daemon=True)
+    thread = threading.Thread(target=wrap_context(tick), name=f"goal-feedback-{gid}", daemon=True)
     thread.start()
     status = "FAILED"
     reason = "long_goal_failed"

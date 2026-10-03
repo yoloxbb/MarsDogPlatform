@@ -4,6 +4,8 @@ Provider algorithms, authorization and event ordering remain unchanged. Callback
 factories and protocol helpers are supplied by the shell to retain old entrypoints.
 """
 from __future__ import annotations
+
+from marsdog_observability import bind_context, wrap_context
 import re
 import time
 import uuid
@@ -319,7 +321,8 @@ def process_speech(self, audio_data: dict[str, Any], utterance_id: str | None=No
             raise RuntimeError("An intent computation is already pending")
         if getattr(self, "_intent_executor", None) is None:
             self._intent_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="cpu-intent")
-        future = self._intent_executor.submit(self._parse_intent, text, raw_text=raw_text)
+        with bind_context(interaction_id=self._interaction_id, utterance_id=utterance_id):
+            future = self._intent_executor.submit(wrap_context(self._parse_intent), text, raw_text=raw_text)
         self._pending_intent = (self._interaction_id, context, future)
         return True
     parsed_intent = self._parse_intent(text, raw_text=raw_text)

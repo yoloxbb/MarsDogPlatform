@@ -51,6 +51,7 @@ def audit():
                             check_import(name, owner, relative, node.lineno)
     packages = {}
     xmls = [ROOT / modules[n]["path"] / "package.xml" for n in ("emotion", "behavior", "action", "voice", "vision")]
+    xmls += list((ROOT / "packages").glob("*/package.xml"))
     xmls += list((ROOT / "robotics/ros2/src").glob("*/package.xml"))
     xmls += list((ROOT / "interfaces/ros2").glob("*/package.xml"))
     for file in xmls:

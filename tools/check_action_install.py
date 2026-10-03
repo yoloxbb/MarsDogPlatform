@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 from component_inventory import check_installed_components
+from observability_install import build_wheel
 import hashlib
 import json
 import os
@@ -46,14 +47,15 @@ def main():
         requirements = work / "requirements.txt"
         requirements.write_text(run([
             args.uv, "export", "--project", str(source), "--locked", "--no-dev",
-            "--no-emit-project", "--format", "requirements.txt",
+            "--no-emit-project", "--no-emit-package", "marsdog-observability", "--format", "requirements.txt",
         ]))
         run([args.uv, "build", "--wheel", "--out-dir", str(work / "wheels"), str(source)])
         wheels = list((work / "wheels").glob("*.whl"))
         assert len(wheels) == 1
         run([args.uv, "venv", "--python", args.python, str(work / "venv")])
         python = work / "venv/bin/python"
-        run([args.uv, "pip", "install", "--python", str(python), "-r", str(requirements), str(wheels[0])])
+        observability_wheel = build_wheel(run, args.uv, work)
+        run([args.uv, "pip", "install", "--python", str(python), "-r", str(requirements), str(wheels[0]), observability_wheel])
         probe = """
 import hashlib,json,importlib.metadata,importlib.util,pathlib
 from marsdog_action_executor import config_loader,emotion_display

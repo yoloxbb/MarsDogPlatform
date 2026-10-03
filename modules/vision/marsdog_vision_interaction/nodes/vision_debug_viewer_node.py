@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from marsdog_observability import configure
+
 from array import array
 from collections import deque
 import copy
@@ -50,6 +52,7 @@ _WEB_OBJECT_SESSION_ID = "vision-debug-web"
 class VisionDebugViewerNode(Node):
     def __init__(self) -> None:
         super().__init__("vision_debug_viewer")
+        configure("vision")
         self.declare_parameter("config_path", "config/vision.yaml")
         self.declare_parameter(
             "camera_topic", "/camera/camera/color/image_raw"
