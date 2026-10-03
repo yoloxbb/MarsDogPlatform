@@ -111,7 +111,7 @@ def acceptance_status(integration, quality, mode):
     return "PASS" if integration and (quality or mode == "flow") else "FAIL"
 
 
-def main(argv=None):
+def main(argv=None, *, trial=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--voice-manifest", type=Path,
                         default=ROOT / "out/models/cpu-20260929/voice-replay.json")
@@ -149,12 +149,19 @@ def main(argv=None):
                                              directory, INSTALL)
             request_data = json.loads(request.read_text())
             request_data["with_behavior"] = args.with_behavior
+            if trial is not None:
+                if not args.with_behavior:
+                    raise ValueError("Recording trials require the behavior chain")
+                request_data["trial"] = trial
+                assets[trial["wav"]] = sha256(Path(trial["wav"]))
             request.write_text(json.dumps(request_data, ensure_ascii=False, indent=2) + "\n")
             tool_hash = sha256(Path(__file__))
             report.update(assets_sha256=assets, source_fingerprint=before, tool_sha256=tool_hash)
             env = ros_environment(INSTALL, 215)
             env.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1", TOKENIZERS_PARALLELISM="false",
                        ROS_LOG_DIR=str(directory / "ros-log"))
+            if trial is not None:
+                env["MARSDOG_DECISION_TRACE_DIR"] = str(directory / "decisions")
             if args.with_behavior:
                 from marsdog import BUILD_TOOLS, process_specs
                 env.update(MARSDOG_LOCAL_SIMULATION="1",
@@ -181,7 +188,8 @@ def main(argv=None):
                     components.append((name, child, cmd))
             python = ROOT / "modules/voice/.venv/bin/python"
             env["MARSDOG_PYTHON"] = str(python)
-            command = [str(python), "-B", str(ROOT / "modules/voice/tests/ros_cpu_pipeline_probe.py"),
+            probe_script = "recording_trial_probe.py" if trial is not None else "ros_cpu_pipeline_probe.py"
+            command = [str(python), "-B", str(ROOT / "modules/voice/tests" / probe_script),
                        "--request", str(request), "--output", str(directory)]
             with (directory / "observer.log").open("w") as log:
                 process = subprocess.Popen(command, cwd=directory, env=env, stdout=log,
@@ -205,7 +213,11 @@ def main(argv=None):
                 raise RuntimeError("Source changed during probe")
             if any(child.poll() is not None for _, child, _ in components):
                 raise RuntimeError("A behavior-chain component exited before validation completed")
-            integration, quality = evaluate_report(data, code, with_behavior=args.with_behavior)
+            if trial is None:
+                integration, quality = evaluate_report(data, code, with_behavior=args.with_behavior)
+            else:
+                from trial_report import evaluate_trial
+                integration, quality = evaluate_trial(data, code)
             report.update(integration_acceptance=integration, fixture_quality_passed=quality,
                           status=acceptance_status(integration, quality, args.acceptance))
     except (Exception, KeyboardInterrupt) as exc:
@@ -231,6 +243,13 @@ def main(argv=None):
             stream.close()
         for sig, handler in old_handlers.items():
             signal.signal(sig, handler)
+        if trial is not None:
+            from trial_report import write_trial_report
+            report["trial"] = trial
+            try:
+                write_trial_report(directory, report)
+            except Exception as exc:
+                report.update(status="FAIL", diagnostics_error=str(exc))
         (directory / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     print(json.dumps({k: report[k] for k in ("status", "integration_acceptance", "model_acceptance", "run_directory")}))
     return 0 if report["status"] == "PASS" else 1

@@ -41,6 +41,7 @@ jobs:
       - run: python3 -B tools/check_action_callbacks.py
       - run: python3 -B tools/check_action_transport.py
       - run: python3 -B tools/check_business_scenarios.py
+      - run: python3 -B tools/check_decision_scenarios.py
       - run: python3 -B tools/check_robotics.py --uwb-source .external/uwb --output out/robotics-ci
       - if: inputs.run_extended_ros
         run: |

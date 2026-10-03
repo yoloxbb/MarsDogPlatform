@@ -73,6 +73,7 @@ class ObservedASR:
     def __init__(self, delegate, audit):
         self.delegate, self.audit = delegate, audit
     def transcribe(self, data):
+        started_ns = time.monotonic_ns()
         case = data["probe_case"]
         self.audit["current_case"] = case["id"]
         if "audio" in case:
@@ -81,7 +82,10 @@ class ObservedASR:
         else:
             result = {"asr_text": case["text"], "language": "zh", "reason": "text_fixture"}
             kind = "explicit_text_fixture_no_asr"
-        self.audit["asr"].append({"id": case["id"], "kind": kind, "result": result})
+        finished_ns = time.monotonic_ns()
+        self.audit["asr"].append({"id": case["id"], "kind": kind, "result": result,
+                                  "started_monotonic_ns": started_ns, "finished_monotonic_ns": finished_ns,
+                                  "elapsed_ms": (finished_ns-started_ns)/1e6})
         return result
     def is_available(self):
         return self.delegate.is_available()
@@ -228,11 +232,7 @@ def check_case(case, observed, audit, interaction_id):
             "asr": asr, "intent": intents}
 
 
-def observer(request, directory):
-    import rclpy
-    from rclpy.node import Node
-    from std_msgs.msg import String
-    from marsdog_voice_interaction.srv import VoiceTask
+def prepare_worker_request(request, directory):
     from ament_index_python.packages import get_package_share_directory
     import yaml
     share = Path(get_package_share_directory("marsdog_voice_interaction")).resolve()
@@ -261,6 +261,17 @@ def observer(request, directory):
     config_path.write_text(yaml.safe_dump(config, allow_unicode=True))
     request["config"] = str(config_path)
     atomic_json(directory / "worker-request.json", request)
+    return config
+
+
+def observer(request, directory):
+    import rclpy
+    from rclpy.node import Node
+    from std_msgs.msg import String
+    from marsdog_voice_interaction.srv import VoiceTask
+    from ament_index_python.packages import get_package_share_directory
+    import yaml
+    config = prepare_worker_request(request, directory)
     events, records, services = [], [], []
     process = None
     node = None

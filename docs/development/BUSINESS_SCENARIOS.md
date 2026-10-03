@@ -63,6 +63,18 @@ Python 优化模式会禁用断言，门禁显式拒绝该模式。
 已接入 .github/workflows/platform.yml 的手动 Humble job。
 没有配置远端 runner，配置存在不等于 hosted CI 已运行。
 
+## 完整 BT / Action 仲裁与录音试用（P0–P2）
+
+新增 `check_decision_scenarios.py` 在 localhost domain 217 运行安装后的完整 BT 和
+Action，覆盖重复事件、同级命令排队、STOP 抢占、陈旧目标拒绝及 Needs 优先于 Emotion。
+协议输入为明确样例，设备/导航模拟；要求每个 Goal 恰好一个终态，组件正常回收。
+该门禁补充上面的感知进程恢复七场景，详情见 [功能流程](FEATURE_WORKFLOW.md)。
+
+`marsdog.py trial --wav /absolute/path.wav` 接入任意合规的预切分 WAV，
+用真实 CPU ASR，经安装后的 Voice → DDS → BT → Action 生成关联诊断。
+见 [录音试用](RECORDING_TRIAL.md)；合成录音试验、原固定 CPU flow、协议样例仲裁
+和实机验收分别记录，不能相互替代。
+
 ## 修改后的最小回归
 
 会话或视觉缓存改动：受影响模块单测 + 对应 audio/visual/task 契约 + 本恢复门禁。

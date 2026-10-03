@@ -1,4 +1,4 @@
-# MarsDog 平台会话交接 — 2026-09-30
+# MarsDog 平台会话交接 — 2026-10-03
 
 P7、五模块兼容性重构 R1–R4，以及后续业务恢复/导航交接/新源码交付均已完成。见
 [当前路线](docs/architecture/COMPATIBILITY_REFACTOR.md)。
@@ -93,9 +93,9 @@ Vision 暂停超时/陈旧缓存、恢复后迟到回复不重复完成、重启
 validation/voice-action-trial/README.md。原 mainline 标签和旧包固定不变，
 此修复是基线之后的普通功能分支增量，不能再声称最新 main 只有文档变化。
 
-当前启动说明见 docs/CPU_SOFTWARE_FLOW.md。已有入口为固定分段回放：
+当时的启动说明见 docs/CPU_SOFTWARE_FLOW.md。该轮入口为固定分段回放：
 一条真实普通 WAV + 明确文本命令，回家文本可到 Action 并模拟导航成功；
-尚未验证真实麦克风/用户音频口令到动作。WSL 缺 PortAudio，PATH 无 arecord；
+该轮尚未验证真实麦克风/用户音频口令到动作。新增 WAV 入口见下方 P0–P2。WSL 缺 PortAudio，PATH 无 arecord；
 设备探测未录音，没有放宽 Lite3 动作限制。
 
 ## 后续工作
@@ -116,3 +116,21 @@ BT 533、Action 423 + 29 skip；另有 35 ROS 动作回调 0 skip。
 正式方案：docs/architecture/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md 第 15 节；
 聚合目录 /home/elephant/MarsDog/ARCHITECTURE_AND_MIGRATION_PROPOSAL.md 同步维护。
 历史阶段叙述保留在 Git，旧“下一步”不代表当前待办。
+
+## P0–P2：录音、诊断、能力与功能开发入口
+
+本轮从 90b16be 创建 feature/recording-diagnostics-p2；实际提交以 git log 为准。
+接手前核对工作区，不重复实现本节。验收见 validation/recording-diagnostics-p2。
+
+- P0：marsdog.py trial --wav 接任意合规预切分 WAV，通过真实 CPU ASR 和安装节点 DDS，
+  输出 HTML / JSON 时间线。BT 诊断默认关闭，使用原会话/语句/Goal 身份，不新增 wire 字段。
+- P1：capabilities 由现有词库/映射及 Action 自身策略生成；125 路由中 49 条缺失模板照实保留。
+  check_decision_scenarios.py 五场景通过，覆盖去重、排队、停止抢占、目标过期、Needs/Emotion 仲裁。
+- P2：new-feature 生成未激活草稿、配置落点、三侧契约测试与 NOT_RUN 验收清单；
+  未实现的 Voice/BT 正向模板已实测会失败，不是空断言。
+
+文档：docs/development/RECORDING_TRIAL.md、FEATURE_WORKFLOW.md；
+诊断定义：interfaces/application/decision-trace-v1/README.md。
+本机合成“回家”音频可经真实 ASR 完成模拟导航；“坐下”正确保留原 Lite3 门限拒绝。
+没有用户麦克风/实机/模型精度验收，没有改默认配置、IDL、依赖、需求结算或导航避障内部。
+本次新增开发工具与已完成迁移/重构是不同层次的增量，不要再做迁移。

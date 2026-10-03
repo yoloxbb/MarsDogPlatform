@@ -302,8 +302,14 @@ def supervise(args, *, profile=PROFILE, local=LOCAL, specs=process_specs,
 
 
 def main():
+    # Specialized developer tools own their flags; keep the original launch CLI stable.
+    if len(sys.argv) > 1 and sys.argv[1] in {"trial", "capabilities", "new-feature"}:
+        import importlib
+        module = {"trial": "recording_trial", "capabilities": "capabilities",
+                  "new-feature": "new_feature"}[sys.argv[1]]
+        raise SystemExit(importlib.import_module(module).main(sys.argv[2:]))
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("prepare", "build", "doctor", "up", "smoke", "replay", "models", "intent-replay", "voice-cpu-ros"))
+    parser.add_argument("command", choices=("prepare", "build", "doctor", "up", "smoke", "replay", "models", "intent-replay", "voice-cpu-ros", "trial", "capabilities", "new-feature"))
     parser.add_argument("--profile", choices=("lite3-local-cpu", "lite3-nav2-cpu"), default="lite3-local-cpu")
     parser.add_argument("--uv", default="uv")
     parser.add_argument("--archive-dir", type=Path, default=vendor_archive_directory())

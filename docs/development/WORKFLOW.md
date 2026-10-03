@@ -31,6 +31,9 @@ flowchart LR
 修改登记的配置后先运行 `check_identifiers.py --refresh --python modules/action/.venv/bin/python`，
 再运行 `dev.py check` 和受影响的契约测试；新缺口不会自动豁免。
 
+新增功能可从 [能力清单与功能草稿](FEATURE_WORKFLOW.md) 开始；
+实现后用 [录音试用](RECORDING_TRIAL.md) 观察真实 ASR、候选仲裁与动作终态。
+
 ## 开发示例：已有“回家”功能的扩展
 
 先确定是 Voice 识别/入口变化、BT 仲裁变化、Action 执行阶段变化，

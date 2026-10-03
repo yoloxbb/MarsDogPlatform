@@ -19,6 +19,7 @@ from bionic_dog_bt.constants import GOAL_CANCEL_REQUESTED, STATUS_RUNNING
 from bionic_dog_bt.datatypes import ActiveBehavior, BehaviorFeedbackEvent
 from bionic_dog_bt.tree_builder import build_tree
 
+from .decision_trace import emit
 from .candidate_pool import CandidatePool
 from .lifecycle import (
     cancel_on_voice_idle,
@@ -100,6 +101,7 @@ class BehaviorRuntime:
         self.blackboard.last_feedback_event = None
 
         if completed is not None:
+            emit("bt_terminal", completed, goal_id=completed.behavior_id)
             self.candidate_pool.release_inflight(
                 completed.behavior_name,
                 completed.behavior_id,
@@ -133,6 +135,7 @@ class BehaviorRuntime:
             )
             and not self._candidate_is_owned(candidate)
         ):
+            emit("candidate_discarded", candidate, reason="tree_guard_before_dispatch")
             self.candidate_pool.release_inflight(
                 candidate["behavior_name"],
                 candidate.get("candidate_id"),
@@ -178,6 +181,7 @@ class BehaviorRuntime:
     def _can_run_candidate_now(self, candidate: dict) -> bool:
         """Keep blocked work queued until it can start or preempt safely."""
         if self.candidate_gate is not None and not self.candidate_gate(candidate):
+            emit("candidate_waiting", candidate, reason="interaction_gate", repeat_key=candidate.get("candidate_id"))
             return False
 
         blackboard = self.blackboard
@@ -185,6 +189,8 @@ class BehaviorRuntime:
         if current is None or blackboard.current_status != STATUS_RUNNING:
             return True
         if blackboard.goal_lifecycle == GOAL_CANCEL_REQUESTED:
+            emit("candidate_waiting", candidate, reason="awaiting_cancel_terminal",
+                 current_goal_id=current.behavior_id, repeat_key=candidate.get("candidate_id"))
             return False
 
         # CandidatePool should suppress this before injection.  Keep the guard
@@ -193,7 +199,7 @@ class BehaviorRuntime:
             return False
 
         active = self.candidate_to_active_behavior(candidate)
-        can_preempt, _ = evaluate_preemption(
+        can_preempt, reason = evaluate_preemption(
             active.priority_level,
             active.value,
             active.behavior_name,
@@ -204,6 +210,9 @@ class BehaviorRuntime:
             active.params,
             current.params,
         )
+        emit("arbitration", candidate, allowed=can_preempt, reason=reason,
+             current_goal_id=current.behavior_id, current_behavior=current.behavior_name,
+             repeat_key=candidate.get("candidate_id"))
         return can_preempt
 
     def cancel_current_interaction(

@@ -56,6 +56,7 @@ from .config_paths import get_config_file
 from .result_event_mapper import ResultEventMapper
 from .perception_client_adapter import PerceptionClientAdapter
 from .intent_mapper import IntentMapper, BehaviorCandidate
+from .decision_trace import emit
 from .runtime import BehaviorRuntime
 from .voice_interaction_session import (
     ACQUIRING_TARGET,
@@ -400,6 +401,7 @@ class BehaviorTreeRosNode(NodeBase):
 
         Pipeline: event_type → category → intent → action_pool → behavior_name
         """
+        emit("audio_received", data, event_type=event_type)
         if event_type == "EVT_VOICE_WAKE_SPEAKER_RESULT":
             if (not isinstance(data, dict)
                     or type(data.get("schema_version")) is not int
@@ -525,17 +527,21 @@ class BehaviorTreeRosNode(NodeBase):
         # before this event may mutate the active voice session.
         candidate = self._intent_mapper.map_audio_event(event_type, data)
         if candidate is None:
+            emit("mapping_rejected", data, reason="contract_rejected_or_unmapped", event_type=event_type)
             self._logger.debug(
                 "Audio event %s → rejected or unmapped", event_type
             )
             return
+        emit("candidate_created", candidate)
         if not self._audio_need_gate_allows(candidate):
+            emit("candidate_rejected", candidate, reason="need_gate")
             return
 
         interaction_id = str(data.get("interaction_id", "")).strip()
         utterance_id = str(data.get("utterance_id", "")).strip()
         event_key = (interaction_id, utterance_id, event_type)
         if interaction_id and self._audio_event_seen(event_key):
+            emit("candidate_rejected", candidate, reason="duplicate_event")
             return
 
         session = self._voice_session
@@ -549,6 +555,7 @@ class BehaviorTreeRosNode(NodeBase):
             # accepts an exact match while a wake session is active.
             if interaction_id:
                 self._remember_audio_event(event_key)
+            emit("candidate_rejected", candidate, reason="stale_interaction")
             self._logger.warn(
                 "Voice command ignored: stale/missing interaction_id=%r "
                 "current=%r" % (interaction_id, session.interaction_id)
@@ -664,6 +671,7 @@ class BehaviorTreeRosNode(NodeBase):
                 or not target_id
                 or not vision_epoch
             ):
+                emit("candidate_rejected", candidate, reason="owner_visual_target_unavailable")
                 self._logger.warn(
                     "Voice behavior %s not queued: current owner visual "
                     "target unavailable (%s)",
@@ -1406,6 +1414,7 @@ class BehaviorTreeRosNode(NodeBase):
         dedup_key = candidate.dedup_key
         bhv_name = candidate.behavior_name
         if self._is_duplicate_or_running(bhv_name, dedup_key):
+            emit("candidate_rejected", candidate, reason="behavior_queued_or_inflight")
             self._logger.debug(
                 "Candidate suppressed: %s already queued/in-flight",
                 bhv_name,

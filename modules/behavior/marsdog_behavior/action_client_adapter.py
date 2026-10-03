@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import time
 import threading
+from .decision_trace import emit
 from typing import Optional
 
 from bionic_dog_bt.constants import (
@@ -120,6 +121,8 @@ class ActionClientAdapter:
             )
             return active.behavior_id
 
+        emit("goal_dispatch", active, goal_id=active.behavior_id,
+             executor_behavior_name=self._executor_behavior_name(active))
         goal_msg = self._action_type.Goal()
         goal_msg.goal_id = active.behavior_id
         goal_msg.behavior_id = active.behavior_id
@@ -251,6 +254,7 @@ class ActionClientAdapter:
             if not cancel_requested:
                 self._goal_lifecycle[goal_id] = GOAL_RUNNING
 
+        emit("goal_accepted", goal_id=goal_id)
         result_future = goal_handle.get_result_async()
         with self._lock:
             self._result_futures[goal_id] = result_future
@@ -283,6 +287,8 @@ class ActionClientAdapter:
             )
             return
 
+        emit("action_terminal", goal_id=goal_id, status=result.status,
+             result=result.result, reason=result.reason)
         with self._lock:
             self._result_cache[goal_id] = {
                 # Correlate by the client-side Goal ID captured by this
@@ -307,6 +313,7 @@ class ActionClientAdapter:
 
     def _request_handle_cancel(self, goal_id: str, goal_handle) -> None:
         """Issue CancelGoal without treating its response as completion."""
+        emit("cancel_requested", goal_id=goal_id)
         try:
             cancel_future = goal_handle.cancel_goal_async()
         except Exception as exc:
@@ -337,6 +344,8 @@ class ActionClientAdapter:
         reason: str,
     ) -> None:
         """Expose asynchronous transport failures through ExecutorInterface."""
+        emit("action_terminal", goal_id=goal_id, behavior_name=behavior_name,
+             status="FAILURE", reason=reason)
         with self._lock:
             self._result_cache[goal_id] = {
                 "goal_id": goal_id,

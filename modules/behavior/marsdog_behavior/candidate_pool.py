@@ -15,6 +15,7 @@ from typing import Callable, Optional
 from bionic_dog_bt.logger import get_logger, LogEvent
 from bionic_dog_bt.arbitration import priority_key
 
+from .decision_trace import emit
 from .lifecycle import discard_unstarted_on_voice_idle
 
 _log = get_logger("candidate_pool")
@@ -93,6 +94,7 @@ class CandidatePool:
                 "allow_repeat": allow_repeat,
                 "emotion_priority": emotion_priority,
             })
+            emit("candidate_queued", self._candidates[-1])
             _log.event(LogEvent.CANDIDATE_INJECT,
                        behavior_name=behavior_name,
                        priority_level=priority_level,
@@ -141,6 +143,8 @@ class CandidatePool:
                     candidate["behavior_name"]
                 )
                 if not cooldown_ready:
+                    emit("candidate_waiting", candidate, reason="cooldown",
+                         repeat_key=candidate["candidate_id"])
                     continue
                 if can_run is not None and not can_run(candidate):
                     continue
@@ -153,6 +157,10 @@ class CandidatePool:
             self._seen_keys.discard(best["dedup_key"])
             self._inflight[best["behavior_name"]] = best["candidate_id"]
 
+            emit("candidate_selected", best, ordering=[
+                *priority_key(best["priority_level"], best["params"],
+                              sub_priority=best.get("sub_priority", 0)),
+                best.get("emotion_priority", 50), -best["value"], -best["created_at"]])
             _log.event(LogEvent.CANDIDATE_SELECT,
                        behavior_name=best["behavior_name"],
                        priority_level=best["priority_level"],
@@ -172,6 +180,7 @@ class CandidatePool:
                 and now - float(candidate["created_at"]) >= ttl_sec
             )
             if expired:
+                emit("candidate_expired", candidate, reason="ttl_elapsed")
                 self._seen_keys.discard(candidate["dedup_key"])
             else:
                 retained.append(candidate)

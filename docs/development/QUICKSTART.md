@@ -1,5 +1,8 @@
 # 开发快速开始
 
+录音试用入口：见 [WAV → ASR → Action](RECORDING_TRIAL.md)；
+新增功能入口：见 [能力清单与功能草稿](FEATURE_WORKFLOW.md)。
+
 ## 选择工作范围
 
 支持基线为 WSL2 中的 Ubuntu 22.04 / 系统 Python 3.10。源码应放 Linux 文件系统，

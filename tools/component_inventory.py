@@ -18,12 +18,14 @@ COMPONENTS = {
     "emotion": ["marsdog_ros2.common.state_publication"],
     "behavior": [
         "marsdog_behavior.audio_contract",
+        "marsdog_behavior.decision_trace",
         "marsdog_behavior.visual_event_consumer",
         "marsdog_behavior.state_subscriptions",
         "marsdog_behavior.voice_engagement",
     ],
     "action": [
         "marsdog_action_executor.perception_dispatch",
+        "marsdog_action_executor.capability_report",
         "marsdog_action_executor.goal_contract",
         "marsdog_action_executor.action_messages",
         "marsdog_action_executor.goal_lifecycle",

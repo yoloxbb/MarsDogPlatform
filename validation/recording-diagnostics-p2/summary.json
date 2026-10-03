@@ -1,0 +1,1075 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-03",
+  "base_commit": "90b16be4bbb6dcedc5b29197dc81112dc8fa7bac",
+  "branch": "feature/recording-diagnostics-p2",
+  "module_source_sha256": "236b71a581e951d67a70bbc1df3c86361e536328036a32b8e806011fcccbc8b3",
+  "hardware_acceptance": false,
+  "model_acceptance": false,
+  "platform_tests": {
+    "tests": 106,
+    "failures": 0,
+    "errors": 0,
+    "log": "out/p0p2/platform-final.log",
+    "log_sha256": "21aae6cd16ffc9d1d10e4a56ee7fdc42a74ee40309c31e390dcb02b55d1fe827"
+  },
+  "module_tests": {
+    "voice": {
+      "status": "PASS",
+      "counts": {
+        "tests": 430,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "behavior": {
+      "status": "PASS",
+      "counts": {
+        "tests": 538,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "skips": []
+    },
+    "action": {
+      "status": "PASS_WITH_EXPLICIT_LIMITS",
+      "counts": {
+        "tests": 458,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 29
+      },
+      "skips": [
+        {
+          "case": "tests.test_emotion_display.test_short_fall_result_keeps_warning_visible_and_debug_result_exact",
+          "reason": "PySide2 is not installed"
+        },
+        {
+          "case": "tests.test_emotion_display.test_stale_result_does_not_reset_preempting_goal",
+          "reason": "PySide2 is not installed"
+        },
+        {
+          "case": "tests.test_emotion_display.test_feedback_recovers_a_goal_missed_by_late_display_start",
+          "reason": "PySide2 is not installed"
+        },
+        {
+          "case": "tests.test_emotion_display.test_unclassified_active_behavior_is_not_labeled_ready",
+          "reason": "PySide2 is not installed"
+        },
+        {
+          "case": "tests.test_emotion_display.test_normal_mode_hides_engineering_fields_and_debug_key_reveals_overlay",
+          "reason": "PySide2 is not installed"
+        },
+        {
+          "case": "tests.test_emotion_display.test_feedback_drives_friendly_copy_face_cue_and_debug_state",
+          "reason": "PySide2 is not installed"
+        },
+        {
+          "case": "tests.test_emotion_display.test_intensity_changes_bounded_facial_shape_and_motion_targets",
+          "reason": "PySide2 is not installed"
+        },
+        {
+          "case": "tests.test_emotion_display.test_gaze_and_blink_remain_bounded_and_use_staggered_lids",
+          "reason": "PySide2 is not installed"
+        },
+        {
+          "case": "tests.test_emotion_display.test_classic_pet_face_renders_key_expressions_offscreen",
+          "reason": "PySide2 is not installed"
+        },
+        {
+          "case": "tests.test_long_goal_arbitration.test_cancel_pending_rejects_same_event_and_safety_replacement",
+          "reason": "rclpy unavailable"
+        },
+        {
+          "case": "tests.test_long_goal_arbitration.test_uwb_terminal_unknown_rejects_replacement",
+          "reason": "rclpy unavailable"
+        },
+        {
+          "case": "tests.test_long_goal_arbitration.test_lease_is_keyed_by_goal_and_behavior_id",
+          "reason": "rclpy unavailable"
+        },
+        {
+          "case": "tests.test_long_goal_arbitration.test_voice_idle_does_not_stop_goal_owned_uwb",
+          "reason": "rclpy unavailable"
+        },
+        {
+          "case": "tests.test_long_goal_runtime.test_follow_starts_once_and_returns_canceled_after_controller_stop",
+          "reason": "rclpy unavailable"
+        },
+        {
+          "case": "tests.test_long_goal_runtime.test_play_completes_two_full_cycles_in_one_goal",
+          "reason": "rclpy unavailable"
+        },
+        {
+          "case": "tests.test_long_goal_runtime.test_play_failure_does_not_begin_next_cycle",
+          "reason": "rclpy unavailable"
+        },
+        {
+          "case": "tests.test_ros_goal_params_boundary.test_goal_callback_rejects_invalid_params_before_accept[{source:visual_direct,trigger_event:EVT_VISION_PERSON_FALL}]",
+          "reason": "rclpy is not installed"
+        },
+        {
+          "case": "tests.test_ros_goal_params_boundary.test_goal_callback_rejects_invalid_params_before_accept[[]]",
+          "reason": "rclpy is not installed"
+        },
+        {
+          "case": "tests.test_ros_goal_params_boundary.test_goal_callback_rejects_invalid_params_before_accept[true]",
+          "reason": "rclpy is not installed"
+        },
+        {
+          "case": "tests.test_ros_goal_params_boundary.test_goal_callback_rejects_invalid_params_before_accept[false]",
+          "reason": "rclpy is not installed"
+        },
+        {
+          "case": "tests.test_ros_goal_params_boundary.test_goal_callback_rejects_invalid_params_before_accept[null]",
+          "reason": "rclpy is not installed"
+        },
+        {
+          "case": "tests.test_ros_goal_params_boundary.test_goal_callback_rejects_invalid_params_before_accept[17]",
+          "reason": "rclpy is not installed"
+        },
+        {
+          "case": "tests.test_ros_goal_params_boundary.test_goal_callback_accepts_valid_json_object",
+          "reason": "rclpy is not installed"
+        },
+        {
+          "case": "tests.test_ros_goal_params_boundary.test_accepted_callback_never_throws_for_invalid_params[{source:visual_direct,trigger_event:EVT_VISION_PERSON_FALL}]",
+          "reason": "rclpy is not installed"
+        },
+        {
+          "case": "tests.test_ros_goal_params_boundary.test_accepted_callback_never_throws_for_invalid_params[[]]",
+          "reason": "rclpy is not installed"
+        },
+        {
+          "case": "tests.test_ros_goal_params_boundary.test_accepted_callback_never_throws_for_invalid_params[true]",
+          "reason": "rclpy is not installed"
+        },
+        {
+          "case": "tests.test_ros_goal_params_boundary.test_accepted_callback_never_throws_for_invalid_params[false]",
+          "reason": "rclpy is not installed"
+        },
+        {
+          "case": "tests.test_ros_goal_params_boundary.test_accepted_callback_never_throws_for_invalid_params[null]",
+          "reason": "rclpy is not installed"
+        },
+        {
+          "case": "tests.test_ros_goal_params_boundary.test_accepted_callback_never_throws_for_invalid_params[17]",
+          "reason": "rclpy is not installed"
+        }
+      ]
+    },
+    "emotion": {
+      "status": "PASS",
+      "counts": {
+        "tests": 374,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "skips": []
+    }
+  },
+  "gates": {
+    "voice-install": {
+      "status": "PASS",
+      "path": "out/voice-install/result.json",
+      "sha256": "33adabe9f450ddcfb04d1646028afc39146405c46d555dacec6b088698143ce4"
+    },
+    "vision-install": {
+      "status": "PASS",
+      "path": "out/vision-install/result.json",
+      "sha256": "2e78f81667273be3cb537e0166e3505445da9d9960471b7d6f27236969c7cdbc"
+    },
+    "emotion-install": {
+      "status": "PASS",
+      "path": "out/emotion-install/result.json",
+      "sha256": "e0953d3e85f43e7691cba880e84674449ffeb5b973cb2c34d1411d4292022e14"
+    },
+    "behavior-install": {
+      "status": "PASS",
+      "path": "out/behavior-install/result.json",
+      "sha256": "d50b94b29fcbad65d63e613abb17f6f3c811ec7d64caddc62a0a0ec61956f91a"
+    },
+    "action-install": {
+      "status": "PASS",
+      "path": "out/action-install/result.json",
+      "sha256": "65655164b9eeddbf86e6e07cc4ff3ffb8e0fa41a8d3c5e4dc996a7764135e884"
+    },
+    "audio-contracts": {
+      "status": "PASS",
+      "path": "out/audio-contracts/result.json",
+      "sha256": "165b005b2797dc732c691b59a60c83f76721aa0e09799b930e4ac13674b00c24"
+    },
+    "visual-contracts": {
+      "status": "PASS",
+      "path": "out/visual-contracts/result.json",
+      "sha256": "ef6f2de8247c5387394eac7d8b481058e7417e8ed2017c6dc76be51a7139bb4e"
+    },
+    "state-contracts": {
+      "status": "PASS",
+      "path": "out/state-contracts/result.json",
+      "sha256": "0fdc83871f524cb085d862aa3d489c2e80a4e067c013f76e720a913c617d2e0f"
+    },
+    "task-contracts": {
+      "status": "PASS",
+      "path": "out/task-contracts/result.json",
+      "sha256": "4703379cfb63966b294ed45813fe833a52553ddc30711182e96590d78d27b488"
+    },
+    "action-callbacks": {
+      "status": "PASS",
+      "path": "out/action-callbacks/result.json",
+      "sha256": "9e19cfe414d26ae4b15005bbf65e7a80b120d0fb13478e3ba22e353d25808f4b",
+      "counts": {
+        "tests": 35,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "action-transport": {
+      "status": "PASS",
+      "path": "out/action-transport/result.json",
+      "sha256": "0bd530a5c65dc3dc1c01ca20830d62b694f7a2faa29e00439e4c66d84114437d"
+    },
+    "action-shutdown": {
+      "status": "PASS",
+      "path": "out/action-shutdown/result.json",
+      "sha256": "3b28c308eb9e4f2d4970b60cedea403e791631f87e623a9fed8c50c23af99381"
+    },
+    "local-lifecycle": {
+      "status": "PASS",
+      "path": "out/local-lifecycle/result.json",
+      "sha256": "be50f6cad8f178432e3b5e4e78fea317e0dd0399c4a512da5e1ddcb6738c75b4"
+    }
+  },
+  "trials": {
+    "trial-home-final": {
+      "status": "PASS",
+      "integration_acceptance": true,
+      "model_acceptance": false,
+      "run_directory": "/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-home-final/20261003T150358774501Z",
+      "source_fingerprint": "236b71a581e951d67a70bbc1df3c86361e536328036a32b8e806011fcccbc8b3",
+      "components": [
+        {
+          "name": "behavior",
+          "pid": 318479,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_behavior.ros_node import main; main()",
+            "--ros-args",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "vision",
+          "pid": 318478,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_vision_interaction.nodes.vision_interaction_node import main; main()",
+            "--ros-args",
+            "-p",
+            "config_path:=/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-home-final/20261003T150358774501Z/vision.yaml",
+            "-p",
+            "log_dir:=/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-home-final/20261003T150358774501Z/vision-log",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "action",
+          "pid": 318477,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/action/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_action_executor.ros_node import main; main()",
+            "--ros-args",
+            "-p",
+            "config_dir:=/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-home-final/20261003T150358774501Z/action-config",
+            "-p",
+            "chassis_type:=lite3",
+            "-p",
+            "lite3_enabled:=true",
+            "-p",
+            "go2_enabled:=false",
+            "-p",
+            "lite3_simulated_io:=true",
+            "-p",
+            "lite3_allow_proxies:=true",
+            "-p",
+            "lite3_allow_unverified:=false",
+            "-p",
+            "uwb_follow_enabled:=false",
+            "-p",
+            "wake_orientation_enabled:=false",
+            "-p",
+            "attention_tracking_enabled:=false",
+            "-p",
+            "target_approach_enabled:=false",
+            "-p",
+            "navigation_enabled:=true",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "waypoint",
+          "pid": 318476,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+            "-B",
+            "-c",
+            "from waypoint_nav.waypoint_nav_dispatcher import main; main()",
+            "--ros-args",
+            "-p",
+            "waypoints_file:=/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-home-final/20261003T150358774501Z/waypoints.yaml",
+            "-p",
+            "task_store_file:=/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-home-final/20261003T150358774501Z/tasks.sqlite3",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "emotion",
+          "pid": 318475,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_ros2.emotion_engine_node import main; main()",
+            "--ros-args",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "needs",
+          "pid": 318474,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_ros2.internal_need_node import main; main()",
+            "--ros-args",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "personality",
+          "pid": 318473,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_ros2.personality_node import main; main()",
+            "--ros-args",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "time",
+          "pid": 318472,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_ros2.time_controller_node import main; main()",
+            "--ros-args",
+            "-p",
+            "time_scale:=1",
+            "-p",
+            "virtual_start_time:=10:00",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "inputs",
+          "pid": 318471,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+            "-B",
+            "/home/elephant/MarsDog/marsdog-platform/tools/local_inputs.py",
+            "--ros-args",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_aa069c4935974f1787975858ada93358/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        }
+      ],
+      "diagnostics": {
+        "html": "/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-home-final/20261003T150358774501Z/report.html",
+        "trace": "/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-home-final/20261003T150358774501Z/trace.json",
+        "trace_records": 13
+      },
+      "report_sha256": "44c163ccd9ca9994f4a028920ea97543e6553faba736a679c5d68a182d5b8f73",
+      "input_origin": "locally synthesized Mandarin speech via Microsoft Huihui Desktop; waveform passed through real ASR, no text injection",
+      "wav_sha256": "fdc096af2e5d5bbf7f3c57c548c8a0e54ff5c5e8a985940a25fc52c2e4767dcd",
+      "asr": [
+        {
+          "id": "user-recording",
+          "kind": "real_sensevoice_cpu",
+          "result": {
+            "asr_text": "回家。",
+            "language": "zh",
+            "confidence": null,
+            "reason": "ok",
+            "latency_ms": 43.5
+          },
+          "started_monotonic_ns": 39924195817962,
+          "finished_monotonic_ns": 39924239583838,
+          "elapsed_ms": 43.765876
+        }
+      ],
+      "outcome": "success",
+      "real_asr_cases": 1,
+      "text_fixture_cases": 0,
+      "no_hardware_publishers": true,
+      "command_terminals": [
+        {
+          "goal_id": "cand_08c4b6133c9b",
+          "behavior_id": "cand_08c4b6133c9b",
+          "behavior_name": "go_home",
+          "status": "SUCCESS",
+          "result": "completed",
+          "reason": "behavior completed",
+          "duration_sec": 2.0927062034606934,
+          "failed_action": "",
+          "interrupted_by": "",
+          "reward": 1.0,
+          "emotion_delta_json": "{}",
+          "need_delta_json": "{}",
+          "metadata_json": "{}",
+          "timestamp": 1791039850.2974029
+        }
+      ],
+      "interaction_id": "d1b640a379b94fc29049403701e23477",
+      "utterance_id": "a3b0ad6f69f64a32b9f1fc2c34d079e8"
+    },
+    "trial-sit-final": {
+      "status": "PASS",
+      "integration_acceptance": true,
+      "model_acceptance": false,
+      "run_directory": "/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-sit-final/20261003T150414241912Z",
+      "source_fingerprint": "236b71a581e951d67a70bbc1df3c86361e536328036a32b8e806011fcccbc8b3",
+      "components": [
+        {
+          "name": "behavior",
+          "pid": 318986,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_behavior.ros_node import main; main()",
+            "--ros-args",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "vision",
+          "pid": 318985,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_vision_interaction.nodes.vision_interaction_node import main; main()",
+            "--ros-args",
+            "-p",
+            "config_path:=/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-sit-final/20261003T150414241912Z/vision.yaml",
+            "-p",
+            "log_dir:=/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-sit-final/20261003T150414241912Z/vision-log",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "action",
+          "pid": 318984,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/action/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_action_executor.ros_node import main; main()",
+            "--ros-args",
+            "-p",
+            "config_dir:=/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-sit-final/20261003T150414241912Z/action-config",
+            "-p",
+            "chassis_type:=lite3",
+            "-p",
+            "lite3_enabled:=true",
+            "-p",
+            "go2_enabled:=false",
+            "-p",
+            "lite3_simulated_io:=true",
+            "-p",
+            "lite3_allow_proxies:=true",
+            "-p",
+            "lite3_allow_unverified:=false",
+            "-p",
+            "uwb_follow_enabled:=false",
+            "-p",
+            "wake_orientation_enabled:=false",
+            "-p",
+            "attention_tracking_enabled:=false",
+            "-p",
+            "target_approach_enabled:=false",
+            "-p",
+            "navigation_enabled:=true",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "waypoint",
+          "pid": 318983,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+            "-B",
+            "-c",
+            "from waypoint_nav.waypoint_nav_dispatcher import main; main()",
+            "--ros-args",
+            "-p",
+            "waypoints_file:=/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-sit-final/20261003T150414241912Z/waypoints.yaml",
+            "-p",
+            "task_store_file:=/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-sit-final/20261003T150414241912Z/tasks.sqlite3",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "emotion",
+          "pid": 318982,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_ros2.emotion_engine_node import main; main()",
+            "--ros-args",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "needs",
+          "pid": 318981,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_ros2.internal_need_node import main; main()",
+            "--ros-args",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "personality",
+          "pid": 318980,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_ros2.personality_node import main; main()",
+            "--ros-args",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "time",
+          "pid": 318979,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_ros2.time_controller_node import main; main()",
+            "--ros-args",
+            "-p",
+            "time_scale:=1",
+            "-p",
+            "virtual_start_time:=10:00",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "inputs",
+          "pid": 318978,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+            "-B",
+            "/home/elephant/MarsDog/marsdog-platform/tools/local_inputs.py",
+            "--ros-args",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_d73dda925b264376a551504ef0704655/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        }
+      ],
+      "diagnostics": {
+        "html": "/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-sit-final/20261003T150414241912Z/report.html",
+        "trace": "/home/elephant/MarsDog/marsdog-platform/out/p0p2/trial-sit-final/20261003T150414241912Z/trace.json",
+        "trace_records": 13
+      },
+      "report_sha256": "f8694471931f8b8caa9a50e39af461e2907e0bb451a686a2208eef7614cc286f",
+      "input_origin": "locally synthesized Mandarin speech via Microsoft Huihui Desktop; waveform passed through real ASR, no text injection",
+      "wav_sha256": "4975c4d260471d34a4754e0de39c9ac775e396843b3c02cb4256aa93c097ac10",
+      "asr": [
+        {
+          "id": "user-recording",
+          "kind": "real_sensevoice_cpu",
+          "result": {
+            "asr_text": "坐下。",
+            "language": "zh",
+            "confidence": null,
+            "reason": "ok",
+            "latency_ms": 43.09
+          },
+          "started_monotonic_ns": 39939857039793,
+          "finished_monotonic_ns": 39939900345284,
+          "elapsed_ms": 43.305491
+        }
+      ],
+      "outcome": "action_failed_or_canceled",
+      "real_asr_cases": 1,
+      "text_fixture_cases": 0,
+      "no_hardware_publishers": true,
+      "command_terminals": [
+        {
+          "goal_id": "cand_9cb4c68a3287",
+          "behavior_id": "cand_9cb4c68a3287",
+          "behavior_name": "sit_down",
+          "status": "FAILURE",
+          "result": "failed",
+          "reason": "lite3_action_gated:unit_id=ACT_BASIC_SIT,fidelity=proxy,verified=False",
+          "duration_sec": 0.0022504329681396484,
+          "failed_action": "",
+          "interrupted_by": "",
+          "reward": -0.5,
+          "emotion_delta_json": "{}",
+          "need_delta_json": "{}",
+          "metadata_json": "{}",
+          "timestamp": 1791039863.86043
+        }
+      ],
+      "interaction_id": "d8b3227bc79b4ff8869b406c88b28658",
+      "utterance_id": "a1ac4ade166f48108e2d53a66977e43f"
+    },
+    "cpu-flow": {
+      "status": "PASS",
+      "integration_acceptance": true,
+      "model_acceptance": false,
+      "run_directory": "/home/elephant/MarsDog/marsdog-platform/out/p0p2/cpu-flow/20261003T150219465126Z",
+      "source_fingerprint": "236b71a581e951d67a70bbc1df3c86361e536328036a32b8e806011fcccbc8b3",
+      "components": [
+        {
+          "name": "behavior",
+          "pid": 315441,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/behavior/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_behavior.ros_node import main; main()",
+            "--ros-args",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "vision",
+          "pid": 315440,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/vision/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_vision_interaction.nodes.vision_interaction_node import main; main()",
+            "--ros-args",
+            "-p",
+            "config_path:=/home/elephant/MarsDog/marsdog-platform/out/p0p2/cpu-flow/20261003T150219465126Z/vision.yaml",
+            "-p",
+            "log_dir:=/home/elephant/MarsDog/marsdog-platform/out/p0p2/cpu-flow/20261003T150219465126Z/vision-log",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "action",
+          "pid": 315439,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/action/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_action_executor.ros_node import main; main()",
+            "--ros-args",
+            "-p",
+            "config_dir:=/home/elephant/MarsDog/marsdog-platform/out/p0p2/cpu-flow/20261003T150219465126Z/action-config",
+            "-p",
+            "chassis_type:=lite3",
+            "-p",
+            "lite3_enabled:=true",
+            "-p",
+            "go2_enabled:=false",
+            "-p",
+            "lite3_simulated_io:=true",
+            "-p",
+            "lite3_allow_proxies:=true",
+            "-p",
+            "lite3_allow_unverified:=false",
+            "-p",
+            "uwb_follow_enabled:=false",
+            "-p",
+            "wake_orientation_enabled:=false",
+            "-p",
+            "attention_tracking_enabled:=false",
+            "-p",
+            "target_approach_enabled:=false",
+            "-p",
+            "navigation_enabled:=true",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "waypoint",
+          "pid": 315438,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+            "-B",
+            "-c",
+            "from waypoint_nav.waypoint_nav_dispatcher import main; main()",
+            "--ros-args",
+            "-p",
+            "waypoints_file:=/home/elephant/MarsDog/marsdog-platform/out/p0p2/cpu-flow/20261003T150219465126Z/waypoints.yaml",
+            "-p",
+            "task_store_file:=/home/elephant/MarsDog/marsdog-platform/out/p0p2/cpu-flow/20261003T150219465126Z/tasks.sqlite3",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "emotion",
+          "pid": 315437,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_ros2.emotion_engine_node import main; main()",
+            "--ros-args",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "needs",
+          "pid": 315436,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_ros2.internal_need_node import main; main()",
+            "--ros-args",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "personality",
+          "pid": 315435,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_ros2.personality_node import main; main()",
+            "--ros-args",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "time",
+          "pid": 315434,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/modules/emotion/.venv/bin/python",
+            "-B",
+            "-c",
+            "from marsdog_ros2.time_controller_node import main; main()",
+            "--ros-args",
+            "-p",
+            "time_scale:=1",
+            "-p",
+            "virtual_start_time:=10:00",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        },
+        {
+          "name": "inputs",
+          "pid": 315433,
+          "command": [
+            "/home/elephant/MarsDog/marsdog-platform/platform/humble-build-tools/.venv/bin/python",
+            "-B",
+            "/home/elephant/MarsDog/marsdog-platform/tools/local_inputs.py",
+            "--ros-args",
+            "-r",
+            "/perception/audio_event:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/audio_event",
+            "-r",
+            "/perception/voice/task:=/development/voice_cpu_2c8becc8e7f3454697ad20bd47521289/perception/voice/task"
+          ],
+          "shutdown_returncode": 0
+        }
+      ],
+      "report_sha256": "0f1d51db8adc1acc823d26f856ab445a3708ce4578cf16f6bf40c5a96af5c712"
+    }
+  },
+  "limits": [
+    "Synthetic speech WAVs; not user microphone/VAD/voiceprint acceptance.",
+    "Lite3, vision and navigation simulated; original capability gates retained.",
+    "Existing 49 missing-template routes retained; navigation/avoidance internals not changed.",
+    "No hosted CI or remote configured. Skips are not passes."
+  ],
+  "decision_scenarios": {
+    "status": "PASS",
+    "run_directory": "/home/elephant/MarsDog/marsdog-platform/out/p0p2/decision-final/20261003T150220422693Z",
+    "source_sha256": "236b71a581e951d67a70bbc1df3c86361e536328036a32b8e806011fcccbc8b3",
+    "cases": [
+      {
+        "id": "duplicate-event-one-goal",
+        "status": "PASS",
+        "goal_id": "cand_849213049208"
+      },
+      {
+        "id": "queued-command-after-terminal",
+        "status": "PASS",
+        "first_goal": "cand_8580ae8a3bfb",
+        "next_goal": "cand_04cc2bdf05e6",
+        "terminal_precedes_dispatch": true
+      },
+      {
+        "id": "stop-preempts-running-goal",
+        "status": "PASS",
+        "canceled_goal": "cand_fc4f4bdf3ef5",
+        "replacement_goal": "cand_9007fd940c0c",
+        "terminal": {
+          "goal_id": "cand_fc4f4bdf3ef5",
+          "behavior_id": "cand_fc4f4bdf3ef5",
+          "behavior_name": "wait_in_place",
+          "status": "CANCELED",
+          "result": "canceled",
+          "reason": "canceled",
+          "duration_sec": 0.10237288475036621,
+          "failed_action": "",
+          "interrupted_by": "",
+          "reward": -0.1,
+          "emotion_delta_json": "{}",
+          "need_delta_json": "{}",
+          "metadata_json": "{\"lite3_action\": {\"requested_act\": \"ACT_BASIC_WAIT\", \"executed_plan\": \"ACT_BASIC_WAIT\", \"fidelity\": \"exact\", \"semantic_effect\": \"physical\", \"hardware_verified\": true, \"success\": false, \"physical_posture\": \"standing\", \"terminal_status\": {\"basic_state\": 6, \"gait_state\": 0, \"motion_state\": 0, \"battery_level\": 75.0}}, \"lite3_actions\": [{\"requested_act\": \"ACT_BASIC_WAIT\", \"executed_plan\": \"ACT_BASIC_WAIT\", \"fidelity\": \"exact\", \"semantic_effect\": \"physical\", \"hardware_verified\": true, \"success\": false, \"physical_posture\": \"standing\", \"terminal_status\": {\"basic_state\": 6, \"gait_state\": 0, \"motion_state\": 0, \"battery_level\": 75.0}}]}",
+          "timestamp": 1791039758.9901419
+        }
+      },
+      {
+        "id": "stale-visual-target-no-goal",
+        "status": "PASS",
+        "reason": "owner_visual_target_unavailable",
+        "dispatched": false
+      },
+      {
+        "id": "need-before-emotion-after-command",
+        "status": "PASS",
+        "dispatch_order": [
+          "barkShortAlert",
+          "expressJoyAlone"
+        ],
+        "priority_levels": [
+          2,
+          5
+        ]
+      }
+    ],
+    "processes": [
+      {
+        "name": "behavior",
+        "pid": 315504,
+        "returncode": 0,
+        "reaped": true,
+        "forced": false
+      },
+      {
+        "name": "action",
+        "pid": 315497,
+        "returncode": 0,
+        "reaped": true,
+        "forced": false
+      },
+      {
+        "name": "waypoint",
+        "pid": 315491,
+        "returncode": 0,
+        "reaped": true,
+        "forced": false
+      },
+      {
+        "name": "inputs",
+        "pid": 315482,
+        "returncode": 0,
+        "reaped": true,
+        "forced": false
+      }
+    ],
+    "provenance": {
+      "action": {
+        "module": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_action_executor/lib/python3.10/site-packages/marsdog_action_executor/ros_node.py",
+        "installed": true
+      },
+      "behavior": {
+        "module": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install/marsdog_behavior/lib/python3.10/site-packages/marsdog_behavior/ros_node.py",
+        "installed": true
+      }
+    },
+    "no_hardware_publishers": true,
+    "scope": "Installed full BT and Action; protocol/state/visual fixtures, DDS and simulated Lite3/Nav2; no hardware/models"
+  },
+  "capabilities": {
+    "routes": 125,
+    "missing_template_routes": 49,
+    "declared_voice_commands": 82,
+    "action_templates": 74,
+    "action_units": 183,
+    "hardware_acceptance": "unknown",
+    "reports": [
+      "out/p0p2/capabilities-default/capabilities.json",
+      "out/p0p2/capabilities-local/capabilities.json"
+    ]
+  },
+  "draft_validation": {
+    "draft_status": "VALID_DRAFT_NOT_ACTIVATED",
+    "unimplemented_feature_test_outcomes": {
+      "voice": 1,
+      "behavior": 1,
+      "action": 0
+    },
+    "existing_sit_route_template_control": "Voice 2 / Behavior 2 / Action 1 passed",
+    "notes": "Missing implementation deliberately fails positive Voice/BT assertions; no collection or syntax error; production configs unchanged."
+  },
+  "changed_code_sha256": {
+    "integration/platform/tests/test_recording_diagnostics.py": "4d4f44fd416341c897f20a7eb38cbfba629a87f47482f07a9a2a25f0c8a74917",
+    "integration/scenarios/decision_pipeline_probe.py": "5130177e4bb1739c0d71b41af1347ec95e6114ceab196ce03ceb341fe0d3ed2f",
+    "modules/action/marsdog_action_executor/capability_report.py": "c520e5789c3d0d6bb7585a60e669ae457b26d3701dac7c3dca24fd25fc0813f7",
+    "modules/action/tests/test_capability_report.py": "803ab7a240441838a959a8aed038913eeae6273bf58e6388584b086d45f60b9d",
+    "modules/behavior/marsdog_behavior/action_client_adapter.py": "594bb944efdbe4bece17d7c8b7d3e0e4f97278699d7182070cf4a4e4f5297193",
+    "modules/behavior/marsdog_behavior/candidate_pool.py": "2d120ee88b181e56a12a13902e457f6bd6fec2914177b7c4ae619632076ac4a6",
+    "modules/behavior/marsdog_behavior/decision_trace.py": "bf98282daa3399da4bafc78e09a9ca0efbb0477ab1377ef207a6e252e79e4a1d",
+    "modules/behavior/marsdog_behavior/ros_node.py": "4b59444f26d38887f94cd7fe19f37ebedb96b90c877ed920559950a51597e569",
+    "modules/behavior/marsdog_behavior/runtime.py": "0135a1a721e2bd1fdb52af2dfa8fee25e85fe70cf8573915eb96436d4a655d26",
+    "modules/behavior/marsdog_behavior/tests/test_decision_trace.py": "f5b2d0f3ea0457b9cb9696f3497d3b185cd3ae8d4be0f55c4e87a0bbe83b9f7e",
+    "modules/voice/tests/recording_trial_probe.py": "6d8cd4a56d90a527d413120efc5dfcdc6e7ca40ae25ff26ced9347562629abb1",
+    "modules/voice/tests/ros_cpu_pipeline_probe.py": "ad5469d897e7d2513ca554b79fa3f238ffc6b4d83e6f8cb4aae246c464ebdcc1",
+    "tools/capabilities.py": "13ce7a43b49eec102c86eeeb71c651c0113e46032481a28807c9f26e243fcaca",
+    "tools/check_decision_scenarios.py": "7254aff13233dfd89f5224fd80bf8f1186f50319d188cdcd63461c8aecd42da4",
+    "tools/check_voice_cpu_ros.py": "23f0ea13f97f87392f040e20178d2ce331194c6f199a6962e9549881d25007f6",
+    "tools/component_inventory.py": "3acf283b414e51c7f7edff741b0e000d9563b557137db99cf4061a3ee75ebf1d",
+    "tools/marsdog.py": "e0e6af4e0b10b6cf05f50d12bf98db719a94e00789154b9007bef49ac3247dbe",
+    "tools/new_feature.py": "256d7c8915cb882f117166cf288e21086ce1583afa962c9c1fc79625361dd2f2",
+    "tools/recording_trial.py": "71dd69ea240619ed88bf1a83ba2ef48403813e570a3f98d4bd5de20ea69dc2f6",
+    "tools/trial_report.py": "aaeb96d5fb07d762a7be919ea08ed3e66b0d8640903d088810a136e9dd426bfa"
+  },
+  "unchanged_contract_scope": [
+    "production module YAML",
+    "runtime profiles",
+    "ROS IDL/endpoints",
+    "dependency locks",
+    "frozen migration/contract baselines"
+  ],
+  "other_checks": {
+    "build": "15 ROS packages; out/p0p2/build.log",
+    "doctor": "PASS; out/p0p2/doctor.log",
+    "smoke": "PASS; out/p0p2/smoke.log",
+    "result_contracts": "25 passed; out/p0p2/contracts.log",
+    "git_diff_check": "PASS"
+  }
+}
