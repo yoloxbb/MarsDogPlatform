@@ -8,7 +8,7 @@ MarsDog 的统一开发主仓：视觉、语音、Emotion/Needs、行为树、Ac
 没有实机；本机集成用明确的设备替身。开发板的系统、ABI、NPU SDK 尚待确认。
 目标是先完成软件协作和集成，再在板端构建、接入 Lite3。
 
-远端主仓：[yoloxbb/MarsDogPlatform](https://github.com/yoloxbb/MarsDogPlatform)（私有）。
+远端主仓：[yoloxbb/MarsDogPlatform](https://github.com/yoloxbb/MarsDogPlatform)（公开，可直接访问和克隆）。
 当前开发主线为 main，已包含截至 `978d263` 的五模块重构、功能开发工具与日志 v2。
 后续功能从最新 main 创建分支；最新日志验收见 [日志 v2 记录](validation/logging-v2/README.md)。
 原标签 acceptance/five-module-software-20260930 和

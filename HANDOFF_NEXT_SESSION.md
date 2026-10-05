@@ -9,7 +9,8 @@ P7、五模块兼容性重构 R1–R4，以及后续业务恢复/导航交接/�
 
 ## 2026-10-05 GitHub 上传基线
 
-用户授权上传到 yoloxbb/MarsDogPlatform，按私有仓库创建。
+用户授权上传到 yoloxbb/MarsDogPlatform，最初按私有仓库创建；
+2026-10-05 按用户后续要求改为公开，任何人可访问与克隆，写入权限仍由仓库所有者管理。
 本地 main 已从 926f14b 快进到 978d263，随后只更新远端与开发入口文档；未重写历史。
 上传 main 及已有 acceptance/five-module-software-20260930 标签，旧功能分支在本地保留。
 所有源码及原有资源随 Git 历史交付；out、模型、虚拟环境和缓存仍排除。
@@ -27,7 +28,7 @@ P7、五模块兼容性重构 R1–R4，以及后续业务恢复/导航交接/�
 - 继续前核对 git status --short 和 git log -3 --oneline，保留任何新出现的用户改动。
 - 初始 25 个未提交文件已备份、复核并纳入源码提交；仅修正 Vision CI 重复 run 键。
   备份在 out/developer-platform/initial-worktree，保全证明随验收证据冻结。
-- 原仓/归档/映射保留；没有第二主仓。远端为 https://github.com/yoloxbb/MarsDogPlatform（私有），真实模块 CODEOWNERS 与专用 runner 仍待团队配置。
+- 原仓/归档/映射保留；没有第二主仓。远端为 https://github.com/yoloxbb/MarsDogPlatform（公开，可直接访问和克隆），真实模块 CODEOWNERS 与专用 runner 仍待团队配置。
 
 ## P7 历史验证
 

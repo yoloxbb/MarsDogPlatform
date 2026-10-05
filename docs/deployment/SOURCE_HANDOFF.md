@@ -40,7 +40,7 @@ bundle 保留主仓已有历史，不复制 .venv、out、.external、模型、�
 
 ## 当前本地主线
 
-远端为 [yoloxbb/MarsDogPlatform](https://github.com/yoloxbb/MarsDogPlatform)（私有）。
+远端为 [yoloxbb/MarsDogPlatform](https://github.com/yoloxbb/MarsDogPlatform)（公开，可直接访问和克隆）。
 2026-10-05，本地 main 已快进到日志 v2 验收提交 978d263；后续文档提交只更新交付入口。
 新开发者应克隆远端最新 main；软件验收见 [日志 v2](../../validation/logging-v2/README.md)。
 原标签 acceptance/five-module-software-20260930 保留为历史基线，不代表最新功能版本。
