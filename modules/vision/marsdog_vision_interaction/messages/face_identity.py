@@ -45,6 +45,32 @@ def face_identity_role(value: str | FaceIdentity) -> str:
     return "unknown"
 
 
+def pose_event_identity_eligible(
+    identity: str,
+    identity_state: str,
+    tracking_state: str,
+) -> bool:
+    """Return whether a tracked target may emit a pose or hand event.
+
+    Registered identities must be confirmed by the face state machine.  An
+    unknown face may also emit the established pose event names after the
+    unknown state has been confirmed.  Candidate and unverified states remain
+    gated so a transient recognition result cannot become an event.
+    """
+    normalized_identity = str(identity or "")
+    normalized_identity_state = str(identity_state or "")
+    return str(tracking_state or "") == "tracking" and (
+        (
+            normalized_identity in ALLOWED_FACE_IDENTITIES
+            and normalized_identity_state == "confirmed_known"
+        )
+        or (
+            normalized_identity == "unknown"
+            and normalized_identity_state == "confirmed_unknown"
+        )
+    )
+
+
 def face_identity_display_name(value: str | FaceIdentity) -> str:
     """Return the operator-facing Chinese slot label."""
     raw_value = value.value if isinstance(value, FaceIdentity) else str(value)

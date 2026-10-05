@@ -211,8 +211,9 @@ Provider 只对 RKNN 模型已有类别做不区分大小写的精确标签过�
 Debug session 始终优先。两个阳性结果之间允许一次短暂漏检；物体可随伸出的手部分
 超出人物框，但远离手腕的地面或桌面物体仍不会成为手持证据。
 
-`EVT_VISION_TOY/FOOD` 现在只由上述已确认手持姿态产生，并继续遵守固定人脸库
-`confirmed_known + tracking` 门控。地面、桌面或其他人附近仅出现对应物体，只保留
+`EVT_VISION_TOY/FOOD` 现在只由上述已确认手持姿态产生，并遵守姿态事件门控：当前目标
+必须为 `tracking`，且身份为固定人脸库中的 `confirmed_known`，或为
+`unknown/confirmed_unknown`。地面、桌面或其他人附近仅出现对应物体，只保留
 `tracked_objects[]`，不再发布 TOY/FOOD 事件。跌倒姿态优先，不会被手持结果覆盖。
 
 重新构建并 source 工作区后，只需执行一个调试命令：
@@ -297,10 +298,12 @@ uv run python tests/test_rknn.py path/to/input.jpg
 `metrics` 和 `thresholds`；连续录入通过 `enrollment_event` 返回相同诊断。
 
 每张样本会分别生成 SFace 模板，识别时对同一固定身份的所有模板取最高相似度。
-所有姿态/手势事件只在当前主目标属于固定人脸库（`owner` 或
-`family_member_1`～`family_member_4`），目标仍为 `tracking`，且身份状态达到 `confirmed_known` 后
-发布。第一次匹配形成的 `candidate_known`、陌生人或未检测到人脸时，页面仍可
-看到结构化姿态调试结果，但不会上报普通姿态、跌倒或 Stop 手势事件。
+所有姿态/手势事件在当前主目标仍为 `tracking`，且身份满足以下任一条件时发布：固定人脸库
+中的 `owner` 或 `family_member_1`～`family_member_4` 达到 `confirmed_known`，或陌生人
+身份为 `unknown` 且达到 `confirmed_unknown`。第一次匹配形成的 `candidate_known`、未确认
+的陌生人状态或未检测到人脸时，页面仍可看到结构化姿态调试结果，但不会上报姿态、跌倒或
+Stop 手势事件。确认的陌生人沿用现有事件名，并可与 `EVT_VISION_STRANGER*` 同时出现在
+同一条消息中。
 
 正式节点会在视觉状态发生变化时输出一条 `Visual state changed` 日志，包含
 `track`、`identity`、`identity_state`、`pose`、`hands`、

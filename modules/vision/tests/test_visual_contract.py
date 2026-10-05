@@ -13,7 +13,10 @@ from marsdog_vision_interaction.core.visual_target_manager import (
 from marsdog_vision_interaction.messages.visual_event import (
     normalize_visual_event,
 )
-from marsdog_vision_interaction.messages import visual_event_types
+from marsdog_vision_interaction.messages import (
+    visual_event_derivation,
+    visual_event_types,
+)
 from marsdog_vision_interaction.providers.gesture_pose_engine import ActionName
 from marsdog_vision_interaction.providers.pose_action import (
     _HAND_ACTIONS,
@@ -38,6 +41,29 @@ def test_victory_is_a_public_happy_hand_action() -> None:
         )
         == ""
     )
+
+
+def test_confirmed_unknown_may_emit_existing_pose_event_names() -> None:
+    observation = {
+        "active_target": {
+            "identity": "unknown",
+            "identity_state": "confirmed_unknown",
+            "tracking_state": "tracking",
+            "pose_action": "fallen_down",
+        },
+        "hands": [],
+    }
+
+    assert visual_event_derivation.derive_events(
+        observation,
+        identity_eligible=visual_event_derivation.pose_event_identity_eligible,
+    ) == [visual_event_types.EVT_VISION_FALL]
+
+    observation["active_target"]["identity_state"] = "unverified"
+    assert visual_event_derivation.derive_events(
+        observation,
+        identity_eligible=visual_event_derivation.pose_event_identity_eligible,
+    ) == []
 
 
 def test_visual_contract_preserves_identity_and_pose() -> None:

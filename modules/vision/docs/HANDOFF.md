@@ -178,9 +178,9 @@ ros2 launch marsdog_vision_interaction vision_debug.launch.py
 GesturePose
 面板中的“粗姿态”来自 `pose_state`，精确标签和25项候选分数来自独立调试
 Topic，不会改变行为树使用的正式 `/perception/visual_event` 契约。
-普通姿态、跌倒和 Stop 手势只有在当前主目标仍为 `tracking`、属于固定人脸库且
-达到 `confirmed_known` 时才进入正式 `events[]`；陌生人、`candidate_known` 或无人脸
-状态只保留结构化姿态与 GesturePose 调试结果，不上报姿态事件。
+普通姿态、跌倒和 Stop 手势在当前主目标仍为 `tracking`，且身份为固定人脸库中的
+`confirmed_known`，或为 `unknown/confirmed_unknown` 时进入正式 `events[]`。`candidate_known`、
+未确认的陌生人状态或无人脸状态只保留结构化姿态与 GesturePose 调试结果，不上报姿态事件。
 Stop 还要求手腕离开髋部自然下垂区并进入躯干指令区域。跳跃优先要求髋部和双脚
 共同向上且连续两帧成立；脚踝因裁切不可见时，允许使用肩髋共同上升，并要求先有
 约0.2秒稳定基线、取得一个强起跳帧或两个普通起跳帧，随后在1.1秒内观察到共同
@@ -191,7 +191,8 @@ Stop 还要求手腕离开髋部自然下垂区并进入躯干指令区域。跳
 手持姿态要求玩具/狗粮物体框接近当前人的有效手腕，并由1.5秒内两个阳性物体结果
 确认；允许两个阳性结果之间出现一次短暂漏检，
 分别写入 `holding_toy/holding_dog_food`。地面或桌面仅出现物体不产生TOY/FOOD事件；
-正式事件仍要求固定人脸库身份达到 `confirmed_known + tracking`。
+正式事件仍要求当前目标满足 `confirmed_known + tracking`，或满足
+`unknown/confirmed_unknown + tracking`。
 “Vision 已发布事件记录”在 Viewer 的 Topic 回调中记录事件开始、持续、结束，
 保留序号和目标证据，并支持复制、导出和清空。它仅验证 Vision 发布边界；测试
 行为树候选选择或 Action 执行结果时仍须分别检查对应节点日志。

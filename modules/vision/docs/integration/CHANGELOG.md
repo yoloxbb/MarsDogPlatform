@@ -1,5 +1,13 @@
 # 对接归档变更记录
 
+## Unreleased
+
+- 姿态和手势正式事件现在允许当前跟踪目标为固定人脸库中的
+  `confirmed_known`，或为 `unknown/confirmed_unknown`；两类目标继续沿用既有事件名。
+  `candidate_known`、`unknown_candidate`、`unverified` 和非跟踪目标仍被门控拦截。
+- 确认的陌生人姿态事件可与 `EVT_VISION_STRANGER*` 在同一条视觉消息中同时出现；Viewer
+  和 Web Dashboard 的姿态事件门控显示已同步该规则。
+
 ## 1.4.0 — 2026-09-09
 
 - `/perception/audio_event` 对齐 Voice 当前 `schema_version=2`。

@@ -479,6 +479,10 @@
       owner: '主人', family_member_1: '家人1', family_member_2: '家人2',
       family_member_3: '家人3', family_member_4: '家人4',
     };
+    const poseEventGateOpen = target => target && target.tracking_state === 'tracking' && (
+      (Object.prototype.hasOwnProperty.call(faceLabels, target.identity) && target.identity_state === 'confirmed_known') ||
+      (target.identity === 'unknown' && target.identity_state === 'confirmed_unknown')
+    );
     let faceRecords = {};
     function showFaces(faces) {
       const host = byId('faceList'); host.replaceChildren();
@@ -693,7 +697,7 @@
         setKv(byId('target'), [
           ['Track ID', active.track_id], ['跟踪状态', active.tracking_state],
           ['身份', active.identity], ['身份置信度', fixed(active.identity_confidence)],
-          ['姿态事件门控', active.tracking_state === 'tracking' && active.identity_state === 'confirmed_known' && faceLabels[active.identity] ? 'open · 已登记身份' : 'blocked · 身份未确认或目标已丢失'],
+          ['姿态事件门控', poseEventGateOpen(active) ? (active.identity === 'unknown' ? 'open · 已确认陌生人' : 'open · 已登记身份') : 'blocked · 身份未确认或目标已丢失'],
           ['粗姿态 pose_state', active.pose_state], ['精确识别动作', recognizedNames.join(', ')],
           ['最高原始候选', topCandidate.name ? `${topCandidate.name} (${fixed(topCandidate.score)})` : '—'],
           ['兼容动作字段', active.pose_action_label || active.pose_action],

@@ -110,39 +110,40 @@ Pose 关键点对象：
 ### 4.7 25 个精确动作到正式字段和事件的映射
 
 精确动作名只稳定出现在 `/perception/vision/gesture_debug`。正式 Topic 为兼容
-既有下游，将它们折叠为 `pose_action` 或 `hand_action`。所有姿态/手势事件都要求
-`active_target.identity` 是固定人脸库中的 `owner` 或 `family_member_1`～
-`family_member_4`，且同时满足 `tracking_state == "tracking"`、
-`identity_state == "confirmed_known"`。`candidate_known`、
-陌生人和未确认身份仍会输出结构化姿态字段及调试 Topic，但不会下发事件。
+既有下游，将它们折叠为 `pose_action` 或 `hand_action`。姿态/手势事件要求
+`active_target.tracking_state == "tracking"`，并满足以下身份条件之一：固定人脸库中的
+`owner` 或 `family_member_1`～`family_member_4` 且 `identity_state == "confirmed_known"`，
+或 `identity == "unknown"` 且 `identity_state == "confirmed_unknown"`。`candidate_known`、
+`unknown_candidate`、`unverified`、丢失目标和未确认身份仍会输出结构化姿态字段及调试
+Topic，但不会下发事件。
 
 | 优先级 | 精确 GesturePose 名 | 组 | 正式兼容字段和值 | 派生正式事件 |
 |---|---|---|---|---|
-| P0 | `fall` | event | `pose_action=fallen_down` | `EVT_VISION_FALL`，需确认固定身份 |
-| P0 | `stop_gesture` | event | `hand_action=stop_gesture` | `EVT_VISION_STOP_GESTURE`，需确认固定身份 |
-| P1 | `hands_on_hips` | gesture | `pose_action=hands_on_hips` | `EVT_VISION_MASTER_SAD`，需确认身份 |
-| P1 | `large_arm_swing` | dynamic | `pose_action=rapid_wave_slap` | `EVT_VISION_MASTER_SAD`，需确认身份 |
-| P1 | `pointing` | gesture | `hand_action=finger_pointing` | `EVT_VISION_MASTER_SAD`，需确认身份 |
-| P1 | `stomping` | dynamic | `pose_action=stomping` | `EVT_VISION_MASTER_SAD`，需确认身份 |
-| P1 | `arms_crossed` | gesture | `pose_action=arms_crossed` | `EVT_VISION_MASTER_SAD`，需确认身份 |
-| P2 | `head_down` | posture | `pose_action=head_down_slumped` | `EVT_VISION_MASTER_SAD`，需确认身份 |
-| P2 | `shoulders_slumped` | posture | `pose_action=head_down_slumped` | `EVT_VISION_MASTER_SAD`，需确认身份 |
-| P2 | `face_covering` | gesture | `hand_action=hands_covering_face` | `EVT_VISION_MASTER_SAD`，需确认身份 |
-| P2 | `hands_on_head` | gesture | `hand_action=hands_covering_face` | `EVT_VISION_MASTER_SAD`，需确认身份 |
-| P2 | `curled_up` | posture | `pose_action=body_curled_up` | `EVT_VISION_MASTER_SAD`，需确认身份 |
-| P2 | `hunched` | posture | `pose_action=hunched_back` | `EVT_VISION_MASTER_SAD`，需确认身份 |
-| P3 | `arms_raised` | gesture | `pose_action=arm_raise_wave` | `EVT_VISION_MASTER_HAPPY`，需确认身份 |
-| P3 | `waving` | dynamic | `pose_action=arm_raise_wave` | `EVT_VISION_MASTER_HAPPY`，需确认身份 |
-| P3 | `victory` | gesture | `hand_action=victory` | `EVT_VISION_MASTER_HAPPY`，需确认身份 |
-| P3 | `jumping` | dynamic | `pose_action=jump` | `EVT_VISION_MASTER_HAPPY`，需确认身份 |
-| P3 | `arms_open` | gesture | `pose_action=lean_forward_arms_open` | `EVT_VISION_MASTER_HAPPY`，需确认身份 |
-| P3 | `fast_nod` | dynamic | `pose_action=nodding` | `EVT_VISION_MASTER_HAPPY`，需确认身份 |
-| P3 | `clapping` | dynamic | `hand_action=clapping` | `EVT_VISION_MASTER_HAPPY`，需确认身份 |
-| P3 | `thumbs_up` | gesture | `hand_action=thumbs_up` | `EVT_VISION_MASTER_HAPPY`，需确认身份 |
-| P4 | `standing` | posture | `pose_action=neutral_stand_sit` | `EVT_VISION_MASTER_NEUTRAL`，需确认身份 |
-| P4 | `sitting` | posture | `pose_action=neutral_stand_sit` | `EVT_VISION_MASTER_NEUTRAL`，需确认身份 |
+| P0 | `fall` | event | `pose_action=fallen_down` | `EVT_VISION_FALL`，需满足姿态门控 |
+| P0 | `stop_gesture` | event | `hand_action=stop_gesture` | `EVT_VISION_STOP_GESTURE`，需满足姿态门控 |
+| P1 | `hands_on_hips` | gesture | `pose_action=hands_on_hips` | `EVT_VISION_MASTER_SAD`，需满足姿态门控 |
+| P1 | `large_arm_swing` | dynamic | `pose_action=rapid_wave_slap` | `EVT_VISION_MASTER_SAD`，需满足姿态门控 |
+| P1 | `pointing` | gesture | `hand_action=finger_pointing` | `EVT_VISION_MASTER_SAD`，需满足姿态门控 |
+| P1 | `stomping` | dynamic | `pose_action=stomping` | `EVT_VISION_MASTER_SAD`，需满足姿态门控 |
+| P1 | `arms_crossed` | gesture | `pose_action=arms_crossed` | `EVT_VISION_MASTER_SAD`，需满足姿态门控 |
+| P2 | `head_down` | posture | `pose_action=head_down_slumped` | `EVT_VISION_MASTER_SAD`，需满足姿态门控 |
+| P2 | `shoulders_slumped` | posture | `pose_action=head_down_slumped` | `EVT_VISION_MASTER_SAD`，需满足姿态门控 |
+| P2 | `face_covering` | gesture | `hand_action=hands_covering_face` | `EVT_VISION_MASTER_SAD`，需满足姿态门控 |
+| P2 | `hands_on_head` | gesture | `hand_action=hands_covering_face` | `EVT_VISION_MASTER_SAD`，需满足姿态门控 |
+| P2 | `curled_up` | posture | `pose_action=body_curled_up` | `EVT_VISION_MASTER_SAD`，需满足姿态门控 |
+| P2 | `hunched` | posture | `pose_action=hunched_back` | `EVT_VISION_MASTER_SAD`，需满足姿态门控 |
+| P3 | `arms_raised` | gesture | `pose_action=arm_raise_wave` | `EVT_VISION_MASTER_HAPPY`，需满足姿态门控 |
+| P3 | `waving` | dynamic | `pose_action=arm_raise_wave` | `EVT_VISION_MASTER_HAPPY`，需满足姿态门控 |
+| P3 | `victory` | gesture | `hand_action=victory` | `EVT_VISION_MASTER_HAPPY`，需满足姿态门控 |
+| P3 | `jumping` | dynamic | `pose_action=jump` | `EVT_VISION_MASTER_HAPPY`，需满足姿态门控 |
+| P3 | `arms_open` | gesture | `pose_action=lean_forward_arms_open` | `EVT_VISION_MASTER_HAPPY`，需满足姿态门控 |
+| P3 | `fast_nod` | dynamic | `pose_action=nodding` | `EVT_VISION_MASTER_HAPPY`，需满足姿态门控 |
+| P3 | `clapping` | dynamic | `hand_action=clapping` | `EVT_VISION_MASTER_HAPPY`，需满足姿态门控 |
+| P3 | `thumbs_up` | gesture | `hand_action=thumbs_up` | `EVT_VISION_MASTER_HAPPY`，需满足姿态门控 |
+| P4 | `standing` | posture | `pose_action=neutral_stand_sit` | `EVT_VISION_MASTER_NEUTRAL`，需满足姿态门控 |
+| P4 | `sitting` | posture | `pose_action=neutral_stand_sit` | `EVT_VISION_MASTER_NEUTRAL`，需满足姿态门控 |
 | P4 | `lying` | posture | 无；由 `pose_state=lying` 表达 | 无 |
-| P4 | `low_motion` | activity | `pose_action=neutral_stand_sit` | `EVT_VISION_MASTER_NEUTRAL`，需确认身份 |
+| P4 | `low_motion` | activity | `pose_action=neutral_stand_sit` | `EVT_VISION_MASTER_NEUTRAL`，需满足姿态门控 |
 
 一帧可以同时有一个 `pose_action` 和一个 `hand_action`。P0–P4 是规则输出优先级，
 不是 ROS QoS，也不等同于行为树候选优先级。
@@ -181,13 +182,13 @@ GesturePose 判定，不改变正式事件名称、身份门禁或发布契约�
 | `EVT_VISION_STRANGER_ALERT` | 主目标身份未知，且新鲜 `/emotion/state` 中 `Anxiety` 或 `Fear` 的 `triggered=true` | `faces[]`、`active_target.identity_state`；情绪证据来自 `/emotion/state` |
 | `EVT_VISION_STRANGER_FRIEND` | 主目标身份未知，无 Alert 情绪，且 `Joy`、`Excite` 或 `Calm` 的 `triggered=true` | 同上 |
 | `EVT_VISION_STRANGER` | 主目标身份未知，但情绪状态缺失、过期、非法或没有匹配分类 | `faces[]`、`active_target.identity_state` |
-| `EVT_VISION_MASTER_HAPPY` | `identity_state=confirmed_known` 的主目标出现表 4.7 的 happy 兼容动作 | `pose_action` 或 `hands[].hand_action` |
-| `EVT_VISION_MASTER_SAD` | `identity_state=confirmed_known` 的主目标出现表 4.7 的 sad 兼容动作 | `pose_action` 或 `hands[].hand_action` |
-| `EVT_VISION_MASTER_NEUTRAL` | `identity_state=confirmed_known` 的主目标出现 `neutral_stand_sit` | `pose_action`、`pose_state` |
-| `EVT_VISION_FALL` | 固定人脸库身份达到 `confirmed_known`，且 `pose_action=fallen_down`；已确认从直立快速转为持续躺卧 | `active_target.identity/identity_state`、`pose_action`；调试时看 `fall_detector` |
-| `EVT_VISION_STOP_GESTURE` | 固定人脸库身份达到 `confirmed_known`，且任一 `hands[].hand_action=stop_gesture` | `active_target.identity/identity_state`、`hands[]` |
-| `EVT_VISION_FOOD` | 固定人脸库身份达到 `confirmed_known`，且 `pose_action=holding_dog_food` | `active_target.held_object`、`tracked_objects[]` |
-| `EVT_VISION_TOY` | 固定人脸库身份达到 `confirmed_known`，且 `pose_action=holding_toy` | `active_target.held_object`、`tracked_objects[]` |
+| `EVT_VISION_MASTER_HAPPY` | 满足姿态门控的主目标出现表 4.7 的 happy 兼容动作 | `active_target.identity/identity_state/tracking_state`、`pose_action` 或 `hands[].hand_action` |
+| `EVT_VISION_MASTER_SAD` | 满足姿态门控的主目标出现表 4.7 的 sad 兼容动作 | `active_target.identity/identity_state/tracking_state`、`pose_action` 或 `hands[].hand_action` |
+| `EVT_VISION_MASTER_NEUTRAL` | 满足姿态门控的主目标出现 `neutral_stand_sit` | `active_target.identity/identity_state/tracking_state`、`pose_action`、`pose_state` |
+| `EVT_VISION_FALL` | 满足姿态门控且 `pose_action=fallen_down`；已确认从直立快速转为持续躺卧 | `active_target.identity/identity_state/tracking_state`、`pose_action`；调试时看 `fall_detector` |
+| `EVT_VISION_STOP_GESTURE` | 满足姿态门控且任一 `hands[].hand_action=stop_gesture` | `active_target.identity/identity_state/tracking_state`、`hands[]` |
+| `EVT_VISION_FOOD` | 满足姿态门控且 `pose_action=holding_dog_food` | `active_target.identity/identity_state/tracking_state`、`active_target.held_object`、`tracked_objects[]` |
+| `EVT_VISION_TOY` | 满足姿态门控且 `pose_action=holding_toy` | `active_target.identity/identity_state/tracking_state`、`active_target.held_object`、`tracked_objects[]` |
 
 手持玩具只接受 `dog toy ball/dog frisbee toy/dog tug ring toy`；手持狗粮只接受
 `dog bowl/dog food can/dog treat bag`。只检测到物体但没有手腕关联时不得产生事件。

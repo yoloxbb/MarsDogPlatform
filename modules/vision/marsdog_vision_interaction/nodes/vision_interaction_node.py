@@ -52,16 +52,8 @@ from marsdog_vision_interaction.core.stranger_emotion_context import (
     StrangerEmotionContext,
 )
 from marsdog_vision_interaction.fusion.stereo_fusion import get_target_manager
-from marsdog_vision_interaction.messages.face_identity import (
-    ALLOWED_FACE_IDENTITIES,
-)
 from marsdog_vision_interaction.messages.visual_event import (
     normalize_visual_event,
-)
-from marsdog_vision_interaction.messages.visual_event_types import (
-    face_identity_to_vision_event,
-    pose_action_to_vision_event,
-    refine_stranger_vision_event,
 )
 from marsdog_vision_interaction.providers.base import BaseProvider
 from marsdog_vision_interaction.utils.config_loader import (
@@ -1226,7 +1218,7 @@ class VisionInteractionNode(Node):
 
         gate = (
             "open"
-            if VisionInteractionNode._pose_event_identity_confirmed(active)
+            if VisionInteractionNode._pose_event_identity_eligible(active)
             else "blocked"
         )
         if not pose_action and not hand_actions:
@@ -1988,15 +1980,19 @@ class VisionInteractionNode(Node):
         return result
 
     @staticmethod
-    def _pose_event_identity_confirmed(active: dict[str, Any]) -> bool:
-        return visual_event_derivation.pose_event_identity_confirmed(active)
+    def _pose_event_identity_eligible(active: dict[str, Any]) -> bool:
+        return visual_event_derivation.pose_event_identity_eligible(active)
 
     @staticmethod
     def _derive_events(
         observation: dict[str, Any],
         emotion_classification: str = "",
     ) -> list[str]:
-        return visual_event_derivation.derive_events(observation, emotion_classification, identity_confirmed=VisionInteractionNode._pose_event_identity_confirmed)
+        return visual_event_derivation.derive_events(
+            observation,
+            emotion_classification,
+            identity_eligible=VisionInteractionNode._pose_event_identity_eligible,
+        )
 
     def _process_enrollment_frame(self) -> None:
         frame = self._frame_for_tasks()

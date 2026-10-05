@@ -23,7 +23,7 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import String
 
 from marsdog_vision_interaction.messages.face_identity import (
-    ALLOWED_FACE_IDENTITIES,
+    pose_event_identity_eligible,
 )
 from marsdog_vision_interaction.utils.config_loader import (
     load_config,
@@ -361,9 +361,11 @@ class VisionDebugViewerNode(Node):
             "hand_actions": hand_actions,
             "pose_event_gate": (
                 "open"
-                if active.get("identity") in ALLOWED_FACE_IDENTITIES
-                and active.get("identity_state") == "confirmed_known"
-                and active.get("tracking_state") == "tracking"
+                if pose_event_identity_eligible(
+                    active.get("identity", ""),
+                    active.get("identity_state", ""),
+                    active.get("tracking_state", ""),
+                )
                 else "blocked"
             ),
         }

@@ -805,9 +805,9 @@ def test_victory_hand_publishes_happy_only_after_identity_confirmation() -> None
     ]
 
 
-def test_all_pose_events_require_fixed_confirmed_face_identity() -> None:
+def test_all_pose_events_allow_confirmed_stranger_identity() -> None:
     unrecognized = {
-        "faces": [],
+        "faces": [{"recognized_user": ""}],
         "hands": [{"hand_action": "stop_gesture"}],
         "active_target": {
             "identity": "unknown",
@@ -816,10 +816,15 @@ def test_all_pose_events_require_fixed_confirmed_face_identity() -> None:
             "pose_action": "fallen_down",
         },
     }
-    assert VisionInteractionNode._derive_events(unrecognized) == []
+    assert VisionInteractionNode._derive_events(unrecognized) == [
+        "EVT_VISION_STRANGER",
+        "EVT_VISION_FALL",
+        "EVT_VISION_STOP_GESTURE",
+    ]
 
     candidate_owner = {
         **unrecognized,
+        "faces": [],
         "active_target": {
             **unrecognized["active_target"],
             "identity": "owner",

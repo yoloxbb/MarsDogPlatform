@@ -101,20 +101,20 @@ topics:
       EVT_VISION_STRANGER_FRIEND:
         condition: stranger_face_present_and_no_alert_and_fresh_joy_excite_or_calm_triggered
       EVT_VISION_MASTER_HAPPY:
-        condition: fixed_face_identity_confirmed_with_happy_compatible_action
+        condition: tracked_confirmed_known_or_unknown_confirmed_unknown_with_happy_compatible_action
       EVT_VISION_MASTER_SAD:
-        condition: fixed_face_identity_confirmed_with_sad_compatible_action
+        condition: tracked_confirmed_known_or_unknown_confirmed_unknown_with_sad_compatible_action
       EVT_VISION_MASTER_NEUTRAL:
-        condition: fixed_face_identity_confirmed_with_neutral_stand_sit
+        condition: tracked_confirmed_known_or_unknown_confirmed_unknown_with_neutral_stand_sit
       EVT_VISION_FALL:
-        condition: fixed_face_identity_confirmed_and_upright_to_lying_fall
+        condition: tracked_confirmed_known_or_unknown_confirmed_unknown_and_upright_to_lying_fall
       EVT_VISION_STOP_GESTURE:
-        condition: fixed_face_identity_confirmed_with_stop_gesture
+        condition: tracked_confirmed_known_or_unknown_confirmed_unknown_with_stop_gesture
       EVT_VISION_FOOD:
-        condition: fixed_face_identity_confirmed_with_holding_dog_food_pose
+        condition: tracked_confirmed_known_or_unknown_confirmed_unknown_with_holding_dog_food_pose
         labels: [dog bowl, dog food can, dog treat bag]
       EVT_VISION_TOY:
-        condition: fixed_face_identity_confirmed_with_holding_toy_pose
+        condition: tracked_confirmed_known_or_unknown_confirmed_unknown_with_holding_toy_pose
         labels: [dog toy ball, dog frisbee toy, dog tug ring toy]
     reserved_not_emitted_events:
       - EVT_VISION_ANIMAL_CALM
@@ -290,7 +290,7 @@ invariants:
   vision_held_object_confirmation: two_positive_results_with_one_intermediate_miss_allowed
   vision_held_object_max_pose_object_sync_delta_sec: 0.75
   vision_held_object_wrist_distance_ratio: 0.16
-  vision_toy_food_event_policy: confirmed_registered_person_holding_pose_only
+  vision_toy_food_event_policy: tracked_confirmed_known_or_confirmed_unknown_person_holding_pose_only
   vision_stop_gesture_policy: raised_command_zone_open_palm_with_temporal_stability
   vision_jump_policy: full_body_two_frames_or_cropped_one_strong_or_two_takeoff_frames_plus_return
   vision_stomp_policy: ankle_lift_return_cycle_or_cropped_knee_cycle_with_stable_body

@@ -225,7 +225,7 @@ unavailable` 时，本轮真实模型测试不得判为通过。
 | FACE-01 | 人脸在线录入 | 5 个固定身份分别录入 | 录入进度、名单 | `enrollment_event`、HTTP/Service 返回 | 默认连续 3 张；每人最多 5 张；不要求动作 |
 | FACE-02 | 人脸样本 CRUD | 增、查、图像、替换、删除 | 名单刷新、现场识别 | HTTP 状态码与 JSON | `sample_id` 稳定；删除不重排；空位复用 |
 | FACE-03 | 人脸识别 | 已登记人、陌生人、遮脸、多人 | 人脸表、当前目标 | `Face identity changed`、身份字段 | 已知身份需确认；陌生人不误报固定身份 |
-| GATE-01 | 姿态事件身份门控 | 同一动作由已登记人/陌生人执行 | 姿态门控、事件历史 | `Visual state changed` | 仅固定身份 + `confirmed_known` + `tracking` 上报姿态事件 |
+| GATE-01 | 姿态事件身份门控 | 同一动作由已登记人/确认陌生人执行 | 姿态门控、事件历史 | `Visual state changed` | `confirmed_known + tracking` 或 `unknown/confirmed_unknown + tracking` 上报姿态事件 |
 | POS-01 | 姿态与动作 | 按动作清单逐项表演 | GesturePose 分数、人体表 | `gesture_debug` | 原始候选可解释；仅稳定命中写兼容动作/事件 |
 | STOP-01 | 停止手势 | 正例、挥手、指点、抱臂反例 | 手部特征、黄色事件记录 | `hands[]`、`EVT_VISION_STOP_GESTURE` | 3/5 帧稳定；反例不触发；身份门控有效 |
 | JUMP-01 | 跳跃 | 全身/缺脚踝原地跳；快速起立、踮脚、走路反例 | 识别通道、起跳/回落证据、肩/髋/脚速度 | `jump_detector`、`recognized_actions` | 全身两帧共同上升；半身要求肩髋上升后回落；身份门控有效 |
@@ -379,16 +379,19 @@ curl -sS -X DELETE \
 Face identity changed: track=<face_track_id> identity=<name> state=<state> confidence=<score> attempts=<n>
 ```
 
-当前确认规则为连续两次已知匹配进入 `confirmed_known`，连续四次未知证据确认
-unknown。第一次匹配可能只是 `candidate_known`，测试时不得把它当作已确认身份。
+当前确认规则为连续两次已知匹配进入 `confirmed_known`，连续四次未知证据进入
+`confirmed_unknown`。第一次匹配可能只是 `candidate_known`，测试时不得把它当作已确认身份。
+姿态事件门控要求目标为 `tracking`，且身份为固定人脸库中的 `confirmed_known`，或为
+`unknown/confirmed_unknown`；`unknown_candidate`、`unverified` 和非跟踪目标继续关闭门控。
 
 门控矩阵必须完整执行：
 
 | 当前目标 | 页面姿态/原始分 | 正式 `events[]` | `Visual state changed` |
 |---|---|---|---|
 | 固定身份 + `confirmed_known` + `tracking` | 可见 | 应发布对应姿态/手势事件 | `pose_event_gate=open` |
+| `unknown` + `confirmed_unknown` + `tracking` | 可见 | 应发布对应姿态/手势事件，并可与 `EVT_VISION_STRANGER*` 共存 | `pose_event_gate=open` |
 | 固定身份 + `candidate_known` | 可见 | 不发布姿态/手势事件 | `pose_event_gate=blocked` |
-| 陌生人/unknown | 可见 | 不发布普通姿态、跌倒、Stop 事件 | `pose_event_gate=blocked` |
+| 陌生人 `unknown_candidate`/`unverified` | 可见 | 不发布普通姿态、跌倒、Stop 事件 | `pose_event_gate=blocked` |
 | 未检测到人脸 | 可见或保留诊断 | 不发布姿态/手势事件 | `blocked` 或 `idle` |
 | 已知身份但目标非 `tracking` | 可保留 | 不发布姿态/手势事件 | `pose_event_gate=blocked` |
 
@@ -429,16 +432,16 @@ Visual state changed: track=<id> tracking=<state> identity=<name> identity_state
 | 5. 正式事件 | `/perception/visual_event.events[]` 和 `统一日志 v2 vision.event.published` | 身份门禁后的正式 Vision 事件 | 证明 Vision 已发布；不能证明 Tree 已选择或 Action 已执行 |
 
 一条正例只有第2～5层都符合下表预期，才能判“识别与 Vision 路由 PASS”。若第2层
-成功，但人物不是固定人脸库中的 `confirmed_known + tracking`，应看到
-`vision.event.suppressed`，该用例只能判“动作识别 PASS、身份门禁 PASS”，不能要求正式姿态
-事件。`raw_scores` 单帧升高但始终没有进入 `recognized_actions[]`，动作识别仍是 FAIL。
+成功，但人物不满足 `confirmed_known + tracking` 或 `unknown/confirmed_unknown + tracking`，
+应看到 `vision.event.suppressed`，该用例只能判“动作识别 PASS、身份门禁 PASS”，不能要求正式
+姿态事件。`raw_scores` 单帧升高但始终没有进入 `recognized_actions[]`，动作识别仍是 FAIL。
 
 #### 5.6.2 25 个精确动作逐项测试对齐表
 
 “表演要点”用于统一测试人员动作，不代替算法完整公式。动态动作应完整做完一个周期；
 静态动作应保持到 `recognized_actions[]` 稳定出现。所有正式姿态事件都默认要求
-`identity ∈ {owner,family_member_1..4}`、`identity_state=confirmed_known`、
-`tracking_state=tracking`。
+`tracking_state=tracking`，并满足 `identity ∈ {owner,family_member_1..4}` 且
+`identity_state=confirmed_known`，或 `identity=unknown` 且 `identity_state=confirmed_unknown`。
 
 | 用例 ID | 中文动作与表演要点 | 精确名称（优先级/组） | 预期兼容字段 | 身份门禁打开时的正式事件 |
 |---|---|---|---|---|
@@ -512,7 +515,8 @@ Visual state changed: track=<id> tracking=<state> identity=<name> identity_state
 |---|---|---|---|
 | 主人已确认并在跟踪 | `recognized_actions=jumping`、`pose_action=jump` | `EVT_VISION_MASTER`，随后 `EVT_VISION_MASTER_HAPPY` | 动作识别、折叠和事件路由均可 PASS |
 | 第一次匹配，仅 `candidate_known` | 同上 | 可有人脸事件，但不得有 `EVT_VISION_MASTER_HAPPY` | 动作识别 PASS；门禁阻止姿态事件 PASS |
-| 陌生人/unknown | 同上 | 根据情绪为 `EVT_VISION_STRANGER_ALERT/FRIEND`，无效状态回退 `EVT_VISION_STRANGER`；不得有 Happy | 动作识别 PASS；门禁 PASS |
+| 陌生人 `unknown/confirmed_unknown` | 同上 | 根据情绪出现 `EVT_VISION_STRANGER_ALERT/FRIEND` 或无效状态回退 `EVT_VISION_STRANGER`，并可同时出现 `EVT_VISION_MASTER_HAPPY` | 动作识别 PASS；门禁 PASS |
+| 陌生人 `unknown_candidate`/`unverified` | 同上 | 根据情绪出现陌生人事件；不得有 Happy | 动作识别 PASS；门禁 PASS |
 | 没有检测到人脸 | 可保留 GesturePose 诊断 | 通常没有 Master/Stranger，也不得有 Happy | 只判识别层和门禁层 |
 | 已知身份但 `temporarily_lost` | 可保留旧诊断 | 不得发布新的姿态事件 | 门禁 PASS |
 
@@ -596,13 +600,13 @@ goal/result，不能用 Vision `vision.event.published` 代替端到端成功。
   pose_event_gate=open
 ```
 
-陌生人完成同样跳跃时，前两行 GesturePose 识别证据仍可成立，但正式证据应改为：
+确认陌生人完成同样跳跃时，前两行 GesturePose 识别证据仍可成立，正式证据应包含：
 
 ```text
-/perception/visual_event events[]=EVT_VISION_STRANGER_ALERT|FRIEND
-# 情绪状态无效时回退 EVT_VISION_STRANGER
-日志字段投影 event_name=vision.event.suppressed reason_code=identity_not_confirmed
-  pose_action=jump pose_event_gate=blocked
+/perception/visual_event events[]=EVT_VISION_STRANGER_ALERT|FRIEND,EVT_VISION_MASTER_HAPPY
+# 情绪状态无效时仍保留 EVT_VISION_STRANGER；已确认陌生人的姿态事件同时发布
+日志字段投影 event_name=vision.event.published event_type=EVT_VISION_MASTER_HAPPY
+  identity_state=confirmed_unknown pose_action=jump pose_event_gate=open
 ```
 
 如果只保存到 `raw_scores[name=jumping]`，缺少 `recognized_actions`，不能证明识别完成；
@@ -783,7 +787,8 @@ rg '"record":"held_object_evaluation"' /tmp/marsdog_vision_qa/HOLD-01/*.jsonl
 2. 将相同物体放在地上、桌面或人物框内但远离双手，均不得出现手持姿态。
 3. 只让物体靠近手腕不到一次检测周期，然后移开，不得达到 `confirmed`。
 4. 两个人同时入镜，把物体放在非当前目标手中，不得关联到当前目标。
-5. 陌生人手持时可以看到结构化姿态，但 `events[]` 不得出现 TOY/FOOD。
+5. `unknown/confirmed_unknown` 陌生人手持时，除独立陌生人事件外，`events[]` 应出现
+   对应的 TOY/FOOD；`unknown_candidate` 或 `unverified` 陌生人只保留结构化姿态。
 6. 已确认主人/家人手持时，分别出现 `EVT_VISION_TOY/EVT_VISION_FOOD`；物体单独
    出现不得再触发这两个事件。
 7. 人物离开后内部物体流最多保持2秒；通过页面启动显式流时，应立即显示显式
@@ -812,8 +817,9 @@ rg '"record":"held_object_evaluation"' /tmp/marsdog_vision_qa/HOLD-01/*.jsonl
 | `Fall event confirmed (transition=..., lying=...)` | 状态机确认边沿；一次受控跌倒应只计这条确认日志一次 |
 
 `EVT_VISION_FALL` 可能因 10 Hz 状态保持出现在多个包中，不能据包数统计跌倒次数。
-测试事件次数应数 `Fall event confirmed` 或页面 `ENTER`。陌生人即使状态机确认跌倒，
-也只保留调试诊断，不得发布正式跌倒事件。
+测试事件次数应数 `Fall event confirmed` 或页面 `ENTER`。`unknown/confirmed_unknown`
+陌生人完成同样的跌倒状态机确认时，应发布正式跌倒事件；`unknown_candidate` 或
+`unverified` 只保留调试诊断。
 
 ### 5.12 陌生人脸与情绪状态融合
 
