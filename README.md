@@ -8,9 +8,16 @@ MarsDog 的统一开发主仓：视觉、语音、Emotion/Needs、行为树、Ac
 没有实机；本机集成用明确的设备替身。开发板的系统、ABI、NPU SDK 尚待确认。
 目标是先完成软件协作和集成，再在板端构建、接入 Lite3。
 
-当前开发主线为 main，软件验收基线标签为
-acceptance/five-module-software-20260930。
-后续功能从该主线创建分支；[收口记录](validation/mainline-acceptance/README.md)说明版本与验证范围。
+远端主仓：[yoloxbb/MarsDogPlatform](https://github.com/yoloxbb/MarsDogPlatform)（私有）。
+当前开发主线为 main，已包含截至 `978d263` 的五模块重构、功能开发工具与日志 v2。
+后续功能从最新 main 创建分支；最新日志验收见 [日志 v2 记录](validation/logging-v2/README.md)。
+原标签 acceptance/five-module-software-20260930 和
+[主线收口记录](validation/mainline-acceptance/README.md) 保留为历史验收基线。
+
+```bash
+git clone https://github.com/yoloxbb/MarsDogPlatform.git
+cd MarsDogPlatform
+```
 
 ## 从这里开始
 
@@ -85,5 +92,6 @@ Ctrl-C 关闭整组进程，日志写入 out/local/runs。
 Action 保持 2.2.6，Vision/Voice 保持 1.x。模块内使用自己的 pyproject.toml 和 uv.lock。
 公共 ROS 类型由原 owning package 维护，现有服务/动作/Topic 身份不随目录调整而改名。
 
-本仓已有 CI 配置，但尚无远端、真实 owner 账号或 hosted CI 运行记录。
+本仓已配置 GitHub 远端和 CI 工作流；各模块负责人、专用 Humble runner 与分支保护仍需团队配置。
+远端 CI 结果以 GitHub Actions 的实际运行记录为准，本地验收不代替远端运行。
 源码离线交付保留 Git 历史；模型、构建输出、虚拟环境和设备配置不进入主仓。

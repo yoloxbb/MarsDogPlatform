@@ -71,7 +71,8 @@ flowchart LR
 
 当前 CI 按模块分 job，基础架构检查复用 dev.py check。
 Humble 集成仅在手动触发的专用 localhost runner 上运行，默认不使用硬件。
-由于还没有远端及 runner，已提交的 workflow 只代表配置；本地证据在 validation。
+GitHub 远端为 yoloxbb/MarsDogPlatform；专用 Humble runner 尚未配置。
+远端工作流状态以 Actions 记录为准，本地证据在 validation。
 不引入复杂增量 CI 推断：先保证所有模块 job 可独立复现，再按实际耗时优化。
 
 ## 历史与第三方

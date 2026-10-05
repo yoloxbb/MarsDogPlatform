@@ -40,10 +40,10 @@ bundle 保留主仓已有历史，不复制 .venv、out、.external、模型、�
 
 ## 当前本地主线
 
-本地主仓 main 已接收全部验收成果，软件基线标签为
-acceptance/five-module-software-20260930。后续功能从 main 创建分支。
-收口只快进分支并同步文档、证据，没有改运行代码；见
-[主线验收记录](../../validation/mainline-acceptance/README.md)。
+远端为 [yoloxbb/MarsDogPlatform](https://github.com/yoloxbb/MarsDogPlatform)（私有）。
+2026-10-05，本地 main 已快进到日志 v2 验收提交 978d263；后续文档提交只更新交付入口。
+新开发者应克隆远端最新 main；软件验收见 [日志 v2](../../validation/logging-v2/README.md)。
+原标签 acceptance/five-module-software-20260930 保留为历史基线，不代表最新功能版本。
 
 下列已有包仍保留原 manifest 和 refs，不包含本次主线标签。
 需要交付最新 main 时，切换到干净 main，按上文 create/verify 导出新的目录；

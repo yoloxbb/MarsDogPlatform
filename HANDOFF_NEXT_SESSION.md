@@ -1,11 +1,19 @@
-# MarsDog 平台会话交接 — 2026-10-03
+# MarsDog 平台会话交接 — 2026-10-05
 
-日志重构已接入五模块：入口、配置、诊断与扩展见 [统一日志](docs/development/UNIFIED_LOGGING.md)，验收见 [日志重构记录](validation/unified-logging/README.md)。公共包在 packages/observability；所有模块独立锁/环境保持，ROS 构建现在含 16 个包。
+日志重构已接入五模块：入口、配置、诊断与扩展见 [统一日志](docs/development/UNIFIED_LOGGING.md)，验收见 [日志 v2 重构记录](validation/logging-v2/README.md)。公共包在 packages/observability；所有模块独立锁/环境保持，ROS 构建现在含 16 个包。
 
 P7、五模块兼容性重构 R1–R4，以及后续业务恢复/导航交接/新源码交付均已完成。见
 [当前路线](docs/architecture/COMPATIBILITY_REFACTOR.md)。
 不要重新迁移，不做模型精度优化；导航/避障内部实现留给其负责人。
 普通工程决策可直接推进。
+
+## 2026-10-05 GitHub 上传基线
+
+用户授权上传到 yoloxbb/MarsDogPlatform，按私有仓库创建。
+本地 main 已从 926f14b 快进到 978d263，随后只更新远端与开发入口文档；未重写历史。
+上传 main 及已有 acceptance/five-module-software-20260930 标签，旧功能分支在本地保留。
+所有源码及原有资源随 Git 历史交付；out、模型、虚拟环境和缓存仍排除。
+下方旧交付包/分支说明属于历史证据；新开发从远端最新 main 开始。
 
 ## 真实位置与版本
 
@@ -19,7 +27,7 @@ P7、五模块兼容性重构 R1–R4，以及后续业务恢复/导航交接/�
 - 继续前核对 git status --short 和 git log -3 --oneline，保留任何新出现的用户改动。
 - 初始 25 个未提交文件已备份、复核并纳入源码提交；仅修正 Vision CI 重复 run 键。
   备份在 out/developer-platform/initial-worktree，保全证明随验收证据冻结。
-- 原仓/归档/映射保留；没有第二主仓，没有远端，没有真实 CODEOWNERS 账号。
+- 原仓/归档/映射保留；没有第二主仓。远端为 https://github.com/yoloxbb/MarsDogPlatform（私有），真实模块 CODEOWNERS 与专用 runner 仍待团队配置。
 
 ## P7 历史验证
 

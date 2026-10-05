@@ -11,7 +11,7 @@
 4. 运行 `python3 tools/dev.py check`、受影响模块测试；按流程表补安装、契约、ROS 验证。
 5. 提交源码、必要配置、对应锁文件及文档；不提交 out、.venv、.external、权重或录音。
 6. 按 PR 模板写清触发条件、变更后行为、验证范围与未覆盖项；公开接口变更由生产方和消费方共同评审。
-7. CI 与评审完成后合并。远端与分支保护尚未配置，本地通过不能记作 hosted CI 通过。
+7. CI 与评审完成后合并。远端为 yoloxbb/MarsDogPlatform；分支保护和专用 Humble runner 尚待配置，本地通过不能记作 hosted CI 通过。
 
 依赖变更只在受影响模块更新、评审并提交锁文件；不要顺手升级算法、模型 runtime 或 ROS。
 `dev.py setup` 使用 --locked，发现锁不同步应失败，不自动重解依赖。
