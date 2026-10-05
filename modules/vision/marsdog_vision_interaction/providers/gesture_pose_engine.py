@@ -40,8 +40,8 @@ import logging
 import math
 import time
 from collections import deque
-from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, field
 from enum import Enum, IntEnum
 from typing import Protocol
 
@@ -56,6 +56,90 @@ LOGGER = logging.getLogger(__name__)
 # ==============================================================================
 
 ImageArray = NDArray[np.uint8]
+
+
+@dataclass(frozen=True, slots=True)
+class FaceObservation:
+    """Current, target-associated YuNet face geometry.
+
+    Coordinates are normalized to the selected camera view.  YuNet landmark
+    points are predictions rather than visibility measurements; callers must
+    combine them with current hand/arm evidence before treating a face as
+    uncovered.
+    """
+
+    bbox: tuple[float, float, float, float]
+    landmarks: tuple[tuple[float, float], ...] = ()
+    confidence: float = 0.0
+    track_id: int = -1
+
+    def __post_init__(self) -> None:
+        if len(self.bbox) != 4:
+            raise ValueError("FaceObservation.bbox must contain four values")
+        if any(not math.isfinite(float(value)) for value in self.bbox):
+            raise ValueError("FaceObservation.bbox must be finite")
+        if not math.isfinite(float(self.confidence)):
+            raise ValueError("FaceObservation.confidence must be finite")
+        if any(
+            len(point) != 2
+            or any(not math.isfinite(float(value)) for value in point)
+            for point in self.landmarks
+        ):
+            raise ValueError("FaceObservation.landmarks must be finite x/y pairs")
+
+
+def _coerce_face_observation(value: FaceObservation | Mapping[str, object] | None) -> FaceObservation | None:
+    """Accept the private provider mapping without making it a public schema."""
+
+    if value is None:
+        return None
+    if isinstance(value, FaceObservation):
+        return value
+    if not isinstance(value, Mapping):
+        return None
+    try:
+        bbox_value = value.get("bbox")
+        if bbox_value is None:
+            bbox_value = (
+                value.get("x", 0.0),
+                value.get("y", 0.0),
+                value.get("w", 0.0),
+                value.get("h", 0.0),
+            )
+        if (
+            not isinstance(bbox_value, Sequence)
+            or isinstance(bbox_value, (str, bytes))
+            or len(bbox_value) != 4
+        ):
+            return None
+        landmarks_value = value.get("landmarks", ())
+        if (
+            not isinstance(landmarks_value, Sequence)
+            or isinstance(landmarks_value, (str, bytes))
+        ):
+            return None
+        landmarks: list[tuple[float, float]] = []
+        for point in landmarks_value:
+            if (
+                not isinstance(point, Sequence)
+                or isinstance(point, (str, bytes))
+                or len(point) != 2
+            ):
+                return None
+            landmarks.append((float(point[0]), float(point[1])))
+        return FaceObservation(
+            bbox=(
+                float(bbox_value[0]),
+                float(bbox_value[1]),
+                float(bbox_value[2]),
+                float(bbox_value[3]),
+            ),
+            landmarks=tuple(landmarks),
+            confidence=float(value.get("confidence", 0.0)),
+            track_id=int(value.get("track_id", -1)),
+        )
+    except (TypeError, ValueError, IndexError):
+        return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,6 +182,14 @@ class FrameData:
     # ``False`` means an independent face detector explicitly saw no face.
     # ``None`` keeps the standalone engine usable without a face detector.
     face_observed: bool | None = None
+    # Private current face geometry used only by FACE_COVERING.  It is kept
+    # separate from ``face_observed`` because nod detection has different
+    # semantics and must continue to accept its old boolean contract.
+    face_observation: FaceObservation | Mapping[str, object] | None = None
+    # ``False`` means the target manager explicitly confirmed that the active
+    # body is absent.  ``None`` keeps direct standalone callers compatible and
+    # does not turn a missing pose sample into absence by itself.
+    target_present: bool | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -3179,73 +3271,8 @@ class RuleActionClassifier:
 
     @staticmethod
     def _bilateral_face_covering(frame: AnalyzedFrame) -> float:
-        anchor = RuleActionClassifier._reliable_face_anchor(frame)
-        if anchor is None:
-            return 0.0
-        nose, scale = anchor
-        pose_landmarks = frame.inference.data.pose_landmarks
-        pose = frame.features.pose
-
-        hands = (frame.features.left_hand, frame.features.right_hand)
-        # ``face_covering`` means both hands cover the face. Pose wrists alone
-        # are not sufficient: a close-up hand can make PoseLandmarker invent a
-        # compact pseudo-person and place guessed wrists around a guessed nose.
-        if not all(hand.detected for hand in hands):
-            return 0.0
-        detected_hand_proximity = [
-            _classifier_low(
-                math.hypot(hand.center_x - nose.x, hand.center_y - nose.y) / scale,
-                0.25,
-                0.90,
-            )
-            for hand in hands
-            if hand.center_x is not None and hand.center_y is not None
-        ]
-        if len(detected_hand_proximity) != 2:
-            return 0.0
-        hand_score = min(detected_hand_proximity)
-
-        left_wrist = _classifier_point(pose_landmarks, 15)
-        right_wrist = _classifier_point(pose_landmarks, 16)
-        if left_wrist is not None and right_wrist is not None:
-            left_elbow = (
-                pose.left_elbow_angle_3d_degrees
-                if pose.left_elbow_angle_3d_degrees is not None
-                else pose.left_elbow_angle_degrees
-            )
-            right_elbow = (
-                pose.right_elbow_angle_3d_degrees
-                if pose.right_elbow_angle_3d_degrees is not None
-                else pose.right_elbow_angle_degrees
-            )
-            folded_elbows = min(
-                _classifier_low(left_elbow, 85.0, 115.0),
-                _classifier_low(right_elbow, 85.0, 115.0),
-            )
-            hand_score = min(hand_score, folded_elbows)
-
-            # Two truly forward Stop arms can overlap the face in image space. Keep
-            # them when both arms are straight and both wrists are clearly in front
-            # of the nose according to Pose depth.
-            straight_elbows = min(
-                _classifier_high(left_elbow, 125.0, 160.0),
-                _classifier_high(right_elbow, 125.0, 160.0),
-            )
-            if (
-                nose.z is not None
-                and left_wrist.z is not None
-                and right_wrist.z is not None
-            ):
-                forward_wrists = min(
-                    _classifier_high((nose.z - left_wrist.z) / scale, 0.05, 0.30),
-                    _classifier_high((nose.z - right_wrist.z) / scale, 0.05, 0.30),
-                )
-            else:
-                forward_wrists = 0.0
-            forward_stop_escape = min(straight_elbows, forward_wrists)
-            hand_score *= 1.0 - forward_stop_escape
-
-        return hand_score
+        evidence = FaceCoveringDetector.evaluate_frame(frame)
+        return evidence.score if evidence.category == "cover" else 0.0
 
     @staticmethod
     def _reliable_face_anchor(
@@ -3698,6 +3725,634 @@ class RuleActionClassifier:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class FaceCoveringConfig:
+    """Real-time lifecycle thresholds for the specific face-covering action."""
+
+    activation_s: float = 3.0
+    exit_s: float = 1.0
+    unknown_grace_s: float = 0.5
+
+    def __post_init__(self) -> None:
+        for name in ("activation_s", "exit_s", "unknown_grace_s"):
+            value = float(getattr(self, name))
+            if not math.isfinite(value) or value <= 0.0:
+                raise ValueError(f"{name} must be finite and positive")
+
+
+@dataclass(frozen=True, slots=True)
+class FaceCoveringEvidence:
+    """Explainable current-frame evidence before temporal confirmation."""
+
+    category: str
+    score: float
+    region_source: str
+    left_source: str
+    right_source: str
+    left_cover_score: float
+    right_cover_score: float
+    left_away_score: float
+    right_away_score: float
+    current_face: bool
+    transition_reason: str
+
+
+class FaceCoveringDetector:
+    """Track one person's face-covering lifecycle using monotonic time.
+
+    The detector deliberately lives beside the rule classifier rather than in
+    the generic vote smoother.  A three-second posture must not be shortened
+    by a frame-count window, and an already active posture must not disappear
+    after one hand or face sample is temporarily unknown.
+    """
+
+    _IDLE = "idle"
+    _CANDIDATE = "candidate"
+    _ACTIVE = "active"
+
+    def __init__(self, config: FaceCoveringConfig | None = None) -> None:
+        self.config = config or FaceCoveringConfig()
+        self._state = self._IDLE
+        self._onset_s: float | None = None
+        self._activated_at_s: float | None = None
+        self._last_s: float | None = None
+        self._unknown_since_s: float | None = None
+        self._away_since_s: float | None = None
+        self._clear_since_s: float | None = None
+        self._candidate_dwell_s = 0.0
+        self._last_cover_s: float | None = None
+        self._cached_region: tuple[float, float, float, str, bool] | None = None
+        self._cached_region_at_s: float | None = None
+        self._cached_torso: tuple[float, float, float] | None = None
+        self._cached_face_track_id: int = -1
+        self._last_evidence = FaceCoveringEvidence(
+            category="unknown",
+            score=0.0,
+            region_source="none",
+            left_source="none",
+            right_source="none",
+            left_cover_score=0.0,
+            right_cover_score=0.0,
+            left_away_score=0.0,
+            right_away_score=0.0,
+            current_face=False,
+            transition_reason="initial",
+        )
+        self._last_reason = "initial"
+
+    @property
+    def active(self) -> bool:
+        return self._state == self._ACTIVE
+
+    @classmethod
+    def evaluate_frame(cls, frame: AnalyzedFrame) -> FaceCoveringEvidence:
+        """Evaluate current evidence without retaining any temporal state."""
+
+        detector = cls()
+        return detector._evaluate(frame, frame.inference.captured.monotonic_ns / 1_000_000_000.0)
+
+    def update(self, frame: AnalyzedFrame) -> FaceCoveringEvidence:
+        now = frame.inference.captured.monotonic_ns / 1_000_000_000.0
+        if self._last_s is not None and now <= self._last_s:
+            self._reset("timestamp_restart")
+        gap_too_long = (
+            self._last_s is not None
+            and now - self._last_s > self.config.unknown_grace_s
+        )
+        if gap_too_long:
+            # Invalidate retained geometry before evaluating the first frame
+            # after a discontinuity.  Otherwise that frame can briefly reuse
+            # a face region from the previous observation epoch.
+            self._reset("evidence_gap")
+        evidence = self._evaluate(frame, now)
+        self._last_evidence = evidence
+        self._last_s = now
+
+        if evidence.category == "absent":
+            self._reset("target_absent")
+            return evidence
+        if gap_too_long:
+            self._last_reason = "evidence_gap"
+            timed_out = FaceCoveringEvidence(
+                category="unknown",
+                score=0.0,
+                region_source=evidence.region_source,
+                left_source=evidence.left_source,
+                right_source=evidence.right_source,
+                left_cover_score=evidence.left_cover_score,
+                right_cover_score=evidence.right_cover_score,
+                left_away_score=evidence.left_away_score,
+                right_away_score=evidence.right_away_score,
+                current_face=evidence.current_face,
+                transition_reason="evidence_gap",
+            )
+            self._last_evidence = timed_out
+            return timed_out
+
+        recovered_after_timeout = (
+            evidence.category != "unknown"
+            and self._unknown_since_s is not None
+            and now - self._unknown_since_s > self.config.unknown_grace_s
+        )
+        if recovered_after_timeout:
+            timeout_reason = (
+                "evidence_timeout"
+                if self._state == self._ACTIVE
+                else "candidate_evidence_timeout"
+            )
+            self._reset(timeout_reason)
+            if evidence.category == "cover":
+                self._state = self._CANDIDATE
+                self._onset_s = now
+                self._last_cover_s = now
+                self._last_reason = "cover_started_after_timeout"
+            return evidence
+
+        if evidence.category == "cover":
+            had_unknown = self._unknown_since_s is not None
+            self._unknown_since_s = None
+            self._away_since_s = None
+            self._clear_since_s = None
+            if self._state == self._IDLE:
+                self._state = self._CANDIDATE
+                self._onset_s = now
+                self._candidate_dwell_s = 0.0
+                self._last_cover_s = now
+                self._last_reason = "cover_started"
+            elif self._state == self._CANDIDATE:
+                if self._onset_s is None:
+                    self._onset_s = now
+                # Unknown frames pause supported dwell.  Only adjacent cover
+                # observations contribute, so a hand disappearing for 0.4 s
+                # cannot silently turn that interval into cover time.
+                if self._last_cover_s is not None and not had_unknown:
+                    self._candidate_dwell_s += max(0.0, now - self._last_cover_s)
+                self._last_cover_s = now
+                if self._candidate_dwell_s >= self.config.activation_s:
+                    self._state = self._ACTIVE
+                    self._activated_at_s = now
+                    self._last_reason = "activation_confirmed"
+            else:
+                self._last_reason = "cover_continues"
+            return evidence
+
+        if evidence.category == "unknown":
+            self._away_since_s = None
+            self._clear_since_s = None
+            if self._state == self._CANDIDATE:
+                if self._unknown_since_s is None:
+                    self._unknown_since_s = now
+                elif now - self._unknown_since_s > self.config.unknown_grace_s:
+                    self._reset("candidate_evidence_timeout")
+            elif self._state == self._ACTIVE:
+                if self._unknown_since_s is None:
+                    self._unknown_since_s = now
+                elif now - self._unknown_since_s > self.config.unknown_grace_s:
+                    self._reset("evidence_timeout")
+            return evidence
+
+        # Away and clear are explicit end observations.  A candidate is reset
+        # immediately so two short gestures can never add up to three seconds.
+        self._unknown_since_s = None
+        if self._state == self._CANDIDATE:
+            self._reset("candidate_interrupted")
+            return evidence
+        if self._state == self._ACTIVE:
+            timer_name = "_away_since_s" if evidence.category == "away" else "_clear_since_s"
+            other_name = "_clear_since_s" if evidence.category == "away" else "_away_since_s"
+            setattr(self, other_name, None)
+            since = getattr(self, timer_name)
+            if since is None:
+                setattr(self, timer_name, now)
+                self._last_reason = (
+                    "hands_away_started"
+                    if evidence.category == "away"
+                    else "face_uncovered_started"
+                )
+            elif now - since >= self.config.exit_s:
+                self._reset(
+                    "hands_away" if evidence.category == "away" else "face_uncovered"
+                )
+        return evidence
+
+    def action_score(self, evidence: FaceCoveringEvidence) -> ActionScore | None:
+        if not self.active or self._activated_at_s is None or self._last_s is None:
+            return None
+        return ActionScore(
+            name=ActionName.FACE_COVERING,
+            confidence=max(0.0, min(1.0, evidence.score)),
+            support_ratio=1.0,
+            duration_s=max(0.0, self._last_s - self._activated_at_s),
+        )
+
+    def diagnostics(self, evidence: FaceCoveringEvidence | None = None) -> dict[str, object]:
+        current = evidence or self._last_evidence
+        now = self._last_s
+        return {
+            "state": self._state,
+            "active": self.active,
+            "onset_s": self._onset_s,
+            # Keep onset evidence distinct from active duration.  The latter
+            # already lives on ActionScore.duration_s; changing this field to
+            # zero at activation made a confirmed three-second dwell look as
+            # if it had never happened.
+            "activation_dwell_s": self._candidate_dwell_s,
+            "exit_away_dwell_s": (
+                max(0.0, now - self._away_since_s)
+                if now is not None and self._away_since_s is not None
+                else 0.0
+            ),
+            "exit_clear_dwell_s": (
+                max(0.0, now - self._clear_since_s)
+                if now is not None and self._clear_since_s is not None
+                else 0.0
+            ),
+            "unknown_age_s": (
+                max(0.0, now - self._unknown_since_s)
+                if now is not None and self._unknown_since_s is not None
+                else 0.0
+            ),
+            "region_source": current.region_source,
+            "left_source": current.left_source,
+            "right_source": current.right_source,
+            "score": round(current.score, 4),
+            "category": current.category,
+            "transition_reason": self._last_reason,
+            "left_cover_score": round(current.left_cover_score, 4),
+            "right_cover_score": round(current.right_cover_score, 4),
+            "left_away_score": round(current.left_away_score, 4),
+            "right_away_score": round(current.right_away_score, 4),
+            "current_face": current.current_face,
+            "activation_threshold_s": self.config.activation_s,
+            "exit_threshold_s": self.config.exit_s,
+            "unknown_grace_s": self.config.unknown_grace_s,
+        }
+
+    def _reset(self, reason: str) -> None:
+        self._state = self._IDLE
+        self._onset_s = None
+        self._activated_at_s = None
+        self._unknown_since_s = None
+        self._away_since_s = None
+        self._clear_since_s = None
+        self._candidate_dwell_s = 0.0
+        self._last_cover_s = None
+        if reason in {"target_absent", "timestamp_restart", "evidence_gap", "evidence_timeout"}:
+            self._cached_region = None
+            self._cached_region_at_s = None
+            self._cached_torso = None
+            self._cached_face_track_id = -1
+        self._last_reason = reason
+
+    def _evaluate(self, frame: AnalyzedFrame, now: float) -> FaceCoveringEvidence:
+        data = frame.inference.data
+        if data.target_present is False:
+            return self._evidence("absent", "none", (), (), 0.0, 0.0, 0.0, 0.0, False, "target_absent")
+        region = self._face_region(frame, now)
+        if region is None:
+            return self._evidence("unknown", "none", (), (), 0.0, 0.0, 0.0, 0.0, False, "region_unknown")
+        cx, cy, scale, source, current_face = region
+        sides = (
+            self._side_evidence(frame, "left", cx, cy, scale),
+            self._side_evidence(frame, "right", cx, cy, scale),
+        )
+        left, right = sides
+        if not left[0] or not right[0]:
+            return self._evidence(
+                "unknown", source, left, right,
+                left[2], right[2], left[3], right[3], current_face,
+                "side_unknown",
+            )
+        cover_score = min(left[2], right[2])
+        away_score = min(left[3], right[3])
+        if cover_score >= 0.40:
+            return self._evidence(
+                "cover", source, left, right,
+                left[2], right[2], left[3], right[3], current_face,
+                "bilateral_cover",
+                score=cover_score,
+            )
+        if away_score >= 0.55:
+            return self._evidence(
+                "away", source, left, right,
+                left[2], right[2], left[3], right[3], current_face,
+                "bilateral_away",
+                score=away_score,
+            )
+        if (
+            current_face
+            and left[4] <= 0.20
+            and right[4] <= 0.20
+            and self._face_geometry_clear(data.face_observation)
+        ):
+            return self._evidence(
+                "clear", source, left, right,
+                left[2], right[2], left[3], right[3], current_face,
+                "face_clear",
+                score=max(0.0, 1.0 - cover_score),
+            )
+        return self._evidence(
+            "unknown", source, left, right,
+            left[2], right[2], left[3], right[3], current_face,
+            "face_or_hand_not_clear",
+        )
+
+    @staticmethod
+    def _evidence(
+        category: str,
+        source: str,
+        left: tuple[bool, str, float, float, float],
+        right: tuple[bool, str, float, float, float],
+        left_cover: float,
+        right_cover: float,
+        left_away: float,
+        right_away: float,
+        current_face: bool,
+        reason: str,
+        *,
+        score: float = 0.0,
+    ) -> FaceCoveringEvidence:
+        return FaceCoveringEvidence(
+            category=category,
+            score=max(0.0, min(1.0, score)),
+            region_source=source,
+            left_source=left[1] if left else "none",
+            right_source=right[1] if right else "none",
+            left_cover_score=left_cover,
+            right_cover_score=right_cover,
+            left_away_score=left_away,
+            right_away_score=right_away,
+            current_face=current_face,
+            transition_reason=reason,
+        )
+
+    def _face_region(
+        self,
+        frame: AnalyzedFrame,
+        now: float,
+    ) -> tuple[float, float, float, str, bool] | None:
+        observation = _coerce_face_observation(frame.inference.data.face_observation)
+        if observation is not None:
+            if (
+                self._cached_face_track_id >= 0
+                and observation.track_id >= 0
+                and observation.track_id != self._cached_face_track_id
+            ):
+                self._cached_region = None
+                self._cached_region_at_s = None
+            x, y, width, height = observation.bbox
+            if (
+                observation.confidence >= 0.35
+                and width > 0.015
+                and height > 0.015
+                and width <= 1.0
+                and height <= 1.0
+            ):
+                scale = max(width, height, 0.02)
+                self._cached_region = (x + width / 2.0, y + height / 2.0, scale, "face", True)
+                self._cached_region_at_s = now
+                self._cached_face_track_id = observation.track_id
+                return x + width / 2.0, y + height / 2.0, scale, "face", True
+
+        landmarks = frame.inference.data.pose_landmarks
+        left_shoulder = _classifier_point(landmarks, 11, min_confidence=0.45)
+        right_shoulder = _classifier_point(landmarks, 12, min_confidence=0.45)
+        if left_shoulder is None or right_shoulder is None:
+            return None
+        shoulder_width = _classifier_distance(left_shoulder, right_shoulder)
+        # Reject palm-like pseudo-person detections and degenerate upper-body
+        # constellations before they can provide a face anchor.
+        if shoulder_width < 0.04:
+            return None
+        # Nose/ear confidence commonly collapses exactly while both hands are
+        # over the face.  Keep them as refinements, but derive the fallback
+        # location from the current shoulder line so a low-confidence guessed
+        # nose cannot pull the region away from the person.
+        nose = _classifier_point(landmarks, 0, min_confidence=0.60)
+        left_ear = _classifier_point(landmarks, 7, min_confidence=0.55)
+        right_ear = _classifier_point(landmarks, 8, min_confidence=0.55)
+        shoulder_mid_x = (left_shoulder.x + right_shoulder.x) / 2.0
+        shoulder_mid_y = (left_shoulder.y + right_shoulder.y) / 2.0
+        shoulder_head_x = shoulder_mid_x
+        shoulder_head_y = shoulder_mid_y - 0.55 * shoulder_width
+        if left_ear is not None and right_ear is not None:
+            center_x = (left_ear.x + right_ear.x) / 2.0
+            center_y = (left_ear.y + right_ear.y) / 2.0
+        elif (
+            nose is not None
+            and math.hypot(
+                nose.x - shoulder_head_x,
+                nose.y - shoulder_head_y,
+            ) <= 0.20 * shoulder_width
+        ):
+            # A lone high-confidence nose is often a guessed point on the
+            # covering hand.  Use it only when it agrees with the current
+            # torso-derived head position; bilateral ears or a current face
+            # box remain stronger anchors.
+            center_x, center_y = nose.x, nose.y
+        else:
+            # The shoulder midpoint and width are current same-person evidence;
+            # their upper continuation is a conservative face region even when
+            # every head point is occluded.  A short cache is only a last resort
+            # while that torso constellation remains available.
+            center_x, center_y = shoulder_head_x, shoulder_head_y
+        scale = max(shoulder_width, 0.02)
+        cached = self._cached_region
+        if (
+            (nose is None or (center_x, center_y) == (shoulder_head_x, shoulder_head_y))
+            and not (left_ear is not None and right_ear is not None)
+            and cached is not None
+            and self._cached_region_at_s is not None
+            and now - self._cached_region_at_s <= self.config.unknown_grace_s
+            and cached[3] in {"pose", "cached_pose"}
+            and self._cached_torso is not None
+            and 0.67 <= shoulder_width / self._cached_torso[2] <= 1.50
+            and math.hypot(
+                shoulder_mid_x - self._cached_torso[0],
+                shoulder_mid_y - self._cached_torso[1],
+            ) <= 0.50 * shoulder_width
+        ):
+            center_x, center_y, scale = cached[:3]
+            return center_x, center_y, scale, "cached_pose", False
+        self._cached_region = (center_x, center_y, scale, "pose", False)
+        self._cached_region_at_s = now
+        self._cached_torso = (shoulder_mid_x, shoulder_mid_y, shoulder_width)
+        return center_x, center_y, scale, "pose", False
+
+    @staticmethod
+    def _side_evidence(
+        frame: AnalyzedFrame,
+        side: str,
+        center_x: float,
+        center_y: float,
+        scale: float,
+    ) -> tuple[bool, str, float, float, float]:
+        features = frame.features.left_hand if side == "left" else frame.features.right_hand
+        landmarks = frame.inference.data.pose_landmarks
+        wrist_index = 15 if side == "left" else 16
+        elbow_index = 13 if side == "left" else 14
+        shoulder_index = 11 if side == "left" else 12
+        pose_wrist = _classifier_point(landmarks, wrist_index, min_confidence=0.35)
+        elbow = _classifier_point(landmarks, elbow_index, min_confidence=0.45)
+        shoulder = _classifier_point(landmarks, shoulder_index, min_confidence=0.45)
+        arm_angle = _pose_angle(
+            shoulder,
+            elbow,
+            pose_wrist,
+        )
+        folded = _classifier_low(arm_angle, 85.0, 145.0)
+        if features.detected and features.center_x is not None and features.center_y is not None:
+            point_x, point_y = features.center_x, features.center_y
+            source = "hand"
+            association = 0.0
+            if pose_wrist is not None and landmarks is not None:
+                hand_landmarks = frame.inference.data.left_hand if side == "left" else frame.inference.data.right_hand
+                hand_wrist = hand_landmarks[0] if hand_landmarks else None
+                if hand_wrist is not None:
+                    hand_alignment = min(
+                        math.hypot(hand_wrist.x - pose_wrist.x, hand_wrist.y - pose_wrist.y),
+                        math.hypot(point_x - pose_wrist.x, point_y - pose_wrist.y),
+                    )
+                    association = _classifier_low(
+                        hand_alignment / max(scale, _EPSILON),
+                        0.08,
+                        0.60,
+                    )
+            elif elbow is not None and shoulder is not None:
+                # A hand model can survive face occlusion while the pose wrist
+                # drops out.  Shoulder/elbow continuity still guards against a
+                # close-up palm belonging to a different person.
+                association = _classifier_low(
+                    math.hypot(point_x - elbow.x, point_y - elbow.y) / max(scale, _EPSILON),
+                    0.25,
+                    1.80,
+                )
+            if elbow is None or shoulder is None:
+                if pose_wrist is None:
+                    return False, "unknown", 0.0, 0.0, 0.0
+                point_x, point_y = pose_wrist.x, pose_wrist.y
+                source = "pose_wrist_fallback"
+                arm_support = max(folded, 0.55)
+            elif association < 0.20:
+                # A hand detector can return a stale/foreign palm while the
+                # same person's pose arm remains coherent.  Prefer that
+                # current arm evidence over letting the bad palm veto a side.
+                if pose_wrist is None:
+                    return False, "unknown", 0.0, 0.0, 0.0
+                point_x, point_y = pose_wrist.x, pose_wrist.y
+                source = "pose_wrist_fallback"
+                arm_support = max(folded, 0.55)
+            else:
+                arm_support = max(folded, association)
+            # Association is an independent gate.  A folded-looking elbow or
+            # a near-looking palm cannot compensate for a hand from another
+            # person/track.
+        elif pose_wrist is not None and elbow is not None and shoulder is not None:
+            point_x, point_y = pose_wrist.x, pose_wrist.y
+            source = "pose_wrist"
+            # COCO pose has no Z and 2D elbow angles become unreliable when a
+            # forearm points into the camera.  Coherent same-side shoulder /
+            # elbow / wrist geometry therefore remains usable even when the
+            # 2D angle looks straight; the face-region overlap is the primary
+            # cover evidence.
+            arm_support = max(folded, 0.55)
+        else:
+            return False, "unknown", 0.0, 0.0, 0.0
+
+        distance = math.hypot(point_x - center_x, point_y - center_y) / max(scale, _EPSILON)
+        # Covering requires the palm/wrist to overlap the central face area.
+        # A broad head-distance threshold also classifies two hands touching
+        # the cheeks, ears, or crown as covering, which conflicts with the
+        # distinct HANDS_ON_HEAD action.  Keep the outer head ring unknown (or
+        # clear when current face evidence exists) instead of treating it as
+        # positive cover evidence.
+        near = _classifier_low(distance, 0.25, 0.65)
+        if features.detected and pose_wrist is not None:
+            hand_landmarks = (
+                frame.inference.data.left_hand
+                if side == "left"
+                else frame.inference.data.right_hand
+            )
+            if hand_landmarks:
+                # The palm center can sit above or beside the face while the
+                # palm edge actually covers it.  Accept that overlap only when
+                # the same person's pose wrist independently enters the face
+                # region; this prevents a large foreign/close-up palm or a
+                # cheek/head touch from winning on bounds alone.
+                edge_distance = min(
+                    math.hypot(point.x - center_x, point.y - center_y)
+                    for point in hand_landmarks
+                ) / max(scale, _EPSILON)
+                wrist_distance = math.hypot(
+                    pose_wrist.x - center_x,
+                    pose_wrist.y - center_y,
+                ) / max(scale, _EPSILON)
+                edge_overlap = _classifier_low(edge_distance, 0.15, 0.65)
+                wrist_overlap = _classifier_low(wrist_distance, 0.25, 0.65)
+                near = max(near, min(edge_overlap, wrist_overlap))
+        away = _classifier_high(distance, 0.95, 1.45)
+        forward_depth = (
+            _classifier_high(
+                (shoulder.z - pose_wrist.z) / max(scale, _EPSILON),
+                0.05,
+                0.25,
+            )
+            if shoulder is not None
+            and pose_wrist is not None
+            and shoulder.z is not None
+            and pose_wrist.z is not None
+            else 0.0
+        )
+        # A fully straight arm is a contradiction only when depth confirms a
+        # forward Stop reach.  A 2D angle by itself is ambiguous under COCO's
+        # missing-Z contract and must not veto a valid face cover.
+        if arm_angle is not None and arm_angle >= 155.0 and forward_depth >= 0.35:
+            arm_support = 0.0
+        elif (
+            arm_angle is not None
+            and arm_angle >= 155.0
+            and forward_depth == 0.0
+            and features.detected
+            and (features.palm_facing_score or 0.0) >= 0.45
+            and features.extended_finger_count >= 4
+        ):
+            # COCO has no Z, but a current open camera-facing palm plus a
+            # straight arm is still positive Stop evidence and must not become
+            # a face cover merely because its 2D projection crosses the head.
+            arm_support = 0.0
+        return True, source, min(near, arm_support), away, near
+
+    @staticmethod
+    def _face_geometry_clear(value: FaceObservation | Mapping[str, object] | None) -> bool:
+        observation = _coerce_face_observation(value)
+        if observation is None or observation.confidence < 0.50 or len(observation.landmarks) < 5:
+            return False
+        x, y, width, height = observation.bbox
+        if width <= _EPSILON or height <= _EPSILON:
+            return False
+        points = observation.landmarks[:5]
+        if any(
+            px < x - 0.25 * width
+            or px > x + 1.25 * width
+            or py < y - 0.25 * height
+            or py > y + 1.25 * height
+            for px, py in points
+        ):
+            return False
+        left_eye, right_eye, nose, mouth_left, mouth_right = points
+        eye_y = (left_eye[1] + right_eye[1]) / 2.0
+        eye_width = abs(right_eye[0] - left_eye[0])
+        if eye_width <= _EPSILON:
+            return False
+        if abs(left_eye[1] - right_eye[1]) > 0.45 * height:
+            return False
+        if not (min(left_eye[0], right_eye[0]) - 0.25 * eye_width <= nose[0] <= max(left_eye[0], right_eye[0]) + 0.25 * eye_width):
+            return False
+        if nose[1] < eye_y - 0.20 * height or nose[1] > max(mouth_left[1], mouth_right[1]) + 0.25 * height:
+            return False
+        return True
+
+
 class ActionSmoother:
     """Applies per-action majority windows and activation/deactivation hysteresis."""
 
@@ -3872,8 +4527,13 @@ class ActionRecognizer:
     def __init__(self) -> None:
         self._classifier = RuleActionClassifier()
         self._smoother = ActionSmoother()
+        self._face_covering = FaceCoveringDetector()
         self._fall_events = FallEventManager()
         self._jump_events = JumpEventManager()
+
+    @property
+    def face_covering_diagnostics(self) -> dict[str, object]:
+        return self._face_covering.diagnostics()
 
     def recognize(
         self, frame: AnalyzedFrame
@@ -3885,6 +4545,14 @@ class ActionRecognizer:
     ]:
         raw_scores = self._classifier.classify(frame)
         timestamp_s = frame.inference.captured.monotonic_ns / 1_000_000_000.0
+        face_evidence = self._face_covering.update(frame)
+        # FACE_COVERING is owned by its real-time lifecycle.  Its raw score is
+        # still published for diagnostics and conflict suppression, but its
+        # stable label is appended below instead of passing through the generic
+        # frame-count smoother.
+        raw_scores[ActionName.FACE_COVERING] = (
+            face_evidence.score if face_evidence.category == "cover" else 0.0
+        )
         pose_detected = frame.inference.data.pose_landmarks is not None
         jump_motion = _jump_motion_evidence(frame)
         raw_scores[ActionName.JUMPING] = jump_motion.takeoff_score
@@ -3915,11 +4583,6 @@ class ActionRecognizer:
             # survive after both hands leave the frame.  This also removes stale
             # votes when an upper-body crop no longer contains either hand.
             self._smoother.clear(ActionName.STOP_GESTURE)
-        if RuleActionClassifier._bilateral_face_covering(frame) <= 0.0:
-            # Face covering is a current bilateral observation. Never attach a
-            # retained face-covering vote to a lone hand after the person or the
-            # second hand has left the frame.
-            self._smoother.clear(ActionName.FACE_COVERING)
         if RuleActionClassifier._reliable_nod_anchor(frame) is None:
             # Nose motion is meaningless without a current, coherent head and
             # shoulders. Clear old votes immediately when only a hand remains.
@@ -3932,7 +4595,23 @@ class ActionRecognizer:
             )
         ):
             self._smoother.clear(ActionName.HANDS_ON_HEAD)
+        # The lifecycle above is the single owner of FACE_COVERING activation;
+        # keep the generic smoother's private history from reactivating it on
+        # its older 8/10 frame policy during a short candidate or exit period.
+        self._smoother.clear(ActionName.FACE_COVERING)
         actions = self._smoother.update(raw_scores, timestamp_s)
+        actions = tuple(
+            action for action in actions
+            if action.name is not ActionName.FACE_COVERING
+        )
+        face_action = self._face_covering.action_score(face_evidence)
+        if face_action is not None:
+            actions = tuple(
+                sorted(
+                    (*actions, face_action),
+                    key=lambda action: (*action_priority(action.name), -action.confidence),
+                )
+            )
         ranked_scores = tuple(
             sorted(
                 raw_scores.items(),
@@ -3959,6 +4638,8 @@ class LandmarkFrame:
     timestamp_s: float | None = None
     fps: float = 0.0
     face_observed: bool | None = None
+    face_observation: FaceObservation | Mapping[str, object] | None = None
+    target_present: bool | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -3973,6 +4654,7 @@ class BehaviorResult:
     jump_status: JumpEventStatus
     feature_ms: float
     recognition_ms: float
+    face_covering_detector: dict[str, object] = field(default_factory=dict)
 
     @property
     def primary_action(self) -> ActionScore | None:
@@ -4022,6 +4704,8 @@ class BehaviorEngine:
             right_hand=frame.right_hand,
             fps=frame.fps,
             face_observed=frame.face_observed,
+            face_observation=frame.face_observation,
+            target_present=frame.target_present,
         )
         captured = CapturedFrame(
             sequence=self._sequence,
@@ -4066,6 +4750,7 @@ class BehaviorEngine:
             jump_status=jump_status,
             feature_ms=feature_ms,
             recognition_ms=recognition_ms,
+            face_covering_detector=self._recognizer.face_covering_diagnostics,
         )
 
     def reset(self) -> None:
@@ -4141,11 +4826,15 @@ __all__ = [
     "ActionScore",
     "BehaviorEngine",
     "BehaviorResult",
+    "FaceCoveringConfig",
+    "FaceCoveringDetector",
+    "FaceCoveringEvidence",
     "FallDetectionConfig",
     "FallEventStatus",
     "FallPhase",
     "HandLandmark",
     "HandLandmarkSet",
+    "FaceObservation",
     "LandmarkFrame",
     "PoseLandmark",
     "PoseLandmarkSet",

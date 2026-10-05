@@ -73,7 +73,10 @@ evaluated_wrist_distance_ratio,wrist_distance_threshold_ratio`。它记录手腕
 
 当前 HandLandmarker 没有手到人体的多目标关联；规则引擎只在单主目标模式使用
 手部结果，并把本帧选出的同一个兼容 `hand_action` 写入所有当前手项。因此
-`hands[i].hand_action` 不能解释为第 `i` 只手独立分类的结论。
+`hands[i].hand_action` 不能解释为第 `i` 只手独立分类的结论。 当精确 `face_covering` 已由人体腕肘
+证据确认、但手部模型未检出当前手时，可以输出一条 `handedness=""`、
+`landmarks=[]` 的动作证据项，使 `hands_covering_face` 继续参与正式事件路由。
+该项不表示检测到一只手，不得用于画手部骨架；掩面解除后该项消失。
 
 `tracked_objects[]` 是 `/perception/vision/object_detections` 最近成功结果的
 短时镜像。除检测框字段外还包含 `vision_epoch,target_id,target_type,track_id,
@@ -273,6 +276,7 @@ Vision 不订阅 `/internal_need/state`。情绪系统不得把
 | `fall_alert_active` | 跌倒确认后的短暂保持状态 |
 | `fall_detector` | `phase,armed,lying_score,transition_score,event_triggered,alert_active,cooldown_remaining_s` |
 | `jump_detector` | `mode,phase,evidence_score,full_body_score,upper_body_score,return_score,component_scores,baseline_ready,upward_displacement_ratio,evidence_frames,event_triggered,active,hold_remaining_s,cooldown_remaining_s,missing_landmarks,torso_scale_change_ratio,rejection_reason` |
+| `face_covering_detector` | `state,active,onset_s,activation_dwell_s,exit_away_dwell_s,exit_clear_dwell_s,unknown_age_s,region_source,left_source,right_source,score,category,transition_reason,left_cover_score,right_cover_score,left_away_score,right_away_score,current_face,activation_threshold_s,exit_threshold_s,unknown_grace_s` |
 | `stomp_detector` | `source,score,recognized` 以及脚踝/膝部垂直速度、归一化幅度和换向次数 |
 | `hand_features.left/right` | 手是否检出、伸指状态、掌心分数、尺度、运动能量及 Stop 手腕高度/指令区域分 |
 | `temporal_features` | 窗口、人体/头/手运动、肩/髋/脚踝垂直速度、脚踝/膝部抬落周期、躯干尺度变化和双腕开合量 |

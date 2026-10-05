@@ -16,6 +16,7 @@ from __future__ import annotations
 from collections import deque
 import copy
 import logging
+import math
 from pathlib import Path
 import threading
 import time
@@ -29,6 +30,7 @@ from marsdog_vision_interaction.providers.face_backends import (
     create_face_recognizer,
 )
 from marsdog_vision_interaction.providers.gesture_pose_engine import (
+    FaceObservation,
     HandLandmark,
     HandLandmarkSet,
     PoseLandmark,
@@ -1110,6 +1112,11 @@ class VisionObservationProvider(BaseProvider):
         # stable target manager.  Hand-to-person association is not available
         # from MediaPipe Tasks, so hands are used only in single-target mode.
         target_human = self._match_active_human(active.bbox, obs.get("humans", []))
+        active_face_observation = self._match_active_face_observation(
+            active,
+            obs.get("faces", []),
+            target_is_current,
+        )
         pose_landmarks = (
             target_human.get("_behavior_landmarks")
             if target_human is not None and target_is_current
@@ -1126,6 +1133,8 @@ class VisionObservationProvider(BaseProvider):
                 if self.task_face_enabled
                 else None
             ),
+            face_observation=active_face_observation,
+            target_present=(target_is_current if active.track_id > 0 else False),
             now=time.monotonic(),
         )
         action_result["landmarker"] = obs.get(
@@ -1214,7 +1223,12 @@ class VisionObservationProvider(BaseProvider):
                     "quality": round(f.get("quality", 0), 4),
                 })
 
-        # Attach hand action labels to each hand
+        # Attach action labels to detected hands.  Some bilateral actions can
+        # be established from the active person's pose wrists when the hand
+        # landmarker is occluded.  Preserve that formal action as one
+        # coordinate-free row instead of silently dropping it with an empty
+        # ``hands`` list; an empty landmark list explicitly avoids inventing
+        # hand coordinates.
         hands_out = []
         for h in obs.get("hands", []):
             hands_out.append({
@@ -1222,6 +1236,19 @@ class VisionObservationProvider(BaseProvider):
                 "hand_action": hand_key,
                 "hand_action_label": hand_label,
                 "landmarks": h.get("landmarks", []),
+            })
+        face_covering_status = action_result.get("face_covering_detector", {})
+        pose_supported_face_covering = (
+            hand_key == "hands_covering_face"
+            and isinstance(face_covering_status, dict)
+            and face_covering_status.get("active") is True
+        )
+        if pose_supported_face_covering and not hands_out:
+            hands_out.append({
+                "handedness": "",
+                "hand_action": hand_key,
+                "hand_action_label": hand_label,
+                "landmarks": [],
             })
 
         result = {
@@ -1267,6 +1294,123 @@ class VisionObservationProvider(BaseProvider):
             return sum((first - second) ** 2 for first, second in zip(active_bbox, bbox))
 
         return min(humans, key=distance)
+
+    @staticmethod
+    def _match_active_face_observation(
+        active: Any,
+        faces: list[dict[str, Any]],
+        target_is_current: bool,
+    ) -> FaceObservation | None:
+        """Return only the current YuNet evidence belonging to the active body."""
+
+        if not target_is_current:
+            return None
+        try:
+            active_face_track_id = int(getattr(active, "face_track_id", -1))
+        except (TypeError, ValueError):
+            active_face_track_id = -1
+        candidates: list[FaceObservation] = []
+        for face in faces:
+            if not isinstance(face, dict):
+                continue
+            observation = face.get("_behavior_face_observation")
+            if not isinstance(observation, FaceObservation):
+                continue
+            if (
+                active_face_track_id >= 0
+                and observation.track_id >= 0
+                and observation.track_id != active_face_track_id
+            ):
+                continue
+            candidates.append(observation)
+        if not candidates:
+            return None
+        compatible = [
+            item for item in candidates
+            if VisionObservationProvider._face_observation_compatible(active, item)
+        ]
+        if not compatible:
+            return None
+        if active_face_track_id >= 0:
+            exact = [
+                item for item in compatible
+                if item.track_id == active_face_track_id
+            ]
+            if exact:
+                return max(exact, key=lambda item: item.confidence)
+        active_bbox = getattr(active, "face_bbox", (0.0, 0.0, 0.0, 0.0))
+        try:
+            active_center = (
+                float(active_bbox[0]) + float(active_bbox[2]) / 2.0,
+                float(active_bbox[1]) + float(active_bbox[3]) / 2.0,
+            )
+        except (TypeError, ValueError, IndexError):
+            return None
+        ranked = sorted(
+            compatible,
+            key=lambda item: math.hypot(
+                item.bbox[0] + item.bbox[2] / 2.0 - active_center[0],
+                item.bbox[1] + item.bbox[3] / 2.0 - active_center[1],
+            ),
+        )
+        if len(ranked) > 1:
+            first_distance = math.hypot(
+                ranked[0].bbox[0] + ranked[0].bbox[2] / 2.0 - active_center[0],
+                ranked[0].bbox[1] + ranked[0].bbox[3] / 2.0 - active_center[1],
+            )
+            second_distance = math.hypot(
+                ranked[1].bbox[0] + ranked[1].bbox[2] / 2.0 - active_center[0],
+                ranked[1].bbox[1] + ranked[1].bbox[3] / 2.0 - active_center[1],
+            )
+            if second_distance - first_distance < 0.05:
+                return None
+        return ranked[0]
+
+    @staticmethod
+    def _face_observation_compatible(
+        active: Any,
+        observation: FaceObservation,
+    ) -> bool:
+        """Require current face geometry to sit inside the selected body."""
+
+        try:
+            body_x, body_y, body_w, body_h = tuple(
+                float(value) for value in getattr(active, "bbox")
+            )
+            face_x, face_y, face_w, face_h = observation.bbox
+        except (AttributeError, TypeError, ValueError):
+            return False
+        if body_w <= 0.0 or body_h <= 0.0 or face_w <= 0.0 or face_h <= 0.0:
+            return False
+        face_center = (face_x + face_w / 2.0, face_y + face_h / 2.0)
+        if not (
+            body_x - 0.15 * body_w <= face_center[0] <= body_x + 1.15 * body_w
+            and body_y - 0.20 * body_h <= face_center[1] <= body_y + 0.85 * body_h
+        ):
+            return False
+        active_face_bbox = getattr(active, "face_bbox", (0.0, 0.0, 0.0, 0.0))
+        try:
+            active_face_x, active_face_y, active_face_w, active_face_h = tuple(
+                float(value) for value in active_face_bbox
+            )
+        except (TypeError, ValueError):
+            active_face_w = active_face_h = 0.0
+        if active_face_w > 0.0 and active_face_h > 0.0:
+            active_center = (
+                active_face_x + active_face_w / 2.0,
+                active_face_y + active_face_h / 2.0,
+            )
+            max_distance = max(
+                0.20,
+                2.5 * max(active_face_w, active_face_h, face_w, face_h),
+            )
+        else:
+            active_center = (body_x + body_w / 2.0, body_y + 0.20 * body_h)
+            max_distance = max(0.25, 0.40 * body_w)
+        return math.hypot(
+            face_center[0] - active_center[0],
+            face_center[1] - active_center[1],
+        ) <= max_distance
 
     @staticmethod
     def _behavior_hands(
@@ -1547,6 +1691,18 @@ class VisionObservationProvider(BaseProvider):
                     "confidence": round(conf, 4),
                     "x1": x1, "y1": y1, "x2": x2, "y2": y2,  # pixel coords for tracking
                     "_yunet_detection": np.asarray(det, dtype=np.float32),
+                    # Keep immutable normalized five-point evidence private to
+                    # the action engine.  The public face contract remains
+                    # bbox/identity only.
+                    "_behavior_face_observation": FaceObservation(
+                        bbox=(fx / w, fy / h, fw / w, fh / h),
+                        landmarks=tuple(
+                            (float(det[4 + index * 2]) / w, float(det[5 + index * 2]) / h)
+                            for index in range(5)
+                        ),
+                        confidence=conf,
+                        track_id=-1,
+                    ),
                 })
 
             if not face_data:
@@ -1588,6 +1744,14 @@ class VisionObservationProvider(BaseProvider):
             for i, fd in enumerate(face_data):
                 tid = int(track_ids[i]) if track_ids is not None and i < len(track_ids) else -1
                 fd["track_id"] = tid
+                behavior_face = fd.get("_behavior_face_observation")
+                if isinstance(behavior_face, FaceObservation):
+                    fd["_behavior_face_observation"] = FaceObservation(
+                        bbox=behavior_face.bbox,
+                        landmarks=behavior_face.landmarks,
+                        confidence=behavior_face.confidence,
+                        track_id=tid,
+                    )
                 fd["identity_state"] = "unverified"
                 fd["identity_confidence"] = 0.0
                 fd["recognized_user"] = ""

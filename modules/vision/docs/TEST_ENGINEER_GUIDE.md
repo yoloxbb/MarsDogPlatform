@@ -426,7 +426,7 @@ Visual state changed: track=<id> tracking=<state> identity=<name> identity_state
 | 层级 | 字段 | 含义 | 能证明什么 |
 |---|---|---|---|
 | 1. 原始候选 | `raw_scores[name=<精确名>].score` | 当前帧规则分数，尚未经过时序确认 | 只能定位规则是否接近成立，不能判成功 |
-| 2. 稳定识别 | `recognized_actions[name=<精确名>]` | 经过动作自己的窗口、支持率和滞回后成立 | 证明 GesturePose 确实识别了该精确动作 |
+| 2. 稳定识别 | `recognized_actions[name=<精确名>]` | 经过动作自己的时序确认（窗口投票或持续时长）后成立 | 证明 GesturePose 确实识别了该精确动作 |
 | 3. 主动作 | `primary_action/primary_priority` | 同帧多个稳定动作中按 P0～P4 选出的最高优先动作 | 证明本帧展示主结果；不能替代完整 `recognized_actions[]` |
 | 4. 兼容输出 | `legacy_pose_action/legacy_hand_actions[]`；正式包中的 `active_target.pose_action/hands[].hand_action` | 折叠给既有下游的公开动作名称 | 证明精确动作已正确折叠；多个精确动作可能共用同一个值 |
 | 5. 正式事件 | `/perception/visual_event.events[]` 和 `统一日志 v2 vision.event.published` | 身份门禁后的正式 Vision 事件 | 证明 Vision 已发布；不能证明 Tree 已选择或 Action 已执行 |
@@ -454,7 +454,7 @@ Visual state changed: track=<id> tracking=<state> identity=<name> identity_state
 | GP-007 | 抱臂：两条前臂交叉于胸前并保持 | `arms_crossed`（P1/gesture） | `pose_action=arms_crossed` | `EVT_VISION_MASTER_SAD` |
 | GP-008 | 低头：头部相对肩线明显下垂并保持 | `head_down`（P2/posture） | `pose_action=head_down_slumped` | `EVT_VISION_MASTER_SAD` |
 | GP-009 | 垂肩：低头并让肩部呈明显塌陷/消沉姿态 | `shoulders_slumped`（P2/posture） | `pose_action=head_down_slumped` | `EVT_VISION_MASTER_SAD` |
-| GP-010 | 掩面：双手同时靠近并遮住脸部 | `face_covering`（P2/gesture） | `hand_action=hands_covering_face` | `EVT_VISION_MASTER_SAD` |
+| GP-010 | 掩面：双手遮住脸部持续至少 3 秒 | `face_covering`（P2/gesture） | `hand_action=hands_covering_face` | `EVT_VISION_MASTER_SAD` |
 | GP-011 | 抱头：双手同时放到头顶或头部两侧 | `hands_on_head`（P2/gesture） | `hand_action=hands_covering_face` | `EVT_VISION_MASTER_SAD` |
 | GP-012 | 蜷缩：下蹲/收拢身体，使头、躯干和四肢呈明显蜷缩 | `curled_up`（P2/posture） | `pose_action=body_curled_up` | `EVT_VISION_MASTER_SAD` |
 | GP-013 | 驼背：躯干明显向前弓曲并保持 | `hunched`（P2/posture） | `pose_action=hunched_back` | `EVT_VISION_MASTER_SAD` |
@@ -470,6 +470,20 @@ Visual state changed: track=<id> tracking=<state> identity=<name> identity_state
 | GP-023 | 坐姿：躯干直立、髋膝弯曲形成明确坐姿并保持 | `sitting`（P4/posture） | `pose_action=neutral_stand_sit` | `EVT_VISION_MASTER_NEUTRAL` |
 | GP-024 | 静态躺卧：测试人员已经躺好后进入画面或保持静止 | `lying`（P4/posture）；同时 `pose_state=lying` | 无精确动作兼容输出 | 无；静态躺卧不得产生 `EVT_VISION_FALL` |
 | GP-025 | 低运动：自然站立或坐下并长时间基本不动 | `low_motion`（P4/activity） | `pose_action=neutral_stand_sit` | `EVT_VISION_MASTER_NEUTRAL` |
+
+**GP-010 掩面时序验收**：掩面持续满 3 秒才允许出现稳定 `face_covering`。
+鼻尖被挡住或手部模型漏检时，可由当前脸部范围及同侧手腕/手肘证据补充；完全未知
+最多容忍 0.5 秒，未知期间不累计开始计时。不能把若干次不足 3 秒的短动作相加判成功。
+
+已确认掩面后，以下任一条件各自连续满 1 秒才解除：双手明确离开脸部；或当前
+五官可信且双手不再遮挡脸部。只有预测五官坐标、检测到人脸或没有检测到手，都不能
+单独证明动作结束。结束计时期间重新遮脸，应取消结束计时并保持已激活状态。
+持续未知超过容忍时间或确认人体离开则清除状态，重新出现重新计时。
+
+需覆盖 3 秒开始边界、1 秒结束边界、短暂漏检、结束中重新遮脸，以及摸脸、抱头、
+停止手势和近镜头单手负例。`hands_covering_face` 同时兼容抱头，验收本动作解除应
+检查精确 `recognized_actions[name=face_covering]`，不能仅看兼容字段或 SAD 事件。
+
 
 其中 P0 优先级最高，P4 最低；这是识别器在同一帧选择主动作的优先级，不是 ROS QoS，
 也不是行为树候选优先级。一个帧中可以同时存在一个 `pose_action` 和一个

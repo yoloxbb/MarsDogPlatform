@@ -17,6 +17,7 @@ from marsdog_vision_interaction.providers.gesture_pose_engine import (
     ActionName,
     BehaviorEngine,
     FallDetectionConfig,
+    FaceObservation,
     HandLandmarkSet,
     LandmarkFrame,
     PoseLandmarkSet,
@@ -158,6 +159,8 @@ class PoseActionClassifier:
         left_hand: HandLandmarkSet | None = None,
         right_hand: HandLandmarkSet | None = None,
         face_observed: bool | None = None,
+        face_observation: FaceObservation | dict[str, Any] | None = None,
+        target_present: bool | None = None,
         now: float | None = None,
     ) -> dict[str, Any]:
         timestamp = time.monotonic() if now is None else float(now)
@@ -193,6 +196,8 @@ class PoseActionClassifier:
                     left_hand=left_hand,
                     right_hand=right_hand,
                     face_observed=face_observed,
+                    face_observation=face_observation,
+                    target_present=target_present,
                 )
             )
         except ValueError as exc:
@@ -209,6 +214,8 @@ class PoseActionClassifier:
                     left_hand=left_hand,
                     right_hand=right_hand,
                     face_observed=face_observed,
+                    face_observation=face_observation,
+                    target_present=target_present,
                 )
             )
 
@@ -270,6 +277,8 @@ class PoseActionClassifier:
         )
         self._diagnostics = {
             "face_observed": face_observed,
+            "target_present": target_present,
+            "face_covering_detector": result.face_covering_detector,
             "primary_action": (
                 result.primary_action.name.value
                 if result.primary_action is not None

@@ -1,6 +1,7 @@
 from marsdog_vision_interaction.providers.gesture_pose_engine import (
     ActionName,
     BehaviorEngine,
+    FaceObservation,
     FallEventManager,
     HandLandmark,
     LandmarkFrame,
@@ -192,6 +193,21 @@ def _face_covering_pose() -> tuple[PoseLandmark, ...]:
         right_elbow=(0.58, 0.31),
         left_wrist=(0.46, 0.21),
         right_wrist=(0.54, 0.21),
+    )
+
+
+def _clear_face() -> FaceObservation:
+    return FaceObservation(
+        bbox=(0.40, 0.10, 0.20, 0.20),
+        landmarks=(
+            (0.445, 0.155),
+            (0.555, 0.155),
+            (0.500, 0.205),
+            (0.460, 0.250),
+            (0.540, 0.250),
+        ),
+        confidence=0.90,
+        track_id=7,
     )
 
 
@@ -883,32 +899,234 @@ def test_crossed_arms_open_palm_does_not_trigger_stop() -> None:
     )
 
 
-def test_face_covering_requires_two_current_hands() -> None:
+def test_face_covering_uses_bilateral_pose_fallback_when_hands_missing() -> None:
     engine = BehaviorEngine()
     results = [
         engine.update(
             LandmarkFrame(
                 monotonic_s=1.0 + index * 0.1,
                 pose_landmarks=_face_covering_pose(),
-                left_hand=_hand_at(0.46, 0.21),
+                target_present=True,
             )
         )
-        for index in range(12)
+        for index in range(32)
     ]
 
-    assert max(
-        result.raw_score_map[ActionName.FACE_COVERING]
-        for result in results
-    ) == 0.0
     assert all(
-        ActionName.FACE_COVERING not in {
-            action.name for action in result.actions
-        }
-        for result in results
+        ActionName.FACE_COVERING not in {action.name for action in result.actions}
+        for result in results[:30]
+    )
+    assert ActionName.FACE_COVERING in {
+        action.name for action in results[-1].actions
+    }
+
+
+def test_face_covering_geometry_handles_hidden_nose_and_mixed_sources() -> None:
+    pose = _hide_pose_landmarks(_face_covering_pose(), 0, 7, 8)
+    result = BehaviorEngine().update(
+        LandmarkFrame(
+            monotonic_s=1.0,
+            pose_landmarks=pose,
+            left_hand=_hand_at(0.46, 0.21),
+            target_present=True,
+        )
     )
 
+    evidence = result.face_covering_detector
+    assert evidence["category"] == "cover"
+    assert evidence["region_source"] == "pose"
+    assert evidence["left_source"] == "hand"
+    assert evidence["right_source"] == "pose_wrist"
 
-def test_face_covering_clears_immediately_when_only_hands_remain() -> None:
+
+def test_face_covering_geometry_requires_bilateral_current_arm_evidence() -> None:
+    pose = _hide_pose_landmarks(_face_covering_pose(), 16)
+    result = BehaviorEngine().update(
+        LandmarkFrame(
+            monotonic_s=1.0,
+            pose_landmarks=pose,
+            left_hand=_hand_at(0.46, 0.21),
+            target_present=True,
+        )
+    )
+
+    assert result.face_covering_detector["category"] == "unknown"
+    assert result.face_covering_detector["right_source"] == "unknown"
+
+
+def test_face_covering_rejects_minuscule_pseudo_person_geometry() -> None:
+    pose = tuple(
+        PoseLandmark(
+            0.5 + (point.x - 0.5) * 0.10,
+            0.5 + (point.y - 0.5) * 0.10,
+            point.z,
+            point.visibility,
+            point.presence,
+        )
+        for point in _face_covering_pose()
+    )
+    result = BehaviorEngine().update(
+        LandmarkFrame(
+            monotonic_s=1.0,
+            pose_landmarks=pose,
+            target_present=True,
+        )
+    )
+
+    assert result.face_covering_detector["category"] == "unknown"
+    assert result.face_covering_detector["region_source"] == "none"
+
+
+def test_cached_face_region_rejects_large_torso_motion() -> None:
+    engine = BehaviorEngine()
+    first = engine.update(
+        LandmarkFrame(
+            monotonic_s=1.0,
+            pose_landmarks=_face_covering_pose(),
+            target_present=True,
+        )
+    )
+    assert first.face_covering_detector["region_source"] == "pose"
+
+    shifted_hidden = tuple(
+        PoseLandmark(
+            point.x + 0.20,
+            point.y,
+            point.z,
+            0.0 if index in (0, 7, 8) else point.visibility,
+            0.0 if index in (0, 7, 8) else point.presence,
+        )
+        for index, point in enumerate(_face_covering_pose())
+    )
+    moved = engine.update(
+        LandmarkFrame(
+            monotonic_s=1.1,
+            pose_landmarks=shifted_hidden,
+            target_present=True,
+        )
+    )
+
+    assert moved.face_covering_detector["region_source"] == "pose"
+
+
+def test_no_z_open_forward_palms_with_straight_arms_are_not_covering() -> None:
+    pose = _pose_with_arms(
+        left_elbow=(0.43, 0.255),
+        right_elbow=(0.57, 0.255),
+        left_wrist=(0.46, 0.21),
+        right_wrist=(0.54, 0.21),
+    )
+    no_depth = tuple(
+        PoseLandmark(
+            point.x,
+            point.y,
+            None,
+            point.visibility,
+            point.presence,
+        )
+        for point in pose
+    )
+    result = BehaviorEngine().update(
+        LandmarkFrame(
+            monotonic_s=1.0,
+            pose_landmarks=no_depth,
+            left_hand=_forward_palm_at_wrist(0.46, 0.21),
+            right_hand=_forward_palm_at_wrist(0.54, 0.21),
+            target_present=True,
+        )
+    )
+
+    assert result.face_covering_detector["category"] != "cover"
+
+
+def test_foreign_face_hands_do_not_override_same_person_pose_arms() -> None:
+    result = BehaviorEngine().update(
+        LandmarkFrame(
+            monotonic_s=1.0,
+            pose_landmarks=_pose("standing"),
+            # Both independent hands appear over the face, but their wrists
+            # do not associate with this person's current pose wrists.
+            left_hand=_hand_at(0.46, 0.21),
+            right_hand=_hand_at(0.54, 0.21),
+            target_present=True,
+        )
+    )
+
+    evidence = result.face_covering_detector
+    assert evidence["category"] != "cover"
+    assert evidence["left_source"] == "pose_wrist_fallback"
+    assert evidence["right_source"] == "pose_wrist_fallback"
+
+
+def test_touching_cheeks_or_holding_head_is_not_face_covering() -> None:
+    for left_wrist, right_wrist in (
+        ((0.38, 0.20), (0.62, 0.20)),
+        ((0.40, 0.10), (0.60, 0.10)),
+    ):
+        pose = _pose_with_arms(
+            left_elbow=(0.40, 0.28),
+            right_elbow=(0.60, 0.28),
+            left_wrist=left_wrist,
+            right_wrist=right_wrist,
+        )
+        engine = BehaviorEngine()
+        for index in range(32):
+            result = engine.update(
+                LandmarkFrame(
+                    monotonic_s=1.0 + index * 0.1,
+                    pose_landmarks=pose,
+                    target_present=True,
+                )
+            )
+
+        assert result.face_covering_detector["category"] != "cover"
+        assert ActionName.FACE_COVERING not in {
+            action.name for action in result.actions
+        }
+
+
+def test_predicted_five_point_face_does_not_end_while_hands_still_cover() -> None:
+    engine = BehaviorEngine()
+    for index in range(32):
+        result = engine.update(
+            LandmarkFrame(
+                monotonic_s=1.0 + index * 0.1,
+                pose_landmarks=_face_covering_pose(),
+                left_hand=_hand_at(0.46, 0.21),
+                right_hand=_hand_at(0.54, 0.21),
+                face_observation=_clear_face(),
+                target_present=True,
+            )
+        )
+
+    assert result.face_covering_detector["category"] == "cover"
+    assert result.face_covering_detector["current_face"] is True
+    assert ActionName.FACE_COVERING in {action.name for action in result.actions}
+
+
+def test_clear_face_needs_both_hands_outside_cover_region() -> None:
+    moderate_pose = _pose_with_arms(
+        left_elbow=(0.36, 0.28),
+        right_elbow=(0.64, 0.28),
+        left_wrist=(0.29, 0.18),
+        right_wrist=(0.71, 0.18),
+    )
+    result = BehaviorEngine().update(
+        LandmarkFrame(
+            monotonic_s=1.0,
+            pose_landmarks=moderate_pose,
+            face_observation=_clear_face(),
+            target_present=True,
+        )
+    )
+
+    evidence = result.face_covering_detector
+    assert evidence["category"] == "clear"
+    assert evidence["left_cover_score"] <= 0.20
+    assert evidence["right_cover_score"] <= 0.20
+
+
+def test_face_covering_clears_when_target_is_confirmed_absent() -> None:
     engine = BehaviorEngine()
     results = [
         engine.update(
@@ -917,9 +1135,10 @@ def test_face_covering_clears_immediately_when_only_hands_remain() -> None:
                 pose_landmarks=_face_covering_pose(),
                 left_hand=_hand_at(0.46, 0.21),
                 right_hand=_hand_at(0.54, 0.21),
+                target_present=True,
             )
         )
-        for index in range(12)
+        for index in range(32)
     ]
     assert ActionName.FACE_COVERING in {
         action.name for action in results[-1].actions
@@ -927,10 +1146,11 @@ def test_face_covering_clears_immediately_when_only_hands_remain() -> None:
 
     hands_without_person = engine.update(
         LandmarkFrame(
-            monotonic_s=2.2,
+            monotonic_s=4.2,
             pose_landmarks=None,
             left_hand=_hand_at(0.46, 0.21),
             right_hand=_hand_at(0.54, 0.21),
+            target_present=False,
         )
     )
 
@@ -941,6 +1161,59 @@ def test_face_covering_clears_immediately_when_only_hands_remain() -> None:
     assert ActionName.FACE_COVERING not in {
         action.name for action in hands_without_person.actions
     }
+
+
+def test_pose_fallback_face_covering_still_publishes_hand_action_without_hands() -> None:
+    classifier = PoseActionClassifier()
+    snapshot = {}
+    for index in range(32):
+        snapshot = classifier.update(
+            track_id=11,
+            pose_landmarks=_face_covering_pose(),
+            target_present=True,
+            now=1.0 + index * 0.1,
+        )
+
+    assert snapshot["hand_action"] == "hands_covering_face"
+    assert snapshot["face_covering_detector"]["active"] is True
+
+
+def test_face_covering_timing_is_isolated_per_target_and_timestamp_restart() -> None:
+    classifier = PoseActionClassifier()
+    for index in range(30):
+        first = classifier.update(
+            track_id=11,
+            pose_landmarks=_face_covering_pose(),
+            target_present=True,
+            now=1.0 + index * 0.1,
+        )
+    assert first["face_covering_detector"]["active"] is False
+
+    second = classifier.update(
+        track_id=12,
+        pose_landmarks=_face_covering_pose(),
+        target_present=True,
+        now=4.0,
+    )
+    assert second["face_covering_detector"]["state"] == "candidate"
+    assert second["face_covering_detector"]["active"] is False
+
+    first = classifier.update(
+        track_id=11,
+        pose_landmarks=_face_covering_pose(),
+        target_present=True,
+        now=4.0,
+    )
+    assert first["face_covering_detector"]["active"] is True
+
+    restarted = classifier.update(
+        track_id=11,
+        pose_landmarks=_face_covering_pose(),
+        target_present=True,
+        now=1.0,
+    )
+    assert restarted["face_covering_detector"]["state"] == "candidate"
+    assert restarted["face_covering_detector"]["active"] is False
 
 
 def test_stop_is_cleared_immediately_when_no_hand_is_observed() -> None:

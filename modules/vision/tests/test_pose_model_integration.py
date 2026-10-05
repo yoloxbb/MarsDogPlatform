@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+
 import numpy as np
 import pytest
 
@@ -10,8 +12,12 @@ from marsdog_vision_interaction.providers.pose_backends.base import PoseBackendE
 from marsdog_vision_interaction.core.visual_target_manager import VisualTargetManager
 from marsdog_vision_interaction.core.held_object_pose import _wrist_points
 from marsdog_vision_interaction.messages.visual_event import normalize_visual_event
+from marsdog_vision_interaction.nodes.vision_interaction_node import (
+    VisionInteractionNode,
+)
 from marsdog_vision_interaction.providers.gesture_pose_engine import (
     BehaviorEngine,
+    FaceObservation,
     LandmarkFrame,
 )
 
@@ -192,6 +198,159 @@ def test_coco_behavior_landmarks_keep_depth_unavailable_and_rules_run() -> None:
     assert result.features.pose is not None
     assert result.features.pose.left_elbow_angle_3d_degrees is None
     assert result.features.pose.left_thigh_depth_ratio is None
+
+
+def test_face_covering_uses_only_current_face_associated_with_active_body() -> None:
+    active = type(
+        "Active",
+        (),
+        {
+            "track_id": 3,
+            "face_track_id": 7,
+            "bbox": (0.20, 0.10, 0.50, 0.80),
+            "face_bbox": (0.40, 0.14, 0.12, 0.12),
+        },
+    )()
+    current = FaceObservation(
+        bbox=(0.40, 0.14, 0.12, 0.12),
+        landmarks=((0.43, 0.17), (0.49, 0.17), (0.46, 0.20), (0.44, 0.23), (0.48, 0.23)),
+        confidence=0.9,
+        track_id=7,
+    )
+    foreign = FaceObservation(
+        bbox=(0.78, 0.16, 0.12, 0.12),
+        landmarks=current.landmarks,
+        confidence=0.99,
+        track_id=8,
+    )
+    faces = [
+        {"track_id": current.track_id, "_behavior_face_observation": current},
+        {"track_id": foreign.track_id, "_behavior_face_observation": foreign},
+    ]
+
+    selected = VisionObservationProvider._match_active_face_observation(
+        active, faces, True
+    )
+    assert selected is current
+
+    foreign_only = VisionObservationProvider._match_active_face_observation(
+        active, [faces[1]], True
+    )
+    assert foreign_only is None
+
+
+def test_face_observation_rejects_nonfinite_confidence() -> None:
+    with pytest.raises(ValueError, match="confidence must be finite"):
+        FaceObservation(
+            bbox=(0.4, 0.1, 0.2, 0.2),
+            confidence=float("nan"),
+        )
+
+
+def test_pose_supported_face_covering_reaches_formal_event_without_hand_points(
+    monkeypatch,
+) -> None:
+    """Provider must not lose a pose-supported hand action at publication."""
+
+    from marsdog_vision_interaction.core.visual_target_manager import (
+        ActiveVisualTarget,
+    )
+    from marsdog_vision_interaction.fusion import stereo_fusion
+
+    now = time.time()
+    active = ActiveVisualTarget(
+        vision_epoch="test-epoch",
+        target_id="human-1",
+        track_id=1,
+        identity="owner",
+        identity_state="confirmed_known",
+        bbox=(0.2, 0.1, 0.6, 0.8),
+        confidence=0.9,
+        last_seen_at=now,
+        last_seen_monotonic=time.monotonic(),
+    )
+
+    class _Manager:
+        def update_vision(self, **_kwargs) -> None:
+            pass
+
+        def get_snapshot(self):
+            return {
+                "vision_epoch": "test-epoch",
+                "active_target": active,
+                "human_candidates": [{"target_id": "human-1"}],
+            }
+
+    provider = VisionObservationProvider({"stereo_enabled": False})
+    provider._run_inference = lambda *_args, **_kwargs: {
+        "humans": [{
+            "x": 0.2,
+            "y": 0.1,
+            "w": 0.6,
+            "h": 0.8,
+            "_behavior_landmarks": (),
+        }],
+        "faces": [],
+        "hands": [],
+        "tracked_objects": [],
+    }
+    provider._action_classifier.update = lambda **_kwargs: {
+        "pose_action": "",
+        "pose_action_label": "",
+        "hand_action": "hands_covering_face",
+        "hand_action_label": "掩面",
+        "feature_ms": 0.0,
+        "recognition_ms": 0.0,
+        "primary_action": "face_covering",
+        "face_covering_detector": {"active": True},
+    }
+    monkeypatch.setattr(stereo_fusion, "get_target_manager", lambda: _Manager())
+
+    raw = provider._process_frame_impl(np.zeros((64, 64, 3), dtype=np.uint8))
+    assert raw["hands"] == [{
+        "handedness": "",
+        "hand_action": "hands_covering_face",
+        "hand_action_label": "掩面",
+        "landmarks": [],
+    }]
+
+    formal = normalize_visual_event(raw)
+    assert formal["hands"][0]["landmarks"] == []
+    assert VisionInteractionNode._derive_events(formal) == [
+        "EVT_VISION_MASTER_SAD"
+    ]
+
+    # The coordinate-free transport belongs only to the exact timed
+    # FACE_COVERING lifecycle.  Other retained hand labels still require a
+    # current hand row, and an ended covering action disappears immediately.
+    provider._action_classifier.update = lambda **_kwargs: {
+        "pose_action": "",
+        "pose_action_label": "",
+        "hand_action": "victory",
+        "hand_action_label": "胜利手势",
+        "feature_ms": 0.0,
+        "recognition_ms": 0.0,
+        "primary_action": "victory",
+        "face_covering_detector": {"active": False},
+    }
+    unrelated = provider._process_frame_impl(
+        np.zeros((64, 64, 3), dtype=np.uint8)
+    )
+    assert unrelated["hands"] == []
+
+    provider._action_classifier.update = lambda **_kwargs: {
+        "pose_action": "",
+        "pose_action_label": "",
+        "hand_action": "",
+        "hand_action_label": "",
+        "feature_ms": 0.0,
+        "recognition_ms": 0.0,
+        "primary_action": "",
+        "face_covering_detector": {"active": False},
+    }
+    ended = provider._process_frame_impl(np.zeros((64, 64, 3), dtype=np.uint8))
+    assert ended["hands"] == []
+    assert VisionInteractionNode._derive_events(normalize_visual_event(ended)) == []
 
 
 def test_pose_quality_uses_active_keypoint_denominator() -> None:
