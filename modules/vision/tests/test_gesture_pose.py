@@ -196,6 +196,15 @@ def _face_covering_pose() -> tuple[PoseLandmark, ...]:
     )
 
 
+def _hands_on_head_pose() -> tuple[PoseLandmark, ...]:
+    return _pose_with_arms(
+        left_elbow=(0.30, 0.28),
+        right_elbow=(0.70, 0.28),
+        left_wrist=(0.46, 0.20),
+        right_wrist=(0.54, 0.20),
+    )
+
+
 def _clear_face() -> FaceObservation:
     return FaceObservation(
         bbox=(0.40, 0.10, 0.20, 0.20),
@@ -1161,6 +1170,128 @@ def test_face_covering_clears_when_target_is_confirmed_absent() -> None:
     assert ActionName.FACE_COVERING not in {
         action.name for action in hands_without_person.actions
     }
+
+
+def test_hands_on_head_survives_missing_hand_landmarker_observations() -> None:
+    pose = _hands_on_head_pose()
+    for left_hand, right_hand in (
+        (None, None),
+        (None, _hand_at(0.54, 0.20)),
+        (_hand_at(0.46, 0.20), None),
+    ):
+        engine = BehaviorEngine()
+        results = [
+            engine.update(
+                LandmarkFrame(
+                    monotonic_s=1.0 + index * 0.1,
+                    pose_landmarks=pose,
+                    left_hand=left_hand,
+                    right_hand=right_hand,
+                    face_observed=True,
+                )
+            )
+            for index in range(10)
+        ]
+
+        assert all(
+            result.raw_score_map[ActionName.HANDS_ON_HEAD] >= 0.55
+            for result in results
+        )
+        assert ActionName.HANDS_ON_HEAD in {
+            action.name for action in results[-1].actions
+        }
+
+
+def test_hands_on_head_clears_when_reliable_pose_anchor_is_lost() -> None:
+    pose = _hands_on_head_pose()
+    for missing_pose in (
+        _hide_pose_landmarks(pose, 0),
+        _hide_pose_landmarks(pose, 11, 12),
+        None,
+    ):
+        engine = BehaviorEngine()
+        for index in range(10):
+            active = engine.update(
+                LandmarkFrame(
+                    monotonic_s=1.0 + index * 0.1,
+                    pose_landmarks=pose,
+                    face_observed=True,
+                )
+            )
+        assert ActionName.HANDS_ON_HEAD in {
+            action.name for action in active.actions
+        }
+
+        lost = engine.update(
+            LandmarkFrame(monotonic_s=2.0, pose_landmarks=missing_pose)
+        )
+        assert ActionName.HANDS_ON_HEAD not in {
+            action.name for action in lost.actions
+        }
+
+        recovered = engine.update(
+            LandmarkFrame(monotonic_s=2.1, pose_landmarks=pose)
+        )
+        assert recovered.raw_score_map[ActionName.HANDS_ON_HEAD] >= 0.55
+        assert ActionName.HANDS_ON_HEAD not in {
+            action.name for action in recovered.actions
+        }
+
+
+def test_hands_on_head_rejects_single_hand_near_head() -> None:
+    pose = _pose_with_arms(
+        left_elbow=(0.30, 0.28),
+        right_elbow=(0.62, 0.48),
+        left_wrist=(0.46, 0.20),
+        right_wrist=(0.62, 0.65),
+    )
+    engine = BehaviorEngine()
+    results = [
+        engine.update(
+            LandmarkFrame(
+                monotonic_s=1.0 + index * 0.1,
+                pose_landmarks=pose,
+                face_observed=True,
+            )
+        )
+        for index in range(10)
+    ]
+
+    assert max(
+        result.raw_score_map[ActionName.HANDS_ON_HEAD] for result in results
+    ) < 0.55
+    assert all(
+        ActionName.HANDS_ON_HEAD not in {action.name for action in result.actions}
+        for result in results
+    )
+
+
+def test_hands_on_head_rejects_arms_raised_away_from_head() -> None:
+    pose = _pose_with_arms(
+        left_elbow=(0.30, 0.22),
+        right_elbow=(0.70, 0.22),
+        left_wrist=(0.25, 0.10),
+        right_wrist=(0.75, 0.10),
+    )
+    engine = BehaviorEngine()
+    results = [
+        engine.update(
+            LandmarkFrame(
+                monotonic_s=1.0 + index * 0.1,
+                pose_landmarks=pose,
+                face_observed=True,
+            )
+        )
+        for index in range(10)
+    ]
+
+    assert max(
+        result.raw_score_map[ActionName.HANDS_ON_HEAD] for result in results
+    ) < 0.55
+    assert all(
+        ActionName.HANDS_ON_HEAD not in {action.name for action in result.actions}
+        for result in results
+    )
 
 
 def test_pose_fallback_face_covering_still_publishes_hand_action_without_hands() -> None:

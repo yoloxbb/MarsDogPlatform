@@ -4587,13 +4587,10 @@ class ActionRecognizer:
             # Nose motion is meaningless without a current, coherent head and
             # shoulders. Clear old votes immediately when only a hand remains.
             self._smoother.clear(ActionName.FAST_NOD)
-        if (
-            RuleActionClassifier._reliable_face_anchor(frame) is None
-            or not (
-                frame.features.left_hand.detected
-                and frame.features.right_hand.detected
-            )
-        ):
+        if RuleActionClassifier._reliable_face_anchor(frame) is None:
+            # HANDS_ON_HEAD is scored from bilateral Pose wrists and ears.  The
+            # HandLandmarker adds optional hand geometry for related actions, but
+            # a brief dropout of either palm must not erase valid Pose evidence.
             self._smoother.clear(ActionName.HANDS_ON_HEAD)
         # The lifecycle above is the single owner of FACE_COVERING activation;
         # keep the generic smoother's private history from reactivating it on
