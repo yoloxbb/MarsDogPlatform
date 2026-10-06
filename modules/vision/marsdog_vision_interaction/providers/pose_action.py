@@ -27,6 +27,8 @@ from marsdog_vision_interaction.providers.gesture_pose_engine import (
 
 logger = logging.getLogger(__name__)
 
+_CURL_HISTORY_GRACE_SEC = 4.0
+
 
 _ACTION_LABEL: dict[str, str] = {
     "arm_raise_wave": "手臂高举/挥舞",
@@ -144,6 +146,7 @@ class PoseActionClassifier:
         )
         self._engines: dict[int, BehaviorEngine] = {}
         self._last_seen: dict[int, float] = {}
+        self._curl_history_expires_at: dict[int, float] = {}
         self._pose_action = ""
         self._pose_label = ""
         self._hand_action = ""
@@ -186,6 +189,7 @@ class PoseActionClassifier:
             self._engines[track_id] = engine
         if observed_track_id > 0:
             self._last_seen[track_id] = timestamp
+            self._curl_history_expires_at.pop(track_id, None)
 
         try:
             result = engine.update(
@@ -514,10 +518,12 @@ class PoseActionClassifier:
     def reset_track(self, track_id: int) -> None:
         self._engines.pop(int(track_id), None)
         self._last_seen.pop(int(track_id), None)
+        self._curl_history_expires_at.pop(int(track_id), None)
 
     def reset(self) -> None:
         self._engines.clear()
         self._last_seen.clear()
+        self._curl_history_expires_at.clear()
         self._clear_output()
 
     def snapshot(self) -> dict[str, Any]:
@@ -537,6 +543,28 @@ class PoseActionClassifier:
             if now - seen_at > self._track_timeout_sec
         ]
         for track_id in stale:
+            curl_expires_at = self._curl_history_expires_at.get(track_id)
+            if curl_expires_at is not None:
+                if now <= curl_expires_at:
+                    continue
+                self.reset_track(track_id)
+                continue
+
+            seen_at = self._last_seen[track_id]
+            engine = self._engines.get(track_id)
+            if (
+                engine is not None
+                and now - seen_at <= _CURL_HISTORY_GRACE_SEC
+                and engine.has_curled_up_candidate
+            ):
+                # In sparse RKNN runs a brief detection gap can exceed the normal
+                # track timeout. Retain only pending curl votes for this same ID;
+                # fall, jump, face, and every other action still reset immediately.
+                engine.reset_after_temporary_track_loss()
+                self._curl_history_expires_at[track_id] = (
+                    seen_at + _CURL_HISTORY_GRACE_SEC
+                )
+                continue
             self.reset_track(track_id)
 
     def _clear_output(self) -> None:

@@ -402,3 +402,104 @@ Wrong: treat any large absolute shoulder-to-hip angle as HUNCHED or as sufficien
 LYING evidence.
 Correct: require signed 2D forward direction for HUNCHED and independent body
 layout evidence for LYING; abstain when the 2D view cannot establish direction.
+
+
+## Scenario: Curled-up compact posture with asymmetric lower-body support
+
+### 1. Scope / Trigger
+
+Apply this contract when changing `CURLED_UP` geometry or its temporal
+recognition. It covers compact crouches and low, side-supported poses where the
+visible legs may be asymmetric and head direction may not be reliable.
+
+### 2. Signatures
+
+- `RuleActionClassifier.classify(frame) -> dict[ActionName, float]` scores
+  `CURLED_UP` from shoulder, hip, knee and existing posture geometry.
+- `ActionSmoother` retains the existing generic 8-of-10 activation policy at
+  score `0.55` for other actions; exact `curled_up` uses its local 3-of-5
+  activation policy at the same score threshold.
+
+### 3. Contracts
+
+- Normalize 2D shoulder-to-knee and hip-to-knee distances by the existing torso
+  scale. Do not fabricate depth when the source is COCO-17.
+- Preserve the existing path where compact shoulder-to-knee geometry is
+  supported by `HEAD_DOWN` or `HUNCHED`, but do not require either action for
+  every curled pose.
+- A second path combines compact shoulder-to-knee geometry (weight `0.35`)
+  with lower-body fold evidence (weight `0.65`). Lower-body evidence is the
+  strongest available signal from hip-to-knee tuck, bent knees, or near-
+  horizontal thighs, capped by support from hip-to-knee tuck or clear torso
+  inclination (a `20` to `45` degree ramp). An upright seated torso with long
+  hip-to-knee geometry must not qualify merely from bent knees or horizontal
+  thighs. Require both signals to contribute at least `0.10`; a
+  distant bent knee or compact legs without a fold cannot create a stable
+  label by itself.
+- When only one side is visible, score each available relation with the
+  conservative `0.82` single-side weight. Missing/low-confidence points provide
+  no relation and must not be replaced with default coordinates.
+- Strong `LYING` suppresses the lower-body-only path when `HEAD_DOWN` and
+  `HUNCHED` are both below `0.55`; it does not suppress a separately supported
+  curled pose. Do not modify fall detection, priority, or event routing.
+- Keep temporal stability specific to `CURLED_UP`: at least 3 of the latest 5
+  actual pose-classifier updates must be `>=0.55` to activate; retain 2-of-5
+  deactivation hysteresis. Do not change the global window or any other
+  action's policy.
+- If the same track ID briefly disappears while `CURLED_UP` has qualifying
+  votes but is not yet stable, preserve only those pending curl votes for at
+  most 4 seconds. Reset
+  `FALL`, `JUMPING`, face-covering and all other action history immediately as
+  before. Other smoothed actions must collect their complete fresh window;
+  zeroed pre-gap frame slots must not shorten confirmation. Never transfer
+  votes to a different track ID.
+- Preserve `ActionName.CURLED_UP`, `pose_action=body_curled_up`, the existing
+  SAD event mapping, identity gate, debug fields, and global action thresholds.
+
+### 4. Validation & Error Matrix
+
+| Situation | Required behavior |
+|---|---|
+| Compact crouch with folded knees and no visible face | Stable exact `curled_up` after existing temporal confirmation |
+| Compact side/asymmetric pose with one reliable lower-body side | Use available evidence with the single-side weight; do not require mirrored knees |
+| Only shoulder-to-knee compactness or only lower-body folding is present | Do not stabilize `curled_up` |
+| Upright chair sitting with bent knees, horizontal thighs and no hip-to-knee tuck | Keep `SITTING`; do not stabilize `CURLED_UP` |
+| Static lying with extended legs and no head/torso curl support | Keep `LYING`; do not stabilize `CURLED_UP` or create FALL |
+| Strong `LYING` and no head/torso fold | Suppress the lower-body-only `CURLED_UP` path |
+| Missing both hips or both knees | No invented fold evidence |
+| Same track returns within 4 seconds after an unconfirmed curl candidate | Pending curl votes may combine; active curl, other actions and fall state start fresh |
+| Same track returns after the 4-second curl grace | Start with empty curl history |
+| Verified curled videos | Both supplied examples produce a stable `recognized_actions[name=curled_up]` interval without FALL |
+| Two of five samples support curl | Keep the exact label inactive; require at least three supported samples |
+
+### 5. Good / Base / Bad Cases
+
+- Good: a low crouch has compact shoulders-to-knees plus folded knees; a
+  side-supported pose has compact body geometry and one reliable tucked side.
+- Base: a straight-leg side-lying pose remains `LYING`; absent facial evidence
+  does not disable valid folded-body evidence.
+- Bad: require `HEAD_DOWN` for every curl, treat near-horizontal torso as curl,
+  or lower the threshold for all posture actions to catch the two examples.
+- Bad: carry candidate curl votes to a new track ID or preserve fall/gesture
+  state when retaining the curl vote window.
+
+### 6. Tests Required
+
+- Positive stable-label tests for a compact folded crouch without head/ear
+  points and an asymmetric pose with one reliable lower-body side.
+- Negative stable-label tests for standing, mirrored upright sitting, forward hunch, static lying and
+  isolated compactness/fold evidence and distant bent legs; cover missing
+  hips/knees.
+- Lifecycle tests for same-ID curl-vote retention within 4 seconds, expiry
+  beyond the grace, and immediate reset of unrelated action/event state,
+  including a complete fresh confirmation window for unrelated actions.
+- Replay the two positive clips and the static-lying/fall negatives. Report
+  `recognized_actions`, pose mapping and fall results separately from synthetic
+  keypoint tests.
+
+### 7. Wrong vs Correct
+
+Wrong: `min(knee_shoulder_compactness, max(HEAD_DOWN, HUNCHED))` as the only
+path, or treating compact knee/hip geometry as sufficient by itself.
+Correct: retain that head-supported path and add a bounded second path that
+requires both normalized body compactness and independent lower-body folding.

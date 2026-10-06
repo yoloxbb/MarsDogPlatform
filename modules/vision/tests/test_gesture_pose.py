@@ -2,6 +2,7 @@ import pytest
 
 from marsdog_vision_interaction.providers.gesture_pose_engine import (
     ActionName,
+    ActionSmoother,
     BehaviorEngine,
     FaceObservation,
     FallEventManager,
@@ -120,6 +121,53 @@ def _pose_with_arms(
             hip_confidence,
             hip_confidence,
         )
+    return tuple(points)
+
+
+def _curled_fold_pose() -> tuple[PoseLandmark, ...]:
+    """Build a low, compact crouch with folded knees and gathered arms."""
+
+    points = list(_pose("standing"))
+    for index, x, y in (
+        (0, 0.50, 0.31),
+        (7, 0.47, 0.23),
+        (8, 0.53, 0.23),
+        (11, 0.40, 0.30),
+        (12, 0.60, 0.30),
+        (13, 0.37, 0.37),
+        (14, 0.63, 0.37),
+        (15, 0.45, 0.43),
+        (16, 0.55, 0.43),
+        (23, 0.45, 0.47),
+        (24, 0.55, 0.47),
+        (25, 0.40, 0.50),
+        (26, 0.60, 0.50),
+        (27, 0.34, 0.70),
+        (28, 0.66, 0.70),
+    ):
+        previous = points[index]
+        points[index] = PoseLandmark(x, y, previous.z, 1.0, 1.0)
+    return tuple(points)
+
+
+def _side_supported_fold_pose() -> tuple[PoseLandmark, ...]:
+    """Build a side-supported curl with a folded leg and partial compactness."""
+
+    points = list(_pose("standing"))
+    for index, x, y in (
+        (0, 0.35, 0.83),
+        (7, 0.37, 0.74),
+        (8, 0.32, 0.91),
+        (11, 0.42, 0.69),
+        (12, 0.32, 0.72),
+        (23, 0.56, 0.70),
+        (24, 0.50, 0.74),
+        (25, 0.62, 0.83),
+        (26, 0.56, 0.85),
+        (27, 0.70, 0.78),
+        (28, 0.70, 0.77),
+    ):
+        points[index] = PoseLandmark(x, y, None, 1.0, 1.0)
     return tuple(points)
 
 
@@ -304,6 +352,274 @@ def test_standing_action_is_deterministic_and_keeps_public_key() -> None:
         ]
         == 0.0
     )
+
+
+def test_curled_up_stabilizes_from_compact_folded_pose_without_head_down() -> None:
+    pose = _hide_pose_landmarks(_curled_fold_pose(), 0, 7, 8)
+    classifier = PoseActionClassifier()
+    snapshots = [
+        classifier.update(track_id=7, pose_landmarks=pose, now=10.0 + index * 0.1)
+        for index in range(12)
+    ]
+
+    assert all(
+        next(item["score"] for item in snapshot["raw_scores"] if item["name"] == "head_down")
+        == 0.0
+        for snapshot in snapshots
+    )
+    assert min(
+        next(item["score"] for item in snapshot["raw_scores"] if item["name"] == "curled_up")
+        for snapshot in snapshots
+    ) >= 0.55
+    assert "curled_up" in {
+        action["name"] for action in snapshots[-1]["recognized_actions"]
+    }
+
+
+def test_curled_up_stabilizes_with_one_reliable_folded_side() -> None:
+    pose = _hide_pose_landmarks(_curled_fold_pose(), 0, 7, 8, 24, 26)
+    engine = BehaviorEngine()
+    results = [
+        engine.update(
+            LandmarkFrame(monotonic_s=index * 0.1, pose_landmarks=pose)
+        )
+        for index in range(12)
+    ]
+
+    assert all(result.raw_score_map[ActionName.HEAD_DOWN] == 0.0 for result in results)
+    assert min(result.raw_score_map[ActionName.CURLED_UP] for result in results) >= 0.55
+    assert ActionName.CURLED_UP in {action.name for action in results[-1].actions}
+
+
+def test_curled_up_stabilizes_from_side_supported_fold_without_head_fold() -> None:
+    pose = _side_supported_fold_pose()
+    engine = BehaviorEngine()
+    results = [
+        engine.update(
+            LandmarkFrame(monotonic_s=index * 0.1, pose_landmarks=pose)
+        )
+        for index in range(5)
+    ]
+
+    assert all(result.raw_score_map[ActionName.HEAD_DOWN] == 0.0 for result in results)
+    assert all(result.raw_score_map[ActionName.CURLED_UP] >= 0.55 for result in results)
+    assert ActionName.CURLED_UP in {action.name for action in results[-1].actions}
+
+
+def test_distant_bent_legs_alone_do_not_stabilize_curled_up() -> None:
+    points = list(_side_supported_fold_pose())
+    for index in (25, 26, 27, 28):
+        point = points[index]
+        points[index] = PoseLandmark(
+            point.x + 0.4,
+            point.y,
+            point.z,
+            point.visibility,
+            point.presence,
+        )
+    engine = BehaviorEngine()
+    results = [
+        engine.update(
+            LandmarkFrame(monotonic_s=index * 0.1, pose_landmarks=tuple(points))
+        )
+        for index in range(8)
+    ]
+
+    assert all(result.raw_score_map[ActionName.CURLED_UP] == 0.0 for result in results)
+    assert all(
+        ActionName.CURLED_UP not in {action.name for action in result.actions}
+        for result in results
+    )
+
+
+@pytest.mark.parametrize(
+    "pose",
+    (
+        _pose("standing"),
+        _pose("lying"),
+        _profile_hunch(facing="right"),
+    ),
+    ids=("standing", "static-lying", "forward-hunch"),
+)
+def test_non_curled_postures_do_not_stabilize_curled_up(
+    pose: tuple[PoseLandmark, ...],
+) -> None:
+    engine = BehaviorEngine()
+    results = [
+        engine.update(LandmarkFrame(monotonic_s=index * 0.1, pose_landmarks=pose))
+        for index in range(12)
+    ]
+
+    assert all(result.raw_score_map[ActionName.CURLED_UP] < 0.55 for result in results)
+    assert all(
+        ActionName.CURLED_UP not in {action.name for action in result.actions}
+        for result in results
+    )
+
+
+def test_curled_up_does_not_invent_missing_leg_evidence() -> None:
+    pose = _hide_pose_landmarks(_curled_fold_pose(), 23, 24, 25, 26)
+    engine = BehaviorEngine()
+    results = [
+        engine.update(LandmarkFrame(monotonic_s=index * 0.1, pose_landmarks=pose))
+        for index in range(12)
+    ]
+
+    assert all(result.raw_score_map[ActionName.CURLED_UP] == 0.0 for result in results)
+    assert all(
+        ActionName.CURLED_UP not in {action.name for action in result.actions}
+        for result in results
+    )
+
+
+@pytest.mark.parametrize("mirror", (False, True))
+def test_upright_seated_pose_does_not_stabilize_curled_up(mirror: bool) -> None:
+    points = list(_pose("standing"))
+    for index, x, y in (
+        (0, 0.42, 0.18),
+        (7, 0.40, 0.20),
+        (8, 0.44, 0.20),
+        (11, 0.40, 0.30),
+        (12, 0.45, 0.30),
+        (23, 0.40, 0.55),
+        (24, 0.45, 0.55),
+        (25, 0.65, 0.55),
+        (26, 0.70, 0.55),
+        (27, 0.65, 0.85),
+        (28, 0.70, 0.85),
+    ):
+        points[index] = PoseLandmark(1.0 - x if mirror else x, y, None, 1.0, 1.0)
+    engine = BehaviorEngine()
+    results = [
+        engine.update(
+            LandmarkFrame(monotonic_s=index * 0.1, pose_landmarks=tuple(points))
+        )
+        for index in range(12)
+    ]
+
+    assert all(result.raw_score_map[ActionName.CURLED_UP] < 0.55 for result in results)
+    assert all(
+        ActionName.CURLED_UP not in {action.name for action in result.actions}
+        for result in results
+    )
+    assert ActionName.SITTING in {action.name for action in results[-1].actions}
+
+
+def test_curled_up_temporal_confirmation_uses_three_of_five_not_single_frame() -> None:
+    smoother = ActionSmoother()
+    raw = {name: 0.0 for name in ActionName}
+    raw[ActionName.CURLED_UP] = 0.8
+    no_stable_actions = []
+    for index in range(5):
+        scores = dict(raw)
+        if index >= 2:
+            scores[ActionName.CURLED_UP] = 0.0
+        no_stable_actions.extend(smoother.update(scores, index * 0.1))
+    assert ActionName.CURLED_UP not in {action.name for action in no_stable_actions}
+
+    smoother = ActionSmoother()
+    stable_actions = []
+    for index in range(5):
+        scores = dict(raw)
+        if index >= 3:
+            scores[ActionName.CURLED_UP] = 0.0
+        stable_actions = smoother.update(scores, index * 0.1)
+    assert ActionName.CURLED_UP in {action.name for action in stable_actions}
+
+
+def test_track_gap_retains_curl_votes_but_clears_fall_votes() -> None:
+    smoother = ActionSmoother()
+    raw = {name: 0.0 for name in ActionName}
+    raw[ActionName.CURLED_UP] = 0.8
+    raw[ActionName.FALL] = 1.0
+    stable_actions = ()
+    for index in range(5):
+        stable_actions = smoother.update(raw, index * 0.1)
+    assert {action.name for action in stable_actions} >= {
+        ActionName.CURLED_UP,
+        ActionName.FALL,
+    }
+
+    smoother.retain_only(ActionName.CURLED_UP)
+    after_gap = smoother.update(
+        {name: 0.0 for name in ActionName}, timestamp_s=0.5
+    )
+
+    assert ActionName.CURLED_UP in {action.name for action in after_gap}
+    assert ActionName.FALL not in {action.name for action in after_gap}
+
+
+def test_pose_action_retains_only_pending_curl_votes_across_short_track_gap() -> None:
+    classifier = PoseActionClassifier(track_timeout_sec=0.75)
+    pose = _side_supported_fold_pose()
+    classifier.update(track_id=7, pose_landmarks=pose, now=0.0)
+    classifier.update(track_id=7, pose_landmarks=pose, now=0.1)
+
+    classifier.update(track_id=0, pose_landmarks=None, now=2.8)
+    resumed = [
+        classifier.update(track_id=7, pose_landmarks=pose, now=2.9 + index * 0.1)
+        for index in range(3)
+    ]
+
+    assert "curled_up" in {
+        action["name"]
+        for snapshot in resumed
+        for action in snapshot["recognized_actions"]
+    }
+    assert all(not snapshot["fall_event_triggered"] for snapshot in resumed)
+
+
+@pytest.mark.parametrize(
+    "action,window", ((ActionName.STANDING, 10), (ActionName.FALL, 5))
+)
+def test_retained_curl_votes_do_not_shorten_other_actions_fresh_windows(
+    action: ActionName, window: int
+) -> None:
+    smoother = ActionSmoother()
+    raw = {name: 0.0 for name in ActionName}
+    raw[ActionName.CURLED_UP] = 0.8
+    for index in range(4):
+        smoother.update(dict(raw), index * 0.1)
+    smoother.retain_only(ActionName.CURLED_UP)
+
+    raw[ActionName.CURLED_UP] = 0.0
+    raw[action] = 1.0
+    for index in range(1, window + 1):
+        stable = smoother.update(dict(raw), 1.0 + index * 0.1)
+        assert (action in {item.name for item in stable}) == (index == window)
+
+
+def test_pose_action_discards_curl_votes_after_grace_expires() -> None:
+    classifier = PoseActionClassifier(track_timeout_sec=0.75)
+    pose = _side_supported_fold_pose()
+    classifier.update(track_id=7, pose_landmarks=pose, now=0.0)
+    classifier.update(track_id=7, pose_landmarks=pose, now=0.1)
+
+    classifier.update(track_id=0, pose_landmarks=None, now=4.2)
+    resumed = classifier.update(track_id=7, pose_landmarks=pose, now=4.3)
+
+    assert "curled_up" not in {
+        action["name"] for action in resumed["recognized_actions"]
+    }
+
+
+def test_pose_action_does_not_carry_active_curl_through_track_loss() -> None:
+    classifier = PoseActionClassifier(track_timeout_sec=0.75)
+    pose = _side_supported_fold_pose()
+    stable = [
+        classifier.update(track_id=7, pose_landmarks=pose, now=index * 0.1)
+        for index in range(5)
+    ]
+    assert "curled_up" in {
+        action["name"] for action in stable[-1]["recognized_actions"]
+    }
+
+    classifier.update(track_id=0, pose_landmarks=None, now=2.8)
+    resumed = classifier.update(track_id=7, pose_landmarks=pose, now=2.9)
+
+    assert "curled_up" not in {
+        action["name"] for action in resumed["recognized_actions"]
+    }
 
 
 def test_profile_hunch_triggers_without_head_down_for_both_facing_directions() -> None:

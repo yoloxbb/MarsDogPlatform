@@ -3289,15 +3289,95 @@ class RuleActionClassifier:
                 min(same_side_distance, crossed_distance), 0.25, 1.10
             )
 
-        if all((left_knee, right_knee, left_shoulder, right_shoulder)):
-            curled_distance = (
-                _classifier_distance(left_knee, left_shoulder)
-                + _classifier_distance(right_knee, right_shoulder)
-            ) / (2.0 * scale)
-            scores[ActionName.CURLED_UP] = min(
-                _classifier_low(curled_distance, 0.8, 1.8),
-                max(scores[ActionName.HEAD_DOWN], scores[ActionName.HUNCHED]),
-            )
+        left_curl_distance = (
+            _classifier_distance(left_knee, left_shoulder) / scale
+            if left_knee is not None and left_shoulder is not None
+            else None
+        )
+        right_curl_distance = (
+            _classifier_distance(right_knee, right_shoulder) / scale
+            if right_knee is not None and right_shoulder is not None
+            else None
+        )
+        compactness = _classifier_partial_bilateral_score(
+            left_curl_distance,
+            right_curl_distance,
+            lambda value: _classifier_low(value, 0.8, 1.8),
+            single_side_weight=0.82,
+        )
+
+        # A curled posture can keep the head level or face sideways.  Add a
+        # separate lower-body fold path instead of making HEAD_DOWN/HUNCHED a
+        # mandatory gate.  Distances are normalized by the same torso scale so
+        # the cue works for either source keypoint format and camera distance.
+        left_hip_knee_ratio = (
+            _classifier_distance(left_hip, left_knee) / scale
+            if left_hip is not None and left_knee is not None
+            else None
+        )
+        right_hip_knee_ratio = (
+            _classifier_distance(right_hip, right_knee) / scale
+            if right_hip is not None and right_knee is not None
+            else None
+        )
+        hip_knee_tuck = _classifier_partial_bilateral_score(
+            left_hip_knee_ratio,
+            right_hip_knee_ratio,
+            lambda value: _classifier_low(value, 0.18, 0.75),
+            single_side_weight=0.82,
+        )
+        bent_knees = _classifier_partial_bilateral_score(
+            pose.left_knee_angle_degrees,
+            pose.right_knee_angle_degrees,
+            lambda value: _classifier_centered(value, 100.0, 70.0),
+            single_side_weight=0.82,
+        )
+        horizontal_thighs = _classifier_partial_bilateral_score(
+            pose.left_thigh_vertical_degrees,
+            pose.right_thigh_vertical_degrees,
+            lambda value: _classifier_centered(value, 85.0, 55.0),
+            single_side_weight=0.82,
+        )
+        torso_inclination = _classifier_high(
+            abs(pose.torso_lean_degrees)
+            if pose.torso_lean_degrees is not None
+            else None,
+            20.0,
+            45.0,
+        )
+        # Ordinary chair sitting also has bent knees and horizontal thighs.
+        # Require a tucked hip-to-knee relation for an upright torso, or a
+        # clearly inclined torso supporting the asymmetric lower-body fold.
+        lower_body_fold = min(
+            max(hip_knee_tuck, bent_knees, horizontal_thighs),
+            max(hip_knee_tuck, torso_inclination),
+        )
+        head_fold = max(scores[ActionName.HEAD_DOWN], scores[ActionName.HUNCHED])
+        # The RKNN side-supported sample can show a clearly bent knee while its
+        # normalized shoulder-to-knee distance is only moderately compact. Give
+        # the independent fold cue more weight, while still requiring compactness
+        # to contribute to the combined score.
+        lower_body_path = _classifier_weighted_average(
+            (compactness, 0.35),
+            (lower_body_fold, 0.65),
+        )
+        if compactness < 0.10 or lower_body_fold < 0.10:
+            # Neither a distant bent knee nor compact legs without a fold are
+            # enough to establish the curled posture on their own.
+            lower_body_path = 0.0
+        if scores[ActionName.LYING] >= 0.55 and head_fold < 0.55:
+            # A flat body with compact legs can be ordinary side-lying.  Keep
+            # the dedicated lower-body path for a supported head/torso fold,
+            # which is present in the supplied side-supported curl example.
+            lower_body_path = 0.0
+
+        # Retain the existing strong head/torso-supported path.  The second
+        # path requires both compact shoulder-to-knee geometry and a folded or
+        # tucked lower body; neither cue can activate curl on its own.
+        scores[ActionName.CURLED_UP] = max(
+            min(compactness, head_fold),
+            lower_body_path,
+        )
 
     @staticmethod
     def _score_hand_actions(
@@ -4450,12 +4530,14 @@ class ActionSmoother:
         ActionName.STOP_GESTURE,
         ActionName.FALL,
     }
+    _CURL_ACTIONS = {ActionName.CURLED_UP}
     _POSTURE_ACTIONS = {ActionName.STANDING, ActionName.SITTING, ActionName.LYING}
 
     def __init__(self, window_size: int = 10, score_threshold: float = 0.55) -> None:
         if window_size < 5:
             raise ValueError("window_size must be at least 5")
         self._history: deque[dict[ActionName, float]] = deque(maxlen=window_size)
+        self._history_counts = {name: 0 for name in ActionName}
         self._score_threshold = score_threshold
         self._active: set[ActionName] = set()
         self._activated_at: dict[ActionName, float] = {}
@@ -4544,8 +4626,11 @@ class ActionSmoother:
         output: list[ActionScore] = []
         for name in ActionName:
             window, activation_ratio, deactivation_ratio, threshold = self._policy(name)
+            self._history_counts[name] = min(
+                self._history_counts[name] + 1, self._history.maxlen or 10
+            )
             recent = list(self._history)[-window:]
-            if len(recent) < window:
+            if len(recent) < window or self._history_counts[name] < window:
                 continue
             supporting = [scores.get(name, 0.0) for scores in recent]
             support_ratio = sum(score >= threshold for score in supporting) / window
@@ -4586,6 +4671,36 @@ class ActionSmoother:
             self._active.discard(name)
             self._activated_at.pop(name, None)
 
+    def has_supporting_score(
+        self, name: ActionName, threshold: float | None = None
+    ) -> bool:
+        """Return whether retained history contains a qualifying raw vote."""
+
+        minimum_score = self._score_threshold if threshold is None else threshold
+        return any(
+            scores.get(name, 0.0) >= minimum_score for scores in self._history
+        )
+
+    def is_active(self, name: ActionName) -> bool:
+        """Return whether the stable label is currently active."""
+
+        return name in self._active
+
+    def retain_only(self, *names: ActionName) -> None:
+        """Keep selected raw votes while clearing every active stable label."""
+
+        retained = set(names)
+        for name in ActionName:
+            if name not in retained:
+                # Zeroed old slots must not shorten this action's fresh window.
+                self._history_counts[name] = 0
+        for historical_scores in self._history:
+            for name in ActionName:
+                if name not in retained:
+                    historical_scores[name] = 0.0
+        self._active.clear()
+        self._activated_at.clear()
+
     def _policy(self, name: ActionName) -> tuple[int, float, float, float]:
         if name is ActionName.CLAPPING:
             # The raw clap rule already contains an 18-frame close/open cycle.  Keep
@@ -4597,6 +4712,13 @@ class ActionSmoother:
             return self._history.maxlen or 10, 0.6, 0.3, min(self._score_threshold, 0.50)
         if name is ActionName.STOP_GESTURE:
             return 5, 3 / 5, 2 / 5, max(self._score_threshold, _STOP_SCORE_THRESHOLD)
+        if name in self._CURL_ACTIONS:
+            # Curl evidence varies with foreshortening and partial occlusion.
+            # RKNN analyzes sparse frames while the rest of the vision pipeline
+            # is active, so an 8-of-10 window spans too much video time for the
+            # brief curled pose. Require three of five actual classifier
+            # updates; this policy is local to CURLED_UP.
+            return 5, 3 / 5, 2 / 5, self._score_threshold
         if name in self._THREE_OF_FIVE_ACTIONS:
             return 5, 3 / 5, 2 / 5, self._score_threshold
         if name is ActionName.SITTING:
@@ -4619,6 +4741,21 @@ class ActionRecognizer:
     @property
     def face_covering_diagnostics(self) -> dict[str, object]:
         return self._face_covering.diagnostics()
+
+    @property
+    def has_curled_up_candidate(self) -> bool:
+        return (
+            not self._smoother.is_active(ActionName.CURLED_UP)
+            and self._smoother.has_supporting_score(ActionName.CURLED_UP)
+        )
+
+    def reset_after_temporary_track_loss(self) -> None:
+        """Clear track state while retaining only candidate curl votes."""
+
+        self._smoother.retain_only(ActionName.CURLED_UP)
+        self._face_covering = FaceCoveringDetector()
+        self._fall_events = FallEventManager()
+        self._jump_events = JumpEventManager()
 
     def recognize(
         self, frame: AnalyzedFrame
@@ -4840,6 +4977,18 @@ class BehaviorEngine:
 
         self._samples.clear()
         self._recognizer = ActionRecognizer()
+        self._sequence = 0
+        self._last_monotonic_s = None
+
+    @property
+    def has_curled_up_candidate(self) -> bool:
+        return self._recognizer.has_curled_up_candidate
+
+    def reset_after_temporary_track_loss(self) -> None:
+        """Reset temporal state but keep pending CURLED_UP votes only."""
+
+        self._samples.clear()
+        self._recognizer.reset_after_temporary_track_loss()
         self._sequence = 0
         self._last_monotonic_s = None
 
