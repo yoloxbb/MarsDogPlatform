@@ -260,6 +260,10 @@ class PoseFeatures:
     right_arm_elevation_degrees: float | None
     left_wrist_above_shoulder: bool | None
     right_wrist_above_shoulder: bool | None
+    # Positive values mean that the torso bends toward the subject's image-space
+    # facing direction.  ``None`` is intentional when reliable face geometry
+    # cannot establish a reliable left/right direction from 2D landmarks.
+    forward_torso_lean_degrees: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -350,6 +354,11 @@ class AnalyzedFrame:
 # ==============================================================================
 
 _EPSILON = 1e-6
+_FORWARD_FACING_OFFSET_RATIO = 0.08
+# With only one reliable ear, a small nose-to-ear offset cannot distinguish a
+# frontal detector asymmetry from a profile. Require a substantially larger
+# normalized separation; the hunch recording's clear profile is around 0.8+.
+_SINGLE_EAR_FORWARD_FACING_OFFSET_RATIO = 0.45
 
 
 def _pose_visible(point: PoseLandmark, threshold: float) -> bool:
@@ -538,6 +547,57 @@ def extract_pose_features(
         if nose is not None and ear_mid is not None and shoulder_width and shoulder_width > _EPSILON
         else None
     )
+    # A profile/oblique face gives us a usable 2D facing direction when the nose
+    # extends beyond the bilateral ear interval. Merely being off-center from
+    # the ear midpoint is not enough: small detector asymmetries on a frontal
+    # face could otherwise turn a lateral torso lean into a false hunch.
+    nose_ear_interval_offset_ratio = None
+    if (
+        nose is not None
+        and left_ear is not None
+        and right_ear is not None
+        and shoulder_width
+        and shoulder_width > _EPSILON
+    ):
+        ear_min_x = min(left_ear.x, right_ear.x)
+        ear_max_x = max(left_ear.x, right_ear.x)
+        if nose.x < ear_min_x:
+            nose_ear_interval_offset_ratio = (nose.x - ear_min_x) / shoulder_width
+        elif nose.x > ear_max_x:
+            nose_ear_interval_offset_ratio = (nose.x - ear_max_x) / shoulder_width
+    elif (
+        nose is not None
+        and shoulder_width
+        and shoulder_width > _EPSILON
+        and (left_ear is not None) != (right_ear is not None)
+    ):
+        # A single visible ear is useful for a clear profile, but it is weaker
+        # orientation evidence than the bilateral interval. Keep this fallback
+        # deliberately conservative so a modest frontal asymmetry abstains.
+        visible_ear = left_ear if left_ear is not None else right_ear
+        nose_ear_interval_offset_ratio = (nose.x - visible_ear.x) / shoulder_width
+    facing_direction = (
+        1.0
+        if nose_ear_interval_offset_ratio is not None
+        and nose_ear_interval_offset_ratio >= (
+            _FORWARD_FACING_OFFSET_RATIO
+            if left_ear is not None and right_ear is not None
+            else _SINGLE_EAR_FORWARD_FACING_OFFSET_RATIO
+        )
+        else -1.0
+        if nose_ear_interval_offset_ratio is not None
+        and nose_ear_interval_offset_ratio <= -(
+            _FORWARD_FACING_OFFSET_RATIO
+            if left_ear is not None and right_ear is not None
+            else _SINGLE_EAR_FORWARD_FACING_OFFSET_RATIO
+        )
+        else None
+    )
+    forward_torso_lean = (
+        -torso_lean * facing_direction
+        if torso_lean is not None and facing_direction is not None
+        else None
+    )
     arms_span_ratio = (
         _pose_distance(left_wrist, right_wrist) / shoulder_width
         if left_wrist is not None
@@ -562,6 +622,7 @@ def extract_pose_features(
         body_height=body_height,
         shoulder_slope_degrees=shoulder_slope,
         torso_lean_degrees=torso_lean,
+        forward_torso_lean_degrees=forward_torso_lean,
         head_drop_ratio=head_drop_ratio,
         nose_ear_vertical_ratio=nose_ear_vertical_ratio,
         arms_span_ratio=arms_span_ratio,
@@ -2726,17 +2787,16 @@ class RuleActionClassifier:
         scores[ActionName.HEAD_DOWN] = min(head_neck_compression, face_pitch)
 
         lean = abs(pose.torso_lean_degrees) if pose.torso_lean_degrees is not None else None
-        scores[ActionName.HUNCHED] = min(
-            _classifier_high(lean, 12.0, 35.0),
-            max(0.45, scores[ActionName.HEAD_DOWN]),
+        # Hunching requires a signed forward bend.  The old absolute torso
+        # angle treated backward and lateral lean as equivalent, and coupling it
+        # to HEAD_DOWN made a genuine hunch impossible when the head stayed up.
+        forward_lean = pose.forward_torso_lean_degrees
+        forward_hunch = _classifier_high(forward_lean, 12.0, 35.0)
+        scores[ActionName.HUNCHED] = forward_hunch * (
+            0.85 + 0.15 * scores[ActionName.HEAD_DOWN]
         )
         scores[ActionName.SHOULDERS_SLUMPED] = min(
             scores[ActionName.HEAD_DOWN], _classifier_low(lean, 10.0, 35.0)
-        )
-        shoulder_line_tilt = _classifier_undirected_line_tilt(pose.shoulder_slope_degrees)
-        scores[ActionName.LYING] = max(
-            _classifier_high(lean, 40.0, 68.0),
-            _classifier_high(shoulder_line_tilt, 45.0, 75.0),
         )
 
         upright = _classifier_low(lean, 8.0, 25.0)
@@ -2796,6 +2856,31 @@ class RuleActionClassifier:
         )
         standing_geometry = max(straight_knees, vertical_thighs * 0.9)
         standing_geometry *= 1.0 - 0.90 * sitting_contradiction
+
+        # Torso tilt alone is also produced by a forward bend.  A lying body
+        # needs an independent layout cue: horizontal/near-horizontal thighs
+        # when the lower body is visible, or a strongly rotated shoulder line
+        # as the conservative upper-body fallback for a crop.
+        shoulder_line_tilt = _classifier_undirected_line_tilt(pose.shoulder_slope_degrees)
+        horizontal_shoulder_line = _classifier_high(shoulder_line_tilt, 45.0, 75.0)
+        lower_body_layout = horizontal_thighs
+        has_lower_body_orientation = (
+            pose.left_thigh_vertical_degrees is not None
+            or pose.right_thigh_vertical_degrees is not None
+        )
+        # In a profile view the projected shoulder line can rotate even when
+        # the legs stay upright.  Use visible leg geometry in preference to
+        # the shoulder fallback, including a reliable single visible thigh.
+        lying_layout = (
+            lower_body_layout
+            if has_lower_body_orientation
+            else horizontal_shoulder_line * 0.85
+        )
+        torso_horizontal = _classifier_high(lean, 40.0, 68.0)
+        scores[ActionName.LYING] = min(torso_horizontal, lying_layout)
+        # Clear horizontal body geometry contradicts a hunch candidate even when
+        # a profile face happens to provide a valid facing direction.
+        scores[ActionName.HUNCHED] *= 1.0 - scores[ActionName.LYING]
 
         scores[ActionName.STANDING] = min(upright, standing_geometry)
         scores[ActionName.SITTING] = min(upright, sitting_geometry)

@@ -1,3 +1,5 @@
+import pytest
+
 from marsdog_vision_interaction.providers.gesture_pose_engine import (
     ActionName,
     BehaviorEngine,
@@ -47,6 +49,45 @@ def _pose_with_nose_y(y: float) -> tuple[PoseLandmark, ...]:
     points[0] = PoseLandmark(
         nose.x, y, nose.z, nose.visibility, nose.presence
     )
+    return tuple(points)
+
+
+def _profile_hunch(
+    *, facing: str = "right", bend: str = "forward"
+) -> tuple[PoseLandmark, ...]:
+    """Build a 2D profile/oblique pose with an explicit torso direction."""
+
+    points = list(_pose("standing"))
+    if facing == "right":
+        shoulders = ((11, 0.62, 0.30), (12, 0.82, 0.30))
+        hips = ((23, 0.48, 0.55), (24, 0.68, 0.55))
+        ears = ((7, 0.56, 0.18), (8, 0.60, 0.18))
+        nose = (0.78, 0.16)
+    elif facing == "left":
+        shoulders = ((11, 0.18, 0.30), (12, 0.38, 0.30))
+        hips = ((23, 0.32, 0.55), (24, 0.52, 0.55))
+        ears = ((7, 0.40, 0.18), (8, 0.44, 0.18))
+        nose = (0.22, 0.16)
+    else:
+        # A frontal face has no trustworthy 2D facing direction.  Keep the same
+        # torso lean as the profile fixture so this test catches abs(angle)
+        # regressions instead of passing because the body is upright.
+        shoulders = ((11, 0.62, 0.30), (12, 0.82, 0.30))
+        hips = ((23, 0.48, 0.55), (24, 0.68, 0.55))
+        ears = ((7, 0.46, 0.18), (8, 0.54, 0.18))
+        nose = (0.50, 0.16)
+
+    if bend == "backward":
+        if facing == "right":
+            shoulders = ((11, 0.38, 0.30), (12, 0.58, 0.30))
+            hips = ((23, 0.48, 0.55), (24, 0.68, 0.55))
+        elif facing == "left":
+            shoulders = ((11, 0.42, 0.30), (12, 0.62, 0.30))
+            hips = ((23, 0.32, 0.55), (24, 0.52, 0.55))
+
+    for index, x, y in (*shoulders, *hips, *ears, (0, *nose)):
+        point = points[index]
+        points[index] = PoseLandmark(x, y, point.z, point.visibility, point.presence)
     return tuple(points)
 
 
@@ -263,6 +304,378 @@ def test_standing_action_is_deterministic_and_keeps_public_key() -> None:
         ]
         == 0.0
     )
+
+
+def test_profile_hunch_triggers_without_head_down_for_both_facing_directions() -> None:
+    for facing in ("left", "right"):
+        engine = BehaviorEngine()
+        results = [
+            engine.update(
+                LandmarkFrame(
+                    monotonic_s=0.1 + index * 0.1,
+                    pose_landmarks=_profile_hunch(facing=facing),
+                )
+            )
+            for index in range(12)
+        ]
+
+        assert results[-1].raw_score_map[ActionName.HEAD_DOWN] == 0.0
+        assert results[-1].raw_score_map[ActionName.HUNCHED] >= 0.55
+        assert ActionName.HUNCHED in {action.name for action in results[-1].actions}
+
+
+@pytest.mark.parametrize("facing", ("left", "right"))
+def test_hunch_requires_forward_direction_and_reliable_face_orientation(facing: str) -> None:
+    engine = BehaviorEngine()
+    backward = engine.update(
+        LandmarkFrame(
+            monotonic_s=0.1,
+            pose_landmarks=_profile_hunch(facing=facing, bend="backward"),
+        )
+    )
+    assert backward.raw_score_map[ActionName.HUNCHED] == 0.0
+
+    engine = BehaviorEngine()
+    lateral = engine.update(
+        LandmarkFrame(
+            monotonic_s=0.1,
+            pose_landmarks=_profile_hunch(facing="front"),
+        )
+    )
+    assert lateral.raw_score_map[ActionName.HUNCHED] == 0.0
+
+    missing_ears = _hide_pose_landmarks(_profile_hunch(facing="right"), 7, 8)
+    engine = BehaviorEngine()
+    missing = engine.update(
+        LandmarkFrame(monotonic_s=0.1, pose_landmarks=missing_ears)
+    )
+    assert missing.raw_score_map[ActionName.HUNCHED] == 0.0
+
+
+def test_small_frontal_nose_offset_inside_ear_interval_is_ambiguous() -> None:
+    points = list(_profile_hunch(facing="front"))
+    nose = points[0]
+    # A small detector asymmetry moves the nose away from the ear midpoint,
+    # but it remains between the two ears and cannot establish profile facing.
+    points[0] = PoseLandmark(0.52, nose.y, nose.z, nose.visibility, nose.presence)
+    pose = tuple(points)
+    engine = BehaviorEngine()
+    results = [
+        engine.update(
+            LandmarkFrame(monotonic_s=0.1 + index * 0.1, pose_landmarks=pose)
+        )
+        for index in range(12)
+    ]
+
+    assert all(result.raw_score_map[ActionName.HUNCHED] == 0.0 for result in results)
+    assert all(
+        ActionName.HUNCHED not in {action.name for action in result.actions}
+        for result in results
+    )
+
+
+@pytest.mark.parametrize("facing", ("left", "right"))
+@pytest.mark.parametrize("hidden_ear", (7, 8))
+def test_single_ear_clear_profile_still_triggers_hunch(
+    facing: str, hidden_ear: int
+) -> None:
+    pose = tuple(
+        PoseLandmark(point.x, point.y, None, point.visibility, point.presence)
+        for point in _hide_pose_landmarks(_profile_hunch(facing=facing), hidden_ear)
+    )
+    engine = BehaviorEngine()
+    results = [
+        engine.update(
+            LandmarkFrame(
+                monotonic_s=0.1 + index * 0.1,
+                pose_landmarks=pose,
+            )
+        )
+        for index in range(12)
+    ]
+
+    assert results[-1].raw_score_map[ActionName.HUNCHED] >= 0.55
+    assert ActionName.HUNCHED in {action.name for action in results[-1].actions}
+
+
+@pytest.mark.parametrize("hidden_ear", (7, 8))
+def test_frontal_single_ear_with_nose_asymmetry_remains_ambiguous(hidden_ear: int) -> None:
+    points = list(_profile_hunch(facing="front"))
+    point = points[0]
+    points[0] = PoseLandmark(0.52, point.y, None, 1.0, 1.0)
+    pose = _hide_pose_landmarks(tuple(points), hidden_ear)
+    engine = BehaviorEngine()
+    for index in range(12):
+        result = engine.update(LandmarkFrame(monotonic_s=index * 0.1, pose_landmarks=pose))
+        assert result.raw_score_map[ActionName.HUNCHED] == 0.0
+        assert ActionName.HUNCHED not in {action.name for action in result.actions}
+
+
+@pytest.mark.parametrize("facing", ("left", "right"))
+@pytest.mark.parametrize("visible_ear", (7, 8))
+@pytest.mark.parametrize("offset_ratio", (0.44, 0.46, 0.82))
+def test_single_ear_direction_requires_large_normalized_offset(
+    facing: str, visible_ear: int, offset_ratio: float
+) -> None:
+    points = list(_profile_hunch(facing=facing))
+    shoulder_width = abs(points[12].x - points[11].x)
+    direction = -1.0 if facing == "left" else 1.0
+    points[0] = PoseLandmark(
+        points[visible_ear].x + direction * offset_ratio * shoulder_width,
+        points[0].y, None, 1.0, 1.0,
+    )
+    pose = _hide_pose_landmarks(tuple(points), 8 if visible_ear == 7 else 7)
+    engine = BehaviorEngine()
+    for index in range(12):
+        result = engine.update(LandmarkFrame(monotonic_s=index * 0.1, pose_landmarks=pose))
+    if offset_ratio < 0.45:
+        assert result.raw_score_map[ActionName.HUNCHED] == 0.0
+        assert ActionName.HUNCHED not in {action.name for action in result.actions}
+    else:
+        assert result.raw_score_map[ActionName.HUNCHED] >= 0.55
+        assert ActionName.HUNCHED in {action.name for action in result.actions}
+    assert result.raw_score_map[ActionName.LYING] == 0.0
+
+
+@pytest.mark.parametrize("facing", ("left", "right"))
+@pytest.mark.parametrize("offset_ratio", (0.07, 0.09))
+def test_bilateral_ear_interval_keeps_its_smaller_direction_threshold(
+    facing: str, offset_ratio: float
+) -> None:
+    points = list(_profile_hunch(facing=facing))
+    shoulder_width = abs(points[12].x - points[11].x)
+    ear_edge = (
+        min(points[7].x, points[8].x)
+        if facing == "left"
+        else max(points[7].x, points[8].x)
+    )
+    direction = -1.0 if facing == "left" else 1.0
+    points[0] = PoseLandmark(
+        ear_edge + direction * offset_ratio * shoulder_width,
+        points[0].y, None, 1.0, 1.0,
+    )
+    engine = BehaviorEngine()
+    for index in range(12):
+        result = engine.update(
+            LandmarkFrame(monotonic_s=index * 0.1, pose_landmarks=tuple(points))
+        )
+    if offset_ratio < 0.08:
+        assert result.raw_score_map[ActionName.HUNCHED] == 0.0
+        assert ActionName.HUNCHED not in {action.name for action in result.actions}
+    else:
+        assert result.raw_score_map[ActionName.HUNCHED] >= 0.55
+        assert ActionName.HUNCHED in {action.name for action in result.actions}
+
+
+@pytest.mark.parametrize("facing", ("left", "right"))
+@pytest.mark.parametrize("hidden_ear", (7, 8))
+def test_single_ear_profile_backward_lean_remains_negative(
+    facing: str, hidden_ear: int
+) -> None:
+    pose = _hide_pose_landmarks(_profile_hunch(facing=facing, bend="backward"), hidden_ear)
+    engine = BehaviorEngine()
+    for index in range(12):
+        result = engine.update(LandmarkFrame(monotonic_s=index * 0.1, pose_landmarks=pose))
+        assert result.raw_score_map[ActionName.HUNCHED] == 0.0
+        assert ActionName.HUNCHED not in {action.name for action in result.actions}
+
+
+def test_single_ear_small_nose_offset_remains_ambiguous() -> None:
+    points = list(_profile_hunch(facing="right"))
+    nose = points[0]
+    # The visible ear is x=.56 and the shoulder width is .20.  This .25
+    # normalized offset is deliberately below the conservative .45 fallback.
+    points[0] = PoseLandmark(0.61, nose.y, nose.z, nose.visibility, nose.presence)
+    pose = _hide_pose_landmarks(tuple(points), 8)
+    engine = BehaviorEngine()
+    results = [
+        engine.update(
+            LandmarkFrame(
+                monotonic_s=0.1 + index * 0.1,
+                pose_landmarks=pose,
+            )
+        )
+        for index in range(12)
+    ]
+
+    assert all(result.raw_score_map[ActionName.HUNCHED] == 0.0 for result in results)
+    assert all(
+        ActionName.HUNCHED not in {action.name for action in result.actions}
+        for result in results
+    )
+
+
+def test_transient_forward_hunch_does_not_activate_stable_label() -> None:
+    engine = BehaviorEngine()
+    results = [
+        engine.update(
+            LandmarkFrame(
+                monotonic_s=0.1 + index * 0.1,
+                pose_landmarks=(
+                    _profile_hunch(facing="right")
+                    if index < 4
+                    else _pose("standing")
+                ),
+            )
+        )
+        for index in range(10)
+    ]
+
+    assert max(result.raw_score_map[ActionName.HUNCHED] for result in results) >= 0.55
+    assert all(
+        ActionName.HUNCHED not in {action.name for action in result.actions}
+        for result in results
+    )
+
+
+@pytest.mark.parametrize("facing", ("left", "right"))
+@pytest.mark.parametrize("visible_knees", ((25, 26), (25,), (26,)))
+def test_deep_profile_hunch_with_rotated_shoulders_and_upright_legs(
+    facing: str, visible_knees: tuple[int, ...]
+) -> None:
+    # A profile shoulder line can rotate without the whole body lying down.
+    # This 70-degree bend exceeded the old lying gate.  Keep the legs exactly
+    # vertical and use absent Z, as with the production COCO input.
+    points = list(_pose("standing"))
+    for index, x, y in (
+        (0, 0.90, 0.38), (7, 0.82, 0.40), (8, 0.84, 0.40),
+        (11, 0.76, 0.44), (12, 0.80, 0.56),
+        (23, 0.48, 0.60), (24, 0.52, 0.60),
+        (25, 0.48, 0.77), (26, 0.52, 0.77),
+        (27, 0.48, 0.94), (28, 0.52, 0.94),
+    ):
+        points[index] = PoseLandmark(x, y, None, 1.0, 1.0)
+    pose = tuple(
+        PoseLandmark(
+            1.0 - point.x if facing == "left" else point.x,
+            point.y,
+            None,
+            point.visibility,
+            point.presence,
+        )
+        for point in points
+    )
+    pose = _hide_pose_landmarks(
+        pose, 13, 14, 15, 16,
+        *(index for index in (25, 26) if index not in visible_knees),
+    )
+    classifier = PoseActionClassifier()
+    for index in range(12):
+        classifier.update(
+            track_id=7, pose_landmarks=_pose("standing"), now=index * 0.1
+        )
+    snapshots = [
+        classifier.update(track_id=7, pose_landmarks=pose, now=1.2 + index * 0.1)
+        for index in range(12)
+    ]
+    scores = {item["name"]: item["score"] for item in snapshots[-1]["raw_scores"]}
+    assert scores["head_down"] == 0.0
+    assert scores["hunched"] >= 0.55
+    assert scores["lying"] == 0.0
+    assert snapshots[-1]["pose_action"] == "hunched_back"
+    assert all(
+        not snapshot["fall_detector"]["event_triggered"] for snapshot in snapshots
+    )
+
+
+@pytest.mark.parametrize("index", (0, 7, 8))
+@pytest.mark.parametrize("confidence_field", ("visibility", "presence"))
+def test_weak_nose_or_sole_visible_ear_does_not_support_hunch(
+    index: int, confidence_field: str
+) -> None:
+    pose = _profile_hunch(facing="right")
+    if index in (7, 8):
+        pose = _hide_pose_landmarks(pose, 8 if index == 7 else 7)
+    points = list(pose)
+    point = points[index]
+    points[index] = PoseLandmark(
+        point.x, point.y, None,
+        0.49 if confidence_field == "visibility" else 1.0,
+        0.49 if confidence_field == "presence" else 1.0,
+    )
+    engine = BehaviorEngine()
+    for frame_index in range(12):
+        result = engine.update(
+            LandmarkFrame(monotonic_s=frame_index * 0.1, pose_landmarks=tuple(points))
+        )
+        assert result.raw_score_map[ActionName.HUNCHED] == 0.0
+        assert ActionName.HUNCHED not in {action.name for action in result.actions}
+
+
+def test_cropped_horizontal_body_keeps_shoulder_layout_fallback() -> None:
+    engine = BehaviorEngine()
+    pose = _hide_pose_landmarks(_pose("lying"), 25, 26, 27, 28)
+    for index in range(12):
+        result = engine.update(LandmarkFrame(monotonic_s=index * 0.1, pose_landmarks=pose))
+        assert not result.fall_status.event_triggered
+    assert result.raw_score_map[ActionName.LYING] >= 0.55
+    assert ActionName.LYING in {action.name for action in result.actions}
+    assert ActionName.HUNCHED not in {action.name for action in result.actions}
+
+
+def test_head_down_and_slumped_shoulders_keep_existing_scores() -> None:
+    engine = BehaviorEngine()
+    for index in range(12):
+        result = engine.update(
+            LandmarkFrame(monotonic_s=index * 0.1, pose_landmarks=_pose_with_nose_y(0.25))
+        )
+    assert result.raw_score_map[ActionName.HEAD_DOWN] >= 0.55
+    assert result.raw_score_map[ActionName.SHOULDERS_SLUMPED] >= 0.55
+    assert result.raw_score_map[ActionName.HUNCHED] == 0.0
+    assert {ActionName.HEAD_DOWN, ActionName.SHOULDERS_SLUMPED}.issubset(
+        action.name for action in result.actions
+    )
+
+
+def test_sitting_keeps_existing_geometry_without_lying_or_hunch() -> None:
+    points = list(_pose("standing"))
+    for index, x, y in (
+        (25, 0.65, 0.55), (26, 0.75, 0.55),
+        (27, 0.65, 0.80), (28, 0.75, 0.80),
+    ):
+        points[index] = PoseLandmark(x, y, None, 1.0, 1.0)
+    engine = BehaviorEngine()
+    for index in range(12):
+        result = engine.update(
+            LandmarkFrame(monotonic_s=index * 0.1, pose_landmarks=tuple(points))
+        )
+    assert ActionName.SITTING in {action.name for action in result.actions}
+    assert result.raw_score_map[ActionName.LYING] == 0.0
+    assert result.raw_score_map[ActionName.HUNCHED] == 0.0
+
+
+def test_forward_hunch_with_upright_legs_is_not_lying() -> None:
+    engine = BehaviorEngine()
+    results = [
+        engine.update(
+            LandmarkFrame(
+                monotonic_s=0.1 + index * 0.1,
+                pose_landmarks=_profile_hunch(facing="right"),
+            )
+        )
+        for index in range(12)
+    ]
+
+    assert results[-1].raw_score_map[ActionName.HUNCHED] >= 0.55
+    assert results[-1].raw_score_map[ActionName.LYING] == 0.0
+
+
+def test_horizontal_body_keeps_lying_and_suppresses_hunch() -> None:
+    engine = BehaviorEngine()
+    results = [
+        engine.update(
+            LandmarkFrame(
+                monotonic_s=0.1 + index * 0.1,
+                pose_landmarks=_pose("lying"),
+            )
+        )
+        for index in range(12)
+    ]
+
+    assert results[-1].raw_score_map[ActionName.LYING] >= 0.55
+    assert results[-1].raw_score_map[ActionName.HUNCHED] < 0.55
+    assert ActionName.LYING in {action.name for action in results[-1].actions}
+    assert ActionName.HUNCHED not in {action.name for action in results[-1].actions}
 
 
 def test_entering_frame_while_lying_never_fabricates_fall_event() -> None:
