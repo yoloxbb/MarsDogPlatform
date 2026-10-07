@@ -341,6 +341,11 @@
       "tests": 25,
       "failures": 0,
       "skipped": 0
+    },
+    "naming_regression": {
+      "status": "PASS",
+      "tests": 4,
+      "scope": "Live catalog, duplicate YAML keys, shared anchors, and negative checks for all reviewed configurations, including Voice VAD threshold."
     }
   },
   "source_sha256": {
@@ -374,7 +379,8 @@
     "tools/prepare_cpu_models.py": "6e57365c96cb942ab19a508b63dd3a5b72032407fc79a43ac282f604e56d2038",
     "tools/prepare_qwen_intent.py": "c420bfd6f13ac64367f31612c0209cc6406dcdc342422c5d2683ae9c03fef37f",
     "tools/recording_trial.py": "8d7989bbab09c58777ef3346da0423f3dc29def41069974b02be84f038bb00fd",
-    "integration/naming/config_compatibility.json": "33e3a6e210453e87554edf6c819d8816ccf385b70d7897a3b538d7c9e63be9c5"
+    "integration/naming/config_compatibility.json": "33e3a6e210453e87554edf6c819d8816ccf385b70d7897a3b538d7c9e63be9c5",
+    "integration/naming/test_yaml_catalog.py": "7e9bcd25639ea63e00c20bc3f40f15627453defc6ec8f77222f6ec8422979a46"
   },
   "local_evidence": {
     "out/model-directories/platform.log": "34e5fbe21851a95332378511a2a2a9079dcfd35b90f7f86e87bc47e470cca16d",
@@ -391,8 +397,10 @@
     "out/model-directories/voice-install/result.json": "227719643ca6b94616b5277ff7c9161caa1be595fe0758844f8c6b5dd86804d5",
     "out/model-directories/vision-install/result.json": "21087f68ee279ca6eb8374f7efd61c89156e7514555b610ce6909d1962efaeb7",
     "out/model-directories/contracts.log": "d14e8f97030393ecb0b7cbfc2297ea461966bc35031766e8f71bef490b1b8f26",
-    "out/model-directories/contracts/contracts.xml": "507792ca85c5fe28f2c24ba18660df81ef048853a77ae857679bd4c264ce9a5f",
-    "out/model-directories/platform-after-ci.log": "4d80d9a4caa177bbe89b8e22772a3d85ff35f82784c287f8f36d119acc1236c0"
+    "out/model-directories/contracts/contracts.xml": "a84f934c8f1b5ec04e9a681e8d9a51cd517e4900064a6d3b0d20a92d6aa1199d",
+    "out/model-directories/platform-after-ci.log": "e94c4b4cd069aa61f572cbe5ca3efe983bcebb308cbd7eb389316969167ae126",
+    "out/model-directories/naming.log": "58a0d9c02bfcfcd9cad3142f507c142a72dde390f68abbbbb2249d88d8f7ad4e",
+    "out/model-directories/identifiers-live.log": "52940c3d5536a304fe50b780b307ad9069a47f902500c68857c814664fb01b3e"
   },
   "limits": [
     "Vision skips three RGA library checks; no NPU/camera/hardware acceptance.",
@@ -405,6 +413,7 @@
     "initial_failure": "https://github.com/yoloxbb/MarsDogPlatform/actions/runs/37589356421/job/112686863352",
     "cause": "The original frozen Voice configuration gate had no reviewed entry for the six authorized model path replacements.",
     "fix": "Registered the parsed config in the existing reviewed-config mechanism after verifying that reversing exactly six prefixes reproduces the original byte SHA256. Historical baseline unchanged.",
-    "local_rechecks": "25 migration/cross-module contracts and dev.py check passed."
+    "local_rechecks": "25 migration/cross-module contracts, live identifier extraction, 4 naming/YAML regression tests and dev.py check passed.",
+    "naming_fix": "Extended the negative mutation test to distinguish Voice production configuration from the command catalog; changing VAD threshold still fails the semantic guard."
   }
 }

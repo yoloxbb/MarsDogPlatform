@@ -39,6 +39,8 @@ class YamlCatalogTests(unittest.TestCase):
                     changed["command_handshake"]["candidates"] = ["sit_down"]
                 elif "/action/" in path:
                     changed["behaviors"]["eatNormally"]["stages"][0]["candidates"][0]["unit_id"] = "ACT_BASIC_SIT"
+                elif path == "modules/voice/config/voice.yaml":
+                    changed["providers"]["audio"]["config"]["vad_threshold"] = 0.75
                 else:
                     changed["commands"][0]["command_id"] = "CMD_WRONG"
                 with self.assertRaisesRegex(AssertionError, "semantics changed"):
