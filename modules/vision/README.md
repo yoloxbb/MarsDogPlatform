@@ -32,9 +32,10 @@ source scripts/fastdds_env.sh
 `rknn-toolkit-lite2` 只在 Linux AArch64（RK3588）环境安装；其他平台仍可安装、
 运行单元测试和 Mock 联调，但不能执行 RKNN 模型。
 
-模型目录按以下顺序解析：`MARSDOG_VISION_MODEL_DIR` 环境变量、仓库内
-`models/vision`、仓库同级的 `models/vision`。因此既可以让单项目自包含，也可以
-让多个项目共享一份大模型而不写死开发机目录。运行数据默认写入仓库内 `data`，
+模型默认放在 **平台主仓根目录的 models/vision**。可用 `MARSDOG_MODEL_DIR`
+设置共享模型根目录，或用 `MARSDOG_VISION_MODEL_DIR` 单独覆盖视觉目录（优先级更高）。
+环境变量使用绝对路径；安装到平台仓库外时需显式设置。详见
+[统一模型目录](../../config/models/README.md)。运行数据仍默认写入本模块的 `data`，
 可通过 `MARSDOG_VISION_DATA_DIR` 覆盖。
 人脸注册表和人脸样本是运行时生成的生物识别数据，仅保存在本机 `data/`
 目录，不进入 Git，也不打进源码发布包；新设备需单独完成人脸注册或安全迁移数据。
@@ -103,7 +104,8 @@ RKNN 模型、输出契约和板端检查命令见
 MediaPipe Lite 和 Full 模型统一放在共享模型目录。Full 模型可用以下命令安装：
 
 ```bash
-export MARSDOG_VISION_MODEL_DIR="${MARSDOG_VISION_MODEL_DIR:-$PWD/models/vision}"
+# 以下在平台主仓根目录执行
+export MARSDOG_VISION_MODEL_DIR="${MARSDOG_VISION_MODEL_DIR:-${MARSDOG_MODEL_DIR:-$PWD/models}/vision}"
 mkdir -p "$MARSDOG_VISION_MODEL_DIR"
 curl --fail --location \
   --output "$MARSDOG_VISION_MODEL_DIR/pose_landmarker_full.task" \

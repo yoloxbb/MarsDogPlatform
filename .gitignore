@@ -11,3 +11,7 @@ out/
 # Public Python package build output
 packages/*/build/
 packages/*/dist/
+
+# Runtime model weights are distributed separately from source.
+/models/*
+!/models/README.md

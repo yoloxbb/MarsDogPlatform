@@ -13,6 +13,8 @@ from typing import Any
 
 import yaml
 
+from .model_paths import model_root, vision_model_directory
+
 
 DEBUG_OSD_DEFAULTS: dict[str, bool] = {
     "enabled": True,
@@ -59,33 +61,30 @@ def _find_project_root(config_path: Path) -> Path:
     return Path.cwd().resolve()
 
 
-def _path_variables(config_path: Path) -> dict[str, str]:
+def _path_variables(config_path: Path, data: dict[str, Any]) -> dict[str, str]:
     project_override = os.environ.get("MARSDOG_VISION_PROJECT_DIR")
     project_dir = Path(
         project_override or _find_project_root(config_path)
     ).expanduser().resolve()
 
-    model_override = os.environ.get("MARSDOG_VISION_MODEL_DIR")
-    if model_override:
-        model_dir = Path(model_override).expanduser().resolve()
-    else:
-        candidates = (
-            project_dir / "models" / "vision",
-            project_dir.parent / "models" / "vision",
-        )
-        model_dir = next(
-            (item for item in candidates if item.is_dir()),
-            candidates[0],
-        )
-
     data_dir = Path(
         os.environ.get("MARSDOG_VISION_DATA_DIR", project_dir / "data")
     ).expanduser().resolve()
-    return {
+    variables = {
         "MARSDOG_VISION_PROJECT_DIR": str(project_dir),
-        "MARSDOG_VISION_MODEL_DIR": str(model_dir),
         "MARSDOG_VISION_DATA_DIR": str(data_dir),
     }
+    # Only resolve model variables used by this config. Mock configs and configs
+    # with explicit model paths also work in a standalone wheel without a root.
+    referenced = {
+        match.group("named") or match.group("braced")
+        for match in Template.pattern.finditer(str(data))
+    }
+    if "MARSDOG_MODEL_DIR" in referenced:
+        variables["MARSDOG_MODEL_DIR"] = str(model_root(config_path))
+    if "MARSDOG_VISION_MODEL_DIR" in referenced:
+        variables["MARSDOG_VISION_MODEL_DIR"] = str(vision_model_directory(config_path))
+    return variables
 
 
 def _expand_variables(value: Any, variables: dict[str, str]) -> Any:
@@ -130,7 +129,7 @@ def load_config(path: str | Path) -> dict[str, Any]:
             f"got {type(data).__name__}"
         )
 
-    expanded = _expand_variables(data, _path_variables(config_path))
+    expanded = _expand_variables(data, _path_variables(config_path, data))
     # Keep the compatibility defaults at the shared config boundary so the
     # interaction node and debug viewer cannot interpret an omitted section
     # differently.

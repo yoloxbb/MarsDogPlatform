@@ -15,10 +15,11 @@ python3 tools/marsdog.py prepare \
 python3 tools/marsdog.py models \
   --intent-archive /home/elephant/MarsDog/Qwen2.5-0.5B-Instruct.zip
 python3 tools/marsdog.py intent-replay \
-  --manifest out/models/qwen2.5-0.5b-instruct/intent-replay.json
+  --manifest models/llm/qwen2.5-0.5b-instruct/intent-replay.json
 ~~~
 
-当前机器已完成准备。以后重新 prepare 时，需要保留 `--voice-intent-cpu`；
+当前机器已完成旧目录 out/models/qwen2.5-0.5b-instruct 的准备；上面的命令展示新目录。
+回放旧资产时显式指定旧清单，trial/voice-cpu-ros 的兼容规则见 [模型目录](../config/models/README.md)。以后重新 prepare 时，需要保留 `--voice-intent-cpu`；
 不带该参数会按默认依赖集合同步，移除 CPU 意图可选依赖。
 仅同步 Voice 可使用：
 
@@ -44,7 +45,7 @@ providers:
     enabled: true
     type: qwen_cpu
     config:
-      model: /home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct
+      model: /home/elephant/MarsDog/marsdog-platform/models/llm/qwen2.5-0.5b-instruct
       num_threads: 2
       max_context_len: 4096
       max_new_tokens: 32

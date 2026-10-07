@@ -33,7 +33,7 @@ python3 -B tools/marsdog.py trial \
 
 | 参数 | 用途 |
 | --- | --- |
-| --voice-manifest / --intent-manifest | 指向已验证的 CPU 模型清单；默认使用本机已有 out/models 路径 |
+| --voice-manifest / --intent-manifest | 指向已验证的 CPU 模型清单；默认使用统一 models 根目录，旧资产兼容规则见 [模型目录](../../config/models/README.md) |
 | --output | 输出根目录；每次新建带时间戳的子目录 |
 | --terminal-timeout | 等待 Action 终态，默认 75 秒，允许 1–180 秒 |
 | --timeout | 整组观察超时，默认 300 秒，允许 30–600 秒 |

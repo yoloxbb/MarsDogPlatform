@@ -1,0 +1,393 @@
+{
+  "status": "PASS_WITH_EXPLICIT_LIMITS",
+  "recorded_at": "2026-10-07T05:32:14.216183+00:00",
+  "base_commit": "387792e28ff54a2425a58cf1e32d930c738d1918",
+  "checks": {
+    "platform": {
+      "status": "PASS",
+      "tests": 120,
+      "observability_tests": 13,
+      "architecture_errors": [],
+      "identifier_errors": [],
+      "known_identifier_gaps_retained": true
+    },
+    "voice": {
+      "status": "PASS",
+      "counts": {
+        "tests": 438,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "scope": "Existing unit tests; no actual microphone/models/ROS transport"
+    },
+    "vision": {
+      "status": "PASS_WITH_EXPLICIT_LIMITS",
+      "counts": {
+        "tests": 305,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 3
+      },
+      "skips": [
+        {
+          "case": "test_rga_image_parity_when_helper_is_explicitly_requested[shape0-False]",
+          "reason": "set MARSDOG_HAND_RGA_TEST_LIBRARY for an RGA parity smoke"
+        },
+        {
+          "case": "test_rga_image_parity_when_helper_is_explicitly_requested[shape1-True]",
+          "reason": "set MARSDOG_HAND_RGA_TEST_LIBRARY for an RGA parity smoke"
+        },
+        {
+          "case": "test_rga_image_parity_when_helper_is_explicitly_requested[shape2-True]",
+          "reason": "set MARSDOG_HAND_RGA_TEST_LIBRARY for an RGA parity smoke"
+        }
+      ],
+      "scope": "Original unit suite on CPU; no camera/model/NPU hardware validation"
+    },
+    "voice_wheel": {
+      "status": "PASS",
+      "scope": "Locked Python wheel; exact config/static bytes; HTTP schema only, no sockets; no ROS/node/hardware/models"
+    },
+    "vision_wheel": {
+      "status": "PASS",
+      "scope": "Original locked CPU runtime and wheel resources; no model/device inference"
+    },
+    "build": {
+      "source_sha256": "8d5ad9c685fb031e76defb1adf20bac2be003320b30cde2304733ba6ecf8ae3f",
+      "python": "3.10.12 (main, Aug 31 2026, 10:18:17) [GCC 11.4.0]",
+      "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+      "ros": "humble",
+      "install": "/home/elephant/MarsDog/marsdog-platform/out/local/ros/install",
+      "source_paths": [
+        "modules/emotion",
+        "modules/behavior",
+        "modules/action",
+        "modules/voice",
+        "modules/vision",
+        "packages/observability",
+        "interfaces/ros2/marsdog_interfaces",
+        "robotics/ros2/src/waypoint_nav",
+        ".external/uwb",
+        "robotics/ros2/src/stereo_v4l2_camera",
+        "robotics/ros2/src/wit_imu",
+        "robotics/ros2/src/person_3d_localization",
+        "robotics/ros2/src/robot_slam_bringup",
+        "robotics/ros2/src/stereo_slam_legacy_bringup",
+        "robotics/ros2/src/go2_uwb_local_follow",
+        "robotics/ros2/src/go2_uwb_behavior"
+      ],
+      "options": {
+        "BUILD_TESTING": "OFF",
+        "BUILD_UWB_VENDOR_DRIVER": "OFF"
+      }
+    },
+    "doctor": {
+      "status": "PASS"
+    },
+    "smoke": {
+      "status": "PASS",
+      "report": "out/local/runs/20261007T052911Z-942099/result.json"
+    },
+    "lifecycle": {
+      "status": "PASS",
+      "cases": [
+        {
+          "case": "interrupt",
+          "status": "PASS",
+          "run": "/home/elephant/MarsDog/marsdog-platform/out/local/runs/20261007T053018Z-943725",
+          "observed_supervisor_status": "PASS",
+          "returncode": 0,
+          "all_owned_pids_reaped": true
+        },
+        {
+          "case": "child_crash",
+          "status": "PASS",
+          "run": "/home/elephant/MarsDog/marsdog-platform/out/local/runs/20261007T053027Z-944332",
+          "observed_supervisor_status": "FAIL",
+          "returncode": 1,
+          "all_owned_pids_reaped": true
+        },
+        {
+          "case": "collector_crash",
+          "status": "PASS",
+          "run": "/home/elephant/MarsDog/marsdog-platform/out/local/runs/20261007T053035Z-944818",
+          "observed_supervisor_status": "PASS",
+          "returncode": 0,
+          "all_owned_pids_reaped": true
+        }
+      ],
+      "profile": "lite3-local-cpu",
+      "scope": "Local profile only; no hardware"
+    },
+    "recording_trial": {
+      "status": "PASS",
+      "integration_acceptance": true,
+      "model_acceptance": false,
+      "hardware_acceptance": false,
+      "outcome": "success",
+      "asr_text": [
+        "回家"
+      ],
+      "command_events": [
+        {
+          "schema_version": 2,
+          "header": {
+            "stamp": 1791350960.2434132,
+            "frame_id": "microphone_array"
+          },
+          "event_type": "EVT_VOICE_UNMASTER_ID",
+          "interaction_id": "f2afc649d37246eaae059e5685ea370c",
+          "utterance_id": "c0b6d95882cf433e831ce2218e3c6204",
+          "wake_id": "",
+          "wake_word": "",
+          "wake_angle": 0.0,
+          "wake_confidence": 0.0,
+          "wake_score_raw": 0.0,
+          "asr_text": "",
+          "speaker_id": "unknown",
+          "speaker_confidence": 0.0,
+          "speaker_role": "",
+          "speaker_status": "",
+          "speaker_reason": "",
+          "social": "",
+          "intent": "",
+          "emotion": "",
+          "action": "",
+          "control": "",
+          "language": "zh",
+          "command_id": "",
+          "intent_category": "",
+          "intent_source": "",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "",
+          "raw_nlu_tag": "",
+          "specific_event_type": "",
+          "dispatch_role": "",
+          "slots": [],
+          "response_text": "",
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "danger_type": "",
+          "danger_angle": 0.0,
+          "state": "interaction",
+          "previous_state": "attention",
+          "state_reason": "",
+          "latency_ms": 0.0
+        },
+        {
+          "schema_version": 2,
+          "header": {
+            "stamp": 1791350960.2438176,
+            "frame_id": "microphone_array"
+          },
+          "event_type": "speech",
+          "interaction_id": "f2afc649d37246eaae059e5685ea370c",
+          "utterance_id": "c0b6d95882cf433e831ce2218e3c6204",
+          "wake_id": "",
+          "wake_word": "",
+          "wake_angle": 0.0,
+          "wake_confidence": 0.0,
+          "wake_score_raw": 0.0,
+          "asr_text": "回家",
+          "speaker_id": "unknown",
+          "speaker_confidence": 0.0,
+          "speaker_role": "",
+          "speaker_status": "",
+          "speaker_reason": "",
+          "social": "",
+          "intent": "",
+          "emotion": "",
+          "action": "",
+          "control": "",
+          "language": "zh",
+          "command_id": "",
+          "intent_category": "",
+          "intent_source": "",
+          "intent_confidence": 0.0,
+          "nlu_protocol": "",
+          "raw_nlu_tag": "",
+          "specific_event_type": "",
+          "dispatch_role": "",
+          "slots": [],
+          "response_text": "",
+          "is_executable": false,
+          "should_trigger_behavior_tree": false,
+          "danger_type": "",
+          "danger_angle": 0.0,
+          "state": "interaction",
+          "previous_state": "attention",
+          "state_reason": "",
+          "latency_ms": 47.42
+        },
+        {
+          "schema_version": 2,
+          "header": {
+            "stamp": 1791350960.2461762,
+            "frame_id": "microphone_array"
+          },
+          "event_type": "EVT_VOICE_COMMAND_GO_HOME",
+          "interaction_id": "f2afc649d37246eaae059e5685ea370c",
+          "utterance_id": "c0b6d95882cf433e831ce2218e3c6204",
+          "wake_id": "",
+          "wake_word": "",
+          "wake_angle": 0.0,
+          "wake_confidence": 0.0,
+          "wake_score_raw": 0.0,
+          "asr_text": "回家",
+          "speaker_id": "unknown",
+          "speaker_confidence": 0.0,
+          "speaker_role": "",
+          "speaker_status": "",
+          "speaker_reason": "",
+          "social": "NONE",
+          "intent": "GO_HOME",
+          "emotion": "NONE",
+          "action": "GO_HOME",
+          "control": "DO",
+          "language": "zh",
+          "command_id": "CMD_GO_HOME",
+          "intent_category": "command",
+          "intent_source": "command_lexicon",
+          "intent_confidence": 1.0,
+          "nlu_protocol": "rkllm_social_intent_control_v1",
+          "raw_nlu_tag": "NONE|GO_HOME|DO",
+          "specific_event_type": "EVT_VOICE_COMMAND_GO_HOME",
+          "dispatch_role": "specific_command",
+          "slots": [
+            {
+              "key": "command_key",
+              "value": "GO_HOME"
+            },
+            {
+              "key": "matched_phrase",
+              "value": "回家"
+            },
+            {
+              "key": "catalog_phrase",
+              "value": "回家"
+            },
+            {
+              "key": "command_catalog_version",
+              "value": "2026-09-22-play-alone-v6"
+            },
+            {
+              "key": "match_strategy",
+              "value": "catalog_exact"
+            },
+            {
+              "key": "action_name",
+              "value": "ACT_GO_HOME"
+            },
+            {
+              "key": "catalog_source_rows",
+              "value": "5"
+            }
+          ],
+          "response_text": "",
+          "is_executable": true,
+          "should_trigger_behavior_tree": true,
+          "danger_type": "",
+          "danger_angle": 0.0,
+          "state": "execution",
+          "previous_state": "interaction",
+          "state_reason": "",
+          "latency_ms": 0.041
+        }
+      ],
+      "command_terminals": [
+        {
+          "goal_id": "cand_ea151af679a6",
+          "behavior_id": "cand_ea151af679a6",
+          "behavior_name": "go_home",
+          "status": "SUCCESS",
+          "result": "completed",
+          "reason": "behavior completed",
+          "duration_sec": 2.1443440914154053,
+          "failed_action": "",
+          "interrupted_by": "",
+          "reward": 1.0,
+          "emotion_delta_json": "{}",
+          "need_delta_json": "{}",
+          "metadata_json": "{}",
+          "timestamp": 1791350962.4259052
+        }
+      ],
+      "expectation_errors": [],
+      "no_hardware_publishers": true,
+      "source_fingerprint": "8d5ad9c685fb031e76defb1adf20bac2be003320b30cde2304733ba6ecf8ae3f",
+      "assets_sha256": {
+        "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/model.int8.onnx": "c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51",
+        "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/tokens.txt": "f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc",
+        "/home/elephant/MarsDog/marsdog-platform/modules/voice/config/command_catalog.yaml": "cd2db640a624fc6efeaf0b970d31ed9209874380aa125db9db96b0fad8fadcdf",
+        "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/archive/models/asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/test_wavs/zh.wav": "b77f1794fe374a0ba1ee1dc458bfaf9349496cbbfc32780c50ba3c5a7ad8e373",
+        "/home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct/config.json": "1b92fb341d335957a883c105f5e842298e809f2bafe7f55ecfaa3024b30ce3a1",
+        "/home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct/generation_config.json": "d9292be634413d89bf1e11c0fa2195a6c1bf4287cef565808db53be500e3a0d4",
+        "/home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct/LICENSE": "b907c8234b565e5ecefff8232dbb6f1d603fbf9a47a3176db734dcae27175d08",
+        "/home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct/README.md": "f2707aecc87e81a68e614cba25a72ae2498c1975f125077652a5d8f086bf0840",
+        "/home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct/merges.txt": "0de0bc38a29ea38eef099b677fa1ff52edd181e573529af26c4cd2136e233777",
+        "/home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct/model.safetensors": "fdf756fa7fcbe7404d5c60e26bff1a0c8b8aa1f72ced49e7dd0210fe288fb7fe",
+        "/home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct/tokenizer.json": "47ec9be242d3ef39b9c97ac0a3f06c1752f061b234e295bc0a2842067a3fe4f9",
+        "/home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct/tokenizer_config.json": "fa2a40a9d8c8c4bb7f25ab726eb78ec9cbaaef96d1fa26f1d7f5615e886449a8",
+        "/home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct/vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+        "/home/elephant/MarsDog/marsdog-platform/out/models/cpu-20260929/voice-replay.json": "a2344402f9bff56fa1e68775792f9e57c36501a3ec6e828cda74ac0f2807cd20",
+        "/home/elephant/MarsDog/marsdog-platform/out/models/qwen2.5-0.5b-instruct/intent-replay.json": "1afff2af00fcebe458e1fd5328290ec76c5f0d6212bce84a9ff7428c56fd284f",
+        "/home/elephant/MarsDog/marsdog-platform/config/models/qwen2.5-0.5b-intent.lock.json": "70cbe1d34eaf83a8bc7c36cdaefa0af12ca609fd81626ee1ecf0ebdc866c0cc3",
+        "/home/elephant/MarsDog/marsdog-platform/out/p0p2/fixtures/go-home.wav": "fdc096af2e5d5bbf7f3c57c548c8a0e54ff5c5e8a985940a25fc52c2e4767dcd"
+      }
+    }
+  },
+  "source_sha256": {
+    ".gitignore": "42b6b17b997020a72cef6c06a36a3c7583d6c0f1138b3c5f145291994b259de1",
+    "README.md": "02f97144a4a6df82af110d219af5a404b659d97a42b59e4c85d58a5237dcabaa",
+    "config/models/README.md": "84343881694288c76a666e8292b51bea5da46bcc7226f2a2f0464bfaf04ccbbd",
+    "docs/CPU_INTENT.md": "743f4903ccba223751b6f895c1b8c6725e5ebf7e3e25fea53d289406a076846e",
+    "docs/CPU_MODEL_ASSETS.md": "8aeae17056ceb710173a7821d11d112d95e6515f1cdd24b1084df4ed37b0c9be",
+    "docs/CPU_VOICE_ROS.md": "b3967a948e2a500c2cbc393db2416a16dbfb6f2613bf1c2cf32f4bd5e288f0dc",
+    "docs/development/RECORDING_TRIAL.md": "6121e9b100379351f7437ba2c0d049528922ecaf462308f387e58d6da8ef2fdf",
+    "docs/migration/P4_VOICE.md": "872cf97f118bc775c004c485217393e1795a8d9b44df9379bbd90a2a2c309c12",
+    "integration/platform/tests/test_model_directories.py": "15fb8f3cc16ab1a5f7974c726e8fc8455d061f7d596e67822e50febdd1d9a21b",
+    "models/README.md": "e8ed230f76b1ef1f418c63beb6cd425251db66bad8acffadd22375ef5d13b337",
+    "modules/vision/README.md": "d0f7ecc4844bba7992a32aba96883d3a3ea4df89331b8295979340cddbdb28d5",
+    "modules/vision/docs/rknn-face-models.md": "43065dc8aad743a4d8489f1ffb93f907ac1cb46c20b8ed62f882b669b6f64097",
+    "modules/vision/marsdog_vision_interaction/utils/config_loader.py": "635a7b2d0fd1cd54e6b0757af73540547e490199c8caead2d4816c54baac37d8",
+    "modules/vision/marsdog_vision_interaction/utils/model_paths.py": "0c664a5d4bc114f3b6862fbeb7ee1d994aeaa1d9344ff20338a4c305addc909a",
+    "modules/vision/tests/test_config_loader.py": "b21ae3687065a166368933564a69fa4e72ad0da30038a528e53f09fa481215d6",
+    "modules/vision/tests/test_model_paths.py": "f4949a99645a5fe2a43017f84447f04e15ac4f0d29c2cda65acf20af94a78be7",
+    "modules/vision/tools/benchmark_cpu_npu.py": "9559004d046ce0fa8c913cb635488b8ebfda32375eb91ff211d9609185b7b269",
+    "modules/voice/README.md": "57ed0bdc461dfadd107ed3d80cd03a6407773710e8394c90427298735f53b484",
+    "modules/voice/config/voice.yaml": "bf3890b529c9d6a59070b13a2f241c842549088800e933b9de63472b166d5bbc",
+    "modules/voice/marsdog_voice_interaction/utils/config_loader.py": "99cccf2319b28526817bdc06b47cd45cdd633e5e1a89869217048ab307c529f3",
+    "modules/voice/marsdog_voice_interaction/utils/model_paths.py": "11d12338c8cbc073fa35af447bf05166e35530713cdef67e1b4dbdcf761effdd",
+    "modules/voice/tests/test_config_loader.py": "2101eda976e48a8e0c73156f45daaa4ef1859e536a4071730b0ddd6a269f3c2f",
+    "modules/voice/tests/test_model_paths.py": "88f482af0b9b9ea7ee7b1a87a8f4890b1556dde01e3445374e60cd6bcec33dc8",
+    "tools/check_vision_install.py": "3fbd17047e98b03228ee13178d75f4c5ba8652fabf7c9f9535e15a68fa9f0577",
+    "tools/check_voice_cpu_ros.py": "abf386b4ec66829f03578aa22b33c72a6e3c2a0608818b963545f029b97fe143",
+    "tools/check_voice_install.py": "9f2a6d38f6680e24e756f8dc6f2d828f35f38583a1471588897f61aa71866760",
+    "tools/model_assets.py": "ec6bfe8368cb528814b590ad932394564f9fb329304bfc42ccccd5f8e9ce5770",
+    "tools/prepare_cpu_models.py": "6e57365c96cb942ab19a508b63dd3a5b72032407fc79a43ac282f604e56d2038",
+    "tools/prepare_qwen_intent.py": "c420bfd6f13ac64367f31612c0209cc6406dcdc342422c5d2683ae9c03fef37f",
+    "tools/recording_trial.py": "8d7989bbab09c58777ef3346da0423f3dc29def41069974b02be84f038bb00fd"
+  },
+  "local_evidence": {
+    "out/model-directories/platform.log": "34e5fbe21851a95332378511a2a2a9079dcfd35b90f7f86e87bc47e470cca16d",
+    "out/model-directories/build.log": "7a00b9b9514b98cd88902c60cf58270a32439162dfb7ee340fee91ec4552548f",
+    "out/model-directories/doctor.log": "d3205c87781ba0484ef4b6332d7aa103a2b82a69e2a9ec6c0633dc0bad8b8e8c",
+    "out/model-directories/smoke.log": "e3297020d975e49388df217821ce67375b88e89b85a6c10f5cce2c7faa4c572c",
+    "out/model-directories/lifecycle.log": "b92b55d77889ba55c54e4e1608f322ebfeb706d1405991191eab15d552d323cd",
+    "out/local/build-receipt.json": "ebd2fef1efece9d9e09016af9cb8d3e14a0ec23ce13f8c2e0f5a1c24b1c076e2",
+    "out/local-lifecycle/result.json": "b92b55d77889ba55c54e4e1608f322ebfeb706d1405991191eab15d552d323cd",
+    "out/model-directories/trial/20261007T052907019777Z/result.json": "fd434ba6612260b869f1767a1b42070d495515905667eb947944df3fa625fa31",
+    "out/local/runs/20261007T052911Z-942099/result.json": "98ba9622e8c10b05fbfb6b5aeab551c0687f4a0f7a8f3f0d8145da28ebe0bea3",
+    "out/model-directories/voice/result.json": "1981d2382bbd8e1dc348f2798ad237847314f4b8f8842e41cfbe2d3a6efda36e",
+    "out/model-directories/vision/result.json": "d8fad6acd2d58d178a0d67a141d0cec2b6cc1c6ac2b102dbcd648daf23ef5536",
+    "out/model-directories/voice-install/result.json": "227719643ca6b94616b5277ff7c9161caa1be595fe0758844f8c6b5dd86804d5",
+    "out/model-directories/vision-install/result.json": "21087f68ee279ca6eb8374f7efd61c89156e7514555b610ce6909d1962efaeb7"
+  },
+  "limits": [
+    "Vision skips three RGA library checks; no NPU/camera/hardware acceptance.",
+    "CPU go-home fixture verifies software flow with simulated devices, not model accuracy.",
+    "Existing out/models assets retained; production models/ contains no copied weights.",
+    "Hosted CI has not been run for this local change."
+  ]
+}

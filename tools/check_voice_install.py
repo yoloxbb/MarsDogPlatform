@@ -65,14 +65,19 @@ def main():
             run([args.uv, "pip", "install", "--python", str(python), "--no-deps", str(wheels[0])])
             run([args.uv, "pip", "check", "--python", str(python)])
             probe = """
-import hashlib, importlib.metadata, importlib.util, json, pathlib, sys
+import hashlib, importlib.metadata, importlib.util, json, os, pathlib, sys
 import marsdog_voice_interaction
 from marsdog_voice_interaction.utils.config_loader import load_config
 from marsdog_voice_interaction.core.command_lexicon import CommandLexicon
 from marsdog_voice_interaction.api.speaker_api import SpeakerApiServer
 package=pathlib.Path(marsdog_voice_interaction.__file__).parent
 share=pathlib.Path(sys.prefix)/'share/marsdog_voice_interaction'
+os.environ.pop('MARSDOG_MODEL_DIR', None)
 config=load_config(share/'config/voice.yaml')
+assert config['providers']['audio']['config']['vad_model']==str(pathlib.Path(MODEL_ROOT_LITERAL)/'vad/silero_vad.onnx')
+os.environ['MARSDOG_MODEL_DIR']=str(share/'external-models')
+config=load_config(share/'config/voice.yaml')
+assert config['providers']['audio']['config']['vad_model']==str(share/'external-models/vad/silero_vad.onnx')
 catalog=CommandLexicon(config['command_lexicon']['catalog'])
 match=catalog.match('回家')
 assert match is not None and match.event_type=='EVT_VOICE_COMMAND_GO_HOME'
@@ -98,6 +103,7 @@ print(json.dumps({
              ['numpy','scipy','sherpa-onnx','sherpa-onnx-core','fastapi','pydantic']}
 }))
 """
+            probe = probe.replace("MODEL_ROOT_LITERAL", repr(str(ROOT / "models")))
             observation = json.loads(run([str(python), "-B", "-c", probe]))
             observation["components"] = check_installed_components(run, python, source)
             if (source / "marsdog_voice_interaction/replay.py").is_file():

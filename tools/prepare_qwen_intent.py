@@ -6,12 +6,13 @@ from pathlib import Path
 import zipfile
 
 from runtime_environment import ROOT
+from model_assets import QWEN_INTENT, model_directory
 from prepare_cpu_models import verify, materialize, checked_zip, safe_path, sha256
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--archive", required=True, type=Path)
-    parser.add_argument("--output", type=Path, default=ROOT / "out/models/qwen2.5-0.5b-instruct")
+    parser.add_argument("--output", type=Path, default=model_directory() / QWEN_INTENT)
     args = parser.parse_args(argv)
     lock_path = ROOT / "config/models/qwen2.5-0.5b-intent.lock.json"
     lock = json.loads(lock_path.read_text())

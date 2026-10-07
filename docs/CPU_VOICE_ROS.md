@@ -19,8 +19,10 @@ python3 tools/marsdog.py voice-cpu-ros
 ~~~
 
 模型准备见 [CPU 资产](CPU_MODEL_ASSETS.md)和 [CPU 意图](CPU_INTENT.md)。
-默认读取 out/models/cpu-20260929/voice-replay.json 与
-out/models/qwen2.5-0.5b-instruct/intent-replay.json。
+默认读取模型根目录下 cpu-20260929/voice-replay.json 与
+llm/qwen2.5-0.5b-instruct/intent-replay.json；默认根为仓库 models，可用 MARSDOG_MODEL_DIR 覆盖。
+未指定根目录且新资产包尚不存在时，会提示并兼容读取旧 out/models 资产。
+详见 [统一目录与兼容规则](../config/models/README.md)。
 自定义路径可通过 tools/check_voice_cpu_ros.py 的
 --voice-manifest / --intent-manifest / --output / --timeout 指定；
 当前验证固定使用 upstream-zh-itn 官方 WAV，不将任意录音假定为中性输入。
