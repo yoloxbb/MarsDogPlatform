@@ -335,6 +335,12 @@
         "/home/elephant/MarsDog/marsdog-platform/config/models/qwen2.5-0.5b-intent.lock.json": "70cbe1d34eaf83a8bc7c36cdaefa0af12ca609fd81626ee1ecf0ebdc866c0cc3",
         "/home/elephant/MarsDog/marsdog-platform/out/p0p2/fixtures/go-home.wav": "fdc096af2e5d5bbf7f3c57c548c8a0e54ff5c5e8a985940a25fc52c2e4767dcd"
       }
+    },
+    "migration_contracts": {
+      "status": "PASS",
+      "tests": 25,
+      "failures": 0,
+      "skipped": 0
     }
   },
   "source_sha256": {
@@ -367,7 +373,8 @@
     "tools/model_assets.py": "ec6bfe8368cb528814b590ad932394564f9fb329304bfc42ccccd5f8e9ce5770",
     "tools/prepare_cpu_models.py": "6e57365c96cb942ab19a508b63dd3a5b72032407fc79a43ac282f604e56d2038",
     "tools/prepare_qwen_intent.py": "c420bfd6f13ac64367f31612c0209cc6406dcdc342422c5d2683ae9c03fef37f",
-    "tools/recording_trial.py": "8d7989bbab09c58777ef3346da0423f3dc29def41069974b02be84f038bb00fd"
+    "tools/recording_trial.py": "8d7989bbab09c58777ef3346da0423f3dc29def41069974b02be84f038bb00fd",
+    "integration/naming/config_compatibility.json": "33e3a6e210453e87554edf6c819d8816ccf385b70d7897a3b538d7c9e63be9c5"
   },
   "local_evidence": {
     "out/model-directories/platform.log": "34e5fbe21851a95332378511a2a2a9079dcfd35b90f7f86e87bc47e470cca16d",
@@ -382,12 +389,22 @@
     "out/model-directories/voice/result.json": "1981d2382bbd8e1dc348f2798ad237847314f4b8f8842e41cfbe2d3a6efda36e",
     "out/model-directories/vision/result.json": "d8fad6acd2d58d178a0d67a141d0cec2b6cc1c6ac2b102dbcd648daf23ef5536",
     "out/model-directories/voice-install/result.json": "227719643ca6b94616b5277ff7c9161caa1be595fe0758844f8c6b5dd86804d5",
-    "out/model-directories/vision-install/result.json": "21087f68ee279ca6eb8374f7efd61c89156e7514555b610ce6909d1962efaeb7"
+    "out/model-directories/vision-install/result.json": "21087f68ee279ca6eb8374f7efd61c89156e7514555b610ce6909d1962efaeb7",
+    "out/model-directories/contracts.log": "d14e8f97030393ecb0b7cbfc2297ea461966bc35031766e8f71bef490b1b8f26",
+    "out/model-directories/contracts/contracts.xml": "507792ca85c5fe28f2c24ba18660df81ef048853a77ae857679bd4c264ce9a5f",
+    "out/model-directories/platform-after-ci.log": "4d80d9a4caa177bbe89b8e22772a3d85ff35f82784c287f8f36d119acc1236c0"
   },
   "limits": [
     "Vision skips three RGA library checks; no NPU/camera/hardware acceptance.",
     "CPU go-home fixture verifies software flow with simulated devices, not model accuracy.",
     "Existing out/models assets retained; production models/ contains no copied weights.",
-    "Hosted CI has not been run for this local change."
-  ]
+    "Hosted CI state is available on PR #1; this record contains local verification and the initial CI finding."
+  ],
+  "ci_followup": {
+    "pull_request": "https://github.com/yoloxbb/MarsDogPlatform/pull/1",
+    "initial_failure": "https://github.com/yoloxbb/MarsDogPlatform/actions/runs/37589356421/job/112686863352",
+    "cause": "The original frozen Voice configuration gate had no reviewed entry for the six authorized model path replacements.",
+    "fix": "Registered the parsed config in the existing reviewed-config mechanism after verifying that reversing exactly six prefixes reproduces the original byte SHA256. Historical baseline unchanged.",
+    "local_rechecks": "25 migration/cross-module contracts and dev.py check passed."
+  }
 }
