@@ -90,7 +90,7 @@ MarsDogTree 配置维护，不应在 Action 或页面中复制一份：
 | 上游事件/条件 | Tree 行为 | Action 单元 | 控制器/效果 |
 |---|---|---|---|
 | `EVT_VOICE_CALL_NAME` + `wake_angle` | `respond_owner_call` | `ACT_INTERACT_RESPOND_CALL` | `wake_orientation` -> Nav2 `/spin` |
-| 已识别并锁定的语音呼叫者 | `approach_voice_caller` | `ACT_INTERACT_APPROACH_VOICE_CALLER` | `person_nav_approach` -> VisionTask `locate_person_once` -> Nav2 `/navigate_to_pose` |
+| 已识别并锁定的语音呼叫者 | `approach_voice_caller` | `ACT_INTERACT_APPROACH_VOICE_CALLER` | VisionTask `locate_person_once` 仅返回视觉候选；无地图几何时 Action 失败关闭且不发送 Nav2 Goal |
 | `EVT_VISION_FALL` | `respond_person_fall` | `ACT_PERCEPTION_RESPOND_PERSON_FALL` | 安全响应并保持/发布零速度 |
 | `EVT_VISION_STOP_GESTURE` | `respond_stop_gesture` | `ACT_PERCEPTION_RESPOND_STOP_GESTURE` | 停止响应并保持/发布零速度 |
 | 页面“坐下” | `sit_down` | `ACT_BASIC_SIT` | Go2/Lite3 平台动作；页面播放坐下动画 |
@@ -124,7 +124,8 @@ function onRosbridgeMessage(envelope) {
 
 页面只发送 `ExecuteBehavior.Goal`，不要直接发布 `/cmd_vel`。
 动作执行器根据精确 `ACT_*` 选择 Go2 或 Lite3 后端；
-`approach_voice_caller` 对已锁定的人执行单次 SLAM 定位和按需 Nav2 导航。
+`approach_voice_caller` 对已锁定的人请求一次 `locate_person_once`。Vision 当前只返回
+视觉候选；缺少地图几何时 Action 失败关闭，不发送 Nav2 目标。
 
 `respond_owner_call` 是额外的动态角度动作：行为树把语音事件的
 `wake_angle` 作为 `params_json.wake_angle_deg` 发送，动作执行器调用 Nav2

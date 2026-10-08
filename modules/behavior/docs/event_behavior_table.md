@@ -220,9 +220,10 @@ Voice 词库权威命名；`behavior_name` 为描述性短名，动作语义待�
 `approach_owner`、`come_to_owner`、`return_to_owner` 不做 Tree 侧
 `query_targets`，直接下发 Goal。Action 在执行时从新鲜的
 `/perception/visual_event.active_target` 绑定人体 `target_id`，允许视觉身份
-`unknown`，设置严格目标锁和 1.5 m 停靠距离；然后执行一次
-`locate_person_once`，按响应需要发送一次 Nav2 导航 Goal。没有新鲜人体轨迹
-时有限等待后失败并停车。语音 idle 不取消已接管的有界导航 Goal。此时目标是
+`unknown`，设置严格目标锁和 1.5 m 停靠距离；然后执行一次视觉版
+`locate_person_once`。该任务只返回当前视觉候选；Action 因缺少地图几何返回失败，
+不发送 Nav2 Goal。没有新鲜人体轨迹时有限等待后失败并停车。语音 idle 不取消
+已接管的 Action Goal，仍按该 Goal 的现有终态与超时规则收敛。此时目标是
 视觉当前人体，不能仅凭该结果证明是说话者或主人。具体 Go2/Lite3 底盘由
 Action 的运行参数选择。
 

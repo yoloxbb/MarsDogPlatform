@@ -171,13 +171,13 @@ emergency_stop
 
 ```text
 approach_voice_caller
-  target_approach
+  person_nav_approach
     ACT_INTERACT_APPROACH_VOICE_CALLER
 ```
 
-该 Task 不允许随机换人；`vision_epoch + target_id` 必须在整个闭环内保持一致。
-正式距离只接受 `range_valid=true` 的米制值，所有目标无效/失鲜/取消/超时出口
-都会先发布零 Twist。
+该 Task 不允许随机换人；`vision_epoch + target_id` 必须在整个调用内保持一致。
+Vision 当前只返回视觉候选，没有地图几何时 Action 以
+`visual_target_only_no_navigation_geometry` 失败关闭，不发送 Nav2 目标。
 
 新增核心指令保持独立完成语义：`stand_up` 站起后即完成，`stand_still` 还会执行
 站立保持；`hold_position` 不改变当前姿态；`quiet` 只停止声音。
@@ -186,7 +186,8 @@ approach_voice_caller
 
 Go2 模式通过 `go2_sport.yaml` 在运行时覆盖已实现动作：坐/趴/站、后退、保持、
 握手/击掌代理、转圈和装死身体姿态使用官方高层 SportMode；`come_to_owner`、
-`approach_owner`、`return_to_owner` 在 Action 侧绑定当前新鲜人体轨迹后执行单次定位与按需 Nav2 导航；视觉身份 `unknown` 可用。
+`approach_owner`、`return_to_owner` 在 Action 侧绑定当前新鲜人体轨迹并请求一次视觉候选；
+视觉身份 `unknown` 可用。当前 Vision 响应没有地图几何，Action 失败关闭且不发送 Nav2 目标。
 无等价高层接口的动作按配置使用明确标注的代理或失败关闭。
 详见 [Go2 ROS2 动作集成](GO2_ROS2_INTEGRATION.md)。
 

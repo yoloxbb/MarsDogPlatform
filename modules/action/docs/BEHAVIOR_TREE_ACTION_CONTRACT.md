@@ -144,8 +144,9 @@ Lv0 `emergency_stop` 的全局抢占语义。
 `human` 且包含完整 `vision_epoch:human:track_id`。还须携带非空 `wake_id`，
 与 `speaker_role=owner/family` 相符的 `speaker_id`、`speaker_status=matched`，
 以及不小于 1.5 m 的有限 `stand_off_distance_m`。Action 只向 VisionTask 发一次
-`locate_person_once`，收到 `status=0`、目标 ID 一致的有效结果后，按
-`navigation_required` 决定是否发送一次 Nav2 `/navigate_to_pose`。
+`locate_person_once`。Vision 当前返回视觉目标候选而非地图位置；Action 对该响应
+返回 `visual_target_only_no_navigation_geometry`，不发送 Nav2 Goal。Action 保留
+对旧版有效地图定位响应的校验与导航终态处理。
 
 ### 视觉安全事件行为
 

@@ -86,6 +86,21 @@ def test_owner_locates_once_and_navigates_once():
     assert len(stops) == 3
 
 
+def test_visual_only_target_result_fails_without_navigation():
+    transport = Transport({
+        "ok": True,
+        "target_id": TARGET_ID,
+        "target": {"target_id": TARGET_ID, "tracking_state": "tracking"},
+    })
+
+    result = run(PersonNavApproachAdapter(transport, lambda _: None), context())
+
+    assert not result.success
+    assert result.reason == "visual_target_only_no_navigation_geometry"
+    assert transport.locates == [(TARGET_ID, 1.5)]
+    assert transport.navigations == []
+
+
 def _visual_target(*, identity="unknown", tracking_state="tracking", age_ms=20.0):
     return {
         "vision_epoch": "epoch-1",
@@ -363,6 +378,45 @@ class _Future:
         self.completed = True
         for callback in self.callbacks:
             callback(self)
+
+
+def test_locate_sends_only_target_id_to_visual_only_vision_task():
+    response = SimpleNamespace(
+        success=True,
+        result_json=json.dumps({
+            "ok": True,
+            "target_id": TARGET_ID,
+            "target": {"target_id": TARGET_ID, "tracking_state": "tracking"},
+        }),
+        error_message="",
+    )
+
+    class Request:
+        pass
+
+    class Vision:
+        request = None
+
+        def wait_for_service(self, timeout_sec):
+            return True
+
+        def call_async(self, request):
+            self.request = request
+            return _Future(response, done=True)
+
+    vision = Vision()
+    transport = object.__new__(Ros2PersonApproachTransport)
+    transport._vision_type = SimpleNamespace(Request=Request)
+    transport._vision = vision
+    transport._service_timeout = 1.0
+
+    result, reason = transport.locate(
+        TARGET_ID, 1.5, time.monotonic() + 1.0, threading.Event()
+    )
+
+    assert reason == "ok"
+    assert result["target_id"] == TARGET_ID
+    assert json.loads(vision.request.params_json) == {"target_id": TARGET_ID}
 
 
 def _ros_transport(monkeypatch, send_future):

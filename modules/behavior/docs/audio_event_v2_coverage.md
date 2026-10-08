@@ -166,8 +166,9 @@ Voice 目录里的 `action_name=ACT_*` 是参考动作名，Action 使用自身�
 
 `walk_to_random_point`、`go_out_to_play` 和 `go_home` 依赖 Action Nav2 配置，控制器
 不可用时失败关闭。演示配置中 GO_OUT 与 WALK 共用随机可导航区域，GO_HOME 暂复用
-A 点；部署现场必须替换为实际 play/home 区域或点位。`approach_owner` 当前使用受限
-短距离底盘代理，尚未完成基于主人实时距离的闭环硬件验收。
+A 点；部署现场必须替换为实际 play/home 区域或点位。`approach_owner` 和另外两个
+主人接近行为当前收到的 Vision 结果只有视觉候选，没有地图几何；Action 因此失败关闭，
+不发送 Nav2 目标。要恢复导航接近，需由后续兼容工作提供经过验证的导航几何来源。
 
 ## 验收边界
 

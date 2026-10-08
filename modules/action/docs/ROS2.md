@@ -285,10 +285,10 @@ Action 的行为配置决定。
 | `target.vision_epoch` / `target.target_id` | 目标 ID 必须以 `<vision_epoch>:human:` 开头 |
 | `stand_off_distance_m` | 有限且不少于 1.5 m |
 
-Action 向 `/perception/vision/task` 发一次 `locate_person_once`，由 Vision
-对目标框和原图 Header 做来源绑定，再调用 SLAM。只有响应 `ok=true`、
-`status=0`、目标 ID 一致、人体点有效且 `navigation_required=true` 时，
-Action 才向 `/navigate_to_pose` 发送一次地图目标；`false` 时直接完成。
+Action 向 `/perception/vision/task` 发一次 `locate_person_once`。Vision 当前只返回
+目标 ID 对应的 tracking 视觉候选，不调用 SLAM。仅有该候选时 Action 返回
+`visual_target_only_no_navigation_geometry`，不会向 `/navigate_to_pose` 发送目标。
+Action 仍只接受具有有效地图几何和一致目标 ID 的定位响应执行 Nav2。
 Lite3 在 Nav2 前执行底盘导航预检，Nav2 终态后确认退出遥控并停稳。
 取消受理不等于完成；Action 等 Nav2 真实 Result 后返回 CANCELED。
 内层终态未知时返回 FAILED 并锁定恢复状态，拒绝后续非急停 Goal。
@@ -416,10 +416,11 @@ Go2 只覆盖 `go2_sport.yaml` 中有实现的动作；未实现动作不会模�
 运动组。字段契约、校准参数和测试命令见
 [唤醒声源朝向说明](WAKE_ORIENTATION_INTEGRATION.md)。
 
-`approach_voice_caller` 不是固定运动组。它用 Vision + SLAM 取得一次地图目标，
-再按需交给 Nav2 避障导航，不做实时人体跟随。Action Result 的
-`metadata_json.target_approach` 回传阶段、原因和是否导航。外层
-`timeout_sec` 与内部服务、导航超时均保持有限。
+`approach_voice_caller` 不是固定运动组。它请求 Vision 的
+`locate_person_once`，当前只得到视觉候选；没有地图几何时以
+`visual_target_only_no_navigation_geometry` 失败关闭，不调用 SLAM 或 Nav2，
+也不回退到底盘速度控制。Action Result 的 `metadata_json.target_approach`
+回传阶段、原因和是否导航。外层 `timeout_sec` 与内部服务超时均保持有限。
 
 Social / Exploration 的视觉目标接近同样不是固定运动组或 Nav2 点位。它通过
 `visual_target_approach` 路由直接闭环发布受限 Twist；只有到达并确认停车后才

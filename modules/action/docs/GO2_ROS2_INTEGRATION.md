@@ -63,8 +63,8 @@ SportMode `Move`/`StopMove` 请求。导航地点名、随机目标 `K`、Nav2 G
 | 出去玩 | `go_out_to_play` | waypoint_nav `place="K"` | 实时地图随机目标 |
 | 回家 | `go_home` | waypoint_nav YAML 精确地点名 | 固定地点导航 |
 | 跟着我 | `follow_owner` | 外接 FTDI UWB + `go2_uwb_local_follow` | 外部进程管线与 `/cmd_vel` |
-| 过来/回来 | `come_to_owner` / `return_to_owner` | Action 绑定当前新鲜人体轨迹，单次定位并按需调用 Nav2 | `unknown` 身份允许；目标失鲜、定位或导航失败即停止并返回失败 |
-| 靠近点 | `approach_owner` | 同一单次定位与 Nav2 链路，1.5 m 停靠距离 | `unknown` 身份允许；没有新鲜人体轨迹则失败停车 |
+| 过来/回来 | `come_to_owner` / `return_to_owner` | Action 绑定当前新鲜人体轨迹并请求一次视觉候选 | `unknown` 身份允许；当前结果没有地图几何，失败关闭且不发送 Nav2 目标 |
+| 靠近点 | `approach_owner` | 同一视觉候选链路 | 当前结果没有地图几何，失败关闭且不发送 Nav2 目标 |
 | 退后 | `back_up` | `Move(x=-0.20)` 1.2 秒 | 时间式“两步”代理，真机需标定 |
 | 坐下 | `sit_down` | `Sit` | 已实现 |
 | 趴下 | `lie_down` | `StandDown` | 已实现 |

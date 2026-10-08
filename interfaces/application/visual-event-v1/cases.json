@@ -307,6 +307,73 @@
           "track_id": "4"
         }
       ]
+    },
+    "confirmed_unknown_fall": {
+      "vision_epoch": "epoch-1",
+      "snapshot_id": "epoch-1:1",
+      "sequence": 1,
+      "header": {
+        "stamp": 1000,
+        "frame_id": "camera"
+      },
+      "active_target": {
+        "vision_epoch": "epoch-1",
+        "target_id": "epoch-1:human:7",
+        "track_id": 7,
+        "target_type": "human",
+        "identity": "unknown",
+        "identity_state": "confirmed_unknown",
+        "tracking_state": "tracking",
+        "last_seen_age_ms": 0,
+        "confidence": 0.9,
+        "is_registered": false,
+        "bearing_deg": 15,
+        "bearing_valid": true,
+        "pose_3d": {
+          "valid": true,
+          "frame_id": "camera",
+          "x": 1,
+          "y": 2,
+          "z": 3
+        },
+        "range_valid": true,
+        "distance_m": 2.0
+      },
+      "human_candidates": [
+        {
+          "vision_epoch": "epoch-1",
+          "target_id": "epoch-1:human:7",
+          "track_id": 7,
+          "target_type": "human",
+          "identity": "unknown",
+          "identity_state": "confirmed_unknown",
+          "tracking_state": "tracking",
+          "last_seen_age_ms": 0,
+          "confidence": 0.9,
+          "is_registered": false,
+          "bearing_deg": 15,
+          "bearing_valid": true,
+          "pose_3d": {
+            "valid": true,
+            "frame_id": "camera",
+            "x": 1,
+            "y": 2,
+            "z": 3
+          },
+          "range_valid": true,
+          "distance_m": 2.0
+        }
+      ],
+      "humans": [
+        {
+          "track_id": 7,
+          "confidence": 0.9
+        }
+      ],
+      "events": [
+        "EVT_VISION_STRANGER",
+        "EVT_VISION_FALL"
+      ]
     }
   },
   "scenarios": [
@@ -774,6 +841,14 @@
       "steps": [
         {
           "raw": "{}"
+        }
+      ]
+    },
+    {
+      "id": "confirmed_unknown_fall",
+      "steps": [
+        {
+          "source": "confirmed_unknown_fall"
         }
       ]
     }

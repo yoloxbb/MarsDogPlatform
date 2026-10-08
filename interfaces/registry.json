@@ -18,7 +18,7 @@
         "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py"
       ],
       "verification": "Source registered; see local smoke for observed CPU endpoints",
-      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
+      "compatibility": "Retain std_msgs/String and visual-event v1 fields; pose events require tracking plus confirmed known identity or confirmed_unknown",
       "qos": "Publisher BEST_EFFORT; consumers must request compatible reliability"
     },
     {
@@ -65,7 +65,7 @@
         "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py"
       ],
       "verification": "Source registered; see local smoke for observed CPU endpoints",
-      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
+      "compatibility": "Retain VisionTask type and envelope; locate_person_once returns a current tracking visual candidate only and does not call SLAM",
       "idl": "modules/vision/srv/VisionTask.srv",
       "idl_sha256": "0462429dcab62ab1d63a246d0de077b133660310f29402b03048b9e275bedac4"
     },
@@ -238,15 +238,12 @@
       "name": "/person_3d_localization/locate_from_bbox",
       "type": "person_3d_localization/srv/LocateFromBbox",
       "provider": "robot",
-      "consumers": [
-        "vision"
-      ],
+      "consumers": [],
       "evidence": [
-        "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
         "robotics/ros2/src/person_3d_localization/src/bbox_depth_goal_node.cpp"
       ],
-      "verification": "Source registered; see local smoke for observed CPU endpoints",
-      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
+      "verification": "Robot-owned service retained; Vision no longer calls it",
+      "compatibility": "Retain robot-owned ROS service type; currently has no platform consumer",
       "idl": "robotics/ros2/src/person_3d_localization/srv/LocateFromBbox.srv",
       "idl_sha256": "2686bcd67ad1c53c9e4e06de6479b045424a6296eae77c344485273428f167aa"
     },

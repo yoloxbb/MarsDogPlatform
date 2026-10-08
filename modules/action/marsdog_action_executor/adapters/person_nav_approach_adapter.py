@@ -196,8 +196,22 @@ class PersonNavApproachAdapter:
                 return self._finish(ctx, False, "canceled_during_localization", canceled=True)
             if located is None:
                 return self._finish(ctx, False, reason)
-            if located.get("target_id") != target_id or located.get("ok") is not True:
+            if located.get("ok") is not True:
+                return self._finish(
+                    ctx,
+                    False,
+                    str(located.get("error_code") or "localization_target_mismatch"),
+                )
+            if located.get("target_id") != target_id:
                 return self._finish(ctx, False, "localization_target_mismatch")
+            visual_target = located.get("target")
+            if isinstance(visual_target, Mapping):
+                if (str(visual_target.get("target_id", "")) != target_id
+                        or str(visual_target.get("tracking_state", "")) != "tracking"):
+                    return self._finish(ctx, False, "localization_target_mismatch")
+                return self._finish(
+                    ctx, False, "visual_target_only_no_navigation_geometry"
+                )
             if located.get("status") != 0 or not self._valid_person_point(located.get("person_point")):
                 return self._finish(ctx, False, "invalid_localization_success")
             if located.get("navigation_required") is False:
@@ -336,9 +350,7 @@ class Ros2PersonApproachTransport:
         request = self._vision_type.Request()
         request.task_id = "person-locate-" + uuid.uuid4().hex
         request.task_type = "locate_person_once"
-        request.params_json = json.dumps({
-            "target_id": target_id, "stand_off_distance": stand_off,
-        })
+        request.params_json = json.dumps({"target_id": target_id})
         future = self._vision.call_async(request)
         response_deadline = min(deadline, time.monotonic() + self._service_timeout)
         if not self._wait(future, response_deadline, cancel):

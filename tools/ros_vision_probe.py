@@ -37,7 +37,6 @@ def main():
         assert config["face_api"]["enabled"] is False and config["depth_fusion"]["enabled"] is False
         assert all(v["type"]=="mock" for v in config["providers"].values())
         endpoints=[v for v in config["topics"].values() if isinstance(v,str) and v.startswith("/")]
-        endpoints+=["/person_3d_localization/locate_from_bbox"]
         config_path=work/"vision.yaml"
         config_path.write_text(yaml.safe_dump(config))
         args=["--ros-args","-p","config_path:="+str(config_path),"-p","log_dir:="+str(work/"logs")]

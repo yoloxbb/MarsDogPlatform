@@ -108,9 +108,9 @@ Go2 使用外部管线时，底盘驱动、RealSense 双目输入和关闭主动
 approach_voice_caller
   -> person_nav_approach
   -> ACT_INTERACT_APPROACH_VOICE_CALLER
-  -> VisionTask.locate_person_once(target_id, stand_off_distance)
-  -> navigation_required=true: Nav2 /navigate_to_pose 一次固定地图目标
-  -> navigation_required=false: 已在安全距离，直接完成
+  -> VisionTask.locate_person_once(target_id)
+  -> 返回当前视觉候选，不返回地图点或导航目标
+  -> Action 返回 visual_target_only_no_navigation_geometry，不发送 Nav2 Goal
 ```
 
 Goal 必须携带同一语音会话的 `interaction_id`、
@@ -135,11 +135,11 @@ Goal 必须携带同一语音会话的 `interaction_id`、
 }
 ```
 
-Vision 负责 bbox 原图来源校验和一次 SLAM 定位。Action 必须检查响应目标 ID、
-`status=0`、人体点和地图目标；定位失败、目标失鲜、Nav2 拒绝或导航超时均不
-回退到 bbox 或直接 `/cmd_vel`。`metadata_json.target_approach` 回传终态、
-失败原因与 `navigation_required`。取消等待 Nav2 真实 Result；终态未知时进入
-恢复锁并拒绝后续非急停 Goal。
+Vision 的 `locate_person_once` 只校验并返回仍在跟踪的视觉候选。该响应不能证明
+人体地图位置或安全停靠距离，因此 Action 以
+`visual_target_only_no_navigation_geometry` 失败终止且不发送 Nav2 Goal，也不回退到
+bbox 或直接 `/cmd_vel`。`metadata_json.target_approach` 回传终态和失败原因。
+若收到旧版地图定位响应，原有导航终态、取消与恢复锁规则仍生效。
 
 安全条件：
 

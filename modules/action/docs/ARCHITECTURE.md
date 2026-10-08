@@ -254,8 +254,9 @@ Twist 运动组。
 `ACT_INTERACT_APPROACH_VOICE_CALLER -> person_nav_approach`。Action 只接受
 匹配已识别主人或家人的 `speaker_role + speaker_id`、`wake_id`、
 `interaction_id`、严格目标锁和 `vision_epoch + target_id` 的 human Goal。
-VisionTask 对该目标执行一次 `locate_person_once`，SLAM 返回有效地图目标后
-Action 最多发送一次 Nav2 `/navigate_to_pose`；内层终态未知时锁定恢复状态。
+VisionTask 对该目标执行一次视觉版 `locate_person_once`。当前结果不含地图位置，
+因此 Action 返回 `visual_target_only_no_navigation_geometry` 且不发送 Nav2 Goal；
+旧版有效地图定位响应仍按单次 Nav2 及恢复锁规则处理。
 
 普通 Social / Exploration 目标使用独立的
 `ACT_APPROACH_VISUAL_TARGET -> visual_target_approach`，不复用也不放宽语音呼叫者

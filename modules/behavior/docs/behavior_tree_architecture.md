@@ -338,8 +338,9 @@ perception_bridge
 
 **强指令约束**：WAKEUP 的 `respond_owner_call` 只负责原地转向，随后由
 `wake_speaker_result → query_targets → approach_voice_caller → WAITING` 完成已识别
-主人或家人的唤醒者接近；陌生人和未判定者原地等待。靠近由 Action 经
-`locate_person_once → NavigateToPose` 执行一次固定导航目标。坐下、
+主人或家人的唤醒者接近；陌生人和未判定者原地等待。当前 Vision 的
+`locate_person_once` 仅返回视觉候选，Action 没有地图几何时不会发 Nav2 Goal。
+坐下、
 趴下、站立、等待、过来、跟随、握手、击掌、翻滚、转圈、返回、吐掉和装死
 都映射各自的专用 Behavior。
 

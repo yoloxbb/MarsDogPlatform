@@ -327,9 +327,9 @@ signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢�
   `VisionTask.query_targets`，按声源方向在前方 `±25°` 内绑定稳定人体
   `vision_epoch + target_id` 并生成 `approach_voice_caller`。陌生人、无法判定、
   超时和明确视觉身份冲突均原地进入 WAITING，关闭 attention 底盘转向。
-- Action 对锁定人体请求一次 `VisionTask.locate_person_once`；仅在 SLAM 成功且
-  `navigation_required=true` 时发送一次 `/navigate_to_pose`，`false` 时直接完成。
-  取消须等 Nav2 真实终态后释放运动所有权；没有 bbox 速度回退。
+- Action 对锁定人体请求一次 `VisionTask.locate_person_once`。Vision 当前只返回
+  视觉候选；Action 将其作为 `visual_target_only_no_navigation_geometry` 失败处理，
+  不发送 `/navigate_to_pose`，也没有 bbox 速度回退。
 - `query_targets` 超过 2 秒会作废该 generation；迟到结果不能重新触发移动。
 - 行为树用 `VoiceTask.hold_interaction` 的有限租约覆盖转向、声纹等待、视觉查询和靠近耗时，
   到达后 `release_interaction_hold(reset_idle_timer=true)`。
@@ -341,7 +341,8 @@ signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢�
   Action 最长 20 秒的视觉接近及后续表达阶段。
 - `approach_owner`、`come_to_owner`、`return_to_owner` 直接入候选池，不调用
   `query_targets`。Action 从新鲜的视觉事件绑定当前人体轨迹，视觉身份可以为
-  `unknown`，再调用一次 `locate_person_once` 并按需导航；无人或目标失鲜则失败停车。
+  `unknown`，再调用一次视觉版 `locate_person_once`；无人或目标失鲜则失败停车，
+  当前任务没有地图几何，因此不会启动 Nav2 接近。
 - TOILET/CLEAN/SLEEP 分别要求最新内部状态严格满足 `Bladder > 50`、
   `Cleanliness > 40`、`Sleepiness > 50`，之后复用
   `barkShortAlert/lickPaws/sleepOnSide`；缺状态和等于阈值都不执行。

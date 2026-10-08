@@ -206,9 +206,10 @@ offset/sign 转成 `base_link` 相对 yaw 后调用 `/spin`。角度标定和联
 
 同一语音会话随后可下发精确行为 `approach_voice_caller`。其唯一动作
 `ACT_INTERACT_APPROACH_VOICE_CALLER` 锁定 `vision_epoch + target_id`，向
-`/perception/vision/task` 请求一次 `locate_person_once`。SLAM 成功且
-`navigation_required=true` 时向 Nav2 `/navigate_to_pose` 发送一次地图目标；
-`false` 时直接完成。Action 不再用 bbox 或直接 `/cmd_vel` 追逐唤醒者。
+`/perception/vision/task` 请求一次 `locate_person_once`。该任务当前只返回
+仍在跟踪的人体视觉候选，不调用 SLAM、不返回地图点或导航目标。Action 将这种
+视觉结果报告为 `visual_target_only_no_navigation_geometry`，不会向 Nav2 发送目标，
+也不会用 bbox 或直接 `/cmd_vel` 追逐唤醒者。
 取消要等待 Nav2 真实 Result；终态无法确认时锁定恢复状态并拒绝替代运动 Goal。
 
 Social / Exploration 中有明确人、动物或物体目标的 13 个行为、六类普通
@@ -274,8 +275,9 @@ Service 不可用，Tree 只会回退到 0.5 秒内的
 上述主人视觉门槛只用于 `unhappy`、`miss_owner`、`farewell_leave` 社交行为。
 `approach_owner`、`come_to_owner`、`return_to_owner` 由 Tree 直接下发；Action
 在执行时从 `/perception/visual_event.active_target` 绑定新鲜人体轨迹，允许
-`identity=unknown`，再调用 `locate_person_once` 并按需导航。没有可用人体轨迹时
-返回 `visual_target_unavailable`，不会发送 Nav2 Goal。
+`identity=unknown`，再调用视觉版 `locate_person_once`。没有可用人体轨迹时返回
+`visual_target_unavailable`；只有视觉候选、没有地图几何时返回
+`visual_target_only_no_navigation_geometry`，不会发送 Nav2 Goal。
 
 Go2 的身体动作走独立 SportMode 映射，Lite3 走对应动作计划。没有口部、尾部、面部或物体夹持能力的语义使用配置中明确
 标记的 `proxy` 身体表达，不把它解释为真实咬取、张嘴或搬运动作。三个主人行为

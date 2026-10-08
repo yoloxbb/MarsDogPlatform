@@ -18,6 +18,11 @@ waypoint 的历史类型依赖保持原状，导航内部由其负责人调整�
 Vision 有 stage_start/stage_complete trace。延迟日志分别沿用两位和三位小数，
 应答 latency_ms 的原计算保留。共用严格错误转换器会改变现有行为。
 
+Vision 的 `locate_person_once` 接受 `target_id`，成功结果为
+`{ok:true,target_id,target}`；`target` 是仍处于 tracking 的视觉候选。目标缺失、过期或
+不再 tracking 时返回 `person_target_not_found`。该任务不调用 SLAM，也不返回地图坐标、
+深度质量或导航目标。该语义变更来自上游 `1904258`；VisionTask ROS 类型和 envelope 不变。
+
 `python3 -B tools/check_task_contracts.py` 在系统 Humble 可导入时，
 分别用 Voice/Vision 自己的 Python 调用真实服务回调，每端 18 个固定场景，
 合计 36 份观测。覆盖参数类型、数组键、JSON 错误、ok 缺失/真假/字符串、

@@ -119,10 +119,9 @@ EVT_VOICE_WAKEUP
   -> stranger / undetermined / 超时：原地 WAITING，关闭 attention 底盘转向
   -> owner / family：VisionTask.query_targets（2 s 超时，按声源方向选人体）
   -> approach_voice_caller（严格锁定 vision_epoch + target_id）
-     -> VisionTask.locate_person_once（一次 SLAM 人体定位）
-     -> navigation_required=true 时 Nav2 NavigateToPose（一次目标）
-     -> navigation_required=false 时直接完成
-  -> 到达：WAITING + face_body_centering；失败：原地 WAITING
+     -> VisionTask.locate_person_once（返回当前视觉候选，不做 SLAM）
+     -> 缺少地图几何，Action 返回失败且不发送 Nav2 Goal
+  -> 接近阶段未导航；后续处理依据原树失败语义
   -> release_interaction_hold(reset_idle_timer=true)
 
 EVT_VOICE_COMMAND_FOLLOW
