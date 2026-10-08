@@ -16,6 +16,7 @@ import urllib.request
 import zipfile
 
 from runtime_environment import ROOT, clean_environment
+from model_assets import CPU_BUNDLE, model_directory
 
 def sha256(path):
     h = hashlib.sha256()
@@ -173,7 +174,7 @@ def prepare(args):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--archive", type=Path, required=True)
-    parser.add_argument("--output", type=Path, default=ROOT / "out/models/cpu-20260929")
+    parser.add_argument("--output", type=Path, default=model_directory() / CPU_BUNDLE)
     parser.add_argument("--lock", type=Path, default=ROOT / "config/models/cpu-assets.lock.json")
     parser.add_argument("--download", action="store_true")
     args = parser.parse_args(argv)

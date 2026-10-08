@@ -1,5 +1,6 @@
 """Isolated installed Voice CPU pipeline gate; no hardware or default profile changes."""
 import argparse
+from model_assets import default_manifest
 from datetime import datetime, timezone
 import fcntl
 import json
@@ -114,15 +115,17 @@ def acceptance_status(integration, quality, mode):
 def main(argv=None, *, trial=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--voice-manifest", type=Path,
-                        default=ROOT / "out/models/cpu-20260929/voice-replay.json")
+                        default=None)
     parser.add_argument("--intent-manifest", type=Path,
-                        default=ROOT / "out/models/qwen2.5-0.5b-instruct/intent-replay.json")
+                        default=None)
     parser.add_argument("--output", type=Path, default=ROOT / "out/voice-cpu-ros")
     parser.add_argument("--timeout", type=int, default=240)
     parser.add_argument("--acceptance", choices=("strict", "flow"), default="strict")
     parser.add_argument("--with-behavior", action="store_true",
                         help="Include installed BT/Action/Needs and simulated Lite3/navigation")
     args = parser.parse_args(argv)
+    args.voice_manifest = args.voice_manifest or default_manifest("voice")
+    args.intent_manifest = args.intent_manifest or default_manifest("intent")
     if not 30 <= args.timeout <= 600:
         parser.error("timeout must be 30..600 seconds")
     args.output.mkdir(parents=True, exist_ok=True)

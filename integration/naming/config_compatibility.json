@@ -16,6 +16,11 @@
       "original_sha256": "52b98c604d1d98617ce4369f96d9f4a0fe7ef5ad5815fd26b279d65675343326",
       "effective_semantic_sha256": "539b535c1d040c5263dc2bfda4bc52b9f6c1e71f9e790935db9cf65da25e94a9",
       "review": "Explanatory comments only; full parsed values frozen."
+    },
+    "modules/voice/config/voice.yaml": {
+      "original_sha256": "2874bf13cec1a667e092eb1fc2d23206b8d48686b43dd5bf817253b9d8ec789a",
+      "effective_semantic_sha256": "42d86fe5c48a0814485297d3da3d73f480bb038c532eba4044b5590f55421232",
+      "review": "User-authorized model directory convention: replace only six ../../models/ prefixes with ${MARSDOG_MODEL_DIR}/. Reversing those six replacements reproduces every original byte and its frozen SHA256; all parsed settings remain protected."
     }
   }
 }

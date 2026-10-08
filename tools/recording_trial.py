@@ -1,5 +1,6 @@
 """Try one presegmented WAV through real CPU ASR and installed simulated robot flow."""
 import argparse
+from model_assets import default_manifest
 from pathlib import Path
 import wave
 from runtime_environment import ROOT
@@ -28,8 +29,8 @@ def main(argv=None):
                                                    "rejected_before_goal", "no_dispatch_requested"))
     parser.add_argument("--terminal-timeout", type=float, default=75)
     parser.add_argument("--timeout", type=int, default=300)
-    parser.add_argument("--voice-manifest", type=Path, default=ROOT / "out/models/cpu-20260929/voice-replay.json")
-    parser.add_argument("--intent-manifest", type=Path, default=ROOT / "out/models/qwen2.5-0.5b-instruct/intent-replay.json")
+    parser.add_argument("--voice-manifest", type=Path, default=None)
+    parser.add_argument("--intent-manifest", type=Path, default=None)
     parser.add_argument("--output", type=Path, default=ROOT / "out/recording-trial")
     parser.add_argument("--check-only", action="store_true")
     args = parser.parse_args(argv)
@@ -43,6 +44,8 @@ def main(argv=None):
         print("WAV format ready: " + str(wav))
         return 0
     from check_voice_cpu_ros import main as run
+    args.voice_manifest = args.voice_manifest or default_manifest("voice")
+    args.intent_manifest = args.intent_manifest or default_manifest("intent")
     # Strict here means explicit user expectations must match; it does not
     # certify model accuracy or require unverified motions to be enabled.
     return run(["--with-behavior", "--acceptance", "strict", "--timeout", str(args.timeout),

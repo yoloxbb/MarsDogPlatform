@@ -7,9 +7,12 @@ to provider configs, topic settings, and debug options.
 from __future__ import annotations
 
 from pathlib import Path
+from string import Template
 from typing import Any
 
 import yaml
+
+from .model_paths import model_root
 
 
 _CONFIG_PATH_FIELDS = (
@@ -47,7 +50,16 @@ def _resolve_config_paths(
             raw_value = parent[field]
             if raw_value is None or not str(raw_value).strip():
                 continue
-            path = Path(str(raw_value)).expanduser()
+            raw_path = str(raw_value)
+            referenced = {
+                match.group("named") or match.group("braced")
+                for match in Template.pattern.finditer(raw_path)
+            }
+            if "MARSDOG_MODEL_DIR" in referenced:
+                raw_path = Template(raw_path).safe_substitute(
+                    MARSDOG_MODEL_DIR=str(model_root(config_dir / "voice.yaml"))
+                )
+            path = Path(raw_path).expanduser()
             if not path.is_absolute():
                 path = config_dir / path
             parent[field] = str(path.resolve())

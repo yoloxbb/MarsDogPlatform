@@ -2,7 +2,8 @@
 
 用户提供 /home/elephant/MarsDog/models.zip，原文件保留。
 CPU 资产已准备，真实推理已执行；**完整感知验收仍未通过**。
-模型、公开样本、准备工具源码/依赖只放在 out，Git 保存清单、工具与证据。
+模型、公开样本、准备依赖保存在不提交的资产目录，Git 保存清单、工具与证据。
+新准备默认使用仓库根 models；历史 out/models 资产保留。见 [目录规范](../config/models/README.md)。
 
 ## 可复现入口
 
@@ -11,8 +12,8 @@ CPU 资产已准备，真实推理已执行；**完整感知验收仍未通过**
 ~~~bash
 cd /home/elephant/MarsDog/marsdog-platform
 python3 tools/marsdog.py models --model-archive /home/elephant/MarsDog/models.zip --download
-python3 tools/marsdog.py replay --manifest out/models/cpu-20260929/cpu-replay.json
-python3 tools/check_cpu_model_runtimes.py --assets out/models/cpu-20260929
+python3 tools/marsdog.py replay --manifest models/cpu-20260929/cpu-replay.json
+python3 tools/check_cpu_model_runtimes.py --assets models/cpu-20260929
 ~~~
 
 第二条目前应返回 FAIL / exit 1：两张视觉正例没有检出 dog。不能把这个预期失败写成整体验收通过。
@@ -23,7 +24,8 @@ models 的 READY 仅代表资产准备完成，model_acceptance=false。
 --download 可离线准备并核验。工具只支持本轮已有的 CPython 3.10 / Linux x86_64
 Vision 环境；regex 准备依赖明确锁定此 ABI，不承诺在 Windows/ARM 原生运行。
 
-资产目录默认 out/models/cpu-20260929，可用 --output 指定新目录。指定的压缩包必须匹配
+资产目录默认 models/cpu-20260929，支持 MARSDOG_MODEL_DIR 根目录覆盖，也可用 --output 指定完整目录。
+旧资产仍在 out/models/cpu-20260929，回放旧资产时显式使用其清单路径。指定的压缩包必须匹配
 config/models/cpu-assets.lock.json，不能用另一个同名包绕过哈希。新模型更新需要修改
 清单、复核来源和重做验收，已有不匹配文件会被拒绝而不会覆盖。
 

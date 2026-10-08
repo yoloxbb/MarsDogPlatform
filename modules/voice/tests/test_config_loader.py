@@ -62,7 +62,8 @@ topics:
     assert config["topics"]["audio_event"] == "/perception/audio_event"
 
 
-def test_project_configs_only_use_relative_filesystem_paths() -> None:
+def test_project_configs_use_portable_filesystem_paths(monkeypatch) -> None:
+    monkeypatch.delenv("MARSDOG_MODEL_DIR", raising=False)
     root = Path(__file__).parents[1]
     production_text = (root / "config" / "voice.yaml").read_text(
         encoding="utf-8"
@@ -83,3 +84,38 @@ def test_project_configs_only_use_relative_filesystem_paths() -> None:
     assert pipeline_mock["storage"]["root"] == str(
         root / "data" / "pipeline_mock"
     )
+
+
+def test_production_models_use_platform_root_from_foreign_cwd(tmp_path, monkeypatch):
+    monkeypatch.delenv("MARSDOG_MODEL_DIR", raising=False)
+    monkeypatch.chdir(tmp_path)
+    source = Path(__file__).resolve().parents[1]
+    config = load_config(source / "config/voice.yaml")
+    model_root = source.parents[1] / "models"
+    for provider, field, relative in (
+        ("audio", "vad_model", "vad/silero_vad.onnx"),
+        ("kws", "model_dir", "wakeup/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20"),
+        ("asr", "asr_model", "asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/model.int8.onnx"),
+        ("asr", "tokens", "asr/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17/tokens.txt"),
+        ("speaker", "speaker_model", "speaker/3dspeaker_speech_campplus_sv_zh_en_16k-common_advanced.onnx"),
+        ("intent_llm", "model", "llm/qwen2_5_5b_rk3588_260903_w8a8.rkllm"),
+    ):
+        assert config["providers"][provider]["config"][field] == str(model_root / relative)
+
+
+def test_model_root_expansion_preserves_explicit_paths_and_non_model_paths(tmp_path, monkeypatch):
+    monkeypatch.setenv("MARSDOG_MODEL_DIR", str(tmp_path / "external models"))
+    config_path = tmp_path / "voice.yaml"
+    absolute_model = tmp_path / "custom.onnx"
+    config_path.write_text(
+        "providers:\n"
+        "  audio:\n    config:\n      vad_model: ${MARSDOG_MODEL_DIR}/vad/vad.onnx\n"
+        f"  asr:\n    config:\n      asr_model: {absolute_model}\n"
+        "  intent_llm:\n    config:\n      lib_path: lib/librkllmrt.so\n"
+        "storage:\n  root: data\n"
+    )
+    config = load_config(config_path)
+    assert config["providers"]["audio"]["config"]["vad_model"] == str(tmp_path / "external models/vad/vad.onnx")
+    assert config["providers"]["asr"]["config"]["asr_model"] == str(absolute_model)
+    assert config["providers"]["intent_llm"]["config"]["lib_path"] == str(tmp_path / "lib/librkllmrt.so")
+    assert config["storage"]["root"] == str(tmp_path / "data")

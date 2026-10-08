@@ -29,8 +29,9 @@ providers:
 这是合并到现有配置的片段，不是完整配置文件。主视觉识别与独立任务识别均配置 SFace；
 切换两者可以避免同一节点仍运行独立的 ONNX 人脸识别。YuNet 和 SFace 也支持混合格式。
 
-模型目录依次采用 `MARSDOG_VISION_MODEL_DIR`、项目内 `models/vision`、项目同级
-`models/vision`。模型不随 Python 包打包，部署时需要同步这些文件。
+模型默认使用平台主仓根目录的 `models/vision`，或 `MARSDOG_MODEL_DIR/vision`；
+`MARSDOG_VISION_MODEL_DIR` 可单独覆盖。模型不随 Python 包打包，部署时需要同步这些文件。
+路径规则见 [统一模型目录](../../../config/models/README.md)。
 
 配置在节点重启后生效。使用既有启动入口：
 

@@ -67,8 +67,16 @@ root=pathlib.Path(package.__file__).parent
 share=pathlib.Path(sys.prefix)/'share/marsdog_vision_interaction'
 os.environ['MARSDOG_VISION_PROJECT_DIR']=str(share)
 os.environ['MARSDOG_VISION_DATA_DIR']=str(share/'data')
+os.environ.pop('MARSDOG_MODEL_DIR', None)
+os.environ.pop('MARSDOG_VISION_MODEL_DIR', None)
+config=load_config(share/'config/vision.yaml')
+assert config['providers']['vision']['config']['face_detect_model']==str(pathlib.Path(MODEL_ROOT_LITERAL)/'vision/face_detection_yunet_2023mar_fp16.rknn')
+os.environ['MARSDOG_MODEL_DIR']=str(share/'external-models')
+config=load_config(share/'config/vision.yaml')
+assert config['providers']['vision']['config']['face_detect_model']==str(share/'external-models/vision/face_detection_yunet_2023mar_fp16.rknn')
 os.environ['MARSDOG_VISION_MODEL_DIR']=str(share/'models')
 config=load_config(share/'config/vision.yaml')
+assert config['providers']['vision']['config']['face_detect_model']==str(share/'models/face_detection_yunet_2023mar_fp16.rknn')
 assert torch.ones((2,2), device='cpu').matmul(torch.ones((2,2),device='cpu')).sum().item()==8
 assert cv2.resize(np.zeros((4,4,3),np.uint8),(2,2)).shape==(2,2,3)
 assert hasattr(cv2,'FaceDetectorYN_create') and hasattr(cv2,'FaceRecognizerSF_create')
@@ -84,6 +92,7 @@ print(json.dumps({'module_file':str(root),'scripts':scripts,'assets':assets,'web
  'cv2_contrib_face_namespace':hasattr(cv2,'face'),
  'versions':{n:importlib.metadata.version(n) for n in ['numpy','opencv-python','opencv-contrib-python','torch','mediapipe','protobuf','pydantic']}}))
 """
+            probe = probe.replace("MODEL_ROOT_LITERAL", repr(str(ROOT / "models")))
             observation = json.loads(run([str(python), "-B", "-c", probe]))
             observation["components"] = check_installed_components(run, python, source)
             if (source / "marsdog_vision_interaction/replay.py").is_file():

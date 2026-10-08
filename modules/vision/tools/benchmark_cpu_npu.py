@@ -166,14 +166,9 @@ def _sha256(path: Path) -> str | None:
 
 
 def _model_dir(source: Path) -> Path:
-    configured = os.environ.get("MARSDOG_VISION_MODEL_DIR", "").strip()
-    if configured:
-        return Path(configured).expanduser().resolve()
-    candidates = (
-        source.parent.parent / "models" / "vision",
-        source.parent.parent.parent / "models" / "vision",
-    )
-    return next((item.resolve() for item in candidates if item.is_dir()), candidates[0].resolve())
+    from marsdog_vision_interaction.utils.model_paths import vision_model_directory
+
+    return vision_model_directory(source)
 
 
 def _vision_config(data: Mapping[str, Any]) -> dict[str, Any]:

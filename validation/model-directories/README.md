@@ -1,0 +1,40 @@
+# 统一模型目录验证 — 2026-10-07
+
+基于 main 387792e，开始修改前工作区干净。默认模型根改为平台仓库 models，
+支持 MARSDOG_MODEL_DIR 绝对路径覆盖，保留 Vision 专用目录覆盖。
+Voice 只改变模型路径，词库、SDK、存储、ROS 协议与推理配置沿用原逻辑。
+CPU 准备默认写入新目录；已有 out/models 资产原样保留，试用入口按明确规则兼容读取。
+
+| 验证 | 结果 |
+| --- | --- |
+| 架构 / 标识检查 | 无新增错误，既有标识缺口保留 |
+| 平台工具 / 日志基础设施 | 120 / 13 通过 |
+| 冻结配置 / 跨模块契约 | 25 通过 |
+| 实时标识 / YAML 负向回归 | 标识匹配，4 项通过 |
+| Voice Humble 单测 | 438 通过，无跳过 |
+| Vision 单测 | 302 通过，3 项 RGA 库检查跳过 |
+| Voice / Vision wheel | 均通过；验证默认安装路径、统一根覆盖、Vision 专用覆盖 |
+| ROS 构建 / doctor | 通过 |
+| 默认 smoke | 通过，设备替身 |
+| 生命周期 | 停止、业务子进程崩溃、日志采集进程崩溃三项通过，无遗留进程 |
+| 真实 CPU ASR 回家录音 | PASS，ASR 文本“回家”，GO_HOME 事件到模拟动作 success |
+
+路径回归覆盖重新命名的 checkout、源码与 out 下安装配置、任意 cwd、外部配置、
+外部模型根、脱离仓库安装缺少根目录时报错、显式模型路径、CPU 旧目录兼容和新包不完整时拒绝回退。
+根 .gitignore 忽略模型权重，仅提交 models/README.md。
+
+[结果与源码/原始报告摘要](result.json)记录构建指纹、测试数量及旧资产哈希。
+原始报告保存在 out/model-directories；本次没有下载、重提取、转换或优化模型。
+模型精度、真实摄像头、NPU 和实机动作均未验收。远端 CI 状态见 [PR #1](https://github.com/yoloxbb/MarsDogPlatform/pull/1)。
+
+规范与使用方式见 [config/models/README.md](../../config/models/README.md)。
+
+## GitHub 契约门禁补充
+
+首轮远端契约检查发现 Voice 默认配置尚未登记本次六处模型路径修改。
+已通过逆向替换验证：六处模型前缀恢复后，文件逐字节匹配原始 SHA256。
+随后复用 integration/naming/config_compatibility.json 登记新配置的完整语义摘要。
+原迁移基线及其余配置保护保留；本地 25 项契约与 dev.py check 重跑通过。
+
+配置负向回归同步区分 Voice 生产配置与命令词库，确认改变 VAD 阈值仍被语义保护拒绝。
+实时标识提取、4 项命名/YAML 回归、25 项契约与平台检查通过。

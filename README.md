@@ -25,6 +25,7 @@ cd MarsDogPlatform
 - 新功能、提交与合并：[贡献指南](CONTRIBUTING.md)
 - 模块边界与跨模块变更：[开发流程](docs/development/WORKFLOW.md)
 - 事件、行为、仲裁与动作：[当前系统详图](docs/architecture/EVENT_BEHAVIOR_ACTION.md)、[配置索引](docs/architecture/EVENT_BEHAVIOR_ACTION_INDEX.md)
+- 模型存放与部署变量：[统一模型目录](config/models/README.md)
 - 真实录音到动作：[WAV 试用与诊断](docs/development/RECORDING_TRIAL.md)
 - 五模块日志与会话查询：[统一日志使用说明](docs/development/UNIFIED_LOGGING.md)
 - 能力缺口与新增功能：[能力清单和功能草稿](docs/development/FEATURE_WORKFLOW.md)
