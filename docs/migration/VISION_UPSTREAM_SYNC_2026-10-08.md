@@ -49,3 +49,18 @@
 地图定位能力，当前 `approach_voice_caller`、`approach_owner`、`come_to_owner` 和
 `return_to_owner` 在 Go2/Lite3 路由中都因没有地图几何安全失败，不会发送 Nav2 目标；恢复
 导航需要单独提供并验证符合现有边界的几何来源。
+
+## 上游后续提交：RK3588 情绪 benchmark
+
+原 `VisionInteraction` 分支随后在 `59a64e5` 上新增了提交
+`a39980e13ae1ef2c70d6c79095b624ddfe005885`（`feat: add RK3588 emotion benchmark harness`）。
+该提交没有进入此前的六提交导入，平台现由 `5cfb190` 导入到
+`modules/vision/tools/benchmark_emotion_rknn.py`，并增加纯软件回归测试
+`modules/vision/tests/test_benchmark_emotion_rknn.py`。
+
+平台适配将默认模型目录接入 `vision_model_directory()`，生成报告放在根目录 `out/` 下；
+JAFFE/KDEF 清单、图像和 RKNN 权重仍需由使用者单独提供，没有复制数据集或模型资产。
+
+验证：`python3 -B tools/dev.py check` 通过；`python3 -B tools/dev.py test vision` 为
+405 项通过、3 项因没有 RGA helper 明确跳过、0 项失败；benchmark 的 `--help` 与新增
+3 项纯软件测试通过。未在本机执行 RKNN/NPU benchmark，也未验证板端模型精度或性能。
