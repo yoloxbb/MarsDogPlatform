@@ -4,7 +4,8 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import call, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "tools"))
 import dev
@@ -22,6 +23,27 @@ class DeveloperWorkflowTests(unittest.TestCase):
         self.assertIn("intent-cpu", dev.setup_command("voice", "/uv", "/py", intent_cpu=True))
         with self.assertRaises(ValueError):
             dev.setup_command("action", "/uv", "/py", intent_cpu=True)
+
+    def test_vision_setup_installs_rknn_runtime_after_sync(self):
+        sync = ["/tool/uv", "sync", "--locked"]
+        with patch.object(dev, "run", side_effect=[
+            SimpleNamespace(returncode=0), SimpleNamespace(returncode=0),
+        ]) as run:
+            self.assertEqual(dev.setup_module_environment("vision", sync, {}), 0)
+        vision = dev.ROOT / "modules/vision"
+        self.assertEqual(run.call_args_list, [
+            call(sync, cwd=dev.ROOT, env={}),
+            call(
+                [vision / ".venv/bin/python", "-B", vision / "tools/install_rknn_runtime.py"],
+                cwd=dev.ROOT,
+                env={},
+            ),
+        ])
+
+    def test_vision_setup_stops_after_sync_failure(self):
+        with patch.object(dev, "run", return_value=SimpleNamespace(returncode=2)) as run:
+            self.assertEqual(dev.setup_module_environment("vision", ["uv", "sync"], {}), 2)
+        run.assert_called_once()
 
     def test_behavior_preserves_both_test_trees(self):
         command, cwd = dev.test_command("behavior", Path("/reports"))

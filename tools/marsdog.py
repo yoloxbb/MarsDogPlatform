@@ -60,6 +60,12 @@ def prepare(args):
         if module.endswith("/vision"):
             command += ["--extra", "models"]
         run(command, env=env)
+        if module.endswith("/vision"):
+            vision = ROOT / "modules/vision"
+            run(
+                [vision / ".venv/bin/python", "-B", vision / "tools/install_rknn_runtime.py"],
+                env=env,
+            )
     run([sys.executable, "-B", ROOT / "tools/prepare_ros_deps.py"], env=env)
     # The main CPU build needs the pinned UWB IDL/stub, not the ARM vendor library.
     run([sys.executable, "-B", ROOT / "tools/materialize_vendors.py",

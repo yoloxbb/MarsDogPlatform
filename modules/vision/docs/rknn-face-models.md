@@ -69,6 +69,10 @@ RKNN。人脸与物体检测复用 runtime 库定位：Provider 的 `rknn_runtim
 `MARSDOG_RKNN_RUNTIME_LIBRARY`、rknnlite 包旁库文件、系统 `/usr/lib/librknnrt.so`。
 一个进程必须使用同一个 runtime 库；冲突配置会明确报错。
 
+Linux AArch64 上使用 `python3 tools/dev.py setup vision` 或 `python3 tools/marsdog.py prepare`
+会在创建虚拟环境后自动安装并校验与锁定的 `rknn-toolkit-lite2==2.3.2` 配套的 runtime。
+若直接运行 `uv sync`，随后执行 `.venv/bin/python tools/install_rknn_runtime.py`。其他平台会跳过。
+
 `core_mask` 可选值为字符串 `"auto"`、`"0"`、`"1"`、`"2"`、`"0_1"`、`"0_1_2"`；
 配置文件中请保留引号，避免 YAML 将带下划线的值解析成数字。数字 `0`、`1`、`2` 仍分别
 表示三个独立核心，数字 `3`、`7` 和其他未列出的值会被拒绝。

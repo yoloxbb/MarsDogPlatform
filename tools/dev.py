@@ -26,6 +26,17 @@ def setup_command(name, uv, python, ros=False, intent_cpu=False):
         command += ["--extra", "intent-cpu"]
     return command
 
+def setup_module_environment(name, command, env):
+    result = run(command, cwd=ROOT, env=env)
+    if result.returncode or name != "vision":
+        return result.returncode
+    vision = ROOT / "modules/vision"
+    return run(
+        [vision / ".venv/bin/python", "-B", vision / "tools/install_rknn_runtime.py"],
+        cwd=ROOT,
+        env=env,
+    ).returncode
+
 def test_command(name, output, ros=False):
     record = modules()[name]
     source = ROOT / record["path"]
@@ -137,7 +148,7 @@ def main():
         parser.error(str(error))
     env = clean_environment()
     env["UV_PYTHON_DOWNLOADS"] = "never"
-    return run(command, cwd=ROOT, env=env).returncode
+    return setup_module_environment(args.module, command, env)
 
 if __name__ == "__main__":
     sys.exit(main())

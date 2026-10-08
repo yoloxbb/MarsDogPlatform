@@ -149,6 +149,7 @@ Swagger 页面为 `/docs`，接口形状与声纹样本 CRUD 对齐：POST 新�
 ```bash
 # 在视觉仓库根目录执行，并预先加载本机 ROS2 环境
 uv sync --extra models --extra dev
+.venv/bin/python tools/install_rknn_runtime.py
 
 colcon build --base-paths . --packages-select marsdog_vision_interaction
 source install/setup.bash

@@ -44,8 +44,14 @@ source scripts/fastdds_env.sh
 
 ```bash
 uv sync --extra models --extra dev
+.venv/bin/python tools/install_rknn_runtime.py
 uv run pytest
 ```
+
+在统一主仓中，`python3 tools/dev.py setup vision` 会在依赖同步后自动补装 RKNN runtime；
+整机环境的 `python3 tools/marsdog.py prepare` 也会调用同一脚本。脚本只在 Linux AArch64
+安装与锁定的 `rknn-toolkit-lite2==2.3.2` 匹配的官方 runtime，并校验 SHA256；x86_64
+开发机跳过。该动态库从 Rockchip `rknn-toolkit2` v2.3.2 获取，不进入 Git。
 
 直接运行源码节点：
 

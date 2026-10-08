@@ -39,6 +39,13 @@ bootstrap 使用现有锁定 Linux x86_64 uv，下载需网络；已经有 uv �
 | voice | dev.py setup voice | dev.py test voice；纯测试子集 |
 | vision | dev.py setup vision | dev.py test vision；必须已有 Humble |
 
+`dev.py setup vision` 在 Linux AArch64 上还会安装与锁定的 RKNN Lite 配套的
+`librknnrt.so`。直接 `uv sync` 后运行：
+
+```bash
+modules/vision/.venv/bin/python modules/vision/tools/install_rknn_runtime.py
+```
+
 上表命令均加 `python3 tools/` 前缀。需要 Voice 完整单测：
 `python3 tools/dev.py test voice --ros`。
 可选真实 CPU Qwen：`python3 tools/dev.py setup voice --intent-cpu`；

@@ -114,6 +114,9 @@ Git 包内以实测源码、验收日志、清单和 Git diff 为复核依据，
 3. 为确认的板端目标增加独立的构建/运行配置。当前 prepare 的 x86_64 Debian
    依赖和 bootstrap_uv 的 x86_64 可执行文件不可直接当作 ARM 工具链。
 4. 在板端重新创建 .venv、colcon build/install；严禁复制 WSL 的这些二进制产物充当部署。
+   Vision 环境使用 `python3 tools/dev.py setup vision --uv /path/to/board/uv`；Linux AArch64
+   会自动安装经 SHA256 校验的 RKNN runtime。手动 `uv sync` 时，再运行
+   `modules/vision/.venv/bin/python modules/vision/tools/install_rknn_runtime.py`。
    保留原 RKLLM/NPU 推理路径，CPU 只承担开发回放；模型由独立资产清单交付。
 5. 先做 imports/IDL/构建/进程启停与模拟 I/O，之后逐一接入实际传感器/导航/Lite3。
    外部运动/嵌入式协议以现有调用和厂商证据确认，不实现猜测的内部控制器。

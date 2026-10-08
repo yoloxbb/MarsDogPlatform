@@ -65,6 +65,7 @@ alpha 分支上的后续更新。
 source /opt/ros/humble/setup.bash
 cd /home/cat/ros2_ws/src/marsdog_vision_interaction
 uv sync --extra models --extra dev
+.venv/bin/python tools/install_rknn_runtime.py
 
 cd /home/cat/ros2_ws
 colcon build --symlink-install \
