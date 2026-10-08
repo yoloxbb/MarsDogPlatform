@@ -8,6 +8,13 @@ out/
 .tools/
 .cache/
 
+# Local Trellis and agent tooling; keep workspace-specific setup out of Git.
+/.agents/
+/.claude/
+/.codex/
+/.trellis/
+/.gitattributes
+
 # Public Python package build output
 packages/*/build/
 packages/*/dist/
