@@ -459,16 +459,39 @@ def draw_visual_debug(
         )
         name = str(face.get("recognized_user", "") or "unknown")
         emotion = normalize_facial_emotion(face.get("facial_emotion"))
-        emotion_label = f" {emotion['emotion']} {emotion['intensity']:.2f}" if emotion else ""
+        face_label_lines = 2 if emotion else 1
+        face_label_y = y2 + label_baseline
+        face_label_bottom = height - label_gap
+        if face_label_y + (face_label_lines - 1) * line_pitch > face_label_bottom:
+            face_label_y = y1 - label_gap - (face_label_lines - 1) * line_pitch
+        face_label_y = max(
+            label_baseline,
+            min(
+                face_label_y,
+                max(
+                    label_baseline,
+                    face_label_bottom - (face_label_lines - 1) * line_pitch,
+                ),
+            ),
+        )
         _text(
             output,
             f"face id={face.get('track_id', -1)} {name} "
-            f"conf={float(face.get('confidence', 0)):.2f}{emotion_label}",
+            f"conf={float(face.get('confidence', 0)):.2f}",
             x1,
-            min(height - label_gap, y2 + label_baseline),
+            face_label_y,
             face_color,
             scale=osd_scale,
         )
+        if emotion:
+            _text(
+                output,
+                f"{emotion['emotion']} {emotion['intensity']:.2f}",
+                x1,
+                face_label_y + line_pitch,
+                face_color,
+                scale=osd_scale,
+            )
 
     if (
         isinstance(active, dict)

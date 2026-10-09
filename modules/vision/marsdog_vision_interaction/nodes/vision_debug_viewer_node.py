@@ -8,6 +8,7 @@ from array import array
 from collections import deque
 import copy
 import json
+import math
 import os
 import threading
 import time
@@ -29,7 +30,11 @@ from marsdog_vision_interaction.utils.config_loader import (
     load_config,
     normalize_debug_osd,
 )
-from marsdog_vision_interaction.messages.facial_emotion import FacialEmotionExpiry, expire_facial_emotions
+from marsdog_vision_interaction.messages.facial_emotion import (
+    FacialEmotionExpiry,
+    expire_facial_emotions,
+    normalize_facial_emotion,
+)
 from marsdog_vision_interaction.utils.visual_debug import draw_visual_debug
 from marsdog_vision_interaction.utils.stereo_view import select_camera_view
 from marsdog_vision_interaction.utils.web_debug_server import (
@@ -48,6 +53,129 @@ _BEST_EFFORT = QoSProfile(
     depth=1,
 )
 _WEB_OBJECT_SESSION_ID = "vision-debug-web"
+
+
+class _FacialEmotionOverlayCache:
+    """Hold the last face expression while that face remains on screen."""
+
+    def __init__(self) -> None:
+        self._entries: dict[
+            int, tuple[tuple[str, str, str], dict[str, Any], float]
+        ] = {}
+
+    @staticmethod
+    def _source(event: dict[str, Any]) -> tuple[str, str, str]:
+        header = event.get("header", {})
+        if not isinstance(header, dict):
+            header = {}
+        stamp = str(header.get("stamp", ""))
+        frame_id = str(header.get("frame_id", ""))
+        if not stamp and not frame_id:
+            stamp = str(event.get("sequence", ""))
+        return str(event.get("vision_epoch", "")), stamp, frame_id
+
+    @staticmethod
+    def _faces(event: dict[str, Any]) -> tuple[list[dict[str, Any]], set[int], bool]:
+        faces: list[dict[str, Any]] = []
+        track_ids: set[int] = set()
+        has_face_arrays = False
+        for key in ("faces", "debug_faces"):
+            values = event.get(key)
+            if not isinstance(values, list):
+                continue
+            has_face_arrays = True
+            for face in values:
+                if not isinstance(face, dict):
+                    continue
+                faces.append(face)
+                try:
+                    track_id = int(face.get("track_id", -1))
+                except (TypeError, ValueError):
+                    continue
+                if track_id > 0:
+                    track_ids.add(track_id)
+        return faces, track_ids, has_face_arrays
+
+    def observe(self, event: dict[str, Any], now: float, hold_sec: float) -> None:
+        """Refresh visible tracks and accept only new source-frame results."""
+        faces, track_ids, has_face_arrays = self._faces(event)
+        if has_face_arrays:
+            for track_id in tuple(self._entries):
+                if track_id not in track_ids:
+                    self._entries.pop(track_id, None)
+        for track_id in track_ids:
+            previous = self._entries.get(track_id)
+            if previous is not None:
+                self._entries[track_id] = (
+                    previous[0],
+                    previous[1],
+                    now + max(0.0, hold_sec),
+                )
+
+        lifetime = event.get("facial_emotion_valid_for_sec")
+        if lifetime is not None and (
+            isinstance(lifetime, bool)
+            or not isinstance(lifetime, (int, float))
+            or not math.isfinite(float(lifetime))
+            or float(lifetime) <= 0.0
+        ):
+            return
+
+        source = self._source(event)
+        for face in faces:
+            emotion = normalize_facial_emotion(face.get("facial_emotion"))
+            if emotion is None:
+                continue
+            try:
+                track_id = int(face.get("track_id", -1))
+            except (TypeError, ValueError):
+                continue
+            if track_id <= 0:
+                continue
+            previous = self._entries.get(track_id)
+            if previous is not None and previous[0] == source:
+                continue
+            self._entries[track_id] = (
+                source,
+                emotion,
+                now + max(0.0, hold_sec),
+            )
+
+    def apply(self, event: dict[str, Any], now: float) -> bool:
+        """Restore still-held expressions to a render copy of the event."""
+        faces, _, _ = self._faces(event)
+        remaining: list[float] = []
+        for face in faces:
+            try:
+                track_id = int(face.get("track_id", -1))
+            except (TypeError, ValueError):
+                continue
+            entry = self._entries.get(track_id)
+            if entry is None:
+                continue
+            seconds_left = entry[2] - now
+            if seconds_left <= 0.0:
+                face.pop("facial_emotion", None)
+                continue
+            face["facial_emotion"] = dict(entry[1])
+            remaining.append(seconds_left)
+
+        if remaining:
+            # The JPEG stream uses this deadline to replace the current image
+            # with a frame that has no expression label, even if the camera
+            # stops publishing before the hold expires.
+            event["facial_emotion_valid_for_sec"] = min(remaining)
+            return True
+        event.pop("facial_emotion_valid_for_sec", None)
+        return False
+
+    def has_visible(self, event: dict[str, Any], now: float) -> bool:
+        """Whether a currently visible face has an unexpired held expression."""
+        _, track_ids, _ = self._faces(event)
+        return any(
+            track_id in self._entries and self._entries[track_id][2] > now
+            for track_id in track_ids
+        )
 
 
 class VisionDebugViewerNode(Node):
@@ -118,6 +246,7 @@ class VisionDebugViewerNode(Node):
         self._lock = threading.Lock()
         self._event: dict[str, Any] = {}
         self._facial_emotion_expiry = FacialEmotionExpiry()
+        self._facial_emotion_overlay = _FacialEmotionOverlayCache()
         self._gesture_debug: dict[str, Any] = {}
         self._control: dict[str, Any] = {}
         self._cmd_vel = (0.0, 0.0)
@@ -332,6 +461,13 @@ class VisionDebugViewerNode(Node):
                 ):
                     return
                 received_at = time.monotonic()
+                overlay = getattr(self, "_facial_emotion_overlay", None)
+                if overlay is not None:
+                    overlay.observe(
+                        value,
+                        received_at,
+                        getattr(self, "_overlay_stale_sec", 1.0),
+                    )
                 self._facial_emotion_expiry.apply(value, received_at)
                 self._event = value
                 self._visual_last_monotonic = received_at
@@ -340,6 +476,8 @@ class VisionDebugViewerNode(Node):
                     for faces in (value.get("faces"), value.get("debug_faces"))
                     if isinstance(faces, list)
                     for face in faces if isinstance(face, dict)
+                ) and not (
+                    overlay is not None and overlay.has_visible(value, received_at)
                 ):
                     web_server = getattr(self, "_web_server", None)
                     if web_server is not None:
@@ -740,6 +878,10 @@ class VisionDebugViewerNode(Node):
                         self._gesture_debug
                     )
                 cmd_vel = self._cmd_vel
+        overlay = getattr(self, "_facial_emotion_overlay", None)
+        if overlay is not None:
+            with self._lock:
+                overlay.apply(event, received_at)
         control["_visual_age_ms"] = (
             visual_age * 1000.0 if visual_age != float("inf") else -1.0
         )
