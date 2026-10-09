@@ -94,6 +94,15 @@ providers:
       # face_detection_yunet_2023mar_fp16.rknn. No backend selector is needed.
       # Optional RKNN settings (ignored for ONNX):
       # face_detect_rknn: {profile: yunet_2023mar_fp16, core_mask: auto}
+      # Human expression only; confidence is the original eight-class softmax.
+      face_emotion:
+        enabled: true
+        # Minimum short side of the face crop in source-frame pixels after clipping.
+        min_face_size_px: 80
+        model: ${MARSDOG_VISION_MODEL_DIR}/emotion/enet_b0_8_va_mtl_rk3588_fp.rknn
+        profile: enet_b0_8_va_mtl
+        core_mask: auto
+        max_age_sec: 0.5
       face_detect_model: ${MARSDOG_VISION_MODEL_DIR}/face_detection_yunet_2023mar_fp16.rknn
       # Select rknn/lite/full at launch without editing the config:
       #   ros2 launch ... pose_model_variant:=full

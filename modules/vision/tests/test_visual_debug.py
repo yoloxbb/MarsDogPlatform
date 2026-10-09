@@ -1,6 +1,7 @@
 from collections import deque
 from pathlib import Path
 import threading
+from urllib.request import urlopen
 from types import MethodType
 from types import SimpleNamespace
 
@@ -20,6 +21,7 @@ from marsdog_vision_interaction.utils.visual_debug import (
     draw_visual_debug,
 )
 from marsdog_vision_interaction.utils import visual_debug
+from marsdog_vision_interaction.utils import web_debug_server as web_server_module
 from marsdog_vision_interaction.utils.web_debug_server import (
     VisionDebugWebServer,
 )
@@ -538,3 +540,126 @@ def test_object_only_config_disables_non_object_models() -> None:
         assert providers["object"]["config"][key] == (
             production["providers"]["object"]["config"][key]
         )
+
+
+def test_viewer_cached_expression_expires_in_web_json_and_repeated_packets(monkeypatch):
+    import json
+    from marsdog_vision_interaction.messages.facial_emotion import FacialEmotionExpiry
+
+    clock = [10.0]
+    monkeypatch.setattr(viewer_node_module.time, 'monotonic', lambda: clock[0])
+    viewer = SimpleNamespace(
+        _lock=threading.Lock(), _event={}, _facial_emotion_expiry=FacialEmotionExpiry(),
+        _visual_last_monotonic=0.0, _record_visual_event_lifecycle=lambda *a, **kw: True,
+        _debug_objects_monotonic=0, _object_overlay_hold_sec=lambda: .5,
+        _object_only=False, _camera_times=[], _render_times=[], _camera_meta={},
+        _camera_last_monotonic=0, _gesture_last_monotonic=0, _gesture_debug={},
+        _control={}, _cmd_vel=(0, 0), _object_task={}, _enrollment={},
+        _published_event_history=[], _active_published_events={}, _max_render_fps=30,
+        _started_monotonic=1, _visual_topic='/test/visual', _debug_osd_enabled=True,
+        _show_all_detections=True, _gesture_debug_topic='/test/gesture',
+    )
+    web_server = VisionDebugWebServer('127.0.0.1', 0, lambda: {})
+    viewer._web_server = web_server
+    def packet(sequence, stamp=123):
+        return SimpleNamespace(data=json.dumps({
+            'vision_epoch': 'epoch', 'sequence': sequence,
+            'header': {'stamp': stamp, 'frame_id': 'camera'},
+            'faces': [{'track_id': 1, 'facial_emotion': {'emotion': 'happy', 'intensity': .85}}],
+            'facial_emotion_valid_for_sec': .4,
+        }))
+    VisionDebugViewerNode._on_visual(viewer, packet(1))
+    assert VisionDebugViewerNode._web_snapshot(viewer)['visual_event']['faces'][0]['facial_emotion']['emotion'] == 'happy'
+    clock[0] = 10.3
+    VisionDebugViewerNode._on_visual(viewer, packet(2))
+    assert viewer._event['facial_emotion_valid_for_sec'] < .11
+    clock[0] = 10.41
+    event = VisionDebugViewerNode._web_snapshot(viewer)['visual_event']
+    assert 'facial_emotion' not in event['faces'][0]
+    assert 'facial_emotion_valid_for_sec' not in event
+    VisionDebugViewerNode._on_visual(viewer, packet(3))
+    assert 'facial_emotion' not in viewer._event['faces'][0]
+    VisionDebugViewerNode._on_visual(viewer, packet(4, stamp=124))
+    assert 'facial_emotion' in viewer._event['faces'][0]
+    web_server.update_jpeg(b'annotated', valid_for_sec=.4, fallback=b'no-expression')
+    VisionDebugViewerNode._on_visual(viewer, SimpleNamespace(data=json.dumps({
+        'vision_epoch': 'epoch', 'sequence': 5, 'faces': [],
+    })))
+    assert web_server._jpeg == b'no-expression'
+
+
+def test_cached_mjpeg_replaces_expired_frame_without_new_camera_input(monkeypatch):
+    clock = [10.0]
+    monkeypatch.setattr(web_server_module, 'time', SimpleNamespace(monotonic=lambda: clock[0]))
+    server = VisionDebugWebServer('127.0.0.1', 0, lambda: {})
+    server.update_jpeg(b'annotated-frame', valid_for_sec=.4, fallback=b'fallback-frame')
+    server.start()
+    def read_frame(stream):
+        assert stream.readline() == b'--frame\r\n'
+        assert stream.readline() == b'Content-Type: image/jpeg\r\n'
+        length = int(stream.readline().split(b':')[1])
+        assert stream.readline() == b'\r\n'
+        frame = stream.read(length)
+        assert stream.read(2) == b'\r\n'
+        return frame
+    try:
+        with urlopen(f'http://127.0.0.1:{server.bound_port}/stream.mjpg', timeout=2) as stream:
+            assert read_frame(stream) == b'annotated-frame'
+            with server._condition:
+                clock[0] = 10.41
+            assert read_frame(stream) == b'fallback-frame'
+            assert server._frame_sequence == 2 and server._jpeg_deadline is None
+            # Existing callers without a lifetime continue to cache their frame.
+            server.update_jpeg(b'ordinary-frame')
+            with server._condition:
+                clock[0] = 100.0
+                server._condition.notify_all()
+            assert read_frame(stream) == b'ordinary-frame'
+            server.expire_jpeg()
+            assert server._jpeg == b'ordinary-frame' and server._frame_sequence == 3
+    finally:
+        server.stop()
+
+
+def test_viewer_jpeg_fallback_preserves_other_osd_and_original_expiry(monkeypatch):
+    clock = [10.1]
+    monkeypatch.setattr(viewer_node_module, 'time', SimpleNamespace(monotonic=lambda: clock[0]))
+    monkeypatch.setattr(web_server_module, 'time', SimpleNamespace(monotonic=lambda: clock[0]))
+    server = VisionDebugWebServer('127.0.0.1', 0, lambda: {})
+    viewer = SimpleNamespace(_web_server=server, _jpeg_quality=80, _debug_osd_enabled=True)
+    frame = np.full((100, 160, 3), 19, dtype=np.uint8)
+    event = {
+        'faces': [{'track_id': 1, 'x': .1, 'y': .1, 'w': .2, 'h': .2,
+                   'confidence': .9, 'facial_emotion': {'emotion': 'happy', 'intensity': .85}}],
+        'humans': [{'track_id': 3, 'x': .1, 'y': .1, 'w': .3, 'h': .8}],
+        'facial_emotion_valid_for_sec': .4,
+    }
+    control = {'mode': 'object_only'}
+    rendered = draw_visual_debug(frame, event, control=control)
+    fallback_events = []
+    original_draw = viewer_node_module.draw_visual_debug
+    original_encode = viewer_node_module.cv2.imencode
+    def capture_draw(source, value, **kwargs):
+        assert np.array_equal(source, frame)
+        fallback_events.append(value)
+        return original_draw(source, value, **kwargs)
+    def delayed_encode(*args):
+        clock[0] += .025
+        return original_encode(*args)
+    monkeypatch.setattr(viewer_node_module, 'draw_visual_debug', capture_draw)
+    monkeypatch.setattr(viewer_node_module.cv2, 'imencode', delayed_encode)
+    VisionDebugViewerNode._update_web_jpeg(viewer, frame, rendered, event, control, None, 10.0)
+    assert len(fallback_events) == 1
+    fallback_event = fallback_events[0]
+    assert 'facial_emotion' not in fallback_event['faces'][0]
+    assert 'facial_emotion_valid_for_sec' not in fallback_event
+    assert fallback_event['humans'] == event['humans']
+    assert fallback_event['faces'][0]['confidence'] == .9
+    assert event['faces'][0]['facial_emotion']['emotion'] == 'happy'
+    assert abs(server._jpeg_deadline - 10.4) < 1e-9
+    expected_fallback = original_draw(frame, fallback_event, control=control, cmd_vel=None, enabled=True)
+    _, expected_bytes = original_encode('.jpg', expected_fallback, [viewer_node_module.cv2.IMWRITE_JPEG_QUALITY, 80])
+    assert server._jpeg_fallback == expected_bytes.tobytes()
+    clock[0] = 10.41
+    server.expire_jpeg()
+    assert server._jpeg == expected_bytes.tobytes()

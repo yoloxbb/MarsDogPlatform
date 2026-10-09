@@ -7,7 +7,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
 import json
 import logging
+import math
 import threading
+import time
 from typing import Any, Callable
 from urllib.parse import urlsplit
 
@@ -38,6 +40,8 @@ class VisionDebugWebServer:
         self._event_history_clear_handler = event_history_clear_handler
         self._condition = threading.Condition()
         self._jpeg = b""
+        self._jpeg_deadline: float | None = None
+        self._jpeg_fallback = b""
         self._frame_sequence = 0
         self._stopping = threading.Event()
         self._httpd: _DashboardHttpServer | None = None
@@ -90,13 +94,41 @@ class VisionDebugWebServer:
                 pass
             self._thread = None
 
-    def update_jpeg(self, value: bytes) -> None:
+    def update_jpeg(
+        self, value: bytes, *, valid_for_sec: float | None = None,
+        fallback: bytes = b"",
+    ) -> None:
+        """Cache a frame, optionally replacing it when its lifetime expires."""
         if not value:
             return
+        lifetime = None if valid_for_sec is None else float(valid_for_sec)
+        if lifetime is not None and not math.isfinite(lifetime):
+            raise ValueError("JPEG lifetime must be finite")
         with self._condition:
             self._jpeg = bytes(value)
+            self._jpeg_deadline = (
+                None if lifetime is None else time.monotonic() + max(0.0, lifetime)
+            )
+            self._jpeg_fallback = bytes(fallback) if lifetime is not None else b""
             self._frame_sequence += 1
+            self._expire_jpeg_locked()
             self._condition.notify_all()
+
+    def _expire_jpeg_locked(self, *, force: bool = False) -> bool:
+        if self._jpeg_deadline is None:
+            return False
+        if not force and time.monotonic() < self._jpeg_deadline:
+            return False
+        self._jpeg, self._jpeg_fallback = self._jpeg_fallback, b""
+        self._jpeg_deadline = None
+        self._frame_sequence += 1
+        self._condition.notify_all()
+        return True
+
+    def expire_jpeg(self) -> None:
+        """Immediately replace a frame that was published with a lifetime."""
+        with self._condition:
+            self._expire_jpeg_locked(force=True)
 
     def _make_handler(self) -> type[BaseHTTPRequestHandler]:
         owner = self
@@ -228,13 +260,19 @@ class VisionDebugWebServer:
                 try:
                     while not owner._stopping.is_set():
                         with owner._condition:
+                            owner._expire_jpeg_locked()
+                            timeout = 1.0
+                            if owner._jpeg_deadline is not None:
+                                timeout = min(timeout, max(0.0, owner._jpeg_deadline - time.monotonic()))
                             owner._condition.wait_for(
                                 lambda: (
                                     owner._frame_sequence != sequence
                                     or owner._stopping.is_set()
+                                    or owner._expire_jpeg_locked()
                                 ),
-                                timeout=1.0,
+                                timeout=timeout,
                             )
+                            owner._expire_jpeg_locked()
                             if owner._stopping.is_set():
                                 return
                             jpeg = owner._jpeg

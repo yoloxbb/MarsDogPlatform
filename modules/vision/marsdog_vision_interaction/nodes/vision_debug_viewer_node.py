@@ -29,6 +29,7 @@ from marsdog_vision_interaction.utils.config_loader import (
     load_config,
     normalize_debug_osd,
 )
+from marsdog_vision_interaction.messages.facial_emotion import FacialEmotionExpiry, expire_facial_emotions
 from marsdog_vision_interaction.utils.visual_debug import draw_visual_debug
 from marsdog_vision_interaction.utils.stereo_view import select_camera_view
 from marsdog_vision_interaction.utils.web_debug_server import (
@@ -116,6 +117,7 @@ class VisionDebugViewerNode(Node):
 
         self._lock = threading.Lock()
         self._event: dict[str, Any] = {}
+        self._facial_emotion_expiry = FacialEmotionExpiry()
         self._gesture_debug: dict[str, Any] = {}
         self._control: dict[str, Any] = {}
         self._cmd_vel = (0.0, 0.0)
@@ -329,8 +331,19 @@ class VisionDebugViewerNode(Node):
                     value, received_at=time.time()
                 ):
                     return
+                received_at = time.monotonic()
+                self._facial_emotion_expiry.apply(value, received_at)
                 self._event = value
-                self._visual_last_monotonic = time.monotonic()
+                self._visual_last_monotonic = received_at
+                if not any(
+                    face.get("facial_emotion")
+                    for faces in (value.get("faces"), value.get("debug_faces"))
+                    if isinstance(faces, list)
+                    for face in faces if isinstance(face, dict)
+                ):
+                    web_server = getattr(self, "_web_server", None)
+                    if web_server is not None:
+                        web_server.expire_jpeg()
 
     @staticmethod
     def _published_event_evidence(value: dict[str, Any]) -> dict[str, Any]:
@@ -707,6 +720,7 @@ class VisionDebugViewerNode(Node):
                 if visual_age <= self._overlay_stale_sec
                 else {}
             )
+            expire_facial_emotions(event, visual_age)
             object_age = received_at - self._debug_objects_monotonic
             if object_age <= self._object_overlay_hold_sec():
                 event["tracked_objects"] = copy.deepcopy(self._debug_objects)
@@ -757,13 +771,7 @@ class VisionDebugViewerNode(Node):
             output.data = array("B", rendered.tobytes())
             self._debug_pub.publish(output)
         if self._web_server is not None:
-            ok, encoded = cv2.imencode(
-                ".jpg",
-                rendered,
-                [cv2.IMWRITE_JPEG_QUALITY, self._jpeg_quality],
-            )
-            if ok:
-                self._web_server.update_jpeg(encoded.tobytes())
+            self._update_web_jpeg(frame, rendered, event, control, cmd_vel, received_at)
         if self._show_window:
             shown = rendered
             if self._scale != 1.0:
@@ -776,6 +784,33 @@ class VisionDebugViewerNode(Node):
                 cv2.destroyWindow(self._window_name)
         with self._lock:
             self._render_times.append(time.monotonic())
+
+    def _update_web_jpeg(
+        self, frame: np.ndarray, rendered: np.ndarray, event: dict[str, Any],
+        control: dict[str, Any], cmd_vel: Any, received_at: float,
+    ) -> None:
+        """Expire expression pixels even when the camera no longer publishes."""
+        parameters = [cv2.IMWRITE_JPEG_QUALITY, self._jpeg_quality]
+        ok, encoded = cv2.imencode(".jpg", rendered, parameters)
+        if not ok:
+            return
+        lifetime = event.get("facial_emotion_valid_for_sec")
+        if lifetime is not None and self._debug_osd_enabled:
+            fallback_event = copy.deepcopy(event)
+            expire_facial_emotions(fallback_event, float("inf"))
+            fallback = draw_visual_debug(
+                frame, fallback_event, control=control, cmd_vel=cmd_vel,
+                enabled=self._debug_osd_enabled,
+            )
+            fallback_ok, fallback_encoded = cv2.imencode(".jpg", fallback, parameters)
+            if not fallback_ok:
+                return
+            self._web_server.update_jpeg(
+                encoded.tobytes(), fallback=fallback_encoded.tobytes(),
+                valid_for_sec=max(0.0, float(lifetime) - (time.monotonic() - received_at)),
+            )
+        else:
+            self._web_server.update_jpeg(encoded.tobytes())
 
     @staticmethod
     def _render_is_due(
@@ -864,6 +899,7 @@ class VisionDebugViewerNode(Node):
         wall_now = time.time()
         with self._lock:
             event = copy.deepcopy(self._event)
+            expire_facial_emotions(event, max(0.0, now - self._visual_last_monotonic))
             object_age = now - self._debug_objects_monotonic
             if object_age <= self._object_overlay_hold_sec():
                 event["tracked_objects"] = copy.deepcopy(self._debug_objects)

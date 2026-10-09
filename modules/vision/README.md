@@ -40,12 +40,13 @@ source scripts/fastdds_env.sh
 人脸注册表和人脸样本是运行时生成的生物识别数据，仅保存在本机 `data/`
 目录，不进入 Git，也不打进源码发布包；新设备需单独完成人脸注册或安全迁移数据。
 
-以下命令均假定当前目录为仓库根目录，并且已经按本机 ROS2 安装方式加载环境：
+以下依赖准备和测试命令在 **MarsDogPlatform 主仓根目录**执行；Vision 使用自己的
+`modules/vision/.venv`，并且完整测试需要本机已有 ROS2 Humble：
 
 ```bash
-uv sync --extra models --extra dev
-.venv/bin/python tools/install_rknn_runtime.py
-uv run pytest
+cd /absolute/path/to/MarsDogPlatform
+python3 tools/dev.py setup vision
+python3 tools/dev.py test vision
 ```
 
 在统一主仓中，`python3 tools/dev.py setup vision` 会在依赖同步后自动补装 RKNN runtime；
@@ -56,17 +57,33 @@ uv run pytest
 直接运行源码节点：
 
 ```bash
-uv run marsdog-vision-interaction \
-  --ros-args -p config_path:=config/vision.yaml
+uv run --project modules/vision --locked --extra models --extra dev marsdog-vision-interaction \
+  --ros-args -p config_path:=modules/vision/config/vision.yaml
 ```
 
-ROS2 构建：
+ROS2 单包构建和启动在 **主仓的 `modules/vision` 目录**执行。使用新终端先加载
+Humble，再构建和 source 此模块的安装目录：
 
 ```bash
+cd /absolute/path/to/MarsDogPlatform/modules/vision
+source /opt/ros/humble/setup.bash
 colcon build --base-paths . --packages-select marsdog_vision_interaction
-source install/setup.bash
+source install/local_setup.bash
+ros2 pkg prefix marsdog_vision_interaction
 ros2 launch marsdog_vision_interaction vision.launch.py
 ```
+
+`ros2 pkg prefix` 应指向当前主仓的
+`modules/vision/install/marsdog_vision_interaction`。如果输出其它工作区，先重新 source
+此模块的安装目录。上述构建只刷新本包，不迁移或改写历史独立仓。
+
+`ros2 launch` 从选中的 ROS 安装目录取得 launch 和默认 YAML。安装入口可能重新执行
+`python -m`，Python 与 Web 资源的实际来源还受当前目录、`PYTHONPATH` 和模块虚拟环境
+影响；从源码目录启动时，可能读取新 Python 代码却仍使用旧的安装 YAML。本包通过
+CMake `install(DIRECTORY ...)` 安装这些文件；即使构建时用了 `--symlink-install`，也不能
+假定所有资源都实时跟随源码。修改源码、`config/vision.yaml` 或 dashboard 后，必须
+重新构建此模块、source 对应安装目录，再重启节点。仅重新 source、刷新网页或重启
+launch 不会刷新已有的安装副本。刷新代码不需要切换已有的安装模式。
 
 该 launch 只启动视觉节点，并订阅已经存在的 RealSense 彩色图、对齐深度与
 CameraInfo；相机驱动需单独启动且启用 `enable_depth` 与 `align_depth.enable`。
@@ -216,16 +233,15 @@ Debug session 始终优先。两个阳性结果之间允许一次短暂漏检；
 `unknown/confirmed_unknown`。地面、桌面或其他人附近仅出现对应物体，只保留
 `tracked_objects[]`，不再发布 TOY/FOOD 事件。跌倒姿态优先，不会被手持结果覆盖。
 
-重新构建并 source 工作区后，只需执行一个调试命令：
+更新后先停止旧的视觉 launch。在主仓 Vision 模块内重新构建和 source，再启动
+调试页面；此流程适用于新增人脸表情后端、配置和 OSD 页面：
 
 ```bash
-export VISION_REPO="$PWD"
-export ROS2_WS="${ROS2_WS:-$HOME/ros2_ws}"
-cd "$ROS2_WS"
-colcon build --symlink-install \
-  --packages-select marsdog_vision_interaction
-source install/setup.bash
-
+cd /absolute/path/to/MarsDogPlatform/modules/vision
+source /opt/ros/humble/setup.bash
+colcon build --base-paths . --packages-select marsdog_vision_interaction
+source install/local_setup.bash
+ros2 pkg prefix marsdog_vision_interaction
 ros2 launch marsdog_vision_interaction vision_debug.launch.py \
   web_host:=0.0.0.0
 ```
@@ -452,3 +468,13 @@ ros2 service call /perception/vision/task \
 调用方先从 `query_targets` 获得完整 `target_id`。任务返回该当前人体的视觉目标记录，
 包括归一化 bbox、身份/置信度、姿态动作和跟踪状态；不会请求 SLAM，也不返回地图坐标、
 导航目标或深度质量。
+
+
+### 人脸表情
+
+真实 observation 配置可对已有检测人脸裁剪运行 EmotiEffLib RKNN 八类表情模型，
+包括未登记身份。`GET /api/v1/faces/emotion`（可选 `track_id`）返回
+`{"emotion":"happy","intensity":0.85}`；intensity 保留原始八类 softmax 概率。
+调试 OSD 和人脸表格显示相应结果，来源过期或推理失败时清除。
+配置、模型 SHA-256、HTTP 错误规则及板端验收见
+[RKNN 人脸表情](docs/rknn-emotion-models.md)。这是人类表情识别，不写机器人情绪状态。

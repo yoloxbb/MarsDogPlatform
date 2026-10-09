@@ -823,3 +823,14 @@ Pose、Hand、YuNet 或 SFace 加载失败时节点可能继续运行，但对�
 
 跨项目完整链路见 [ROS2_INTERFACES.md](integration/ROS2_INTERFACES.md)，部署与
 启动见 [HANDOFF.md](HANDOFF.md)。
+
+
+## Optional facial expression evidence
+
+Visual schema v1 can include `facial_emotion: {emotion, intensity}` on current
+`faces` and `debug_faces`, plus `facial_emotion_valid_for_sec` remaining lifetime
+metadata for debug consumers. Missing/invalid/stale expression fields are omitted;
+existing required fields, event policy, topics/types and task lifecycle are unchanged.
+The separate read HTTP endpoint returns only emotion/confidence. See
+[rknn-emotion-models.md](rknn-emotion-models.md) for labels, selection/errors,
+source-frame freshness and the distinction from robot `/emotion/state`.

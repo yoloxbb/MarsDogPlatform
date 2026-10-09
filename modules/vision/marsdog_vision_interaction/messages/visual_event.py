@@ -208,6 +208,15 @@ _OBJECT = {
 }
 
 
+def _normalize_face(value: dict[str, Any]) -> dict[str, Any]:
+    from marsdog_vision_interaction.messages.facial_emotion import normalize_facial_emotion
+    face = _merge(_FACE, value)
+    emotion = normalize_facial_emotion(value.get("facial_emotion"))
+    if emotion is not None:
+        face["facial_emotion"] = emotion
+    return face
+
+
 def _merge(template: dict[str, Any], value: Any) -> dict[str, Any]:
     result = copy.deepcopy(template)
     if not isinstance(value, dict):
@@ -292,7 +301,7 @@ def normalize_visual_event(data: Any) -> dict[str, Any]:
         if isinstance(item, dict)
     ]
     event["faces"] = [
-        _merge(_FACE, item) for item in data.get("faces", [])
+        _normalize_face(item) for item in data.get("faces", [])
         if isinstance(item, dict)
     ]
     event["humans"] = [
@@ -316,10 +325,14 @@ def normalize_visual_event(data: Any) -> dict[str, Any]:
     if "debug_faces" in data:
         raw_debug_faces = data.get("debug_faces")
         event["debug_faces"] = [
-            _merge(_FACE, item)
+            _normalize_face(item)
             for item in (raw_debug_faces if isinstance(raw_debug_faces, list) else [])
             if isinstance(item, dict)
         ]
+    if "facial_emotion_valid_for_sec" in data:
+        from marsdog_vision_interaction.messages.facial_emotion import expire_facial_emotions
+        event["facial_emotion_valid_for_sec"] = data["facial_emotion_valid_for_sec"]
+        expire_facial_emotions(event, 0.0)
     event["hands"] = [
         _merge(_HAND, item) for item in data.get("hands", [])
         if isinstance(item, dict)

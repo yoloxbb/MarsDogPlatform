@@ -7,6 +7,8 @@ from typing import Any
 import cv2
 import numpy as np
 
+from marsdog_vision_interaction.messages.facial_emotion import normalize_facial_emotion
+
 from marsdog_vision_interaction.providers.pose_backends.contract import normalize_keypoint_format
 
 
@@ -456,10 +458,12 @@ def draw_visual_debug(
             scale=osd_scale,
         )
         name = str(face.get("recognized_user", "") or "unknown")
+        emotion = normalize_facial_emotion(face.get("facial_emotion"))
+        emotion_label = f" {emotion['emotion']} {emotion['intensity']:.2f}" if emotion else ""
         _text(
             output,
             f"face id={face.get('track_id', -1)} {name} "
-            f"conf={float(face.get('confidence', 0)):.2f}",
+            f"conf={float(face.get('confidence', 0)):.2f}{emotion_label}",
             x1,
             min(height - label_gap, y2 + label_baseline),
             face_color,

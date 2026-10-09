@@ -2190,6 +2190,7 @@ class VisionInteractionNode(Node):
                 self._get_face_sample_for_api,
                 self._replace_face_sample_for_api,
                 self._delete_face_sample_for_api,
+                self._facial_emotion_for_api,
             )
             ready = self._face_api.start()
             self._face_api_status = {
@@ -2206,6 +2207,13 @@ class VisionInteractionNode(Node):
                 "error": str(exc),
             }
             logger.error("Face FastAPI unavailable: %s", exc, exc_info=True)
+
+    def _facial_emotion_for_api(self, track_id: int | None = None) -> dict[str, Any]:
+        vision = self._providers.get("vision")
+        handler = getattr(vision, "get_facial_emotion", None)
+        if not callable(handler):
+            return {"ok": False, "status": 503, "error": "facial emotion capability unavailable"}
+        return handler(track_id)
 
     def _enroll_uploaded_face_for_api(
         self,
