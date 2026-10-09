@@ -53,9 +53,14 @@ def test_preprocess_is_exact_benchmark_parity():
     # Non-square, noncontiguous input makes channel/order/resize differences visible.
     crop = np.random.default_rng(13).integers(0, 256, (47, 73, 3), dtype=np.uint8)[::2, ::2]
     tensor = backend.preprocess_face(crop)
-    expected = module._preprocess(crop, module.MODEL_PROFILES["enet_b0_8_va_mtl_rk3588_fp.rknn"])
+    profile = module.MODEL_PROFILES["enet_b0_8_va_mtl_rk3588_fp.rknn"]
+    expected = module._preprocess(crop, profile)
     np.testing.assert_array_equal(tensor, expected)
-    assert tensor.shape == (1, 3, 224, 224) and tensor.dtype == np.float32 and tensor.flags.c_contiguous
+    legacy_profile = copy.deepcopy(profile)
+    legacy_profile["input"]["layout"] = "nchw"
+    previous_nchw = module._preprocess(crop, legacy_profile)
+    np.testing.assert_array_equal(tensor.transpose(0, 3, 1, 2), previous_nchw)
+    assert tensor.shape == (1, 224, 224, 3) and tensor.dtype == np.float32 and tensor.flags.c_contiguous
     outputs = [np.arange(10, dtype=np.float32).reshape(1, 10)]
     _, scores = module._normalize_outputs(outputs, module.MODEL_PROFILES["enet_b0_8_va_mtl_rk3588_fp.rknn"])
     assert backend.decode_expression(outputs)["intensity"] == float(scores.max())
@@ -100,8 +105,8 @@ def test_runtime_layout_and_idempotent_release(fake_runtime):
     model, runtime = fake_runtime
     adapter = backend.RknnEmotionBackend(str(model))
     assert adapter.infer(np.zeros((12, 8, 3), np.uint8))["intensity"] == .125
-    assert runtime.calls[0]['data_format'] == ['nchw']
-    assert runtime.calls[0]['inputs'][0].shape == (1, 3, 224, 224)
+    assert runtime.calls[0]['data_format'] == ['nhwc']
+    assert runtime.calls[0]['inputs'][0].shape == (1, 224, 224, 3)
     adapter.close()
     adapter.close()
     assert runtime.released == 1

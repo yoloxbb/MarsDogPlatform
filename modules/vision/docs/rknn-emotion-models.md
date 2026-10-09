@@ -33,9 +33,11 @@ image detail and does not estimate physical distance.
 
 Preprocessing matches `tools/benchmark_emotion_rknn.py`: clipped BGR uint8 face
 ROI, RGB, Pillow bilinear 224×224, float32/255, ImageNet mean
-[0.485,0.456,0.406] and std [0.229,0.224,0.225], contiguous [1,3,224,224]. RKNN
-returns one finite floating-point [1,10] tensor. Only its first eight logits
-participate in a stable softmax, in order:
+[0.485,0.456,0.406] and std [0.229,0.224,0.225], contiguous NHWC
+[1,224,224,3]. The selected model expects NHWC, so the input is passed in that
+layout, avoiding the previous NCHW-to-NHWC reorder. Other benchmark profiles
+retain their own declared layouts. RKNN returns one finite floating-point
+[1,10] tensor. Only its first eight logits participate in a stable softmax, in order:
 `angry / contempt / disgust / fear / happy / neutral / sad / surprise`.
 Valence/arousal are ignored. Intensity is the winning class's original eight-way
 probability, without class grouping, thresholding or further renormalization;

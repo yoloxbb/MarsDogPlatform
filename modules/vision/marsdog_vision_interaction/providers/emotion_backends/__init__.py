@@ -18,7 +18,7 @@ MODEL_SHA256 = "e260bee2a207a14256db37d5b313bfa46d1f3fc344818ca3108a7d6fffcfd4f0
 
 
 def preprocess_face(crop: np.ndarray) -> np.ndarray:
-    """Match the benchmark's BGR uint8 -> Pillow RGB bilinear -> NCHW."""
+    """Match the benchmark's BGR uint8 -> Pillow RGB bilinear -> NHWC."""
     if (not isinstance(crop, np.ndarray) or crop.dtype != np.uint8
             or crop.ndim != 3 or crop.shape[2] != 3 or not crop.size):
         raise ValueError("emotion input must be a nonempty BGR uint8 face crop")
@@ -26,7 +26,7 @@ def preprocess_face(crop: np.ndarray) -> np.ndarray:
     resized = np.asarray(Image.fromarray(rgb).resize((224, 224), Image.Resampling.BILINEAR))
     array = resized.astype(np.float32) / np.float32(255.0)
     array = (array - np.asarray([.485, .456, .406], np.float32)) / np.asarray([.229, .224, .225], np.float32)
-    return np.ascontiguousarray(array.transpose(2, 0, 1)[None])
+    return np.ascontiguousarray(array[None])
 
 
 def decode_expression(outputs: Any) -> dict[str, Any]:
@@ -80,7 +80,7 @@ class RknnEmotionBackend:
         with self._lock:
             if self._runtime is None:
                 raise RuntimeError("emotion backend is closed")
-            return decode_expression(self._runtime.inference(inputs=[tensor], data_format=["nchw"]))
+            return decode_expression(self._runtime.inference(inputs=[tensor], data_format=["nhwc"]))
 
     def close(self) -> None:
         with self._lock:

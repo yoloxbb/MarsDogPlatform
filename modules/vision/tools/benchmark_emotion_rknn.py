@@ -93,6 +93,7 @@ def _enet_profile(
     std: Sequence[float],
     output_activation: str,
     aux_count: int = 0,
+    input_layout: str = "nchw",
 ) -> dict[str, Any]:
     return {
         "filename": filename,
@@ -108,7 +109,7 @@ def _enet_profile(
             "width": side,
             "height": side,
             "channels": 3,
-            "layout": "nchw",
+            "layout": input_layout,
             "dtype": "float32",
             "resize": "Pillow bilinear, square resize",
             "channel_order": "RGB",
@@ -201,6 +202,7 @@ MODEL_PROFILES: dict[str, dict[str, Any]] = {
         std=[0.229, 0.224, 0.225],
         output_activation="logits",
         aux_count=2,
+        input_layout="nhwc",
     ),
     "enet_b2_7_rk3588_fp.rknn": _enet_profile(
         source_name="EmotiEffLib enet_b2_7",

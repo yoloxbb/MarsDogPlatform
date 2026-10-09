@@ -38,6 +38,17 @@ def test_preprocess_and_output_contract_use_profile_shapes():
     assert color.flags.c_contiguous
     assert np.isfinite(color).all()
 
+    emotion_profile = benchmark.MODEL_PROFILES["enet_b0_8_va_mtl_rk3588_fp.rknn"]
+    emotion = benchmark._preprocess(np.zeros((16, 16, 3), dtype=np.uint8), emotion_profile)
+    assert emotion_profile["input"]["layout"] == "nhwc"
+    assert emotion.shape == (1, 224, 224, 3)
+    assert emotion.flags.c_contiguous
+
+    for name, profile in benchmark.MODEL_PROFILES.items():
+        if name.startswith(("enet_", "mbf_", "mobilevit_")):
+            expected_layout = "nhwc" if name == "enet_b0_8_va_mtl_rk3588_fp.rknn" else "nchw"
+            assert profile["input"]["layout"] == expected_layout
+
     outputs = [np.full((1, 7), 1.0 / 7.0, dtype=np.float32)]
     raw, scores = benchmark._normalize_outputs(outputs, grayscale_profile)
     assert raw.shape == (7,)
