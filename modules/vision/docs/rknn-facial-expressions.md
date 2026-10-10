@@ -4,10 +4,10 @@ Vision analyzes each current detected face crop, including unknown identities,
 with EmotiEffLib `enet_b0_8_va_mtl`. This is human expression evidence; it does
 not update robot `/emotion/state`, needs settlement, stranger policy or actions.
 
-The real observation configuration enables `providers.vision.config.face_emotion`:
+The real observation configuration enables `providers.vision.config.facial_expression`:
 
 ```yaml
-face_emotion:
+facial_expression:
   enabled: true
   min_face_size_px: 80
   model: ${MARSDOG_VISION_MODEL_DIR}/emotion/enet_b0_8_va_mtl_rk3588_fp.rknn
@@ -24,6 +24,11 @@ reviewed SHA-256 is
 unreviewed assets/profiles fail closed. Paths follow the existing Vision model
 root; see the platform `config/models/README.md`.
 
+Custom configurations must use the `facial_expression` key. The previous
+unmerged-branch key `face_emotion`, old result fields and old HTTP route are not
+aliases; migrate branch consumers together before merge. The model asset remains
+under the existing `emotion/` directory.
+
 Before expression inference, Vision clips each detected face box to the source
 frame and checks its pixel width and height. Both dimensions must be at least
 `min_face_size_px` (80 px by default); smaller crops keep their face detection
@@ -39,9 +44,9 @@ layout, avoiding the previous NCHW-to-NHWC reorder. Other benchmark profiles
 retain their own declared layouts. RKNN returns one finite floating-point
 [1,10] tensor. Only its first eight logits participate in a stable softmax, in order:
 `angry / contempt / disgust / fear / happy / neutral / sad / surprise`.
-Valence/arousal are ignored. Intensity is the winning class's original eight-way
-probability, without class grouping, thresholding or further renormalization;
-it is confidence, not psychological strength.
+Valence/arousal are ignored. `confidence` is the winning class's original
+eight-way probability, without class grouping, thresholding or further
+renormalization. It is not psychological strength.
 
 ## Build and select the current ROS installation
 
@@ -78,7 +83,7 @@ ros2 pkg prefix --share marsdog_vision_interaction
 VISION_RUNTIME_PYTHON="$PWD/.venv/bin/python"
 (
   cd /tmp
-  "$VISION_RUNTIME_PYTHON" -c 'import marsdog_vision_interaction.providers.emotion_backends as backend; print(backend.__file__)'
+  "$VISION_RUNTIME_PYTHON" -c 'import marsdog_vision_interaction.providers.expression_backends as backend; print(backend.__file__)'
 )
 ```
 
@@ -91,19 +96,19 @@ depends on the launch working directory and `PYTHONPATH`. A launch from the
 source directory can therefore run new Python code with an old default YAML
 from the selected ROS share directory. The printed backend path must belong to the
 same selected Vision install, and its `share/marsdog_vision_interaction/config/vision.yaml` must contain the enabled
-`face_emotion` block above. If a custom `config_path` is supplied, inspect that
+`facial_expression` block above. If a custom `config_path` is supplied, inspect that
 file instead. Once the current package is running, query
-`http://127.0.0.1:8092/api/v1/faces/emotion`: HTTP 404 means no fresh selected
+`http://127.0.0.1:8092/api/v1/faces/expression`: HTTP 404 means no fresh selected
 result, while HTTP 503 means the capability is unavailable. A stale Face API
 without the new route can also return HTTP 404; verify the installed backend
 and configuration first.
 
 ## Read API and debug display
 
-`GET /api/v1/faces/emotion` on the existing Face API port (8092) returns exactly:
+`GET /api/v1/faces/expression` on the existing Face API port (8092) returns exactly:
 
 ```json
-{"emotion":"happy","intensity":0.85}
+{"expression":"happy","confidence":0.85}
 ```
 
 Without a query, choose the current active face if it has same-frame matching
@@ -123,11 +128,11 @@ untracked faces cannot be selected reliably by track ID.
 Errors follow the existing `detail`/`request_id` API convention. HTTP performs
 no inference and starts no task/session. Existing face sample CRUD is unchanged.
 
-Visual schema v1 has additive optional `facial_emotion: {emotion, intensity}`
+Visual schema v1 has additive optional `facial_expression: {expression, confidence}`
 on `faces` and `debug_faces`. Invalid/unavailable/expired expression fields are
 omitted. Shared OSD shows the canonical category and probability beside its
 face; the dashboard face table shows the same evidence. Optional event metadata
-`facial_emotion_valid_for_sec` carries remaining source lifetime to the viewer.
+`facial_expression_valid_for_sec` carries remaining source lifetime to the viewer.
 Repeated publications of the same image (epoch/header stamp/frame ID) keep the
 earliest local expiry, independently of publication sequence; both OSD and web
 JSON age cached expressions. Viewer aging starts on local receipt; it does not
@@ -156,6 +161,6 @@ Synthetic/fake tests verify benchmark parity, eight-class decoding, associations
 API errors, source aging, debug rendering and shutdown. They do not establish
 NPU performance or expression accuracy. For a board trial, record the model hash,
 RKNN runtime library/version, provider status/logged
-`facial_emotion_inference` timings, current and explicit-track API responses,
+`facial_expression_inference` timings, current and explicit-track API responses,
 OSD association, face loss/failure/expiry behavior and end-to-end latency. Keep
 hardware/quality evidence separate from software and ROS transport reports.

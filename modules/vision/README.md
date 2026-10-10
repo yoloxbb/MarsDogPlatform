@@ -473,8 +473,8 @@ ros2 service call /perception/vision/task \
 ### 人脸表情
 
 真实 observation 配置可对已有检测人脸裁剪运行 EmotiEffLib RKNN 八类表情模型，
-包括未登记身份。`GET /api/v1/faces/emotion`（可选 `track_id`）返回
-`{"emotion":"happy","intensity":0.85}`；intensity 保留原始八类 softmax 概率。
+包括未登记身份。`GET /api/v1/faces/expression`（可选 `track_id`）返回
+`{"expression":"happy","confidence":0.85}`；confidence 保留原始八类 softmax 概率。
 调试 OSD 和人脸表格显示相应结果，来源过期或推理失败时清除。
 配置、模型 SHA-256、HTTP 错误规则及板端验收见
-[RKNN 人脸表情](docs/rknn-emotion-models.md)。这是人类表情识别，不写机器人情绪状态。
+[RKNN 人脸表情](docs/rknn-facial-expressions.md)。这是人类表情识别，不写机器人情绪状态。

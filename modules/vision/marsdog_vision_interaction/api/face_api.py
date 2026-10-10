@@ -24,7 +24,7 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 
 from marsdog_vision_interaction.messages.face_identity import FaceIdentity
-from marsdog_vision_interaction.messages.facial_emotion import EMOTIONS, normalize_facial_emotion
+from marsdog_vision_interaction.messages.facial_expression import EXPRESSIONS, normalize_facial_expression
 
 
 logger = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ class FaceApiServer:
         sample_get_handler: Callable[[str, int], dict[str, Any]],
         sample_replace_handler: Callable[[str, int, bytes], dict[str, Any]],
         sample_delete_handler: Callable[[str, int], dict[str, Any]],
-        emotion_handler: Callable[[int | None], dict[str, Any]] | None = None,
+        expression_handler: Callable[[int | None], dict[str, Any]] | None = None,
     ) -> None:
         self._config = dict(config)
         self._upload_handler = upload_handler
@@ -65,7 +65,7 @@ class FaceApiServer:
         self._sample_get_handler = sample_get_handler
         self._sample_replace_handler = sample_replace_handler
         self._sample_delete_handler = sample_delete_handler
-        self._emotion_handler = emotion_handler
+        self._expression_handler = expression_handler
         self._enabled = bool(config.get("enabled", True))
         self._host = str(config.get("host", "127.0.0.1")).strip()
         self._port = int(config.get("port", 8092))
@@ -270,34 +270,39 @@ class FaceApiServer:
             return {"ok": True, "service": "marsdog-vision-face-api"}
 
         @app.get(
-            "/api/v1/faces/emotion",
+            "/api/v1/faces/expression",
             response_model=None,
             responses={
                 200: {
                     "description": "Current face expression and original eight-class confidence",
                     "content": {"application/json": {"schema": {
                         "type": "object",
-                        "required": ["emotion", "intensity"],
+                        "required": ["expression", "confidence"],
                         "additionalProperties": False,
                         "properties": {
-                            "emotion": {"type": "string", "enum": list(EMOTIONS)},
-                            "intensity": {"type": "number", "minimum": 0, "maximum": 1},
+                            "expression": {"type": "string", "enum": list(EXPRESSIONS)},
+                            "confidence": {"type": "number", "minimum": 0, "maximum": 1},
                         },
                     }}},
                 },
                 404: {"description": "No fresh face result"},
                 409: {"description": "Ambiguous face selection"},
-                503: {"description": "Emotion capability unavailable"},
+                503: {"description": "Facial expression capability unavailable"},
             },
         )
-        async def facial_emotion(track_id: int | None = Query(None, ge=0, description="Current face track ID; omit for active or single face")) -> dict[str, Any]:
-            if self._emotion_handler is None:
-                raise _ApiRejection(503, {"error": "facial emotion capability unavailable"})
-            result = self._emotion_handler(track_id)
+        async def facial_expression(
+            track_id: int | None = Query(
+                None, ge=0,
+                description="Current face track ID; omit for active or single face",
+            ),
+        ) -> dict[str, Any]:
+            if self._expression_handler is None:
+                raise _ApiRejection(503, {"error": "facial expression capability unavailable"})
+            result = self._expression_handler(track_id)
             raise_for_result(result)
-            value = normalize_facial_emotion(result)
+            value = normalize_facial_expression(result)
             if value is None:
-                raise _ApiRejection(503, {"error": "invalid facial emotion result"})
+                raise _ApiRejection(503, {"error": "invalid facial expression result"})
             return value
 
         @app.post(

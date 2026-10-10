@@ -256,6 +256,8 @@ http_apis:
       get_image: GET /api/v1/faces/{name}/samples/{sample_id}/image
       replace_sample: PUT /api/v1/faces/{name}/samples/{sample_id}
       delete_sample: DELETE /api/v1/faces/{name}/samples/{sample_id}
+      get_facial_expression: GET /api/v1/faces/expression
+    expression_result_fields: [expression, confidence]
 
 actions:
   /execute_behavior:

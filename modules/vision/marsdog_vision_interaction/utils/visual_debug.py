@@ -7,7 +7,7 @@ from typing import Any
 import cv2
 import numpy as np
 
-from marsdog_vision_interaction.messages.facial_emotion import normalize_facial_emotion
+from marsdog_vision_interaction.messages.facial_expression import normalize_facial_expression
 
 from marsdog_vision_interaction.providers.pose_backends.contract import normalize_keypoint_format
 
@@ -458,8 +458,8 @@ def draw_visual_debug(
             scale=osd_scale,
         )
         name = str(face.get("recognized_user", "") or "unknown")
-        emotion = normalize_facial_emotion(face.get("facial_emotion"))
-        face_label_lines = 2 if emotion else 1
+        expression = normalize_facial_expression(face.get("facial_expression"))
+        face_label_lines = 2 if expression else 1
         face_label_y = y2 + label_baseline
         face_label_bottom = height - label_gap
         if face_label_y + (face_label_lines - 1) * line_pitch > face_label_bottom:
@@ -483,10 +483,10 @@ def draw_visual_debug(
             face_color,
             scale=osd_scale,
         )
-        if emotion:
+        if expression:
             _text(
                 output,
-                f"{emotion['emotion']} {emotion['intensity']:.2f}",
+                f"{expression['expression']} {expression['confidence']:.2f}",
                 x1,
                 face_label_y + line_pitch,
                 face_color,

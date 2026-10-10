@@ -9,6 +9,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -46,6 +47,24 @@ def main():
                     raise RuntimeError(f"Exit {r.returncode}: {cmd}; see {log}")
                 return r.stdout
             run([a.uv, "build", "--wheel", "--out-dir", str(work / "wheels"), str(source)])
+            wheel = next((work / "wheels").glob("*.whl"))
+            with zipfile.ZipFile(wheel) as archive:
+                wheel_members = set(archive.namelist())
+            required_wheel_members = {
+                "marsdog_vision_interaction/messages/facial_expression.py",
+                "marsdog_vision_interaction/providers/expression_backends/__init__.py",
+            }
+            retired_wheel_members = {
+                "marsdog_vision_interaction/messages/facial_emotion.py",
+                "marsdog_vision_interaction/providers/emotion_backends/__init__.py",
+            }
+            missing_wheel_members = sorted(required_wheel_members - wheel_members)
+            stale_wheel_members = sorted(retired_wheel_members & wheel_members)
+            if missing_wheel_members or stale_wheel_members:
+                raise RuntimeError(
+                    "Wheel facial-expression module contract failed: "
+                    f"missing={missing_wheel_members}, stale={stale_wheel_members}"
+                )
             copy_source(work)
             project = work / "modules" / source.name
             project.mkdir(parents=True)
@@ -54,7 +73,6 @@ def main():
             run([a.uv, "sync", "--project", str(project), "--locked", "--no-dev", "--extra", "models",
                  "--no-install-project", "--python", "/usr/bin/python3.10"])
             python = project / ".venv/bin/python"
-            wheel = next((work / "wheels").glob("*.whl"))
             run([a.uv, "pip", "install", "--python", str(python), "--no-deps", str(wheel)])
             run([a.uv, "pip", "check", "--python", str(python)])
             probe = """
@@ -121,7 +139,11 @@ print(json.dumps({'module_file':str(root),'scripts':scripts,'assets':assets,'web
             assert set(observation["scripts"]) == {"marsdog-vision-interaction","marsdog-camera-driver","marsdog-vision-viewer"}
             result = {"status":"KNOWN_PACKAGING_GAP" if missing else "PASS","missing_resources":missing,
                       "source":str(source),"scope":"Original locked CPU runtime and wheel resources; no model/device inference",
-                      "lock_sha256":hashlib.sha256((source/"uv.lock").read_bytes()).hexdigest(),"observation":observation}
+                      "lock_sha256":hashlib.sha256((source/"uv.lock").read_bytes()).hexdigest(),
+                      "facial_expression_wheel_contract":{
+                          "required_members":sorted(required_wheel_members),
+                          "retired_members_absent":sorted(retired_wheel_members),
+                      },"observation":observation}
             report.write_text(json.dumps(result,indent=2)+"\n")
             print(json.dumps({"status":result["status"],"missing_resources":missing,"report":str(report)}))
     except Exception as e:

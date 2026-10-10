@@ -209,11 +209,11 @@ _OBJECT = {
 
 
 def _normalize_face(value: dict[str, Any]) -> dict[str, Any]:
-    from marsdog_vision_interaction.messages.facial_emotion import normalize_facial_emotion
+    from marsdog_vision_interaction.messages.facial_expression import normalize_facial_expression
     face = _merge(_FACE, value)
-    emotion = normalize_facial_emotion(value.get("facial_emotion"))
-    if emotion is not None:
-        face["facial_emotion"] = emotion
+    expression = normalize_facial_expression(value.get("facial_expression"))
+    if expression is not None:
+        face["facial_expression"] = expression
     return face
 
 
@@ -329,10 +329,10 @@ def normalize_visual_event(data: Any) -> dict[str, Any]:
             for item in (raw_debug_faces if isinstance(raw_debug_faces, list) else [])
             if isinstance(item, dict)
         ]
-    if "facial_emotion_valid_for_sec" in data:
-        from marsdog_vision_interaction.messages.facial_emotion import expire_facial_emotions
-        event["facial_emotion_valid_for_sec"] = data["facial_emotion_valid_for_sec"]
-        expire_facial_emotions(event, 0.0)
+    if "facial_expression_valid_for_sec" in data:
+        from marsdog_vision_interaction.messages.facial_expression import expire_facial_expressions
+        event["facial_expression_valid_for_sec"] = data["facial_expression_valid_for_sec"]
+        expire_facial_expressions(event, 0.0)
     event["hands"] = [
         _merge(_HAND, item) for item in data.get("hands", [])
         if isinstance(item, dict)

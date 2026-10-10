@@ -15,6 +15,13 @@ modules/vision/marsdog_vision_interaction/messages/visual_event.py。
 | last_seen_age_ms / tracking_state | 观测新鲜度与跟踪状态；身份不充当 target_id |
 | range_valid / distance_m / pose_3d | 原有距离有效性、深度和坐标；未知不能伪装为 0 距离 |
 
+Vision 可在当前检测人脸及 `debug_faces` 中附加可选字段
+`facial_expression: {expression, confidence}`。`expression` 是模型八类结果之一，
+`confidence` 是胜出类别原始 softmax 概率；调试快照可带
+`facial_expression_valid_for_sec` 表示该结果剩余有效期。这是人脸表情证据，
+不表示或更新 MarsDog 的 `/emotion/state`。该字段为 schema v1 的可选扩展，
+不改变既有 required 字段及冻结基线。
+
 姿态/手势正式事件仅在目标处于 `tracking` 时发布，并要求身份满足以下其一：
 登记身份 `owner` / `family_member_1..4` 且 `identity_state=confirmed_known`，或
 `identity=unknown` 且 `identity_state=confirmed_unknown`。已确认陌生人的姿态继续使用

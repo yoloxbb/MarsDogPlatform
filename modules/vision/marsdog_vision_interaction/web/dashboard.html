@@ -779,7 +779,7 @@
         });
         byId('gestureTiming').textContent = `规则 ${fixed(gesture.recognition_ms, 2)} ms`;
         setRows(byId('humans'), humans.map(h => [h.track_id, h.pose_state, h.pose_action_label || h.pose_action, fixed(h.confidence)]), 4);
-        setRows(byId('faces'), faces.map(f => [f.track_id, f.recognized_user || 'unknown', f.identity_state, fixed(f.identity_confidence || f.confidence), f.facial_emotion ? `${f.facial_emotion.emotion} / ${fixed(f.facial_emotion.intensity)}` : '—']), 5);
+        setRows(byId('faces'), faces.map(f => [f.track_id, f.recognized_user || 'unknown', f.identity_state, fixed(f.identity_confidence || f.confidence), f.facial_expression ? `${f.facial_expression.expression} / ${fixed(f.facial_expression.confidence)}` : '—']), 5);
         const detectionRows = hands.map(h => ['手部 ' + text(h.handedness), h.hand_action_label || h.hand_action, `${(h.landmarks || []).length} 点`]);
         objects.forEach(o => detectionRows.push(['物体', o.label, fixed(o.confidence)]));
         setRows(byId('detections'), detectionRows, 3);

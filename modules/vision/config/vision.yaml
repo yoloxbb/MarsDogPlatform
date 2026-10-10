@@ -95,7 +95,7 @@ providers:
       # Optional RKNN settings (ignored for ONNX):
       # face_detect_rknn: {profile: yunet_2023mar_fp16, core_mask: auto}
       # Human expression only; confidence is the original eight-class softmax.
-      face_emotion:
+      facial_expression:
         enabled: true
         # Minimum short side of the face crop in source-frame pixels after clipping.
         min_face_size_px: 80

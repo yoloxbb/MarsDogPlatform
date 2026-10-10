@@ -24,7 +24,7 @@ from typing import Any
 
 import numpy as np
 
-from marsdog_vision_interaction.messages.facial_emotion import normalize_facial_emotion
+from marsdog_vision_interaction.messages.facial_expression import normalize_facial_expression
 from marsdog_vision_interaction.providers.base import BaseProvider
 from marsdog_vision_interaction.providers.face_backends import (
     create_face_detector,
@@ -236,20 +236,20 @@ class VisionObservationProvider(BaseProvider):
             track_timeout_sec=float(config.get("action_track_timeout_sec", 3.0)),
         )
 
-        emotion_config = config.get("face_emotion", {})
-        self._emotion_config = emotion_config if isinstance(emotion_config, dict) else {}
-        self._emotion_enabled = bool(self._emotion_config.get("enabled", False))
-        self._emotion_min_face_size_px = self._emotion_config.get("min_face_size_px", 80)
-        if type(self._emotion_min_face_size_px) is not int or self._emotion_min_face_size_px <= 0:
-            raise ValueError("face_emotion.min_face_size_px must be a positive integer")
-        self._emotion_max_age = float(self._emotion_config.get("max_age_sec", 0.5))
-        if not math.isfinite(self._emotion_max_age) or self._emotion_max_age <= 0:
-            raise ValueError("face_emotion.max_age_sec must be positive and finite")
-        self._emotion_backend: Any = None
-        self.emotion_model_status: dict[str, Any] = {"enabled": self._emotion_enabled, "ready": False}
-        self._emotion_faces: list[dict[str, Any]] = []
-        self._emotion_active_index: int | None = None
-        self._emotion_source_monotonic = 0.0
+        expression_config = config.get("facial_expression", {})
+        self._expression_config = expression_config if isinstance(expression_config, dict) else {}
+        self._expression_enabled = bool(self._expression_config.get("enabled", False))
+        self._expression_min_face_size_px = self._expression_config.get("min_face_size_px", 80)
+        if type(self._expression_min_face_size_px) is not int or self._expression_min_face_size_px <= 0:
+            raise ValueError("facial_expression.min_face_size_px must be a positive integer")
+        self._expression_max_age = float(self._expression_config.get("max_age_sec", 0.5))
+        if not math.isfinite(self._expression_max_age) or self._expression_max_age <= 0:
+            raise ValueError("facial_expression.max_age_sec must be positive and finite")
+        self._expression_backend: Any = None
+        self.expression_model_status: dict[str, Any] = {"enabled": self._expression_enabled, "ready": False}
+        self._expression_faces: list[dict[str, Any]] = []
+        self._expression_active_index: int | None = None
+        self._expression_source_monotonic = 0.0
         self._pending_frame_monotonic = 0.0
 
         # Cache
@@ -460,7 +460,7 @@ class VisionObservationProvider(BaseProvider):
         if (
             self._face_detector is not None
             or self._face_rec_model is not None
-            or self._emotion_backend is not None
+            or self._expression_backend is not None
             or self._hand_backend is not None
             or self._pose_backend is not None
         ):
@@ -678,7 +678,7 @@ class VisionObservationProvider(BaseProvider):
                     logger.error("SFace recognizer init failed: %s", exc)
                 total += 1
 
-            self._start_emotion_backend()
+            self._start_expression_backend()
             if loaded > 0:
                 self.available = True
                 self._start_inference_worker()
@@ -805,9 +805,9 @@ class VisionObservationProvider(BaseProvider):
             return
         self._action_classifier.reset()
         with self._inference_lock:
-            self._close_face_model(self._emotion_backend)
-            self._emotion_backend = None
-            self.emotion_model_status = {"enabled": self._emotion_enabled, "ready": False}
+            self._close_face_model(self._expression_backend)
+            self._expression_backend = None
+            self.expression_model_status = {"enabled": self._expression_enabled, "ready": False}
             self._close_face_model(self._face_detector)
             self._close_face_model(self._face_rec_model)
             self._face_detector = None
@@ -845,9 +845,9 @@ class VisionObservationProvider(BaseProvider):
             self._latest_frame = None
             self._pending_frame = None
             self._cached_observation = {}
-            self._emotion_faces = []
-            self._emotion_active_index = None
-            self._emotion_source_monotonic = 0.0
+            self._expression_faces = []
+            self._expression_active_index = None
+            self._expression_source_monotonic = 0.0
         self._received_frame_count = 0
         self._inference_candidate_count = 0
         self._inferred_frame_count = 0
@@ -940,17 +940,17 @@ class VisionObservationProvider(BaseProvider):
                 }
                 with self._lock:
                     self._latest_frame = frame
-                    self._emotion_faces = obs.pop("_facial_emotion_faces", [])
-                    self._emotion_active_index = obs.pop("_facial_emotion_active_index", None)
-                    self._emotion_source_monotonic = frame_source_monotonic
+                    self._expression_faces = obs.pop("_facial_expression_faces", [])
+                    self._expression_active_index = obs.pop("_facial_expression_active_index", None)
+                    self._expression_source_monotonic = frame_source_monotonic
                     self._cached_observation = obs
                     self._inferred_frame_count += 1
             except Exception as exc:
                 with self._lock:
-                    self._emotion_faces = []
-                    self._emotion_active_index = None
-                    self._emotion_source_monotonic = 0.0
-                    self._clear_emotions(self._cached_observation)
+                    self._expression_faces = []
+                    self._expression_active_index = None
+                    self._expression_source_monotonic = 0.0
+                    self._clear_expressions(self._cached_observation)
                 logger.error("Frame processing error: %s", exc, exc_info=True)
 
     def run_inference_exclusive(self, operation: Any) -> Any:
@@ -1070,7 +1070,7 @@ class VisionObservationProvider(BaseProvider):
                 and track_id == active_face_track_id
             )
             overlays.append({
-                **VisionObservationProvider._emotion_field(face),
+                **VisionObservationProvider._expression_field(face),
                 "track_id": track_id,
                 "x": round(float(face.get("x", 0.0)), 4),
                 "y": round(float(face.get("y", 0.0)), 4),
@@ -1227,9 +1227,9 @@ class VisionObservationProvider(BaseProvider):
 
         faces_out = []
         if active.face_confidence > 0 and target_is_current:
-            current_face = self._current_emotion_face(active, obs.get("faces", []))
+            current_face = self._current_expression_face(active, obs.get("faces", []))
             faces_out = [{
-                **self._emotion_field(current_face),
+                **self._expression_field(current_face),
                 "track_id": active.face_track_id,
                 "x": round(active.face_bbox[0], 4),
                 "y": round(active.face_bbox[1], 4),
@@ -1245,7 +1245,7 @@ class VisionObservationProvider(BaseProvider):
             # Keep any detected faces even if not yet bound to a human
             for f in obs.get("faces", []):
                 faces_out.append({
-                    **self._emotion_field(f),
+                    **self._expression_field(f),
                     "track_id": int(f.get("track_id", -1)),
                     "x": round(f.get("x", 0), 4),
                     "y": round(f.get("y", 0), 4),
@@ -1316,9 +1316,9 @@ class VisionObservationProvider(BaseProvider):
         # Private worker evidence includes unbound faces even when public
         # normal output is restricted to the active target.
         current_faces = self._debug_face_overlays(obs.get("faces", []), active, target_is_current)
-        result["_facial_emotion_faces"] = current_faces
-        matched = self._current_emotion_face(active, obs.get("faces", [])) if target_is_current else None
-        result["_facial_emotion_active_index"] = next(
+        result["_facial_expression_faces"] = current_faces
+        matched = self._current_expression_face(active, obs.get("faces", [])) if target_is_current else None
+        result["_facial_expression_active_index"] = next(
             (i for i, face in enumerate(obs.get("faces", [])) if face is matched), None
         )
         return result
@@ -1525,35 +1525,35 @@ class VisionObservationProvider(BaseProvider):
         with self._lock:
             if self._cached_observation:
                 observation = copy.deepcopy(self._cached_observation)
-                if not self._emotions_fresh_locked():
-                    self._clear_emotions(observation)
-                elif any("facial_emotion" in face for face in self._emotion_faces):
-                    observation["facial_emotion_valid_for_sec"] = max(
-                        0.0, self._emotion_max_age - (time.monotonic() - self._emotion_source_monotonic)
+                if not self._expressions_fresh_locked():
+                    self._clear_expressions(observation)
+                elif any("facial_expression" in face for face in self._expression_faces):
+                    observation["facial_expression_valid_for_sec"] = max(
+                        0.0, self._expression_max_age - (time.monotonic() - self._expression_source_monotonic)
                     )
                 return observation
         return {}
 
-    def _start_emotion_backend(self) -> None:
-        self.emotion_model_status = {"enabled": self._emotion_enabled, "ready": False}
-        if not self._emotion_enabled:
+    def _start_expression_backend(self) -> None:
+        self.expression_model_status = {"enabled": self._expression_enabled, "ready": False}
+        if not self._expression_enabled:
             return
         try:
-            from marsdog_vision_interaction.providers.emotion_backends import RknnEmotionBackend
-            self._emotion_backend = RknnEmotionBackend(
-                str(self._emotion_config.get("model", "")),
-                profile=str(self._emotion_config.get("profile", "enet_b0_8_va_mtl")),
-                core_mask=self._emotion_config.get("core_mask", "auto"),
+            from marsdog_vision_interaction.providers.expression_backends import RknnExpressionBackend
+            self._expression_backend = RknnExpressionBackend(
+                str(self._expression_config.get("model", "")),
+                profile=str(self._expression_config.get("profile", "enet_b0_8_va_mtl")),
+                core_mask=self._expression_config.get("core_mask", "auto"),
                 runtime_library=self.config.get("rknn_runtime_library", ""),
             )
-            self.emotion_model_status = {"enabled": True, "ready": True}
+            self.expression_model_status = {"enabled": True, "ready": True}
         except Exception as exc:
-            self._emotion_backend = None
-            self.emotion_model_status = {"enabled": True, "ready": False, "error": str(exc)}
-            logger.error("Facial emotion model unavailable: %s", exc)
+            self._expression_backend = None
+            self.expression_model_status = {"enabled": True, "ready": False, "error": str(exc)}
+            logger.error("Facial expression model unavailable: %s", exc)
 
-    def _infer_face_emotions(self, frame: np.ndarray, faces: list[dict[str, Any]], sequence: int) -> None:
-        if self._emotion_backend is None:
+    def _infer_facial_expressions(self, frame: np.ndarray, faces: list[dict[str, Any]], sequence: int) -> None:
+        if self._expression_backend is None:
             return
         height, width = frame.shape[:2]
         started = time.perf_counter()
@@ -1565,76 +1565,76 @@ class VisionObservationProvider(BaseProvider):
                 x2 = max(0, min(width, math.ceil(face["x2"])))
                 y2 = max(0, min(height, math.ceil(face["y2"])))
                 if x2 <= x1 or y2 <= y1:
-                    face.pop("facial_emotion", None)
+                    face.pop("facial_expression", None)
                     continue
                 # Gate on the clipped source-frame crop before backend.infer()
                 # resizes it to the model's fixed 224x224 input.
                 if (
-                    (x2 - x1) < self._emotion_min_face_size_px
-                    or (y2 - y1) < self._emotion_min_face_size_px
+                    (x2 - x1) < self._expression_min_face_size_px
+                    or (y2 - y1) < self._expression_min_face_size_px
                 ):
-                    face.pop("facial_emotion", None)
+                    face.pop("facial_expression", None)
                     continue
-                value = normalize_facial_emotion(self._emotion_backend.infer(frame[y1:y2, x1:x2]))
+                value = normalize_facial_expression(self._expression_backend.infer(frame[y1:y2, x1:x2]))
                 if value is None:
-                    raise ValueError("invalid facial emotion result")
-                face["facial_emotion"] = value
+                    raise ValueError("invalid facial expression result")
+                face["facial_expression"] = value
         except Exception as exc:
             # Disable once; keep identity/pose/hand capabilities operational.
             for face in faces:
-                face.pop("facial_emotion", None)
-            backend, self._emotion_backend = self._emotion_backend, None
+                face.pop("facial_expression", None)
+            backend, self._expression_backend = self._expression_backend, None
             self._close_face_model(backend)
             with self._lock:
-                self.emotion_model_status = {"enabled": True, "ready": False, "error": str(exc)}
-            logger.error("Facial emotion inference disabled: %s", exc)
+                self.expression_model_status = {"enabled": True, "ready": False, "error": str(exc)}
+            logger.error("Facial expression inference disabled: %s", exc)
         finally:
             vision_timing_trace(node="vision_interaction_node", module="vision_observation",
-                                stage="facial_emotion_inference", latency_ms=(time.perf_counter() - started) * 1000,
+                                stage="facial_expression_inference", latency_ms=(time.perf_counter() - started) * 1000,
                                 inference_sequence=sequence, face_count=len(faces))
 
     @staticmethod
-    def _emotion_field(face: Any) -> dict[str, Any]:
-        value = normalize_facial_emotion(face.get("facial_emotion")) if isinstance(face, dict) else None
-        return {"facial_emotion": value} if value is not None else {}
+    def _expression_field(face: Any) -> dict[str, Any]:
+        value = normalize_facial_expression(face.get("facial_expression")) if isinstance(face, dict) else None
+        return {"facial_expression": value} if value is not None else {}
 
     @staticmethod
-    def _current_emotion_face(active: Any, faces: list[dict[str, Any]]) -> dict[str, Any] | None:
+    def _current_expression_face(active: Any, faces: list[dict[str, Any]]) -> dict[str, Any] | None:
         evidence = VisionObservationProvider._match_active_face_observation(active, faces, True)
         return next((face for face in faces if face.get("_behavior_face_observation") is evidence), None) if evidence is not None else None
 
     @staticmethod
-    def _clear_emotions(observation: dict[str, Any]) -> None:
-        observation.pop("facial_emotion_valid_for_sec", None)
+    def _clear_expressions(observation: dict[str, Any]) -> None:
+        observation.pop("facial_expression_valid_for_sec", None)
         for key in ("faces", "debug_faces"):
             for face in observation.get(key, []):
-                face.pop("facial_emotion", None)
+                face.pop("facial_expression", None)
 
-    def _emotions_fresh_locked(self) -> bool:
-        return (self.available and self.task_face_enabled and bool(self.emotion_model_status.get("ready"))
-                and self._emotion_source_monotonic > 0
-                and 0 <= time.monotonic() - self._emotion_source_monotonic <= self._emotion_max_age)
+    def _expressions_fresh_locked(self) -> bool:
+        return (self.available and self.task_face_enabled and bool(self.expression_model_status.get("ready"))
+                and self._expression_source_monotonic > 0
+                and 0 <= time.monotonic() - self._expression_source_monotonic <= self._expression_max_age)
 
-    def get_facial_emotion(self, track_id: int | None = None) -> dict[str, Any]:
+    def get_facial_expression(self, track_id: int | None = None) -> dict[str, Any]:
         """Read coherent current evidence; never execute model work from HTTP."""
         with self._lock:
-            if not self.available or not self.emotion_model_status.get("ready"):
-                return {"ok": False, "status": 503, "error": "facial emotion capability unavailable"}
-            if not self._emotions_fresh_locked() or not self._emotion_faces:
-                return {"ok": False, "status": 404, "error": "no fresh facial emotion result"}
-            faces = self._emotion_faces
+            if not self.available or not self.expression_model_status.get("ready"):
+                return {"ok": False, "status": 503, "error": "facial expression capability unavailable"}
+            if not self._expressions_fresh_locked() or not self._expression_faces:
+                return {"ok": False, "status": 404, "error": "no fresh facial expression result"}
+            faces = self._expression_faces
             if track_id is not None:
                 matches = [face for face in faces if face["track_id"] == track_id]
                 face = matches[0] if len(matches) == 1 else None
-            elif self._emotion_active_index is not None:
-                face = faces[self._emotion_active_index]
+            elif self._expression_active_index is not None:
+                face = faces[self._expression_active_index]
             elif len(faces) == 1:
                 face = faces[0]
             else:
                 return {"ok": False, "status": 409, "error": "multiple current faces; specify track_id"}
-            value = normalize_facial_emotion(face.get("facial_emotion")) if face is not None else None
+            value = normalize_facial_expression(face.get("facial_expression")) if face is not None else None
             if value is None:
-                return {"ok": False, "status": 404, "error": "no fresh facial emotion result for face"}
+                return {"ok": False, "status": 404, "error": "no fresh facial expression result for face"}
             return {"ok": True, **value}
 
     def check_person(self) -> dict[str, Any]:
@@ -1954,7 +1954,7 @@ class VisionObservationProvider(BaseProvider):
                 quality = fd["confidence"]
                 fd["quality"] = round(quality, 4)
 
-            self._infer_face_emotions(frame, face_data, inference_sequence)
+            self._infer_facial_expressions(frame, face_data, inference_sequence)
 
             # Remove internal pixel fields
             if self.face_model_status.get("sface", {}).get("fatal", False):

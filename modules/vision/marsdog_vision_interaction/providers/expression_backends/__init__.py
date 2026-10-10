@@ -10,7 +10,7 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
-from marsdog_vision_interaction.messages.facial_emotion import EMOTIONS
+from marsdog_vision_interaction.messages.facial_expression import EXPRESSIONS
 from marsdog_vision_interaction.utils.rknn_runtime import configure_rknn_runtime
 
 PROFILE = "enet_b0_8_va_mtl"
@@ -21,7 +21,7 @@ def preprocess_face(crop: np.ndarray) -> np.ndarray:
     """Match the benchmark's BGR uint8 -> Pillow RGB bilinear -> NHWC."""
     if (not isinstance(crop, np.ndarray) or crop.dtype != np.uint8
             or crop.ndim != 3 or crop.shape[2] != 3 or not crop.size):
-        raise ValueError("emotion input must be a nonempty BGR uint8 face crop")
+        raise ValueError("expression input must be a nonempty BGR uint8 face crop")
     rgb = np.ascontiguousarray(crop[:, :, ::-1])
     resized = np.asarray(Image.fromarray(rgb).resize((224, 224), Image.Resampling.BILINEAR))
     array = resized.astype(np.float32) / np.float32(255.0)
@@ -32,45 +32,45 @@ def preprocess_face(crop: np.ndarray) -> np.ndarray:
 def decode_expression(outputs: Any) -> dict[str, Any]:
     """Softmax only the eight expression logits; ignore valence/arousal."""
     if not isinstance(outputs, (list, tuple)) or len(outputs) != 1:
-        raise ValueError("emotion model requires one output tensor")
+        raise ValueError("expression model requires one output tensor")
     tensor = np.asarray(outputs[0])
     if tensor.shape != (1, 10) or tensor.dtype.kind != "f" or not np.isfinite(tensor).all():
-        raise ValueError("emotion output must be finite floating point [1,10]")
+        raise ValueError("expression output must be finite floating point [1,10]")
     logits = tensor[0, :8].astype(np.float64)
     scores = np.exp(logits - logits.max())
     scores /= scores.sum()
     winner = int(scores.argmax())
-    return {"emotion": EMOTIONS[winner], "intensity": float(scores[winner])}
+    return {"expression": EXPRESSIONS[winner], "confidence": float(scores[winner])}
 
 
-class RknnEmotionBackend:
+class RknnExpressionBackend:
     """One validated runtime; close/inference are serialized and idempotent."""
 
     def __init__(self, model: str, *, profile: str = PROFILE,
                  core_mask: str = "auto", runtime_library: str = "") -> None:
         path = Path(model).expanduser()
         if profile != PROFILE:
-            raise ValueError(f"unsupported emotion profile: {profile}")
+            raise ValueError(f"unsupported expression profile: {profile}")
         digest = hashlib.sha256()
         with path.open("rb") as stream:
             for chunk in iter(lambda: stream.read(1024 * 1024), b""):
                 digest.update(chunk)
         if digest.hexdigest() != MODEL_SHA256:
-            raise ValueError(f"unverified emotion RKNN artifact: {path}")
+            raise ValueError(f"unverified expression RKNN artifact: {path}")
         configure_rknn_runtime(runtime_library)
         from rknnlite.api import RKNNLite
 
         cores = {"auto": "NPU_CORE_AUTO", "0": "NPU_CORE_0", "1": "NPU_CORE_1",
                  "2": "NPU_CORE_2", "0_1": "NPU_CORE_0_1", "0_1_2": "NPU_CORE_0_1_2"}
         if isinstance(core_mask, bool) or str(core_mask) not in cores:
-            raise ValueError(f"invalid emotion core_mask: {core_mask}")
+            raise ValueError(f"invalid expression core_mask: {core_mask}")
         self._lock = threading.Lock()
         self._runtime: Any = RKNNLite()
         try:
             if self._runtime.load_rknn(str(path)) != 0:
-                raise RuntimeError("emotion RKNN load failed")
+                raise RuntimeError("expression RKNN load failed")
             if self._runtime.init_runtime(core_mask=getattr(RKNNLite, cores[str(core_mask)])) != 0:
-                raise RuntimeError("emotion RKNN runtime initialization failed")
+                raise RuntimeError("expression RKNN runtime initialization failed")
         except Exception:
             self.close()
             raise
@@ -79,7 +79,7 @@ class RknnEmotionBackend:
         tensor = preprocess_face(crop)
         with self._lock:
             if self._runtime is None:
-                raise RuntimeError("emotion backend is closed")
+                raise RuntimeError("expression backend is closed")
             return decode_expression(self._runtime.inference(inputs=[tensor], data_format=["nhwc"]))
 
     def close(self) -> None:

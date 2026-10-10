@@ -30,10 +30,10 @@ from marsdog_vision_interaction.utils.config_loader import (
     load_config,
     normalize_debug_osd,
 )
-from marsdog_vision_interaction.messages.facial_emotion import (
-    FacialEmotionExpiry,
-    expire_facial_emotions,
-    normalize_facial_emotion,
+from marsdog_vision_interaction.messages.facial_expression import (
+    FacialExpressionExpiry,
+    expire_facial_expressions,
+    normalize_facial_expression,
 )
 from marsdog_vision_interaction.utils.visual_debug import draw_visual_debug
 from marsdog_vision_interaction.utils.stereo_view import select_camera_view
@@ -55,7 +55,7 @@ _BEST_EFFORT = QoSProfile(
 _WEB_OBJECT_SESSION_ID = "vision-debug-web"
 
 
-class _FacialEmotionOverlayCache:
+class _FacialExpressionOverlayCache:
     """Hold the last face expression while that face remains on screen."""
 
     def __init__(self) -> None:
@@ -112,7 +112,7 @@ class _FacialEmotionOverlayCache:
                     now + max(0.0, hold_sec),
                 )
 
-        lifetime = event.get("facial_emotion_valid_for_sec")
+        lifetime = event.get("facial_expression_valid_for_sec")
         if lifetime is not None and (
             isinstance(lifetime, bool)
             or not isinstance(lifetime, (int, float))
@@ -123,8 +123,8 @@ class _FacialEmotionOverlayCache:
 
         source = self._source(event)
         for face in faces:
-            emotion = normalize_facial_emotion(face.get("facial_emotion"))
-            if emotion is None:
+            expression = normalize_facial_expression(face.get("facial_expression"))
+            if expression is None:
                 continue
             try:
                 track_id = int(face.get("track_id", -1))
@@ -137,7 +137,7 @@ class _FacialEmotionOverlayCache:
                 continue
             self._entries[track_id] = (
                 source,
-                emotion,
+                expression,
                 now + max(0.0, hold_sec),
             )
 
@@ -155,18 +155,18 @@ class _FacialEmotionOverlayCache:
                 continue
             seconds_left = entry[2] - now
             if seconds_left <= 0.0:
-                face.pop("facial_emotion", None)
+                face.pop("facial_expression", None)
                 continue
-            face["facial_emotion"] = dict(entry[1])
+            face["facial_expression"] = dict(entry[1])
             remaining.append(seconds_left)
 
         if remaining:
             # The JPEG stream uses this deadline to replace the current image
             # with a frame that has no expression label, even if the camera
             # stops publishing before the hold expires.
-            event["facial_emotion_valid_for_sec"] = min(remaining)
+            event["facial_expression_valid_for_sec"] = min(remaining)
             return True
-        event.pop("facial_emotion_valid_for_sec", None)
+        event.pop("facial_expression_valid_for_sec", None)
         return False
 
     def has_visible(self, event: dict[str, Any], now: float) -> bool:
@@ -245,8 +245,8 @@ class VisionDebugViewerNode(Node):
 
         self._lock = threading.Lock()
         self._event: dict[str, Any] = {}
-        self._facial_emotion_expiry = FacialEmotionExpiry()
-        self._facial_emotion_overlay = _FacialEmotionOverlayCache()
+        self._facial_expression_expiry = FacialExpressionExpiry()
+        self._facial_expression_overlay = _FacialExpressionOverlayCache()
         self._gesture_debug: dict[str, Any] = {}
         self._control: dict[str, Any] = {}
         self._cmd_vel = (0.0, 0.0)
@@ -461,18 +461,18 @@ class VisionDebugViewerNode(Node):
                 ):
                     return
                 received_at = time.monotonic()
-                overlay = getattr(self, "_facial_emotion_overlay", None)
+                overlay = getattr(self, "_facial_expression_overlay", None)
                 if overlay is not None:
                     overlay.observe(
                         value,
                         received_at,
                         getattr(self, "_overlay_stale_sec", 1.0),
                     )
-                self._facial_emotion_expiry.apply(value, received_at)
+                self._facial_expression_expiry.apply(value, received_at)
                 self._event = value
                 self._visual_last_monotonic = received_at
                 if not any(
-                    face.get("facial_emotion")
+                    face.get("facial_expression")
                     for faces in (value.get("faces"), value.get("debug_faces"))
                     if isinstance(faces, list)
                     for face in faces if isinstance(face, dict)
@@ -858,7 +858,7 @@ class VisionDebugViewerNode(Node):
                 if visual_age <= self._overlay_stale_sec
                 else {}
             )
-            expire_facial_emotions(event, visual_age)
+            expire_facial_expressions(event, visual_age)
             object_age = received_at - self._debug_objects_monotonic
             if object_age <= self._object_overlay_hold_sec():
                 event["tracked_objects"] = copy.deepcopy(self._debug_objects)
@@ -878,7 +878,7 @@ class VisionDebugViewerNode(Node):
                         self._gesture_debug
                     )
                 cmd_vel = self._cmd_vel
-        overlay = getattr(self, "_facial_emotion_overlay", None)
+        overlay = getattr(self, "_facial_expression_overlay", None)
         if overlay is not None:
             with self._lock:
                 overlay.apply(event, received_at)
@@ -936,10 +936,10 @@ class VisionDebugViewerNode(Node):
         ok, encoded = cv2.imencode(".jpg", rendered, parameters)
         if not ok:
             return
-        lifetime = event.get("facial_emotion_valid_for_sec")
+        lifetime = event.get("facial_expression_valid_for_sec")
         if lifetime is not None and self._debug_osd_enabled:
             fallback_event = copy.deepcopy(event)
-            expire_facial_emotions(fallback_event, float("inf"))
+            expire_facial_expressions(fallback_event, float("inf"))
             fallback = draw_visual_debug(
                 frame, fallback_event, control=control, cmd_vel=cmd_vel,
                 enabled=self._debug_osd_enabled,
@@ -1041,7 +1041,7 @@ class VisionDebugViewerNode(Node):
         wall_now = time.time()
         with self._lock:
             event = copy.deepcopy(self._event)
-            expire_facial_emotions(event, max(0.0, now - self._visual_last_monotonic))
+            expire_facial_expressions(event, max(0.0, now - self._visual_last_monotonic))
             object_age = now - self._debug_objects_monotonic
             if object_age <= self._object_overlay_hold_sec():
                 event["tracked_objects"] = copy.deepcopy(self._debug_objects)

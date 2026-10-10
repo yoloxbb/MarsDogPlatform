@@ -16,24 +16,24 @@ import numpy as np
 import pytest
 
 from marsdog_vision_interaction.api.face_api import FaceApiServer
-from marsdog_vision_interaction.messages.facial_emotion import (
-    EMOTIONS, expire_facial_emotions, normalize_facial_emotion,
+from marsdog_vision_interaction.messages.facial_expression import (
+    EXPRESSIONS, expire_facial_expressions, normalize_facial_expression,
 )
 from marsdog_vision_interaction.messages.visual_event import normalize_visual_event
-from marsdog_vision_interaction.providers import emotion_backends as backend
+from marsdog_vision_interaction.providers import expression_backends as backend
 from marsdog_vision_interaction.providers.gesture_pose_engine import FaceObservation
 from marsdog_vision_interaction.providers import vision_observation as vision
 from marsdog_vision_interaction.utils import visual_debug
 
 
-@pytest.mark.parametrize("winner,label", enumerate(EMOTIONS))
+@pytest.mark.parametrize("winner,label", enumerate(EXPRESSIONS))
 def test_all_eight_winners_and_auxiliary_exclusion(winner, label):
     logits = np.full((1, 10), -1000.0, np.float32)
     logits[0, winner] = -995.0
     logits[0, 8:] = [1e30, -1e30]
     result = backend.decode_expression([logits])
-    assert result == {"emotion": label, "intensity": pytest.approx(1 / (1 + 7 * np.exp(-5)))}
-    assert backend.decode_expression([np.zeros((1, 10), np.float32)]) == {"emotion": "angry", "intensity": .125}
+    assert result == {"expression": label, "confidence": pytest.approx(1 / (1 + 7 * np.exp(-5)))}
+    assert backend.decode_expression([np.zeros((1, 10), np.float32)]) == {"expression": "angry", "confidence": .125}
 
 
 @pytest.mark.parametrize("outputs", [None, [], [np.zeros((10,), np.float32)],
@@ -63,7 +63,7 @@ def test_preprocess_is_exact_benchmark_parity():
     assert tensor.shape == (1, 224, 224, 3) and tensor.dtype == np.float32 and tensor.flags.c_contiguous
     outputs = [np.arange(10, dtype=np.float32).reshape(1, 10)]
     _, scores = module._normalize_outputs(outputs, module.MODEL_PROFILES["enet_b0_8_va_mtl_rk3588_fp.rknn"])
-    assert backend.decode_expression(outputs)["intensity"] == float(scores.max())
+    assert backend.decode_expression(outputs)["confidence"] == float(scores.max())
 
 
 @pytest.mark.parametrize("crop", [np.empty((0, 3, 3), np.uint8), np.zeros((3, 3), np.uint8), np.zeros((3, 3, 3), np.float32)])
@@ -103,8 +103,8 @@ def fake_runtime(monkeypatch, tmp_path):
 
 def test_runtime_layout_and_idempotent_release(fake_runtime):
     model, runtime = fake_runtime
-    adapter = backend.RknnEmotionBackend(str(model))
-    assert adapter.infer(np.zeros((12, 8, 3), np.uint8))["intensity"] == .125
+    adapter = backend.RknnExpressionBackend(str(model))
+    assert adapter.infer(np.zeros((12, 8, 3), np.uint8))["confidence"] == .125
     assert runtime.calls[0]['data_format'] == ['nhwc']
     assert runtime.calls[0]['inputs'][0].shape == (1, 224, 224, 3)
     adapter.close()
@@ -120,26 +120,26 @@ def test_hash_guard_precedes_runtime_import(monkeypatch, tmp_path):
     calls = []
     monkeypatch.setattr(backend, 'configure_rknn_runtime', lambda *a: calls.append(a))
     with pytest.raises(ValueError, match='unverified'):
-        backend.RknnEmotionBackend(str(path))
+        backend.RknnExpressionBackend(str(path))
     assert calls == []
     with pytest.raises(FileNotFoundError):
-        backend.RknnEmotionBackend(str(path.parent / 'missing.rknn'))
+        backend.RknnExpressionBackend(str(path.parent / 'missing.rknn'))
 
 
 def test_init_failure_releases_runtime(fake_runtime):
     model, runtime = fake_runtime
     runtime.init_runtime = lambda **kw: -1
     with pytest.raises(RuntimeError, match='initialization'):
-        backend.RknnEmotionBackend(str(model))
+        backend.RknnExpressionBackend(str(model))
     assert runtime.released == 1
 
 
 def provider():
     instance = vision.VisionObservationProvider({
-        'face_emotion': {'enabled': True, 'min_face_size_px': 1}, 'stereo_enabled': False,
+        'facial_expression': {'enabled': True, 'min_face_size_px': 1}, 'stereo_enabled': False,
     })
     instance.available = True
-    instance.emotion_model_status = {'enabled': True, 'ready': True}
+    instance.expression_model_status = {'enabled': True, 'ready': True}
     return instance
 
 
@@ -151,13 +151,13 @@ class Detector:
                             [12, 2, 8, 8] + [14, 4] * 5 + [.95]], np.float32)
 
 
-class EmotionModel:
+class ExpressionModel:
     def __init__(self):
         self.crops = []
         self.closed = 0
     def infer(self, crop):
         self.crops.append(crop.copy())
-        return {'emotion': 'happy' if len(self.crops) == 1 else 'sad', 'intensity': .85}
+        return {'expression': 'happy' if len(self.crops) == 1 else 'sad', 'confidence': .85}
     def close(self):
         self.closed += 1
 
@@ -165,29 +165,29 @@ class EmotionModel:
 def test_clipped_unknown_faces_keep_correct_expression_independent_of_identity():
     instance = provider()
     instance._face_detector = Detector()
-    instance._emotion_backend = model = EmotionModel()
+    instance._expression_backend = model = ExpressionModel()
     image = np.arange(20 * 24 * 3, dtype=np.uint8).reshape(20, 24, 3)
     faces = instance._detect_faces(image, 24, 20)
     assert len(faces) == 2  # Also verifies the real timing trace call does not throw.
-    assert faces[0]['facial_emotion'] == {'emotion': 'happy', 'intensity': .85}
-    assert faces[1]['facial_emotion'] == {'emotion': 'sad', 'intensity': .85}
+    assert faces[0]['facial_expression'] == {'expression': 'happy', 'confidence': .85}
+    assert faces[1]['facial_expression'] == {'expression': 'sad', 'confidence': .85}
     assert all(face['recognized_user'] == '' and face['track_id'] == -1 for face in faces)
     np.testing.assert_array_equal(model.crops[0], image[:10, :10])
     np.testing.assert_array_equal(model.crops[1], image[2:10, 12:20])
     assert 'x1' not in faces[0]
     overlays = instance._debug_face_overlays(faces, SimpleNamespace(face_track_id=-1), False)
-    assert [f['facial_emotion']['emotion'] for f in overlays] == ['happy', 'sad']
+    assert [f['facial_expression']['expression'] for f in overlays] == ['happy', 'sad']
 
 
 @pytest.mark.parametrize('min_face_size_px', [0, -1, True, False, 80.0, '80', None])
-def test_invalid_emotion_min_face_size_is_rejected(min_face_size_px):
-    with pytest.raises(ValueError, match='face_emotion.min_face_size_px must be a positive integer'):
-        vision.VisionObservationProvider({'face_emotion': {'min_face_size_px': min_face_size_px}})
+def test_invalid_expression_min_face_size_is_rejected(min_face_size_px):
+    with pytest.raises(ValueError, match='facial_expression.min_face_size_px must be a positive integer'):
+        vision.VisionObservationProvider({'facial_expression': {'min_face_size_px': min_face_size_px}})
 
 
-def test_missing_emotion_min_face_size_defaults_to_80_pixels():
-    instance = vision.VisionObservationProvider({'face_emotion': {'enabled': True}})
-    assert instance._emotion_min_face_size_px == 80
+def test_missing_expression_min_face_size_defaults_to_80_pixels():
+    instance = vision.VisionObservationProvider({'facial_expression': {'enabled': True}})
+    assert instance._expression_min_face_size_px == 80
 
 
 @pytest.mark.parametrize(('bbox', 'expected_crop_shape'), [
@@ -200,26 +200,26 @@ def test_missing_emotion_min_face_size_defaults_to_80_pixels():
     ((0, -1, 80, 79), None),      # Clipping reduces height to 79 px.
     ((0, -1, 80, 80), (80, 80)),  # Clipping leaves exactly 80 px.
 ])
-def test_emotion_gate_uses_clipped_source_crop_dimensions(bbox, expected_crop_shape):
+def test_expression_gate_uses_clipped_source_crop_dimensions(bbox, expected_crop_shape):
     instance = vision.VisionObservationProvider({
-        'face_emotion': {'enabled': True, 'min_face_size_px': 80},
+        'facial_expression': {'enabled': True, 'min_face_size_px': 80},
     })
-    instance._emotion_backend = model = EmotionModel()
+    instance._expression_backend = model = ExpressionModel()
     x1, y1, x2, y2 = bbox
     face = {
         'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
         'track_id': 7, 'recognized_user': 'known-person', 'identity_state': 'known',
     }
 
-    instance._infer_face_emotions(np.zeros((100, 100, 3), dtype=np.uint8), [face], sequence=1)
+    instance._infer_facial_expressions(np.zeros((100, 100, 3), dtype=np.uint8), [face], sequence=1)
 
     if expected_crop_shape is None:
         assert model.crops == []
-        assert 'facial_emotion' not in face
+        assert 'facial_expression' not in face
     else:
         assert len(model.crops) == 1
         assert model.crops[0].shape[:2] == expected_crop_shape
-        assert face['facial_emotion'] == {'emotion': 'happy', 'intensity': .85}
+        assert face['facial_expression'] == {'expression': 'happy', 'confidence': .85}
     assert face['track_id'] == 7
     assert face['recognized_user'] == 'known-person'
     assert face['identity_state'] == 'known'
@@ -228,17 +228,17 @@ def test_emotion_gate_uses_clipped_source_crop_dimensions(bbox, expected_crop_sh
 def test_failure_on_second_face_clears_first_and_isolates_capability():
     instance = provider()
     instance._face_detector = Detector()
-    instance._emotion_backend = model = EmotionModel()
+    instance._expression_backend = model = ExpressionModel()
     def failing(crop):
         model.crops.append(crop.copy())
         if len(model.crops) == 2:
             raise RuntimeError('runtime failed')
-        return {'emotion': 'happy', 'intensity': .9}
+        return {'expression': 'happy', 'confidence': .9}
     model.infer = failing
     faces = instance._detect_faces(np.zeros((20, 24, 3), np.uint8), 24, 20)
-    assert len(faces) == 2 and all('facial_emotion' not in face for face in faces)
+    assert len(faces) == 2 and all('facial_expression' not in face for face in faces)
     assert instance.available and instance._face_detector is not None
-    assert instance.get_facial_emotion()['status'] == 503
+    assert instance.get_facial_expression()['status'] == 503
     assert model.closed == 1
     instance._detect_faces(np.zeros((20, 24, 3), np.uint8), 24, 20)
     assert len(model.crops) == 2
@@ -246,63 +246,63 @@ def test_failure_on_second_face_clears_first_and_isolates_capability():
 
 def test_disabled_default_does_not_construct_backend(monkeypatch):
     instance = vision.VisionObservationProvider({})
-    monkeypatch.setattr(backend, 'RknnEmotionBackend', lambda *a, **kw: pytest.fail('must not load RKNN'))
-    instance._start_emotion_backend()
-    assert instance.get_facial_emotion()['status'] == 503
+    monkeypatch.setattr(backend, 'RknnExpressionBackend', lambda *a, **kw: pytest.fail('must not load RKNN'))
+    instance._start_expression_backend()
+    assert instance.get_facial_expression()['status'] == 503
 
 
 def test_init_failure_is_reported_without_disabling_provider(monkeypatch):
     instance = provider()
     def fail(*a, **kw):
         raise RuntimeError('not installed')
-    monkeypatch.setattr(backend, 'RknnEmotionBackend', fail)
-    instance._start_emotion_backend()
-    assert instance.available and not instance.emotion_model_status['ready']
-    assert instance.get_facial_emotion()['status'] == 503
+    monkeypatch.setattr(backend, 'RknnExpressionBackend', fail)
+    instance._start_expression_backend()
+    assert instance.available and not instance.expression_model_status['ready']
+    assert instance.get_facial_expression()['status'] == 503
 
 
-def test_unavailable_provider_restart_releases_previous_emotion_backend(monkeypatch):
+def test_unavailable_provider_restart_releases_previous_expression_backend(monkeypatch):
     instance = vision.VisionObservationProvider({
-        'face_emotion': {'enabled': True}, 'face_tracking': {'use_bytetrack': False},
+        'facial_expression': {'enabled': True}, 'face_tracking': {'use_bytetrack': False},
         'hand_landmark_model': '',
     })
     models = []
     def create(*a, **kw):
-        model = EmotionModel()
+        model = ExpressionModel()
         models.append(model)
         return model
-    monkeypatch.setattr(backend, 'RknnEmotionBackend', create)
+    monkeypatch.setattr(backend, 'RknnExpressionBackend', create)
     instance.start()
     assert not instance.available and models[0].closed == 0
     instance.start()
     assert not instance.available and models[0].closed == 1
-    assert instance._emotion_backend is models[1]
+    assert instance._expression_backend is models[1]
     instance.stop()
     instance.stop()
     assert [model.closed for model in models] == [1, 1]
 
 
-def current_face(track, emotion='happy', bbox=(.1, .1, .2, .2)):
+def current_face(track, expression='happy', bbox=(.1, .1, .2, .2)):
     return {'track_id': track, 'x': bbox[0], 'y': bbox[1], 'w': bbox[2], 'h': bbox[3],
-            'facial_emotion': {'emotion': emotion, 'intensity': .85},
+            'facial_expression': {'expression': expression, 'confidence': .85},
             '_behavior_face_observation': FaceObservation(bbox=bbox, confidence=.9, track_id=track)}
 
 
 def test_retained_active_face_cannot_receive_other_track_or_bbox_result():
     active = SimpleNamespace(face_track_id=3, face_bbox=(.1, .1, .2, .2), bbox=(0, 0, .5, 1))
     matching, other = current_face(3), current_face(4, 'sad')
-    assert vision.VisionObservationProvider._current_emotion_face(active, [other, matching]) is matching
-    assert vision.VisionObservationProvider._current_emotion_face(active, [other]) is None
-    assert vision.VisionObservationProvider._current_emotion_face(active, [current_face(3, bbox=(.8, .8, .1, .1))]) is None
+    assert vision.VisionObservationProvider._current_expression_face(active, [other, matching]) is matching
+    assert vision.VisionObservationProvider._current_expression_face(active, [other]) is None
+    assert vision.VisionObservationProvider._current_expression_face(active, [current_face(3, bbox=(.8, .8, .1, .1))]) is None
     active.face_track_id = -1
-    assert vision.VisionObservationProvider._current_emotion_face(active, [matching]) is matching
+    assert vision.VisionObservationProvider._current_expression_face(active, [matching]) is matching
 
 
 def cache(instance, now=10.0, faces=None, active=None):
     faces = faces if faces is not None else [current_face(1)]
-    instance._emotion_faces = faces
-    instance._emotion_active_index = active
-    instance._emotion_source_monotonic = now
+    instance._expression_faces = faces
+    instance._expression_active_index = active
+    instance._expression_source_monotonic = now
     instance._cached_observation = {'faces': copy.deepcopy(faces), 'debug_faces': copy.deepcopy(faces)}
 
 
@@ -311,26 +311,26 @@ def test_api_selection_and_source_expiry_are_shared_with_debug(monkeypatch):
     now = [10.1]
     monkeypatch.setattr(vision.time, 'monotonic', lambda: now[0])
     cache(instance, faces=[current_face(1), current_face(2, 'sad')])
-    assert instance.get_facial_emotion()['status'] == 409
-    assert instance.get_facial_emotion(2) == {'ok': True, 'emotion': 'sad', 'intensity': .85}
-    assert instance.get_facial_emotion(3)['status'] == 404
-    instance._emotion_active_index = 0
-    assert instance.get_facial_emotion()['emotion'] == 'happy'
-    assert instance.get_observation()['facial_emotion_valid_for_sec'] == pytest.approx(.4)
+    assert instance.get_facial_expression()['status'] == 409
+    assert instance.get_facial_expression(2) == {'ok': True, 'expression': 'sad', 'confidence': .85}
+    assert instance.get_facial_expression(3)['status'] == 404
+    instance._expression_active_index = 0
+    assert instance.get_facial_expression()['expression'] == 'happy'
+    assert instance.get_observation()['facial_expression_valid_for_sec'] == pytest.approx(.4)
     now[0] = 10.51
     # Unrelated fresh camera/pending frame does not refresh the inferred source.
     instance._pending_frame_monotonic = now[0]
     for _ in range(3):
-        assert instance.get_facial_emotion()['status'] == 404
+        assert instance.get_facial_expression()['status'] == 404
         observation = instance.get_observation()
-        assert all('facial_emotion' not in face for key in ('faces', 'debug_faces') for face in observation[key])
+        assert all('facial_expression' not in face for key in ('faces', 'debug_faces') for face in observation[key])
     cache(instance, now=now[0], faces=[])
-    assert instance.get_facial_emotion()['status'] == 404
+    assert instance.get_facial_expression()['status'] == 404
     cache(instance, now=now[0], faces=[current_face(9, 'fear')])
-    assert instance.get_facial_emotion(1)['status'] == 404
-    assert instance.get_facial_emotion()['emotion'] == 'fear'
+    assert instance.get_facial_expression(1)['status'] == 404
+    assert instance.get_facial_expression()['expression'] == 'fear'
     instance.task_face_enabled = False
-    assert instance.get_facial_emotion()['status'] == 404
+    assert instance.get_facial_expression()['status'] == 404
 
 
 def test_worker_ages_from_frame_receipt_and_invalidates_failed_frames(monkeypatch):
@@ -342,7 +342,7 @@ def test_worker_ages_from_frame_receipt_and_invalidates_failed_frames(monkeypatc
         entered.set()
         assert finish.wait(2)
         completed.set()
-        return {'faces': [current_face(1)], '_facial_emotion_faces': [current_face(1)], '_facial_emotion_active_index': 0}
+        return {'faces': [current_face(1)], '_facial_expression_faces': [current_face(1)], '_facial_expression_active_index': 0}
     monkeypatch.setattr(instance, '_process_frame_impl', process)
     instance._start_inference_worker()
     try:
@@ -355,50 +355,62 @@ def test_worker_ages_from_frame_receipt_and_invalidates_failed_frames(monkeypatc
         deadline = time.monotonic() + 2
         while instance._inferred_frame_count < 1 and time.monotonic() < deadline:
             time.sleep(.005)
-        assert instance._emotion_source_monotonic == receipt
-        assert instance.get_facial_emotion()['emotion'] == 'happy'
+        assert instance._expression_source_monotonic == receipt
+        assert instance.get_facial_expression()['expression'] == 'happy'
         instance.process_frame(np.ones((2, 2, 3), np.uint8))
         deadline = time.monotonic() + 2
-        while instance._emotion_source_monotonic != 0 and time.monotonic() < deadline:
+        while instance._expression_source_monotonic != 0 and time.monotonic() < deadline:
             time.sleep(.005)
-        assert instance.get_facial_emotion()['status'] == 404
-        assert 'facial_emotion' not in instance.get_observation()['faces'][0]
+        assert instance.get_facial_expression()['status'] == 404
+        assert 'facial_expression' not in instance.get_observation()['faces'][0]
     finally:
         finish.set()
         instance.stop()
 
 
-def test_stop_preserves_live_worker_then_releases_emotion_once(monkeypatch):
+def test_stop_preserves_live_worker_then_releases_expression_once(monkeypatch):
     instance = provider()
-    instance._emotion_backend = model = EmotionModel()
+    instance._expression_backend = model = ExpressionModel()
     monkeypatch.setattr(instance, '_stop_inference_worker', lambda: False)
     instance.stop()
-    assert model.closed == 0 and instance._emotion_backend is model
-    assert instance.get_facial_emotion()['status'] == 503
+    assert model.closed == 0 and instance._expression_backend is model
+    assert instance.get_facial_expression()['status'] == 503
     monkeypatch.setattr(instance, '_stop_inference_worker', lambda: True)
     instance.stop()
     instance.stop()
     assert model.closed == 1
 
 
-@pytest.mark.parametrize('value', [{'emotion': 'anger', 'intensity': .5},
-    {'emotion': 'happy', 'intensity': True}, {'emotion': 'happy', 'intensity': float('nan')},
-    {'emotion': 'happy', 'intensity': 1.1}, {'emotion': 'happy', 'intensity': '0.8'}])
+@pytest.mark.parametrize('value', [{'expression': 'anger', 'confidence': .5},
+    {'expression': 'happy', 'confidence': True}, {'expression': 'happy', 'confidence': float('nan')},
+    {'expression': 'happy', 'confidence': 1.1}, {'expression': 'happy', 'confidence': '0.8'}])
 def test_bad_optional_results_omitted_from_public_contract(value):
-    assert normalize_facial_emotion(value) is None
-    event = normalize_visual_event({'faces': [{'facial_emotion': value}], 'debug_faces': [{'facial_emotion': value}]})
-    assert 'facial_emotion' not in event['faces'][0] and 'facial_emotion' not in event['debug_faces'][0]
+    assert normalize_facial_expression(value) is None
+    event = normalize_visual_event({'faces': [{'facial_expression': value}], 'debug_faces': [{'facial_expression': value}]})
+    assert 'facial_expression' not in event['faces'][0] and 'facial_expression' not in event['debug_faces'][0]
+
+
+def test_legacy_face_result_keys_are_not_accepted_as_aliases():
+    legacy = {'emotion': 'happy', 'intensity': .85}
+    assert normalize_facial_expression(legacy) is None
+    event = normalize_visual_event({'faces': [{'facial_expression': legacy}]})
+    assert 'facial_expression' not in event['faces'][0]
+
+
+def test_legacy_configuration_key_does_not_enable_expression_backend():
+    instance = vision.VisionObservationProvider({'face_emotion': {'enabled': True}})
+    assert not instance._expression_enabled
 
 
 def test_normalization_and_debug_expiry_preserve_original_probability():
-    value = {'emotion': 'happy', 'intensity': .85123456789, 'other': 7}
-    event = normalize_visual_event({'faces': [{'facial_emotion': value}],
-                                    'debug_faces': [{'facial_emotion': value}], 'facial_emotion_valid_for_sec': .2})
-    assert event['faces'][0]['facial_emotion'] == {'emotion': 'happy', 'intensity': .85123456789}
-    expire_facial_emotions(event, .1)
-    assert 'facial_emotion' in event['debug_faces'][0]
-    expire_facial_emotions(event, .11)
-    assert all('facial_emotion' not in face for key in ('faces', 'debug_faces') for face in event[key])
+    value = {'expression': 'happy', 'confidence': .85123456789, 'other': 7}
+    event = normalize_visual_event({'faces': [{'facial_expression': value}],
+                                    'debug_faces': [{'facial_expression': value}], 'facial_expression_valid_for_sec': .2})
+    assert event['faces'][0]['facial_expression'] == {'expression': 'happy', 'confidence': .85123456789}
+    expire_facial_expressions(event, .1)
+    assert 'facial_expression' in event['debug_faces'][0]
+    expire_facial_expressions(event, .11)
+    assert all('facial_expression' not in face for key in ('faces', 'debug_faces') for face in event[key])
 
 
 def test_osd_labels_show_associated_category_probability(monkeypatch):
@@ -406,8 +418,12 @@ def test_osd_labels_show_associated_category_probability(monkeypatch):
     monkeypatch.setattr(visual_debug, '_text', lambda image, text, *a, **kw: labels.append(text))
     visual_debug.draw_visual_debug(np.zeros((120, 180, 3), np.uint8),
         {'faces': [current_face(1, 'happy'), current_face(2, 'sad')]})
-    assert any('face id=1' in text and 'happy 0.85' in text for text in labels)
-    assert any('face id=2' in text and 'sad 0.85' in text for text in labels)
+    face_labels = [(labels[index], labels[index + 1]) for index, text in enumerate(labels[:-1])
+                   if text.startswith('face id=')]
+    assert face_labels == [
+        ('face id=1 unknown conf=0.00', 'happy 0.85'),
+        ('face id=2 unknown conf=0.00', 'sad 0.85'),
+    ]
 
 
 def request(server, path):
@@ -418,16 +434,18 @@ def request(server, path):
 
 
 def server(handler=None):
-    return FaceApiServer({}, *([lambda *a: {'ok': True}] * 6), emotion_handler=handler)
+    return FaceApiServer({}, *([lambda *a: {'ok': True}] * 6), expression_handler=handler)
 
 
 def test_http_openapi_documents_exact_expression_schema():
-    operation = server().create_app().openapi()['paths']['/api/v1/faces/emotion']['get']
+    paths = server().create_app().openapi()['paths']
+    assert '/api/v1/faces/emotion' not in paths
+    operation = paths['/api/v1/faces/expression']['get']
     schema = operation['responses']['200']['content']['application/json']['schema']
-    assert set(schema['required']) == {'emotion', 'intensity'}
+    assert set(schema['required']) == {'expression', 'confidence'}
     assert schema['additionalProperties'] is False
-    assert schema['properties']['emotion']['enum'] == list(EMOTIONS)
-    assert schema['properties']['intensity'] == {'type': 'number', 'minimum': 0, 'maximum': 1}
+    assert schema['properties']['expression']['enum'] == list(EXPRESSIONS)
+    assert schema['properties']['confidence'] == {'type': 'number', 'minimum': 0, 'maximum': 1}
     assert set(operation['responses']) == {'200', '404', '409', '422', '503'}
 
 
@@ -435,19 +453,20 @@ def test_exact_http_success_and_error_matrix(monkeypatch):
     instance = provider()
     monkeypatch.setattr(vision.time, 'monotonic', lambda: 10.1)
     cache(instance)
-    api = server(instance.get_facial_emotion)
-    result = request(api, '/api/v1/faces/emotion')
-    assert result.status_code == 200 and result.json() == {'emotion': 'happy', 'intensity': .85}
-    assert request(api, '/api/v1/faces/emotion?track_id=123').status_code == 404
-    assert request(api, '/api/v1/faces/emotion?track_id=nope').status_code == 422
-    assert request(api, '/api/v1/faces/emotion?track_id=-1').status_code == 422
+    api = server(instance.get_facial_expression)
+    result = request(api, '/api/v1/faces/expression')
+    assert result.status_code == 200 and result.json() == {'expression': 'happy', 'confidence': .85}
+    assert request(api, '/api/v1/faces/emotion').status_code == 404
+    assert request(api, '/api/v1/faces/expression?track_id=123').status_code == 404
+    assert request(api, '/api/v1/faces/expression?track_id=nope').status_code == 422
+    assert request(api, '/api/v1/faces/expression?track_id=-1').status_code == 422
     cache(instance, faces=[current_face(1), current_face(2, 'sad')])
-    assert request(api, '/api/v1/faces/emotion').status_code == 409
-    assert request(api, '/api/v1/faces/emotion?track_id=2').json() == {'emotion': 'sad', 'intensity': .85}
-    instance.emotion_model_status['ready'] = False
-    result = request(api, '/api/v1/faces/emotion')
+    assert request(api, '/api/v1/faces/expression').status_code == 409
+    assert request(api, '/api/v1/faces/expression?track_id=2').json() == {'expression': 'sad', 'confidence': .85}
+    instance.expression_model_status['ready'] = False
+    result = request(api, '/api/v1/faces/expression')
     assert result.status_code == 503 and set(result.json()) == {'detail', 'request_id'}
-    assert request(server(), '/api/v1/faces/emotion').status_code == 503
+    assert request(server(), '/api/v1/faces/expression').status_code == 503
 
 
 def test_processed_active_fallback_and_all_detections_keep_same_frame_results(monkeypatch):
@@ -466,34 +485,34 @@ def test_processed_active_fallback_and_all_detections_keep_same_frame_results(mo
     image = np.zeros((32, 32, 3), np.uint8)
     result = instance._process_frame_impl(image)
     assert result['faces'][0]['track_id'] == 3
-    assert result['faces'][0]['facial_emotion']['emotion'] == 'happy'
-    assert [face['facial_emotion']['emotion'] for face in result['debug_faces']] == ['sad', 'happy']
-    assert result['_facial_emotion_active_index'] == 1
+    assert result['faces'][0]['facial_expression']['expression'] == 'happy'
+    assert [face['facial_expression']['expression'] for face in result['debug_faces']] == ['sad', 'happy']
+    assert result['_facial_expression_active_index'] == 1
     # A retained active target's face ID cannot acquire current unrelated evidence.
     faces[:] = [current_face(4, 'sad', (.7, .1, .2, .2))]
     result = instance._process_frame_impl(image)
-    assert 'facial_emotion' not in result['faces'][0]
-    assert result['_facial_emotion_active_index'] is None
+    assert 'facial_expression' not in result['faces'][0]
+    assert result['_facial_expression_active_index'] is None
     active.face_confidence = 0
     result = instance._process_frame_impl(image)
-    assert result['faces'][0]['track_id'] == 4 and result['faces'][0]['facial_emotion']['emotion'] == 'sad'
+    assert result['faces'][0]['track_id'] == 4 and result['faces'][0]['facial_expression']['expression'] == 'sad'
 
 
 def test_repeated_publications_cannot_extend_same_source_viewer_deadline():
-    from marsdog_vision_interaction.messages.facial_emotion import FacialEmotionExpiry
-    expiry = FacialEmotionExpiry()
+    from marsdog_vision_interaction.messages.facial_expression import FacialExpressionExpiry
+    expiry = FacialExpressionExpiry()
     def packet(stamp, sequence):
         return {'vision_epoch': 'epoch', 'header': {'stamp': stamp, 'frame_id': 'camera'},
-                'sequence': sequence, 'faces': [current_face(1)], 'facial_emotion_valid_for_sec': .4}
+                'sequence': sequence, 'faces': [current_face(1)], 'facial_expression_valid_for_sec': .4}
     first = packet(123, 1)
     expiry.apply(first, 10)
     repeated = packet(123, 2)
     expiry.apply(repeated, 10.3)
-    assert repeated['facial_emotion_valid_for_sec'] == pytest.approx(.1)
+    assert repeated['facial_expression_valid_for_sec'] == pytest.approx(.1)
     expired = packet(123, 3)
     expiry.apply(expired, 10.41)
-    assert 'facial_emotion' not in expired['faces'][0]
-    assert 'facial_emotion_valid_for_sec' not in expired
+    assert 'facial_expression' not in expired['faces'][0]
+    assert 'facial_expression_valid_for_sec' not in expired
     new_source = packet(124, 4)
     expiry.apply(new_source, 10.5)
-    assert new_source['facial_emotion_valid_for_sec'] == pytest.approx(.4)
+    assert new_source['facial_expression_valid_for_sec'] == pytest.approx(.4)
