@@ -40,6 +40,10 @@ from marsdog_vision_interaction.core.face_enrollment_manager import (
     FaceEnrollmentManager,
     set_storage_root,
 )
+from marsdog_vision_interaction.core.facial_expression_event_state import (
+    FacialExpressionEventConfig,
+    FacialExpressionEventState,
+)
 from marsdog_vision_interaction.core.held_object_pose import (
     HELD_OBJECT_LABELS,
     HeldObjectPoseManager,
@@ -153,6 +157,20 @@ class VisionInteractionNode(Node):
             )
         )
         self._vision_epoch = self._target_manager.vision_epoch
+        facial_expression_events_config = FacialExpressionEventConfig.from_mapping(
+            self._config.get("facial_expression_events")
+        )
+        facial_expression_config = vision_runtime_config.get(
+            "facial_expression", {}
+        )
+        if not isinstance(facial_expression_config, dict):
+            facial_expression_config = {}
+        self._facial_expression_event_state = FacialExpressionEventState(
+            facial_expression_events_config,
+            source_freshness_sec=(
+                facial_expression_config.get("max_age_sec", 0.5)
+            ),
+        )
         self._visual_sequence = 0
         self._latest_visual_snapshot: dict[str, Any] = {}
         self._latest_visual_snapshot_monotonic = 0.0
@@ -1134,9 +1152,11 @@ class VisionInteractionNode(Node):
         emotion_context = getattr(self, "_stranger_emotion_context", None)
         if emotion_context is not None:
             emotion_classification = emotion_context.classify(now=now)
-        event["events"] = self._derive_events(
+        event["events"] = VisionInteractionNode._derive_events_with_facial_expression(
+            self,
             event,
             emotion_classification=emotion_classification,
+            now=time.monotonic(),
         )
         # Cache exactly the complete packet that is published.  VisionTask
         # query_targets only ever copies this atomic snapshot; it never
@@ -1994,6 +2014,29 @@ class VisionInteractionNode(Node):
             identity_eligible=VisionInteractionNode._pose_event_identity_eligible,
         )
 
+    def _derive_events_with_facial_expression(
+        self,
+        observation: dict[str, Any],
+        emotion_classification: str = "",
+        *,
+        now: float | None = None,
+    ) -> list[str]:
+        """Merge temporal expression support into existing pose/hand events."""
+        events = self._derive_events(observation, emotion_classification)
+        expression_state = getattr(
+            self, "_facial_expression_event_state", None
+        )
+        if expression_state is None:
+            return events
+        expression_events = expression_state.update(
+            observation,
+            now=time.monotonic() if now is None else now,
+        )
+        for event_name in expression_events:
+            if event_name not in events:
+                events.append(event_name)
+        return events
+
     def _process_enrollment_frame(self) -> None:
         frame = self._frame_for_tasks()
         if frame is None:
@@ -2305,6 +2348,11 @@ class VisionInteractionNode(Node):
             logger.warning("Face registry sync failed: %s", exc)
 
     def destroy_node(self) -> None:
+        expression_state = getattr(
+            self, "_facial_expression_event_state", None
+        )
+        if expression_state is not None:
+            expression_state.reset()
         if self._face_api is not None:
             self._face_api.stop()
             self._face_api = None

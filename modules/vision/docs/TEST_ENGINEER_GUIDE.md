@@ -580,8 +580,8 @@ Vision 事件路由正确率 = 门禁打开且期望事件正确次数 / 门禁�
 | `EVT_VISION_STRANGER` | 当前有陌生人脸，但情绪状态缺失、过期、非法或无匹配分类 | 否 | `faces[]`、`active_target.identity_state` |
 | `EVT_VISION_STRANGER_ALERT` | 陌生人 + 新鲜情绪中 Anxiety/Fear 已触发 | 否 | `faces[]`、`active_target.identity_state`、`/emotion/state` |
 | `EVT_VISION_STRANGER_FRIEND` | 陌生人 + 无 Alert 且 Joy/Excite/Calm 已触发 | 否 | 同上 |
-| `EVT_VISION_MASTER_HAPPY` | GP-014～GP-021 的兼容动作 | 是 | `recognized_actions[]`、`pose_action` 或 `hands[].hand_action` |
-| `EVT_VISION_MASTER_SAD` | GP-003～GP-013 的兼容动作 | 是 | 同上 |
+| `EVT_VISION_MASTER_HAPPY` | GP-014～GP-021 的兼容动作，或确认主人稳定开心表情 | 姿态：是；表情：仅 `owner/confirmed_known/tracking` | 动作来源看 `recognized_actions[]`、`pose_action` 或 `hands[].hand_action`；表情来源看对应 `faces[].facial_expression` |
+| `EVT_VISION_MASTER_SAD` | GP-003～GP-013 的兼容动作，或确认主人稳定难过表情 | 姿态：是；表情：仅 `owner/confirmed_known/tracking` | 同上 |
 | `EVT_VISION_MASTER_NEUTRAL` | GP-022、GP-023、GP-025 折叠出的 `neutral_stand_sit` | 是 | `pose_state`、`recognized_actions[]`、`pose_action` |
 | `EVT_VISION_FALL` | GP-001 跌倒状态机确认 | 是 | `fall_detector`、`pose_action=fallen_down` |
 | `EVT_VISION_STOP_GESTURE` | GP-002 Stop 时序确认 | 是 | 手部特征、`hands[].hand_action=stop_gesture` |
@@ -668,6 +668,27 @@ rg '"case_id":"GP-017-r01"' \
 
 上述三个文件分别证明精确识别、正式发布和门禁/事件边沿，缺一项时应在报告中明确
 标为“未取证”，不能从另外一项推断。
+
+#### 5.6.9 主人表情事件
+
+真实配置中的 `facial_expression_events` 开启后，Vision 将当前确认主人对应人脸的表情
+作为 Happy/Sad 的另一种事件来源。原有姿态/手势来源不变，两个来源合并到已有事件名；
+同一事件名已由任一来源支持时只发布一次。
+
+| 条件 | 预期 |
+|---|---|
+| `active_target` 为 `owner/confirmed_known/tracking`，对应 `face_track_id` 的表情为 `happy`，置信度 `>=0.70` 且连续新鲜证据满 1.0 秒 | `events[]` 加入 `EVT_VISION_MASTER_HAPPY` |
+| 同上，表情为 `sad` | `events[]` 加入 `EVT_VISION_MASTER_SAD` |
+| 置信度 `<0.70`、类别改变、结果缺失/过期或主人目标失效持续 0.5 秒 | 移除表情对相应事件的支持 |
+| 表情失效，但姿态或手势仍映射到同一事件 | 事件继续保留 |
+| 家人、陌生人、候选身份、非当前人脸或未匹配的其他人脸输出 happy/sad | 不新增表情事件 |
+| 同一来源帧被 10 Hz 事件快照重复发布 | 不增加稳定时长；以新来源帧形成持续证据 |
+
+查看同一视觉包中的 `active_target.face_track_id`、对应 `faces[].track_id`、
+`faces[].facial_expression.expression/confidence` 和 `facial_expression_valid_for_sec`。
+阈值使用模型的原始八分类 softmax 概率；`0.70` 是当前配置值，不是经代表性样本标定的
+准确率承诺。此事件来源不直接写入 `/emotion/state`。软件回归应使用合成快照，不依赖
+相机、RKNN 硬件或生产 ROS domain。
 
 ### 5.7 Stop 手势
 

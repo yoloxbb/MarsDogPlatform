@@ -62,6 +62,15 @@ stranger_emotion:
   alert_emotions: [Anxiety, Fear]
   friend_emotions: [Joy, Excite, Calm]
 
+# Owner facial expressions contribute to the existing Vision happy/sad events.
+# Confidence is the classifier's raw eight-class softmax probability; this
+# starting threshold is configurable and has not been calibrated on a dataset.
+facial_expression_events:
+  enabled: true
+  minimum_confidence: 0.70
+  stable_duration_sec: 1.0
+  release_duration_sec: 0.5
+
 # Aligned RealSense depth is the only source allowed to populate a target
 # range. Missing/stale depth, invalid CameraInfo, a timestamp mismatch or an
 # unsupported encoding leaves range_valid=false and therefore forbids motion.

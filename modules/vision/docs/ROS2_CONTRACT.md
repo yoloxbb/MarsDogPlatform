@@ -175,9 +175,9 @@ GesturePose 判定，不改变正式事件名称、身份门禁或发布契约�
 
 ### 4.8 当前会实际产生的 `events[]`
 
-事件生成顺序固定为：人脸 → 主目标姿态 → 手势；同一事件名在一个数组
-内去重。`events[]` 只有字符串，没有独立时间、置信度或目标 ID；相关细节必须从
-同一份消息的结构化字段读取。
+现有事件生成顺序为：人脸 → 主目标姿态 → 手势；启用时再合并主人表情事件；同一事件名
+在一个数组内去重。`events[]` 只有字符串，没有独立时间、置信度或目标 ID；相关细节必须
+从同一份消息的结构化字段读取。
 
 | 事件名 | 当前触发条件 | 同包中应读取的证据 |
 |---|---|---|
@@ -185,8 +185,8 @@ GesturePose 判定，不改变正式事件名称、身份门禁或发布契约�
 | `EVT_VISION_STRANGER_ALERT` | 主目标身份未知，且新鲜 `/emotion/state` 中 `Anxiety` 或 `Fear` 的 `triggered=true` | `faces[]`、`active_target.identity_state`；情绪证据来自 `/emotion/state` |
 | `EVT_VISION_STRANGER_FRIEND` | 主目标身份未知，无 Alert 情绪，且 `Joy`、`Excite` 或 `Calm` 的 `triggered=true` | 同上 |
 | `EVT_VISION_STRANGER` | 主目标身份未知，但情绪状态缺失、过期、非法或没有匹配分类 | `faces[]`、`active_target.identity_state` |
-| `EVT_VISION_MASTER_HAPPY` | 满足姿态门控的主目标出现表 4.7 的 happy 兼容动作 | `active_target.identity/identity_state/tracking_state`、`pose_action` 或 `hands[].hand_action` |
-| `EVT_VISION_MASTER_SAD` | 满足姿态门控的主目标出现表 4.7 的 sad 兼容动作 | `active_target.identity/identity_state/tracking_state`、`pose_action` 或 `hands[].hand_action` |
+| `EVT_VISION_MASTER_HAPPY` | 满足姿态门控的主目标出现表 4.7 的 happy 兼容动作；或当前确认主人 `owner/confirmed_known/tracking` 的匹配人脸 `happy` 表情置信度 `>=0.70` 连续稳定 1.0 秒 | 姿态来源读取 `active_target.identity/identity_state/tracking_state`、`pose_action` 或 `hands[].hand_action`；表情来源读取 `active_target.face_track_id`、对应 `faces[].facial_expression` 和 `facial_expression_valid_for_sec` |
+| `EVT_VISION_MASTER_SAD` | 满足姿态门控的主目标出现表 4.7 的 sad 兼容动作；或当前确认主人 `owner/confirmed_known/tracking` 的匹配人脸 `sad` 表情置信度 `>=0.70` 连续稳定 1.0 秒 | 姿态来源读取 `active_target.identity/identity_state/tracking_state`、`pose_action` 或 `hands[].hand_action`；表情来源读取 `active_target.face_track_id`、对应 `faces[].facial_expression` 和 `facial_expression_valid_for_sec` |
 | `EVT_VISION_MASTER_NEUTRAL` | 满足姿态门控的主目标出现 `neutral_stand_sit` | `active_target.identity/identity_state/tracking_state`、`pose_action`、`pose_state` |
 | `EVT_VISION_FALL` | 满足姿态门控且 `pose_action=fallen_down`；已确认从直立快速转为持续躺卧 | `active_target.identity/identity_state/tracking_state`、`pose_action`；调试时看 `fall_detector` |
 | `EVT_VISION_STOP_GESTURE` | 满足姿态门控且任一 `hands[].hand_action=stop_gesture` | `active_target.identity/identity_state/tracking_state`、`hands[]` |
@@ -195,6 +195,11 @@ GesturePose 判定，不改变正式事件名称、身份门禁或发布契约�
 
 手持玩具只接受 `dog toy ball/dog frisbee toy/dog tug ring toy`；手持狗粮只接受
 `dog bowl/dog food can/dog treat bag`。只检测到物体但没有手腕关联时不得产生事件。
+
+表情事件由独立的 Vision 去抖策略提供：连续新鲜且不同源帧达到 1.0 秒后进入；类别变化、
+置信度低于阈值、表情结果缺失/过期或主人跟踪失效持续 0.5 秒后退出。重复的视觉事件
+快照不算新帧。表情来源结束后，如果姿态或手势仍支持同一事件名，事件仍保留。该策略只
+使用已生成的人脸表情元数据，不代表情绪强度标定，也不直接写入 `/emotion/state`。
 
 人脸事件当前以“是否存在任意 `faces[]` + 主目标身份”组合判断，并不逐张人脸绑定
 事件。多人物场景的消费者应读取 `active_target`，不要自行假定事件对应
@@ -830,7 +835,9 @@ Pose、Hand、YuNet 或 SFace 加载失败时节点可能继续运行，但对�
 Visual schema v1 can include `facial_expression: {expression, confidence}` on current
 `faces` and `debug_faces`, plus `facial_expression_valid_for_sec` remaining lifetime
 metadata for debug consumers. Missing/invalid/stale expression fields are omitted;
-existing required fields, event policy, topics/types and task lifecycle are unchanged.
+existing required fields, topics/types and task lifecycle are unchanged. The optional
+`facial_expression_events` policy uses matching confirmed-owner evidence to support
+the existing happy/sad events as described in section 4.8.
 The separate read HTTP endpoint returns only `expression` and `confidence`. See
 [rknn-facial-expressions.md](rknn-facial-expressions.md) for labels, selection/errors,
 source-frame freshness and the distinction from robot `/emotion/state`.

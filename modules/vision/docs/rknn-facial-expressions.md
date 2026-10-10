@@ -2,7 +2,17 @@
 
 Vision analyzes each current detected face crop, including unknown identities,
 with EmotiEffLib `enet_b0_8_va_mtl`. This is human expression evidence; it does
-not update robot `/emotion/state`, needs settlement, stranger policy or actions.
+not directly write robot `/emotion/state`, change needs settlement, or alter
+stranger emotion classification. Existing event consumers may respond to the
+happy/sad events; their policy is unchanged.
+The separate root-level `facial_expression_events` policy can use a current
+confirmed owner's matching face to support existing `EVT_VISION_MASTER_HAPPY`
+and `EVT_VISION_MASTER_SAD` events. The real configuration requires raw
+confidence >= 0.70 and distinct fresh source frames for 1.0 second; invalid
+evidence releases expression support after 0.5 second. An absent policy block
+leaves this event source disabled. Pose/hand support remains independent. See
+[ROS2_CONTRACT.md section 4.8](ROS2_CONTRACT.md#48-当前会实际产生的-events)
+for the owner gate and event combination rules.
 
 The real observation configuration enables `providers.vision.config.facial_expression`:
 
