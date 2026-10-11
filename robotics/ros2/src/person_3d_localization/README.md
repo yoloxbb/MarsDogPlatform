@@ -16,11 +16,11 @@ Nav2 action client。
 
 ## 构建与启动
 
+按 [公共构建说明](../../README.md) 选择 `person_3d_localization`，加载构建后的安装环境再启动：
+
 ```bash
 source /opt/ros/humble/setup.bash
-cd ~/robot_ws_leg_velocity/slam_ws
-colcon build --packages-select person_3d_localization --symlink-install
-source install/setup.bash
+source /home/marsdog/MarsDogPlatform/out/rk3588-robotics/install/local_setup.bash
 ros2 launch person_3d_localization person_3d_localization.launch.py
 ```
 
@@ -36,8 +36,10 @@ D435i 必须发布与 bbox 图像对齐的深度，例如默认配置使用：
 服务名称：`/person_3d_localization/locate_from_bbox`
 
 上层传入 bbox、原图时间戳和可选安全距离。`stand_off_distance <= 0` 时使用参数中的
-`default_stand_off_distance`。成功响应包含人体 `person_point` 和固定导航目标
-`navigation_goal`；上层只需把后者作为一次 `NavigateToPose` action 目标发送给现有 Nav2。
+`default_stand_off_distance`。成功响应包含人体 `person_point`、固定导航目标
+`navigation_goal` 和是否需要导航的 `navigation_required`。上层仅在 `success=true` 且
+`navigation_required=true`，并确认目标 frame 与 Nav2 全局 frame 一致时发送一次
+`NavigateToPose`。已在安全距离及容差内时无需继续靠近；本节点不会自动导航。
 
 人工测试可使用零时间戳选取最新深度：
 

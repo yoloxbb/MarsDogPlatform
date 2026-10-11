@@ -41,9 +41,20 @@ behavior_server:
 
 ```bash
 source /opt/ros/humble/setup.bash
-cd ~/go2_follow
-colcon build --symlink-install --packages-select behavior_ext_plugins
-source install/setup.bash
+export MARS_ROOT=/home/marsdog/MarsDogPlatform
+export ROBOTICS_OUT="$MARS_ROOT/out/rk3588-robotics"
+export CMAKE_BUILD_PARALLEL_LEVEL=2
+export MAKEFLAGS=-j2
+colcon --log-base "$ROBOTICS_OUT/log" build \
+  --base-paths "$MARS_ROOT/robotics/ros2/src" \
+  --build-base "$ROBOTICS_OUT/build" --install-base "$ROBOTICS_OUT/install" \
+  --symlink-install --executor sequential --packages-select behavior_ext_plugins \
+  --cmake-args -DCMAKE_BUILD_TYPE=Release
+source "$ROBOTICS_OUT/install/local_setup.bash"
 ```
 
-该执行器已由 DWB、直连 MPPI、Dynamic A*+MPPI 和 TEB launch 自动启动，一般无需单独运行。
+构建前须具备 Nav2 开发依赖和 BehaviorTree.CPP v3，详见 [公共构建说明](../../README.md)。本包没有自带 launch。
+
+当前 `robot_slam_bringup/config/nav.yaml` 将 Nav2 behavior server 的 `backup` 实现配置为本包插件，其导航行为树通过标准 `BackUp` 调用它。这条主链路不额外启动 `follow_path_recovery_bt_node`。
+
+独立执行器供外部路径控制管线使用，可运行 `ros2 run behavior_ext_plugins follow_path_recovery_bt_node`。默认路径话题 `follow_path`、状态话题 `follow/recovery_status`、Action 名 `follow_path` 和 `backup`，支持 namespace；运行前准备对应 Nav2 Action server，避免与常规 NavigateToPose 同时争用控制。旧文档提到的 DWB/TEB/Dynamic A* launch 不在本目录，不能据此假定当前主入口已自动启动独立执行器。

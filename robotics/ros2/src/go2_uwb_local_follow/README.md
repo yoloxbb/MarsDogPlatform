@@ -33,13 +33,42 @@ infra1/infra2 已校正图像
 在总仓库根目录执行：
 
 ```bash
-source scripts/setup_robot_env.sh
 source /opt/ros/humble/setup.bash
-cd "${ROBOT_WS_ROOT}/go2_follow_ws"
-colcon build --symlink-install --packages-up-to go2_uwb_local_follow \
-  --cmake-args -DCMAKE_BUILD_TYPE=Release
-source install/local_setup.bash
+export MARS_ROOT=/home/marsdog/MarsDogPlatform
+export ROBOTICS_OUT="$MARS_ROOT/out/rk3588-robotics"
+export CMAKE_BUILD_PARALLEL_LEVEL=2
+export MAKEFLAGS=-j2
+mkdir -p "$ROBOTICS_OUT/source"
+if [ ! -e "$ROBOTICS_OUT/source/uwb" ]; then
+  cp -a "$MARS_ROOT/.external/uwb" "$ROBOTICS_OUT/source/uwb"
+  sha256sum "$MARS_ROOT/.external/uwb/package.xml" \
+    "$MARS_ROOT/.external/uwb/CMakeLists.txt" > "$ROBOTICS_OUT/source/uwb-source-inputs.sha256"
+fi
+colcon --log-base "$ROBOTICS_OUT/log" build \
+  --base-paths "$MARS_ROOT/robotics/ros2/src" "$ROBOTICS_OUT/source/uwb" \
+  --build-base "$ROBOTICS_OUT/build" --install-base "$ROBOTICS_OUT/install" \
+  --packages-up-to go2_uwb_local_follow --symlink-install --executor sequential \
+  --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_UWB_VENDOR_DRIVER=OFF
+source "$ROBOTICS_OUT/install/local_setup.bash"
 ```
+
+上例在 UWB 工作副本上只构建接口与通用串口库，不启动/构建厂家硬件驱动。实机驱动和依赖前缀见
+[公共构建说明](../../README.md)。此处 C++ 节点依赖 `uwb_aoa_pkg`，不能只发现自有 src 就假定依赖存在。
+
+## 执行文件与入口
+
+| 执行文件 | 功能 |
+| --- | --- |
+| `stereo_obstacle_projector_node` | 稀疏视差投影、障碍及自由空间射线输出 |
+| `uwb_target_adapter_node` | 厂家消息转机器人坐标目标点 |
+| `uwb_follow_controller_node` | 持续纯跟随、名义速度与可选底盘直出 |
+| `local_collision_monitor_node` | 单条名义轨迹碰撞调试 |
+| `local_velocity_planner_node` | 自研 MPPI、运动约束与紧急恢复 |
+| `rolling_obstacle_map_node` | 位姿补偿、多帧确认、射线清除与时间衰减 |
+| `benchmark_local_planner` | 无硬件规划性能基准 |
+
+面向上层按需任务优先使用 `go2_uwb_behavior/behavior_follow_roam.launch.py`；本包的完整
+`local_follow.launch.py` 是常驻跟随链路，不提供三个 Action 的生命周期。两种入口不可同时运行。
 
 ## 启动
 
@@ -47,18 +76,14 @@ source install/local_setup.bash
 完整实机链路还需要厂家 UWB 话题 `/libAoa_robot_publisher`、里程计
 `/leg_odom2` 和底盘 `/cmd_vel` 接收节点。
 
-一键启动完整感知、跟随和局部避障链路：
-
-```bash
-ros2 launch go2_uwb_local_follow local_follow.launch.py
-```
-
-该启动文件默认只由局部速度规划器发布 `/cmd_vel`；UWB 跟随节点只发布
-名义速度，不会绕过碰撞检查。架空调试时可禁止真实速度：
+一键启动完整感知、跟随和局部避障链路，先显式禁止本链路运动（launch 默认 true）：
 
 ```bash
 ros2 launch go2_uwb_local_follow local_follow.launch.py enable_motion:=false
 ```
+
+该启动文件只由局部速度规划器发布 `/cmd_vel`；UWB 跟随节点只发布
+名义速度，不会绕过碰撞检查。实际运动需在部署层确认控制权后显式使用 `enable_motion:=true`。
 
 以下独立启动命令仍用于分阶段验收。
 
@@ -121,9 +146,9 @@ ros2 launch go2_uwb_local_follow uwb_follow_only.launch.py \
 ```
 
 UWB 角速度随目标方位误差连续增大，最大限制为 `2.00 rad/s`；线速度随目标
-距离误差增大，在方位角超过约 `28.6°` 后平滑降速，超过约 `80.2°` 才停止前进
+距离误差增大，在方位角超过约 `17.2°`（0.30 rad） 后平滑降速，超过约 `88.8°`（1.55 rad） 才停止前进
 并原地转向。有效非零线速度范围默认设为
-`0.23~0.80 m/s`，避免 MCF 长时间接收无法形成步态的极小前进速度。线加速度和
+`0.25~0.80 m/s`，避免 MCF 长时间接收无法形成步态的极小前进速度。线加速度和
 减速度均为 `0.80 m/s²`；从静止加速到最高线速度理论约需 1 秒。目标丢失属于
 安全事件，仍绕过普通减速过程并立即发布零速度。
 
@@ -138,12 +163,12 @@ UWB 角速度随目标方位误差连续增大，最大限制为 `2.00 rad/s`；
 
 ```bash
 ros2 launch go2_uwb_local_follow stereo_obstacle_cloud.launch.py
-ros2 launch go2_uwb_local_follow uwb_follow_only.launch.py
+ros2 launch go2_uwb_local_follow uwb_follow_only.launch.py enable_motion:=false cmd_vel_topic:=/debug_follow_cmd_vel
 ros2 launch go2_uwb_local_follow local_collision_debug.launch.py
 ```
 
 默认 `enable_motion:=false`，因此 `/cmd_vel_avoidance` 始终为零；实际判定结果在
-`/go2_uwb_local_follow/collision_checked_cmd`，不会接管真实底盘。检查以下话题：
+`/go2_uwb_local_follow/collision_checked_cmd`，不会接管真实底盘。上例纯跟随输出也隔离到 `/debug_follow_cmd_vel`，避免绕过碰撞门控。检查以下话题：
 
 ```bash
 ros2 topic echo /go2_uwb_local_follow/collision_diagnostics
@@ -176,8 +201,8 @@ UWB 名义转向使用 `/leg_odom2.twist.twist.angular.z` 计算动态停止角�
 动态刹车触发后会锁存零名义角速度，直到实测角速度低于
 `angular_brake_release_speed`，防止停止角随速度下降后过早恢复同方向转向。
 
-`local_velocity_planner_node` 仍只读取 `/leg_odom2` 的 `twist.twist.linear.x` 和
-`twist.twist.angular.z` 作为当前真实速度。新增的 `rolling_obstacle_map_node` 独立
+`local_velocity_planner_node` 使用 `/leg_odom2` 的 `twist` 作为实测初始速度，
+也缓存带时间戳的 pose，将观测时刻的障碍补偿到当前机身。`rolling_obstacle_map_node`
 读取同一话题的带时间戳 pose：每帧 `/local_depth_observation` 先按观测时间戳插值
 `odom -> base_footprint` 位姿并转换到局部 `odom` 二维体素地图，再把全部保留障碍补偿到
 该观测时刻的当前 `base_footprint`，发布 `/local_rolling_obstacle` 给原规划器。
@@ -221,7 +246,7 @@ UWB 名义转向使用 `/leg_odom2.twist.twist.angular.z` 计算动态停止角�
 当前版本仍直接使用滚动障碍点云，没有增加 OccupancyGrid、距离场、A* 或局部路径
 引导，因此 MPPI 提升的是时变控制能力，不保证单独解决所有 U 型拓扑陷阱。
 UWB 名义角速度使用 `/leg_odom2` 实测角速度进行 P 反馈修正，默认
-`angular_velocity_tracking_kp=1.0`，同时保留小命令死区、反向停稳保护和最大角速度
+`angular_velocity_tracking_kp=1.5`，同时保留小命令死区、反向停稳保护和最大角速度
 限幅；不再叠加原角速度阻尼，也不强制抬升跟随角速度。普通 MPPI 控制序列使用
 `1.50 rad/s` 最大角速度，并在调整后重新预测碰撞轨迹。
 `/leg_odom2`、名义速度或障碍点云任一超时都会故障停车。
@@ -237,11 +262,11 @@ UWB 名义角速度使用 `/leg_odom2` 实测角速度进行 P 反馈修正，�
 
 ```bash
 ros2 launch go2_uwb_local_follow stereo_obstacle_cloud.launch.py
-ros2 launch go2_uwb_local_follow uwb_follow_only.launch.py enable_motion:=false
+ros2 launch go2_uwb_local_follow uwb_follow_only.launch.py enable_motion:=false cmd_vel_topic:=/debug_follow_cmd_vel
 ros2 launch go2_uwb_local_follow local_velocity_planner.launch.py
 ```
 
-规划器在这个 launch 里默认 `enable_motion:=false`，所以它只往 `/cmd_vel` 发零速度。
+规划器在这个 launch 里默认 `enable_motion:=false`，所以它只往 `/cmd_vel` 发零速度。上游纯跟随输出隔离到 `/debug_follow_cmd_vel`，避免两节点同时发底盘速度。
 ⚠️ 这也意味着它是 `/cmd_vel` 的一个发布者：跑这一路时不要再开键盘 teleop，
 否则两路指令在同一条话题上互相覆盖。MPPI 首个控制量和限幅结果分别发布到：
 
@@ -255,7 +280,7 @@ ros2 topic echo /go2_uwb_local_follow/rolling_map_diagnostics
 在 RViz 中显示 `/go2_uwb_local_follow/selected_path`。该 Path 包括规划时域以及
 完整制动尾段，因此可能比原来的 `/evaluated_path` 更长。默认每周期评估
 `48 × 2 = 96` 条时变控制序列；`planning_time_ms` 用于现场核对是否稳定低于
-20 Hz 控制周期的 `50 ms`。当前机器的固定种子侧墙基准中，5000 个障碍点的中位
+20 Hz 控制周期的 `50 ms`。历史固定种子侧墙基准中，5000 个障碍点的中位
 耗时约 `1.5 ms`、P95 约 `1.6 ms`；实机仍须结合目标 CPU 和真实点云复测。
 
 诊断状态含义：

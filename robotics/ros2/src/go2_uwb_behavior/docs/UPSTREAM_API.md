@@ -1,146 +1,139 @@
 # RK/Lite3 UWB 行为上层调用接口
 
-## 1. 接口选择
+核对日期：2026-10-11。接口定义见本包 `action/`、`srv/`；下表范围是当前 `behavior_controller.yaml` 的配置值，修改服务端配置后以实际值为准。
 
-语音识别层不要直接发布 `/cmd_vel`，只调用以下接口：
+## 1. 接口选择与互斥
 
-| 语音意图 | 接口 | 生命周期 |
+| 意图 | 接口与类型 | 生命周期 |
 | --- | --- | --- |
-| “跟着我” | `/go2/follow_uwb`，`FollowUwb` Action | 持续到 cancel 或超时 |
-| “原地玩耍” | `/go2/random_roam`，`RandomRoam` Action | 随机走到一个目标后自动结束 |
-| “停下” | `/go2/set_behavior`，`SetBehavior` Service，`mode=STOP` | 锁存停车并拒绝新任务 |
-| “解除停止” | `/go2/set_behavior`，`mode=IDLE` | 回到可接收任务的空闲状态 |
+| 跟着我 | `/go2/follow_uwb`，`go2_uwb_behavior/action/FollowUwb` | 持续到取消或超时 |
+| 原地玩耍 | `/go2/random_roam`，`go2_uwb_behavior/action/RandomRoam` | 单次随机目标到达并停车后结束 |
+| 围着我转一圈 | `/go2/orbit_uwb_once`，`go2_uwb_behavior/action/OrbitUwbOnce` | 接近、环绕一周、停车后结束 |
+| 停止/解除 | `/go2/set_behavior`，`go2_uwb_behavior/srv/SetBehavior` | STOP=2 / IDLE=0 |
 
-两个 Action 全局互斥。Goal 被接受时开启双目点云和避障计算；结束、失败或取消后关闭。上层应保存 Action Goal Handle，“停止跟随”通过 cancel 当前 Follow Goal 实现。
+三个 Action 全局互斥，不自动抢占已有 Goal。STOP 锁存时拒绝新 Goal。上层保存 Goal Handle，先取消当前任务、等待 Result，再决定后续行为。语音识别层只调用任务接口，速度控制权由任务/部署层协调。
 
-## 2. 持续跟随 Action
+所有 Feedback `state` 和 Result `code` 都是 **uint8 数字枚举**，不是字符串。应使用生成接口的常量比较；不要用诊断消息中的文字状态替代它们。
 
-```text
-Action 名：/go2/follow_uwb
-类型：go2_uwb_behavior/action/FollowUwb
-```
+## 2. FollowUwb
 
-Goal：
-
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
-| `timeout_sec` | `float64` | `0` 表示持续到 cancel；显式值允许 5～3600 秒 |
+Goal：`float64 timeout_sec`，0 表示不设总时限；显式值 5～3600 秒。非有限值、负值和范围外值拒绝。
 
 ```bash
 ros2 action send_goal /go2/follow_uwb \
-  go2_uwb_behavior/action/FollowUwb \
-  "{timeout_sec: 0.0}" --feedback
+  go2_uwb_behavior/action/FollowUwb "{timeout_sec: 0.0}" --feedback
 ```
 
-Feedback：
+Feedback：`state`、`distance`（米）、`heading`（弧度）、`elapsed_sec`（秒）。state 为 STARTING=0、FOLLOWING=1、HOLDING=2、INPUT_PAUSED=3、STOPPING=4。
 
-| 字段 | 说明 |
-| --- | --- |
-| `state` | `STARTING`、`FOLLOWING`、`HOLDING`、`INPUT_PAUSED` 或 `STOPPING` |
-| `distance` | 当前 UWB 距离，米 |
-| `heading` | 当前 UWB 方位误差，弧度 |
-| `elapsed_sec` | 已执行时间，秒 |
+Result：`code`、`message`、`elapsed_sec`、`final_distance`。
 
-Result 包含 `code`、`message`、`elapsed_sec` 和 `final_distance`。常见结果码为
-`CANCELED`、`NOT_READY`、`TIMEOUT`、`INPUT_TIMEOUT`、`PREEMPTED_BY_MODE` 和
-`STOP_UNCONFIRMED`。跟随是持续任务，正常的“停止跟随”应得到 Action
-`STATUS_CANCELED` 且业务码为 `CANCELED`。
-
-## 3. 单次随机玩耍 Action
-
-```text
-Action 名：/go2/random_roam
-类型：go2_uwb_behavior/action/RandomRoam
-```
-
-Goal：
-
-| 字段 | 类型 | 说明 |
+| code | 常量 | 含义 |
 | --- | --- | --- |
-| `random_seed` | `uint32` | `0` 使用随机种子；非零便于复现 |
-| `timeout_sec` | `float64` | `0` 使用默认 30 秒；显式值允许 5～120 秒 |
-| `min_radius` | `float64` | 目标到调用时 UWB 原点的最小半径；与最大半径同时为 0 时使用默认值 |
-| `max_radius` | `float64` | 目标到调用时 UWB 原点的最大半径；服务端上限默认 2.0 米 |
+| 0 | SUCCESS | 成功 |
+| 1 | CANCELED | 上层取消 |
+| 2 | PREEMPTED_BY_MODE | IDLE/STOP 请求抢占 |
+| 3 | NOT_READY | 就绪窗口内输入未备齐 |
+| 4 | TIMEOUT | 总时限到达 |
+| 5 | INPUT_TIMEOUT | 输入恢复窗口到达仍未恢复 |
+| 6 | STOP_UNCONFIRMED | 成功停车流程无法确认停稳 |
+
+跟随是持续任务，正常“别跟了”通过 cancel 请求完成，期待 `STATUS_CANCELED` + CANCELED；停车证据限制见第 5 节。
+
+## 3. RandomRoam
+
+| Goal 字段 | 类型 | 当前配置下规则 |
+| --- | --- | --- |
+| `random_seed` | uint32 | 0 使用随机种子；非零便于复现 |
+| `timeout_sec` | float64 | 0 使用默认 30 秒；显式值 5～120 秒 |
+| `min_radius` | float64 | 目标距冻结中心的最小半径，米 |
+| `max_radius` | float64 | 最大半径，米 |
+
+半径同时为 0 时使用默认 0.5～2.0 米；否则需为有限值且 `0.5 <= min_radius < max_radius <= 2.0`。
 
 ```bash
 ros2 action send_goal /go2/random_roam \
   go2_uwb_behavior/action/RandomRoam \
-  "{random_seed: 0, timeout_sec: 30.0, min_radius: 0.5, max_radius: 2.0}" \
-  --feedback
+  "{random_seed: 0, timeout_sec: 30.0, min_radius: 0.5, max_radius: 2.0}" --feedback
 ```
 
-行为节点优先在 Goal 接收时冻结经过滤波的 UWB `odom` 坐标；若当时样本不足，则在输入首次就绪时冻结。目标按面积均匀分布在圆环内，并通过障碍净空检查。UWB 后续移动不会拖动本次圆心或目标。
+优先在 Goal 接受时冻结过滤后的 UWB odom 坐标；样本不足时在输入首次就绪后冻结。目标在圆环中按面积均匀采样并检查障碍净空。后续 UWB 移动不拖动本次目标和围栏中心；这是单次任务，不是持续漫游。当前配置还保留 5.0 米软返回触发、4.5 米释放、5.6 米限制区和 6.0 米绝对围栏。
 
-Result：
+Feedback：`state`、`target_pose`、`distance_remaining`、`owner_distance`、`elapsed_sec`。state 为 PREPARING=0、SELECTING_GOAL=1、NAVIGATING=2、RETURNING=3、STOPPING=4、RETRYING=5。
 
-| 字段 | 说明 |
+Result：`code`、`message`、`reached_pose`、`center_pose`、`target_pose`、`owner_distance`、`min_clearance`。Pose 使用 odom；距离/净空单位米。
+
+| code | 常量 |
 | --- | --- |
-| `code`、`message` | 业务结果及说明 |
-| `reached_pose` | 任务结束时机器人 `odom` 位姿 |
-| `center_pose` | 本次冻结的 UWB 圆心 |
-| `target_pose` | 本次随机目标 |
-| `owner_distance` | 机器人到冻结圆心的距离 |
-| `min_clearance` | 足迹边缘到最近缓存障碍的净空 |
+| 0 | SUCCESS |
+| 1 | CANCELED |
+| 2 | PREEMPTED_BY_MODE |
+| 3 | NOT_READY |
+| 4 | NO_VALID_GOAL |
+| 5 | BLOCKED |
+| 6 | TIMEOUT |
+| 7 | INPUT_TIMEOUT |
+| 8 | GEOFENCE_STOP |
+| 9 | STOP_UNCONFIRMED |
 
-成功必须同时满足：
+后续依赖任务成功的动作只接受 `STATUS_SUCCEEDED` 且 `result.code == RandomRoam.Result.SUCCESS`。
 
-```text
-Action 状态 == STATUS_SUCCEEDED
-且 result.code == SUCCESS
+## 4. OrbitUwbOnce
+
+| Goal 字段 | 类型 | 当前配置下规则 |
+| --- | --- | --- |
+| `timeout_sec` | float64 | 0 使用 60 秒；显式值 5～180 秒 |
+| `orbit_radius` | float64 | 0 使用 1.0 米；显式值 0.5～2.0 米 |
+| `direction` | int8 | 0 或 1 逆时针；-1 顺时针；其他值拒绝 |
+
+```bash
+ros2 action send_goal /go2/orbit_uwb_once \
+  go2_uwb_behavior/action/OrbitUwbOnce \
+  "{timeout_sec: 60.0, orbit_radius: 1.0, direction: 0}" --feedback
 ```
 
-其他业务码包括 `CANCELED`、`PREEMPTED_BY_MODE`、`NOT_READY`、
-`NO_VALID_GOAL`、`BLOCKED`、`TIMEOUT`、`INPUT_TIMEOUT`、`GEOFENCE_STOP` 和
-`STOP_UNCONFIRMED`。任何非成功结果都不应继续执行厂家跳跃、摆腿等动作。
+Feedback：`state`、`distance`、`orbit_angle`、`elapsed_sec`；state 为 STARTING=0、APPROACHING=1、ORBITING=2、INPUT_PAUSED=3、STOPPING=4。角度单位弧度。
 
-## 4. 停车 Service
+Result：`code`、`message`、`elapsed_sec`、`final_distance`、`completed_angle`。
 
-```text
-服务名：/go2/set_behavior
-类型：go2_uwb_behavior/srv/SetBehavior
-```
-
-只接受：
-
-- `IDLE=0`：解除 STOP，保持空闲零速。
-- `STOP=2`：抢占活动 Action，停车后进入锁存状态。
-
-`FOLLOW=1` 和 `ROAM=3` 会被拒绝，因为长任务必须使用可取消、可反馈的 Action。
-
-## 5. 推荐语音层时序
-
-```text
-“跟着我”
-  -> 发送 FollowUwb Goal
-  -> 保存 Goal Handle
-  -> 等待 STARTING 变为 FOLLOWING/HOLDING
-
-“别跟了”
-  -> cancel 保存的 Follow Goal
-  -> 等待 CANCELED Result（节点已停车并关闭点云计算）
-
-“原地玩耍”
-  -> 发送 RandomRoam Goal（带 min/max_radius）
-  -> 等待 Result
-  -> 仅 SUCCEEDED + SUCCESS 时，才允许进入后续厂家动作
-
-“停下”
-  -> SetBehavior(STOP)
-  -> 当前 Action 被抢占并停车，后续 Goal 被拒绝
-```
-
-## 6. 数据与安全约束
-
-机器人侧必须提供：
-
-| 数据 | RK 默认话题 |
+| code | 常量 |
 | --- | --- |
-| UWB 原始数据 | `/libAoa_robot_publisher` |
-| 适配后目标点 | `/uwb/target_point` |
-| Lite3 里程计 | `/leg_odom2`，`nav_msgs/Odometry` |
-| 左右校正图像 | `/camera/camera/infra1/image_rect_raw`、`infra2/image_rect_raw` |
-| 相机内参与 TF | CameraInfo、相机坐标系到 `base_footprint` |
+| 0 | SUCCESS |
+| 1 | CANCELED |
+| 2 | PREEMPTED_BY_MODE |
+| 3 | NOT_READY |
+| 4 | TIMEOUT |
+| 5 | INPUT_TIMEOUT |
+| 6 | BLOCKED |
+| 7 | STOP_UNCONFIRMED |
 
-运动期间必须持续进行双目感知，不能只在 Goal 开始时计算一帧点云。输入短时中断会立即输出零速并等待默认 3 秒；恢复后可继续，持续失效返回 `INPUT_TIMEOUT`。漫游目标上限默认 2.0 米，仍有 5.6 米限制区和 6 米硬围栏。
+完成判断为 `STATUS_SUCCEEDED` + SUCCESS，不能只看反馈角度达到约 2π。Python 调用见 [环绕接口说明](OrbitUwbOnce上层调用说明.md)。
 
-新启动链路输出 `/cmd_vel`，不能与旧 `local_follow.launch.py` 或其他速度控制节点同时运行。
+## 5. 模式、取消与停车证据
+
+SetBehavior 只接受 IDLE=0 和 STOP=2；FOLLOW=1、ROAM=3 被拒绝。活动任务遇到模式请求时进入停车流程，Service 的 `accepted=true` 仅表示受理，`current_mode` 可能仍是旧模式。
+
+```bash
+ros2 service call /go2/set_behavior go2_uwb_behavior/srv/SetBehavior "{mode: 2}"
+ros2 service call /go2/set_behavior go2_uwb_behavior/srv/SetBehavior "{mode: 0}"
+```
+
+cancel 也是异步受理；上层需等待原 Goal 的最终 Result。停车确认要求新鲜 odom，低 twist（线速度绝对值不大于 0.04 m/s、角速度绝对值不大于 0.08 rad/s）或位姿稳定（平移 0.02 m、偏航 0.03 rad 容差）满足任一路证据，累计 0.30 秒。最多等待 2 秒。
+
+**当前实现只把原拟成功的任务在停车确认超时时改为 STOP_UNCONFIRMED；取消或失败会保留原 CANCELED/错误码并结束。** 因此收到 CANCELED 不代表物理停车已经被确认。需要以停稳为前提的后续任务还需核对底盘/新鲜里程计；本次只修正文档，没有修改此实现。
+
+STOP 仅锁存本 UWB 控制器，不能自动阻断其他节点或遥控器。本包也没有检测 Nav2 启动的自动互锁。上层必须协调控制权。
+
+## 6. 输入、门控与默认时限
+
+| 数据 | 默认来源 |
+| --- | --- |
+| 厂家 UWB | `/libAoa_robot_publisher`，适配后 `/uwb/target_point` |
+| 底盘位姿与速度 | `/leg_odom2`，nav_msgs/Odometry |
+| 双目 | `/camera/camera/infra1/image_rect_raw`、`/camera/camera/infra2/image_rect_raw` 及 CameraInfo |
+| 障碍 | `/local_rolling_obstacle`，来自本包统一链路 |
+| TF | 相机到 base_footprint，及一致的 odom 位姿 |
+
+当前配置就绪窗口 2 秒、输入恢复窗口 3 秒；输入短时中断先停车，恢复后按当前任务状态继续。不同模式检查其所需输入，漫游中心冻结后不随实时 UWB 移动。
+
+门控是 transient-local `/go2_uwb_behavior/compute_enable`：Action 接受开启；Follow/Orbit 进入最终停车时关闭，RandomRoam 结束时关闭。当前配置 `publish_idle_velocity=false`，IDLE/STOP 不持续发零。详细环境加载与分阶段验收见 [部署说明](上层对接与部署.md)。

@@ -18,9 +18,18 @@ from launch.substitutions import (
 from launch_ros.actions import Node, SetRemap
 from nav2_common.launch import ReplaceString, RewrittenYaml
 
+from robot_slam_bringup.profile_launch import (
+    ProfiledNav2Params,
+    configure_robot_profile,
+    create_sensor_transform,
+    show_configuration,
+)
+from robot_slam_bringup.robot_profiles import ROBOTS, prepare_description
+
 
 def create_robot_state_publisher(
-        context, enabled, description_package, description_file):
+        context, enabled, description_package, description_file,
+        base_frame, description_root_frame):
     """仅在显式启用时读取指定 URDF 并创建状态发布节点。"""
     enabled_value = enabled.perform(context).strip().lower()
     if enabled_value not in {'1', 'true', 'yes', 'on'}:
@@ -35,9 +44,10 @@ def create_robot_state_publisher(
 
     # 描述包保持可选，只有显式启用时才解析对应机器人的 URDF。
     package_share = get_package_share_directory(package_name)
-    urdf_path = os.path.join(package_share, relative_file)
-    with open(urdf_path, encoding='utf-8') as urdf_file:
-        robot_description = urdf_file.read()
+    robot_description = prepare_description(
+        package_share, relative_file, package_name,
+        base_frame.perform(context).strip(),
+        description_root_frame.perform(context).strip())
 
     return [
         Node(
@@ -51,7 +61,7 @@ def create_robot_state_publisher(
 
 
 def generate_launch_description():
-    """使用外部 2D 里程计和可配置 TF 链启动 RTAB-Map/Nav2。"""
+    """选择 Lite3/GO2/灵猫，使用外部里程计启动公共 RTAB-Map/Nav2。"""
 
     base_frame = LaunchConfiguration('base_frame')
     odom_frame = LaunchConfiguration('odom_frame')
@@ -76,6 +86,10 @@ def generate_launch_description():
     description_package = LaunchConfiguration('description_package')
     description_file = LaunchConfiguration('description_file')
     use_stereo_odometry = LaunchConfiguration('use_stereo_odometry')
+    print_config = LaunchConfiguration('print_config')
+    publish_odom_tf = LaunchConfiguration('publish_odom_tf')
+    publish_sensor_tf = LaunchConfiguration('publish_sensor_tf')
+    description_root_frame = LaunchConfiguration('description_root_frame')
 
     rtabmap_odom_params = {
         'frame_id': base_frame,
@@ -134,12 +148,14 @@ def generate_launch_description():
         'Grid/MapFrameProjection': 'false',
     }
 
-    # 回环检测、几何验证和位姿图优化参数参考优化建图配置。
+    # D435i 回环/重定位的均衡试调起点；Lite3、GO2、灵猫共用。
     rtabmap_loop_closure_params = {
         # 回环假设阈值与单帧处理预算。
         'Rtabmap/ImageBufferSize': '1',
         'Rtabmap/CreateIntermediateNodes': 'false',
-        'Rtabmap/LoopThr': '0.2',  # 本轮优化：0.11 -> 0.2，提高回环候选置信度门槛
+        'Rtabmap/LoopThr': '0.15',
+        # 首次定位保留较宽松入口，同时提高默认 0.05 的候选门槛。
+        'RGBD/AggressiveLoopThr': '0.10',
         'Rtabmap/LoopRatio': '0',
         'Rtabmap/PublishStats': 'true',
         'Rtabmap/PublishLastSignature': 'true',
@@ -167,16 +183,17 @@ def generate_launch_description():
         'RGBD/LinearSpeedUpdate': '0.0',
         'RGBD/AngularSpeedUpdate': '0.0',
         'RGBD/OptimizeFromGraphEnd': 'false',
-        'RGBD/OptimizeMaxError': '1.5',
+        'RGBD/OptimizeMaxError': '2.5',
         'RGBD/ProximityBySpace': 'true',
         'RGBD/ProximityByTime': 'false',
         'RGBD/NeighborLinkRefining': 'false',
         'RGBD/LoopClosureIdentityGuess': 'false',
         'RGBD/LoopClosureReextractFeatures': 'false',
         'RGBD/LocalBundleOnLoopClosure': 'false',
-        # 3~5 m 为建议范围；先取 5 m，避免走廊回程时漏掉有效回环。
-        'RGBD/MaxLoopClosureDistance': '5.0',  # 本轮优化：0 -> 5.0 m，限制过远回环
-        'VhEp/Enabled': 'true',  # 本轮新增：启用极线几何验证，剔除错误回环候选
+        # 限制候选两帧的相对平移，不限制 map -> odom 的定位跳变。
+        'RGBD/MaxLoopClosureDistance': '5.0',
+        # 使用下方 PnP/BA 几何验证，关闭独立极线前置检查。
+        'VhEp/Enabled': 'false',
         'RGBD/MaxOdomCacheSize': '10',
 
         # 使用视觉特征对回环候选进行几何一致性验证。
@@ -184,6 +201,8 @@ def generate_launch_description():
         'Reg/Force3DoF': 'true',
         'Reg/RepeatOnce': 'true',
         'Vis/MinInliers': '20',
+        # 归一化二维内点 PCA 的第二特征值门槛，不是内点数量比例。
+        'Vis/MinInliersDistribution': '0.002',
         'Vis/Iterations': '300',
         'Vis/FeatureType': '8',
         'Vis/MaxFeatures': '800',
@@ -198,14 +217,20 @@ def generate_launch_description():
         'Vis/CorNNDR': '0.8',
         'Vis/CorGuessWinSize': '40',
         'Vis/PnPReprojError': '2.0',
-        'Vis/PnPRefineIterations': '1',
+        'Vis/PnPRefineIterations': '0',  # BA 已启用，按核心参数说明设置。
         'Vis/PnPVarianceMedianRatio': '4',
         'Vis/BundleAdjustment': '1',
 
         # 词袋字典参数决定回环候选检索质量。
         'Kp/DetectorStrategy': '8',
         'Kp/MaxFeatures': '600',
-        'Kp/BadSignRatio': '0.5',
+        'Kp/BadSignRatio': '0.35',
+        # 保存/检索特征的网格；旧地图的特征不会自动重新提取。
+        'Kp/GridRows': '3',
+        'Kp/GridCols': '3',
+        # 词袋保留远处二维纹理；三维配准仍由 Vis/MaxDepth 限制。
+        'Kp/MaxDepth': '0',
+        'Kp/MinDepth': '0',
         'Kp/NndrRatio': '0.8',
         'Kp/NNStrategy': '1',
         'Kp/IncrementalDictionary': 'true',
@@ -227,6 +252,7 @@ def generate_launch_description():
         'subscribe_stereo': True,
         'subscribe_odom_info': False,
         'subscribe_odom': True,
+        # 非空 frame 保留 TF 位姿输入；不使用未经校核的话题协方差。
         'odom_frame_id': odom_frame,
         'map_frame_id': map_frame,
         'use_sim_time': False,
@@ -280,7 +306,7 @@ def generate_launch_description():
         [pkg_nav2_bringup, 'launch', 'navigation_launch.py'])
     # 先替换非 ROS 参数占位符，再按参数路径覆盖不同节点使用的坐标系。
     replaced_nav2_params_file = ReplaceString(
-        source_file=nav2_params_file,
+        source_file=ProfiledNav2Params(nav2_params_file),
         replacements={
             'SLAM_WS_SHARE': pkg_robot_slam_bringup,
             'KEEPOUT_ZONE_ENABLED': keepout_enabled,
@@ -361,7 +387,13 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-
+        DeclareLaunchArgument(
+            'robot', default_value='lite3', choices=ROBOTS,
+            description='机器人配置：lite3 / go2 / lingmao；默认保持 Lite3'),
+        DeclareLaunchArgument(
+            'robot_config', default_value='',
+            description='可选自定义机器人 YAML；留空读取包内 config/robots/<robot>.yaml'),
+        OpaqueFunction(function=configure_robot_profile),
         DeclareLaunchArgument(
             'base_frame',
             default_value='base_footprint',
@@ -471,84 +503,115 @@ def generate_launch_description():
             ),
         ),
 
-        # 不再启动旧的 /odom_leg 发布器，odom -> base TF 由底盘里程计独占发布。
+        DeclareLaunchArgument(
+            'description_root_frame', default_value='',
+            description='可选 URDF 根名称别名；Cyvet 官方模型为 BASE_LINK'),
+        DeclareLaunchArgument(
+            'publish_odom_tf', default_value='false',
+            description='仅在外部 Odometry 来源不发布 odom -> base TF 时启用'),
+        DeclareLaunchArgument(
+            'publish_sensor_tf', default_value='false',
+            description='从机器人 YAML 发布已实测的基座到相机安装 TF'),
+        DeclareLaunchArgument(
+            'print_config', default_value='false',
+            description='true 时只打印合并配置，不启动任何 ROS 节点'),
         OpaqueFunction(
-            function=create_robot_state_publisher,
-            args=[
-                start_robot_state_publisher,
-                description_package,
-                description_file,
-            ],
-        ),
+            function=show_configuration,
+            args=[configured_nav2_params_file]),
 
-        Node(
-            condition=IfCondition(use_stereo_odometry),
-            package='rtabmap_odom',
-            executable='stereo_odometry',
-            name='d435i_stereo_odometry',
-            output='screen',
-            parameters=[rtabmap_odom_params],
-            remappings=odom_remaps,
-            arguments=['--ros-args', '--log-level', 'warn']
-        ),
+        GroupAction(condition=UnlessCondition(print_config), actions=[
 
-        Node(
-            condition=UnlessCondition(localization),
-            package='rtabmap_slam',
-            executable='rtabmap',
-            name='rtabmap',
-            output='screen',
-            parameters=[rtabmap_slam_params, {'database_path': database_path}],
-            remappings=slam_remaps,
-            arguments=['--ros-args', '--log-level', 'warn', '--', '-d']
-        ),
+            # TF 由外部里程计或显式启用的 relay 独占发布；不启动旧 /odom_leg 发布器。
+            OpaqueFunction(
+                function=create_robot_state_publisher,
+                args=[
+                    start_robot_state_publisher,
+                    description_package,
+                    description_file,
+                    base_frame,
+                    description_root_frame,
+                ],
+            ),
 
-        Node(
-            condition=IfCondition(localization),
-            package='rtabmap_slam',
-            executable='rtabmap',
-            name='rtabmap',
-            output='screen',
-            parameters=[
-                rtabmap_slam_params,
-                rtabmap_localization_params,
-                {'database_path': database_path}
-            ],
-            remappings=slam_remaps,
-            arguments=['--ros-args', '--log-level', 'warn']
-        ),
+            OpaqueFunction(
+                condition=IfCondition(publish_sensor_tf),
+                function=create_sensor_transform),
+            Node(
+                condition=IfCondition(publish_odom_tf),
+                package='robot_slam_bringup', executable='odometry_tf_relay',
+                name='odometry_tf_relay', output='screen',
+                parameters=[{'odom_topic': odom_topic, 'odom_frame': odom_frame,
+                             'base_frame': base_frame}]),
 
-        Node(
-            package='rtabmap_viz',
-            executable='rtabmap_viz',
-            name='rtabmap_viz',
-            output='screen',
-            condition=IfCondition(use_viz),
-            parameters=[rtabmap_slam_params],
-            remappings=slam_remaps,
-            arguments=['--ros-args', '--log-level', 'warn']
-        ),
+            Node(
+                condition=IfCondition(use_stereo_odometry),
+                package='rtabmap_odom',
+                executable='stereo_odometry',
+                name='d435i_stereo_odometry',
+                output='screen',
+                parameters=[rtabmap_odom_params],
+                remappings=odom_remaps,
+                arguments=['--ros-args', '--log-level', 'warn']
+            ),
 
-        GroupAction(
-            condition=IfCondition(use_nav2),
-            actions=[
-                # 仅重映射最终输出节点，保留 controller 到 smoother 的内部速度链。
-                SetRemap(
-                    src='behavior_server:cmd_vel',
-                    dst=cmd_vel_topic,
-                ),
-                SetRemap(
-                    src='velocity_smoother:cmd_vel_smoothed',
-                    dst=cmd_vel_topic,
-                ),
-                IncludeLaunchDescription(
-                    PythonLaunchDescriptionSource([nav2_launch]),
-                    launch_arguments=[
-                        ('use_sim_time', 'false'),
-                        ('params_file', configured_nav2_params_file)
-                    ]
-                ),
-                keepout_nodes,
-            ],
-        ),
+            Node(
+                condition=UnlessCondition(localization),
+                package='rtabmap_slam',
+                executable='rtabmap',
+                name='rtabmap',
+                output='screen',
+                parameters=[rtabmap_slam_params, {'database_path': database_path}],
+                remappings=slam_remaps,
+                arguments=['--ros-args', '--log-level', 'warn', '--', '-d']
+            ),
+
+            Node(
+                condition=IfCondition(localization),
+                package='rtabmap_slam',
+                executable='rtabmap',
+                name='rtabmap',
+                output='screen',
+                parameters=[
+                    rtabmap_slam_params,
+                    rtabmap_localization_params,
+                    {'database_path': database_path}
+                ],
+                remappings=slam_remaps,
+                arguments=['--ros-args', '--log-level', 'warn']
+            ),
+
+            Node(
+                package='rtabmap_viz',
+                executable='rtabmap_viz',
+                name='rtabmap_viz',
+                output='screen',
+                condition=IfCondition(use_viz),
+                parameters=[rtabmap_slam_params],
+                remappings=slam_remaps,
+                arguments=['--ros-args', '--log-level', 'warn']
+            ),
+
+            GroupAction(
+                condition=IfCondition(use_nav2),
+                actions=[
+                    # 仅重映射最终输出节点，保留 controller 到 smoother 的内部速度链。
+                    SetRemap(
+                        src='behavior_server:cmd_vel',
+                        dst=cmd_vel_topic,
+                    ),
+                    SetRemap(
+                        src='velocity_smoother:cmd_vel_smoothed',
+                        dst=cmd_vel_topic,
+                    ),
+                    IncludeLaunchDescription(
+                        PythonLaunchDescriptionSource([nav2_launch]),
+                        launch_arguments=[
+                            ('use_sim_time', 'false'),
+                            ('params_file', configured_nav2_params_file)
+                        ]
+                    ),
+                    keepout_nodes,
+                ],
+            ),
+        ]),
     ])
