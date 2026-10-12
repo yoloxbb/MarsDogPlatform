@@ -79,6 +79,20 @@ owner_presence_events:
   exit_duration_sec: 2.0
   retrigger_delay_sec: 3.0
 
+# Emit independent state facts for confirmed enrolled family and strangers.
+# Timing advances on distinct successful source inferences, not 10 Hz snapshots.
+family_presence_events:
+  enabled: true
+  enter_duration_sec: 1.0
+  exit_duration_sec: 2.0
+  retrigger_delay_sec: 3.0
+
+stranger_presence_events:
+  enabled: true
+  enter_duration_sec: 1.0
+  exit_duration_sec: 2.0
+  retrigger_delay_sec: 3.0
+
 # Aligned RealSense depth is the only source allowed to populate a target
 # range. Missing/stale depth, invalid CameraInfo, a timestamp mismatch or an
 # unsupported encoding leaves range_valid=false and therefore forbids motion.

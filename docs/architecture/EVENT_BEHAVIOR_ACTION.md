@@ -127,23 +127,29 @@ Voice 的 `speech_pipeline.py` 编排 ASR、声纹、KWS、词库与意图输出
 
 ### 3.2 视觉入口
 
-当前 BT 视觉直驱白名单包含 `EVT_VISION_FALL`、`EVT_VISION_STOP_GESTURE` 和
-状态事件 `EVT_VISION_OWNER_PRESENT`。FALL/STOP 沿用出现边沿去重。主人事件在
-Vision 状态机 ENTER 后留在活动集合，HOLD 快照保持事件不变，达到有效负观测
-`T_exit=2.0s` 后移除；连续有效主人观测满 `T_enter=1.0s` 才能 ENTER，EXIT 后从
-该 EXIT 时刻开始冷却 `T_retrigger=3.0s`。重复同一源观测不推进计时。无效推理、相机
-断流或观测过期不会作为主人缺席；恢复后需要新的有效观测继续状态判定。
+当前 BT 视觉直驱白名单包含 `EVT_VISION_FALL`、`EVT_VISION_STOP_GESTURE` 和三个状态
+事件：`EVT_VISION_OWNER_PRESENT`、`EVT_VISION_FAMILY_PRESENT`、
+`EVT_VISION_STRANGER_PRESENT`。FALL/STOP 沿用出现边沿去重。presence 事件在 Vision
+状态机 ENTER 后留在活动集合，HOLD 快照保持事件不变，达到有效负观测 `T_exit=2.0s` 后
+移除；连续有效合格目标观测满 `T_enter=1.0s` 才能 ENTER，EXIT 后从该 EXIT 时刻开始冷却
+`T_retrigger=3.0s`。重复同一源观测不推进计时。无效推理、相机断流或观测过期不会作为目标
+缺席；恢复后需要新的有效观测继续状态判定。
 
-主人直驱事件要求可选 v1 元数据 `observation_status=valid`、事件实例 ID 和当前
-`owner/confirmed_known/tracking` 目标。BT 按事件实例 ID 跨重复快照及短暂缓存超时去重，
-并在仲裁前复核事件仍活动、epoch 一致且目标新鲜。候选 `owner_greet` 使用 Lv1、
-`sub_priority=12`、`semantic_rank=3`、`safe_point`，进入统一候选池和仲裁。现有 Action
-尚无 `owner_greet` 模板，因此执行解析会拒绝该候选；本实现不新增或推断动作阶段。
+主人事件仅接受 `owner/confirmed_known/tracking`，家人事件接受登记家人
+`family_member_1..4/confirmed_known/tracking`，陌生人事件接受
+`unknown/confirmed_unknown/tracking`。每个类别分别要求可选 v1 元数据
+`observation_status=valid`、事件实例 ID 和同包唯一的新鲜目标。BT 按事件实例 ID 跨重复
+快照及短暂缓存超时去重，并在仲裁前复核事件仍活动、epoch 一致且目标新鲜。候选
+`owner_greet`、`familiar_person_greet`、`stranger_observe` 使用 Lv1、`sub_priority=12`、
+`semantic_rank=3`、`safe_point`，进入统一候选池和仲裁。现有 Action 尚无这些行为模板，
+因此执行解析会拒绝候选；本实现不新增或推断动作阶段。
 
 `EVT_VISION_MASTER` 仍表示已登记的非 unknown 身份，继续由 Emotion/需求系统按原语义消费；
 主人直驱事件不会替代该事件，也不会增加重复情绪增量。
 
-`STRANGER`、人物与物体观测主要进入缓存或 Emotion；不是所有 `events[]` 都直接变成行为。目标绑定必须保留 `vision_epoch + target_id / track_id`、快照与新鲜度，身份字符串不能替代稳定目标引用。
+现有 `EVT_VISION_STRANGER`、人物与物体观测主要进入缓存或 Emotion；不是所有 `events[]`
+都直接变成行为。新的 `EVT_VISION_STRANGER_PRESENT` 是单独的在场状态，不改变旧陌生人事实。
+目标绑定必须保留 `vision_epoch + target_id / track_id`、快照与新鲜度，身份字符串不能替代稳定目标引用。
 
 ### 3.3 状态驱动的激活与恢复
 

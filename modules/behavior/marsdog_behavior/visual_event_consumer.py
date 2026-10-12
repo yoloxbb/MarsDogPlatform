@@ -6,15 +6,73 @@ from __future__ import annotations
 import json
 import time
 
+from .visual_presence_contract import (
+    OWNER_PRESENCE_EVENT,
+    VISUAL_PRESENCE_EVENT_NAMES,
+)
+
+
+def _presence_instance_id(self, event_name: str) -> str:
+    return self._cached_visual_event_instances.get(event_name, "")
+
+
+def _consumed_presence_instance_id(self, event_name: str) -> str:
+    if event_name == OWNER_PRESENCE_EVENT:
+        return self._consumed_owner_presence_instance_id
+    return getattr(
+        self, "_consumed_visual_presence_instance_ids", {}
+    ).get(event_name, "")
+
+
+def _pending_presence_instance_id(self, event_name: str) -> str:
+    if event_name == OWNER_PRESENCE_EVENT:
+        return self._pending_owner_presence_instance_id
+    return getattr(
+        self, "_pending_visual_presence_instance_ids", {}
+    ).get(event_name, "")
+
+
+def _set_pending_presence_instance_id(
+    self,
+    event_name: str,
+    event_id: str,
+) -> None:
+    if event_name == OWNER_PRESENCE_EVENT:
+        self._pending_owner_presence_instance_id = event_id
+    else:
+        values = getattr(self, "_pending_visual_presence_instance_ids", None)
+        if not isinstance(values, dict):
+            values = {}
+            self._pending_visual_presence_instance_ids = values
+        if event_id:
+            values[event_name] = event_id
+        else:
+            values.pop(event_name, None)
+
+
+def _set_consumed_presence_instance_id(
+    self,
+    event_name: str,
+    event_id: str,
+) -> None:
+    if event_name == OWNER_PRESENCE_EVENT:
+        self._consumed_owner_presence_instance_id = event_id
+    elif event_id:
+        values = getattr(self, "_consumed_visual_presence_instance_ids", None)
+        if not isinstance(values, dict):
+            values = {}
+            self._consumed_visual_presence_instance_ids = values
+        values[event_name] = event_id
+
 
 def consume_visual_event(self, msg, *, direct_events):
     """Handle /perception/visual_event messages.
 
     Caches visual targets and tracked_objects as a visual-service fallback.
     STRANGER, FALL, and STOP_GESTURE are forwarded on their appearance edge.
-    Owner presence is an active state with an instance ID: retry it while
-    active until a candidate is accepted, then retain its dedup ID across
-    cache timeouts and snapshot repetition.
+    Presence events are active states with instance IDs: retry while active
+    until a candidate is accepted, then retain each dedup ID across cache
+    timeouts and repeated HOLD snapshots.
     """
     try:
         data = json.loads(msg.data if hasattr(msg, 'data') else str(msg))
@@ -76,26 +134,18 @@ def consume_visual_event(self, msg, *, direct_events):
             status if status in {"valid", "invalid"} else ""
         )
         raw_event_instances = data.get("event_instances")
-        owner_instance = (
-            raw_event_instances.get("EVT_VISION_OWNER_PRESENT")
-            if isinstance(raw_event_instances, dict)
-            else None
-        )
-        raw_owner_event_id = (
-            owner_instance.get("event_id")
-            if isinstance(owner_instance, dict)
-            else None
-        )
-        owner_event_id = (
-            raw_owner_event_id.strip()
-            if isinstance(raw_owner_event_id, str)
-            else ""
-        )
-        self._cached_visual_event_instances = (
-            {"EVT_VISION_OWNER_PRESENT": owner_event_id}
-            if owner_event_id
-            else {}
-        )
+        cached_presence_ids = {}
+        if isinstance(raw_event_instances, dict):
+            for event_name in VISUAL_PRESENCE_EVENT_NAMES:
+                instance = raw_event_instances.get(event_name)
+                raw_event_id = (
+                    instance.get("event_id")
+                    if isinstance(instance, dict)
+                    else None
+                )
+                if isinstance(raw_event_id, str) and raw_event_id.strip():
+                    cached_presence_ids[event_name] = raw_event_id.strip()
+        self._cached_visual_event_instances = cached_presence_ids
         raw_candidates = data.get("human_candidates", [])
         self._cached_human_candidates = [
             dict(item)
@@ -228,20 +278,23 @@ def consume_visual_event(self, msg, *, direct_events):
         for event_type in event_types:
             if event_type not in current_direct_events:
                 continue
-            if event_type == "EVT_VISION_OWNER_PRESENT":
+            if event_type in VISUAL_PRESENCE_EVENT_NAMES:
+                event_id = _presence_instance_id(self, event_type)
+                consumed_id = _consumed_presence_instance_id(
+                    self, event_type
+                )
+                pending_id = _pending_presence_instance_id(
+                    self, event_type
+                )
                 if (
                     self._on_visual_event is None
                     or self._cached_observation_status != "valid"
-                    or not owner_event_id
-                    or owner_event_id
-                    in {
-                        self._consumed_owner_presence_instance_id,
-                        self._pending_owner_presence_instance_id,
-                    }
+                    or not event_id
+                    or event_id in {consumed_id, pending_id}
                 ):
                     continue
-                self._pending_owner_presence_instance_id = owner_event_id
-                dispatch_events.append((event_type, owner_event_id))
+                _set_pending_presence_instance_id(self, event_type, event_id)
+                dispatch_events.append((event_type, event_id))
                 continue
             if event_type not in previous_direct_events:
                 dispatch_events.append((event_type, ""))
@@ -263,9 +316,12 @@ def consume_visual_event(self, msg, *, direct_events):
             finally:
                 if event_id:
                     with self._lock:
-                        if self._pending_owner_presence_instance_id == event_id:
-                            self._pending_owner_presence_instance_id = ""
+                        if (
+                            _pending_presence_instance_id(self, event_type)
+                            == event_id
+                        ):
+                            _set_pending_presence_instance_id(self, event_type, "")
                             if accepted:
-                                self._consumed_owner_presence_instance_id = (
-                                    event_id
+                                _set_consumed_presence_instance_id(
+                                    self, event_type, event_id
                                 )

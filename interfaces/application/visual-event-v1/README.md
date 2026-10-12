@@ -41,6 +41,22 @@ Behavior 对该状态事件按 `event_id` 而非 `events[]` 的快照重复次�
 并在统一仲裁前再次核对当前事件与目标。其他 v1 消费者忽略这些可选字段，既有
 `events[]` 消费语义保持兼容。
 
+### 家人与陌生人在场状态事件（v1 可选扩展）
+
+`EVT_VISION_FAMILY_PRESENT` 和 `EVT_VISION_STRANGER_PRESENT` 复用上述活动状态、
+`observation_status`、`source_observation_id` 和 `event_instances.<event>.event_id` 规则，
+各自独立计时并维护一个类别级活动周期。家人只由身份属于 `family_member_1..4`、状态为
+`confirmed_known` 且正在 `tracking` 的当前源帧目标确认；陌生人只由身份 `unknown`、状态
+`confirmed_unknown` 且正在 `tracking` 的当前源帧目标确认。两者默认 `T_enter=1.0s`、
+`T_exit=2.0s`、`T_retrigger=3.0s`，可分别由
+`family_presence_events`、`stranger_presence_events` 配置。owner 身份仍只走主人事件。
+
+BehaviorTree 将两个 ENTER 周期分别映射到 `familiar_person_greet` 和 `stranger_observe`
+候选，并按 event ID 去重。候选必须绑定同包、同 epoch 且唯一的新鲜目标；缺少或无法唯一
+确认目标时拒绝候选。现有 `EVT_VISION_STRANGER` 及其 Emotion 消费语义保持不变。
+这两个 Behavior 当前没有 Action 模板，因此候选被记录或排入仲裁不代表歪头、摇尾、注视、
+保持距离或警觉动作已执行；Action 会沿现有 unsupported-template 边界拒绝它们。
+
 Vision 可在当前检测人脸及 `debug_faces` 中附加可选字段
 `facial_expression: {expression, confidence}`。`expression` 是模型八类结果之一，
 `confidence` 是胜出类别原始 softmax 概率；调试快照可带

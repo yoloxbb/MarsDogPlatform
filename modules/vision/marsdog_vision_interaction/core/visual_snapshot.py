@@ -20,10 +20,16 @@ def build_visual_snapshot(self, raw: dict[str, Any] | Any, *, finite_positive, f
     """
     raw_dict = dict(raw) if isinstance(raw, dict) else {}
     event = normalize_visual_event(raw_dict)
-    # These private source-evidence fields are consumed by the owner event
-    # policy in the publishing node and removed before the ROS packet is sent.
+    # These private source-evidence fields are consumed by presence-event
+    # policies in the publishing node and removed before the ROS packet is sent.
     event["_source_owner_target_ids"] = raw_dict.get(
         "_source_owner_target_ids"
+    )
+    event["_source_family_target_ids"] = raw_dict.get(
+        "_source_family_target_ids"
+    )
+    event["_source_stranger_target_ids"] = raw_dict.get(
+        "_source_stranger_target_ids"
     )
     event["_source_observation_age_sec"] = raw_dict.get(
         "_source_observation_age_sec"

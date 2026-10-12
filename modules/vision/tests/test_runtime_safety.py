@@ -17,6 +17,10 @@ from marsdog_vision_interaction.core.owner_presence_event_state import (
     OwnerPresenceEventConfig,
     OwnerPresenceEventState,
 )
+from marsdog_vision_interaction.core.presence_event_state import (
+    PresenceEventConfig,
+    PresenceEventState,
+)
 from marsdog_vision_interaction.core.object_detection_session import (
     ObjectDetectionSessionManager,
 )
@@ -155,6 +159,131 @@ def test_stale_camera_does_not_refresh_cached_target(monkeypatch) -> None:
     )
 
 
+def test_presence_event_publication_preserves_instances_and_strips_private_evidence() -> None:
+    from marsdog_vision_interaction.nodes.vision_interaction_node import (
+        _apply_presence_event_states,
+    )
+
+    def state(tag, key, identities, identity_state):
+        return PresenceEventState(
+            PresenceEventConfig(
+                enter_duration_sec=0.2,
+                exit_duration_sec=0.2,
+                retrigger_delay_sec=3.0,
+            ),
+            event_tag=tag,
+            source_target_ids_key=key,
+            identities=set(identities),
+            identity_state=identity_state,
+            source_freshness_sec=0.5,
+        )
+
+    family = state(
+        "family-presence",
+        "_source_family_target_ids",
+        {"family_member_1", "family_member_2", "family_member_3", "family_member_4"},
+        "confirmed_known",
+    )
+    stranger = state(
+        "stranger-presence",
+        "_source_stranger_target_ids",
+        {"unknown"},
+        "confirmed_unknown",
+    )
+    presence_states = (
+        ("EVT_VISION_FAMILY_PRESENT", family),
+        ("EVT_VISION_STRANGER_PRESENT", stranger),
+    )
+
+    def observation(sequence, *, status="valid", present=True):
+        family_id = f"epoch:human:family-{sequence}"
+        stranger_id = f"epoch:human:stranger-{sequence}"
+        return {
+            "schema_version": 1,
+            "vision_epoch": "epoch",
+            "snapshot_id": f"epoch:{sequence}",
+            "sequence": sequence,
+            "source_observation_id": f"frame:{sequence}",
+            "_source_observation_age_sec": 0.0,
+            "observation_status": status,
+            "events": ["EVT_VISION_MASTER", "EVT_VISION_OWNER_PRESENT"],
+            "event_instances": {
+                "EVT_VISION_OWNER_PRESENT": {"event_id": "owner-cycle"},
+                "UNRELATED_EVENT": {"event_id": "keep-me"},
+            },
+            "_source_owner_target_ids": [],
+            "_source_family_target_ids": [family_id] if present else [],
+            "_source_stranger_target_ids": [stranger_id] if present else [],
+            "human_candidates": [
+                {
+                    "vision_epoch": "epoch",
+                    "target_id": family_id,
+                    "track_id": sequence + 1,
+                    "identity": "family_member_1",
+                    "identity_state": "confirmed_known",
+                    "tracking_state": "tracking",
+                },
+                {
+                    "vision_epoch": "epoch",
+                    "target_id": stranger_id,
+                    "track_id": sequence + 101,
+                    "identity": "unknown",
+                    "identity_state": "confirmed_unknown",
+                    "tracking_state": "tracking",
+                },
+            ] if present else [],
+        }
+
+    packet = None
+    for index in range(3):
+        packet = _apply_presence_event_states(
+            observation(index + 1), presence_states, now=10.0 + index * 0.11
+        )
+    assert packet is not None
+    assert "EVT_VISION_FAMILY_PRESENT" in packet["events"]
+    assert "EVT_VISION_STRANGER_PRESENT" in packet["events"]
+    assert packet["event_instances"]["EVT_VISION_OWNER_PRESENT"] == {
+        "event_id": "owner-cycle"
+    }
+    assert packet["event_instances"]["UNRELATED_EVENT"] == {
+        "event_id": "keep-me"
+    }
+    family_event_id = packet["event_instances"]["EVT_VISION_FAMILY_PRESENT"][
+        "event_id"
+    ]
+    stranger_event_id = packet["event_instances"]["EVT_VISION_STRANGER_PRESENT"][
+        "event_id"
+    ]
+    assert family_event_id != stranger_event_id
+    assert not any(key.startswith("_source_") for key in packet)
+
+    packet = _apply_presence_event_states(
+        observation(4, status="invalid", present=False),
+        presence_states,
+        now=10.33,
+    )
+    assert packet["event_instances"]["EVT_VISION_FAMILY_PRESENT"][
+        "event_id"
+    ] == family_event_id
+    assert packet["event_instances"]["EVT_VISION_STRANGER_PRESENT"][
+        "event_id"
+    ] == stranger_event_id
+
+    for index in range(3):
+        packet = _apply_presence_event_states(
+            observation(5 + index, present=False),
+            presence_states,
+            now=10.44 + index * 0.11,
+        )
+    assert "EVT_VISION_FAMILY_PRESENT" not in packet["events"]
+    assert "EVT_VISION_STRANGER_PRESENT" not in packet["events"]
+    assert "EVT_VISION_FAMILY_PRESENT" not in packet["event_instances"]
+    assert "EVT_VISION_STRANGER_PRESENT" not in packet["event_instances"]
+    assert packet["event_instances"]["EVT_VISION_OWNER_PRESENT"][
+        "event_id"
+    ] == "owner-cycle"
+
+
 def test_observation_cache_keeps_source_identity_and_marks_latest_inference_failure() -> None:
     provider = VisionObservationProvider({})
     provider._cached_observation = {"human_candidates": []}
@@ -273,6 +402,116 @@ def test_current_owner_source_evidence_requires_current_confirmed_face_and_body(
     ) == []
     assert VisionObservationProvider._current_owner_target_ids(
         [human], [current_face], [{**candidate, "tracking_state": "temporarily_lost"}]
+    ) == []
+
+
+@pytest.mark.parametrize(
+    ("identity", "identity_state"),
+    [
+        ("owner", "confirmed_known"),
+        ("family_member_3", "confirmed_known"),
+        ("unknown", "confirmed_unknown"),
+    ],
+)
+@pytest.mark.parametrize("malformed_identity", [[], {}, 42])
+def test_current_presence_source_evidence_rejects_non_string_identity(
+    identity: str,
+    identity_state: str,
+    malformed_identity,
+) -> None:
+    human = {"x": 0.1, "y": 0.1, "w": 0.3, "h": 0.7}
+    candidate = {
+        "target_id": "epoch:human:7",
+        "bbox": [0.1, 0.1, 0.3, 0.7],
+        "track_id": 7,
+        "face_track_id": 17,
+        "identity": identity,
+        "identity_state": identity_state,
+        "tracking_state": "tracking",
+    }
+    face = {
+        "track_id": 17,
+        "recognized_user": identity,
+        "identity_state": identity_state,
+    }
+    for current_face, current_candidate in (
+        ({**face, "recognized_user": malformed_identity}, candidate),
+        (face, {**candidate, "identity": malformed_identity}),
+    ):
+        assert VisionObservationProvider._current_presence_target_ids(
+            [human], [current_face], [current_candidate],
+            identities={identity},
+            identity_state=identity_state,
+        ) == []
+
+
+def test_current_family_source_evidence_requires_enrolled_identity() -> None:
+    human = {"x": 0.1, "y": 0.1, "w": 0.3, "h": 0.7}
+    candidate = {
+        "target_id": "epoch:human:7",
+        "bbox": [0.1, 0.1, 0.3, 0.7],
+        "track_id": 7,
+        "face_track_id": 17,
+        "identity": "family_member_3",
+        "identity_state": "confirmed_known",
+        "tracking_state": "tracking",
+    }
+    face = {
+        "track_id": 17,
+        "recognized_user": "family_member_3",
+        "identity_state": "confirmed_known",
+    }
+    eligible = {
+        "family_member_1", "family_member_2",
+        "family_member_3", "family_member_4",
+    }
+    assert VisionObservationProvider._current_presence_target_ids(
+        [human], [face], [candidate],
+        identities=eligible,
+        identity_state="confirmed_known",
+    ) == ["epoch:human:7"]
+    assert VisionObservationProvider._current_presence_target_ids(
+        [human], [face], [{**candidate, "identity": "owner"}],
+        identities=eligible,
+        identity_state="confirmed_known",
+    ) == []
+    assert VisionObservationProvider._current_presence_target_ids(
+        [human], [face], [{**candidate, "identity_state": "candidate_known"}],
+        identities=eligible,
+        identity_state="confirmed_known",
+    ) == []
+
+
+def test_current_stranger_source_evidence_requires_confirmed_unknown_face() -> None:
+    human = {"x": 0.1, "y": 0.1, "w": 0.3, "h": 0.7}
+    candidate = {
+        "target_id": "epoch:human:7",
+        "bbox": [0.1, 0.1, 0.3, 0.7],
+        "track_id": 7,
+        "face_track_id": 17,
+        "identity": "unknown",
+        "identity_state": "confirmed_unknown",
+        "tracking_state": "tracking",
+    }
+    face = {
+        "track_id": 17,
+        "recognized_user": "",
+        "identity_state": "confirmed_unknown",
+    }
+    assert VisionObservationProvider._current_presence_target_ids(
+        [human], [face], [candidate],
+        identities={"unknown"},
+        identity_state="confirmed_unknown",
+    ) == ["epoch:human:7"]
+    assert VisionObservationProvider._current_presence_target_ids(
+        [human], [{**face, "identity_state": "unknown_candidate"}], [candidate],
+        identities={"unknown"},
+        identity_state="confirmed_unknown",
+    ) == []
+    assert VisionObservationProvider._current_presence_target_ids(
+        [human], [face], [{**candidate, "tracking_state": "temporarily_lost"}],
+        identities={"unknown"},
+        identity_state="confirmed_unknown",
     ) == []
 
 

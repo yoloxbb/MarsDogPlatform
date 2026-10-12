@@ -271,6 +271,12 @@ visual_stop_gesture_response:
 owner_greet:
   candidates: [owner_greet]
 
+familiar_person_greet:
+  candidates: [familiar_person_greet]
+
+stranger_observe:
+  candidates: [stranger_observe]
+
 express_joy:
   candidates: [expressJoy]
 

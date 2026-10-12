@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "source_sha256": {
-    "modules/behavior/config/event_intent_map.yaml": "44701d5f5b706e7cfb176e11e960eee5e25b60c4d8daffd2cbb0784e6bdcec9a",
-    "modules/behavior/config/intent_action_pool.yaml": "465babf327bb8b112d2ebd6cdb0a4b1b94e5aa6714f77c051c47e6100d25bebe",
+    "modules/behavior/config/event_intent_map.yaml": "40715bd342663b78d0bf903178a6459dd6ae826f82ea5156a3d3cd2b4938381a",
+    "modules/behavior/config/intent_action_pool.yaml": "d00f064cdb9856706351dad73042aa5dbabffd2a3a21caf8114db8477bf8a583",
     "modules/behavior/config/behavior_categories.yaml": "ac877386c8e71aec0aec4ca93af227b7e6be9f9da769af40d70f50edd220ab10",
     "modules/behavior/config/emotion_behavior_map.yaml": "2e6e4e83fed3a606fbbed43f0986eb94753a741105ca13d255b66ecbad5632be",
     "modules/voice/config/command_catalog.yaml": "cd2db640a624fc6efeaf0b970d31ed9209874380aa125db9db96b0fad8fadcdf",
@@ -259,6 +259,12 @@
     ],
     "owner_greet": [
       "owner_greet"
+    ],
+    "familiar_person_greet": [
+      "familiar_person_greet"
+    ],
+    "stranger_observe": [
+      "stranger_observe"
     ],
     "express_joy": [
       "expressJoy"
@@ -1633,6 +1639,36 @@
       ],
       "executor_behaviors": [
         "owner_greet"
+      ]
+    },
+    {
+      "source": "visual_direct",
+      "event": "EVT_VISION_FAMILY_PRESENT",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "familiar_person_greet",
+      "selection": "intent_pool",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "familiar_person_greet"
+      ],
+      "executor_behaviors": [
+        "familiar_person_greet"
+      ]
+    },
+    {
+      "source": "visual_direct",
+      "event": "EVT_VISION_STRANGER_PRESENT",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "stranger_observe",
+      "selection": "intent_pool",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "stranger_observe"
+      ],
+      "executor_behaviors": [
+        "stranger_observe"
       ]
     },
     {

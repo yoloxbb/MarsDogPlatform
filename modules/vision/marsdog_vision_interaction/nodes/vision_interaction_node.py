@@ -48,6 +48,10 @@ from marsdog_vision_interaction.core.owner_presence_event_state import (
     OwnerPresenceEventConfig,
     OwnerPresenceEventState,
 )
+from marsdog_vision_interaction.core.presence_event_state import (
+    PresenceEventConfig,
+    PresenceEventState,
+)
 from marsdog_vision_interaction.core.held_object_pose import (
     HELD_OBJECT_LABELS,
     HeldObjectPoseManager,
@@ -64,7 +68,9 @@ from marsdog_vision_interaction.messages.visual_event import (
     normalize_visual_event,
 )
 from marsdog_vision_interaction.messages.visual_event_types import (
+    EVT_VISION_FAMILY_PRESENT,
     EVT_VISION_OWNER_PRESENT,
+    EVT_VISION_STRANGER_PRESENT,
 )
 from marsdog_vision_interaction.providers.base import BaseProvider
 from marsdog_vision_interaction.utils.config_loader import (
@@ -104,6 +110,44 @@ _TOY_LABELS = {
     "dog frisbee toy",
     "dog tug ring toy",
 }
+
+
+def _apply_presence_event_states(
+    event: dict[str, Any],
+    presence_states: tuple[tuple[str, Any], ...],
+    *,
+    now: float,
+) -> dict[str, Any]:
+    """Merge state-event cycles into v1 without replacing other event data."""
+    events = event.get("events")
+    event["events"] = list(events) if isinstance(events, list) else []
+    raw_instances = event.get("event_instances")
+    instances = dict(raw_instances) if isinstance(raw_instances, dict) else {}
+    for event_name, state in presence_states:
+        if state is None:
+            continue
+        snapshot = state.update(event, now=now)
+        if snapshot.active:
+            if event_name not in event["events"]:
+                event["events"].append(event_name)
+            instances[event_name] = {"event_id": snapshot.event_id}
+        else:
+            event["events"] = [
+                name for name in event["events"] if name != event_name
+            ]
+            instances.pop(event_name, None)
+    for key in (
+        "_source_owner_target_ids",
+        "_source_family_target_ids",
+        "_source_stranger_target_ids",
+        "_source_observation_age_sec",
+    ):
+        event.pop(key, None)
+    if instances:
+        event["event_instances"] = instances
+    else:
+        event.pop("event_instances", None)
+    return normalize_visual_event(event)
 
 
 class VisionInteractionNode(Node):
@@ -392,6 +436,31 @@ class VisionInteractionNode(Node):
         )
         self._owner_presence_event_state = OwnerPresenceEventState(
             owner_presence_events_config,
+            source_freshness_sec=self._camera_stale_timeout_sec,
+        )
+        self._family_presence_event_state = PresenceEventState(
+            PresenceEventConfig.from_mapping(
+                self._config.get("family_presence_events"),
+                section_name="family_presence_events",
+            ),
+            event_tag="family-presence",
+            source_target_ids_key="_source_family_target_ids",
+            identities={
+                "family_member_1", "family_member_2",
+                "family_member_3", "family_member_4",
+            },
+            identity_state="confirmed_known",
+            source_freshness_sec=self._camera_stale_timeout_sec,
+        )
+        self._stranger_presence_event_state = PresenceEventState(
+            PresenceEventConfig.from_mapping(
+                self._config.get("stranger_presence_events"),
+                section_name="stranger_presence_events",
+            ),
+            event_tag="stranger-presence",
+            source_target_ids_key="_source_stranger_target_ids",
+            identities={"unknown"},
+            identity_state="confirmed_unknown",
             source_freshness_sec=self._camera_stale_timeout_sec,
         )
         object_runtime_config = (
@@ -1154,6 +1223,12 @@ class VisionInteractionNode(Node):
         source_owner_target_ids = raw.pop(
             "_source_owner_target_ids", None
         )
+        source_family_target_ids = raw.pop(
+            "_source_family_target_ids", None
+        )
+        source_stranger_target_ids = raw.pop(
+            "_source_stranger_target_ids", None
+        )
         source_age_valid = (
             not isinstance(source_observation_age, bool)
             and isinstance(source_observation_age, (int, float))
@@ -1179,6 +1254,10 @@ class VisionInteractionNode(Node):
             )
         if isinstance(source_owner_target_ids, list):
             raw["_source_owner_target_ids"] = source_owner_target_ids
+        if isinstance(source_family_target_ids, list):
+            raw["_source_family_target_ids"] = source_family_target_ids
+        if isinstance(source_stranger_target_ids, list):
+            raw["_source_stranger_target_ids"] = source_stranger_target_ids
         self._publish_gesture_debug(raw)
         if (
             camera_fresh
@@ -1214,27 +1293,26 @@ class VisionInteractionNode(Node):
             emotion_classification=emotion_classification,
             now=time.monotonic(),
         )
-        owner_presence = self._owner_presence_event_state.update(
-            event,
-            now=time.monotonic(),
+        presence_states = (
+            (
+                EVT_VISION_OWNER_PRESENT,
+                getattr(self, "_owner_presence_event_state", None),
+            ),
+            (
+                EVT_VISION_FAMILY_PRESENT,
+                getattr(self, "_family_presence_event_state", None),
+            ),
+            (
+                EVT_VISION_STRANGER_PRESENT,
+                getattr(self, "_stranger_presence_event_state", None),
+            ),
         )
-        if owner_presence.active:
-            if EVT_VISION_OWNER_PRESENT not in event["events"]:
-                event["events"].append(EVT_VISION_OWNER_PRESENT)
-            event["event_instances"] = {
-                EVT_VISION_OWNER_PRESENT: {
-                    "event_id": owner_presence.event_id,
-                },
-            }
-        else:
-            event["events"] = [
-                value for value in event["events"]
-                if value != EVT_VISION_OWNER_PRESENT
-            ]
-            event.pop("event_instances", None)
-        event.pop("_source_owner_target_ids", None)
-        event.pop("_source_observation_age_sec", None)
-        event = normalize_visual_event(event)
+        presence_now = time.monotonic()
+        event = _apply_presence_event_states(
+            event,
+            presence_states,
+            now=presence_now,
+        )
         # Cache exactly the complete packet that is published.  VisionTask
         # query_targets only ever copies this atomic snapshot; it never
         # rebuilds target IDs from unrelated caches.

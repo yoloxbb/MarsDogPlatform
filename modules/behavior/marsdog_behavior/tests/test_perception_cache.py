@@ -4,6 +4,8 @@ import json
 import threading
 import time
 
+import pytest
+
 from marsdog_behavior.perception_client_adapter import PerceptionClientAdapter
 
 
@@ -517,6 +519,39 @@ def _owner_presence_payload(*, snapshot: int, epoch: str = "vision-1") -> dict:
     }
 
 
+def _category_presence_payload(
+    event_name: str,
+    *,
+    snapshot: int,
+    epoch: str = "vision-1",
+) -> dict:
+    is_family = event_name == "EVT_VISION_FAMILY_PRESENT"
+    identity = "family_member_1" if is_family else "unknown"
+    identity_state = "confirmed_known" if is_family else "confirmed_unknown"
+    return {
+        "schema_version": 1,
+        "vision_epoch": epoch,
+        "snapshot_id": f"{epoch}:{snapshot}",
+        "sequence": snapshot,
+        "source_observation_id": f"camera-frame-{snapshot}",
+        "observation_status": "valid",
+        "events": [event_name],
+        "event_instances": {
+            event_name: {"event_id": f"{event_name}-cycle-1"}
+        },
+        "human_candidates": [{
+            "identity": identity,
+            "identity_state": identity_state,
+            "tracking_state": "tracking",
+            "target_type": "human",
+            "target_id": f"{epoch}:human:7",
+            "track_id": 7,
+            "vision_epoch": epoch,
+            "last_seen_age_ms": 0.0,
+        }],
+    }
+
+
 def test_owner_presence_instance_deduplicates_repeated_snapshots_and_timeout() -> None:
     adapter = _adapter()
     received: list[tuple[str, str]] = []
@@ -580,6 +615,61 @@ def test_owner_presence_callback_retries_until_candidate_is_accepted() -> None:
     adapter._on_visual_ros2(_Message(_owner_presence_payload(snapshot=2)))
 
     assert received == ["EVT_VISION_OWNER_PRESENT", "EVT_VISION_OWNER_PRESENT"]
+
+
+@pytest.mark.parametrize(
+    "event_name",
+    ["EVT_VISION_FAMILY_PRESENT", "EVT_VISION_STRANGER_PRESENT"],
+)
+def test_category_presence_instance_deduplicates_snapshots_and_timeout(
+    event_name: str,
+) -> None:
+    adapter = _adapter()
+    received: list[tuple[str, str]] = []
+    adapter.set_on_visual_event(
+        lambda event, payload: received.append((event, payload["snapshot_id"]))
+        or True
+    )
+    adapter._on_visual_ros2(
+        _Message(_category_presence_payload(event_name, snapshot=1))
+    )
+    adapter._on_visual_ros2(
+        _Message(_category_presence_payload(event_name, snapshot=2))
+    )
+    adapter._visual_cache_updated_at = (
+        time.monotonic() - adapter.VISUAL_CACHE_TIMEOUT_SEC - 0.1
+    )
+    adapter._on_visual_ros2(
+        _Message(_category_presence_payload(event_name, snapshot=3))
+    )
+
+    assert received == [(event_name, "vision-1:1")]
+
+
+@pytest.mark.parametrize(
+    "event_name",
+    ["EVT_VISION_FAMILY_PRESENT", "EVT_VISION_STRANGER_PRESENT"],
+)
+def test_category_presence_retries_until_candidate_is_accepted(
+    event_name: str,
+) -> None:
+    adapter = _adapter()
+    results = iter((False, True))
+    received: list[str] = []
+
+    def accept(event, _payload):
+        received.append(event)
+        return next(results)
+
+    adapter.set_on_visual_event(accept)
+    adapter._on_visual_ros2(
+        _Message(_category_presence_payload(event_name, snapshot=1))
+    )
+    adapter._on_visual_ros2(
+        _Message(_category_presence_payload(event_name, snapshot=2))
+    )
+
+    assert received == [event_name, event_name]
 
 
 def test_wake_query_rejects_stale_service_snapshot_and_uses_fresh_cache():

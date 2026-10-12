@@ -191,6 +191,8 @@ GesturePose 判定，不改变正式事件名称、身份门禁或发布契约�
 | `EVT_VISION_FALL` | 满足姿态门控且 `pose_action=fallen_down`；已确认从直立快速转为持续躺卧 | `active_target.identity/identity_state/tracking_state`、`pose_action`；调试时看 `fall_detector` |
 | `EVT_VISION_STOP_GESTURE` | 满足姿态门控且任一 `hands[].hand_action=stop_gesture` | `active_target.identity/identity_state/tracking_state`、`hands[]` |
 | `EVT_VISION_OWNER_PRESENT` | 新鲜、不同的有效源观测中，当前帧人体关联到 `owner/confirmed_known/tracking` 并连续达到配置 `enter_duration_sec`（默认 1.0 秒） | `observation_status`、`source_observation_id`、同包 `human_candidates[]`；活动实例见 `event_instances` |
+| `EVT_VISION_FAMILY_PRESENT` | 当前源帧关联到 `family_member_1..4/confirmed_known/tracking`，不同有效源观测连续达到配置 `enter_duration_sec`（默认 1.0 秒） | `observation_status`、`source_observation_id`、同包 `human_candidates[]`；活动实例见 `event_instances` |
+| `EVT_VISION_STRANGER_PRESENT` | 当前源帧关联到 `unknown/confirmed_unknown/tracking`，不同有效源观测连续达到配置 `enter_duration_sec`（默认 1.0 秒） | 同上 |
 | `EVT_VISION_FOOD` | 满足姿态门控且 `pose_action=holding_dog_food` | `active_target.identity/identity_state/tracking_state`、`active_target.held_object`、`tracked_objects[]` |
 | `EVT_VISION_TOY` | 满足姿态门控且 `pose_action=holding_toy` | `active_target.identity/identity_state/tracking_state`、`active_target.held_object`、`tracked_objects[]` |
 
@@ -229,6 +231,14 @@ T_enter 后将事件加入 `events[]`；HOLD 期间事件及同一个
 后只有新的成功源观测可推进计时。`event_instances` 是可选扩展；未识别此字段的消费者可以
 忽略。它不改变 `schema_version=1`、Topic、消息类型或现有 required fields。
 
+家人与陌生人在场分别由独立的 `family_presence_events` 与
+`stranger_presence_events` 控制，默认同为 `T_enter=1.0s`、`T_exit=2.0s`、
+`T_retrigger=3.0s`。每类至少一个符合身份门控且有当前源帧身体/人脸关联的目标即可保持类别
+事件；类别内所有目标均不再满足条件，且有效负观测持续达到 T_exit 后才退出。两个状态各有
+独立 event ID。无效推理、结果过期或重复源结果不会被当作离开证据，也不会推进时间。
+这两个新增事件不改变 `EVT_VISION_MASTER`、`EVT_VISION_STRANGER`、陌生人情绪细分或姿态/
+手势事件语义。
+
 以下常量虽然已在代码中声明，但当前没有任何映射或发布路径，属于预留事件，
 行为树不能依赖它们：
 
@@ -244,9 +254,9 @@ T_enter 后将事件加入 `events[]`；HOLD 期间事件及同一个
 `/perception/visual_event` 是 10 Hz 状态流，因此事件可能在连续消息中重复：
 
 - 人脸在画面中持续存在时，当前 Master/Stranger 系列事件会重复。
-- `EVT_VISION_OWNER_PRESENT` 在 ENTER 后作为活动状态重复发布到 EXIT；行为树按
-  `event_instances` 中的稳定 `event_id` 只对首次出现创建一次候选，并在视觉 Topic 暂时中断
-  后继续按同一实例去重。
+- `EVT_VISION_OWNER_PRESENT`、`EVT_VISION_FAMILY_PRESENT`、
+  `EVT_VISION_STRANGER_PRESENT` 在 ENTER 后作为活动状态重复发布到 EXIT；行为树按各自
+  `event_instances` 中的稳定 `event_id` 去重，并在视觉 Topic 暂时中断后继续按同一实例去重。
 - 平滑后的动作仍有效时，对应情绪或手势事件会重复。
 - 跌倒状态机内部的 `fall_event_triggered` 只在确认帧为一次边沿，但正式
   `EVT_VISION_FALL` 来自短暂保持的 `fallen_down` 兼容动作，可能出现在多个

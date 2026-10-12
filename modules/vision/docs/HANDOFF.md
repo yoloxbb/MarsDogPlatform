@@ -65,6 +65,13 @@ depth_fusion:
 计时，不被解释为主人离开。`event_instances` 为活动周期提供稳定 event ID，供行为树跨短
 Topic 中断去重。该事件不改变现有 `EVT_VISION_MASTER` 的 Emotion/需求语义。
 
+`EVT_VISION_FAMILY_PRESENT` 与 `EVT_VISION_STRANGER_PRESENT` 分别维护已登记家人
+`family_member_1..4/confirmed_known/tracking` 和确认陌生人
+`unknown/confirmed_unknown/tracking` 的类别级活动周期。两者采用不同有效源观测推进的
+1.0 秒 ENTER、2.0 秒有效负观测 EXIT、EXIT 后 3.0 秒冷却和稳定 event ID；失效源观测只打断
+待决计时，不充当离开证据。旧 `EVT_VISION_STRANGER` 与其 Emotion 消费者保持原义。Vision
+只发布事件，不调用行为或动作接口。
+
 ## 4. 人体候选和 `active_target` 使用规则
 
 下游运动控制必须同时满足：

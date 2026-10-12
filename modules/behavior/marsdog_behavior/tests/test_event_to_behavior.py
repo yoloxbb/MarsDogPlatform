@@ -2274,6 +2274,232 @@ class TestVisualDirectToBehavior:
         node.perception._on_visual_ros2(_make_string_msg(expired))
         assert node._candidate_allowed_during_interaction(queued) is False
 
+    @staticmethod
+    def _visual_presence_payload(
+        event_type: str,
+        *,
+        identity: str,
+        identity_state: str,
+        targets: list[dict] | None = None,
+    ) -> dict:
+        target = {
+            "identity": identity,
+            "identity_state": identity_state,
+            "tracking_state": "tracking",
+            "target_type": "human",
+            "target_id": "epoch-1:human:7",
+            "track_id": 7,
+            "vision_epoch": "epoch-1",
+            "last_seen_age_ms": 10.0,
+            "bearing_deg": 12.0,
+        }
+        return {
+            "schema_version": 1,
+            "vision_epoch": "epoch-1",
+            "snapshot_id": "epoch-1:42",
+            "sequence": 42,
+            "source_observation_id": "camera-frame-42",
+            "observation_status": "valid",
+            "header": {"stamp": 1786417000.42, "frame_id": "camera_link"},
+            "events": [event_type],
+            "event_instances": {
+                event_type: {"event_id": f"{event_type}-cycle-1"}
+            },
+            "human_candidates": targets or [target],
+        }
+
+    @pytest.mark.parametrize(
+        ("event_type", "identity", "identity_state", "behavior_name"),
+        [
+            (
+                "EVT_VISION_FAMILY_PRESENT",
+                "family_member_3",
+                "confirmed_known",
+                "familiar_person_greet",
+            ),
+            (
+                "EVT_VISION_STRANGER_PRESENT",
+                "unknown",
+                "confirmed_unknown",
+                "stranger_observe",
+            ),
+        ],
+    )
+    def test_family_and_stranger_presence_map_fresh_lv1_candidates(
+        self,
+        node,
+        event_type: str,
+        identity: str,
+        identity_state: str,
+        behavior_name: str,
+    ) -> None:
+        payload = self._visual_presence_payload(
+            event_type,
+            identity=identity,
+            identity_state=identity_state,
+        )
+
+        candidate = node._intent_mapper.map_visual_event(event_type, payload)
+
+        assert candidate is not None
+        assert candidate.behavior_name == behavior_name
+        assert candidate.intent == behavior_name
+        assert candidate.priority_level == 1
+        assert candidate.sub_priority == 12
+        assert candidate.semantic_rank == 3
+        assert candidate.interactive is True
+        assert candidate.target_required is True
+        assert candidate.params["visual_event_instance_id"] == (
+            f"{event_type}-cycle-1"
+        )
+        assert candidate.params["visual_target"]["identity"] == identity
+        assert candidate.ttl_sec == pytest.approx(0.49)
+
+    @pytest.mark.parametrize(
+        ("event_type", "identity", "identity_state"),
+        [
+            ("EVT_VISION_FAMILY_PRESENT", "owner", "confirmed_known"),
+            ("EVT_VISION_FAMILY_PRESENT", "family_member_1", "candidate_known"),
+            ("EVT_VISION_FAMILY_PRESENT", [], "confirmed_known"),
+            ("EVT_VISION_STRANGER_PRESENT", "family_member_1", "confirmed_known"),
+            ("EVT_VISION_STRANGER_PRESENT", "unknown", "unknown_candidate"),
+            ("EVT_VISION_STRANGER_PRESENT", {}, "confirmed_unknown"),
+        ],
+    )
+    def test_family_and_stranger_presence_reject_wrong_identity(
+        self,
+        node,
+        event_type: str,
+        identity: str,
+        identity_state: str,
+    ) -> None:
+        payload = self._visual_presence_payload(
+            event_type,
+            identity=identity,
+            identity_state=identity_state,
+        )
+        assert node._intent_mapper.map_visual_event(event_type, payload) is None
+
+    def test_visual_presence_rejects_ambiguous_category_targets(self, node) -> None:
+        first = {
+            "identity": "family_member_1",
+            "identity_state": "confirmed_known",
+            "tracking_state": "tracking",
+            "target_type": "human",
+            "target_id": "epoch-1:human:7",
+            "track_id": 7,
+            "vision_epoch": "epoch-1",
+            "last_seen_age_ms": 10.0,
+        }
+        second = {
+            **first,
+            "identity": "family_member_2",
+            "target_id": "epoch-1:human:8",
+            "track_id": 8,
+        }
+        payload = self._visual_presence_payload(
+            "EVT_VISION_FAMILY_PRESENT",
+            identity="family_member_1",
+            identity_state="confirmed_known",
+            targets=[first, second],
+        )
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_FAMILY_PRESENT", payload
+        ) is None
+
+    @pytest.mark.parametrize(
+        ("event_type", "identity", "identity_state", "behavior_name"),
+        [
+            (
+                "EVT_VISION_FAMILY_PRESENT",
+                "family_member_3",
+                "confirmed_known",
+                "familiar_person_greet",
+            ),
+            (
+                "EVT_VISION_STRANGER_PRESENT",
+                "unknown",
+                "confirmed_unknown",
+                "stranger_observe",
+            ),
+        ],
+    )
+    def test_category_presence_candidate_is_revalidated_from_latest_snapshot(
+        self,
+        node,
+        event_type: str,
+        identity: str,
+        identity_state: str,
+        behavior_name: str,
+    ) -> None:
+        initial = self._visual_presence_payload(
+            event_type,
+            identity=identity,
+            identity_state=identity_state,
+        )
+        node.perception._on_visual_ros2(_make_string_msg(initial))
+        queued = node.candidate_pool.candidates[0]
+        assert queued["behavior_name"] == behavior_name
+        assert node._candidate_allowed_during_interaction(queued) is True
+        assert queued["params"]["snapshot_id"] == "epoch-1:42"
+
+        refreshed = self._visual_presence_payload(
+            event_type,
+            identity=identity,
+            identity_state=identity_state,
+        )
+        refreshed["snapshot_id"] = "epoch-1:43"
+        refreshed["sequence"] = 43
+        refreshed["source_observation_id"] = "camera-frame-43"
+        node.perception._on_visual_ros2(_make_string_msg(refreshed))
+        assert node._candidate_allowed_during_interaction(queued) is True
+        assert queued["params"]["snapshot_id"] == "epoch-1:43"
+        assert queued["params"]["source_observation_id"] == "camera-frame-43"
+
+    @pytest.mark.parametrize(
+        ("event_type", "identity", "identity_state"),
+        [
+            ("EVT_VISION_OWNER_PRESENT", "owner", "confirmed_known"),
+            ("EVT_VISION_FAMILY_PRESENT", "family_member_1", "confirmed_known"),
+            ("EVT_VISION_STRANGER_PRESENT", "unknown", "confirmed_unknown"),
+        ],
+    )
+    def test_presence_revalidation_rejects_a_second_current_target(
+        self, node, event_type, identity, identity_state
+    ) -> None:
+        initial = self._visual_presence_payload(
+            event_type, identity=identity, identity_state=identity_state,
+        )
+        node.perception._on_visual_ros2(_make_string_msg(initial))
+        queued = node.candidate_pool.candidates[0]
+        assert node._candidate_allowed_during_interaction(queued) is True
+
+        refreshed = self._visual_presence_payload(
+            event_type, identity=identity, identity_state=identity_state,
+        )
+        refreshed["snapshot_id"] = "epoch-1:43"
+        second = {
+            **refreshed["human_candidates"][0],
+            "target_id": "epoch-1:human:8",
+            "track_id": 8,
+        }
+        if event_type == "EVT_VISION_FAMILY_PRESENT":
+            second["identity"] = "family_member_2"
+        refreshed["human_candidates"].append(second)
+        node.perception._on_visual_ros2(_make_string_msg(refreshed))
+
+        assert node._candidate_allowed_during_interaction(queued) is False
+        assert queued["params"]["snapshot_id"] == "epoch-1:42"
+
+        # An expired second target no longer makes the fresh subject ambiguous.
+        second["last_seen_age_ms"] = 500.0
+        node.perception._on_visual_ros2(_make_string_msg(refreshed))
+        assert node._candidate_allowed_during_interaction(queued) is True
+
+        second["identity"] = []
+        node.perception._on_visual_ros2(_make_string_msg(refreshed))
+        assert node._candidate_allowed_during_interaction(queued) is True
+
     def test_owner_direct_event_does_not_replace_master_emotion_signal(self, node):
         assert node._intent_mapper.map_visual_event(
             "EVT_VISION_MASTER",

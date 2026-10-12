@@ -127,6 +127,24 @@ topics:
           cooldown_starts: at the valid observation that reaches T_exit
           invalid_observation: "breaks pending timing evidence; never counts as owner absence"
           event_instance_field: event_instances.EVT_VISION_OWNER_PRESENT.event_id
+      EVT_VISION_FAMILY_PRESENT:
+        condition: enrolled_family_member_currently_tracked_in_distinct_valid_source_observations_for_1s
+        identity_gate: "family_member_1..4 / confirmed_known / tracking"
+        state_policy:
+          active_set: "added after ENTER, retained during HOLD, removed after 2s of valid negative observations"
+          retrigger_delay_sec: 3.0
+          cooldown_starts: at the valid observation that reaches T_exit
+          invalid_observation: "breaks pending timing evidence; never counts as family absence"
+          event_instance_field: event_instances.EVT_VISION_FAMILY_PRESENT.event_id
+      EVT_VISION_STRANGER_PRESENT:
+        condition: confirmed_unknown_stranger_currently_tracked_in_distinct_valid_source_observations_for_1s
+        identity_gate: "unknown / confirmed_unknown / tracking"
+        state_policy:
+          active_set: "added after ENTER, retained during HOLD, removed after 2s of valid negative observations"
+          retrigger_delay_sec: 3.0
+          cooldown_starts: at the valid observation that reaches T_exit
+          invalid_observation: "breaks pending timing evidence; never counts as stranger absence"
+          event_instance_field: event_instances.EVT_VISION_STRANGER_PRESENT.event_id
       EVT_VISION_FOOD:
         condition: tracked_confirmed_known_or_unknown_confirmed_unknown_with_holding_dog_food_pose
         labels: [dog bowl, dog food can, dog treat bag]

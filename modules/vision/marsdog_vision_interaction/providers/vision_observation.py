@@ -964,7 +964,7 @@ class VisionObservationProvider(BaseProvider):
             except Exception as exc:
                 with self._lock:
                     # The previous cache remains available to legacy readers,
-                    # but it is no longer valid evidence for owner presence.
+                    # but it is no longer valid evidence for presence events.
                     self._source_observation_valid = False
                     self._expression_faces = []
                     self._expression_active_index = None
@@ -1024,16 +1024,48 @@ class VisionObservationProvider(BaseProvider):
         candidates: list[dict[str, Any]],
     ) -> list[str]:
         """Return owner tracks backed by this source frame's body and face."""
-        current_owner_faces = {
-            int(face["track_id"])
-            for face in faces
-            if isinstance(face, dict)
-            and face.get("recognized_user") == "owner"
-            and face.get("identity_state") == "confirmed_known"
-            and isinstance(face.get("track_id"), int)
-            and not isinstance(face.get("track_id"), bool)
-            and int(face["track_id"]) > 0
-        }
+        return cls._current_presence_target_ids(
+            humans,
+            faces,
+            candidates,
+            identities={"owner"},
+            identity_state="confirmed_known",
+        )
+
+    @classmethod
+    def _current_presence_target_ids(
+        cls,
+        humans: list[dict[str, Any]],
+        faces: list[dict[str, Any]],
+        candidates: list[dict[str, Any]],
+        *,
+        identities: set[str],
+        identity_state: str,
+    ) -> list[str]:
+        """Return qualified human tracks tied to current body and face rows."""
+        current_face_tracks: set[int] = set()
+        for face in faces:
+            if not isinstance(face, dict):
+                continue
+            face_identity = face.get("recognized_user")
+            if not isinstance(face_identity, str):
+                continue
+            if identity_state == "confirmed_unknown":
+                face_identity_matches = face_identity in ("", "unknown")
+            else:
+                face_identity_matches = face_identity in identities
+            if (
+                not face_identity_matches
+                or face.get("identity_state") != identity_state
+            ):
+                continue
+            face_track_id = face.get("track_id")
+            if (
+                isinstance(face_track_id, int)
+                and not isinstance(face_track_id, bool)
+                and face_track_id > 0
+            ):
+                current_face_tracks.add(face_track_id)
         matches = cls._human_candidate_matches(humans, candidates)
         target_ids: list[str] = []
         for candidate in matches.values():
@@ -1043,10 +1075,11 @@ class VisionObservationProvider(BaseProvider):
                 face_track_id = -1
             target_id = str(candidate.get("target_id", "") or "").strip()
             if (
-                candidate.get("identity") == "owner"
-                and candidate.get("identity_state") == "confirmed_known"
+                isinstance(candidate.get("identity"), str)
+                and candidate.get("identity") in identities
+                and candidate.get("identity_state") == identity_state
                 and candidate.get("tracking_state") == "tracking"
-                and face_track_id in current_owner_faces
+                and face_track_id in current_face_tracks
                 and target_id
             ):
                 target_ids.append(target_id)
@@ -1207,6 +1240,23 @@ class VisionObservationProvider(BaseProvider):
             obs.get("faces", []),
             human_candidates,
         )
+        source_family_target_ids = self._current_presence_target_ids(
+            obs.get("humans", []),
+            obs.get("faces", []),
+            human_candidates,
+            identities={
+                "family_member_1", "family_member_2",
+                "family_member_3", "family_member_4",
+            },
+            identity_state="confirmed_known",
+        )
+        source_stranger_target_ids = self._current_presence_target_ids(
+            obs.get("humans", []),
+            obs.get("faces", []),
+            human_candidates,
+            identities={"unknown"},
+            identity_state="confirmed_unknown",
+        )
 
         # Run the temporal action engine only for the human selected by the
         # stable target manager.  Hand-to-person association is not available
@@ -1359,6 +1409,8 @@ class VisionObservationProvider(BaseProvider):
             "active_target": active_dict,
             "human_candidates": human_candidates,
             "_source_owner_target_ids": source_owner_target_ids,
+            "_source_family_target_ids": source_family_target_ids,
+            "_source_stranger_target_ids": source_stranger_target_ids,
             "_source_inference_valid": (
                 obs.get("_owner_presence_inference_valid") is True
             ),

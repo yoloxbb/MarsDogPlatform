@@ -191,6 +191,74 @@ def test_runtime_candidate_gate_keeps_blocked_work_queued():
     assert selected["behavior_name"] == "expressCalmAlone"
 
 
+def test_runtime_rechecks_selected_candidate_gate_before_immediate_dispatch():
+    gate_calls = 0
+    executor = _DeferredExecutor()
+
+    def candidate_gate(_candidate):
+        nonlocal gate_calls
+        gate_calls += 1
+        return gate_calls == 1
+
+    runtime = BehaviorRuntime(executor, candidate_gate=candidate_gate)
+    assert runtime.candidate_pool.add(
+        "familiar_person_greet",
+        2,
+        candidate_id="family-presence-candidate",
+        params={"trigger_event": "EVT_VISION_FAMILY_PRESENT"},
+        ttl_sec=0.0,
+    )
+
+    outcome = runtime.tick()
+
+    assert gate_calls == 2
+    assert outcome.started_behavior is None
+    assert executor.sent == []
+    assert runtime.blackboard.active_behavior is None
+    assert not runtime.candidate_pool.is_inflight("familiar_person_greet")
+
+
+def test_runtime_rechecks_pending_presence_before_dispatch_after_cancel():
+    presence_is_current = True
+    runtime, executor = _deferred_runtime()
+
+    def candidate_gate(candidate):
+        if candidate["params"].get("trigger_event") == "EVT_VISION_FAMILY_PRESENT":
+            return presence_is_current
+        return True
+
+    runtime.candidate_gate = candidate_gate
+    assert runtime.candidate_pool.add(
+        "familiar_person_greet",
+        1,
+        candidate_id="family-presence-candidate",
+        params={"trigger_event": "EVT_VISION_FAMILY_PRESENT"},
+        ttl_sec=0.0,
+    )
+
+    runtime.tick()
+    assert executor.cancel_requests == ["old-goal"]
+    assert runtime.blackboard.active_behavior is not None
+    assert executor.sent == ["old-goal"]
+
+    # The old Action still owns cancellation settlement, but the replacement
+    # becomes stale while waiting for its terminal Result.
+    presence_is_current = False
+    runtime.tick()
+    assert runtime.blackboard.current_goal_id == "old-goal"
+    assert runtime.blackboard.goal_lifecycle == GOAL_CANCEL_REQUESTED
+    assert runtime.blackboard.active_behavior is None
+
+    executor.complete("old-goal", "CANCELED")
+    runtime.tick()
+    runtime.tick()
+
+    assert executor.sent == ["old-goal"]
+    assert runtime.blackboard.active_behavior is None
+    assert runtime.blackboard.current_goal_id is None
+    assert not runtime.candidate_pool.is_inflight("familiar_person_greet")
+
+
 def test_same_behavior_name_is_unique_across_different_event_keys():
     pool = CandidatePool()
 

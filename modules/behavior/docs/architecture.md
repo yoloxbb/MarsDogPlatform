@@ -52,7 +52,7 @@ flowchart LR
 | `/internal_need/state` | BEST_EFFORT, depth=5 | V2：更新完整需求状态和相关性 | 否 |
 | `/internal_need/signal_event` | RELIABLE, depth=10 | V2：同步等级变化，再映射需求行为 | 是（RECOVERED 除外） |
 | `/perception/audio_event` | RELIABLE, depth=10 | schema v2；唤醒/终态与可执行具体指令精确白名单 | 是 |
-| `/perception/visual_event` | BEST_EFFORT, depth=5 | 缓存场景；STRANGER 情绪融合；FALL/STOP/OWNER_PRESENT 直驱白名单 | 是（仅白名单） |
+| `/perception/visual_event` | BEST_EFFORT, depth=5 | 缓存场景；STRANGER 情绪融合；FALL/STOP/OWNER/FAMILY/STRANGER_PRESENT 直驱白名单 | 是（仅白名单） |
 
 情绪 V2 的 `state` 和 `signal_event` 分工：
 
@@ -117,9 +117,10 @@ Social 在 URGENT/OVERFLOW 时仍为 `triggered=true`。Energy 输入值是电�
 - visual `events[]` 直接处理 `EVT_VISION_FALL` 和
   `EVT_VISION_STOP_GESTURE`，分别生成 `respond_person_fall` 和
   `respond_stop_gesture`（Lv1, `sub_priority=12`）。连续 10 Hz 快照中的
-  同一事件只在出现沿创建一次候选。`EVT_VISION_OWNER_PRESENT` 使用活动实例 ID
-  去重；有效 owner 观测满 1.0 秒 ENTER，有效漏检 2.0 秒 EXIT 后冷却 3.0 秒，
-  无效观测不作为离开。其候选 `owner_greet` 进入同一 Lv1 仲裁，但 Action 模板缺失。
+  同一事件只在出现沿创建一次候选。OWNER/FAMILY/STRANGER presence 使用各自活动实例 ID
+  跨 HOLD 和短暂 Topic 中断去重；有效类别目标观测满 1.0 秒 ENTER，有效漏检 2.0 秒 EXIT
+  后冷却 3.0 秒，无效观测不作为离开。候选 `owner_greet`、`familiar_person_greet`、
+  `stranger_observe` 进入同一 Lv1 仲裁，但 Action 模板缺失。
 - 六类情绪 signal_event 都异步调用 `check_person`：有人时生成独立的
   `*WithHuman` Behavior，无人时生成独立的 `*Alone` Behavior，共 12 个
   语义行为；Action Client 再通过 `executor_behavior_name` 适配执行端已有

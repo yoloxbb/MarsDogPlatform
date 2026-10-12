@@ -58,6 +58,7 @@ from .config_paths import get_config_file
 from .result_event_mapper import ResultEventMapper
 from .perception_client_adapter import PerceptionClientAdapter
 from .intent_mapper import IntentMapper, BehaviorCandidate
+from .visual_presence_contract import VISUAL_PRESENCE_EVENT_NAMES
 from .decision_trace import emit
 from .runtime import BehaviorRuntime
 from .voice_interaction_session import (
@@ -924,14 +925,16 @@ class BehaviorTreeRosNode(NodeBase):
         does not make the rest of its voice session an emotion embargo.
         """
         params = candidate.get("params", {})
-        if (
-            isinstance(params, dict)
-            and params.get("trigger_event") == "EVT_VISION_OWNER_PRESENT"
-            and not self._perception.owner_presence_candidate_is_current(
-                candidate
-            )
-        ):
-            return False
+        if isinstance(params, dict):
+            event_type = str(params.get("trigger_event", ""))
+            if (
+                event_type in VISUAL_PRESENCE_EVENT_NAMES
+                and not self._perception.visual_presence_candidate_is_current(
+                    candidate,
+                    event_type=event_type,
+                )
+            ):
+                return False
 
         session = self._voice_session
         if not (

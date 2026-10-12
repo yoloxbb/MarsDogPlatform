@@ -10,8 +10,8 @@ Subscriptions:
 
   /perception/visual_event  (BEST_EFFORT, depth=5)
     → Caches humans, active_target, and tracked_objects as service fallback.
-    → Forwards STRANGER, FALL, and STOP_GESTURE appearance edges.
-    → Repeated state snapshots are collapsed to one callback per appearance.
+    → Forwards FALL/STOP_GESTURE appearance edges and qualified presence cycles.
+    → Presence event instances are deduplicated across HOLD snapshots/cache timeouts.
 
 Service Client:
   /perception/vision/task
@@ -25,6 +25,12 @@ service type is installed. Standalone mode uses MockPerceptionClient.
 from __future__ import annotations
 
 from . import visual_event_consumer
+from .visual_presence_contract import (
+    OWNER_PRESENCE_EVENT,
+    VISUAL_PRESENCE_EVENT_NAMES,
+    VISUAL_PRESENCE_EVENT_QUALIFIERS,
+    VISUAL_PRESENCE_TARGET_MAX_AGE_MS,
+)
 
 import json
 import threading
@@ -90,9 +96,9 @@ _AUDIO_STATE_EVENTS = {
 _DIRECT_VISUAL_EVENTS = {
     "EVT_VISION_FALL",
     "EVT_VISION_STOP_GESTURE",
-    "EVT_VISION_OWNER_PRESENT",
+    *VISUAL_PRESENCE_EVENT_NAMES,
 }
-_OWNER_PRESENCE_EVENT = "EVT_VISION_OWNER_PRESENT"
+_OWNER_PRESENCE_EVENT = OWNER_PRESENCE_EVENT
 
 
 def _as_bool(value) -> bool:
@@ -105,7 +111,7 @@ class PerceptionClientAdapter:
     """Adapts ROS2 perception topics/services for the behavior tree.
 
     Audio events: schema-v2 wake/lifecycle and explicitly authorized commands.
-    Visual events: scene cache plus direct STRANGER/FALL/STOP callbacks.
+    Visual events: scene cache plus direct FALL/STOP and presence callbacks.
     Hunger/Social/Exploration need events query the visual service and use this
     cache only when that service is unavailable.
 
@@ -163,6 +169,8 @@ class PerceptionClientAdapter:
         self._cached_visual_event_instances: dict = {}
         self._consumed_owner_presence_instance_id: str = ""
         self._pending_owner_presence_instance_id: str = ""
+        self._consumed_visual_presence_instance_ids: dict[str, str] = {}
+        self._pending_visual_presence_instance_ids: dict[str, str] = {}
         self._visual_cache_updated_at: float = 0.0
         self._lock = threading.Lock()
         self._vision_client = None
@@ -358,14 +366,30 @@ class PerceptionClientAdapter:
     def set_on_visual_event(self, callback: Callable) -> None:
         """Register callback for direct visual events.
 
-        Ordinary events are delivered on appearance edges. The owner-presence
-        state event is retried while active until its instance creates a
+        Ordinary events are delivered on appearance edges. Presence state
+        events are retried while active until their instance creates a
         candidate, then deduplicated across visual-cache timeouts.
         """
         self._on_visual_event = callback
 
     def owner_presence_candidate_is_current(self, candidate: dict) -> bool:
-        """Revalidate and refresh owner-greet context from the latest snapshot."""
+        """Compatibility wrapper for owner-greet candidate revalidation."""
+        return self.visual_presence_candidate_is_current(
+            candidate,
+            event_type=OWNER_PRESENCE_EVENT,
+        )
+
+    def visual_presence_candidate_is_current(
+        self,
+        candidate: dict,
+        *,
+        event_type: str,
+    ) -> bool:
+        """Revalidate one state-event candidate against the latest snapshot."""
+        qualifier = VISUAL_PRESENCE_EVENT_QUALIFIERS.get(event_type)
+        if qualifier is None:
+            return False
+        identities, identity_state = qualifier
         params = candidate.get("params") if isinstance(candidate, dict) else None
         if not isinstance(params, dict):
             return False
@@ -398,30 +422,32 @@ class PerceptionClientAdapter:
                 or cache_age < 0.0
                 or cache_age > self.VISUAL_CACHE_TIMEOUT_SEC
                 or self._cached_observation_status != "valid"
-                or _OWNER_PRESENCE_EVENT not in self._cached_visual_events
+                or event_type not in self._cached_visual_events
                 or self._cached_vision_epoch != expected_epoch
                 or self._cached_visual_event_instances.get(
-                    _OWNER_PRESENCE_EVENT, ""
+                    event_type, ""
                 ) != expected_event_id
                 or not self._cached_visual_snapshot_id
                 or not self._cached_source_observation_id
             ):
                 return False
 
+            qualified = []
             for current in self._cached_human_candidates:
                 if (
                     not isinstance(current, dict)
-                    or str(current.get("identity", "")) != "owner"
+                    or not isinstance(current.get("identity"), str)
+                    or current.get("identity") not in identities
                     or str(current.get("identity_state", ""))
-                    != "confirmed_known"
+                    != identity_state
                     or str(current.get("tracking_state", "")) != "tracking"
                     or str(current.get("vision_epoch", "")) != expected_epoch
                     or str(current.get("target_type", "human")) != "human"
                     or not isinstance(current.get("target_id"), str)
-                    or current["target_id"].strip() != expected_target_id
+                    or not current["target_id"].strip()
                     or isinstance(current.get("track_id"), bool)
                     or not isinstance(current.get("track_id"), int)
-                    or current.get("track_id") != expected_track_id
+                    or current.get("track_id") <= 0
                 ):
                     continue
                 try:
@@ -431,40 +457,44 @@ class PerceptionClientAdapter:
                 current_age_ms = source_age_ms + cache_age * 1000.0
                 if (
                     0.0 <= source_age_ms
-                    and current_age_ms <= self.VISUAL_TARGET_MAX_AGE_MS
+                    and current_age_ms < VISUAL_PRESENCE_TARGET_MAX_AGE_MS
                 ):
-                    # Bind the candidate sent to ExecuteBehavior to this
-                    # latest validated snapshot, not to the older snapshot
-                    # which first inserted it into the pool.
-                    fresh_target = dict(current)
-                    fresh_target.update({
-                        "last_seen_age_ms": current_age_ms,
-                        "snapshot_id": self._cached_visual_snapshot_id,
-                        "source_observation_id": (
-                            self._cached_source_observation_id
-                        ),
-                    })
-                    if self._cached_visual_sequence is not None:
-                        fresh_target["snapshot_sequence"] = (
-                            self._cached_visual_sequence
-                        )
-                    params.update({
-                        "visual_target": fresh_target,
-                        "active_target": dict(fresh_target),
-                        "target": dict(fresh_target),
-                        "target_track_id": fresh_target.get("track_id"),
-                        "target_identity": "owner",
-                        "target_resolution": "same_snapshot_owner",
-                        "vision_epoch": self._cached_vision_epoch,
-                        "snapshot_id": self._cached_visual_snapshot_id,
-                        "snapshot_sequence": self._cached_visual_sequence,
-                        "source_observation_id": (
-                            self._cached_source_observation_id
-                        ),
-                        "visual_header": dict(self._cached_visual_header),
-                    })
-                    return True
-            return False
+                    qualified.append((current, current_age_ms))
+            if len(qualified) != 1:
+                return False
+            current, current_age_ms = qualified[0]
+            if (
+                current["target_id"].strip() != expected_target_id
+                or current.get("track_id") != expected_track_id
+            ):
+                return False
+
+            # Bind ExecuteBehavior to the latest validated snapshot, not the
+            # older packet that first inserted the candidate into the pool.
+            fresh_target = dict(current)
+            fresh_target.update({
+                "last_seen_age_ms": current_age_ms,
+                "snapshot_id": self._cached_visual_snapshot_id,
+                "source_observation_id": self._cached_source_observation_id,
+            })
+            if self._cached_visual_sequence is not None:
+                fresh_target["snapshot_sequence"] = (
+                    self._cached_visual_sequence
+                )
+            params.update({
+                "visual_target": fresh_target,
+                "active_target": dict(fresh_target),
+                "target": dict(fresh_target),
+                "target_track_id": fresh_target.get("track_id"),
+                "target_identity": fresh_target.get("identity", "unknown"),
+                "target_resolution": "same_snapshot_visual_presence",
+                "vision_epoch": self._cached_vision_epoch,
+                "snapshot_id": self._cached_visual_snapshot_id,
+                "snapshot_sequence": self._cached_visual_sequence,
+                "source_observation_id": self._cached_source_observation_id,
+                "visual_header": dict(self._cached_visual_header),
+            })
+            return True
 
     # ── Service Methods ──────────────────────────────────────────────────────
 

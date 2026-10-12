@@ -77,6 +77,28 @@ class BehaviorRuntime:
                 self.candidate_to_active_behavior(candidate)
             )
 
+        # A selected replacement may wait in ``active_behavior`` while the
+        # current Action's cancellation settles. Recheck its gate immediately
+        # before every tree tick so visual presence, target freshness, and
+        # interaction state cannot go stale during that wait. This only drops
+        # the unstarted replacement; the current Goal keeps its cancellation
+        # and result-settlement ownership.
+        pending = self.blackboard.active_behavior
+        if pending is not None and self.candidate_gate is not None:
+            pending_candidate = self._active_behavior_gate_context(pending)
+            if not self.candidate_gate(pending_candidate):
+                self.blackboard.active_behavior = None
+                self.candidate_pool.release_inflight(
+                    pending.behavior_name,
+                    pending.behavior_id,
+                )
+                emit(
+                    "candidate_discarded",
+                    pending_candidate,
+                    reason="pre_dispatch_gate",
+                )
+                candidate = None
+
         # The root is intentionally reactive: every tick starts evaluation at
         # Lv0 while child nodes preserve executor state on the blackboard.
         # A selected candidate is already reserved by name.  Release that
@@ -214,6 +236,24 @@ class BehaviorRuntime:
              current_goal_id=current.behavior_id, current_behavior=current.behavior_name,
              repeat_key=candidate.get("candidate_id"))
         return can_preempt
+
+    @staticmethod
+    def _active_behavior_gate_context(active: ActiveBehavior) -> dict:
+        """Project a reserved, not-yet-dispatched behavior for its gate."""
+        return {
+            "behavior_name": active.behavior_name,
+            "candidate_id": active.behavior_id,
+            "priority_level": active.priority_level,
+            "value": active.value,
+            "confidence": active.confidence,
+            "need_type": active.need_type,
+            "source_emotion": active.params.get("source_emotion", ""),
+            "params": active.params,
+            "timeout_sec": active.timeout_sec,
+            "cooldown_sec": active.cooldown_sec,
+            "interrupt_policy": active.interrupt_policy,
+            "created_at": active.created_at,
+        }
 
     def cancel_current_interaction(
         self,

@@ -77,6 +77,8 @@ class MockVisionProvider(BaseProvider):
             "_source_observation_age_sec": 0.0,
             "_source_observation_valid": True,
             "_source_owner_target_ids": [],
+            "_source_family_target_ids": [],
+            "_source_stranger_target_ids": [],
         })
         self._source_observation_sequence += 1
         if active.track_id > 0:

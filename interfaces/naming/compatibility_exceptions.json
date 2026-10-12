@@ -52,7 +52,9 @@
     "audio_direct|EVT_VOICE_COMMAND_SEEK_HUG|default|hug",
     "audio_direct|EVT_VOICE_COMMAND_STAY_HOME_ALONE|default|stay_home",
     "audio_direct|EVT_VOICE_COMMAND_WAIT_FOR_OWNER_RETURN|default|wait_return",
-    "visual_direct|EVT_VISION_OWNER_PRESENT|default|owner_greet"
+    "visual_direct|EVT_VISION_FAMILY_PRESENT|default|familiar_person_greet",
+    "visual_direct|EVT_VISION_OWNER_PRESENT|default|owner_greet",
+    "visual_direct|EVT_VISION_STRANGER_PRESENT|default|stranger_observe"
   ],
   "legacy_spellings": [
     "behavior|barkShortAlert",

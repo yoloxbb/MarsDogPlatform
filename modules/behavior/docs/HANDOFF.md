@@ -204,11 +204,13 @@ Service 不可用时回退 Topic 缓存。视觉消息超过约 0.5 秒、目标
 `priority_level=1, sub_priority=12`（Lv1.2）。视觉 Topic 是 10 Hz 状态快照，适配器按事件的
 “消失 → 再出现”边沿重新触发，候选池另行保证 queued/in-flight 同名唯一。
 
-`EVT_VISION_OWNER_PRESENT` 是状态事件，按活动周期 `event_id` 去重，且不会因短暂 Topic
-中断清除去重记忆。Vision 以不同有效源观测确认主人满 1.0 秒后 ENTER，HOLD 期间维持，
+`EVT_VISION_OWNER_PRESENT`、`EVT_VISION_FAMILY_PRESENT` 和
+`EVT_VISION_STRANGER_PRESENT` 是状态事件，按各自活动周期 `event_id` 去重，且不会因短暂
+Topic 中断清除去重记忆。Vision 以不同有效源观测确认目标满 1.0 秒后 ENTER，HOLD 期间维持，
 连续有效漏检 2.0 秒后 EXIT 并开始 3.0 秒冷却；断流和无效推理不计作漏检。Behavior 只在
-当前 owner 已确认、仍在跟踪且目标新鲜时创建 Lv1 `owner_greet` 候选。当前 Action 没有该
-行为模板，所以此候选会在 Action 解析阶段被拒绝。
+同包、同 epoch 的唯一匹配目标已确认、仍在跟踪且新鲜时创建 Lv1 `owner_greet`、
+`familiar_person_greet` 或 `stranger_observe` 候选。当前 Action 没有这些行为模板，所以候选
+会在 Action 解析阶段被拒绝，不代表对应动作已执行。
 
 ## 6. 情绪持续表达
 

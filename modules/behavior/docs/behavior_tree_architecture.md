@@ -389,13 +389,15 @@ TOILET、CLEAN、SLEEP 是条件指令：在任何候选入池或会话修改之
     ├── EVT_VISION_FALL → respond_person_fall (Lv1, sp=12)
     ├── EVT_VISION_STOP_GESTURE → respond_stop_gesture (Lv1, sp=12)
     ├── EVT_VISION_OWNER_PRESENT → owner_greet (Lv1, sp=12, semantic_rank=3)
+    ├── EVT_VISION_FAMILY_PRESENT → familiar_person_greet (Lv1, sp=12, semantic_rank=3)
+    ├── EVT_VISION_STRANGER_PRESENT → stranger_observe (Lv1, sp=12, semantic_rank=3)
     └── 其余 events 不直接创建行为候选
 ```
 
-主人事件是 `events[]` 中的活动状态：不同有效源观测确认主人满 1.0 秒后 ENTER，HOLD
-期间保持，连续有效漏检 2.0 秒后 EXIT 并开始 3.0 秒冷却。无效推理、断流或过期观测不算
-漏检。BT 按 `event_instances` 中的事件周期 ID 去重，并在仲裁前校验新鲜目标和 epoch；
-短暂 Topic 超时不会清除周期记忆。当前 Action 尚无 `owner_greet` 模板。
+三个 presence 事件都是 `events[]` 中的活动状态：符合各自身份的不同有效源观测满 1.0 秒后
+ENTER，HOLD 期间保持，连续有效漏检 2.0 秒后 EXIT 并开始 3.0 秒冷却。无效推理、断流或
+过期观测不算漏检。BT 按 `event_instances` 中的事件周期 ID 去重，并在仲裁前校验唯一新鲜
+目标和 epoch；短暂 Topic 超时不会清除周期记忆。当前 Action 没有对应的三个模板。
 
 服务类型优先使用 `marsdog_vision_interaction/srv/VisionTask`，接口名为
 `/perception/vision/task`。如果运行环境只安装了旧接口，则兼容

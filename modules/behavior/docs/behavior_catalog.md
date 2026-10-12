@@ -243,10 +243,13 @@
 | `EVT_VISION_FALL` | `respond_person_fall` | 1 | 12 |
 | `EVT_VISION_STOP_GESTURE` | `respond_stop_gesture` | 1 | 12 |
 | `EVT_VISION_OWNER_PRESENT` | `owner_greet` | 1 | 12 |
+| `EVT_VISION_FAMILY_PRESENT` | `familiar_person_greet` | 1 | 12 |
+| `EVT_VISION_STRANGER_PRESENT` | `stranger_observe` | 1 | 12 |
 
 主人事件携带 `owner/confirmed_known/tracking` 目标和事件实例 ID，经统一仲裁；TTL 不超过
-目标的剩余 500 ms 新鲜期。当前 Action 未注册 `owner_greet` 模板，映射只保证候选安全到达
-Action 能力解析边界。
+目标的剩余 500 ms 新鲜期。当前 Action 未注册 `owner_greet`、
+`familiar_person_greet` 或 `stranger_observe` 模板，映射只保证候选安全到达 Action 能力
+解析边界。
 
 ---
 
