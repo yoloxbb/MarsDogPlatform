@@ -363,7 +363,10 @@ signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢�
   "header": {"stamp": 1786417000.1, "frame_id": "camera_link"},
   "active_target": {"track_id": 7, "pose_action": "fallen_down"},
   "hands": [{"hand_action": "stop_gesture"}],
-  "events": ["EVT_VISION_FALL", "EVT_VISION_STOP_GESTURE"]
+  "events": ["EVT_VISION_FALL", "EVT_VISION_STOP_GESTURE", "EVT_VISION_OWNER_PRESENT"],
+  "observation_status": "valid",
+  "event_instances": {"EVT_VISION_OWNER_PRESENT": {"event_id": "owner-cycle-42"}},
+  "human_candidates": [{"identity": "owner", "identity_state": "confirmed_known", "tracking_state": "tracking", "target_id": "epoch-1:human:7", "track_id": 7, "vision_epoch": "epoch-1", "last_seen_age_ms": 20.0}]
 }
 ```
 
@@ -374,10 +377,14 @@ signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢�
 |---|---|---|---|
 | `EVT_VISION_FALL` | `respond_person_fall` | Lv1, `sub_priority=12` | 8s |
 | `EVT_VISION_STOP_GESTURE` | `respond_stop_gesture` | Lv1, `sub_priority=12` | 8s |
+| `EVT_VISION_OWNER_PRESENT` | `owner_greet` | Lv1, `sub_priority=12`, `semantic_rank=3` | ≤0.5s |
 
-该 Topic 是 10 Hz 状态快照。同一事件连续出现时只生成一次候选；事件先从
-`events[]` 消失、之后再出现才会重新触发。其余 `EVT_VISION_*` 仍只作为
-场景/情绪上下文，不直接生成候选。
+该 Topic 是 10 Hz 状态快照。同一事件连续出现时只生成一次候选；FALL/STOP 事件先从
+`events[]` 消失、之后再出现才会重新触发。主人事件用可选 `event_instances` 的 ID 跨
+重复快照和短暂 Topic 超时去重；新候选要求有效观测、主人已确认跟踪、事件 ID、epoch
+和新鲜目标。目标 TTL 上限为 500 ms，选择时再次对照最新快照验证。其余 `EVT_VISION_*`
+仍只作为场景/情绪上下文，不直接生成候选。当前 Action 没有 `owner_greet` 模板，因而
+尚不能执行迎接动作。
 
 ### 4.7 `/behavior/result_event`
 

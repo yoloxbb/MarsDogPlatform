@@ -477,6 +477,19 @@ def test_legacy_names_and_aliases_are_rejected() -> None:
         assert ctx.error_reason == f"unsupported_behavior: {name!r}"
 
 
+def test_owner_greet_remains_unsupported_until_an_exact_action_template_exists() -> None:
+    loader = _load()
+    resolver = BehaviorResolver(
+        canonical_behaviors=loader.get_behavior_names(),
+    )
+
+    assert loader.get_behavior_template("owner_greet") is None
+    ctx = resolver.resolve(ExecutionContext.from_goal("owner_greet", {}))
+    assert not ctx.is_valid
+    assert ctx.resolved_behavior_name == "owner_greet"
+    assert ctx.error_reason == "unsupported_behavior: 'owner_greet'"
+
+
 def test_shared_stage_definitions_do_not_share_runtime_mutations() -> None:
     loader = ConfigLoader(CONFIG_DIR)
     loader.load_all()

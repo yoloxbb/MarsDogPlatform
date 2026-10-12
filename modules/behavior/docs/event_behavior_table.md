@@ -10,6 +10,7 @@
 |---|---|:---:|:---:|:---:|
 | `EVT_VISION_FALL` | `respond_person_fall` | 1 | 12 | 8s |
 | `EVT_VISION_STOP_GESTURE` | `respond_stop_gesture` | 1 | 12 | 8s |
+| `EVT_VISION_OWNER_PRESENT` | `owner_greet` | 1 | 12 | ≤0.5s |
 
 `Lv1.2` 是本项目的表述约定，实际 Action Goal 仍只有整数
 `priority_level=1`；`.2` 通过候选内部 `sub_priority=12` 表示“视觉”。
@@ -17,9 +18,19 @@
 `hands` 到 `params_json`。FALL/STOP 以原样、区分大小写的 `behavior_name` 发送给
 `/execute_behavior`。
 
+`owner_greet` 还携带同一视觉快照中的主人目标、epoch、快照和源观测标识；TTL 不超过该目标
+剩余的 500 ms 新鲜期。它是 `external_interaction` Lv1 候选，使用 `semantic_rank=3` 和
+`safe_point` 进入统一仲裁。
+
 `/perception/visual_event` 是 10 Hz 状态快照，不是一次性边沿总线。连续包中的
-同名事件只在首次出现时触发；先消失后再出现时才重新触发。候选池还会
-对 queued/in-flight 的同名 Behavior 做二次去重。
+FALL/STOP 同名事件只在首次出现时触发；先消失后再出现时才重新触发。主人事件由
+`event_instances.EVT_VISION_OWNER_PRESENT.event_id` 标识一个 ENTER 周期，重复快照和
+短暂 Topic 中断恢复都不会再次创建候选；EXIT 和冷却后重新进入会使用新实例 ID。只有
+有效观测和当前 `owner/confirmed_known/tracking` 目标可建候选，仲裁前会再次检查事件实例、
+epoch 和目标新鲜度。候选池还会对 queued/in-flight 的同名 Behavior 做二次去重。
+
+当前 Action 模板没有 `owner_greet`，所以候选安全地停在 `/execute_behavior` 解析边界并由
+Action 拒绝；本轮没有定义转头、摇尾或靠近的执行阶段。
 
 > 跨项目约束：动作项目的 `config/behavior_tree_actions.yaml` 必须注册
 > `respond_person_fall` 和 `respond_stop_gesture`。

@@ -387,16 +387,17 @@ class BehaviorTreeRosNode(NodeBase):
 
     # ── Audio Direct Handler ──────────────────────────────────────────────
 
-    def _on_visual_direct(self, event_type: str, data: dict) -> None:
+    def _on_visual_direct(self, event_type: str, data: dict) -> bool:
         """Map a whitelisted visual event into the candidate pipeline."""
         candidate = self._intent_mapper.map_visual_event(event_type, data)
         if candidate is not None:
-            self._add_candidate(candidate)
+            return self._add_candidate(candidate)
         else:
             self._logger.debug(
                 "Visual event %s → no candidate (unmapped event_type)",
                 event_type,
             )
+        return False
 
     def _on_audio_direct(self, event_type: str, data: dict) -> None:
         """Handle event-type-driven audio events via the intent pipeline.
@@ -922,6 +923,16 @@ class BehaviorTreeRosNode(NodeBase):
         Commands and safety work still win through normal priority. A command
         does not make the rest of its voice session an emotion embargo.
         """
+        params = candidate.get("params", {})
+        if (
+            isinstance(params, dict)
+            and params.get("trigger_event") == "EVT_VISION_OWNER_PRESENT"
+            and not self._perception.owner_presence_candidate_is_current(
+                candidate
+            )
+        ):
+            return False
+
         session = self._voice_session
         if not (
             (session is not None and session.active)
@@ -932,7 +943,6 @@ class BehaviorTreeRosNode(NodeBase):
         if int(candidate.get("priority_level", 6)) <= 1:
             return True
 
-        params = candidate.get("params", {})
         return bool(
             self._voice_engagement.get("waiting_emotion_enabled", False)
             and session is not None

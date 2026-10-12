@@ -260,6 +260,10 @@ class VisionObservationProvider(BaseProvider):
         self._pending_frame_stamp: float = 0.0
         self._pending_frame_id: str = "camera_link"
         self._cached_observation: dict[str, Any] = {}
+        self._source_observation_sequence = 0
+        self._source_observation_id = ""
+        self._source_observation_monotonic = 0.0
+        self._source_observation_valid = False
         self._inference_lock = threading.RLock()
         self._worker_stop = False
         self._worker: threading.Thread | None = None
@@ -845,6 +849,9 @@ class VisionObservationProvider(BaseProvider):
             self._latest_frame = None
             self._pending_frame = None
             self._cached_observation = {}
+            self._source_observation_id = ""
+            self._source_observation_monotonic = 0.0
+            self._source_observation_valid = False
             self._expression_faces = []
             self._expression_active_index = None
             self._expression_source_monotonic = 0.0
@@ -939,6 +946,15 @@ class VisionObservationProvider(BaseProvider):
                     "frame_id": str(frame_id or "camera_link"),
                 }
                 with self._lock:
+                    self._source_observation_sequence += 1
+                    self._source_observation_id = (
+                        f"{float(frame_stamp or 0.0):.9f}:"
+                        f"{self._source_observation_sequence}"
+                    )
+                    self._source_observation_monotonic = frame_source_monotonic
+                    self._source_observation_valid = (
+                        obs.pop("_source_inference_valid", True) is True
+                    )
                     self._latest_frame = frame
                     self._expression_faces = obs.pop("_facial_expression_faces", [])
                     self._expression_active_index = obs.pop("_facial_expression_active_index", None)
@@ -947,6 +963,9 @@ class VisionObservationProvider(BaseProvider):
                     self._inferred_frame_count += 1
             except Exception as exc:
                 with self._lock:
+                    # The previous cache remains available to legacy readers,
+                    # but it is no longer valid evidence for owner presence.
+                    self._source_observation_valid = False
                     self._expression_faces = []
                     self._expression_active_index = None
                     self._expression_source_monotonic = 0.0
@@ -996,6 +1015,42 @@ class VisionObservationProvider(BaseProvider):
             matches[human_index] = candidates[candidate_index]
             used_candidates.add(candidate_index)
         return matches
+
+    @classmethod
+    def _current_owner_target_ids(
+        cls,
+        humans: list[dict[str, Any]],
+        faces: list[dict[str, Any]],
+        candidates: list[dict[str, Any]],
+    ) -> list[str]:
+        """Return owner tracks backed by this source frame's body and face."""
+        current_owner_faces = {
+            int(face["track_id"])
+            for face in faces
+            if isinstance(face, dict)
+            and face.get("recognized_user") == "owner"
+            and face.get("identity_state") == "confirmed_known"
+            and isinstance(face.get("track_id"), int)
+            and not isinstance(face.get("track_id"), bool)
+            and int(face["track_id"]) > 0
+        }
+        matches = cls._human_candidate_matches(humans, candidates)
+        target_ids: list[str] = []
+        for candidate in matches.values():
+            try:
+                face_track_id = int(candidate.get("face_track_id", -1))
+            except (TypeError, ValueError):
+                face_track_id = -1
+            target_id = str(candidate.get("target_id", "") or "").strip()
+            if (
+                candidate.get("identity") == "owner"
+                and candidate.get("identity_state") == "confirmed_known"
+                and candidate.get("tracking_state") == "tracking"
+                and face_track_id in current_owner_faces
+                and target_id
+            ):
+                target_ids.append(target_id)
+        return target_ids
 
     @staticmethod
     def _debug_human_overlays(
@@ -1143,6 +1198,15 @@ class VisionObservationProvider(BaseProvider):
         active_dict = active.to_dict()
         human_candidates = target_snapshot["human_candidates"]
         target_is_current = active_dict["tracking_state"] == "tracking"
+
+        # Keep per-source evidence separate from the manager's short-lived
+        # retained tracks. A valid frame without a current body/face association
+        # is negative even while an old track remains inside its expiry window.
+        source_owner_target_ids = self._current_owner_target_ids(
+            obs.get("humans", []),
+            obs.get("faces", []),
+            human_candidates,
+        )
 
         # Run the temporal action engine only for the human selected by the
         # stable target manager.  Hand-to-person association is not available
@@ -1294,6 +1358,10 @@ class VisionObservationProvider(BaseProvider):
             "vision_epoch": target_snapshot["vision_epoch"],
             "active_target": active_dict,
             "human_candidates": human_candidates,
+            "_source_owner_target_ids": source_owner_target_ids,
+            "_source_inference_valid": (
+                obs.get("_owner_presence_inference_valid") is True
+            ),
             "faces": faces_out,
             "humans": humans_out,
             "hands": hands_out,
@@ -1525,6 +1593,15 @@ class VisionObservationProvider(BaseProvider):
         with self._lock:
             if self._cached_observation:
                 observation = copy.deepcopy(self._cached_observation)
+                observation["_source_observation_id"] = self._source_observation_id
+                observation["_source_observation_age_sec"] = (
+                    max(0.0, time.monotonic() - self._source_observation_monotonic)
+                    if self._source_observation_monotonic > 0.0
+                    else None
+                )
+                observation["_source_observation_valid"] = (
+                    self._source_observation_valid
+                )
                 if not self._expressions_fresh_locked():
                     self._clear_expressions(observation)
                 elif any("facial_expression" in face for face in self._expression_faces):
@@ -1682,6 +1759,18 @@ class VisionObservationProvider(BaseProvider):
         started_at = time.perf_counter()
         inference_sequence = self._inferred_frame_count + 1
         timestamp_ms = self._next_landmarker_timestamp()
+        # The existing detectors return empty lists on both a successful
+        # miss and an internal model failure. Preserve that legacy output,
+        # but let the owner policy distinguish failures from negative frames.
+        self._owner_presence_inference_valid = bool(
+            detect_faces and self.task_face_enabled and self.task_pose_enabled
+            and self._face_detector is not None
+            and self._face_rec_model is not None
+            and (
+                (self._pose_backend_kind == "rknn" and self._pose_backend is not None)
+                or (self._pose_backend_kind == "mediapipe" and self._pose_landmarker is not None)
+            )
+        )
         faces = (
             self._detect_faces(
                 frame,
@@ -1766,6 +1855,7 @@ class VisionObservationProvider(BaseProvider):
             "hands": hands,
             "tracked_objects": [],
             "_landmarker_diagnostics": self._landmarker_diagnostics(),
+            "_owner_presence_inference_valid": self._owner_presence_inference_valid,
         }
 
     def _hand_inference_is_due(self) -> bool:
@@ -1789,6 +1879,7 @@ class VisionObservationProvider(BaseProvider):
         inference_sequence: int = 0,
     ) -> list[dict[str, Any]]:
         if self._face_detector is None:
+            self._owner_presence_inference_valid = False
             self._mark_face_tracks_missing()
             return []
 
@@ -1980,6 +2071,7 @@ class VisionObservationProvider(BaseProvider):
             return faces
 
         except Exception as exc:
+            self._owner_presence_inference_valid = False
             if self._disable_fatal_face_model("yunet", self._face_detector):
                 self._mark_face_tracks_missing()
                 return []
@@ -2079,6 +2171,7 @@ class VisionObservationProvider(BaseProvider):
 
             feature = self._face_rec_model.feature(aligned)
             if feature is None:
+                self._owner_presence_inference_valid = False
                 reason_code = "feature_unavailable"
                 return ("unknown", 0.0)
 
@@ -2104,6 +2197,7 @@ class VisionObservationProvider(BaseProvider):
             return ("unknown", round(float(best_score), 4))
 
         except Exception as exc:
+            self._owner_presence_inference_valid = False
             if self._disable_fatal_face_model("sface", self._face_rec_model):
                 reason_code = "model_fatal"
                 result = "failure"
@@ -2217,6 +2311,7 @@ class VisionObservationProvider(BaseProvider):
 
         backend = self._pose_backend
         if backend is None:
+            self._owner_presence_inference_valid = False
             return []
         try:
             detections = backend.process(frame)
@@ -2260,12 +2355,14 @@ class VisionObservationProvider(BaseProvider):
                 })
             return humans
         except PoseBackendError as exc:
+            self._owner_presence_inference_valid = False
             self._disable_fatal_pose_model(backend)
             logger.error("RKNN pose inference failed; CPU pose fallback disabled: %s", exc)
             return []
         except Exception as exc:
             # A provider bug or malformed adapter result must not repeatedly
             # call a potentially dead NPU context on subsequent frames.
+            self._owner_presence_inference_valid = False
             self.pose_model_status.update({"ready": False, "fatal": True, "error": str(exc)})
             try:
                 backend.close()
@@ -2308,6 +2405,7 @@ class VisionObservationProvider(BaseProvider):
             List of human dicts with bbox, confidence, pose_state, keypoints.
         """
         if self._pose_landmarker is None:
+            self._owner_presence_inference_valid = False
             return []
 
         try:
@@ -2383,6 +2481,7 @@ class VisionObservationProvider(BaseProvider):
             return humans
 
         except Exception as exc:
+            self._owner_presence_inference_valid = False
             logger.debug("MediaPipe pose error: %s", exc)
             return []
 

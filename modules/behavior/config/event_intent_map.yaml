@@ -680,6 +680,14 @@ visual_direct:
     ttl_sec: 8.0
     interrupt_policy: immediate
 
+  EVT_VISION_OWNER_PRESENT:
+    category: external_interaction
+    intent: owner_greet
+    semantic_rank: 3  # social presence is not a safety event
+    sub_priority: 12
+    ttl_sec: 0.5  # bounded by the current visual target freshness window
+    interrupt_policy: safe_point
+
 # need — 需求等级变化事件 → category + intent
 need:
   NEED_HUNGER_TRIGGERED:

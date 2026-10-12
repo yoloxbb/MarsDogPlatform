@@ -90,7 +90,9 @@ _AUDIO_STATE_EVENTS = {
 _DIRECT_VISUAL_EVENTS = {
     "EVT_VISION_FALL",
     "EVT_VISION_STOP_GESTURE",
+    "EVT_VISION_OWNER_PRESENT",
 }
+_OWNER_PRESENCE_EVENT = "EVT_VISION_OWNER_PRESENT"
 
 
 def _as_bool(value) -> bool:
@@ -153,6 +155,14 @@ class PerceptionClientAdapter:
         self._cached_objects: list[dict] = []
         self._cached_vision_epoch: str = ""
         self._cached_visual_header: dict = {}
+        self._cached_visual_snapshot_id: str = ""
+        self._cached_visual_sequence: int | None = None
+        self._cached_source_observation_id: str = ""
+        self._cached_visual_events: set[str] = set()
+        self._cached_observation_status: str = ""
+        self._cached_visual_event_instances: dict = {}
+        self._consumed_owner_presence_instance_id: str = ""
+        self._pending_owner_presence_instance_id: str = ""
         self._visual_cache_updated_at: float = 0.0
         self._lock = threading.Lock()
         self._vision_client = None
@@ -346,8 +356,115 @@ class PerceptionClientAdapter:
         self._on_audio_direct = callback
 
     def set_on_visual_event(self, callback: Callable) -> None:
-        """Register callback for direct visual-event appearance edges."""
+        """Register callback for direct visual events.
+
+        Ordinary events are delivered on appearance edges. The owner-presence
+        state event is retried while active until its instance creates a
+        candidate, then deduplicated across visual-cache timeouts.
+        """
         self._on_visual_event = callback
+
+    def owner_presence_candidate_is_current(self, candidate: dict) -> bool:
+        """Revalidate and refresh owner-greet context from the latest snapshot."""
+        params = candidate.get("params") if isinstance(candidate, dict) else None
+        if not isinstance(params, dict):
+            return False
+        target = params.get("visual_target")
+        if not isinstance(target, dict):
+            return False
+        expected_event_id = str(
+            params.get("visual_event_instance_id", "")
+        ).strip()
+        expected_epoch = str(params.get("vision_epoch", "")).strip()
+        expected_target_id = str(target.get("target_id", "")).strip()
+        expected_track_id = target.get("track_id")
+        if (
+            not expected_event_id
+            or not expected_epoch
+            or not expected_target_id
+            or isinstance(expected_track_id, bool)
+            or not isinstance(expected_track_id, int)
+            or expected_track_id <= 0
+            or not str(params.get("snapshot_id", "")).strip()
+            or not str(params.get("source_observation_id", "")).strip()
+        ):
+            return False
+
+        now = time.monotonic()
+        with self._lock:
+            cache_age = now - self._visual_cache_updated_at
+            if (
+                self._visual_cache_updated_at <= 0.0
+                or cache_age < 0.0
+                or cache_age > self.VISUAL_CACHE_TIMEOUT_SEC
+                or self._cached_observation_status != "valid"
+                or _OWNER_PRESENCE_EVENT not in self._cached_visual_events
+                or self._cached_vision_epoch != expected_epoch
+                or self._cached_visual_event_instances.get(
+                    _OWNER_PRESENCE_EVENT, ""
+                ) != expected_event_id
+                or not self._cached_visual_snapshot_id
+                or not self._cached_source_observation_id
+            ):
+                return False
+
+            for current in self._cached_human_candidates:
+                if (
+                    not isinstance(current, dict)
+                    or str(current.get("identity", "")) != "owner"
+                    or str(current.get("identity_state", ""))
+                    != "confirmed_known"
+                    or str(current.get("tracking_state", "")) != "tracking"
+                    or str(current.get("vision_epoch", "")) != expected_epoch
+                    or str(current.get("target_type", "human")) != "human"
+                    or not isinstance(current.get("target_id"), str)
+                    or current["target_id"].strip() != expected_target_id
+                    or isinstance(current.get("track_id"), bool)
+                    or not isinstance(current.get("track_id"), int)
+                    or current.get("track_id") != expected_track_id
+                ):
+                    continue
+                try:
+                    source_age_ms = float(current.get("last_seen_age_ms"))
+                except (TypeError, ValueError):
+                    continue
+                current_age_ms = source_age_ms + cache_age * 1000.0
+                if (
+                    0.0 <= source_age_ms
+                    and current_age_ms <= self.VISUAL_TARGET_MAX_AGE_MS
+                ):
+                    # Bind the candidate sent to ExecuteBehavior to this
+                    # latest validated snapshot, not to the older snapshot
+                    # which first inserted it into the pool.
+                    fresh_target = dict(current)
+                    fresh_target.update({
+                        "last_seen_age_ms": current_age_ms,
+                        "snapshot_id": self._cached_visual_snapshot_id,
+                        "source_observation_id": (
+                            self._cached_source_observation_id
+                        ),
+                    })
+                    if self._cached_visual_sequence is not None:
+                        fresh_target["snapshot_sequence"] = (
+                            self._cached_visual_sequence
+                        )
+                    params.update({
+                        "visual_target": fresh_target,
+                        "active_target": dict(fresh_target),
+                        "target": dict(fresh_target),
+                        "target_track_id": fresh_target.get("track_id"),
+                        "target_identity": "owner",
+                        "target_resolution": "same_snapshot_owner",
+                        "vision_epoch": self._cached_vision_epoch,
+                        "snapshot_id": self._cached_visual_snapshot_id,
+                        "snapshot_sequence": self._cached_visual_sequence,
+                        "source_observation_id": (
+                            self._cached_source_observation_id
+                        ),
+                        "visual_header": dict(self._cached_visual_header),
+                    })
+                    return True
+            return False
 
     # ── Service Methods ──────────────────────────────────────────────────────
 

@@ -67,6 +67,78 @@ def observe(output):
             != emotion_probe["observed"]["expression-metadata"]):
         raise RuntimeError("facial_expression metadata changed MarsDog Emotion consumer output")
 
+    # Owner presence uses optional v1 metadata so the baseline's original
+    # payload corpus and frozen consumer output stay untouched.
+    owner_probe_dir = output / "owner-presence-probe"
+    owner_probe_dir.mkdir(parents=True, exist_ok=True)
+    owner_payload = {
+        "schema_version": 1,
+        "vision_epoch": "owner-probe-epoch",
+        "snapshot_id": "owner-probe-epoch:1",
+        "sequence": 1,
+        "source_observation_id": "owner-probe-frame-1",
+        "observation_status": "valid",
+        "header": {"stamp": 1000, "frame_id": "camera"},
+        "events": ["EVT_VISION_MASTER", "EVT_VISION_OWNER_PRESENT"],
+        "event_instances": {
+            "EVT_VISION_OWNER_PRESENT": {"event_id": "owner-probe-cycle-1"}
+        },
+        "human_candidates": [{
+            "identity": "owner",
+            "identity_state": "confirmed_known",
+            "tracking_state": "tracking",
+            "target_type": "human",
+            "target_id": "owner-probe-epoch:human:7",
+            "track_id": 7,
+            "vision_epoch": "owner-probe-epoch",
+            "last_seen_age_ms": 0.0,
+        }],
+    }
+    owner_producer_probe = run_stage(
+        "vision", {"owner_presence_probe": owner_payload},
+        owner_probe_dir, WORKER,
+    )
+    owner_produced = owner_producer_probe["observed"]["owner_presence_probe"]
+    for key in ("observation_status", "source_observation_id", "event_instances"):
+        if owner_produced.get(key) != owner_payload[key]:
+            raise RuntimeError(
+                f"Vision producer did not preserve optional owner metadata {key}"
+            )
+    targets = owner_produced.get("human_candidates")
+    if not isinstance(targets, list) or len(targets) != 1:
+        raise RuntimeError("Vision producer did not preserve the owner candidate probe")
+    for key in ("identity", "identity_state", "tracking_state", "target_id", "track_id", "vision_epoch"):
+        if targets[0].get(key) != owner_payload["human_candidates"][0][key]:
+            raise RuntimeError(f"Vision producer changed owner candidate field {key}")
+
+    owner_control = deepcopy(owner_produced)
+    owner_control["events"] = ["EVT_VISION_MASTER"]
+    emotion_owner_probe = run_stage(
+        "emotion",
+        [
+            {"id": "owner-event-control", "steps": [{"wire": json.dumps(owner_control, ensure_ascii=False)}]},
+            {"id": "owner-event-metadata", "steps": [{"wire": json.dumps(owner_produced, ensure_ascii=False)}]},
+        ],
+        owner_probe_dir,
+        WORKER,
+    )
+    owner_control_steps = emotion_owner_probe["observed"]["owner-event-control"]
+    owner_metadata_steps = emotion_owner_probe["observed"]["owner-event-metadata"]
+    state_fields = ("emotions", "demands", "owner_present")
+    if (
+        len(owner_control_steps) != 1
+        or len(owner_metadata_steps) != 1
+        or any(
+            owner_control_steps[0].get(key) != owner_metadata_steps[0].get(key)
+            for key in state_fields
+        )
+        or owner_control_steps[0]["accepted"][0]
+        != owner_metadata_steps[0]["accepted"][0]
+    ):
+        raise RuntimeError(
+            "EVT_VISION_OWNER_PRESENT changed EVT_VISION_MASTER Emotion/need output"
+        )
+
     scenarios = []
     for case in fixtures["scenarios"]:
         steps = []
@@ -92,6 +164,15 @@ def observe(output):
         "emotion_module": emotion_probe["provenance"]["module_file"],
         "canonical_faces_checked": ["faces", "debug_faces"],
         "marsdog_emotion_unchanged": True,
+    }
+    provenance["owner_presence_probe"] = {
+        "producer_module": owner_producer_probe["provenance"]["module_file"],
+        "emotion_module": emotion_owner_probe["provenance"]["module_file"],
+        "optional_v1_metadata_checked": [
+            "observation_status", "source_observation_id", "event_instances",
+        ],
+        "owner_identity_tracking_fields_checked": True,
+        "master_emotion_and_need_unchanged": True,
     }
     return ({stage: value["observed"] for stage, value in responses.items()}, provenance)
 

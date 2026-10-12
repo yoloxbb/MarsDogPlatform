@@ -4,8 +4,9 @@
   "configs": {
     "modules/behavior/config/intent_action_pool.yaml": {
       "original_sha256": "d2becbfe959c4a857d71f43325497201e77e754a24da1a51f0d584936bd46c69",
-      "effective_semantic_sha256": "5d8389c1165b774c1d32d879eef841695fb5ef5952df561c112d6d1247a0f59c",
-      "review": "Remove only unused per-intent aliases; all other parsed values frozen."
+      "effective_semantic_sha256": "68474be8b94d120fbc325253d7f77b54fe7fd877e01e76e36318d0fad6d861ab",
+      "review": "Preserve the reviewed values and aliases; add only the owner_greet candidate pool required by EVT_VISION_OWNER_PRESENT. The route intentionally has no Action template.",
+      "previous_effective_semantic_sha256": "5d8389c1165b774c1d32d879eef841695fb5ef5952df561c112d6d1247a0f59c"
     },
     "modules/action/config/behavior_tree_actions.yaml": {
       "original_sha256": "cb860de5b575f936e906a79bf1f304ba36af829c193f5811fc95a86f64db2893",

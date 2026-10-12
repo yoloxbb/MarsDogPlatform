@@ -58,6 +58,13 @@ depth_fusion:
 
 这是下游跟踪稳定的硬契约。修改相机布局时必须同步验证 Viewer、`body_center` 和 Action 控制器。
 
+`EVT_VISION_OWNER_PRESENT` 是单独的活动状态事实：只在当前有效源推理关联到
+`owner/confirmed_known/tracking` 时累计 ENTER；默认稳定进入 1.0 秒、有效负观测 2.0 秒
+退出，EXIT 后冷却 3.0 秒。状态保留在 `events[]` 直到 EXIT。重复快照不推进源观测计时；
+相机断流、推理失败或结果过期发布可选 `observation_status=invalid`，只打断尚未完成的
+计时，不被解释为主人离开。`event_instances` 为活动周期提供稳定 event ID，供行为树跨短
+Topic 中断去重。该事件不改变现有 `EVT_VISION_MASTER` 的 Emotion/需求语义。
+
 ## 4. 人体候选和 `active_target` 使用规则
 
 下游运动控制必须同时满足：

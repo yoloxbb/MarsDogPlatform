@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "baseline_commit": "0c97e42",
-  "reason": "Preserve existing wire/runtime names and unsupported routes; no automatic aliasing or invented implementation. Non-catalog and unrouted catalog events require their runtime contracts, not an inferred producer/consumer.",
+  "reason": "Preserve existing wire/runtime names and explicitly documented unsupported routes; no automatic aliasing or invented implementation. Non-catalog and unrouted catalog events require their runtime contracts, not an inferred producer/consumer.",
   "missing_templates": [
     "audio_direct|EVT_VOICE_COMMAND_ASK_ABILITIES|default|show_skill",
     "audio_direct|EVT_VOICE_COMMAND_ASK_IF_COMFORTABLE|default|respond_comfort",
@@ -51,7 +51,8 @@
     "audio_direct|EVT_VOICE_COMMAND_RESPOND_FOOD_PREFERENCE_QUERY|default|respond_food_preference",
     "audio_direct|EVT_VOICE_COMMAND_SEEK_HUG|default|hug",
     "audio_direct|EVT_VOICE_COMMAND_STAY_HOME_ALONE|default|stay_home",
-    "audio_direct|EVT_VOICE_COMMAND_WAIT_FOR_OWNER_RETURN|default|wait_return"
+    "audio_direct|EVT_VOICE_COMMAND_WAIT_FOR_OWNER_RETURN|default|wait_return",
+    "visual_direct|EVT_VISION_OWNER_PRESENT|default|owner_greet"
   ],
   "legacy_spellings": [
     "behavior|barkShortAlert",

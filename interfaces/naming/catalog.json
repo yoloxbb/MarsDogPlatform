@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "source_sha256": {
-    "modules/behavior/config/event_intent_map.yaml": "0470603ef8e672e22dddb703b22876122a23c8765e66a4dd5d5e07196a5f58f5",
-    "modules/behavior/config/intent_action_pool.yaml": "c39d020be477fefbf98d77bb656fbc55e0b7e462d4da7b7e9a9d2cded4c49371",
+    "modules/behavior/config/event_intent_map.yaml": "44701d5f5b706e7cfb176e11e960eee5e25b60c4d8daffd2cbb0784e6bdcec9a",
+    "modules/behavior/config/intent_action_pool.yaml": "465babf327bb8b112d2ebd6cdb0a4b1b94e5aa6714f77c051c47e6100d25bebe",
     "modules/behavior/config/behavior_categories.yaml": "ac877386c8e71aec0aec4ca93af227b7e6be9f9da769af40d70f50edd220ab10",
     "modules/behavior/config/emotion_behavior_map.yaml": "2e6e4e83fed3a606fbbed43f0986eb94753a741105ca13d255b66ecbad5632be",
     "modules/voice/config/command_catalog.yaml": "cd2db640a624fc6efeaf0b970d31ed9209874380aa125db9db96b0fad8fadcdf",
@@ -256,6 +256,9 @@
     ],
     "visual_stop_gesture_response": [
       "respond_stop_gesture"
+    ],
+    "owner_greet": [
+      "owner_greet"
     ],
     "express_joy": [
       "expressJoy"
@@ -1615,6 +1618,21 @@
       ],
       "executor_behaviors": [
         "respond_stop_gesture"
+      ]
+    },
+    {
+      "source": "visual_direct",
+      "event": "EVT_VISION_OWNER_PRESENT",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "owner_greet",
+      "selection": "intent_pool",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "owner_greet"
+      ],
+      "executor_behaviors": [
+        "owner_greet"
       ]
     },
     {

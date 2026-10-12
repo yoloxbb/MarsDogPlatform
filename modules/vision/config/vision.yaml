@@ -71,6 +71,14 @@ facial_expression_events:
   stable_duration_sec: 1.0
   release_duration_sec: 0.5
 
+# Emit a separate active-state fact for a confirmed, currently tracked owner.
+# Timing uses distinct successful source inferences, not 10 Hz snapshot count.
+owner_presence_events:
+  enabled: true
+  enter_duration_sec: 1.0
+  exit_duration_sec: 2.0
+  retrigger_delay_sec: 3.0
+
 # Aligned RealSense depth is the only source allowed to populate a target
 # range. Missing/stale depth, invalid CameraInfo, a timestamp mismatch or an
 # unsupported encoding leaves range_valid=false and therefore forbids motion.

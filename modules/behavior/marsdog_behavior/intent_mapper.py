@@ -45,6 +45,9 @@ _EMOTION_NAME_TO_EVENT = {
     for event_type, name in EMOTION_V2_EVENT_TO_NAME.items()
 }
 
+_OWNER_PRESENCE_EVENT = "EVT_VISION_OWNER_PRESENT"
+_OWNER_VISUAL_TARGET_MAX_AGE_MS = 500.0
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # BehaviorCandidate — structured with all required fields
@@ -679,9 +682,28 @@ class IntentMapper:
             )
             return None
 
+        owner_presence_target = None
+        owner_presence_event_id = ""
+        if event_type == _OWNER_PRESENCE_EVENT:
+            owner_presence_target, owner_presence_event_id = (
+                self._owner_presence_target(data)
+            )
+            if owner_presence_target is None:
+                _log.debug(
+                    "Rejecting %s: no fresh, confirmed owner context",
+                    event_type,
+                )
+                return None
+
         active_target = data.get("active_target")
+        if owner_presence_target is not None:
+            # Do not leak a different legacy active_target into the owner
+            # candidate when the owner is not the current largest target.
+            active_target = owner_presence_target
         hands = data.get("hands")
         faces = data.get("faces")
+        vision_epoch = str(data.get("vision_epoch", "")).strip()
+        snapshot_id = str(data.get("snapshot_id", "")).strip()
         params = {
             **entry.get("params", {}),
             "visual_header": (
@@ -698,11 +720,37 @@ class IntentMapper:
                 else []
             ),
             "face_count": len(faces) if isinstance(faces, list) else 0,
-            "vision_epoch": str(data.get("vision_epoch", "")),
-            "snapshot_id": str(data.get("snapshot_id", "")),
+            "vision_epoch": vision_epoch,
+            "snapshot_id": snapshot_id,
             "snapshot_sequence": data.get("sequence"),
             "visual_resolved": True,
         }
+        target = None
+        ttl_sec = float(entry.get("ttl_sec", 8.0))
+        if owner_presence_target is not None:
+            target = dict(owner_presence_target)
+            target_age_sec = float(target["last_seen_age_ms"]) / 1000.0
+            remaining_target_lifetime = (
+                _OWNER_VISUAL_TARGET_MAX_AGE_MS / 1000.0
+                - target_age_sec
+            )
+            if remaining_target_lifetime <= 0.0:
+                return None
+            ttl_sec = min(ttl_sec, remaining_target_lifetime)
+            target["snapshot_id"] = snapshot_id
+            target["snapshot_sequence"] = data.get("sequence")
+            params.update({
+                "visual_target": dict(target),
+                "visual_event_instance_id": owner_presence_event_id,
+                "observation_status": "valid",
+                "source_observation_id": str(
+                    data.get("source_observation_id", "")
+                ),
+                "target_identity": "owner",
+                "target_track_id": target.get("track_id"),
+                "target_resolution": "same_snapshot_owner",
+                "visual_resolved": True,
+            })
         candidate = BehaviorCandidate(
             source="visual_direct",
             source_emotion="",
@@ -715,7 +763,7 @@ class IntentMapper:
             modality_rank=2,
             intensity=100.0,
             confidence=1.0,
-            ttl_sec=float(entry.get("ttl_sec", 8.0)),
+            ttl_sec=ttl_sec,
             timeout_sec=(
                 float(entry["timeout_sec"])
                 if entry.get("timeout_sec") is not None
@@ -727,10 +775,12 @@ class IntentMapper:
                 else None
             ),
             interrupt_policy=str(entry.get("interrupt_policy", "immediate")),
-            interactive=False,
-            target_required=False,
-            target=None,
-            interaction_mode="solo",
+            interactive=owner_presence_target is not None,
+            target_required=owner_presence_target is not None,
+            target=target,
+            interaction_mode=(
+                "interactive" if owner_presence_target is not None else "solo"
+            ),
             result_mapping=None,
             params=params,
         )
@@ -743,6 +793,95 @@ class IntentMapper:
             candidate.sub_priority,
         )
         return candidate
+
+    @staticmethod
+    def _owner_presence_target(data: dict) -> tuple[dict | None, str]:
+        """Resolve exactly one fresh owner from the same valid v1 snapshot."""
+        if data.get("observation_status") != "valid":
+            return None, ""
+        raw_epoch = data.get("vision_epoch")
+        raw_snapshot_id = data.get("snapshot_id")
+        epoch = raw_epoch.strip() if isinstance(raw_epoch, str) else ""
+        snapshot_id = (
+            raw_snapshot_id.strip()
+            if isinstance(raw_snapshot_id, str)
+            else ""
+        )
+        instances = data.get("event_instances")
+        instance = (
+            instances.get(_OWNER_PRESENCE_EVENT)
+            if isinstance(instances, dict)
+            else None
+        )
+        raw_event_id = (
+            instance.get("event_id")
+            if isinstance(instance, dict)
+            else None
+        )
+        event_id = raw_event_id.strip() if isinstance(raw_event_id, str) else ""
+        source_observation_id = data.get("source_observation_id")
+        if (
+            not epoch
+            or not snapshot_id
+            or not event_id
+            or not isinstance(source_observation_id, str)
+            or not source_observation_id.strip()
+        ):
+            return None, ""
+
+        raw_targets = data.get("human_candidates")
+        if not isinstance(raw_targets, list):
+            return None, ""
+
+        qualified: list[dict] = []
+        for candidate in raw_targets:
+            if not isinstance(candidate, dict):
+                continue
+            candidate_epoch = candidate.get("vision_epoch")
+            if (
+                candidate.get("identity") != "owner"
+                or candidate.get("identity_state") != "confirmed_known"
+                or candidate.get("tracking_state") != "tracking"
+                or not isinstance(candidate_epoch, str)
+                or candidate_epoch.strip() != epoch
+                or str(candidate.get("target_type", "human")).strip()
+                != "human"
+            ):
+                continue
+            raw_target_id = candidate.get("target_id")
+            target_id = (
+                raw_target_id.strip()
+                if isinstance(raw_target_id, str)
+                else ""
+            )
+            track_id = candidate.get("track_id")
+            if (
+                not target_id
+                or isinstance(track_id, bool)
+                or not isinstance(track_id, int)
+                or track_id <= 0
+            ):
+                continue
+            try:
+                age_ms = float(candidate.get("last_seen_age_ms"))
+            except (TypeError, ValueError):
+                continue
+            if (
+                not math.isfinite(age_ms)
+                or age_ms < 0.0
+                or age_ms >= _OWNER_VISUAL_TARGET_MAX_AGE_MS
+            ):
+                continue
+            target = dict(candidate)
+            target["snapshot_id"] = snapshot_id
+            target["last_seen_age_ms"] = age_ms
+            qualified.append(target)
+
+        # Ambiguous duplicate owner tracks are not a reason to reuse
+        # active_target or whichever owner happened to be selected earlier.
+        if len(qualified) != 1:
+            return None, ""
+        return qualified[0], event_id
 
     def resolve_alias(self, behavior_name: str) -> str:
         """Resolve a legacy behavior name to its new semantic name."""

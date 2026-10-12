@@ -2127,6 +2127,159 @@ class TestVisualDirectToBehavior:
         assert queued[0]["priority_level"] == 1
         assert queued[0]["sub_priority"] == 12
 
+    @staticmethod
+    def _owner_payload(**target_updates):
+        target = {
+            "identity": "owner",
+            "identity_state": "confirmed_known",
+            "tracking_state": "tracking",
+            "target_type": "human",
+            "target_id": "epoch-1:human:7",
+            "track_id": 7,
+            "vision_epoch": "epoch-1",
+            "last_seen_age_ms": 10.0,
+            "bearing_deg": 12.0,
+        }
+        target.update(target_updates)
+        return {
+            "schema_version": 1,
+            "vision_epoch": "epoch-1",
+            "snapshot_id": "epoch-1:42",
+            "sequence": 42,
+            "source_observation_id": "camera-frame-42",
+            "observation_status": "valid",
+            "header": {"stamp": 1786417000.42, "frame_id": "camera_link"},
+            "events": ["EVT_VISION_OWNER_PRESENT"],
+            "event_instances": {
+                "EVT_VISION_OWNER_PRESENT": {"event_id": "owner-cycle-1"}
+            },
+            "human_candidates": [target],
+        }
+
+    def test_owner_presence_maps_one_fresh_lv1_candidate(self, node):
+        payload = self._owner_payload()
+
+        candidate = node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_PRESENT", payload
+        )
+
+        assert candidate is not None
+        assert candidate.behavior_name == "owner_greet"
+        assert candidate.intent == "owner_greet"
+        assert candidate.priority_level == 1
+        assert candidate.sub_priority == 12
+        assert candidate.interactive is True
+        assert candidate.target_required is True
+        assert candidate.params["visual_target"]["target_id"] == "epoch-1:human:7"
+        assert candidate.params["vision_epoch"] == "epoch-1"
+        assert candidate.params["snapshot_id"] == "epoch-1:42"
+        assert candidate.params["visual_event_instance_id"] == "owner-cycle-1"
+        assert candidate.params["source_observation_id"] == "camera-frame-42"
+        assert candidate.ttl_sec == pytest.approx(0.49)
+
+    @pytest.mark.parametrize(
+        "target_updates",
+        [
+            {"identity": "family_member_1"},
+            {"identity": "stranger"},
+            {"identity": "owner", "identity_state": "candidate"},
+            {"identity": "owner", "identity_state": "confirmed_unknown"},
+            {"identity": "owner", "tracking_state": "temporarily_lost"},
+            {"identity": "owner", "last_seen_age_ms": 500.0},
+            {"identity": "owner", "vision_epoch": "other-epoch"},
+            {"identity": "owner", "track_id": 0},
+        ],
+    )
+    def test_owner_presence_rejects_nonconfirmed_or_stale_targets(
+        self, node, target_updates
+    ):
+        payload = self._owner_payload(**target_updates)
+
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_PRESENT", payload
+        ) is None
+
+    def test_owner_presence_requires_valid_observation_and_event_instance(self, node):
+        payload = self._owner_payload()
+        payload["observation_status"] = "invalid"
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_PRESENT", payload
+        ) is None
+
+        payload = self._owner_payload()
+        payload.pop("event_instances")
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_PRESENT", payload
+        ) is None
+
+        payload = self._owner_payload()
+        payload.pop("source_observation_id")
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_PRESENT", payload
+        ) is None
+
+        payload = self._owner_payload()
+        payload["event_instances"]["EVT_VISION_OWNER_PRESENT"]["event_id"] = 1
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_PRESENT", payload
+        ) is None
+
+        payload = self._owner_payload()
+        payload["human_candidates"][0]["target_id"] = 7
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_PRESENT", payload
+        ) is None
+
+    def test_owner_presence_snapshot_is_deduplicated_into_one_candidate(self, node):
+        first = self._owner_payload()
+        second = self._owner_payload()
+        second["snapshot_id"] = "epoch-1:43"
+        second["sequence"] = 43
+        second["source_observation_id"] = "camera-frame-43"
+
+        node.perception._on_visual_ros2(_make_string_msg(first))
+        node.perception._on_visual_ros2(_make_string_msg(second))
+
+        queued = node.candidate_pool.candidates
+        assert len(queued) == 1
+        assert queued[0]["behavior_name"] == "owner_greet"
+        assert queued[0]["params"]["snapshot_id"] == "epoch-1:42"
+        assert node._candidate_allowed_during_interaction(queued[0]) is True
+        assert queued[0]["params"]["snapshot_id"] == "epoch-1:43"
+        assert queued[0]["params"]["source_observation_id"] == "camera-frame-43"
+
+    def test_owner_presence_candidate_is_rejected_after_epoch_or_target_expires(
+        self, node
+    ):
+        node.perception._on_visual_ros2(
+            _make_string_msg(self._owner_payload())
+        )
+        queued = node.candidate_pool.candidates[0]
+        changed_epoch = self._owner_payload()
+        changed_epoch["vision_epoch"] = "epoch-2"
+        changed_epoch["snapshot_id"] = "epoch-2:1"
+        changed_epoch["human_candidates"][0]["vision_epoch"] = "epoch-2"
+        changed_epoch["human_candidates"][0]["target_id"] = "epoch-2:human:7"
+        node.perception._on_visual_ros2(_make_string_msg(changed_epoch))
+        assert node._candidate_allowed_during_interaction(queued) is False
+
+        switched_target = self._owner_payload()
+        switched_target["human_candidates"][0]["target_id"] = "epoch-1:human:8"
+        switched_target["human_candidates"][0]["track_id"] = 8
+        node.perception._on_visual_ros2(_make_string_msg(switched_target))
+        assert node._candidate_allowed_during_interaction(queued) is False
+
+        expired = self._owner_payload()
+        expired["human_candidates"][0]["last_seen_age_ms"] = 501.0
+        node.perception._on_visual_ros2(_make_string_msg(expired))
+        assert node._candidate_allowed_during_interaction(queued) is False
+
+    def test_owner_direct_event_does_not_replace_master_emotion_signal(self, node):
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_MASTER",
+            {"schema_version": 1, "events": ["EVT_VISION_MASTER"]},
+        ) is None
+
 # ══════════════════════════════════════════════════════════════════════════════════════════
 # Test 5: Ignored events produce NO behavior candidates
 # ═════════════════════════════════════════════════════════════════════════════════════════

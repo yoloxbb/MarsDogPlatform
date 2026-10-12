@@ -190,6 +190,7 @@ GesturePose 判定，不改变正式事件名称、身份门禁或发布契约�
 | `EVT_VISION_MASTER_NEUTRAL` | 满足姿态门控的主目标出现 `neutral_stand_sit` | `active_target.identity/identity_state/tracking_state`、`pose_action`、`pose_state` |
 | `EVT_VISION_FALL` | 满足姿态门控且 `pose_action=fallen_down`；已确认从直立快速转为持续躺卧 | `active_target.identity/identity_state/tracking_state`、`pose_action`；调试时看 `fall_detector` |
 | `EVT_VISION_STOP_GESTURE` | 满足姿态门控且任一 `hands[].hand_action=stop_gesture` | `active_target.identity/identity_state/tracking_state`、`hands[]` |
+| `EVT_VISION_OWNER_PRESENT` | 新鲜、不同的有效源观测中，当前帧人体关联到 `owner/confirmed_known/tracking` 并连续达到配置 `enter_duration_sec`（默认 1.0 秒） | `observation_status`、`source_observation_id`、同包 `human_candidates[]`；活动实例见 `event_instances` |
 | `EVT_VISION_FOOD` | 满足姿态门控且 `pose_action=holding_dog_food` | `active_target.identity/identity_state/tracking_state`、`active_target.held_object`、`tracked_objects[]` |
 | `EVT_VISION_TOY` | 满足姿态门控且 `pose_action=holding_toy` | `active_target.identity/identity_state/tracking_state`、`active_target.held_object`、`tracked_objects[]` |
 
@@ -204,6 +205,29 @@ GesturePose 判定，不改变正式事件名称、身份门禁或发布契约�
 人脸事件当前以“是否存在任意 `faces[]` + 主目标身份”组合判断，并不逐张人脸绑定
 事件。多人物场景的消费者应读取 `active_target`，不要自行假定事件对应
 `faces[0]`。
+
+`EVT_VISION_OWNER_PRESENT` 采用活动状态集合语义。Vision
+只从当前源推理中实际匹配到的 owner 人体/人脸关联收集正证据，并要求目标身份为
+`owner`、`confirmed_known`、`tracking`；熟悉人、陌生人、未确认身份和保留但未在当前帧
+检测到的旧轨迹不满足条件。现有人脸身份确认规则原样沿用，不增加通用置信度门限。
+
+其时序由 `owner_presence_events` 配置控制，默认 `enter_duration_sec=1.0`、
+`exit_duration_sec=2.0`、`retrigger_delay_sec=3.0`。计时使用单调时钟，只有不同且新鲜的
+成功推理源观测推进计时；重复快照和重复源结果不累计。首次正观测开始 ENTER 计时，达到
+T_enter 后将事件加入 `events[]`；HOLD 期间事件及同一个
+`event_instances.EVT_VISION_OWNER_PRESENT.event_id` 保留。有效源观测中没有当前确认主人的
+首帧开始 EXIT 计时，主人恢复会取消 EXIT；连续有效负观测达到 T_exit 时才从 `events[]`
+移除事件，冷却从该次达到 T_exit 的观测时刻开始。冷却期间正观测不累计进入时间；结束后
+必须重新满足完整 T_enter 才能产生新实例。
+
+可选字段 `observation_status` 为 `valid` 或 `invalid`，`source_observation_id` 标识一次
+成功推理结果；缺少这两个字段的旧 v1 消费者仍可读取原字段。相机超过现有
+`camera_stale_timeout_sec`、推理失败、Provider 不可用或源结果过期时发布 `invalid`。
+人脸检测、身份识别和人体检测内部返回空结果的失败路径也传递无效标记；成功推理的空结果
+才是有效负观测。主人证据所需的人脸/人体能力关闭或不可用时不能计作有效漏检。
+无效观测打断未完成的 ENTER/EXIT 连续计时，但不代表主人离开，也不会结束已活动事件；恢复
+后只有新的成功源观测可推进计时。`event_instances` 是可选扩展；未识别此字段的消费者可以
+忽略。它不改变 `schema_version=1`、Topic、消息类型或现有 required fields。
 
 以下常量虽然已在代码中声明，但当前没有任何映射或发布路径，属于预留事件，
 行为树不能依赖它们：
@@ -220,6 +244,9 @@ GesturePose 判定，不改变正式事件名称、身份门禁或发布契约�
 `/perception/visual_event` 是 10 Hz 状态流，因此事件可能在连续消息中重复：
 
 - 人脸在画面中持续存在时，当前 Master/Stranger 系列事件会重复。
+- `EVT_VISION_OWNER_PRESENT` 在 ENTER 后作为活动状态重复发布到 EXIT；行为树按
+  `event_instances` 中的稳定 `event_id` 只对首次出现创建一次候选，并在视觉 Topic 暂时中断
+  后继续按同一实例去重。
 - 平滑后的动作仍有效时，对应情绪或手势事件会重复。
 - 跌倒状态机内部的 `fall_event_triggered` 只在确认帧为一次边沿，但正式
   `EVT_VISION_FALL` 来自短暂保持的 `fallen_down` 兼容动作，可能出现在多个

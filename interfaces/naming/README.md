@@ -78,7 +78,9 @@ emotion_behavior_map；Action 的 behavior_tree_actions、action_catalog。
 3. YAML 重复键、Voice 重复标识、阶段重复 ID、空候选、未登记的新拼写与悬空下游引用。
 4. 兼容例外必须精确匹配当前问题；新增问题不会自动登记，已解决问题遗留的例外也会失败。
 
-当前保留 **49 条缺少 Action 模板的配置路由**，检查结果明确为
+当前保留 **50 条缺少 Action 模板的配置路由**，其中新增的
+`visual_direct|EVT_VISION_OWNER_PRESENT|default|owner_greet` 是本功能明确登记的 Action 能力缺口。
+检查结果明确为
 `PASS_WITH_KNOWN_GAPS`。这表示兼容基线未退化，不表示这些功能已实现。
 默认 Action 对相应未支持名称仍会拒绝，不替换为“相似动作”。
 

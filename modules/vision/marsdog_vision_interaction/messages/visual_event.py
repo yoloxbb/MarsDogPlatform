@@ -343,6 +343,23 @@ def normalize_visual_event(data: Any) -> dict[str, Any]:
     ]
     if isinstance(data.get("events"), list):
         event["events"] = [str(item) for item in data["events"] if item]
+    observation_status = data.get("observation_status")
+    if isinstance(observation_status, str) and observation_status in {"valid", "invalid"}:
+        event["observation_status"] = observation_status
+    source_observation_id = data.get("source_observation_id")
+    if isinstance(source_observation_id, str) and source_observation_id.strip():
+        event["source_observation_id"] = source_observation_id.strip()
+    raw_event_instances = data.get("event_instances")
+    if isinstance(raw_event_instances, dict):
+        instances: dict[str, dict[str, str]] = {}
+        for event_name, value in raw_event_instances.items():
+            if not isinstance(event_name, str) or not isinstance(value, dict):
+                continue
+            event_id = value.get("event_id")
+            if isinstance(event_id, str) and event_id.strip():
+                instances[event_name] = {"event_id": event_id.strip()}
+        if instances:
+            event["event_instances"] = instances
     return event
 
 

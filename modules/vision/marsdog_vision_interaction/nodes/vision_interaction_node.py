@@ -44,6 +44,10 @@ from marsdog_vision_interaction.core.facial_expression_event_state import (
     FacialExpressionEventConfig,
     FacialExpressionEventState,
 )
+from marsdog_vision_interaction.core.owner_presence_event_state import (
+    OwnerPresenceEventConfig,
+    OwnerPresenceEventState,
+)
 from marsdog_vision_interaction.core.held_object_pose import (
     HELD_OBJECT_LABELS,
     HeldObjectPoseManager,
@@ -58,6 +62,9 @@ from marsdog_vision_interaction.core.stranger_emotion_context import (
 from marsdog_vision_interaction.fusion.stereo_fusion import get_target_manager
 from marsdog_vision_interaction.messages.visual_event import (
     normalize_visual_event,
+)
+from marsdog_vision_interaction.messages.visual_event_types import (
+    EVT_VISION_OWNER_PRESENT,
 )
 from marsdog_vision_interaction.providers.base import BaseProvider
 from marsdog_vision_interaction.utils.config_loader import (
@@ -379,6 +386,13 @@ class VisionInteractionNode(Node):
         rate = float(topics.get("observation_rate_hz", 10.0))
         self._camera_stale_timeout_sec = max(
             0.1, float(topics.get("camera_stale_timeout_sec", 0.5))
+        )
+        owner_presence_events_config = OwnerPresenceEventConfig.from_mapping(
+            self._config.get("owner_presence_events")
+        )
+        self._owner_presence_event_state = OwnerPresenceEventState(
+            owner_presence_events_config,
+            source_freshness_sec=self._camera_stale_timeout_sec,
         )
         object_runtime_config = (
             self._config.get("providers", {})
@@ -1114,15 +1128,57 @@ class VisionInteractionNode(Node):
                 <= self._camera_stale_timeout_sec
             )
         )
+        provider_ready = False
         try:
+            provider_ready = bool(
+                camera_fresh and vision is not None and vision.is_available()
+            )
             raw = (
                 vision.get_observation()  # type: ignore[attr-defined]
-                if camera_fresh and vision is not None and vision.is_available()
+                if provider_ready
                 else {}
             )
         except Exception as exc:
             logger.error("Visual observation failed: %s", exc)
             raw = {}
+        raw = dict(raw) if isinstance(raw, dict) else {}
+        source_observation_id = str(
+            raw.pop("_source_observation_id", "") or ""
+        ).strip()
+        source_observation_age = raw.pop(
+            "_source_observation_age_sec", None
+        )
+        source_observation_valid = (
+            raw.pop("_source_observation_valid", False) is True
+        )
+        source_owner_target_ids = raw.pop(
+            "_source_owner_target_ids", None
+        )
+        source_age_valid = (
+            not isinstance(source_observation_age, bool)
+            and isinstance(source_observation_age, (int, float))
+            and math.isfinite(float(source_observation_age))
+            and 0.0 <= float(source_observation_age)
+            <= self._camera_stale_timeout_sec
+        )
+        observation_valid = bool(
+            provider_ready
+            and source_observation_valid
+            and source_observation_id
+            and source_age_valid
+            and isinstance(source_owner_target_ids, list)
+        )
+        raw["observation_status"] = (
+            "valid" if observation_valid else "invalid"
+        )
+        if source_observation_id:
+            raw["source_observation_id"] = source_observation_id
+        if source_age_valid:
+            raw["_source_observation_age_sec"] = float(
+                source_observation_age
+            )
+        if isinstance(source_owner_target_ids, list):
+            raw["_source_owner_target_ids"] = source_owner_target_ids
         self._publish_gesture_debug(raw)
         if (
             camera_fresh
@@ -1158,6 +1214,27 @@ class VisionInteractionNode(Node):
             emotion_classification=emotion_classification,
             now=time.monotonic(),
         )
+        owner_presence = self._owner_presence_event_state.update(
+            event,
+            now=time.monotonic(),
+        )
+        if owner_presence.active:
+            if EVT_VISION_OWNER_PRESENT not in event["events"]:
+                event["events"].append(EVT_VISION_OWNER_PRESENT)
+            event["event_instances"] = {
+                EVT_VISION_OWNER_PRESENT: {
+                    "event_id": owner_presence.event_id,
+                },
+            }
+        else:
+            event["events"] = [
+                value for value in event["events"]
+                if value != EVT_VISION_OWNER_PRESENT
+            ]
+            event.pop("event_instances", None)
+        event.pop("_source_owner_target_ids", None)
+        event.pop("_source_observation_age_sec", None)
+        event = normalize_visual_event(event)
         # Cache exactly the complete packet that is published.  VisionTask
         # query_targets only ever copies this atomic snapshot; it never
         # rebuilds target IDs from unrelated caches.

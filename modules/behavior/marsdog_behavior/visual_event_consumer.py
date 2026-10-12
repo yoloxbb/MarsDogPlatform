@@ -10,10 +10,11 @@ import time
 def consume_visual_event(self, msg, *, direct_events):
     """Handle /perception/visual_event messages.
 
-    Caches humans, active_target, and tracked_objects as a visual-service
-    fallback. STRANGER, FALL, and STOP_GESTURE are forwarded once on their
-    appearance edge; the 10 Hz visual state stream may repeat them across
-    snapshots.
+    Caches visual targets and tracked_objects as a visual-service fallback.
+    STRANGER, FALL, and STOP_GESTURE are forwarded on their appearance edge.
+    Owner presence is an active state with an instance ID: retry it while
+    active until a candidate is accepted, then retain its dedup ID across
+    cache timeouts and snapshot repetition.
     """
     try:
         data = json.loads(msg.data if hasattr(msg, 'data') else str(msg))
@@ -38,7 +39,7 @@ def consume_visual_event(self, msg, *, direct_events):
         )
         return
 
-    dispatch_events: list[str] = []
+    dispatch_events: list[tuple[str, str]] = []
     with self._lock:
         received_at = time.monotonic()
         previous_received_at = self._visual_cache_updated_at
@@ -54,14 +55,55 @@ def consume_visual_event(self, msg, *, direct_events):
             if isinstance(data.get("header"), dict)
             else {}
         )
+        self._cached_visual_snapshot_id = str(data.get("snapshot_id", "")).strip()
+        sequence = data.get("sequence")
+        self._cached_visual_sequence = (
+            sequence
+            if isinstance(sequence, int) and not isinstance(sequence, bool)
+            else None
+        )
+        raw_source_observation_id = data.get("source_observation_id")
+        self._cached_source_observation_id = (
+            raw_source_observation_id.strip()
+            if isinstance(raw_source_observation_id, str)
+            else ""
+        )
+        self._cached_visual_events = {
+            item.strip() for item in events if item.strip()
+        }
+        status = data.get("observation_status")
+        self._cached_observation_status = (
+            status if status in {"valid", "invalid"} else ""
+        )
+        raw_event_instances = data.get("event_instances")
+        owner_instance = (
+            raw_event_instances.get("EVT_VISION_OWNER_PRESENT")
+            if isinstance(raw_event_instances, dict)
+            else None
+        )
+        raw_owner_event_id = (
+            owner_instance.get("event_id")
+            if isinstance(owner_instance, dict)
+            else None
+        )
+        owner_event_id = (
+            raw_owner_event_id.strip()
+            if isinstance(raw_owner_event_id, str)
+            else ""
+        )
+        self._cached_visual_event_instances = (
+            {"EVT_VISION_OWNER_PRESENT": owner_event_id}
+            if owner_event_id
+            else {}
+        )
         raw_candidates = data.get("human_candidates", [])
         self._cached_human_candidates = [
             dict(item)
             for item in raw_candidates
             if isinstance(item, dict)
         ] if isinstance(raw_candidates, list) else []
-        snapshot_id = str(data.get("snapshot_id", "")).strip()
-        snapshot_sequence = data.get("sequence")
+        snapshot_id = self._cached_visual_snapshot_id
+        snapshot_sequence = self._cached_visual_sequence
         for candidate in self._cached_human_candidates:
             if self._cached_vision_epoch:
                 candidate.setdefault(
@@ -81,6 +123,11 @@ def consume_visual_event(self, msg, *, direct_events):
             candidate.setdefault(
                 "frame_id", self._cached_visual_header.get("frame_id")
             )
+            if self._cached_source_observation_id:
+                candidate.setdefault(
+                    "source_observation_id",
+                    self._cached_source_observation_id,
+                )
 
         # Compatibility with a visual-event producer that has not yet
         # gained ``human_candidates``.  Only construct a strict target
@@ -178,21 +225,47 @@ def consume_visual_event(self, msg, *, direct_events):
             > self.VISUAL_CACHE_TIMEOUT_SEC
         ):
             previous_direct_events = set()
-        dispatch_events = [
-            event_type
-            for event_type in event_types
-            if event_type in current_direct_events
-            and event_type not in previous_direct_events
-        ]
+        for event_type in event_types:
+            if event_type not in current_direct_events:
+                continue
+            if event_type == "EVT_VISION_OWNER_PRESENT":
+                if (
+                    self._on_visual_event is None
+                    or self._cached_observation_status != "valid"
+                    or not owner_event_id
+                    or owner_event_id
+                    in {
+                        self._consumed_owner_presence_instance_id,
+                        self._pending_owner_presence_instance_id,
+                    }
+                ):
+                    continue
+                self._pending_owner_presence_instance_id = owner_event_id
+                dispatch_events.append((event_type, owner_event_id))
+                continue
+            if event_type not in previous_direct_events:
+                dispatch_events.append((event_type, ""))
         self._active_direct_visual_events = current_direct_events
 
         if event_types:
             self._logger.debug(
                 "visual_event received: events=%s direct_rising=%s"
-                % (event_types, dispatch_events)
+                % (event_types, [event for event, _ in dispatch_events])
             )
 
     # Do not invoke consumers while holding the scene-cache lock.
     if self._on_visual_event:
-        for event_type in dispatch_events:
-            self._on_visual_event(event_type, data)
+        for event_type, event_id in dispatch_events:
+            accepted = False
+            try:
+                result = self._on_visual_event(event_type, data)
+                accepted = result is True
+            finally:
+                if event_id:
+                    with self._lock:
+                        if self._pending_owner_presence_instance_id == event_id:
+                            self._pending_owner_presence_instance_id = ""
+                            if accepted:
+                                self._consumed_owner_presence_instance_id = (
+                                    event_id
+                                )

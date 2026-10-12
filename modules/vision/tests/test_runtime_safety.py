@@ -4,6 +4,7 @@ import time
 from types import MethodType, SimpleNamespace
 
 import numpy as np
+import pytest
 
 from marsdog_vision_interaction.core.face_enrollment_manager import (
     FaceEnrollmentManager,
@@ -11,6 +12,10 @@ from marsdog_vision_interaction.core.face_enrollment_manager import (
 )
 from marsdog_vision_interaction.core.held_object_pose import (
     HeldObjectPoseStatus,
+)
+from marsdog_vision_interaction.core.owner_presence_event_state import (
+    OwnerPresenceEventConfig,
+    OwnerPresenceEventState,
 )
 from marsdog_vision_interaction.core.object_detection_session import (
     ObjectDetectionSessionManager,
@@ -126,6 +131,9 @@ def test_stale_camera_does_not_refresh_cached_target(monkeypatch) -> None:
         _publish_gesture_debug=lambda raw: None,
         _derive_events=VisionInteractionNode._derive_events,
         _process_enrollment_frame=lambda: None,
+        _owner_presence_event_state=OwnerPresenceEventState(
+            OwnerPresenceEventConfig(), source_freshness_sec=0.5
+        ),
     )
 
     VisionInteractionNode._publish_visual(fake_node)
@@ -133,6 +141,8 @@ def test_stale_camera_does_not_refresh_cached_target(monkeypatch) -> None:
     assert payload["humans"] == []
     assert payload["active_target"]["tracking_state"] == "temporarily_lost"
     assert payload["active_target"]["last_seen_age_ms"] >= 900.0
+    assert payload["observation_status"] == "invalid"
+    assert "EVT_VISION_OWNER_PRESENT" not in payload["events"]
     assert any(
         item["module"] == "depth_fusion"
         and item["stage"] == "aligned_depth_range"
@@ -143,6 +153,127 @@ def test_stale_camera_does_not_refresh_cached_target(monkeypatch) -> None:
         and item["stage"] == "event_publish"
         for item in timing_traces
     )
+
+
+def test_observation_cache_keeps_source_identity_and_marks_latest_inference_failure() -> None:
+    provider = VisionObservationProvider({})
+    provider._cached_observation = {"human_candidates": []}
+    provider._source_observation_id = "camera-stamp:4"
+    provider._source_observation_monotonic = time.monotonic()
+    provider._source_observation_valid = True
+
+    first = provider.get_observation()
+    second = provider.get_observation()
+    assert first["_source_observation_id"] == "camera-stamp:4"
+    assert second["_source_observation_id"] == first["_source_observation_id"]
+    assert first["_source_observation_valid"] is True
+    assert first["_source_observation_age_sec"] <= second["_source_observation_age_sec"]
+
+    # A failed latest inference leaves the legacy cache available but makes
+    # that cached result invalid owner-event evidence.
+    provider._source_observation_valid = False
+    failed = provider.get_observation()
+    assert failed["_source_observation_id"] == "camera-stamp:4"
+    assert failed["_source_observation_valid"] is False
+
+
+@pytest.mark.parametrize("failure", [None, "face", "pose"])
+def test_detector_failure_is_not_valid_owner_absence(failure) -> None:
+    class FaceDetector:
+        def setInputSize(self, size):
+            pass
+
+        def detect(self, frame):
+            if failure == "face":
+                raise RuntimeError("face inference failed")
+            return None, None
+
+    class PoseBackend:
+        def process(self, frame):
+            if failure == "pose":
+                raise RuntimeError("pose inference failed")
+            return []
+
+        def close(self):
+            pass
+
+    provider = VisionObservationProvider({})
+    provider.available = True
+    provider.task_hand_enabled = False
+    provider._face_detector = FaceDetector()
+    provider._face_rec_model = object()
+    provider._pose_backend_kind = "rknn"
+    provider._pose_backend = PoseBackend()
+    frame = np.zeros((40, 40, 3), dtype=np.uint8)
+    result = provider._process_frame_impl(frame)
+    assert result["_source_owner_target_ids"] == []
+    assert result["_source_inference_valid"] is (failure is None)
+
+    # Internal detector failures still produce the legacy empty frame, but
+    # must remain invalid after the worker caches and publishes its evidence.
+    provider._process_frame_impl = lambda frame: dict(result)
+    provider._start_inference_worker()
+    try:
+        provider.process_frame(frame)
+        deadline = time.monotonic() + 1.0
+        while provider._inferred_frame_count < 1 and time.monotonic() < deadline:
+            time.sleep(0.005)
+        assert provider._inferred_frame_count == 1
+        assert provider.get_observation()["_source_observation_valid"] is (failure is None)
+    finally:
+        provider.stop()
+
+
+def test_recognition_failure_invalidates_owner_evidence() -> None:
+    class RecognitionModel:
+        def feature(self, frame):
+            raise RuntimeError("recognition inference failed")
+
+    provider = VisionObservationProvider({})
+    provider._face_rec_model = RecognitionModel()
+    provider._face_rec_throttle = SimpleNamespace(enrolled_count=1)
+    provider._disable_fatal_face_model = lambda *args: False
+    provider._owner_presence_inference_valid = True
+    result = provider._run_sface(
+        np.zeros((40, 40, 3), dtype=np.uint8),
+        {"x1": 1, "y1": 1, "x2": 20, "y2": 20},
+    )
+    assert result == ("unknown", 0.0)
+    assert provider._owner_presence_inference_valid is False
+
+
+def test_current_owner_source_evidence_requires_current_confirmed_face_and_body() -> None:
+    human = {"x": 0.1, "y": 0.1, "w": 0.3, "h": 0.7}
+    candidate = {
+        "target_id": "epoch:human:7",
+        "bbox": [0.1, 0.1, 0.3, 0.7],
+        "track_id": 7,
+        "face_track_id": 17,
+        "identity": "owner",
+        "identity_state": "confirmed_known",
+        "tracking_state": "tracking",
+    }
+    current_face = {
+        "track_id": 17,
+        "recognized_user": "owner",
+        "identity_state": "confirmed_known",
+    }
+
+    assert VisionObservationProvider._current_owner_target_ids(
+        [human], [current_face], [candidate]
+    ) == ["epoch:human:7"]
+    assert VisionObservationProvider._current_owner_target_ids(
+        [human], [{**current_face, "recognized_user": "family_member_1"}], [candidate]
+    ) == []
+    assert VisionObservationProvider._current_owner_target_ids(
+        [human], [{**current_face, "identity_state": "unverified"}], [candidate]
+    ) == []
+    assert VisionObservationProvider._current_owner_target_ids(
+        [human], [], [candidate]
+    ) == []
+    assert VisionObservationProvider._current_owner_target_ids(
+        [human], [current_face], [{**candidate, "tracking_state": "temporarily_lost"}]
+    ) == []
 
 
 def test_mono_task_frame_is_not_cropped() -> None:

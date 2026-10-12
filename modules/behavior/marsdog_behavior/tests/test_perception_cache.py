@@ -111,6 +111,14 @@ def _adapter() -> PerceptionClientAdapter:
     adapter._cached_objects = []
     adapter._cached_vision_epoch = ""
     adapter._cached_visual_header = {}
+    adapter._cached_visual_events = set()
+    adapter._cached_observation_status = ""
+    adapter._cached_visual_event_instances = {}
+    adapter._cached_visual_snapshot_id = ""
+    adapter._cached_visual_sequence = None
+    adapter._cached_source_observation_id = ""
+    adapter._consumed_owner_presence_instance_id = ""
+    adapter._pending_owner_presence_instance_id = ""
     adapter._visual_cache_updated_at = 0.0
     adapter._lock = threading.Lock()
     return adapter
@@ -482,6 +490,96 @@ def test_direct_visual_event_retriggers_after_stream_timeout() -> None:
     adapter._on_visual_ros2(_Message(payload))
 
     assert received == ["EVT_VISION_FALL", "EVT_VISION_FALL"]
+
+
+def _owner_presence_payload(*, snapshot: int, epoch: str = "vision-1") -> dict:
+    return {
+        "schema_version": 1,
+        "vision_epoch": epoch,
+        "snapshot_id": f"{epoch}:{snapshot}",
+        "sequence": snapshot,
+        "source_observation_id": f"camera-frame-{snapshot}",
+        "observation_status": "valid",
+        "events": ["EVT_VISION_OWNER_PRESENT"],
+        "event_instances": {
+            "EVT_VISION_OWNER_PRESENT": {"event_id": "owner-cycle-1"}
+        },
+        "human_candidates": [{
+            "identity": "owner",
+            "identity_state": "confirmed_known",
+            "tracking_state": "tracking",
+            "target_type": "human",
+            "target_id": f"{epoch}:human:7",
+            "track_id": 7,
+            "vision_epoch": epoch,
+            "last_seen_age_ms": 0.0,
+        }],
+    }
+
+
+def test_owner_presence_instance_deduplicates_repeated_snapshots_and_timeout() -> None:
+    adapter = _adapter()
+    received: list[tuple[str, str]] = []
+
+    def accept(event_type, payload):
+        received.append((event_type, payload["snapshot_id"]))
+        return True
+
+    adapter.set_on_visual_event(accept)
+    adapter._on_visual_ros2(_Message(_owner_presence_payload(snapshot=1)))
+    adapter._on_visual_ros2(_Message(_owner_presence_payload(snapshot=2)))
+
+    # A short visual-topic outage must not clear the active cycle's identity.
+    adapter._visual_cache_updated_at = (
+        time.monotonic() - adapter.VISUAL_CACHE_TIMEOUT_SEC - 0.1
+    )
+    adapter._on_visual_ros2(_Message(_owner_presence_payload(snapshot=3)))
+
+    assert received == [("EVT_VISION_OWNER_PRESENT", "vision-1:1")]
+
+
+def test_owner_presence_invalid_observation_does_not_create_candidate() -> None:
+    adapter = _adapter()
+    received: list[str] = []
+    adapter.set_on_visual_event(
+        lambda event_type, _: received.append(event_type) or True
+    )
+    payload = _owner_presence_payload(snapshot=1)
+    payload["observation_status"] = "invalid"
+
+    adapter._on_visual_ros2(_Message(payload))
+
+    assert received == []
+
+
+def test_owner_presence_requires_string_event_instance_id() -> None:
+    adapter = _adapter()
+    received: list[str] = []
+    adapter.set_on_visual_event(
+        lambda event_type, _: received.append(event_type) or True
+    )
+    payload = _owner_presence_payload(snapshot=1)
+    payload["event_instances"]["EVT_VISION_OWNER_PRESENT"]["event_id"] = 3
+
+    adapter._on_visual_ros2(_Message(payload))
+
+    assert received == []
+
+
+def test_owner_presence_callback_retries_until_candidate_is_accepted() -> None:
+    adapter = _adapter()
+    results = iter((False, True))
+    received: list[str] = []
+
+    def accept(event_type, _payload):
+        received.append(event_type)
+        return next(results)
+
+    adapter.set_on_visual_event(accept)
+    adapter._on_visual_ros2(_Message(_owner_presence_payload(snapshot=1)))
+    adapter._on_visual_ros2(_Message(_owner_presence_payload(snapshot=2)))
+
+    assert received == ["EVT_VISION_OWNER_PRESENT", "EVT_VISION_OWNER_PRESENT"]
 
 
 def test_wake_query_rejects_stale_service_snapshot_and_uses_fresh_cache():

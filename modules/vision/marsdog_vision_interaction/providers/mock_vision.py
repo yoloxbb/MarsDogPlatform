@@ -25,6 +25,7 @@ class MockVisionProvider(BaseProvider):
             config.get("show_all_detections", False)
         )
         self._last_observation: dict[str, Any] = {}
+        self._source_observation_sequence = 0
 
     def start(self) -> None:
         try:
@@ -70,7 +71,14 @@ class MockVisionProvider(BaseProvider):
             "vision_epoch": snapshot["vision_epoch"],
             "active_target": active_dict,
             "human_candidates": snapshot["human_candidates"],
+            "_source_observation_id": (
+                f"mock:{snapshot['vision_epoch']}:{self._source_observation_sequence + 1}"
+            ),
+            "_source_observation_age_sec": 0.0,
+            "_source_observation_valid": True,
+            "_source_owner_target_ids": [],
         })
+        self._source_observation_sequence += 1
         if active.track_id > 0:
             obs["humans"][0]["track_id"] = active.track_id
         if self._show_all_detections:

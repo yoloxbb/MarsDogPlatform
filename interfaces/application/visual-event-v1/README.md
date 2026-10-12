@@ -15,6 +15,32 @@ modules/vision/marsdog_vision_interaction/messages/visual_event.py。
 | last_seen_age_ms / tracking_state | 观测新鲜度与跟踪状态；身份不充当 target_id |
 | range_valid / distance_m / pose_3d | 原有距离有效性、深度和坐标；未知不能伪装为 0 距离 |
 
+### 主人状态事件（v1 可选扩展）
+
+`EVT_VISION_OWNER_PRESENT` 表示经过身份确认的主人在场状态，和原有
+`EVT_VISION_MASTER` 分工不同：后者仍表示已登记的非 unknown 身份，继续供
+Emotion/需求系统使用。主人事件不会替换或改变 `EVT_VISION_MASTER`。
+
+事件使用可选字段 `observation_status`、`source_observation_id` 和
+`event_instances`，不改变 schema_version、required fields 或既有消费者：
+
+| 字段 | 语义 |
+| --- | --- |
+| `observation_status` | `valid` 表示本快照来自新鲜有效推理；`invalid` 表示断流、推理失败或源观测过期。未知值按 invalid 处理 |
+| `source_observation_id` | 单个源观测的唯一标识；重复发布同一源观测的 10 Hz 快照不推进稳定计时 |
+| `event_instances.EVT_VISION_OWNER_PRESENT.event_id` | 一个主人在场周期的稳定 ID；ENTER 后 HOLD 保持，EXIT 后移除；下个 ENTER 使用新 ID |
+
+Vision 只在 `owner / confirmed_known / tracking` 的有效新观测上推进主人事件状态机。主人
+在不同有效源观测中连续确认满 `T_enter=1.0s` 后 ENTER，`EVT_VISION_OWNER_PRESENT` 加入
+`events[]`；HOLD 期间继续保留；有效观测中连续未识别满 `T_exit=2.0s` 后 EXIT 并移除。
+EXIT 时启动 `T_retrigger=3.0s` 冷却，期间不允许重新 ENTER。无效观测不充当负检测；恢复后
+需要有效的新源观测继续判断。推荐值可配置，冷却默认 3.0 秒，处于产品建议的 3–5 秒范围。
+
+Behavior 对该状态事件按 `event_id` 而非 `events[]` 的快照重复次数去重；短暂 Topic 中断
+不会清除周期记忆。只有通过同快照身份、epoch、跟踪和新鲜度检查的主人目标才会进入候选，
+并在统一仲裁前再次核对当前事件与目标。其他 v1 消费者忽略这些可选字段，既有
+`events[]` 消费语义保持兼容。
+
 Vision 可在当前检测人脸及 `debug_faces` 中附加可选字段
 `facial_expression: {expression, confidence}`。`expression` 是模型八类结果之一，
 `confidence` 是胜出类别原始 softmax 概率；调试快照可带

@@ -101,6 +101,31 @@ def test_visual_contract_preserves_identity_and_pose() -> None:
     assert value["faces"][0]["track_id"] == 17
 
 
+def test_visual_contract_preserves_optional_owner_event_metadata() -> None:
+    value = normalize_visual_event({
+        "observation_status": "valid",
+        "source_observation_id": "frame:12",
+        "event_instances": {
+            visual_event_types.EVT_VISION_OWNER_PRESENT: {
+                "event_id": "epoch:owner-presence:3",
+            },
+            "UNKNOWN_OPTIONAL_EVENT": {"event_id": "other-cycle"},
+        },
+    })
+
+    assert value["schema_version"] == 1
+    assert value["observation_status"] == "valid"
+    assert value["source_observation_id"] == "frame:12"
+    assert value["event_instances"] == {
+        visual_event_types.EVT_VISION_OWNER_PRESENT: {
+            "event_id": "epoch:owner-presence:3",
+        },
+        "UNKNOWN_OPTIONAL_EVENT": {"event_id": "other-cycle"},
+    }
+    assert "observation_status" not in normalize_visual_event({})
+    assert "source_observation_id" not in normalize_visual_event({})
+
+
 def test_visual_contract_normalizes_optional_debug_detection_arrays() -> None:
     value = normalize_visual_event({
         "debug_humans": [{

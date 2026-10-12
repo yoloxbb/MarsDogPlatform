@@ -76,6 +76,15 @@ topics:
     semantics: state_snapshot
     snapshot_identity: [vision_epoch, sequence, snapshot_id]
     source_frame: header
+    optional_fields:
+      observation_status:
+        values: [valid, invalid]
+        meaning: latest source inference freshness for owner-presence admission
+      source_observation_id:
+        meaning: stable identity for one successful inference result across repeated snapshots
+      event_instances:
+        shape: "{event_name: {event_id: string}}"
+        meaning: stable event-cycle identity; consumers may ignore unknown keys
     target_contract:
       human_candidates: all_visible_human_tracks_up_to_5
       stable_key: [vision_epoch, target_id]
@@ -110,6 +119,14 @@ topics:
         condition: tracked_confirmed_known_or_unknown_confirmed_unknown_and_upright_to_lying_fall
       EVT_VISION_STOP_GESTURE:
         condition: tracked_confirmed_known_or_unknown_confirmed_unknown_with_stop_gesture
+      EVT_VISION_OWNER_PRESENT:
+        condition: confirmed_owner_currently_tracked_in_distinct_valid_source_observations_for_1s
+        state_policy:
+          active_set: "added after ENTER, retained during HOLD, removed after 2s of valid negative observations"
+          retrigger_delay_sec: 3.0
+          cooldown_starts: at the valid observation that reaches T_exit
+          invalid_observation: "breaks pending timing evidence; never counts as owner absence"
+          event_instance_field: event_instances.EVT_VISION_OWNER_PRESENT.event_id
       EVT_VISION_FOOD:
         condition: tracked_confirmed_known_or_unknown_confirmed_unknown_with_holding_dog_food_pose
         labels: [dog bowl, dog food can, dog treat bag]
