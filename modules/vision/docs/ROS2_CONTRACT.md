@@ -110,7 +110,7 @@ Pose 关键点对象：
 - `EVT_VISION_FALL` 使用独立时序状态机，要求直立基线、快速下降/转倒和持续
   躺卧。
 
-### 4.7 25 个精确动作到正式字段和事件的映射
+### 4.7 27 个精确动作到正式字段和事件的映射
 
 精确动作名只稳定出现在 `/perception/vision/gesture_debug`。正式 Topic 为兼容
 既有下游，将它们折叠为 `pose_action` 或 `hand_action`。姿态/手势事件要求
@@ -145,6 +145,8 @@ Topic，但不会下发事件。
 | P3 | `thumbs_up` | gesture | `hand_action=thumbs_up` | `EVT_VISION_MASTER_HAPPY`，需满足姿态门控 |
 | P4 | `standing` | posture | `pose_action=neutral_stand_sit` | `EVT_VISION_MASTER_NEUTRAL`，需满足姿态门控 |
 | P4 | `sitting` | posture | `pose_action=neutral_stand_sit` | `EVT_VISION_MASTER_NEUTRAL`，需满足姿态门控 |
+| P4 | `squat_down` | posture | `pose_action=squat_down` | 无；仅姿态字段 |
+| P4 | `bend_over` | posture | `pose_action=bend_over` | 无；仅姿态字段 |
 | P4 | `lying` | posture | 无；由 `pose_state=lying` 表达 | 无 |
 | P4 | `low_motion` | activity | `pose_action=neutral_stand_sit` | `EVT_VISION_MASTER_NEUTRAL`，需满足姿态门控 |
 
@@ -158,8 +160,13 @@ Topic，但不会下发事件。
 两种路径都只改变
 GesturePose 判定，不改变正式事件名称、身份门禁或发布契约。
 
+`bend_over` 和 `squat_down` 分别表示经关键点和时序确认的弯腰、明显半蹲或深蹲，
+只更新 `pose_action`/`pose_action_label`，不派生情绪、宠物问候或其他视觉事件。
+两者按最近 10 次姿态更新中至少 6 次分数达到 0.50 激活，活动期间支持数至少 3/10
+时保留；这是滚动帧投票，不要求连续帧或固定秒数。单帧 `raw_scores` 仅用于诊断。
+
 `holding_toy` 和 `holding_dog_food` 是 Pose/Hand 与物体模型联合产生的多模态特定
-姿态，不属于上述25个 GesturePose 原始标签。要求物体框接近当前人物的有效手腕、
+姿态，不属于上述27个 GesturePose 原始标签。要求物体框接近当前人物的有效手腕、
 检测置信度至少0.35、Pose与物体源帧时间差不超过0.75秒，且1.5秒内两个不同阳性
 物体推理结果成立。两个阳性结果之间允许一次短暂漏检；物体可随伸出的手部分超出
 人物框，但远离手腕的物体仍被拒绝。它们分别显示为“手持玩具/手持狗粮”；除
@@ -312,7 +319,7 @@ Vision 不订阅 `/internal_need/state`。情绪系统不得把
 | `face_observed` | YuNet 是否明确看到当前人脸；禁用人脸任务时可为 `null` |
 | `primary_action`、`primary_priority`、`state_hint` | 精确主动作、P0–P4 和状态候选 |
 | `recognized_actions[]` | 经过时序平滑的动作；含 `name,priority,group,confidence,support_ratio,duration_s` |
-| `raw_scores[]` | 25 个规则原始分数；含 `name,priority,group,score`，按分数降序 |
+| `raw_scores[]` | 27 个规则原始分数；含 `name,priority,group,score`，按分数降序 |
 | `fall_phase` | `unknown/monitoring/falling/lying/recovering` |
 | `fall_event_triggered` | 跌倒确认帧的一次边沿 |
 | `fall_alert_active` | 跌倒确认后的短暂保持状态 |

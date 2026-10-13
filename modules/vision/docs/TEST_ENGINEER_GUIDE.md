@@ -416,7 +416,7 @@ Visual state changed: track=<id> tracking=<state> identity=<name> identity_state
 | P1 明显负向 | `hands_on_hips`、`large_arm_swing`、`pointing`、`stomping`、`arms_crossed` | `EVT_VISION_MASTER_SAD` |
 | P2 消沉/防御 | `head_down`、`shoulders_slumped`、`face_covering`、`hands_on_head`、`curled_up`、`hunched` | `EVT_VISION_MASTER_SAD` |
 | P3 积极互动 | `arms_raised`、`waving`、`victory`、`jumping`、`arms_open`、`fast_nod`、`clapping`、`thumbs_up` | `EVT_VISION_MASTER_HAPPY` |
-| P4 普通状态 | `standing`、`sitting`、`lying`、`low_motion` | 兼容普通状态；稳定站/坐/低运动映射 Neutral，静态 lying 不是跌倒 |
+| P4 普通状态/关注姿态 | `standing`、`sitting`、`lying`、`low_motion`、`bend_over`、`squat_down` | 站/坐/低运动映射 Neutral；弯腰和蹲下只输出姿态字段、不派生事件；静态 lying 不是跌倒 |
 
 #### 5.6.1 一次动作必须按五层结果对齐
 
@@ -436,7 +436,7 @@ Visual state changed: track=<id> tracking=<state> identity=<name> identity_state
 应看到 `vision.event.suppressed`，该用例只能判“动作识别 PASS、身份门禁 PASS”，不能要求正式
 姿态事件。`raw_scores` 单帧升高但始终没有进入 `recognized_actions[]`，动作识别仍是 FAIL。
 
-#### 5.6.2 25 个精确动作逐项测试对齐表
+#### 5.6.2 27 个精确动作逐项测试对齐表
 
 “表演要点”用于统一测试人员动作，不代替算法完整公式。动态动作应完整做完一个周期；
 静态动作应保持到 `recognized_actions[]` 稳定出现。所有正式姿态事件都默认要求
@@ -457,7 +457,7 @@ Visual state changed: track=<id> tracking=<state> identity=<name> identity_state
 | GP-010 | 掩面：双手遮住脸部持续至少 3 秒 | `face_covering`（P2/gesture） | `hand_action=hands_covering_face` | `EVT_VISION_MASTER_SAD` |
 | GP-011 | 抱头：双手同时放到头顶或头部两侧 | `hands_on_head`（P2/gesture） | `hand_action=hands_covering_face` | `EVT_VISION_MASTER_SAD` |
 | GP-012 | 蜷缩：下蹲/收拢身体，使头、躯干和四肢呈明显蜷缩 | `curled_up`（P2/posture） | `pose_action=body_curled_up` | `EVT_VISION_MASTER_SAD` |
-| GP-013 | 驼背：在侧向/斜向且二维面向方向可判断时，躯干向面向方向明显前弯并保持；头部可保持抬起 | `hunched`（P2/posture） | `pose_action=hunched_back` | `EVT_VISION_MASTER_SAD` |
+| GP-013 | 驼背：在可可靠判断二维面向方向时，前弯未达到 `bend_over` 确认分数，但旧驼背规则有足够证据；明显前弯按 GP-026 验收 | `hunched`（P2/posture） | `pose_action=hunched_back`，受同层/更高层姿态优先级影响 | `EVT_VISION_MASTER_SAD` |
 | GP-014 | 举手：至少一侧手腕高于肩部并保持 | `arms_raised`（P3/gesture） | `pose_action=arm_raise_wave` | `EVT_VISION_MASTER_HAPPY` |
 | GP-015 | 挥手：手臂举起后做连续往返挥动 | `waving`（P3/dynamic） | `pose_action=arm_raise_wave` | `EVT_VISION_MASTER_HAPPY` |
 | GP-016 | V 字手势：同一只手伸出食指和中指形成 V 字 | `victory`（P3/gesture） | `hand_action=victory` | `EVT_VISION_MASTER_HAPPY` |
@@ -470,16 +470,29 @@ Visual state changed: track=<id> tracking=<state> identity=<name> identity_state
 | GP-023 | 坐姿：躯干直立、髋膝弯曲形成明确坐姿并保持 | `sitting`（P4/posture） | `pose_action=neutral_stand_sit` | `EVT_VISION_MASTER_NEUTRAL` |
 | GP-024 | 静态躺卧：测试人员已经躺好后进入画面或保持静止，躯干接近水平且下肢/肩线提供独立躺卧证据 | `lying`（P4/posture）；同时 `pose_state=lying` | 无精确动作兼容输出 | 无；静态躺卧不得产生 `EVT_VISION_FALL` |
 | GP-025 | 低运动：自然站立或坐下并长时间基本不动 | `low_motion`（P4/activity） | `pose_action=neutral_stand_sit` | `EVT_VISION_MASTER_NEUTRAL` |
+| GP-026 | 弯腰关注：在侧向/斜向可判断面向时明显前倾并保持；手可不入镜，也可撑一侧/两侧膝盖或抬起一只手呼唤 | `bend_over`（P4/posture） | `pose_action=bend_over`（弯腰） | 无；仅姿态字段，不派生事件 |
+| GP-027 | 蹲下关注：明显降低髋部并弯曲膝盖，保持半蹲或更深；轻微屈膝和普通椅坐作反例 | `squat_down`（P4/posture） | `pose_action=squat_down`（蹲下） | 无；仅姿态字段，不派生事件 |
+
+GP-026/027 都按最近 10 次姿态更新中至少 6 次分数 `>=0.50` 确认，活动后窗口支持数
+仍有至少 3/10 时保持；单帧候选只能查看 `raw_scores[]`，不能算稳定命中。该窗口按
+推理更新计数，不对应固定秒数。弯腰以可可靠判断方向的前倾为必要证据，撑膝/呼唤手势
+只是可选特征；蹲下须同时有较低髋部、明显膝屈曲和区别于普通椅坐的下肢或躯干姿态。
+腿部关键点缺失时不得补造蹲姿证据。两者均不产生情绪、宠物问候或其他正式视觉事件。
 
 GP-013 使用现有二维关键点估计面向方向：双耳可信时，鼻尖须越过双耳水平投影区间至少 0.08 倍肩宽；仅单耳可信时，鼻尖须越过该耳至少 0.45 倍肩宽，才把肩髋位移解释为有方向的前弯。
 正面、小幅单耳偏移或侧向证据不足时应保持未识别；后仰和纯侧倾不能复用绝对躯干角度触发驼背。
 因此二维正面投影无法可靠判断前后方向的样本属于预期的低召回场景。`head_down=0` 不应封顶
-有效的 `hunched` 分数，低头只提供辅助证据。
+有效的原始驼背证据，低头只提供辅助证据。当前 `bend_over` 分数达到 0.50 时会抑制
+`hunched` 并清除旧票数；未达到弯腰阈值的样本仍使用旧驼背规则，是否稳定命中取决于
+旧规则分数和窗口支持。若同时识别到更高层姿态，`bend_over` 可留在 `recognized_actions[]`
+而由更高层姿态占据 `pose_action`；弯腰本身不派生事件。
 
 GP-012 的稳定输出需要躯干到膝部的紧凑关系，并由头/躯干收拢或下肢折叠证据共同支持；下蹲时可用弯膝、近水平大腿或膝髋靠近作为折叠证据，因此不要求 `head_down` 或 `hunched` 必须先触发。弯膝和水平大腿还需膝髋靠近或明显的躯干倾斜支持，倾斜支持在 20° 到 45° 之间递增，避免普通直立坐姿被误判为蜷缩。侧向样例中下肢折叠证据比紧凑度更稳定，组合评分采用 0.35/0.65；两个分量都至少有 0.10 的证据，单独弯膝或单独紧凑都不够。双侧腿部信息不完整时，可用置信度足够的单侧证据，但缺失关键点不能补造。强 `lying` 且没有头/躯干收拢时，不使用单独的下肢折叠路径；静态伸展躺卧仍只应输出 `lying`。受遮挡和投影变化影响，稳定确认采用蜷缩专属的 5 次姿势推理中至少 3 次达到 0.55；同一跟踪 ID 短暂丢失时，只有尚未稳定的蜷缩候选票数可以保留，最多 4 秒，已稳定动作、跌倒及其他动作状态仍按超时清空；其他动作重新确认须收齐完整的新帧窗口，时序门槛不变。
 
 GP-024 不能只看躯干倾角：清晰躺卧还需近水平的大腿方向；只有双侧大腿方向均不可用时，才由肩线旋转作为保守补充。
-只要有一侧可靠大腿方向，就应优先使用下肢证据，避免侧视肩线旋转覆盖直立腿支撑的前弯。静态 `lying` 仍不兼容为驼背或跌倒。
+只要有一侧可靠大腿方向，就应优先使用下肢证据，避免侧视肩线旋转覆盖直立腿支撑的前弯。
+强 `lying` 证据会抑制弯腰分数并清除弯腰旧票数，静态躺卧及弯腰转躺卧不能继续输出 `bend_over`。
+静态 `lying` 仍不兼容为驼背或跌倒。
 
 **GP-010 掩面时序验收**：掩面持续满 3 秒才允许出现稳定 `face_covering`。
 鼻尖被挡住或手部模型漏检时，可由当前脸部范围及同侧手腕/手肘证据补充；完全未知

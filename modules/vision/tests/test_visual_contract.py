@@ -20,6 +20,7 @@ from marsdog_vision_interaction.messages import (
 from marsdog_vision_interaction.providers.gesture_pose_engine import ActionName
 from marsdog_vision_interaction.providers.pose_action import (
     _HAND_ACTIONS,
+    _POSE_ACTIONS,
     get_action_category,
     get_action_label,
 )
@@ -41,6 +42,37 @@ def test_victory_is_a_public_happy_hand_action() -> None:
         )
         == ""
     )
+
+
+@pytest.mark.parametrize(
+    ("action", "key", "label"),
+    (
+        (ActionName.BEND_OVER, "bend_over", "弯腰"),
+        (ActionName.SQUAT_DOWN, "squat_down", "蹲下"),
+    ),
+)
+def test_attention_postures_are_pose_values_without_derived_events(
+    action: ActionName, key: str, label: str
+) -> None:
+    assert _POSE_ACTIONS[action] == key
+    assert get_action_category(key) == "pose"
+    assert get_action_label(key) == label
+    assert visual_event_types.pose_action_to_vision_event(
+        key, identity_confirmed=True
+    ) == ""
+    observation = {
+        "active_target": {
+            "identity": "owner",
+            "identity_state": "confirmed_known",
+            "tracking_state": "tracking",
+            "pose_action": key,
+        },
+        "hands": [],
+    }
+    assert visual_event_derivation.derive_events(
+        observation,
+        identity_eligible=visual_event_derivation.pose_event_identity_eligible,
+    ) == []
 
 
 def test_confirmed_unknown_may_emit_existing_pose_event_names() -> None:

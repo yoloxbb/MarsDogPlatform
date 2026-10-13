@@ -47,6 +47,8 @@ _ACTION_LABEL: dict[str, str] = {
     "hands_covering_face": "双手掩面或抱头",
     "body_curled_up": "身体蜷缩",
     "hunched_back": "驼背/弓着背",
+    "bend_over": "弯腰",
+    "squat_down": "蹲下",
     "neutral_stand_sit": "自然站立/端坐",
     "stop_gesture": "停止/别动手势",
     "fallen_down": "跌倒事件",
@@ -64,6 +66,8 @@ _POSE_ACTIONS: dict[ActionName, str] = {
     ActionName.SHOULDERS_SLUMPED: "head_down_slumped",
     ActionName.CURLED_UP: "body_curled_up",
     ActionName.HUNCHED: "hunched_back",
+    ActionName.BEND_OVER: "bend_over",
+    ActionName.SQUAT_DOWN: "squat_down",
     ActionName.ARMS_RAISED: "arm_raise_wave",
     ActionName.WAVING: "arm_raise_wave",
     ActionName.ARMS_OPEN: "lean_forward_arms_open",
@@ -244,6 +248,9 @@ class PoseActionClassifier:
             self._pose_action = "fallen_down"
             self._pose_label = get_action_label(self._pose_action)
 
+        # ``result.actions`` is already sorted by the shared P0-P4 priority
+        # contract. Attention postures win within P4, while higher-tier poses
+        # such as waving and jumping keep their existing precedence.
         for action in result.actions:
             if not self._pose_action and action.name in _POSE_ACTIONS:
                 self._pose_action = _POSE_ACTIONS[action.name]

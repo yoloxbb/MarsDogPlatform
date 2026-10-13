@@ -1,7 +1,10 @@
+from dataclasses import replace
+
 import pytest
 
 from marsdog_vision_interaction.providers.gesture_pose_engine import (
     ActionName,
+    ActionScore,
     ActionSmoother,
     BehaviorEngine,
     FaceObservation,
@@ -9,6 +12,7 @@ from marsdog_vision_interaction.providers.gesture_pose_engine import (
     HandLandmark,
     LandmarkFrame,
     PoseLandmark,
+    RuleActionClassifier,
 )
 from marsdog_vision_interaction.providers.pose_action import PoseActionClassifier
 
@@ -257,6 +261,44 @@ def _hide_pose_landmarks(
     )
 
 
+def _bend_over_pose(hand_pattern: str = "none") -> tuple[PoseLandmark, ...]:
+    points = list(_profile_hunch(facing="right"))
+    # The profile shoulders are shifted toward image-right, so reset the arms
+    # to a matching relaxed, straight pose instead of leaving the frontal
+    # standing fixture's wrists across the torso (which looks like hands on
+    # hips / crossed arms to the generic gesture rules).
+    for index, x, y in (
+        (13, 0.62, 0.46), (14, 0.82, 0.46),
+        (15, 0.62, 0.65), (16, 0.82, 0.65),
+    ):
+        points[index] = PoseLandmark(x, y, None, 1.0, 1.0)
+    if hand_pattern == "both_knees":
+        points[15] = PoseLandmark(0.45, 0.75, None, 1.0, 1.0)
+        points[16] = PoseLandmark(0.55, 0.75, None, 1.0, 1.0)
+    elif hand_pattern == "one_knee":
+        points[15] = PoseLandmark(0.45, 0.75, None, 1.0, 1.0)
+    elif hand_pattern == "calling":
+        points[13] = PoseLandmark(0.70, 0.34, None, 1.0, 1.0)
+        points[15] = PoseLandmark(0.76, 0.24, None, 1.0, 1.0)
+    elif hand_pattern != "none":
+        raise ValueError(f"unknown hand pattern: {hand_pattern}")
+    return tuple(points)
+
+
+def _squat_down_pose(*, deep: bool = False) -> tuple[PoseLandmark, ...]:
+    points = list(_pose("standing"))
+    hip_y = 0.69 if deep else 0.65
+    knee_y = 0.80 if deep else 0.77
+    for index, x, y in (
+        (11, 0.40, 0.30), (12, 0.60, 0.30),
+        (23, 0.47, hip_y), (24, 0.53, hip_y),
+        (25, 0.36, knee_y), (26, 0.64, knee_y),
+        (27, 0.44, 0.95), (28, 0.56, 0.95),
+    ):
+        points[index] = PoseLandmark(x, y, None, 1.0, 1.0)
+    return tuple(points)
+
+
 def _shift_selected_pose_landmarks(
     pose: tuple[PoseLandmark, ...],
     indices: tuple[int, ...],
@@ -321,6 +363,11 @@ def test_standing_action_is_deterministic_and_keeps_public_key() -> None:
     ]
     assert snapshots[-1]["pose_action"] == "neutral_stand_sit"
     assert snapshots[-1]["recognized_actions"][0]["name"] == "standing"
+    assert next(
+        item["score"]
+        for item in snapshots[-1]["raw_scores"]
+        if item["name"] == "squat_down"
+    ) < 0.50
     assert {
         item["name"] for item in snapshots[-1]["raw_scores"]
     } == {action.value for action in ActionName}
@@ -347,11 +394,222 @@ def test_standing_action_is_deterministic_and_keeps_public_key() -> None:
     }
     assert snapshots[-1]["hand_features"]["left"]["detected"] is False
     assert (
-        snapshots[-1]["hand_features"]["left"][
-            "stop_command_zone_score"
-        ]
+        snapshots[-1]["hand_features"]["left"]["stop_command_zone_score"]
         == 0.0
     )
+
+
+@pytest.mark.parametrize("hand_pattern", ("none", "both_knees", "one_knee", "calling"))
+def test_bend_over_uses_forward_torso_with_optional_hand_patterns(
+    hand_pattern: str,
+) -> None:
+    classifier = PoseActionClassifier()
+    snapshots = [
+        classifier.update(
+            track_id=7,
+            pose_landmarks=_bend_over_pose(hand_pattern),
+            now=20.0 + index * 0.1,
+        )
+        for index in range(10)
+    ]
+
+    recognized = snapshots[-1]["recognized_actions"]
+    raw_scores = {item["name"]: item["score"] for item in snapshots[-1]["raw_scores"]}
+    assert raw_scores["bend_over"] >= 0.50
+    expected_pose_action = (
+        "lean_forward_arms_open"
+        if hand_pattern in ("one_knee", "calling")
+        else "bend_over"
+    )
+    assert snapshots[-1]["pose_action"] == expected_pose_action
+    if expected_pose_action == "bend_over":
+        assert snapshots[-1]["pose_action_label"] == "弯腰"
+    else:
+        assert snapshots[-1]["pose_action_label"] == "身体前倾/张开双臂"
+    bend_action = next(item for item in recognized if item["name"] == "bend_over")
+    assert bend_action["priority"] == "P4"
+    assert bend_action["group"] == "posture"
+    assert all(item["name"] != "hunched" for item in recognized)
+
+
+def test_attention_posture_can_coexist_with_an_independent_hand_action(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        RuleActionClassifier,
+        "_pointing",
+        staticmethod(lambda landmarks, features: 1.0),
+    )
+    classifier = PoseActionClassifier()
+    snapshots = [
+        classifier.update(
+            track_id=7,
+            pose_landmarks=_bend_over_pose(),
+            left_hand=_forward_palm(curled_ring_finger=True),
+            now=25.0 + index * 0.1,
+        )
+        for index in range(10)
+    ]
+
+    assert "bend_over" in {
+        item["name"] for item in snapshots[-1]["recognized_actions"]
+    }
+    assert snapshots[-1]["hand_action"] == "finger_pointing"
+
+
+def test_higher_priority_pose_keeps_precedence_over_attention_posture(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_update = BehaviorEngine.update
+
+    def update_with_waving(self, frame):
+        result = original_update(self, frame)
+        if any(action.name is ActionName.BEND_OVER for action in result.actions):
+            waving = ActionScore(
+                name=ActionName.WAVING,
+                confidence=1.0,
+                support_ratio=1.0,
+                duration_s=0.0,
+            )
+            return replace(result, actions=(waving, *result.actions))
+        return result
+
+    monkeypatch.setattr(BehaviorEngine, "update", update_with_waving)
+    classifier = PoseActionClassifier()
+    snapshots = [
+        classifier.update(
+            track_id=7,
+            pose_landmarks=_bend_over_pose(),
+            now=26.0 + index * 0.1,
+        )
+        for index in range(10)
+    ]
+
+    names = [item["name"] for item in snapshots[-1]["recognized_actions"]]
+    assert snapshots[-1]["pose_action"] == "arm_raise_wave"
+    assert snapshots[-1]["pose_action_label"] == "手臂高举/挥舞"
+    assert names[0] == "waving"
+    assert "bend_over" in names
+
+
+def test_one_bend_frame_does_not_activate_public_posture() -> None:
+    classifier = PoseActionClassifier()
+    snapshots = [
+        classifier.update(
+            track_id=7,
+            pose_landmarks=(
+                _bend_over_pose() if index == 0 else _pose("standing")
+            ),
+            now=27.0 + index * 0.1,
+        )
+        for index in range(10)
+    ]
+
+    assert next(
+        item["score"]
+        for item in snapshots[0]["raw_scores"]
+        if item["name"] == "bend_over"
+    ) >= 0.50
+    assert all(snapshot["pose_action"] != "bend_over" for snapshot in snapshots)
+
+
+@pytest.mark.parametrize("deep", (False, True), ids=("half-squat", "deep-squat"))
+def test_squat_down_recognizes_held_half_or_deep_squat(deep: bool) -> None:
+    classifier = PoseActionClassifier()
+    snapshots = [
+        classifier.update(
+            track_id=7,
+            pose_landmarks=_squat_down_pose(deep=deep),
+            now=30.0 + index * 0.1,
+        )
+        for index in range(10)
+    ]
+
+    raw_scores = {item["name"]: item["score"] for item in snapshots[-1]["raw_scores"]}
+    assert raw_scores["squat_down"] >= 0.50
+    assert snapshots[-1]["pose_action"] == "squat_down"
+    assert snapshots[-1]["pose_action_label"] == "蹲下"
+    squat_action = next(
+        item
+        for item in snapshots[-1]["recognized_actions"]
+        if item["name"] == "squat_down"
+    )
+    assert squat_action["priority"] == "P4"
+    assert squat_action["group"] == "posture"
+    assert all(
+        item["name"] not in {"sitting", "standing", "curled_up"}
+        for item in snapshots[-1]["recognized_actions"]
+    )
+
+
+def test_squat_down_accepts_reliable_one_sided_leg_geometry() -> None:
+    pose = _hide_pose_landmarks(_squat_down_pose(), 24, 26, 28)
+    classifier = PoseActionClassifier()
+    snapshots = [
+        classifier.update(
+            track_id=7,
+            pose_landmarks=pose,
+            now=35.0 + index * 0.1,
+        )
+        for index in range(10)
+    ]
+
+    raw_scores = {item["name"]: item["score"] for item in snapshots[-1]["raw_scores"]}
+    assert raw_scores["squat_down"] >= 0.50
+    assert snapshots[-1]["pose_action"] == "squat_down"
+
+
+def test_deep_squat_with_strongly_folded_knees_does_not_become_curl() -> None:
+    points = list(_bend_over_pose())
+    for index, x, y in (
+        (11, 0.65, 0.48), (12, 0.85, 0.48),
+        (23, 0.40, 0.82), (24, 0.60, 0.82),
+        (25, 0.60, 0.82), (26, 0.80, 0.82),
+        (27, 0.40, 0.95), (28, 0.60, 0.95),
+    ):
+        points[index] = replace(points[index], x=x, y=y)
+    classifier = PoseActionClassifier()
+    for index in range(12):
+        result = classifier.update(
+            track_id=7,
+            pose_landmarks=tuple(points),
+            now=36.0 + index * 0.1,
+        )
+
+    scores = {item["name"]: item["score"] for item in result["raw_scores"]}
+    assert scores["squat_down"] >= 0.50
+    assert result["pose_action"] == "squat_down"
+    assert result["pose_action_label"] == "蹲下"
+    assert all(
+        item["name"] not in {"curled_up", "sitting", "standing"}
+        for item in result["recognized_actions"]
+    )
+
+
+def test_bend_and_squat_candidates_abstain_without_required_geometry() -> None:
+    backward = _profile_hunch(facing="right", bend="backward")
+    ambiguous_direction = _profile_hunch(facing="front")
+    mild_knee_flex = list(_pose("standing"))
+    mild_knee_flex[25] = PoseLandmark(0.42, 0.76, None, 1.0, 1.0)
+    mild_knee_flex[26] = PoseLandmark(0.58, 0.76, None, 1.0, 1.0)
+    examples = (
+        (backward, "bend_over"),
+        (ambiguous_direction, "bend_over"),
+        (tuple(mild_knee_flex), "squat_down"),
+        (_pose("standing"), "squat_down"),
+        (_hide_pose_landmarks(_squat_down_pose(), 27, 28), "squat_down"),
+        (_hide_pose_landmarks(_squat_down_pose(), 25, 26), "squat_down"),
+        (_curled_fold_pose(), "squat_down"),
+    )
+
+    for pose, action_name in examples:
+        classifier = PoseActionClassifier()
+        result = classifier.update(track_id=7, pose_landmarks=pose, now=40.0)
+        score = next(
+            item["score"] for item in result["raw_scores"] if item["name"] == action_name
+        )
+        assert score < 0.50, (action_name, score)
+        assert result["pose_action"] == ""
 
 
 def test_curled_up_stabilizes_from_compact_folded_pose_without_head_down() -> None:
@@ -527,6 +785,62 @@ def test_curled_up_temporal_confirmation_uses_three_of_five_not_single_frame() -
     assert ActionName.CURLED_UP in {action.name for action in stable_actions}
 
 
+@pytest.mark.parametrize(
+    ("attention_action", "conflicts"),
+    (
+        (ActionName.BEND_OVER, (ActionName.HUNCHED,)),
+        (
+            ActionName.SQUAT_DOWN,
+            (ActionName.CURLED_UP, ActionName.SITTING, ActionName.STANDING),
+        ),
+    ),
+)
+def test_attention_postures_use_rolling_ten_update_policy_and_clear_conflicts(
+    attention_action: ActionName,
+    conflicts: tuple[ActionName, ...],
+) -> None:
+    smoother = ActionSmoother()
+    empty = {name: 0.0 for name in ActionName}
+
+    # One isolated frame remains only a candidate.
+    for index in range(10):
+        raw = dict(empty)
+        raw[attention_action] = 0.50 if index == 0 else 0.0
+        output = smoother.update(raw, index * 0.1)
+        assert attention_action not in {action.name for action in output}
+
+    # Six of ten scores at the inclusive 0.50 threshold activate the posture.
+    smoother = ActionSmoother()
+    for index in range(10):
+        raw = dict(empty)
+        raw[attention_action] = 0.50 if index < 6 else 0.0
+        output = smoother.update(raw, 2.0 + index * 0.1)
+    assert attention_action in {action.name for action in output}
+
+    # Retain at exactly three of ten supporting updates, then release below 3/10.
+    for index in range(3):
+        output = smoother.update(dict(empty), 3.0 + index * 0.1)
+    assert attention_action in {action.name for action in output}
+    output = smoother.update(dict(empty), 3.3)
+    assert attention_action not in {action.name for action in output}
+
+    # Existing conflicting votes/active labels are discarded as soon as a new
+    # attention posture has strong current-frame evidence.
+    smoother = ActionSmoother()
+    for index in range(10):
+        raw = dict(empty)
+        for conflict in conflicts:
+            raw[conflict] = 0.80
+        output = smoother.update(raw, 4.0 + index * 0.1)
+    assert set(conflicts).issubset({action.name for action in output})
+
+    raw = dict(empty)
+    raw[attention_action] = 0.80
+    output = smoother.update(raw, 5.0)
+    assert not set(conflicts).intersection({action.name for action in output})
+    assert attention_action not in {action.name for action in output}
+
+
 def test_track_gap_retains_curl_votes_but_clears_fall_votes() -> None:
     smoother = ActionSmoother()
     raw = {name: 0.0 for name in ActionName}
@@ -622,7 +936,7 @@ def test_pose_action_does_not_carry_active_curl_through_track_loss() -> None:
     }
 
 
-def test_profile_hunch_triggers_without_head_down_for_both_facing_directions() -> None:
+def test_clear_profile_bend_over_triggers_without_head_down_for_both_facing_directions() -> None:
     for facing in ("left", "right"):
         engine = BehaviorEngine()
         results = [
@@ -636,8 +950,32 @@ def test_profile_hunch_triggers_without_head_down_for_both_facing_directions() -
         ]
 
         assert results[-1].raw_score_map[ActionName.HEAD_DOWN] == 0.0
-        assert results[-1].raw_score_map[ActionName.HUNCHED] >= 0.55
-        assert ActionName.HUNCHED in {action.name for action in results[-1].actions}
+        assert results[-1].raw_score_map[ActionName.BEND_OVER] >= 0.50
+        assert results[-1].raw_score_map[ActionName.HUNCHED] == 0.0
+        assert ActionName.BEND_OVER in {action.name for action in results[-1].actions}
+
+
+def test_residual_hunch_remains_when_clear_bend_does_not_qualify() -> None:
+    points = list(_bend_over_pose())
+    # A 25-degree forward lean is below the bend vote threshold. Head
+    # compression supplies sufficient evidence for the existing hunch rule.
+    for index, x in ((11, 0.5966), (12, 0.7966)):
+        point = points[index]
+        points[index] = replace(point, x=x)
+    points[0] = replace(points[0], y=0.26)
+    engine = BehaviorEngine()
+    for index in range(10):
+        result = engine.update(
+            LandmarkFrame(
+                monotonic_s=0.1 + index * 0.1,
+                pose_landmarks=tuple(points),
+            )
+        )
+
+    assert result.raw_score_map[ActionName.BEND_OVER] < 0.50
+    assert result.raw_score_map[ActionName.HUNCHED] >= 0.55
+    assert ActionName.HUNCHED in {action.name for action in result.actions}
+    assert ActionName.BEND_OVER not in {action.name for action in result.actions}
 
 
 @pytest.mark.parametrize("facing", ("left", "right"))
@@ -692,7 +1030,7 @@ def test_small_frontal_nose_offset_inside_ear_interval_is_ambiguous() -> None:
 
 @pytest.mark.parametrize("facing", ("left", "right"))
 @pytest.mark.parametrize("hidden_ear", (7, 8))
-def test_single_ear_clear_profile_still_triggers_hunch(
+def test_single_ear_clear_profile_still_triggers_bend_over(
     facing: str, hidden_ear: int
 ) -> None:
     pose = tuple(
@@ -710,8 +1048,9 @@ def test_single_ear_clear_profile_still_triggers_hunch(
         for index in range(12)
     ]
 
-    assert results[-1].raw_score_map[ActionName.HUNCHED] >= 0.55
-    assert ActionName.HUNCHED in {action.name for action in results[-1].actions}
+    assert results[-1].raw_score_map[ActionName.BEND_OVER] >= 0.50
+    assert results[-1].raw_score_map[ActionName.HUNCHED] == 0.0
+    assert ActionName.BEND_OVER in {action.name for action in results[-1].actions}
 
 
 @pytest.mark.parametrize("hidden_ear", (7, 8))
@@ -747,9 +1086,12 @@ def test_single_ear_direction_requires_large_normalized_offset(
     if offset_ratio < 0.45:
         assert result.raw_score_map[ActionName.HUNCHED] == 0.0
         assert ActionName.HUNCHED not in {action.name for action in result.actions}
+        assert result.raw_score_map[ActionName.BEND_OVER] == 0.0
+        assert ActionName.BEND_OVER not in {action.name for action in result.actions}
     else:
-        assert result.raw_score_map[ActionName.HUNCHED] >= 0.55
-        assert ActionName.HUNCHED in {action.name for action in result.actions}
+        assert result.raw_score_map[ActionName.BEND_OVER] >= 0.50
+        assert result.raw_score_map[ActionName.HUNCHED] == 0.0
+        assert ActionName.BEND_OVER in {action.name for action in result.actions}
     assert result.raw_score_map[ActionName.LYING] == 0.0
 
 
@@ -778,9 +1120,12 @@ def test_bilateral_ear_interval_keeps_its_smaller_direction_threshold(
     if offset_ratio < 0.08:
         assert result.raw_score_map[ActionName.HUNCHED] == 0.0
         assert ActionName.HUNCHED not in {action.name for action in result.actions}
+        assert result.raw_score_map[ActionName.BEND_OVER] == 0.0
+        assert ActionName.BEND_OVER not in {action.name for action in result.actions}
     else:
-        assert result.raw_score_map[ActionName.HUNCHED] >= 0.55
-        assert ActionName.HUNCHED in {action.name for action in result.actions}
+        assert result.raw_score_map[ActionName.BEND_OVER] >= 0.50
+        assert result.raw_score_map[ActionName.HUNCHED] == 0.0
+        assert ActionName.BEND_OVER in {action.name for action in result.actions}
 
 
 @pytest.mark.parametrize("facing", ("left", "right"))
@@ -837,9 +1182,9 @@ def test_transient_forward_hunch_does_not_activate_stable_label() -> None:
         for index in range(10)
     ]
 
-    assert max(result.raw_score_map[ActionName.HUNCHED] for result in results) >= 0.55
+    assert max(result.raw_score_map[ActionName.BEND_OVER] for result in results) >= 0.50
     assert all(
-        ActionName.HUNCHED not in {action.name for action in result.actions}
+        ActionName.BEND_OVER not in {action.name for action in result.actions}
         for result in results
     )
 
@@ -886,9 +1231,10 @@ def test_deep_profile_hunch_with_rotated_shoulders_and_upright_legs(
     ]
     scores = {item["name"]: item["score"] for item in snapshots[-1]["raw_scores"]}
     assert scores["head_down"] == 0.0
-    assert scores["hunched"] >= 0.55
+    assert scores["bend_over"] >= 0.50
+    assert scores["hunched"] == 0.0
     assert scores["lying"] == 0.0
-    assert snapshots[-1]["pose_action"] == "hunched_back"
+    assert snapshots[-1]["pose_action"] == "bend_over"
     assert all(
         not snapshot["fall_detector"]["event_triggered"] for snapshot in snapshots
     )
@@ -958,6 +1304,8 @@ def test_sitting_keeps_existing_geometry_without_lying_or_hunch() -> None:
     assert ActionName.SITTING in {action.name for action in result.actions}
     assert result.raw_score_map[ActionName.LYING] == 0.0
     assert result.raw_score_map[ActionName.HUNCHED] == 0.0
+    assert result.raw_score_map[ActionName.SQUAT_DOWN] < 0.50
+    assert ActionName.SQUAT_DOWN not in {action.name for action in result.actions}
 
 
 def test_forward_hunch_with_upright_legs_is_not_lying() -> None:
@@ -972,16 +1320,29 @@ def test_forward_hunch_with_upright_legs_is_not_lying() -> None:
         for index in range(12)
     ]
 
-    assert results[-1].raw_score_map[ActionName.HUNCHED] >= 0.55
+    assert results[-1].raw_score_map[ActionName.BEND_OVER] >= 0.50
+    assert results[-1].raw_score_map[ActionName.HUNCHED] == 0.0
     assert results[-1].raw_score_map[ActionName.LYING] == 0.0
 
 
-def test_horizontal_body_keeps_lying_and_suppresses_hunch() -> None:
+@pytest.mark.parametrize("previous_bend", (False, True))
+def test_horizontal_body_keeps_lying_and_suppresses_hunch_and_bend(
+    previous_bend: bool,
+) -> None:
     engine = BehaviorEngine()
+    if previous_bend:
+        for index in range(10):
+            previous = engine.update(
+                LandmarkFrame(
+                    monotonic_s=0.1 + index * 0.1,
+                    pose_landmarks=_bend_over_pose(),
+                )
+            )
+        assert ActionName.BEND_OVER in {action.name for action in previous.actions}
     results = [
         engine.update(
             LandmarkFrame(
-                monotonic_s=0.1 + index * 0.1,
+                monotonic_s=1.1 + index * 0.1,
                 pose_landmarks=_pose("lying"),
             )
         )
@@ -992,6 +1353,11 @@ def test_horizontal_body_keeps_lying_and_suppresses_hunch() -> None:
     assert results[-1].raw_score_map[ActionName.HUNCHED] < 0.55
     assert ActionName.LYING in {action.name for action in results[-1].actions}
     assert ActionName.HUNCHED not in {action.name for action in results[-1].actions}
+    assert all(result.raw_score_map[ActionName.BEND_OVER] == 0.0 for result in results)
+    assert all(
+        ActionName.BEND_OVER not in {action.name for action in result.actions}
+        for result in results
+    )
 
 
 def test_entering_frame_while_lying_never_fabricates_fall_event() -> None:

@@ -1881,6 +1881,8 @@ class ActionName(str, Enum):
     HANDS_ON_HEAD = "hands_on_head"
     CURLED_UP = "curled_up"
     HUNCHED = "hunched"
+    BEND_OVER = "bend_over"
+    SQUAT_DOWN = "squat_down"
     STANDING = "standing"
     SITTING = "sitting"
     LOW_MOTION = "low_motion"
@@ -1941,6 +1943,8 @@ ACTION_GROUPS: dict[ActionName, ActionGroup] = {
     ActionName.SHOULDERS_SLUMPED: ActionGroup.POSTURE,
     ActionName.CURLED_UP: ActionGroup.POSTURE,
     ActionName.HUNCHED: ActionGroup.POSTURE,
+    ActionName.BEND_OVER: ActionGroup.POSTURE,
+    ActionName.SQUAT_DOWN: ActionGroup.POSTURE,
     ActionName.STANDING: ActionGroup.POSTURE,
     ActionName.SITTING: ActionGroup.POSTURE,
     ActionName.LYING: ActionGroup.POSTURE,
@@ -1969,6 +1973,8 @@ ACTION_TRIGGER_PRIORITIES: dict[ActionName, TriggerPriority] = {
     ActionName.FAST_NOD: TriggerPriority.P3,
     ActionName.CLAPPING: TriggerPriority.P3,
     ActionName.THUMBS_UP: TriggerPriority.P3,
+    ActionName.BEND_OVER: TriggerPriority.P4,
+    ActionName.SQUAT_DOWN: TriggerPriority.P4,
     ActionName.STANDING: TriggerPriority.P4,
     ActionName.SITTING: TriggerPriority.P4,
     ActionName.LYING: TriggerPriority.P4,
@@ -2005,10 +2011,12 @@ _WITHIN_TIER_PRIORITY = {
     ActionName.FAST_NOD: 5,
     ActionName.CLAPPING: 6,
     ActionName.THUMBS_UP: 7,
-    ActionName.STANDING: 0,
-    ActionName.SITTING: 1,
-    ActionName.LYING: 2,
-    ActionName.LOW_MOTION: 3,
+    ActionName.SQUAT_DOWN: 0,
+    ActionName.BEND_OVER: 1,
+    ActionName.STANDING: 2,
+    ActionName.SITTING: 3,
+    ActionName.LYING: 4,
+    ActionName.LOW_MOTION: 5,
 }
 
 
@@ -2795,6 +2803,12 @@ class RuleActionClassifier:
         scores[ActionName.HUNCHED] = forward_hunch * (
             0.85 + 0.15 * scores[ActionName.HEAD_DOWN]
         )
+        # A clearly inclined torso is the defining cue for the pet-attention
+        # bend. Keep this independent of head position and hand visibility;
+        # face direction must still be reliable for the signed feature above.
+        scores[ActionName.BEND_OVER] = _classifier_high(
+            forward_lean, 18.0, 34.0
+        )
         scores[ActionName.SHOULDERS_SLUMPED] = min(
             scores[ActionName.HEAD_DOWN], _classifier_low(lean, 10.0, 35.0)
         )
@@ -2878,9 +2892,10 @@ class RuleActionClassifier:
         )
         torso_horizontal = _classifier_high(lean, 40.0, 68.0)
         scores[ActionName.LYING] = min(torso_horizontal, lying_layout)
-        # Clear horizontal body geometry contradicts a hunch candidate even when
-        # a profile face happens to provide a valid facing direction.
+        # Clear horizontal body geometry contradicts hunch and bend candidates
+        # even when a profile face provides a valid facing direction.
         scores[ActionName.HUNCHED] *= 1.0 - scores[ActionName.LYING]
+        scores[ActionName.BEND_OVER] *= 1.0 - scores[ActionName.LYING]
 
         scores[ActionName.STANDING] = min(upright, standing_geometry)
         scores[ActionName.SITTING] = min(upright, sitting_geometry)
@@ -3087,12 +3102,100 @@ class RuleActionClassifier:
         right_hip = _classifier_point(landmarks, 24, min_confidence=0.35)
         left_knee = _classifier_point(landmarks, 25)
         right_knee = _classifier_point(landmarks, 26)
+        left_ankle = _classifier_point(landmarks, 27)
+        right_ankle = _classifier_point(landmarks, 28)
         nose = _classifier_point(landmarks, 0)
         left_ear = _classifier_point(landmarks, 7)
         right_ear = _classifier_point(landmarks, 8)
         scale = pose.torso_length or pose.shoulder_width
         if scale is None or scale <= _EPSILON:
             return
+
+        # Knee bracing can add a small amount of confidence after torso lean
+        # already qualifies. It cannot create a bend on its own, so hand cues
+        # remain optional and calling gestures do not gate posture recognition.
+        if scores[ActionName.BEND_OVER] >= 0.50:
+            left_brace = (
+                _classifier_low(
+                    _classifier_distance(left_wrist, left_knee) / scale,
+                    0.10,
+                    0.55,
+                )
+                if left_wrist is not None and left_knee is not None
+                else 0.0
+            )
+            right_brace = (
+                _classifier_low(
+                    _classifier_distance(right_wrist, right_knee) / scale,
+                    0.10,
+                    0.55,
+                )
+                if right_wrist is not None and right_knee is not None
+                else 0.0
+            )
+            knee_bracing = max(left_brace, right_brace)
+            scores[ActionName.BEND_OVER] = min(
+                1.0, scores[ActionName.BEND_OVER] + 0.08 * knee_bracing
+            )
+
+        # A squat needs both lowered hips relative to the visible body span and
+        # meaningful knee flexion. Non-horizontal thigh geometry separates an
+        # upright chair sit; a forward inclined torso also supports a deep squat
+        # whose thighs project almost horizontally. Missing landmarks abstain.
+        shoulder_y_values = [
+            point.y for point in (left_shoulder, right_shoulder) if point is not None
+        ]
+        lowered_hip_sides: list[float | None] = [None, None]
+        if shoulder_y_values:
+            shoulder_y = sum(shoulder_y_values) / len(shoulder_y_values)
+            for side, hip, ankle in (
+                (0, left_hip, left_ankle),
+                (1, right_hip, right_ankle),
+            ):
+                if hip is None or ankle is None or ankle.y <= shoulder_y + _EPSILON:
+                    continue
+                relative_hip_height = (hip.y - shoulder_y) / (ankle.y - shoulder_y)
+                lowered_hip_sides[side] = _classifier_high(
+                    relative_hip_height, 0.42, 0.60
+                )
+        lowered_hips = _classifier_partial_bilateral_score(
+            lowered_hip_sides[0], lowered_hip_sides[1], lambda value: value
+        )
+
+        knee_angles = (
+            (pose.left_knee_angle_3d_degrees, pose.right_knee_angle_3d_degrees)
+            if pose.left_knee_angle_3d_degrees is not None
+            or pose.right_knee_angle_3d_degrees is not None
+            else (pose.left_knee_angle_degrees, pose.right_knee_angle_degrees)
+        )
+        knee_flexion = _classifier_partial_bilateral_score(
+            knee_angles[0],
+            knee_angles[1],
+            # Stronger flexion remains positive even in a very deep squat;
+            # mild flexion near a straight knee must not supply a squat vote.
+            lambda value: _classifier_low(value, 105.0, 155.0),
+        )
+        non_horizontal_thighs = _classifier_partial_bilateral_score(
+            pose.left_thigh_vertical_degrees,
+            pose.right_thigh_vertical_degrees,
+            lambda value: _classifier_low(value, 35.0, 70.0),
+        )
+        torso_inclination = _classifier_high(
+            abs(pose.torso_lean_degrees)
+            if pose.torso_lean_degrees is not None
+            else None,
+            18.0,
+            45.0,
+        )
+        squat_layout = max(
+            non_horizontal_thighs,
+            min(torso_inclination, lowered_hips),
+        )
+        scores[ActionName.SQUAT_DOWN] = min(
+            lowered_hips,
+            knee_flexion,
+            squat_layout,
+        )
 
         if all((left_relation_wrist, right_relation_wrist, left_hip, right_hip)):
             left_hip_proximity = _classifier_low(
@@ -3661,6 +3764,7 @@ class RuleActionClassifier:
 
         lying = scores[ActionName.LYING]
         if lying >= 0.55:
+            scores[ActionName.BEND_OVER] = 0.0
             for arm_action in (
                 ActionName.ARMS_OPEN,
                 ActionName.ARMS_RAISED,
@@ -3679,6 +3783,13 @@ class RuleActionClassifier:
         elif scores[ActionName.STANDING] > 0.0:
             scores[ActionName.STANDING] *= 0.5
             scores[ActionName.SITTING] *= 0.5
+
+        if scores[ActionName.BEND_OVER] >= 0.50:
+            scores[ActionName.HUNCHED] = 0.0
+        if scores[ActionName.SQUAT_DOWN] >= 0.50:
+            scores[ActionName.CURLED_UP] = 0.0
+            scores[ActionName.SITTING] = 0.0
+            scores[ActionName.STANDING] = 0.0
 
     @staticmethod
     def _classifier_resolve_dynamic_static_pair(
@@ -4531,7 +4642,13 @@ class ActionSmoother:
         ActionName.FALL,
     }
     _CURL_ACTIONS = {ActionName.CURLED_UP}
-    _POSTURE_ACTIONS = {ActionName.STANDING, ActionName.SITTING, ActionName.LYING}
+    _POSTURE_ACTIONS = {
+        ActionName.BEND_OVER,
+        ActionName.SQUAT_DOWN,
+        ActionName.STANDING,
+        ActionName.SITTING,
+        ActionName.LYING,
+    }
 
     def __init__(self, window_size: int = 10, score_threshold: float = 0.55) -> None:
         if window_size < 5:
@@ -4545,6 +4662,18 @@ class ActionSmoother:
     def update(
         self, raw_scores: dict[ActionName, float], timestamp_s: float
     ) -> tuple[ActionScore, ...]:
+        if raw_scores.get(ActionName.LYING, 0.0) >= 0.55:
+            self.clear(ActionName.BEND_OVER)
+        if (
+            raw_scores.get(ActionName.BEND_OVER, 0.0) >= 0.50
+            or ActionName.BEND_OVER in self._active
+        ):
+            self.clear(ActionName.HUNCHED)
+        if (
+            raw_scores.get(ActionName.SQUAT_DOWN, 0.0) >= 0.50
+            or ActionName.SQUAT_DOWN in self._active
+        ):
+            self.clear(ActionName.CURLED_UP, ActionName.SITTING, ActionName.STANDING)
         if raw_scores.get(ActionName.FACE_COVERING, 0.0) >= 0.55:
             # The bilateral face rule has already zeroed these incompatible raw
             # actions.  Clear votes accumulated while the hands approached the face
