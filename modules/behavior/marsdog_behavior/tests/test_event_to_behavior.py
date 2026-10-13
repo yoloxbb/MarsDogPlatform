@@ -2177,6 +2177,135 @@ class TestVisualDirectToBehavior:
         assert candidate.params["source_observation_id"] == "camera-frame-42"
         assert candidate.ttl_sec == pytest.approx(0.49)
 
+    @staticmethod
+    def _owner_posture_payload(**target_updates):
+        target = {
+            "identity": "owner",
+            "identity_state": "confirmed_known",
+            "tracking_state": "tracking",
+            "target_type": "human",
+            "target_id": "epoch-1:human:7",
+            "track_id": 7,
+            "vision_epoch": "epoch-1",
+            "last_seen_age_ms": 10.0,
+            "pose_action": "bend_over",
+        }
+        target.update(target_updates)
+        return {
+            "schema_version": 1,
+            "vision_epoch": "epoch-1",
+            "snapshot_id": "epoch-1:52",
+            "sequence": 52,
+            "source_observation_id": "camera-frame-52",
+            "observation_status": "valid",
+            "header": {"stamp": 1786417000.52, "frame_id": "camera_link"},
+            "events": ["EVT_VISION_OWNER_BEND_SQUAT"],
+            "event_instances": {
+                "EVT_VISION_OWNER_BEND_SQUAT": {
+                    "event_id": "owner-posture-cycle-1"
+                }
+            },
+            "human_candidates": [target],
+        }
+
+    def test_owner_bend_squat_maps_to_existing_approach_behavior(self, node):
+        payload = self._owner_posture_payload()
+        candidate = node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_BEND_SQUAT", payload
+        )
+
+        assert candidate is not None
+        assert candidate.behavior_name == "approach_owner"
+        assert candidate.intent == "owner_approach_response"
+        assert candidate.priority_level == 1
+        assert candidate.sub_priority == 12
+        assert candidate.semantic_rank == 3
+        assert candidate.modality_rank == 2
+        assert candidate.interrupt_policy == "safe_point"
+        assert candidate.interactive is True
+        assert candidate.target_required is True
+        assert candidate.target["target_id"] == "epoch-1:human:7"
+        assert candidate.params["visual_event_instance_id"] == (
+            "owner-posture-cycle-1"
+        )
+        assert candidate.params["snapshot_id"] == "epoch-1:52"
+        assert candidate.params["source_observation_id"] == "camera-frame-52"
+        assert candidate.ttl_sec == pytest.approx(0.49)
+
+    @pytest.mark.parametrize(
+        "target_updates",
+        [
+            {"identity": "family_member_1"},
+            {"identity": "unknown", "identity_state": "confirmed_unknown"},
+            {"identity_state": "unverified"},
+            {"identity_state": "candidate_known"},
+            {"tracking_state": "temporarily_lost"},
+            {"tracking_state": "lost"},
+            {"track_id": 0},
+            {"pose_action": ""},
+            {"pose_action": "hunched_back"},
+            {"pose_action": []},
+            {"pose_action": {}},
+            {"pose_action": None},
+        ],
+    )
+    def test_owner_bend_squat_rejects_wrong_identity_track_or_pose(
+        self, node, target_updates
+    ):
+        payload = self._owner_posture_payload(**target_updates)
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_BEND_SQUAT", payload
+        ) is None
+
+    def test_owner_bend_squat_requires_unique_posture_target_and_instance(
+        self, node
+    ):
+        payload = self._owner_posture_payload()
+        second = dict(payload["human_candidates"][0])
+        second.update({"target_id": "epoch-1:human:8", "track_id": 8})
+        payload["human_candidates"].append(second)
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_BEND_SQUAT", payload
+        ) is None
+
+        payload = self._owner_posture_payload()
+        payload.pop("event_instances")
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_BEND_SQUAT", payload
+        ) is None
+
+        payload = self._owner_posture_payload()
+        payload["observation_status"] = "invalid"
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_BEND_SQUAT", payload
+        ) is None
+
+    def test_owner_bend_squat_candidate_is_revalidated_for_pose_and_epoch(
+        self, node
+    ):
+        initial = self._owner_posture_payload()
+        node.perception._on_visual_ros2(_make_string_msg(initial))
+        queued = node.candidate_pool.candidates[0]
+        assert queued["behavior_name"] == "approach_owner"
+        assert node._candidate_allowed_during_interaction(queued) is True
+
+        released = self._owner_posture_payload(pose_action="")
+        released["snapshot_id"] = "epoch-1:53"
+        released["sequence"] = 53
+        released["source_observation_id"] = "camera-frame-53"
+        node.perception._on_visual_ros2(_make_string_msg(released))
+        assert node._candidate_allowed_during_interaction(queued) is False
+
+        changed_epoch = self._owner_posture_payload()
+        changed_epoch["vision_epoch"] = "epoch-2"
+        changed_epoch["snapshot_id"] = "epoch-2:1"
+        changed_epoch["human_candidates"][0].update({
+            "vision_epoch": "epoch-2",
+            "target_id": "epoch-2:human:7",
+        })
+        node.perception._on_visual_ros2(_make_string_msg(changed_epoch))
+        assert node._candidate_allowed_during_interaction(queued) is False
+
     @pytest.mark.parametrize(
         "target_updates",
         [

@@ -17,6 +17,10 @@ from marsdog_vision_interaction.core.owner_presence_event_state import (
     OwnerPresenceEventConfig,
     OwnerPresenceEventState,
 )
+from marsdog_vision_interaction.core.owner_posture_event_state import (
+    OwnerPostureEventConfig,
+    OwnerPostureEventState,
+)
 from marsdog_vision_interaction.core.presence_event_state import (
     PresenceEventConfig,
     PresenceEventState,
@@ -284,6 +288,87 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
     ] == "owner-cycle"
 
 
+def test_owner_posture_event_publication_adds_holds_and_removes_active_instance() -> None:
+    from marsdog_vision_interaction.nodes.vision_interaction_node import (
+        _apply_presence_event_states,
+    )
+
+    event_state = OwnerPostureEventState(
+        OwnerPostureEventConfig.from_mapping({"enter_duration_sec": 1.0}),
+        source_freshness_sec=0.5,
+    )
+    states = (("EVT_VISION_OWNER_BEND_SQUAT", event_state),)
+    target_id = "epoch:human:7"
+
+    def observation(sequence, *, pose="bend_over", status="valid"):
+        return {
+            "schema_version": 1,
+            "vision_epoch": "epoch",
+            "snapshot_id": f"epoch:{sequence}",
+            "sequence": sequence,
+            "source_observation_id": f"frame:{sequence}",
+            "_source_observation_age_sec": 0.0,
+            "observation_status": status,
+            "events": ["EVT_VISION_MASTER", "EVT_VISION_OWNER_PRESENT"],
+            "event_instances": {
+                "EVT_VISION_OWNER_PRESENT": {"event_id": "owner-cycle"},
+            },
+            "_source_owner_target_ids": [target_id],
+            "_source_human_target_ids": [target_id],
+            "human_candidates": [{
+                "vision_epoch": "epoch",
+                "target_id": target_id,
+                "track_id": 7,
+                "target_type": "human",
+                "identity": "owner",
+                "identity_state": "confirmed_known",
+                "tracking_state": "tracking",
+                "pose_action": pose,
+                "last_seen_age_ms": 0.0,
+            }],
+        }
+
+    packet = None
+    for sequence in range(1, 7):
+        packet = _apply_presence_event_states(
+            observation(sequence), states, now=10.0 + (sequence - 1) * 0.2
+        )
+    assert packet is not None
+    posture_id = packet["event_instances"]["EVT_VISION_OWNER_BEND_SQUAT"][
+        "event_id"
+    ]
+    assert "EVT_VISION_OWNER_BEND_SQUAT" in packet["events"]
+    assert "EVT_VISION_MASTER" in packet["events"]
+    assert "EVT_VISION_OWNER_PRESENT" in packet["events"]
+    assert not any(key.startswith("_source_") for key in packet)
+
+    duplicate = observation(7)
+    duplicate["source_observation_id"] = "frame:6"
+    held = _apply_presence_event_states(duplicate, states, now=12.0)
+    assert held["event_instances"]["EVT_VISION_OWNER_BEND_SQUAT"][
+        "event_id"
+    ] == posture_id
+
+    invalid = _apply_presence_event_states(
+        observation(8, pose="", status="invalid"),
+        states,
+        now=12.2,
+    )
+    assert invalid["event_instances"]["EVT_VISION_OWNER_BEND_SQUAT"][
+        "event_id"
+    ] == posture_id
+
+    released = _apply_presence_event_states(
+        observation(9, pose=""), states, now=12.4
+    )
+    assert "EVT_VISION_OWNER_BEND_SQUAT" not in released["events"]
+    assert "EVT_VISION_OWNER_BEND_SQUAT" not in released.get(
+        "event_instances", {}
+    )
+    assert "EVT_VISION_MASTER" in released["events"]
+    assert "EVT_VISION_OWNER_PRESENT" in released["events"]
+
+
 def test_observation_cache_keeps_source_identity_and_marks_latest_inference_failure() -> None:
     provider = VisionObservationProvider({})
     provider._cached_observation = {"human_candidates": []}
@@ -304,6 +389,42 @@ def test_observation_cache_keeps_source_identity_and_marks_latest_inference_fail
     failed = provider.get_observation()
     assert failed["_source_observation_id"] == "camera-stamp:4"
     assert failed["_source_observation_valid"] is False
+
+
+def test_source_human_target_ids_require_current_body_and_face_association() -> None:
+    current_humans = [{"x": 0.1, "y": 0.2, "w": 0.3, "h": 0.4}]
+    current_faces = [{"track_id": 17, "recognized_user": "family_member_1"}]
+    candidate = {
+        "bbox": [0.1, 0.2, 0.3, 0.4],
+        "target_id": "epoch:human:7",
+        "track_id": 7,
+        "face_track_id": 17,
+        "identity": "family_member_1",
+        "identity_state": "confirmed_known",
+        "tracking_state": "tracking",
+    }
+
+    current = VisionObservationProvider._current_source_human_target_ids(
+        current_humans,
+        current_faces,
+        [candidate],
+    )
+    assert current == ["epoch:human:7"]
+
+    # A retained manager row without this source frame's matching face is not
+    # source association evidence.
+    assert VisionObservationProvider._current_source_human_target_ids(
+        current_humans,
+        [],
+        [candidate],
+    ) == []
+
+    lost_track = {**candidate, "tracking_state": "temporarily_lost"}
+    assert VisionObservationProvider._current_source_human_target_ids(
+        current_humans,
+        current_faces,
+        [lost_track],
+    ) == []
 
 
 @pytest.mark.parametrize("failure", [None, "face", "pose"])

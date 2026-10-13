@@ -212,6 +212,17 @@ Topic 中断清除去重记忆。Vision 以不同有效源观测确认目标满 
 `familiar_person_greet` 或 `stranger_observe` 候选。当前 Action 没有这些行为模板，所以候选
 会在 Action 解析阶段被拒绝，不代表对应动作已执行。
 
+`EVT_VISION_OWNER_BEND_SQUAT` 是单独的互动姿态状态事件，复用 Vision 的公开
+`bend_over` / `squat_down`，仅允许同包、同 epoch、同 source 的唯一新鲜
+`owner/confirmed_known/tracking` 目标创建候选；Behavior 在候选选择及派发前校验姿态仍活动，
+并按 event instance ID 对重复 HOLD 快照及短暂 Topic 中断去重。路由使用 Lv1、
+`sub_priority=12`、`semantic_rank=3`、`modality_rank=2`、`safe_point`，进入统一仲裁。
+映射为 `owner_approach_response` → `approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER`；
+这里只复用可执行的靠近主人阶段，未验证尾摆和抬头观察能力不纳入候选。
+该姿态事件单独维护所有有效快照的 epoch/sequence 高水位，拒绝回退序号和已退休 epoch，派发前
+缓存也必须匹配最新接受的快照。epoch 为不透明值，只能识别已经见过并退休的 epoch，不能排序
+首次遇到的未知 epoch。已有在场事件的缓存与去重策略保持原规则。
+
 ## 6. 情绪持续表达
 
 `/emotion/signal_event` 只在上升沿创建一次候选。为避免喜悦/兴奋等动作完成后长期静止，当前配置会在权威 state 仍为 triggered 时续排：

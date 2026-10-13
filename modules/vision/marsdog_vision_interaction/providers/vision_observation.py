@@ -1033,6 +1033,53 @@ class VisionObservationProvider(BaseProvider):
         )
 
     @classmethod
+    def _current_source_human_target_ids(
+        cls,
+        humans: list[dict[str, Any]],
+        faces: list[dict[str, Any]],
+        candidates: list[dict[str, Any]],
+    ) -> list[str]:
+        """Return current body/face target associations without identity gates.
+
+        This private provenance distinguishes a target in the source frame
+        from a retained tracker row. Identity qualification remains owned by
+        the event policy consuming the target.
+        """
+        current_face_tracks: set[int] = set()
+        for face in faces:
+            if not isinstance(face, dict):
+                continue
+            face_track_id = face.get("track_id")
+            if (
+                isinstance(face_track_id, int)
+                and not isinstance(face_track_id, bool)
+                and face_track_id > 0
+            ):
+                current_face_tracks.add(face_track_id)
+
+        matches = cls._human_candidate_matches(humans, candidates)
+        target_ids: list[str] = []
+        for candidate in matches.values():
+            if not isinstance(candidate, dict):
+                continue
+            try:
+                face_track_id = int(candidate.get("face_track_id", -1))
+            except (TypeError, ValueError):
+                face_track_id = -1
+            target_id = str(candidate.get("target_id", "") or "").strip()
+            track_id = candidate.get("track_id")
+            if (
+                candidate.get("tracking_state") == "tracking"
+                and isinstance(track_id, int)
+                and not isinstance(track_id, bool)
+                and track_id > 0
+                and face_track_id in current_face_tracks
+                and target_id
+            ):
+                target_ids.append(target_id)
+        return target_ids
+
+    @classmethod
     def _current_presence_target_ids(
         cls,
         humans: list[dict[str, Any]],
@@ -1240,6 +1287,11 @@ class VisionObservationProvider(BaseProvider):
             obs.get("faces", []),
             human_candidates,
         )
+        source_human_target_ids = self._current_source_human_target_ids(
+            obs.get("humans", []),
+            obs.get("faces", []),
+            human_candidates,
+        )
         source_family_target_ids = self._current_presence_target_ids(
             obs.get("humans", []),
             obs.get("faces", []),
@@ -1409,6 +1461,7 @@ class VisionObservationProvider(BaseProvider):
             "active_target": active_dict,
             "human_candidates": human_candidates,
             "_source_owner_target_ids": source_owner_target_ids,
+            "_source_human_target_ids": source_human_target_ids,
             "_source_family_target_ids": source_family_target_ids,
             "_source_stranger_target_ids": source_stranger_target_ids,
             "_source_inference_valid": (

@@ -389,6 +389,7 @@ TOILET、CLEAN、SLEEP 是条件指令：在任何候选入池或会话修改之
     ├── EVT_VISION_FALL → respond_person_fall (Lv1, sp=12)
     ├── EVT_VISION_STOP_GESTURE → respond_stop_gesture (Lv1, sp=12)
     ├── EVT_VISION_OWNER_PRESENT → owner_greet (Lv1, sp=12, semantic_rank=3)
+    ├── EVT_VISION_OWNER_BEND_SQUAT → approach_owner (Lv1, sp=12, semantic_rank=3)
     ├── EVT_VISION_FAMILY_PRESENT → familiar_person_greet (Lv1, sp=12, semantic_rank=3)
     ├── EVT_VISION_STRANGER_PRESENT → stranger_observe (Lv1, sp=12, semantic_rank=3)
     └── 其余 events 不直接创建行为候选
@@ -398,6 +399,13 @@ TOILET、CLEAN、SLEEP 是条件指令：在任何候选入池或会话修改之
 ENTER，HOLD 期间保持，连续有效漏检 2.0 秒后 EXIT 并开始 3.0 秒冷却。无效推理、断流或
 过期观测不算漏检。BT 按 `event_instances` 中的事件周期 ID 去重，并在仲裁前校验唯一新鲜
 目标和 epoch；短暂 Topic 超时不会清除周期记忆。当前 Action 没有对应的三个模板。
+
+主人弯腰/蹲下事件是独立活动状态：Vision 对同一确认主人目标的公共姿态用不同有效源观测稳定
+1.0 秒后 ENTER，复用 GesturePose 低于 3/10 支持时的姿态释放；没有额外退出计时或冷却。
+Behavior 对同一实例去重，并在候选构造、派发前检查同一目标的 `bend_over` / `squat_down`、epoch
+及新鲜度。候选映射 `owner_approach_response` → `approach_owner`，实际执行单元是
+`ACT_INTERACT_APPROACH_OWNER_CLOSER`，并经过已有 L2 仲裁。这里只覆盖靠近主人；尾摆与抬头观察
+没有匹配且验证过的 Action 能力。该事件不产生 Emotion 增量。
 
 服务类型优先使用 `marsdog_vision_interaction/srv/VisionTask`，接口名为
 `/perception/vision/task`。如果运行环境只安装了旧接口，则兼容

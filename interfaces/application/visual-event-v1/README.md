@@ -41,6 +41,41 @@ Behavior 对该状态事件按 `event_id` 而非 `events[]` 的快照重复次�
 并在统一仲裁前再次核对当前事件与目标。其他 v1 消费者忽略这些可选字段，既有
 `events[]` 消费语义保持兼容。
 
+### 主人弯腰/蹲下状态事件（v1 可选扩展）
+
+`EVT_VISION_OWNER_BEND_SQUAT` 是独立的互动姿态事件，消费 Vision 已公开的
+`pose_action=bend_over` 或 `pose_action=squat_down`。它不使用产品候选标签
+`ACT_OWNER_APPROACH_RESPONSE` 作为 ROS 事件名，不改变主人身份事件、Emotion 事件或视觉接口。
+
+事件进入要求同一当前目标同时满足 `identity=owner`、`identity_state=confirmed_known`、
+`tracking_state=tracking`，有正数 `track_id`，且目标 `target_id`、`vision_epoch` 与姿态证据匹配。
+家人、陌生人、未确认身份、失效跟踪及仅由 tracker 保留的目标都不能触发主人事件。复用现有身份
+确认规则，不添加通用置信度门槛。`owner_posture_events.enter_duration_sec` 默认 `1.0s`；只有
+不同且有效的新 `source_observation_id` 推进稳定时间，10 Hz 重复快照不推进计时。
+
+姿态解除沿用 GesturePose 当前公共输出迟滞：最近 10 次姿态更新中至少 6 次分数 `>=0.50`
+才公开，活动姿态在支持数至少 3/10 时保持，低于 3/10 时清除。有效同目标观测确认
+`pose_action` 已不再是上述两种姿态后，Vision 从 `events[]` 删除该事件并删除其
+`event_instances.EVT_VISION_OWNER_BEND_SQUAT.event_id`，随即重新武装；不添加独立释放定时器或
+`T_retrigger` 冷却。弯腰与蹲下之间转换但公共姿态未释放时，仍为同一活动周期和稳定 event ID。
+
+断流、推理失败、无效/过期输入不会伪装成姿态解除：未完成 ENTER 连续性重置，已活动周期及 ID
+保持。若同一 target 在当前源帧中失去主人身份/跟踪上下文，对外事件移除并内部保持 disarmed；
+直到该同一当前 source target 的公共姿态清除才重武装。retained-only 目标行不参与退出判断。
+目标切换或 `vision_epoch` 改变时清除旧目标状态，新目标重新完整累计 1.0 秒。消费者必须验证
+有效 observation、同包事件实例 ID、epoch、snapshot/source IDs、唯一新鲜主人目标和当前姿态，
+并在派发前再次验证；事件出现不等于动作已执行。
+
+Behavior 对新姿态事件从每个有效快照（含不带该事件的快照）记录 epoch 与 sequence 高水位；
+同 epoch 的回退序号及已经退休的 epoch 不能再创建姿态候选，派发前的缓存必须对应最新接受的
+姿态快照。epoch 是不透明标识，因此此保障针对消费者已经见过并退休的 epoch；无法据此排序首次
+遇到的未知 epoch。重复的当前快照仍沿用事件实例去重，短暂缓存超时不会丢失周期记忆。
+
+BehaviorTree 将此事件映射为 `owner_approach_response` 意图，并通过既有 L2 候选池及多源仲裁，
+使用 BT Behavior `approach_owner`，对应 Action unit `ACT_INTERACT_APPROACH_OWNER_CLOSER`。
+目前只确认“靠近主人”执行阶段可复用；尾摆与抬头观察没有匹配且经验证的执行能力，因此不声称
+已执行完整 `ACT_OWNER_APPROACH_RESPONSE`。Vision 不直接下发动作，此事件不进入 Emotion 映射。
+
 ### 家人与陌生人在场状态事件（v1 可选扩展）
 
 `EVT_VISION_FAMILY_PRESENT` 和 `EVT_VISION_STRANGER_PRESENT` 复用上述活动状态、

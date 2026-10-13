@@ -48,6 +48,10 @@ from marsdog_vision_interaction.core.owner_presence_event_state import (
     OwnerPresenceEventConfig,
     OwnerPresenceEventState,
 )
+from marsdog_vision_interaction.core.owner_posture_event_state import (
+    OwnerPostureEventConfig,
+    OwnerPostureEventState,
+)
 from marsdog_vision_interaction.core.presence_event_state import (
     PresenceEventConfig,
     PresenceEventState,
@@ -69,6 +73,7 @@ from marsdog_vision_interaction.messages.visual_event import (
 )
 from marsdog_vision_interaction.messages.visual_event_types import (
     EVT_VISION_FAMILY_PRESENT,
+    EVT_VISION_OWNER_BEND_SQUAT,
     EVT_VISION_OWNER_PRESENT,
     EVT_VISION_STRANGER_PRESENT,
 )
@@ -138,6 +143,7 @@ def _apply_presence_event_states(
             instances.pop(event_name, None)
     for key in (
         "_source_owner_target_ids",
+        "_source_human_target_ids",
         "_source_family_target_ids",
         "_source_stranger_target_ids",
         "_source_observation_age_sec",
@@ -436,6 +442,12 @@ class VisionInteractionNode(Node):
         )
         self._owner_presence_event_state = OwnerPresenceEventState(
             owner_presence_events_config,
+            source_freshness_sec=self._camera_stale_timeout_sec,
+        )
+        self._owner_posture_event_state = OwnerPostureEventState(
+            OwnerPostureEventConfig.from_mapping(
+                self._config.get("owner_posture_events")
+            ),
             source_freshness_sec=self._camera_stale_timeout_sec,
         )
         self._family_presence_event_state = PresenceEventState(
@@ -1223,6 +1235,9 @@ class VisionInteractionNode(Node):
         source_owner_target_ids = raw.pop(
             "_source_owner_target_ids", None
         )
+        source_human_target_ids = raw.pop(
+            "_source_human_target_ids", None
+        )
         source_family_target_ids = raw.pop(
             "_source_family_target_ids", None
         )
@@ -1254,6 +1269,8 @@ class VisionInteractionNode(Node):
             )
         if isinstance(source_owner_target_ids, list):
             raw["_source_owner_target_ids"] = source_owner_target_ids
+        if isinstance(source_human_target_ids, list):
+            raw["_source_human_target_ids"] = source_human_target_ids
         if isinstance(source_family_target_ids, list):
             raw["_source_family_target_ids"] = source_family_target_ids
         if isinstance(source_stranger_target_ids, list):
@@ -1305,6 +1322,10 @@ class VisionInteractionNode(Node):
             (
                 EVT_VISION_STRANGER_PRESENT,
                 getattr(self, "_stranger_presence_event_state", None),
+            ),
+            (
+                EVT_VISION_OWNER_BEND_SQUAT,
+                getattr(self, "_owner_posture_event_state", None),
             ),
         )
         presence_now = time.monotonic()

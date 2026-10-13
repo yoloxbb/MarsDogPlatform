@@ -11,6 +11,7 @@
 | `EVT_VISION_FALL` | `respond_person_fall` | 1 | 12 | 8s |
 | `EVT_VISION_STOP_GESTURE` | `respond_stop_gesture` | 1 | 12 | 8s |
 | `EVT_VISION_OWNER_PRESENT` | `owner_greet` | 1 | 12 | ≤0.5s |
+| `EVT_VISION_OWNER_BEND_SQUAT` | `approach_owner` | 1 | 12 | ≤0.5s |
 | `EVT_VISION_FAMILY_PRESENT` | `familiar_person_greet` | 1 | 12 | ≤0.5s |
 | `EVT_VISION_STRANGER_PRESENT` | `stranger_observe` | 1 | 12 | ≤0.5s |
 
@@ -20,9 +21,16 @@
 `hands` 到 `params_json`。FALL/STOP 以原样、区分大小写的 `behavior_name` 发送给
 `/execute_behavior`。
 
-三个在场候选都携带同一视觉快照中的唯一匹配目标、epoch、快照和源观测标识；TTL 不超过该
+在场候选与主人姿态候选都携带同一视觉快照中的唯一匹配目标、epoch、快照和源观测标识；TTL 不超过该
 目标剩余的 500 ms 新鲜期。它们是 `external_interaction` Lv1 候选，使用
 `semantic_rank=3` 和 `safe_point` 进入统一仲裁。
+
+`EVT_VISION_OWNER_BEND_SQUAT` 仅接受 `owner/confirmed_known/tracking` 的唯一当前目标，且
+同目标 `pose_action` 必须仍为 `bend_over` 或 `squat_down`。视觉事件 ID 跨 HOLD 快照和短缓存中断去重；
+候选构造时及派发前均重验当前姿态、目标、epoch 与新鲜度。它映射到意图
+`owner_approach_response` → Behavior `approach_owner`，实际 Action unit 为
+`ACT_INTERACT_APPROACH_OWNER_CLOSER`。当前可复用的执行能力只有靠近主人；没有经验证的尾摆及抬头观察
+阶段，不创建或声明完整的 `ACT_OWNER_APPROACH_RESPONSE`。
 
 `/perception/visual_event` 是 10 Hz 状态快照，不是一次性边沿总线。连续包中的
 FALL/STOP 同名事件只在首次出现时触发；先消失后再出现时才重新触发。三个在场事件分别由

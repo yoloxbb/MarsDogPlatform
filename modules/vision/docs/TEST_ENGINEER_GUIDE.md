@@ -416,7 +416,7 @@ Visual state changed: track=<id> tracking=<state> identity=<name> identity_state
 | P1 明显负向 | `hands_on_hips`、`large_arm_swing`、`pointing`、`stomping`、`arms_crossed` | `EVT_VISION_MASTER_SAD` |
 | P2 消沉/防御 | `head_down`、`shoulders_slumped`、`face_covering`、`hands_on_head`、`curled_up`、`hunched` | `EVT_VISION_MASTER_SAD` |
 | P3 积极互动 | `arms_raised`、`waving`、`victory`、`jumping`、`arms_open`、`fast_nod`、`clapping`、`thumbs_up` | `EVT_VISION_MASTER_HAPPY` |
-| P4 普通状态/关注姿态 | `standing`、`sitting`、`lying`、`low_motion`、`bend_over`、`squat_down` | 站/坐/低运动映射 Neutral；弯腰和蹲下只输出姿态字段、不派生事件；静态 lying 不是跌倒 |
+| P4 普通状态/关注姿态 | `standing`、`sitting`、`lying`、`low_motion`、`bend_over`、`squat_down` | 站/坐/低运动映射 Neutral；主人弯腰/蹲下另由 `EVT_VISION_OWNER_BEND_SQUAT` 独立稳定状态发布；静态 lying 不是跌倒 |
 
 #### 5.6.1 一次动作必须按五层结果对齐
 
@@ -477,7 +477,12 @@ GP-026/027 都按最近 10 次姿态更新中至少 6 次分数 `>=0.50` 确认�
 仍有至少 3/10 时保持；单帧候选只能查看 `raw_scores[]`，不能算稳定命中。该窗口按
 推理更新计数，不对应固定秒数。弯腰以可可靠判断方向的前倾为必要证据，撑膝/呼唤手势
 只是可选特征；蹲下须同时有较低髋部、明显膝屈曲和区别于普通椅坐的下肢或躯干姿态。
-腿部关键点缺失时不得补造蹲姿证据。两者均不产生情绪、宠物问候或其他正式视觉事件。
+腿部关键点缺失时不得补造蹲姿证据。两者不产生情绪或宠物问候事件。只有当前目标为
+`owner/confirmed_known/tracking` 时，已公开的弯腰或蹲下姿态再经不同有效源观测稳定满
+`T_enter=1.0s`，才进入 `EVT_VISION_OWNER_BEND_SQUAT`；家人/陌生人相同姿态不触发主人事件。
+姿态窗口解除规则沿用 10 次更新内支持数低于 3/10，随后同目标有效源观测解除活动事件并重新武装。
+重复源快照不推进稳定计时；无效/过期观测、断流及 retained-only 目标不作为姿态解除证据。
+该事件不增加 Emotion 输出。
 
 GP-013 使用现有二维关键点估计面向方向：双耳可信时，鼻尖须越过双耳水平投影区间至少 0.08 倍肩宽；仅单耳可信时，鼻尖须越过该耳至少 0.45 倍肩宽，才把肩髋位移解释为有方向的前弯。
 正面、小幅单耳偏移或侧向证据不足时应保持未识别；后仰和纯侧倾不能复用绝对躯干角度触发驼背。

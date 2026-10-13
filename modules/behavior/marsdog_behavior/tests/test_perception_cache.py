@@ -519,6 +519,35 @@ def _owner_presence_payload(*, snapshot: int, epoch: str = "vision-1") -> dict:
     }
 
 
+def _owner_bend_squat_payload(
+    *, snapshot: int, epoch: str = "vision-1", pose_action: str = "bend_over"
+) -> dict:
+    event_name = "EVT_VISION_OWNER_BEND_SQUAT"
+    return {
+        "schema_version": 1,
+        "vision_epoch": epoch,
+        "snapshot_id": f"{epoch}:{snapshot}",
+        "sequence": snapshot,
+        "source_observation_id": f"camera-frame-{snapshot}",
+        "observation_status": "valid",
+        "events": [event_name],
+        "event_instances": {
+            event_name: {"event_id": "owner-posture-cycle-1"}
+        },
+        "human_candidates": [{
+            "identity": "owner",
+            "identity_state": "confirmed_known",
+            "tracking_state": "tracking",
+            "target_type": "human",
+            "target_id": f"{epoch}:human:7",
+            "track_id": 7,
+            "vision_epoch": epoch,
+            "last_seen_age_ms": 0.0,
+            "pose_action": pose_action,
+        }],
+    }
+
+
 def _category_presence_payload(
     event_name: str,
     *,
@@ -571,6 +600,119 @@ def test_owner_presence_instance_deduplicates_repeated_snapshots_and_timeout() -
     adapter._on_visual_ros2(_Message(_owner_presence_payload(snapshot=3)))
 
     assert received == [("EVT_VISION_OWNER_PRESENT", "vision-1:1")]
+
+
+def test_owner_posture_instance_deduplicates_hold_snapshots_and_timeout() -> None:
+    adapter = _adapter()
+    received: list[tuple[str, str]] = []
+    adapter.set_on_visual_event(
+        lambda event, payload: received.append((event, payload["snapshot_id"]))
+        or True
+    )
+    adapter._on_visual_ros2(_Message(_owner_bend_squat_payload(snapshot=1)))
+    adapter._on_visual_ros2(_Message(_owner_bend_squat_payload(snapshot=2)))
+    adapter._visual_cache_updated_at = (
+        time.monotonic() - adapter.VISUAL_CACHE_TIMEOUT_SEC - 0.1
+    )
+    adapter._on_visual_ros2(_Message(_owner_bend_squat_payload(snapshot=3)))
+
+    assert received == [
+        ("EVT_VISION_OWNER_BEND_SQUAT", "vision-1:1")
+    ]
+
+
+def test_owner_posture_does_not_dispatch_invalid_or_released_pose() -> None:
+    adapter = _adapter()
+    received: list[str] = []
+    adapter.set_on_visual_event(
+        lambda event, _payload: received.append(event) or True
+    )
+    invalid = _owner_bend_squat_payload(snapshot=1)
+    invalid["observation_status"] = "invalid"
+    adapter._on_visual_ros2(_Message(invalid))
+    released = _owner_bend_squat_payload(snapshot=2, pose_action="")
+    adapter._on_visual_ros2(_Message(released))
+
+    assert received == []
+
+
+@pytest.mark.parametrize("pose", [[], {}, None, 7])
+def test_owner_posture_malformed_pose_rejected_at_consumer_and_dispatch(pose) -> None:
+    adapter = _adapter()
+    received: list[str] = []
+    adapter.set_on_visual_event(
+        lambda event, _payload: received.append(event) or True
+    )
+    initial = _owner_bend_squat_payload(snapshot=1)
+    adapter._on_visual_ros2(_Message(initial))
+    target = dict(initial["human_candidates"][0])
+    candidate = {"params": {
+        "visual_target": target,
+        "visual_event_instance_id": "owner-posture-cycle-1",
+        "vision_epoch": "vision-1",
+        "snapshot_id": "vision-1:1",
+        "source_observation_id": "camera-frame-1",
+    }}
+    assert adapter.visual_presence_candidate_is_current(
+        candidate, event_type="EVT_VISION_OWNER_BEND_SQUAT"
+    )
+
+    malformed = _owner_bend_squat_payload(snapshot=2, pose_action=pose)
+    malformed["event_instances"]["EVT_VISION_OWNER_BEND_SQUAT"][
+        "event_id"
+    ] = "owner-posture-cycle-2"
+    adapter._on_visual_ros2(_Message(malformed))
+    assert received == ["EVT_VISION_OWNER_BEND_SQUAT"]
+    candidate["params"]["visual_event_instance_id"] = "owner-posture-cycle-2"
+    assert not adapter.visual_presence_candidate_is_current(
+        candidate, event_type="EVT_VISION_OWNER_BEND_SQUAT"
+    )
+
+
+@pytest.mark.parametrize("change", ["sequence", "epoch", "release"])
+def test_owner_posture_rejects_old_cycle_replay_after_latest_valid_snapshot(change) -> None:
+    event = "EVT_VISION_OWNER_BEND_SQUAT"
+    adapter = _adapter()
+    received = []
+    adapter.set_on_visual_event(
+        lambda _event, payload: received.append(payload["snapshot_id"]) or True
+    )
+    first = _owner_bend_squat_payload(snapshot=1)
+    adapter._on_visual_ros2(_Message(first))
+
+    def candidate(payload):
+        return {"params": {
+            "visual_target": dict(payload["human_candidates"][0]),
+            "visual_event_instance_id": payload["event_instances"][event]["event_id"],
+            "vision_epoch": payload["vision_epoch"],
+            "snapshot_id": payload["snapshot_id"],
+            "source_observation_id": payload["source_observation_id"],
+        }}
+
+    old_candidate = candidate(first)
+    latest = _owner_bend_squat_payload(
+        snapshot=2 if change != "epoch" else 1,
+        epoch="vision-1" if change != "epoch" else "vision-2",
+    )
+    latest["event_instances"][event]["event_id"] = "owner-posture-cycle-2"
+    new_candidate = candidate(latest)
+    if change == "release":
+        # Even a valid no-event packet advances the posture watermark.
+        latest["events"] = []
+        latest["event_instances"] = {}
+    adapter._on_visual_ros2(_Message(latest))
+    before_replay = list(received)
+    adapter._on_visual_ros2(_Message(first))
+    assert received == before_replay
+    assert not adapter.visual_presence_candidate_is_current(old_candidate, event_type=event)
+    assert not adapter.visual_presence_candidate_is_current(new_candidate, event_type=event)
+
+    # A delayed packet cannot pass dispatch; the accepted current snapshot can
+    # restore its current candidate without creating another one.
+    adapter._on_visual_ros2(_Message(latest))
+    assert received == before_replay
+    if change != "release":
+        assert adapter.visual_presence_candidate_is_current(new_candidate, event_type=event)
 
 
 def test_owner_presence_invalid_observation_does_not_create_candidate() -> None:

@@ -79,6 +79,12 @@ owner_presence_events:
   exit_duration_sec: 2.0
   retrigger_delay_sec: 3.0
 
+# Emit one active-state event for a confirmed owner's stable bend or squat.
+# Pose release follows GesturePose's existing public-label hysteresis.
+owner_posture_events:
+  enabled: true
+  enter_duration_sec: 1.0
+
 # Emit independent state facts for confirmed enrolled family and strangers.
 # Timing advances on distinct successful source inferences, not 10 Hz snapshots.
 family_presence_events:

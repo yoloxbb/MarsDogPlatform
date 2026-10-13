@@ -127,9 +127,9 @@ Voice 的 `speech_pipeline.py` 编排 ASR、声纹、KWS、词库与意图输出
 
 ### 3.2 视觉入口
 
-当前 BT 视觉直驱白名单包含 `EVT_VISION_FALL`、`EVT_VISION_STOP_GESTURE` 和三个状态
-事件：`EVT_VISION_OWNER_PRESENT`、`EVT_VISION_FAMILY_PRESENT`、
-`EVT_VISION_STRANGER_PRESENT`。FALL/STOP 沿用出现边沿去重。presence 事件在 Vision
+当前 BT 视觉直驱白名单包含 `EVT_VISION_FALL`、`EVT_VISION_STOP_GESTURE` 和四个状态
+事件：`EVT_VISION_OWNER_PRESENT`、`EVT_VISION_OWNER_BEND_SQUAT`、
+`EVT_VISION_FAMILY_PRESENT`、`EVT_VISION_STRANGER_PRESENT`。FALL/STOP 沿用出现边沿去重。presence 事件在 Vision
 状态机 ENTER 后留在活动集合，HOLD 快照保持事件不变，达到有效负观测 `T_exit=2.0s` 后
 移除；连续有效合格目标观测满 `T_enter=1.0s` 才能 ENTER，EXIT 后从该 EXIT 时刻开始冷却
 `T_retrigger=3.0s`。重复同一源观测不推进计时。无效推理、相机断流或观测过期不会作为目标
@@ -143,6 +143,13 @@ Voice 的 `speech_pipeline.py` 编排 ASR、声纹、KWS、词库与意图输出
 `owner_greet`、`familiar_person_greet`、`stranger_observe` 使用 Lv1、`sub_priority=12`、
 `semantic_rank=3`、`safe_point`，进入统一候选池和仲裁。现有 Action 尚无这些行为模板，
 因此执行解析会拒绝候选；本实现不新增或推断动作阶段。
+
+`EVT_VISION_OWNER_BEND_SQUAT` 单独消费同一确认主人 target 的稳定 `bend_over` / `squat_down`
+姿态。Vision 用不同有效源观测稳定 1.0 秒进入，姿态释放沿用 GesturePose 支持数低于 3/10 的
+现有退出规则；不增加冷却。Behavior 只在同快照/epoch/source 的唯一新鲜 owner target 与姿态仍有效时
+创建候选，并在派发前复验。该互动姿态候选按 `external_interaction` 的 L2 顺序进入统一仲裁：
+`owner_approach_response` → `approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER`。
+Action 当前只支持映射中的靠近主人阶段；尾摆和抬头观察能力缺失。新事件不写 Emotion。
 
 `EVT_VISION_MASTER` 仍表示已登记的非 unknown 身份，继续由 Emotion/需求系统按原语义消费；
 主人直驱事件不会替代该事件，也不会增加重复情绪增量。

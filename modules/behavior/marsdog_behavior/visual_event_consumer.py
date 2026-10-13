@@ -8,6 +8,8 @@ import time
 
 from .visual_presence_contract import (
     OWNER_PRESENCE_EVENT,
+    VISUAL_POSTURE_ACTIONS,
+    VISUAL_POSTURE_EVENT_NAMES,
     VISUAL_PRESENCE_EVENT_NAMES,
 )
 
@@ -65,6 +67,47 @@ def _set_consumed_presence_instance_id(
         values[event_name] = event_id
 
 
+def _advance_owner_posture_snapshot(self, data) -> None:
+    """Track valid producer order for the posture event without changing presence."""
+    epoch = data.get("vision_epoch")
+    sequence = data.get("sequence")
+    snapshot_id = data.get("snapshot_id")
+    source_id = data.get("source_observation_id")
+    if (
+        data.get("observation_status") != "valid"
+        or not isinstance(epoch, str) or not epoch.strip()
+        or isinstance(sequence, bool) or not isinstance(sequence, int) or sequence <= 0
+        or not isinstance(snapshot_id, str) or not snapshot_id.strip()
+        or not isinstance(source_id, str) or not source_id.strip()
+    ):
+        return
+    epoch = epoch.strip()
+    retired = getattr(self, "_owner_posture_retired_epochs", set())
+    if epoch in retired:
+        return
+    current_epoch = getattr(self, "_owner_posture_snapshot_epoch", "")
+    if epoch != current_epoch:
+        if current_epoch:
+            retired.add(current_epoch)
+        self._owner_posture_retired_epochs = retired
+    elif sequence <= getattr(self, "_owner_posture_snapshot_sequence", 0):
+        return
+    self._owner_posture_snapshot_epoch = epoch
+    self._owner_posture_snapshot_sequence = sequence
+    self._owner_posture_snapshot_id = snapshot_id.strip()
+
+
+def owner_posture_snapshot_is_current(self) -> bool:
+    """Reject cached posture context overwritten by delayed or retired packets."""
+    epoch = getattr(self, "_owner_posture_snapshot_epoch", "")
+    return bool(
+        epoch
+        and self._cached_vision_epoch == epoch
+        and self._cached_visual_sequence == getattr(self, "_owner_posture_snapshot_sequence", None)
+        and self._cached_visual_snapshot_id == getattr(self, "_owner_posture_snapshot_id", "")
+    )
+
+
 def consume_visual_event(self, msg, *, direct_events):
     """Handle /perception/visual_event messages.
 
@@ -99,6 +142,7 @@ def consume_visual_event(self, msg, *, direct_events):
 
     dispatch_events: list[tuple[str, str]] = []
     with self._lock:
+        _advance_owner_posture_snapshot(self, data)
         received_at = time.monotonic()
         previous_received_at = self._visual_cache_updated_at
         self._visual_cache_updated_at = received_at
@@ -291,6 +335,21 @@ def consume_visual_event(self, msg, *, direct_events):
                     or self._cached_observation_status != "valid"
                     or not event_id
                     or event_id in {consumed_id, pending_id}
+                ):
+                    continue
+                if (
+                    event_type in VISUAL_POSTURE_EVENT_NAMES
+                    and not owner_posture_snapshot_is_current(self)
+                ):
+                    continue
+                if event_type in VISUAL_POSTURE_EVENT_NAMES and not any(
+                    candidate.get("identity") == "owner"
+                    and candidate.get("identity_state") == "confirmed_known"
+                    and candidate.get("tracking_state") == "tracking"
+                    and candidate.get("vision_epoch") == self._cached_vision_epoch
+                    and isinstance(candidate.get("pose_action"), str)
+                    and candidate.get("pose_action") in VISUAL_POSTURE_ACTIONS
+                    for candidate in self._cached_human_candidates
                 ):
                     continue
                 _set_pending_presence_instance_id(self, event_type, event_id)

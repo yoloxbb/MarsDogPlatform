@@ -363,10 +363,10 @@ signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢�
   "header": {"stamp": 1786417000.1, "frame_id": "camera_link"},
   "active_target": {"track_id": 7, "pose_action": "fallen_down"},
   "hands": [{"hand_action": "stop_gesture"}],
-  "events": ["EVT_VISION_FALL", "EVT_VISION_STOP_GESTURE", "EVT_VISION_OWNER_PRESENT", "EVT_VISION_FAMILY_PRESENT", "EVT_VISION_STRANGER_PRESENT"],
+  "events": ["EVT_VISION_FALL", "EVT_VISION_STOP_GESTURE", "EVT_VISION_OWNER_PRESENT", "EVT_VISION_OWNER_BEND_SQUAT", "EVT_VISION_FAMILY_PRESENT", "EVT_VISION_STRANGER_PRESENT"],
   "observation_status": "valid",
-  "event_instances": {"EVT_VISION_OWNER_PRESENT": {"event_id": "owner-cycle-42"}, "EVT_VISION_FAMILY_PRESENT": {"event_id": "family-cycle-42"}, "EVT_VISION_STRANGER_PRESENT": {"event_id": "stranger-cycle-42"}},
-  "human_candidates": [{"identity": "owner", "identity_state": "confirmed_known", "tracking_state": "tracking", "target_id": "epoch-1:human:7", "track_id": 7, "vision_epoch": "epoch-1", "last_seen_age_ms": 20.0}]
+  "event_instances": {"EVT_VISION_OWNER_PRESENT": {"event_id": "owner-cycle-42"}, "EVT_VISION_OWNER_BEND_SQUAT": {"event_id": "owner-posture-cycle-42"}, "EVT_VISION_FAMILY_PRESENT": {"event_id": "family-cycle-42"}, "EVT_VISION_STRANGER_PRESENT": {"event_id": "stranger-cycle-42"}},
+  "human_candidates": [{"identity": "owner", "identity_state": "confirmed_known", "tracking_state": "tracking", "target_id": "epoch-1:human:7", "track_id": 7, "vision_epoch": "epoch-1", "pose_action": "bend_over", "last_seen_age_ms": 20.0}]
 }
 ```
 
@@ -378,15 +378,18 @@ signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢�
 | `EVT_VISION_FALL` | `respond_person_fall` | Lv1, `sub_priority=12` | 8s |
 | `EVT_VISION_STOP_GESTURE` | `respond_stop_gesture` | Lv1, `sub_priority=12` | 8s |
 | `EVT_VISION_OWNER_PRESENT` | `owner_greet` | Lv1, `sub_priority=12`, `semantic_rank=3` | ≤0.5s |
+| `EVT_VISION_OWNER_BEND_SQUAT` | `approach_owner` | Lv1, `sub_priority=12`, `semantic_rank=3`, `safe_point` | ≤0.5s |
 | `EVT_VISION_FAMILY_PRESENT` | `familiar_person_greet` | Lv1, `sub_priority=12`, `semantic_rank=3` | ≤0.5s |
 | `EVT_VISION_STRANGER_PRESENT` | `stranger_observe` | Lv1, `sub_priority=12`, `semantic_rank=3` | ≤0.5s |
 
 该 Topic 是 10 Hz 状态快照。同一事件连续出现时只生成一次候选；FALL/STOP 事件先从
-`events[]` 消失、之后再出现才会重新触发。三个在场事件用可选 `event_instances` 的 ID 跨
+`events[]` 消失、之后再出现才会重新触发。三个在场事件和主人姿态事件用可选 `event_instances` 的 ID 跨
 重复快照和短暂 Topic 超时去重；新候选要求有效观测、同类目标已确认跟踪、事件 ID、epoch
 和新鲜唯一目标。目标 TTL 上限为 500 ms，选择时再次对照最新快照验证。其余 `EVT_VISION_*`
-仍只作为场景/情绪上下文，不直接生成候选。三个在场 Behavior 当前都没有 Action 模板，
-因此候选不会执行问候或观察动作。
+仍只作为场景/情绪上下文，不直接生成候选。主人姿态候选还要求同一 owner target 当前仍有
+`bend_over` 或 `squat_down` 姿态，并在派发前重新验证。它经统一 L2 仲裁映射到
+`approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER`，只覆盖靠近主人；尾摆和抬头观察尚无
+可验证 Action 能力。三个在场 Behavior 当前都没有 Action 模板，因此候选不会执行问候或观察动作。
 
 ### 4.7 `/behavior/result_event`
 

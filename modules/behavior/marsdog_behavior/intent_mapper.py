@@ -29,6 +29,8 @@ from .visual_presence_contract import (
     OWNER_PRESENCE_EVENT,
     VISUAL_PRESENCE_EVENT_QUALIFIERS,
     VISUAL_PRESENCE_EVENT_NAMES,
+    VISUAL_POSTURE_ACTIONS,
+    VISUAL_POSTURE_EVENT_NAMES,
     VISUAL_PRESENCE_TARGET_MAX_AGE_MS,
 )
 
@@ -854,6 +856,14 @@ class IntentMapper:
         qualified: list[dict] = []
         for candidate in raw_targets:
             if not isinstance(candidate, dict):
+                continue
+            if (
+                event_type in VISUAL_POSTURE_EVENT_NAMES
+                and (
+                    not isinstance(candidate.get("pose_action"), str)
+                    or candidate.get("pose_action") not in VISUAL_POSTURE_ACTIONS
+                )
+            ):
                 continue
             candidate_epoch = candidate.get("vision_epoch")
             if (

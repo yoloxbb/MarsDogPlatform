@@ -29,6 +29,8 @@ from .visual_presence_contract import (
     OWNER_PRESENCE_EVENT,
     VISUAL_PRESENCE_EVENT_NAMES,
     VISUAL_PRESENCE_EVENT_QUALIFIERS,
+    VISUAL_POSTURE_ACTIONS,
+    VISUAL_POSTURE_EVENT_NAMES,
     VISUAL_PRESENCE_TARGET_MAX_AGE_MS,
 )
 
@@ -416,6 +418,11 @@ class PerceptionClientAdapter:
 
         now = time.monotonic()
         with self._lock:
+            if (
+                event_type in VISUAL_POSTURE_EVENT_NAMES
+                and not visual_event_consumer.owner_posture_snapshot_is_current(self)
+            ):
+                return False
             cache_age = now - self._visual_cache_updated_at
             if (
                 self._visual_cache_updated_at <= 0.0
@@ -448,6 +455,14 @@ class PerceptionClientAdapter:
                     or isinstance(current.get("track_id"), bool)
                     or not isinstance(current.get("track_id"), int)
                     or current.get("track_id") <= 0
+                    or (
+                        event_type in VISUAL_POSTURE_EVENT_NAMES
+                        and (
+                            not isinstance(current.get("pose_action"), str)
+                            or current.get("pose_action")
+                            not in VISUAL_POSTURE_ACTIONS
+                        )
+                    )
                 ):
                     continue
                 try:

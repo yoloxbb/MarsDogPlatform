@@ -9,6 +9,105 @@ FIXTURES = ROOT / "interfaces/application/visual-event-v1"
 WORKER = ROOT / "integration/contracts/visual_stage.py"
 
 
+def _validate_owner_posture_action_resolution(resolution):
+    expected = {
+        "is_valid": True,
+        "behavior_name": "approach_owner",
+        "unit_ids": ["ACT_INTERACT_APPROACH_OWNER_CLOSER"],
+        "units_registered": True,
+        "controller_routes": {"lite3": ["person_nav_approach"], "go2": ["person_nav_approach"]},
+        "product_label_registered": False,
+    }
+    if resolution != expected:
+        raise RuntimeError("Owner posture candidate changed its registered Action mapping")
+
+
+def _owner_posture_probe(output, owner_payload):
+    """Check the new event beside the immutable required-v1 corpus."""
+    event = "EVT_VISION_OWNER_BEND_SQUAT"
+    probe_dir = output / "owner-posture-probe"
+    probe_dir.mkdir(parents=True, exist_ok=True)
+    payload = deepcopy(owner_payload)
+    payload["events"] = ["EVT_VISION_MASTER", event]
+    payload["event_instances"] = {event: {"event_id": "owner-posture-probe-cycle-1"}}
+    payload["human_candidates"][0]["pose_action"] = "bend_over"
+    producer = run_stage("vision", {"owner_posture": payload}, probe_dir, WORKER)
+    produced = producer["observed"]["owner_posture"]
+    for field in ("events", "event_instances", "source_observation_id", "observation_status"):
+        if produced.get(field) != payload[field]:
+            raise RuntimeError(f"Vision changed owner posture metadata {field}")
+    if produced["human_candidates"][0].get("pose_action") != "bend_over":
+        raise RuntimeError("Vision lost the owner posture target context")
+
+    wire = json.dumps(produced, ensure_ascii=False)
+    repeated = deepcopy(produced)
+    repeated.update(snapshot_id="owner-probe-epoch:2", sequence=2)
+    behavior = run_stage("behavior", [{"id": "posture", "steps": [
+        {"wire": wire}, {"wire": json.dumps(repeated, ensure_ascii=False)},
+        {"advance": 1.1, "wire": json.dumps({**repeated, "snapshot_id": "owner-probe-epoch:3", "sequence": 3}, ensure_ascii=False)},
+    ]}], probe_dir, WORKER)
+    steps = behavior["observed"]["posture"]
+    if any(step["error"] for step in steps) or len(steps[0]["candidates"]) != 1:
+        raise RuntimeError("Owner posture did not produce exactly one Behavior candidate")
+    candidate = steps[0]["candidates"][0]
+    if (
+        candidate["behavior_name"] != "approach_owner"
+        or candidate["intent"] != "owner_approach_response"
+        or candidate["source"] != "visual_direct"
+        or candidate["priority_level"] != 1
+        or candidate["semantic_rank"] != 3
+        or candidate["sub_priority"] != 12
+        or candidate["modality_rank"] != 2
+        or candidate["interrupt_policy"] != "safe_point"
+        or candidate["params"]["visual_event_instance_id"] != "owner-posture-probe-cycle-1"
+        or any(step["candidates"] for step in steps[1:])
+    ):
+        raise RuntimeError("Owner posture bypassed its intended L2 mapping or instance dedup")
+
+    control = deepcopy(produced)
+    control["events"] = ["EVT_VISION_MASTER"]
+    emotion = run_stage("emotion", [
+        {"id": "control", "steps": [{"wire": json.dumps(control, ensure_ascii=False)}]},
+        {"id": "posture", "steps": [{"wire": wire}]},
+    ], probe_dir, WORKER)
+    control_step = emotion["observed"]["control"][0]
+    posture_step = emotion["observed"]["posture"][0]
+    # Needs returns every input event name as receipt metadata. Compare its
+    # state and the Emotion consumer's applied events, not that receipt list.
+    if (
+        any(control_step[field] != posture_step[field]
+            for field in ("emotions", "demands", "owner_present"))
+        or control_step["accepted"][0] != posture_step["accepted"][0]
+    ):
+        raise RuntimeError("Owner posture event changed Emotion/Needs output")
+
+    action = run_stage("action", [{"id": "posture", "steps": [{
+        "wire": wire, "resolve_behavior": candidate["behavior_name"],
+    }]}], probe_dir, WORKER)
+    action_step = action["observed"]["posture"][0]
+    _validate_owner_posture_action_resolution(action_step["resolution"])
+    expected_ports = ["attention_controller", "target_approach_adapter", "visual_target_approach_adapter",
+                      "wake_orientation_adapter", "person_nav_approach_adapter"]
+    if (
+        action_step["accepted"] is not True
+        or [delivery["port"] for delivery in action_step["delivery_order"]] != expected_ports
+        or any(delivery["payload"] != produced for delivery in action_step["delivery_order"])
+    ):
+        raise RuntimeError("Owner posture visual packet changed Action's observation-only fan-out")
+    return {
+        "producer_module": producer["provenance"]["module_file"],
+        "behavior_module": behavior["provenance"]["module_file"],
+        "emotion_module": emotion["provenance"]["module_file"],
+        "action_module": action["provenance"]["module_file"],
+        "event_name": event,
+        "behavior": "approach_owner",
+        "action_unit": "ACT_INTERACT_APPROACH_OWNER_CLOSER",
+        "emotion_and_need_unchanged": True,
+        "instance_dedup_across_cache_timeout": True,
+        "scope": "candidate and registered resolver checks; observation-only Action ports; no motion execution",
+    }
+
+
 def observe(output):
     fixtures = json.loads((FIXTURES / "cases.json").read_text())
     vision = run_stage("vision", fixtures["producers"], output, WORKER)
@@ -139,6 +238,8 @@ def observe(output):
             "EVT_VISION_OWNER_PRESENT changed EVT_VISION_MASTER Emotion/need output"
         )
 
+    owner_posture_provenance = _owner_posture_probe(output, owner_payload)
+
     scenarios = []
     for case in fixtures["scenarios"]:
         steps = []
@@ -174,6 +275,7 @@ def observe(output):
         "owner_identity_tracking_fields_checked": True,
         "master_emotion_and_need_unchanged": True,
     }
+    provenance["owner_posture_probe"] = owner_posture_provenance
     return ({stage: value["observed"] for stage, value in responses.items()}, provenance)
 
 

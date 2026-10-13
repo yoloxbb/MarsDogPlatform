@@ -198,6 +198,7 @@ GesturePose 判定，不改变正式事件名称、身份门禁或发布契约�
 | `EVT_VISION_FALL` | 满足姿态门控且 `pose_action=fallen_down`；已确认从直立快速转为持续躺卧 | `active_target.identity/identity_state/tracking_state`、`pose_action`；调试时看 `fall_detector` |
 | `EVT_VISION_STOP_GESTURE` | 满足姿态门控且任一 `hands[].hand_action=stop_gesture` | `active_target.identity/identity_state/tracking_state`、`hands[]` |
 | `EVT_VISION_OWNER_PRESENT` | 新鲜、不同的有效源观测中，当前帧人体关联到 `owner/confirmed_known/tracking` 并连续达到配置 `enter_duration_sec`（默认 1.0 秒） | `observation_status`、`source_observation_id`、同包 `human_candidates[]`；活动实例见 `event_instances` |
+| `EVT_VISION_OWNER_BEND_SQUAT` | 同一当前源目标为 `owner/confirmed_known/tracking`，其公共 `pose_action` 为 `bend_over` 或 `squat_down`，不同有效源观测稳定满 1.0 秒 | `observation_status`、`source_observation_id`、同包 owner `human_candidates[]` 的 `target_id/track_id/pose_action`；活动实例见 `event_instances` |
 | `EVT_VISION_FAMILY_PRESENT` | 当前源帧关联到 `family_member_1..4/confirmed_known/tracking`，不同有效源观测连续达到配置 `enter_duration_sec`（默认 1.0 秒） | `observation_status`、`source_observation_id`、同包 `human_candidates[]`；活动实例见 `event_instances` |
 | `EVT_VISION_STRANGER_PRESENT` | 当前源帧关联到 `unknown/confirmed_unknown/tracking`，不同有效源观测连续达到配置 `enter_duration_sec`（默认 1.0 秒） | 同上 |
 | `EVT_VISION_FOOD` | 满足姿态门控且 `pose_action=holding_dog_food` | `active_target.identity/identity_state/tracking_state`、`active_target.held_object`、`tracked_objects[]` |
@@ -245,6 +246,28 @@ T_enter 后将事件加入 `events[]`；HOLD 期间事件及同一个
 独立 event ID。无效推理、结果过期或重复源结果不会被当作离开证据，也不会推进时间。
 这两个新增事件不改变 `EVT_VISION_MASTER`、`EVT_VISION_STRANGER`、陌生人情绪细分或姿态/
 手势事件语义。
+
+`EVT_VISION_OWNER_BEND_SQUAT` 是独立的互动姿态状态事件，消费 GesturePose 已公开的
+`bend_over` / `squat_down`，不改识别算法、姿态阈值或通用身份确认规则。事件要求同一当前源
+目标满足 `owner/confirmed_known/tracking`，并以其 `target_id`、正数 `track_id` 和
+`vision_epoch` 绑定姿态；熟悉人、陌生人、未确认身份、跟踪失效或 retained-only 目标不能触发。
+配置项 `owner_posture_events.enter_duration_sec` 默认 `1.0` 秒。只有不同且新鲜的有效
+`source_observation_id` 推进入场稳定时间，10 Hz 重复快照不计时；源观测间隔超过现有
+`camera_stale_timeout_sec`（默认 0.5 秒）会重置未完成的进入计时。
+
+GesturePose 静态姿态窗口为最近 10 次更新至少 6 次分数 `>=0.50` 才公开姿态，活动姿态在
+窗口支持数仍至少为 3/10 时保持、低于 3/10 时解除。事件直接复用该公共姿态迟滞，不添加
+第二个释放计时或重触发冷却；同一主人目标的有效源观测首次公开显示两种姿态均已清除时，
+事件从 `events[]` 和 `event_instances.EVT_VISION_OWNER_BEND_SQUAT` 移除并立即重新武装。
+弯腰与蹲下之间切换但公共姿态周期未释放时，活动事件和 event ID 保持不变。无效/过期源观测、
+推理失败和相机断流不证明姿态解除：未完成进入计时被中断，已有活动实例与 ID 保留。
+若同目标在当前源帧中不再满足主人身份/跟踪门控，事件移除并保留内部 disarmed latch；只有该
+同一当前 source target 的公共姿态清除才释放 latch。仅由 tracker 保留的行不用于退出或重武装。
+目标切换或 `vision_epoch` 改变会丢弃旧目标周期；新目标必须重新满足完整 1.0 秒进入时长。
+
+BehaviorTree 只消费同一有效快照中的活动实例，并再次校验唯一新鲜主人目标及其公共姿态，
+再将候选送入既有 L2 多源仲裁。新事件不进入 Emotion 事件映射，也不改变主人身份/情绪事件。
+具体行为能力映射见应用契约和 Behavior 文档。
 
 以下常量虽然已在代码中声明，但当前没有任何映射或发布路径，属于预留事件，
 行为树不能依赖它们：

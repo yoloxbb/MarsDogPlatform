@@ -98,7 +98,43 @@ def action(request):
             accepted = None
             if "wire" in step:
                 accepted = ros_node._dispatch_visual_event(step["wire"], **ports)
-            steps.append({"accepted": accepted, "delivery_order": received})
+            observed = {"accepted": accepted, "delivery_order": received}
+            if "resolve_behavior" in step:
+                from marsdog_action_executor.behavior_resolver import BehaviorResolver
+                from marsdog_action_executor.config_loader import ConfigLoader
+                from marsdog_action_executor.execution_context import ExecutionContext
+
+                loader = ConfigLoader("config")
+                loader.load_all()
+                name = step["resolve_behavior"]
+                resolver = BehaviorResolver(set(loader.behavior_tree_templates))
+                context = resolver.resolve(ExecutionContext.from_goal(name, {}))
+                units = [
+                    candidate["unit_id"]
+                    for stage in loader.behavior_tree_templates.get(name, {}).get("stages", [])
+                    for candidate in stage.get("candidates", [])
+                ]
+                observed["resolution"] = {
+                    "is_valid": context.is_valid,
+                    "behavior_name": context.resolved_behavior_name,
+                    "unit_ids": units,
+                    "units_registered": all(unit in loader.action_catalog for unit in units),
+                    "controller_routes": {
+                        platform: [
+                            config.get("controller_route_overrides", {}).get(unit)
+                            for unit in units
+                        ]
+                        for platform, config in (
+                            ("lite3", loader.lite3_action_config),
+                            ("go2", loader.go2_sport_config),
+                        )
+                    },
+                    "product_label_registered": (
+                        "ACT_OWNER_APPROACH_RESPONSE" in loader.action_catalog
+                        or "ACT_OWNER_APPROACH_RESPONSE" in resolver.get_canonical_behaviors()
+                    ),
+                }
+            steps.append(observed)
         outputs[case["id"]] = steps
     return outputs, ros_node.__file__
 

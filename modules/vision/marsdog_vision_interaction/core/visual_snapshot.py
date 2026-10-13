@@ -25,6 +25,9 @@ def build_visual_snapshot(self, raw: dict[str, Any] | Any, *, finite_positive, f
     event["_source_owner_target_ids"] = raw_dict.get(
         "_source_owner_target_ids"
     )
+    event["_source_human_target_ids"] = raw_dict.get(
+        "_source_human_target_ids"
+    )
     event["_source_family_target_ids"] = raw_dict.get(
         "_source_family_target_ids"
     )

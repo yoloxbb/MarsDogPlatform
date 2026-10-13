@@ -72,6 +72,14 @@ Topic 中断去重。该事件不改变现有 `EVT_VISION_MASTER` 的 Emotion/�
 待决计时，不充当离开证据。旧 `EVT_VISION_STRANGER` 与其 Emotion 消费者保持原义。Vision
 只发布事件，不调用行为或动作接口。
 
+主人弯腰/蹲下使用独立状态事件 `EVT_VISION_OWNER_BEND_SQUAT`：复用已稳定公开的
+`bend_over` / `squat_down`，要求同一当前 `owner/confirmed_known/tracking` source target，
+按不同有效 source observation 稳定 1.0 秒进入。释放沿用 GesturePose 10 次姿态更新中
+支持数低于 3/10 的现有公共姿态退出；不另设 release timer 或 retrigger 冷却。活动事件保持
+在 `events[]`，事件 ID 仅在有效同目标姿态解除时移除并重新武装。无效观测保留已有活动 ID；
+retained-only target 不当作姿态解除。新事件只发布到 `/perception/visual_event`，不映射 Emotion，
+也不调用行为或动作接口。
+
 ## 4. 人体候选和 `active_target` 使用规则
 
 下游运动控制必须同时满足：

@@ -13,10 +13,31 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "tools"))
 import contract_harness as gate
+from check_visual_contracts import _validate_owner_posture_action_resolution
 from component_inventory import COMPONENTS
 
 
 class ContractHarnessTests(unittest.TestCase):
+    def test_owner_posture_probe_rejects_unregistered_or_wrong_action_mapping(self):
+        valid = {
+            "is_valid": True,
+            "behavior_name": "approach_owner",
+            "unit_ids": ["ACT_INTERACT_APPROACH_OWNER_CLOSER"],
+            "units_registered": True,
+            "controller_routes": {"lite3": ["person_nav_approach"], "go2": ["person_nav_approach"]},
+            "product_label_registered": False,
+        }
+        _validate_owner_posture_action_resolution(valid)
+        for change in (
+            {"unit_ids": ["ACT_OWNER_APPROACH_RESPONSE"]},
+            {"units_registered": False},
+            {"is_valid": False},
+            {"controller_routes": {"lite3": ["mock"], "go2": ["person_nav_approach"]}},
+            {"product_label_registered": True},
+        ):
+            with self.subTest(change=change), self.assertRaises(RuntimeError):
+                _validate_owner_posture_action_resolution({**valid, **change})
+
     def invoke(self, observed=None, error=None, baseline="valid"):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

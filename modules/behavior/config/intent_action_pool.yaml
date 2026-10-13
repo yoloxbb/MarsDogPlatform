@@ -271,6 +271,9 @@ visual_stop_gesture_response:
 owner_greet:
   candidates: [owner_greet]
 
+owner_approach_response:
+  candidates: [approach_owner]
+
 familiar_person_greet:
   candidates: [familiar_person_greet]
 
