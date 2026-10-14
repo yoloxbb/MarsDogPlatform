@@ -344,20 +344,20 @@ class TemporalLandmarkSample:
 
 @dataclass(frozen=True, slots=True)
 class BeckoningEvidence:
-    """Current side-local beckoning scores and orientation validity."""
+    """Current side-local beckoning scores and valid evidence sources."""
 
     left_score: float = 0.0
     right_score: float = 0.0
-    left_orientation_valid: bool = False
-    right_orientation_valid: bool = False
+    left_source_valid: bool = False
+    right_source_valid: bool = False
 
     @property
     def score(self) -> float:
         return max(self.left_score, self.right_score)
 
     @property
-    def orientation_valid(self) -> bool:
-        return self.left_orientation_valid or self.right_orientation_valid
+    def source_valid(self) -> bool:
+        return self.left_source_valid or self.right_source_valid
 
 
 @dataclass(frozen=True, slots=True)
@@ -792,115 +792,6 @@ def _beckoning_hand_assignments(
     return pose, assignments
 
 
-def _beckoning_orientation_valid(
-    data: FrameData,
-    side: str,
-    hand: HandLandmarkSet,
-) -> bool:
-    """Check inward palm polarity only with a reliably frontal body and face.
-
-    Hand normal z and the semantic shoulder order both reverse under an image
-    reflection. Their product preserves polarity without comparing body/hand z.
-    A lateral normal cannot be signed when the source reflection is unknown.
-    """
-
-    assigned = _beckoning_hand_assignments(data)
-    if assigned is None:
-        return False
-    pose, hands = assigned
-    if hands.get(side) is not hand:
-        return False
-    shoulder_left = _pose_point(pose, 11, 0.6)
-    shoulder_right = _pose_point(pose, 12, 0.6)
-    body_wrist = _pose_point(pose, 15 if side == "left" else 16, 0.6)
-    if shoulder_left is None or shoulder_right is None or body_wrist is None:
-        return False
-    shoulder_width = abs(shoulder_left.x - shoulder_right.x)
-    if shoulder_width <= _EPSILON:
-        return False
-
-    wrist, index_mcp, pinky_mcp = hand[0], hand[5], hand[17]
-    index_y = index_mcp.y - wrist.y
-    pinky_y = pinky_mcp.y - wrist.y
-    anatomical_sign = 1.0 if side == "left" else -1.0
-    frontal_mirror_sign = _frontal_camera_mirror_sign(pose, shoulder_width)
-    if frontal_mirror_sign is None:
-        return False
-    # A barely visible transverse palm span cannot establish reliable polarity.
-    # Compare only x-normalized lengths, without an assumed image aspect ratio.
-    if abs(index_mcp.x - pinky_mcp.x) < shoulder_width * 0.05:
-        return False
-    index_x = index_mcp.x - wrist.x
-    pinky_x = pinky_mcp.x - wrist.x
-    normal_z = index_x * pinky_y - index_y * pinky_x
-    normal_z_scale = abs(index_x * pinky_y) + abs(index_y * pinky_x)
-    if (
-        normal_z_scale <= _EPSILON
-        or abs(normal_z) < normal_z_scale * 0.25
-    ):
-        return False
-    return normal_z * anatomical_sign * frontal_mirror_sign > 0.0
-
-
-def _frontal_camera_mirror_sign(
-    pose: PoseLandmarkSet,
-    shoulder_width: float,
-) -> float | None:
-    """Return the image x reflection sign only for clear frontal face geometry."""
-
-    nose = _pose_point(pose, 0, 0.7)
-    left_eye = _pose_point(pose, 2, 0.7)
-    right_eye = _pose_point(pose, 5, 0.7)
-    left_ear = _pose_point(pose, 7, 0.7)
-    right_ear = _pose_point(pose, 8, 0.7)
-    left_shoulder = _pose_point(pose, 11, 0.7)
-    right_shoulder = _pose_point(pose, 12, 0.7)
-    if any(
-        point is None
-        for point in (
-            nose,
-            left_eye,
-            right_eye,
-            left_ear,
-            right_ear,
-            left_shoulder,
-            right_shoulder,
-        )
-    ):
-        return None
-    assert nose is not None
-    assert left_eye is not None and right_eye is not None
-    assert left_ear is not None and right_ear is not None
-    assert left_shoulder is not None and right_shoulder is not None
-    eye_mid_x = (left_eye.x + right_eye.x) / 2.0
-    ear_mid_x = (left_ear.x + right_ear.x) / 2.0
-    eye_mid_y = (left_eye.y + right_eye.y) / 2.0
-    ear_mid_y = (left_ear.y + right_ear.y) / 2.0
-    eye_width = abs(left_eye.x - right_eye.x)
-    ear_width = abs(left_ear.x - right_ear.x)
-    shoulder_dx = left_shoulder.x - right_shoulder.x
-    face_height = nose.y - eye_mid_y
-    if (
-        eye_width < shoulder_width * 0.10
-        or eye_width > shoulder_width * 0.65
-        or ear_width < shoulder_width * 0.18
-        or ear_width > shoulder_width * 0.85
-        or abs(nose.x - eye_mid_x) > shoulder_width * 0.12
-        or abs(eye_mid_x - ear_mid_x) > shoulder_width * 0.16
-        # Keep vertical checks in y-normalized units and horizontal checks in
-        # x-normalized units. The engine has no frame dimensions with which to
-        # convert either axis into pixels for non-square source frames.
-        or face_height <= _EPSILON
-        or abs(left_eye.y - right_eye.y) > face_height * 0.25
-        or abs(left_ear.y - right_ear.y) > face_height * 0.75
-        or abs(ear_mid_y - eye_mid_y) > face_height * 1.5
-        or (left_eye.x - right_eye.x) * shoulder_dx <= 0.0
-        or (left_ear.x - right_ear.x) * shoulder_dx <= 0.0
-    ):
-        return None
-    return 1.0 if shoulder_dx > 0.0 else -1.0
-
-
 def _beckoning_finger_state(hand: HandLandmarkSet) -> str:
     """Return open/closed only for a coherent multi-finger configuration."""
 
@@ -946,26 +837,24 @@ def _beckoning_finger_observation(
 def _beckoning_evidence(
     samples: Sequence[TemporalLandmarkSample],
 ) -> BeckoningEvidence:
-    """Require two same-hand open→flex→reopen cycles and current palm evidence."""
+    """Require two same-hand open→flex→reopen cycles and current hand evidence."""
 
     if not samples:
         return BeckoningEvidence()
     now_s = samples[-1].monotonic_s
     scores: dict[str, float] = {"left": 0.0, "right": 0.0}
-    valid: dict[str, bool] = {"left": False, "right": False}
+    source_valid: dict[str, bool] = {"left": False, "right": False}
     for side in ("left", "right"):
         current_assignment = _beckoning_hand_assignments(samples[-1].data)
         if current_assignment is None:
             continue
         _, current_hands = current_assignment
         current_hand = current_hands.get(side)
-        if current_hand is None or not _beckoning_orientation_valid(
-            samples[-1].data, side, current_hand
-        ):
+        if current_hand is None:
             continue
         if _beckoning_finger_state(current_hand) == "unknown":
             continue
-        valid[side] = True
+        source_valid[side] = True
 
         segment: list[tuple[float, str, frozenset[int], tuple[float, ...]]] = []
         previous_time: float | None = None
@@ -974,9 +863,12 @@ def _beckoning_evidence(
                 continue
             assignment = _beckoning_hand_assignments(sample.data)
             hand = assignment[1].get(side) if assignment is not None else None
-            if hand is None or not _beckoning_orientation_valid(sample.data, side, hand):
-                segment = []
-                previous_time = None
+            if hand is None:
+                # Hand association is intermittent even when the body remains
+                # tracked. Bridge a short detector dropout, then enforce the
+                # existing maximum gap when the next valid same-side sample
+                # arrives. The current sample still needs a valid assignment
+                # before this sequence can produce evidence.
                 continue
             if previous_time is not None:
                 elapsed = sample.monotonic_s - previous_time
@@ -1023,16 +915,21 @@ def _beckoning_evidence(
                         cycles = 1
                         completed_fingers = reopened
                     last_completed_at = sample_time
-                phase = "open"
-                open_fingers, open_distances = fingers, tip_distances
+                    # A detector can report a partial opening for one update
+                    # before all of the curling fingers extend again. Keep the
+                    # closed phase until the required shared fingers reopen;
+                    # otherwise that transient undercount discards a valid
+                    # cycle from the same hand.
+                    phase = "open"
+                    open_fingers, open_distances = fingers, tip_distances
         if cycles >= 2 and last_completed_at is not None:
             if 0.0 <= now_s - last_completed_at <= _BECKONING_COMPLETION_GRACE_S:
                 scores[side] = 0.90
     return BeckoningEvidence(
         left_score=scores["left"],
         right_score=scores["right"],
-        left_orientation_valid=valid["left"],
-        right_orientation_valid=valid["right"],
+        left_source_valid=source_valid["left"],
+        right_source_valid=source_valid["right"],
     )
 
 
@@ -5299,8 +5196,8 @@ class ActionRecognizer:
         timestamp_s = frame.inference.captured.monotonic_ns / 1_000_000_000.0
         valid_sides = {
             side for side, valid in (
-                ("left", frame.beckoning.left_orientation_valid),
-                ("right", frame.beckoning.right_orientation_valid),
+                ("left", frame.beckoning.left_source_valid),
+                ("right", frame.beckoning.right_source_valid),
             ) if valid
         }
         observation_gap = (
@@ -5316,7 +5213,7 @@ class ActionRecognizer:
             )
             or observation_gap
         ):
-            # Palm polarity and its current body-wrist association are required
+            # Current wrist association and measurable finger phases are required
             # sources. A different valid hand cannot preserve a lost hand's votes.
             self._smoother.clear(ActionName.BECKONING)
             self._beckoning_source_votes.clear()

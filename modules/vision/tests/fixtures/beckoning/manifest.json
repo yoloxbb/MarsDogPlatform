@@ -1,0 +1,80 @@
+{
+  "extraction": {
+    "backend": "rknn",
+    "contains_face_landmarks": false,
+    "contains_raw_face_video": false,
+    "contains_video_frames": false,
+    "frame_stride": 2,
+    "hand_landmarks_per_detected_hand": 21,
+    "pose_landmarks": [
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "preprocessing": "rga",
+    "sample_count": 120,
+    "sample_rate_hz_approx": 15
+  },
+  "fixture": "wave_hand_rknn_trace.json",
+  "fixture_type": "privacy_minimized_landmark_trace",
+  "label": {
+    "action": "beckoning",
+    "active_interval_s": [
+      12.0,
+      20.0
+    ],
+    "description": "Come-hither hand gesture: repeated inward curling and reopening of the same fingers."
+  },
+  "models": {
+    "hand_detector": {
+      "path": "models/vision/hand_detector_fp16.rknn",
+      "sha256": "588b2b3749a864766de23caccd12b979305158dad8ea836098529c3f1874c373"
+    },
+    "hand_landmarks": {
+      "path": "models/vision/hand_landmarks_detector_fp16.rknn",
+      "sha256": "9c973f44a100ebdd9aacbe54e7495fe046b2e94fe900f296d3c7a50189a0e7c4"
+    },
+    "pose": {
+      "path": "models/vision/yolov8n-pose-fp16.rknn",
+      "sha256": "74e0a714e3565c491b724787f7419b343d4e1451e56a8103c5b524c482fc1ce2"
+    }
+  },
+  "privacy": "Only shoulder/elbow/wrist and hand landmark coordinates are stored; no face points or image pixels are included.",
+  "schema_version": 1,
+  "source": {
+    "committed_video": false,
+    "filename": "wave_hand.mp4",
+    "location": "marsdog_ws/src/MarsDogVisionInteraction/data/datasets/test/videos/simu/wave_hand.mp4 (local source, not committed)",
+    "sha256": "116ff624392c9f7ba448632989de63675d87361c73b58488daf2cc1cce2c76d1"
+  },
+  "verification": {
+    "backend_errors": 0,
+    "hand_detected_frames": 457,
+    "hand_preprocessing": "rga",
+    "person_detected_frames": 457,
+    "report_backend": "rknn",
+    "runtime_target": "rk3588",
+    "sampled_frames": 457,
+    "stable_pose_action": "beckoning",
+    "stable_timestamps_s": [
+      18.153173,
+      18.219912,
+      18.286652,
+      18.553611,
+      18.62035,
+      18.68709,
+      18.753829,
+      18.820569,
+      18.887309,
+      18.954048,
+      19.020788,
+      19.087527,
+      19.154267,
+      19.221007,
+      19.287746
+    ]
+  }
+}
