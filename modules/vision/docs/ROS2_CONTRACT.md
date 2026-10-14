@@ -110,7 +110,7 @@ Pose 关键点对象：
 - `EVT_VISION_FALL` 使用独立时序状态机，要求直立基线、快速下降/转倒和持续
   躺卧。
 
-### 4.7 27 个精确动作到正式字段和事件的映射
+### 4.7 28 个精确动作到正式字段和事件的映射
 
 精确动作名只稳定出现在 `/perception/vision/gesture_debug`。正式 Topic 为兼容
 既有下游，将它们折叠为 `pose_action` 或 `hand_action`。姿态/手势事件要求
@@ -137,6 +137,7 @@ Topic，但不会下发事件。
 | P2 | `hunched` | posture | `pose_action=hunched_back` | `EVT_VISION_MASTER_SAD`，需满足姿态门控 |
 | P3 | `arms_raised` | gesture | `pose_action=arm_raise_wave` | `EVT_VISION_MASTER_HAPPY`，需满足姿态门控 |
 | P3 | `waving` | dynamic | `pose_action=arm_raise_wave` | `EVT_VISION_MASTER_HAPPY`，需满足姿态门控 |
+| P3 | `beckoning` | dynamic | `pose_action=beckoning`（招手，示意过来） | 无；仅姿态字段 |
 | P3 | `victory` | gesture | `hand_action=victory` | `EVT_VISION_MASTER_HAPPY`，需满足姿态门控 |
 | P3 | `jumping` | dynamic | `pose_action=jump` | `EVT_VISION_MASTER_HAPPY`，需满足姿态门控 |
 | P3 | `arms_open` | gesture | `pose_action=lean_forward_arms_open` | `EVT_VISION_MASTER_HAPPY`，需满足姿态门控 |
@@ -165,8 +166,37 @@ GesturePose 判定，不改变正式事件名称、身份门禁或发布契约�
 两者按最近 10 次姿态更新中至少 6 次分数达到 0.50 激活，活动期间支持数至少 3/10
 时保留；这是滚动帧投票，不要求连续帧或固定秒数。单帧 `raw_scores` 仅用于诊断。
 
+`beckoning` 是 P3/dynamic 姿态值，通过 `pose_action=beckoning` 和标签
+`招手（示意过来）` 发布，不派生视觉事件。它要求同一侧的至少两次完整
+“多指伸开→屈曲→重新伸开”周期，周期总跨度不超过 1.8 秒；至少三个非拇指的
+角度需从 `>=145°` 进入 `<=125°`，同三指参与两次周期；屈曲时平均指尖到掌心距离
+不超过掌宽的 1.35 倍，参与指尖距离较伸开基线至少缩短 0.35 掌宽，重新伸开时与
+基线差不超过 0.15 掌宽。动作证据使用 3/5 推理更新平滑，活动后低于 2/5 支持时
+解除；最后一次周期完成后的原始证据最多保持 0.55 秒。手缺失、指几何退化、时间
+间隔超过 0.35 秒、腕点对应不唯一或掌面方向不清时清除该动作的历史投票。另一只
+有效手不能保留已失效手的招手历史。
+
+掌心方向只在当前 hand wrist 能唯一对应 active target 的 Pose wrist、双肩可见时
+判定。手腕关联分别比较 x/y 轴：x 偏差相对肩宽门控，y 偏差不超过图像高度归一化
+值 0.08；手腕重叠或左右分配含糊时拒绝。引擎没有图像尺寸，不把归一化 x/y 交叉比较
+或换算成三维向量。
+
+方向只支持可靠正面脸部和身体几何。Pose 鼻、双眼、双耳及双肩都以至少 0.7
+置信度可见，脸部左右跨度、鼻眼横向居中和同轴关系通过尺度门控，且双眼、双耳和
+双肩的语义左右顺序一致时，按语义肩部顺序校正图像镜像，使用有符号掌面法向的
+camera-z 分量判定掌心是否朝向身体；index/pinky MCP 的 x 跨度还需至少为肩宽的
+0.05，以拒绝掌面横向投影过窄的视角；允许腕部靠近躯干中线。侧向视角缺少可靠的
+源图像镜像信息，无法给掌面法向 x 分量建立可信正反符号，因此放弃判定。掌面投影
+退化、脸部缺失/偏侧、手腕遮挡或关联含糊也不支持。手部 z 是模型坐标，不得与身体
+z 比较。上述阈值由合成 landmark 测试覆盖，不代表真实摄像头精度或所有视角的识别率。
+
+已确认招手按 P3 顺序优先于泛化举手/挥手，后两者的原始/诊断证据可继续存在，
+不借聚合分数清除另一只手的动作。Pointing 当帧只抑制招手来源手；历史投票仅在
+全部可归属同一招手手时清除，未知或其他手的历史来源保留。独立手势和既有更高优先级
+动作继续按原规则输出；Stop 保持其优先级并抑制招手。
+
 `holding_toy` 和 `holding_dog_food` 是 Pose/Hand 与物体模型联合产生的多模态特定
-姿态，不属于上述27个 GesturePose 原始标签。要求物体框接近当前人物的有效手腕、
+姿态，不属于上述28个 GesturePose 原始标签。要求物体框接近当前人物的有效手腕、
 检测置信度至少0.35、Pose与物体源帧时间差不超过0.75秒，且1.5秒内两个不同阳性
 物体推理结果成立。两个阳性结果之间允许一次短暂漏检；物体可随伸出的手部分超出
 人物框，但远离手腕的物体仍被拒绝。它们分别显示为“手持玩具/手持狗粮”；除
@@ -342,7 +372,7 @@ Vision 不订阅 `/internal_need/state`。情绪系统不得把
 | `face_observed` | YuNet 是否明确看到当前人脸；禁用人脸任务时可为 `null` |
 | `primary_action`、`primary_priority`、`state_hint` | 精确主动作、P0–P4 和状态候选 |
 | `recognized_actions[]` | 经过时序平滑的动作；含 `name,priority,group,confidence,support_ratio,duration_s` |
-| `raw_scores[]` | 27 个规则原始分数；含 `name,priority,group,score`，按分数降序 |
+| `raw_scores[]` | 28 个规则原始分数；含 `name,priority,group,score`，按分数降序 |
 | `fall_phase` | `unknown/monitoring/falling/lying/recovering` |
 | `fall_event_triggered` | 跌倒确认帧的一次边沿 |
 | `fall_alert_active` | 跌倒确认后的短暂保持状态 |

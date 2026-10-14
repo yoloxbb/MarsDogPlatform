@@ -32,6 +32,7 @@ _CURL_HISTORY_GRACE_SEC = 4.0
 
 _ACTION_LABEL: dict[str, str] = {
     "arm_raise_wave": "手臂高举/挥舞",
+    "beckoning": "招手（示意过来）",
     "jump": "跳跃",
     "lean_forward_arms_open": "身体前倾/张开双臂",
     "nodding": "快速点头",
@@ -70,6 +71,7 @@ _POSE_ACTIONS: dict[ActionName, str] = {
     ActionName.SQUAT_DOWN: "squat_down",
     ActionName.ARMS_RAISED: "arm_raise_wave",
     ActionName.WAVING: "arm_raise_wave",
+    ActionName.BECKONING: "beckoning",
     ActionName.ARMS_OPEN: "lean_forward_arms_open",
     ActionName.STANDING: "neutral_stand_sit",
     ActionName.SITTING: "neutral_stand_sit",

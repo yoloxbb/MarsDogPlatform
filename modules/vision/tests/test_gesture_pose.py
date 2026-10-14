@@ -1,4 +1,5 @@
 from dataclasses import replace
+from types import SimpleNamespace
 
 import pytest
 
@@ -13,6 +14,11 @@ from marsdog_vision_interaction.providers.gesture_pose_engine import (
     LandmarkFrame,
     PoseLandmark,
     RuleActionClassifier,
+    ACTION_GROUPS,
+    ACTION_TRIGGER_PRIORITIES,
+    action_priority,
+    hand_landmarks_from_objects,
+    pose_landmarks_from_objects,
 )
 from marsdog_vision_interaction.providers.pose_action import PoseActionClassifier
 
@@ -223,6 +229,76 @@ def _forward_palm_at_wrist(
     )
 
 
+def _beckoning_hand_at_wrist(
+    wrist_x: float,
+    wrist_y: float,
+    *,
+    state: str,
+    palm_polarity: float = 1.0,
+    camera_polarity: float = 1.0,
+) -> tuple[HandLandmark, ...]:
+    """Build an adapter-shaped 21-point hand with signed inward palm geometry."""
+
+    coordinates = [(wrist_x, wrist_y) for _ in range(21)]
+    depths = [0.0 for _ in range(21)]
+    coordinates[1:5] = [
+        (wrist_x - 0.035, wrist_y - 0.01),
+        (wrist_x - 0.045, wrist_y - 0.025),
+        (wrist_x - 0.055, wrist_y - 0.04),
+        (wrist_x - 0.065, wrist_y - 0.055),
+    ]
+    finger_x = (-0.03, -0.01, 0.01, 0.03)
+    for offset, x in zip((5, 9, 13, 17), finger_x, strict=True):
+        coordinates[offset] = (wrist_x + x, wrist_y - 0.05)
+        finger_depth = (
+            0.03 * palm_polarity
+            if offset == 5
+            else -0.03 * palm_polarity
+            if offset == 17
+            else 0.0
+        )
+        depths[offset : offset + 4] = [finger_depth] * 4
+        if state == "open":
+            coordinates[offset + 1] = (wrist_x + x, wrist_y - 0.09)
+            coordinates[offset + 2] = (wrist_x + x, wrist_y - 0.13)
+            coordinates[offset + 3] = (wrist_x + x, wrist_y - 0.17)
+        elif state == "closed":
+            coordinates[offset + 1] = (wrist_x + x, wrist_y - 0.09)
+            coordinates[offset + 2] = (wrist_x + x + 0.02, wrist_y - 0.08)
+            coordinates[offset + 3] = (wrist_x + x + 0.005, wrist_y - 0.05)
+        else:
+            raise ValueError(state)
+    return tuple(
+        HandLandmark(
+            wrist_x + (x - wrist_x) * camera_polarity,
+            y,
+            z,
+        )
+        for (x, y), z in zip(coordinates, depths, strict=True)
+    )
+
+
+def _frontal_beckoning_pose(side: str) -> tuple[PoseLandmark, ...]:
+    """Build a frontal, semantically labeled face/body with a center-line wrist."""
+
+    points = list(_pose("standing"))
+    for index, x, y in (
+        # Frontal semantic left/right labels appear in reversed x order.
+        (11, 0.60, 0.30),
+        (12, 0.40, 0.30),
+        (0, 0.50, 0.18),
+        (2, 0.52, 0.14),
+        (5, 0.48, 0.14),
+        (7, 0.55, 0.16),
+        (8, 0.45, 0.16),
+        (15, 0.50 if side == "left" else 0.30, 0.65),
+        (16, 0.70 if side == "left" else 0.50, 0.65),
+    ):
+        previous = points[index]
+        points[index] = PoseLandmark(x, y, previous.z, 1.0, 1.0)
+    return tuple(points)
+
+
 def _shift_pose(
     pose: tuple[PoseLandmark, ...],
     *,
@@ -397,6 +473,615 @@ def test_standing_action_is_deterministic_and_keeps_public_key() -> None:
         snapshots[-1]["hand_features"]["left"]["stop_command_zone_score"]
         == 0.0
     )
+
+
+@pytest.mark.parametrize(
+    ("hand_index", "pose_wrist_index", "wrist_x"),
+    (("left_hand", 15, 0.38), ("right_hand", 16, 0.62)),
+)
+def test_beckoning_requires_same_hand_cycles_and_projects_pose_only(
+    hand_index: str,
+    pose_wrist_index: int,
+    wrist_x: float,
+) -> None:
+    classifier = PoseActionClassifier()
+    states = ("open", "closed", "open", "closed", "open", "open", "open", "open", "open")
+    snapshots = []
+    for index, state in enumerate(states):
+        side = "left" if hand_index == "left_hand" else "right"
+        pose = _frontal_beckoning_pose(side)
+        wrist = pose[pose_wrist_index]
+        hand = _beckoning_hand_at_wrist(
+            wrist.x, wrist.y, state=state,
+            camera_polarity=1.0 if side == "left" else -1.0,
+        )
+        kwargs = {hand_index: hand}
+        snapshots.append(
+            classifier.update(
+                track_id=7,
+                pose_landmarks=tuple(pose),
+                now=40.0 + index * 0.1,
+                **kwargs,
+            )
+        )
+
+    final = snapshots[-1]
+    assert final["pose_action"] == "beckoning"
+    assert final["pose_action_label"] == "招手（示意过来）"
+    assert final["hand_action"] != "beckoning"
+    assert any(item["name"] == "beckoning" for item in final["recognized_actions"])
+    assert next(item["priority"] for item in final["recognized_actions"] if item["name"] == "beckoning") == "P3"
+    assert next(item["group"] for item in final["recognized_actions"] if item["name"] == "beckoning") == "dynamic"
+    assert next(item["score"] for item in final["raw_scores"] if item["name"] == "beckoning") >= 0.55
+
+
+@pytest.mark.parametrize("camera_polarity", (-1.0, 0.0))
+def test_beckoning_rejects_reverse_or_ambiguous_palm_orientation(
+    camera_polarity: float,
+) -> None:
+    classifier = PoseActionClassifier()
+    snapshots = []
+    for index, state in enumerate(("open", "closed", "open", "closed", "open") * 2):
+        pose = _frontal_beckoning_pose("left")
+        hand = _beckoning_hand_at_wrist(
+            pose[15].x,
+            pose[15].y,
+            state=state,
+            camera_polarity=camera_polarity,
+        )
+        snapshots.append(
+            classifier.update(
+                track_id=7,
+                pose_landmarks=pose,
+                left_hand=hand,
+                now=50.0 + index * 0.1,
+            )
+        )
+    raw = [
+        next(item["score"] for item in snapshot["raw_scores"] if item["name"] == "beckoning")
+        for snapshot in snapshots
+    ]
+    assert all(score == 0.0 for score in raw)
+    assert all(snapshot["pose_action"] != "beckoning" for snapshot in snapshots)
+
+
+@pytest.mark.parametrize(
+    ("side", "camera_polarity"),
+    (("left", 1.0), ("right", -1.0)),
+)
+def test_frontal_beckoning_uses_signed_camera_normal_with_centered_wrist(
+    side: str,
+    camera_polarity: float,
+) -> None:
+    classifier = PoseActionClassifier()
+    snapshots = []
+    for index, state in enumerate(
+        ("open", "closed", "open", "closed", "open", "open", "open", "open", "open")
+    ):
+        pose = _frontal_beckoning_pose(side)
+        wrist = pose[15 if side == "left" else 16]
+        hand = _beckoning_hand_at_wrist(
+            wrist.x,
+            wrist.y,
+            state=state,
+            camera_polarity=camera_polarity,
+        )
+        kwargs = {"left_hand" if side == "left" else "right_hand": hand}
+        snapshots.append(
+            classifier.update(
+                track_id=7,
+                pose_landmarks=pose,
+                now=55.0 + index * 0.1,
+                **kwargs,
+            )
+        )
+
+    assert snapshots[-1]["pose_action"] == "beckoning"
+    assert next(
+        item["score"]
+        for item in snapshots[-1]["raw_scores"]
+        if item["name"] == "beckoning"
+    ) >= 0.55
+
+
+@pytest.mark.parametrize(
+    ("side", "camera_polarity"),
+    (("left", -1.0), ("right", 1.0)),
+)
+def test_frontal_beckoning_rejects_reverse_camera_normal(
+    side: str,
+    camera_polarity: float,
+) -> None:
+    classifier = PoseActionClassifier()
+    scores = []
+    for index, state in enumerate(("open", "closed", "open", "closed", "open") * 2):
+        pose = _frontal_beckoning_pose(side)
+        wrist = pose[15 if side == "left" else 16]
+        hand = _beckoning_hand_at_wrist(
+            wrist.x,
+            wrist.y,
+            state=state,
+            camera_polarity=camera_polarity,
+        )
+        kwargs = {"left_hand" if side == "left" else "right_hand": hand}
+        snapshot = classifier.update(
+            track_id=7,
+            pose_landmarks=pose,
+            now=56.0 + index * 0.1,
+            **kwargs,
+        )
+        scores.append(
+            next(
+                item["score"]
+                for item in snapshot["raw_scores"]
+                if item["name"] == "beckoning"
+            )
+        )
+    assert all(score == 0.0 for score in scores)
+
+
+def test_frontal_beckoning_abstains_when_face_orientation_anchors_are_missing() -> None:
+    classifier = PoseActionClassifier()
+    scores = []
+    for index, state in enumerate(("open", "closed", "open", "closed", "open") * 2):
+        pose = list(_frontal_beckoning_pose("left"))
+        pose[5] = PoseLandmark(pose[5].x, pose[5].y, pose[5].z, 0.0, 0.0)
+        hand = _beckoning_hand_at_wrist(0.50, 0.65, state=state)
+        snapshot = classifier.update(
+            track_id=7,
+            pose_landmarks=tuple(pose),
+            left_hand=hand,
+            now=57.0 + index * 0.1,
+        )
+        scores.append(
+            next(
+                item["score"]
+                for item in snapshot["raw_scores"]
+                if item["name"] == "beckoning"
+            )
+        )
+    assert all(score == 0.0 for score in scores)
+
+
+def test_beckoning_does_not_join_cycles_across_a_long_observation_gap() -> None:
+    classifier = PoseActionClassifier()
+    scores = []
+    observations = (
+        (90.0, "open"),
+        (90.1, "closed"),
+        (90.2, "open"),
+        (90.8, "closed"),
+        (90.9, "open"),
+    )
+    for timestamp, state in observations:
+        pose = _frontal_beckoning_pose("left")
+        hand = _beckoning_hand_at_wrist(pose[15].x, pose[15].y, state=state)
+        snapshot = classifier.update(
+            track_id=7,
+            pose_landmarks=pose,
+            left_hand=hand,
+            now=timestamp,
+        )
+        scores.append(
+            next(
+                item["score"]
+                for item in snapshot["raw_scores"]
+                if item["name"] == "beckoning"
+            )
+        )
+    assert all(score == 0.0 for score in scores)
+
+
+def test_confirmed_frontal_beckoning_wins_pose_projection_over_raised_arm() -> None:
+    classifier = PoseActionClassifier()
+    snapshots = []
+    states = (
+        "open",
+        "closed",
+        "open",
+        "closed",
+        "open",
+        "open",
+        "open",
+        "open",
+        "open",
+        "open",
+    )
+    for index, state in enumerate(states):
+        points = list(_frontal_beckoning_pose("left"))
+        # Keep the beckoning wrist near the body midline but above its shoulder.
+        for landmark_index, x, y in ((13, 0.55, 0.25), (15, 0.50, 0.18)):
+            old = points[landmark_index]
+            points[landmark_index] = PoseLandmark(x, y, old.z, 1.0, 1.0)
+        pose = tuple(points)
+        hand = _beckoning_hand_at_wrist(0.50, 0.18, state=state)
+        snapshots.append(
+            classifier.update(
+                track_id=7,
+                pose_landmarks=pose,
+                left_hand=hand,
+                now=91.0 + index * 0.1,
+            )
+        )
+
+    final = snapshots[-1]
+    raw_scores = {item["name"]: item["score"] for item in final["raw_scores"]}
+    assert raw_scores["beckoning"] >= 0.55
+    assert raw_scores["arms_raised"] >= 0.55
+    assert final["pose_action"] == "beckoning"
+
+
+def test_beckoning_does_not_combine_cycles_across_hands_or_waving_motion() -> None:
+    classifier = PoseActionClassifier()
+    scores: list[float] = []
+    # One complete cycle per anatomical side cannot be combined into two.
+    states_by_side = (
+        ("open", "closed", "open", "open", "open", "open"),
+        ("open", "open", "open", "closed", "open", "open"),
+    )
+    for index in range(6):
+        pose = _frontal_beckoning_pose("left")
+        left = _beckoning_hand_at_wrist(pose[15].x, pose[15].y, state=states_by_side[0][index])
+        right = _beckoning_hand_at_wrist(pose[16].x, pose[16].y, state=states_by_side[1][index], camera_polarity=-1.0)
+        snapshot = classifier.update(
+            track_id=7,
+            pose_landmarks=pose,
+            left_hand=left,
+            right_hand=right,
+            now=60.0 + index * 0.1,
+        )
+        scores.append(next(item["score"] for item in snapshot["raw_scores"] if item["name"] == "beckoning"))
+    assert all(score == 0.0 for score in scores)
+
+    waving = PoseActionClassifier()
+    wave_scores: list[float] = []
+    wrist_positions = (0.29, 0.37, 0.31, 0.39, 0.32, 0.40, 0.33, 0.41)
+    for index, wrist_x in enumerate(wrist_positions):
+        pose = _pose_with_arms(
+            left_elbow=(wrist_x - 0.02, 0.24),
+            right_elbow=(0.62, 0.48),
+            left_wrist=(wrist_x, 0.16),
+            right_wrist=(0.62, 0.65),
+        )
+        hand = _beckoning_hand_at_wrist(wrist_x, 0.16, state="open")
+        snapshot = waving.update(
+            track_id=7,
+            pose_landmarks=pose,
+            left_hand=hand,
+            now=70.0 + index * 0.1,
+        )
+        wave_scores.append(next(item["score"] for item in snapshot["raw_scores"] if item["name"] == "beckoning"))
+    assert all(score == 0.0 for score in wave_scores)
+
+
+def test_beckoning_rejects_one_cycle_static_raised_arm_and_static_pointing() -> None:
+    one_cycle = PoseActionClassifier()
+    one_cycle_scores: list[float] = []
+    for index, state in enumerate(
+        ("open", "closed", "open", "open", "open", "open", "open", "open", "open", "open")
+    ):
+        pose = _frontal_beckoning_pose("left")
+        hand = _beckoning_hand_at_wrist(pose[15].x, pose[15].y, state=state)
+        snapshot = one_cycle.update(
+            track_id=7,
+            pose_landmarks=pose,
+            left_hand=hand,
+            now=75.0 + index * 0.1,
+        )
+        one_cycle_scores.append(next(item["score"] for item in snapshot["raw_scores"] if item["name"] == "beckoning"))
+    assert all(score == 0.0 for score in one_cycle_scores)
+
+    raised_classifier = PoseActionClassifier()
+    raised_scores = []
+    for index in range(10):
+        raised_pose = _pose_with_arms(
+            left_elbow=(0.34, 0.28),
+            right_elbow=(0.62, 0.48),
+            left_wrist=(0.30, 0.18),
+            right_wrist=(0.62, 0.65),
+        )
+        raised_hand = _beckoning_hand_at_wrist(0.30, 0.18, state="open")
+        raised_snapshot = raised_classifier.update(
+            track_id=7,
+            pose_landmarks=raised_pose,
+            left_hand=raised_hand,
+            now=75.0 + index * 0.1,
+        )
+        raised_scores.append(next(item["score"] for item in raised_snapshot["raw_scores"] if item["name"] == "beckoning"))
+    assert all(score == 0.0 for score in raised_scores)
+
+    open_hand = _beckoning_hand_at_wrist(0.30, 0.18, state="open")
+    closed_hand = _beckoning_hand_at_wrist(0.30, 0.18, state="closed")
+    pointing_points = list(open_hand)
+    for start in (9, 13, 17):
+        pointing_points[start : start + 4] = closed_hand[start : start + 4]
+    pointing_hand = tuple(pointing_points)
+    classifier = PoseActionClassifier()
+    raw_beckoning = []
+    for index in range(10):
+        pose = _pose_with_arms(
+            left_elbow=(0.34, 0.28),
+            right_elbow=(0.62, 0.48),
+            left_wrist=(0.30, 0.18),
+            right_wrist=(0.62, 0.65),
+        )
+        snapshot = classifier.update(
+            track_id=7,
+            pose_landmarks=pose,
+            left_hand=pointing_hand,
+            now=76.0 + index * 0.1,
+        )
+        raw_beckoning.append(next(item["score"] for item in snapshot["raw_scores"] if item["name"] == "beckoning"))
+    assert all(score == 0.0 for score in raw_beckoning)
+
+
+def test_beckoning_keeps_an_independent_other_hand_action() -> None:
+    classifier = PoseActionClassifier()
+    snapshot = None
+    states = (
+        "open",
+        "closed",
+        "open",
+        "closed",
+        "open",
+        "open",
+        "open",
+        "open",
+        "open",
+        "open",
+    )
+    for index, state in enumerate(states):
+        pose = _frontal_beckoning_pose("left")
+        right_open = _beckoning_hand_at_wrist(pose[16].x, pose[16].y, state="open", camera_polarity=-1.0)
+        right_closed = _beckoning_hand_at_wrist(pose[16].x, pose[16].y, state="closed", camera_polarity=-1.0)
+        right_pointing = list(right_open)
+        for start in (9, 13, 17):
+            right_pointing[start : start + 4] = right_closed[start : start + 4]
+        snapshot = classifier.update(
+            track_id=7,
+            pose_landmarks=pose,
+            left_hand=_beckoning_hand_at_wrist(pose[15].x, pose[15].y, state=state),
+            right_hand=tuple(right_pointing),
+            now=80.0 + index * 0.1,
+        )
+    assert snapshot is not None
+    assert snapshot["pose_action"] == "beckoning"
+    assert snapshot["hand_action"] == "finger_pointing"
+
+
+def _beckoning_snapshot(
+    classifier: PoseActionClassifier, state: str, now: float,
+    *, track_id: int = 7, slot: str = "left_hand",
+) -> dict:
+    pose = _frontal_beckoning_pose("left")
+    return classifier.update(
+        track_id=track_id, pose_landmarks=pose, now=now,
+        **{slot: _beckoning_hand_at_wrist(pose[15].x, pose[15].y, state=state)},
+    )
+
+
+def _beckoning_raw(snapshot: dict) -> float:
+    return next(item["score"] for item in snapshot["raw_scores"] if item["name"] == "beckoning")
+
+
+@pytest.mark.parametrize("side", ("left", "right"))
+@pytest.mark.parametrize("mirrored", (False, True))
+@pytest.mark.parametrize("inward", (False, True))
+def test_beckoning_frontal_polarity_is_preserved_under_image_reflection(
+    side: str, mirrored: bool, inward: bool,
+) -> None:
+    classifier = PoseActionClassifier()
+    snapshots = []
+    for index, state in enumerate(("open", "closed", "open", "closed", "open", "open", "open")):
+        pose = _frontal_beckoning_pose(side)
+        wrist = pose[15 if side == "left" else 16]
+        polarity = (1.0 if side == "left" else -1.0) * (1.0 if inward else -1.0)
+        hand = _beckoning_hand_at_wrist(wrist.x, wrist.y, state=state, camera_polarity=polarity)
+        if mirrored:
+            pose = tuple(replace(point, x=1.0 - point.x) for point in pose)
+            hand = tuple(replace(point, x=1.0 - point.x) for point in hand)
+        snapshots.append(classifier.update(
+            track_id=7, pose_landmarks=pose, now=100.0 + index * 0.1,
+            **{f"{side}_hand": hand},
+        ))
+    if inward:
+        assert snapshots[-1]["pose_action"] == "beckoning"
+    else:
+        assert all(_beckoning_raw(snapshot) == 0.0 for snapshot in snapshots)
+
+
+@pytest.mark.parametrize("mirrored", (False, True))
+@pytest.mark.parametrize("palm_polarity", (-1.0, 1.0))
+def test_beckoning_abstains_on_unsigned_lateral_geometry(
+    mirrored: bool, palm_polarity: float,
+) -> None:
+    classifier = PoseActionClassifier()
+    for index, state in enumerate(("open", "closed", "open", "closed", "open", "open", "open")):
+        pose = _pose("standing")
+        hand = _beckoning_hand_at_wrist(pose[15].x, pose[15].y, state=state, palm_polarity=palm_polarity)
+        if mirrored:
+            pose = tuple(replace(point, x=1.0 - point.x) for point in pose)
+            hand = tuple(replace(point, x=1.0 - point.x) for point in hand)
+        snapshot = classifier.update(track_id=7, pose_landmarks=pose, left_hand=hand, now=101.0 + index * 0.1)
+        assert _beckoning_raw(snapshot) == 0.0
+        assert snapshot["pose_action"] != "beckoning"
+
+
+@pytest.mark.parametrize("failure", ("gap", "missing_hand", "other_hand", "invalid_fingers", "ambiguous_wrists", "missing_face", "wrong_face_order", "narrow_palm"))
+def test_beckoning_invalid_source_clears_its_stable_history(failure: str) -> None:
+    classifier = PoseActionClassifier()
+    for index, state in enumerate(("open", "closed", "open", "closed", "open", "open", "open")):
+        snapshot = _beckoning_snapshot(classifier, state, 110.0 + index * 0.1)
+    assert snapshot["pose_action"] == "beckoning"
+    pose = _frontal_beckoning_pose("left")
+    hand = _beckoning_hand_at_wrist(pose[15].x, pose[15].y, state="open")
+    right_hand = None
+    now = 110.7
+    if failure == "gap":
+        now = 111.3
+    elif failure == "missing_hand":
+        hand = None
+    elif failure == "other_hand":
+        hand = None
+        right_hand = _beckoning_hand_at_wrist(pose[16].x, pose[16].y, state="open", camera_polarity=-1.0)
+    elif failure == "invalid_fingers":
+        points = list(hand)
+        for start in (5, 9, 13, 17):
+            points[start + 1 : start + 4] = [points[start]] * 3
+        hand = tuple(points)
+    elif failure == "ambiguous_wrists":
+        pose = tuple(replace(point, x=pose[15].x, y=pose[15].y) if index == 16 else point for index, point in enumerate(pose))
+    elif failure == "missing_face":
+        pose = tuple(replace(point, visibility=0.0, presence=0.0) if index == 5 else point for index, point in enumerate(pose))
+    elif failure == "narrow_palm":
+        hand = tuple(replace(point, x=hand[0].x + (point.x - hand[0].x) * 0.01) for point in hand)
+    else:
+        pose = tuple(replace(point, x=1.0 - point.x) if index in (2, 5, 7, 8) else point for index, point in enumerate(pose))
+    snapshot = classifier.update(track_id=7, pose_landmarks=pose, left_hand=hand, right_hand=right_hand, now=now)
+    assert _beckoning_raw(snapshot) == 0.0
+    assert snapshot["pose_action"] != "beckoning"
+    assert all(item["name"] != "beckoning" for item in snapshot["recognized_actions"])
+
+
+def test_beckoning_cycles_expire_and_duplicate_shapes_do_not_add_cycles() -> None:
+    classifier = PoseActionClassifier()
+    for index, state in enumerate(("open", "closed", "open", "closed", "open", "open", "open")):
+        snapshot = _beckoning_snapshot(classifier, state, 120.0 + index * 0.1)
+    assert snapshot["pose_action"] == "beckoning"
+    for index in range(7, 25):
+        snapshot = _beckoning_snapshot(classifier, "open", 120.0 + index * 0.1)
+    assert _beckoning_raw(snapshot) == 0.0
+    assert snapshot["pose_action"] != "beckoning"
+    snapshot = _beckoning_snapshot(classifier, "closed", 122.5)
+    snapshot = _beckoning_snapshot(classifier, "open", 122.6)
+    assert _beckoning_raw(snapshot) == 0.0
+
+
+def test_beckoning_keeps_valid_other_side_votes_after_one_hand_disappears() -> None:
+    classifier = PoseActionClassifier()
+    pose = _frontal_beckoning_pose("left")
+    for index, state in enumerate(("open", "closed", "open", "closed", "open", "open", "open")):
+        snapshot = classifier.update(
+            track_id=7, pose_landmarks=pose, now=125.0 + index * 0.1,
+            left_hand=_beckoning_hand_at_wrist(pose[15].x, pose[15].y, state=state),
+            right_hand=_beckoning_hand_at_wrist(pose[16].x, pose[16].y, state=state, camera_polarity=-1.0),
+        )
+    assert snapshot["pose_action"] == "beckoning"
+    snapshot = classifier.update(
+        track_id=7, pose_landmarks=pose, now=125.7,
+        right_hand=_beckoning_hand_at_wrist(pose[16].x, pose[16].y, state="open", camera_polarity=-1.0),
+    )
+    assert snapshot["pose_action"] == "beckoning"
+    assert _beckoning_raw(snapshot) >= 0.55
+
+
+def test_beckoning_follows_body_wrist_when_backend_handedness_slot_flips() -> None:
+    classifier = PoseActionClassifier()
+    for index, state in enumerate(("open", "closed", "open", "closed", "open", "open", "open")):
+        snapshot = _beckoning_snapshot(classifier, state, 130.0 + index * 0.1,
+                                      slot="left_hand" if index % 2 else "right_hand")
+    assert snapshot["pose_action"] == "beckoning"
+
+
+def test_beckoning_does_not_inherit_history_after_track_change_or_reset() -> None:
+    classifier = PoseActionClassifier()
+    for index, state in enumerate(("open", "closed", "open", "closed", "open", "open", "open")):
+        snapshot = _beckoning_snapshot(classifier, state, 140.0 + index * 0.1)
+    assert snapshot["pose_action"] == "beckoning"
+    assert _beckoning_snapshot(classifier, "open", 140.7, track_id=8)["pose_action"] != "beckoning"
+    # Restarting monotonic time resets the existing target's stream.
+    assert _beckoning_snapshot(classifier, "open", 140.0)["pose_action"] != "beckoning"
+    classifier.reset()
+    assert _beckoning_snapshot(classifier, "open", 141.0)["pose_action"] != "beckoning"
+
+
+def test_beckoning_requires_same_three_fingers_and_tip_travel() -> None:
+    for mode in ("different_fingers", "compact_without_travel"):
+        classifier = PoseActionClassifier()
+        for index, state in enumerate(("open", "closed", "open", "closed", "open", "open", "open")):
+            pose = _frontal_beckoning_pose("left")
+            opened = _beckoning_hand_at_wrist(pose[15].x, pose[15].y, state="open")
+            closed = _beckoning_hand_at_wrist(pose[15].x, pose[15].y, state="closed")
+            points = list(opened if state == "open" else closed)
+            if mode == "different_fingers":
+                # Each frame has three participants, but only two are shared.
+                start = 5 if state == "open" else 17
+                points[start : start + 4] = (closed if state == "open" else opened)[start : start + 4]
+            elif state == "open":
+                # Straight but compact fingers cannot claim an inward excursion.
+                for start in (5, 9, 13, 17):
+                    anchor = points[start]
+                    for offset in (1, 2, 3):
+                        points[start + offset] = replace(anchor, y=anchor.y - offset * 0.002)
+            snapshot = classifier.update(track_id=7, pose_landmarks=pose, left_hand=tuple(points), now=150.0 + index * 0.1)
+            assert _beckoning_raw(snapshot) == 0.0
+
+
+def test_beckoning_small_finger_jitter_does_not_complete_cycles() -> None:
+    classifier = PoseActionClassifier()
+    pose = _frontal_beckoning_pose("left")
+    for index in range(12):
+        hand = _beckoning_hand_at_wrist(pose[15].x, pose[15].y, state="open")
+        hand = tuple(replace(point, x=point.x + (0.001 if index % 2 else -0.001)) if i in (8, 12, 16, 20) else point for i, point in enumerate(hand))
+        snapshot = classifier.update(track_id=7, pose_landmarks=pose, left_hand=hand, now=160.0 + index * 0.1)
+        assert _beckoning_raw(snapshot) == 0.0
+
+
+@pytest.mark.parametrize("pose_z", (None, 0.0))
+def test_beckoning_uses_adapter_objects_without_shared_body_depth(pose_z: float | None) -> None:
+    classifier = PoseActionClassifier()
+    for index, state in enumerate(("open", "closed", "open", "closed", "open", "open", "open")):
+        raw_pose = _frontal_beckoning_pose("left")
+        raw_hand = _beckoning_hand_at_wrist(raw_pose[15].x, raw_pose[15].y, state=state)
+        pose = pose_landmarks_from_objects([SimpleNamespace(x=p.x, y=p.y, z=pose_z, visibility=p.visibility, presence=p.presence) for p in raw_pose])
+        hand = hand_landmarks_from_objects([SimpleNamespace(x=p.x, y=p.y, z=p.z) for p in raw_hand])
+        snapshot = classifier.update(track_id=7, pose_landmarks=pose, left_hand=hand, now=170.0 + index * 0.1)
+    assert snapshot["pose_action"] == "beckoning"
+
+
+def test_beckoning_clears_pointing_votes_from_its_own_hand() -> None:
+    classifier = PoseActionClassifier()
+    pose = _frontal_beckoning_pose("left")
+    opened = _beckoning_hand_at_wrist(pose[15].x, pose[15].y, state="open")
+    closed = _beckoning_hand_at_wrist(pose[15].x, pose[15].y, state="closed")
+    points = list(opened)
+    for start in (9, 13, 17):
+        points[start : start + 4] = closed[start : start + 4]
+    for index in range(10):
+        snapshot = classifier.update(track_id=7, pose_landmarks=pose, left_hand=tuple(points), now=180.0 + index * 0.1)
+    assert snapshot["hand_action"] == "finger_pointing"
+    for index, state in enumerate(("open", "closed", "open", "closed", "open")):
+        snapshot = _beckoning_snapshot(classifier, state, 181.0 + index * 0.1)
+    assert _beckoning_raw(snapshot) >= 0.55
+    assert snapshot["hand_action"] != "finger_pointing"
+    assert all(item["name"] != "pointing" for item in snapshot["recognized_actions"])
+
+
+def test_beckoning_does_not_override_real_other_hand_stop() -> None:
+    classifier = PoseActionClassifier()
+    pose = list(_frontal_beckoning_pose("left"))
+    pose[14] = replace(pose[14], x=0.55, y=0.35)
+    pose[16] = replace(pose[16], x=0.70, y=0.35)
+    for index, state in enumerate(("open", "closed", "open", "closed", "open", "open", "open")):
+        snapshot = classifier.update(track_id=7, pose_landmarks=tuple(pose),
+                                     left_hand=_beckoning_hand_at_wrist(0.50, 0.65, state=state),
+                                     right_hand=_forward_palm_at_wrist(0.70, 0.35), now=190.0 + index * 0.1)
+    assert snapshot["hand_action"] == "stop_gesture"
+    assert _beckoning_raw(snapshot) == 0.0
+    assert all(item["name"] != "beckoning" for item in snapshot["recognized_actions"])
+
+
+def test_beckoning_taxonomy_keeps_higher_tiers_and_stop_precedence() -> None:
+    assert len(ActionName) == 28
+    assert set(ACTION_GROUPS) == set(ActionName)
+    assert set(ACTION_TRIGGER_PRIORITIES) == set(ActionName)
+    for action in ActionName:
+        action_priority(action)
+        if ACTION_TRIGGER_PRIORITIES[action].name in ("P0", "P1", "P2"):
+            assert action_priority(action) < action_priority(ActionName.BECKONING)
+    assert action_priority(ActionName.STOP_GESTURE) < action_priority(ActionName.BECKONING)
+    assert action_priority(ActionName.BECKONING) < action_priority(ActionName.ARMS_RAISED)
+    assert action_priority(ActionName.BECKONING) < action_priority(ActionName.WAVING)
 
 
 @pytest.mark.parametrize("hand_pattern", ("none", "both_knees", "one_knee", "calling"))

@@ -47,6 +47,7 @@ def test_victory_is_a_public_happy_hand_action() -> None:
 @pytest.mark.parametrize(
     ("action", "key", "label"),
     (
+        (ActionName.BECKONING, "beckoning", "招手（示意过来）"),
         (ActionName.BEND_OVER, "bend_over", "弯腰"),
         (ActionName.SQUAT_DOWN, "squat_down", "蹲下"),
     ),

@@ -343,10 +343,30 @@ class TemporalLandmarkSample:
 
 
 @dataclass(frozen=True, slots=True)
+class BeckoningEvidence:
+    """Current side-local beckoning scores and orientation validity."""
+
+    left_score: float = 0.0
+    right_score: float = 0.0
+    left_orientation_valid: bool = False
+    right_orientation_valid: bool = False
+
+    @property
+    def score(self) -> float:
+        return max(self.left_score, self.right_score)
+
+    @property
+    def orientation_valid(self) -> bool:
+        return self.left_orientation_valid or self.right_orientation_valid
+
+
+@dataclass(frozen=True, slots=True)
 class AnalyzedFrame:
     inference: InferenceFrame
     features: FrameFeatures
     feature_ms: float
+    samples: tuple[TemporalLandmarkSample, ...] = ()
+    beckoning: BeckoningEvidence = field(default_factory=BeckoningEvidence)
 
 
 # ==============================================================================
@@ -667,6 +687,353 @@ _FINGER_CHAINS = (
     (13, 14, 15, 16),
     (17, 18, 19, 20),
 )
+_BECKONING_MAX_GAP_S = 0.35
+_BECKONING_SEQUENCE_WINDOW_S = 1.8
+_BECKONING_COMPLETION_GRACE_S = 0.55
+_BECKONING_WRIST_VERTICAL_TOLERANCE = 0.08
+
+
+def _beckoning_hand_assignments(
+    data: FrameData,
+) -> tuple[PoseLandmarkSet, dict[str, HandLandmarkSet]] | None:
+    """Associate hands with the active body's wrists using current landmarks.
+
+    Backend handedness strings are not used as identity: MediaPipe-style camera
+    mirroring and transient handedness changes can move a hand between input
+    slots. Require visible shoulders and both wrists, and reject ambiguous or
+    crossed wrist matches.
+    """
+
+    pose = data.pose_landmarks
+    if pose is None or len(pose) <= 16:
+        return None
+    anchors = {
+        "left": _pose_point(pose, 15, 0.6),
+        "right": _pose_point(pose, 16, 0.6),
+    }
+    shoulders = (_pose_point(pose, 11, 0.6), _pose_point(pose, 12, 0.6))
+    if any(point is None for point in (*anchors.values(), *shoulders)):
+        return None
+    left_shoulder, right_shoulder = shoulders
+    assert left_shoulder is not None and right_shoulder is not None
+    shoulder_width = abs(left_shoulder.x - right_shoulder.x)
+    if shoulder_width < 0.05:
+        return None
+
+    candidates = [
+        points
+        for points in (data.left_hand, data.right_hand)
+        if points is not None and len(points) >= 21
+    ]
+    if not candidates:
+        return pose, {}
+    horizontal_offsets = [
+        {
+            side: abs(points[0].x - wrist.x)
+            for side, wrist in anchors.items()
+            if wrist is not None
+        }
+        for points in candidates
+    ]
+    vertical_offsets = [
+        {
+            side: abs(points[0].y - wrist.y)
+            for side, wrist in anchors.items()
+            if wrist is not None
+        }
+        for points in candidates
+    ]
+
+    assignments: dict[str, HandLandmarkSet] = {}
+    if len(candidates) == 1:
+        offsets_for_hand = horizontal_offsets[0]
+        ranked = sorted(offsets_for_hand.items(), key=lambda item: item[1])
+        if (
+            len(ranked) != 2
+            or ranked[0][1] > shoulder_width * 0.30
+            or ranked[1][1] - ranked[0][1] < shoulder_width * 0.10
+            or vertical_offsets[0][ranked[0][0]] > _BECKONING_WRIST_VERTICAL_TOLERANCE
+        ):
+            return pose, {}
+        assignments[ranked[0][0]] = candidates[0]
+    else:
+        direct = horizontal_offsets[0]["left"] + horizontal_offsets[1]["right"]
+        crossed = horizontal_offsets[0]["right"] + horizontal_offsets[1]["left"]
+        if abs(direct - crossed) < shoulder_width * 0.10:
+            return pose, {}
+        if direct < crossed:
+            assignments = {"left": candidates[0], "right": candidates[1]}
+            chosen = (
+                horizontal_offsets[0]["left"],
+                horizontal_offsets[1]["right"],
+            )
+            chosen_vertical = (
+                vertical_offsets[0]["left"],
+                vertical_offsets[1]["right"],
+            )
+        else:
+            assignments = {"right": candidates[0], "left": candidates[1]}
+            chosen = (
+                horizontal_offsets[0]["right"],
+                horizontal_offsets[1]["left"],
+            )
+            chosen_vertical = (
+                vertical_offsets[0]["right"],
+                vertical_offsets[1]["left"],
+            )
+        if any(
+            distance > shoulder_width * 0.30
+            for distance in chosen
+        ) or any(
+            distance > _BECKONING_WRIST_VERTICAL_TOLERANCE
+            for distance in chosen_vertical
+        ):
+            return pose, {}
+    return pose, assignments
+
+
+def _beckoning_orientation_valid(
+    data: FrameData,
+    side: str,
+    hand: HandLandmarkSet,
+) -> bool:
+    """Check inward palm polarity only with a reliably frontal body and face.
+
+    Hand normal z and the semantic shoulder order both reverse under an image
+    reflection. Their product preserves polarity without comparing body/hand z.
+    A lateral normal cannot be signed when the source reflection is unknown.
+    """
+
+    assigned = _beckoning_hand_assignments(data)
+    if assigned is None:
+        return False
+    pose, hands = assigned
+    if hands.get(side) is not hand:
+        return False
+    shoulder_left = _pose_point(pose, 11, 0.6)
+    shoulder_right = _pose_point(pose, 12, 0.6)
+    body_wrist = _pose_point(pose, 15 if side == "left" else 16, 0.6)
+    if shoulder_left is None or shoulder_right is None or body_wrist is None:
+        return False
+    shoulder_width = abs(shoulder_left.x - shoulder_right.x)
+    if shoulder_width <= _EPSILON:
+        return False
+
+    wrist, index_mcp, pinky_mcp = hand[0], hand[5], hand[17]
+    index_y = index_mcp.y - wrist.y
+    pinky_y = pinky_mcp.y - wrist.y
+    anatomical_sign = 1.0 if side == "left" else -1.0
+    frontal_mirror_sign = _frontal_camera_mirror_sign(pose, shoulder_width)
+    if frontal_mirror_sign is None:
+        return False
+    # A barely visible transverse palm span cannot establish reliable polarity.
+    # Compare only x-normalized lengths, without an assumed image aspect ratio.
+    if abs(index_mcp.x - pinky_mcp.x) < shoulder_width * 0.05:
+        return False
+    index_x = index_mcp.x - wrist.x
+    pinky_x = pinky_mcp.x - wrist.x
+    normal_z = index_x * pinky_y - index_y * pinky_x
+    normal_z_scale = abs(index_x * pinky_y) + abs(index_y * pinky_x)
+    if (
+        normal_z_scale <= _EPSILON
+        or abs(normal_z) < normal_z_scale * 0.25
+    ):
+        return False
+    return normal_z * anatomical_sign * frontal_mirror_sign > 0.0
+
+
+def _frontal_camera_mirror_sign(
+    pose: PoseLandmarkSet,
+    shoulder_width: float,
+) -> float | None:
+    """Return the image x reflection sign only for clear frontal face geometry."""
+
+    nose = _pose_point(pose, 0, 0.7)
+    left_eye = _pose_point(pose, 2, 0.7)
+    right_eye = _pose_point(pose, 5, 0.7)
+    left_ear = _pose_point(pose, 7, 0.7)
+    right_ear = _pose_point(pose, 8, 0.7)
+    left_shoulder = _pose_point(pose, 11, 0.7)
+    right_shoulder = _pose_point(pose, 12, 0.7)
+    if any(
+        point is None
+        for point in (
+            nose,
+            left_eye,
+            right_eye,
+            left_ear,
+            right_ear,
+            left_shoulder,
+            right_shoulder,
+        )
+    ):
+        return None
+    assert nose is not None
+    assert left_eye is not None and right_eye is not None
+    assert left_ear is not None and right_ear is not None
+    assert left_shoulder is not None and right_shoulder is not None
+    eye_mid_x = (left_eye.x + right_eye.x) / 2.0
+    ear_mid_x = (left_ear.x + right_ear.x) / 2.0
+    eye_mid_y = (left_eye.y + right_eye.y) / 2.0
+    ear_mid_y = (left_ear.y + right_ear.y) / 2.0
+    eye_width = abs(left_eye.x - right_eye.x)
+    ear_width = abs(left_ear.x - right_ear.x)
+    shoulder_dx = left_shoulder.x - right_shoulder.x
+    face_height = nose.y - eye_mid_y
+    if (
+        eye_width < shoulder_width * 0.10
+        or eye_width > shoulder_width * 0.65
+        or ear_width < shoulder_width * 0.18
+        or ear_width > shoulder_width * 0.85
+        or abs(nose.x - eye_mid_x) > shoulder_width * 0.12
+        or abs(eye_mid_x - ear_mid_x) > shoulder_width * 0.16
+        # Keep vertical checks in y-normalized units and horizontal checks in
+        # x-normalized units. The engine has no frame dimensions with which to
+        # convert either axis into pixels for non-square source frames.
+        or face_height <= _EPSILON
+        or abs(left_eye.y - right_eye.y) > face_height * 0.25
+        or abs(left_ear.y - right_ear.y) > face_height * 0.75
+        or abs(ear_mid_y - eye_mid_y) > face_height * 1.5
+        or (left_eye.x - right_eye.x) * shoulder_dx <= 0.0
+        or (left_ear.x - right_ear.x) * shoulder_dx <= 0.0
+    ):
+        return None
+    return 1.0 if shoulder_dx > 0.0 else -1.0
+
+
+def _beckoning_finger_state(hand: HandLandmarkSet) -> str:
+    """Return open/closed only for a coherent multi-finger configuration."""
+
+    angles = _hand_finger_straightness(hand)[1:]
+    present_angles = [angle for angle in angles if angle is not None]
+    if len(present_angles) < 3:
+        return "unknown"
+    open_fingers = sum(angle >= 145.0 for angle in angles if angle is not None)
+    flexed_fingers = sum(angle <= 125.0 for angle in angles if angle is not None)
+    palm_center = hand[9]
+    palm_scale = max(_hand_distance(hand[5], hand[17]), _EPSILON)
+    tip_compactness = sum(
+        _hand_distance(hand[index], palm_center) / palm_scale
+        for index in (8, 12, 16, 20)
+    ) / 4.0
+    if open_fingers >= 3:
+        return "open"
+    if flexed_fingers >= 3 and tip_compactness <= 1.35:
+        return "closed"
+    return "neutral"
+
+
+def _beckoning_finger_observation(
+    hand: HandLandmarkSet,
+) -> tuple[str, frozenset[int], tuple[float, ...]]:
+    state = _beckoning_finger_state(hand)
+    angles = _hand_finger_straightness(hand)[1:]
+    participating = frozenset(
+        index for index, angle in enumerate(angles)
+        if angle is not None and (
+            (state == "open" and angle >= 145.0)
+            or (state == "closed" and angle <= 125.0)
+        )
+    )
+    palm_scale = max(_hand_distance(hand[5], hand[17]), _EPSILON)
+    tip_distances = tuple(
+        _hand_distance(hand[index], hand[9]) / palm_scale
+        for index in (8, 12, 16, 20)
+    )
+    return state, participating, tip_distances
+
+
+def _beckoning_evidence(
+    samples: Sequence[TemporalLandmarkSample],
+) -> BeckoningEvidence:
+    """Require two same-hand open→flex→reopen cycles and current palm evidence."""
+
+    if not samples:
+        return BeckoningEvidence()
+    now_s = samples[-1].monotonic_s
+    scores: dict[str, float] = {"left": 0.0, "right": 0.0}
+    valid: dict[str, bool] = {"left": False, "right": False}
+    for side in ("left", "right"):
+        current_assignment = _beckoning_hand_assignments(samples[-1].data)
+        if current_assignment is None:
+            continue
+        _, current_hands = current_assignment
+        current_hand = current_hands.get(side)
+        if current_hand is None or not _beckoning_orientation_valid(
+            samples[-1].data, side, current_hand
+        ):
+            continue
+        if _beckoning_finger_state(current_hand) == "unknown":
+            continue
+        valid[side] = True
+
+        segment: list[tuple[float, str, frozenset[int], tuple[float, ...]]] = []
+        previous_time: float | None = None
+        for sample in samples:
+            if now_s - sample.monotonic_s > _BECKONING_SEQUENCE_WINDOW_S:
+                continue
+            assignment = _beckoning_hand_assignments(sample.data)
+            hand = assignment[1].get(side) if assignment is not None else None
+            if hand is None or not _beckoning_orientation_valid(sample.data, side, hand):
+                segment = []
+                previous_time = None
+                continue
+            if previous_time is not None:
+                elapsed = sample.monotonic_s - previous_time
+                if elapsed <= 0.0 or elapsed > _BECKONING_MAX_GAP_S:
+                    segment = []
+            state, fingers, tip_distances = _beckoning_finger_observation(hand)
+            if state == "unknown":
+                segment = []
+            else:
+                segment.append((sample.monotonic_s, state, fingers, tip_distances))
+            previous_time = sample.monotonic_s
+
+        cycles = 0
+        completed_fingers: frozenset[int] = frozenset()
+        phase = "need_open"
+        last_completed_at: float | None = None
+        open_fingers: frozenset[int] = frozenset()
+        cycle_fingers: frozenset[int] = frozenset()
+        open_distances: tuple[float, ...] = ()
+        for sample_time, state, fingers, tip_distances in segment:
+            if phase == "need_open":
+                if state == "open":
+                    phase = "open"
+                    open_fingers, open_distances = fingers, tip_distances
+            elif phase == "open":
+                if state == "closed":
+                    cycle_fingers = frozenset(
+                        index for index in open_fingers & fingers
+                        if open_distances[index] - tip_distances[index] >= 0.35
+                    )
+                    if len(cycle_fingers) >= 3:
+                        phase = "closed"
+            elif state == "open":
+                reopened = frozenset(
+                    index for index in cycle_fingers & fingers
+                    if tip_distances[index] >= open_distances[index] - 0.15
+                )
+                if len(reopened) >= 3:
+                    common_fingers = completed_fingers & reopened
+                    if cycles and len(common_fingers) >= 3:
+                        cycles += 1
+                        completed_fingers = common_fingers
+                    else:
+                        cycles = 1
+                        completed_fingers = reopened
+                    last_completed_at = sample_time
+                phase = "open"
+                open_fingers, open_distances = fingers, tip_distances
+        if cycles >= 2 and last_completed_at is not None:
+            if 0.0 <= now_s - last_completed_at <= _BECKONING_COMPLETION_GRACE_S:
+                scores[side] = 0.90
+    return BeckoningEvidence(
+        left_score=scores["left"],
+        right_score=scores["right"],
+        left_orientation_valid=valid["left"],
+        right_orientation_valid=valid["right"],
+    )
 
 
 def _hand_distance(a: HandLandmark, b: HandLandmark) -> float:
@@ -1865,6 +2232,7 @@ class ActionName(str, Enum):
     ARMS_RAISED = "arms_raised"
     ARMS_OPEN = "arms_open"
     WAVING = "waving"
+    BECKONING = "beckoning"
     JUMPING = "jumping"
     FAST_NOD = "fast_nod"
     CLAPPING = "clapping"
@@ -1929,6 +2297,7 @@ ACTION_GROUPS: dict[ActionName, ActionGroup] = {
     ActionName.CLAPPING: ActionGroup.DYNAMIC,
     ActionName.FAST_NOD: ActionGroup.DYNAMIC,
     ActionName.WAVING: ActionGroup.DYNAMIC,
+    ActionName.BECKONING: ActionGroup.DYNAMIC,
     ActionName.LARGE_ARM_SWING: ActionGroup.DYNAMIC,
     ActionName.THUMBS_UP: ActionGroup.GESTURE,
     ActionName.VICTORY: ActionGroup.GESTURE,
@@ -1967,6 +2336,7 @@ ACTION_TRIGGER_PRIORITIES: dict[ActionName, TriggerPriority] = {
     ActionName.HUNCHED: TriggerPriority.P2,
     ActionName.ARMS_RAISED: TriggerPriority.P3,
     ActionName.WAVING: TriggerPriority.P3,
+    ActionName.BECKONING: TriggerPriority.P3,
     ActionName.VICTORY: TriggerPriority.P3,
     ActionName.JUMPING: TriggerPriority.P3,
     ActionName.ARMS_OPEN: TriggerPriority.P3,
@@ -2004,13 +2374,14 @@ _WITHIN_TIER_PRIORITY = {
     ActionName.CURLED_UP: 4,
     ActionName.HUNCHED: 5,
     ActionName.VICTORY: 0,
-    ActionName.ARMS_RAISED: 1,
-    ActionName.WAVING: 2,
-    ActionName.JUMPING: 3,
-    ActionName.ARMS_OPEN: 4,
-    ActionName.FAST_NOD: 5,
-    ActionName.CLAPPING: 6,
-    ActionName.THUMBS_UP: 7,
+    ActionName.BECKONING: 1,
+    ActionName.ARMS_RAISED: 2,
+    ActionName.WAVING: 3,
+    ActionName.JUMPING: 4,
+    ActionName.ARMS_OPEN: 5,
+    ActionName.FAST_NOD: 6,
+    ActionName.CLAPPING: 7,
+    ActionName.THUMBS_UP: 8,
     ActionName.SQUAT_DOWN: 0,
     ActionName.BEND_OVER: 1,
     ActionName.STANDING: 2,
@@ -2728,7 +3099,14 @@ class RuleActionClassifier:
         self._score_basic_pose(scores, pose)
         self._score_temporal_actions(scores, frame)
         self._score_pose_relations(scores, pose, landmarks)
-        self._score_hand_actions(scores, frame, data.left_hand, data.right_hand)
+        scores[ActionName.BECKONING] = frame.beckoning.score
+        self._score_hand_actions(
+            scores,
+            frame,
+            data.left_hand,
+            data.right_hand,
+            frame.beckoning,
+        )
         self._resolve_conflicts(scores)
         return scores
 
@@ -3488,6 +3866,7 @@ class RuleActionClassifier:
         frame: AnalyzedFrame,
         left: HandLandmarkSet | None,
         right: HandLandmarkSet | None,
+        beckoning: BeckoningEvidence,
     ) -> None:
         hand_inputs = (
             (
@@ -3507,10 +3886,24 @@ class RuleActionClassifier:
         victory_scores: list[float] = []
         pointing_scores: list[float] = []
         stop_scores: list[float] = []
+        assigned = _beckoning_hand_assignments(frame.inference.data)
+        body_side_by_hand = (
+            {id(hand): side for side, hand in assigned[1].items()}
+            if assigned is not None
+            else {}
+        )
         for side, landmarks, features, motion in hand_inputs:
             thumb_scores.append(RuleActionClassifier._thumbs_up(landmarks, features))
             victory_scores.append(RuleActionClassifier._victory(landmarks, features))
-            pointing_scores.append(RuleActionClassifier._pointing(landmarks, features))
+            pointing_score = RuleActionClassifier._pointing(landmarks, features)
+            body_side = body_side_by_hand.get(id(landmarks), side)
+            if (
+                body_side == "left" and beckoning.left_score >= 0.55
+            ) or (body_side == "right" and beckoning.right_score >= 0.55):
+                # Beckoning and pointing are derived from the same hand. Suppress
+                # only that source; a pointing hand on the other side can coexist.
+                pointing_score = 0.0
+            pointing_scores.append(pointing_score)
             stop_scores.append(
                 RuleActionClassifier._stop_hand(
                     frame,
@@ -3741,6 +4134,7 @@ class RuleActionClassifier:
                 ActionName.ARMS_RAISED,
                 ActionName.ARMS_OPEN,
                 ActionName.POINTING,
+                ActionName.BECKONING,
             ):
                 scores[incompatible_action] = 0.0
 
@@ -4636,6 +5030,7 @@ class ActionSmoother:
         ActionName.FAST_NOD,
         ActionName.JUMPING,
         ActionName.WAVING,
+        ActionName.BECKONING,
         ActionName.LARGE_ARM_SWING,
         ActionName.STOMPING,
         ActionName.STOP_GESTURE,
@@ -4729,6 +5124,7 @@ class ActionSmoother:
                 ActionName.ARMS_OPEN,
                 ActionName.ARMS_RAISED,
                 ActionName.WAVING,
+                ActionName.BECKONING,
                 ActionName.LARGE_ARM_SWING,
             )
             for historical_scores in self._history:
@@ -4740,6 +5136,7 @@ class ActionSmoother:
         if raw_scores.get(ActionName.STOP_GESTURE, 0.0) >= _STOP_SCORE_THRESHOLD:
             incompatible_stop_actions = (
                 ActionName.WAVING,
+                ActionName.BECKONING,
                 ActionName.LARGE_ARM_SWING,
                 ActionName.ARMS_RAISED,
                 ActionName.ARMS_OPEN,
@@ -4866,6 +5263,8 @@ class ActionRecognizer:
         self._face_covering = FaceCoveringDetector()
         self._fall_events = FallEventManager()
         self._jump_events = JumpEventManager()
+        self._beckoning_source_votes: deque[frozenset[str]] = deque(maxlen=5)
+        self._pointing_source_votes: deque[frozenset[str] | None] = deque(maxlen=10)
 
     @property
     def face_covering_diagnostics(self) -> dict[str, object]:
@@ -4885,6 +5284,8 @@ class ActionRecognizer:
         self._face_covering = FaceCoveringDetector()
         self._fall_events = FallEventManager()
         self._jump_events = JumpEventManager()
+        self._beckoning_source_votes.clear()
+        self._pointing_source_votes.clear()
 
     def recognize(
         self, frame: AnalyzedFrame
@@ -4896,6 +5297,64 @@ class ActionRecognizer:
     ]:
         raw_scores = self._classifier.classify(frame)
         timestamp_s = frame.inference.captured.monotonic_ns / 1_000_000_000.0
+        valid_sides = {
+            side for side, valid in (
+                ("left", frame.beckoning.left_orientation_valid),
+                ("right", frame.beckoning.right_orientation_valid),
+            ) if valid
+        }
+        observation_gap = (
+            len(frame.samples) >= 2
+            and frame.samples[-1].monotonic_s - frame.samples[-2].monotonic_s
+            > _BECKONING_MAX_GAP_S
+        )
+        if (
+            not valid_sides
+            or any(
+                sources and not sources & valid_sides
+                for sources in list(self._beckoning_source_votes)[-4:]
+            )
+            or observation_gap
+        ):
+            # Palm polarity and its current body-wrist association are required
+            # sources. A different valid hand cannot preserve a lost hand's votes.
+            self._smoother.clear(ActionName.BECKONING)
+            self._beckoning_source_votes.clear()
+        beckoning_sides = {
+            side for side, score in (
+                ("left", frame.beckoning.left_score),
+                ("right", frame.beckoning.right_score),
+            ) if score >= 0.55
+        }
+        if raw_scores[ActionName.BECKONING] >= 0.55:
+            # Clear old Pointing only when all of its retained sources are known
+            # to be the beckoning hand. Unknown or other-hand votes are preserved.
+            retained_sources = [vote for vote in self._pointing_source_votes if vote]
+            if (
+                raw_scores[ActionName.POINTING] < 0.55
+                and retained_sources
+                and None not in self._pointing_source_votes
+                and all(vote <= beckoning_sides for vote in retained_sources)
+            ):
+                self._smoother.clear(ActionName.POINTING)
+                self._pointing_source_votes.clear()
+        self._beckoning_source_votes.append(
+            frozenset(beckoning_sides)
+            if raw_scores[ActionName.BECKONING] >= 0.55 else frozenset()
+        )
+        pointing_sources: frozenset[str] | None = frozenset()
+        if raw_scores[ActionName.POINTING] >= 0.55:
+            assignment = _beckoning_hand_assignments(frame.inference.data)
+            if assignment is None:
+                pointing_sources = None
+            else:
+                hands = assignment[1]
+                pointing_sources = frozenset(
+                    side for side, hand in hands.items()
+                    if RuleActionClassifier._pointing(hand, extract_hand_features(hand)) >= 0.55
+                    and side not in beckoning_sides
+                ) or None
+        self._pointing_source_votes.append(pointing_sources)
         face_evidence = self._face_covering.update(frame)
         # FACE_COVERING is owned by its real-time lifecycle.  Its raw score is
         # still published for diagnostics and conflict suppression, but its
@@ -4948,6 +5407,8 @@ class ActionRecognizer:
         # its older 8/10 frame policy during a short candidate or exit period.
         self._smoother.clear(ActionName.FACE_COVERING)
         actions = self._smoother.update(raw_scores, timestamp_s)
+        if not self._smoother.has_supporting_score(ActionName.BECKONING):
+            self._beckoning_source_votes.clear()
         actions = tuple(
             action for action in actions
             if action.name is not ActionName.FACE_COVERING
@@ -5071,17 +5532,21 @@ class BehaviorEngine:
         )
 
         feature_started_ns = time.perf_counter_ns()
+        sample_snapshot = tuple(self._samples)
         features = FrameFeatures(
             pose=extract_pose_features(frame.pose_landmarks),
             left_hand=extract_hand_features(frame.left_hand),
             right_hand=extract_hand_features(frame.right_hand),
-            temporal=extract_temporal_features(tuple(self._samples)),
+            temporal=extract_temporal_features(sample_snapshot),
         )
+        beckoning = _beckoning_evidence(sample_snapshot)
         feature_ms = (time.perf_counter_ns() - feature_started_ns) / 1_000_000.0
         analyzed = AnalyzedFrame(
             inference=inference,
             features=features,
             feature_ms=feature_ms,
+            samples=sample_snapshot,
+            beckoning=beckoning,
         )
 
         recognition_started_ns = time.perf_counter_ns()
