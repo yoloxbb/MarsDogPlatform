@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 9
-- **Last Active**: 2026-10-13
+- **Total Sessions**: 10
+- **Last Active**: 2026-10-14
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~329 | Active |
+| `journal-1.md` | ~351 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 10 | 2026-10-14 | Implement beckoning pose detection | `c0bd0a3` | `codex/vision-face-emotion` |
 | 9 | 2026-10-13 | Owner bend squat visual event | `cd57886` | `codex/vision-face-emotion` |
 | 8 | 2026-10-13 | Add pet-attention bend and squat postures | `0595dd2` | `codex/vision-face-emotion` |
 | 7 | 2026-10-12 | Family and stranger presence events | `4ce1a9a` | `codex/vision-face-emotion` |

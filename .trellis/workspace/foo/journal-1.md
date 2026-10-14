@@ -327,3 +327,25 @@ Implemented owner-only bend/squat visual event with distinct-observation entry s
 ### Status
 
 [OK] **Completed**
+
+
+## Session 10: Implement beckoning pose detection
+<!-- trellis-session: v=2 fp=5c260fe5dd1d243a -->
+
+**Date**: 2026-10-14
+**Task**: Implement beckoning pose detection
+**Branch**: `codex/vision-face-emotion`
+
+### Summary
+
+Added a conservative frontal-only beckoning pose action for the current active target. Published pose_action=beckoning with no ROS event or robot behavior changes; added cycle/orientation gates and regression coverage. Verified 660 Vision tests pass with 3 existing RGA parity skips, dev check passes, and 34 visual-contract scenarios pass with unchanged baseline.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c0bd0a3` | feat(vision): detect beckoning pose |
+
+### Status
+
+[OK] **Completed**
