@@ -382,3 +382,25 @@ Added a privacy-minimized RKNN positive trace, fixed beckoning continuity across
 ### Status
 
 [OK] **Completed**
+
+
+## Session 12: 视觉主人召唤事件
+<!-- trellis-session: v=2 fp=3c297166b4bbfbe4 -->
+
+**Date**: 2026-10-14
+**Task**: 视觉主人召唤事件
+**Branch**: `codex/vision-face-emotion`
+
+### Summary
+
+实现 EVT_VISION_OWNER_RECALL_GESTURE，串联 Vision 状态事件、Behavior 统一仲裁与已登记主人靠近 Action；补充连续手势解除/失效来源/目标切换保护和契约文档。验证：Vision 694 passed、3 RGA skipped；Behavior 611 passed；视觉契约 34 场景及召唤探针通过；未运行真实 ROS transport。已提交 67adb02。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `67adb02` | feat(vision): route owner recall gesture through behavior arbitration |
+
+### Status
+
+[OK] **Completed**

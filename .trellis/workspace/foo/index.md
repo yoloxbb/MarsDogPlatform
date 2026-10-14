@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 11
+- **Total Sessions**: 12
 - **Last Active**: 2026-10-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~384 | Active |
+| `journal-1.md` | ~406 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 12 | 2026-10-14 | 视觉主人召唤事件 | `67adb02` | `codex/vision-face-emotion` |
 | 11 | 2026-10-14 | Tune Vision beckoning with RKNN positive | `ce8ecce` | `codex/vision-face-emotion` |
 | 10 | 2026-10-14 | Implement beckoning pose detection | `c0bd0a3` | `codex/vision-face-emotion` |
 | 9 | 2026-10-13 | Owner bend squat visual event | `cd57886` | `codex/vision-face-emotion` |
