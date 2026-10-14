@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 10
+- **Total Sessions**: 11
 - **Last Active**: 2026-10-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~351 | Active |
+| `journal-1.md` | ~384 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 11 | 2026-10-14 | Tune Vision beckoning with RKNN positive | `ce8ecce` | `codex/vision-face-emotion` |
 | 10 | 2026-10-14 | Implement beckoning pose detection | `c0bd0a3` | `codex/vision-face-emotion` |
 | 9 | 2026-10-13 | Owner bend squat visual event | `cd57886` | `codex/vision-face-emotion` |
 | 8 | 2026-10-13 | Add pet-attention bend and squat postures | `0595dd2` | `codex/vision-face-emotion` |

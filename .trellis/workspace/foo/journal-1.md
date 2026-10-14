@@ -349,3 +349,36 @@ Added a conservative frontal-only beckoning pose action for the current active t
 ### Status
 
 [OK] **Completed**
+
+
+## Session 11: Tune Vision beckoning with RKNN positive
+<!-- trellis-session: v=2 fp=257cbf8d5fdc15e4 -->
+
+**Date**: 2026-10-14
+**Task**: Tune Vision beckoning with RKNN positive
+**Branch**: `codex/vision-face-emotion`
+
+### Summary
+
+Added a privacy-minimized RKNN positive trace, fixed beckoning continuity across brief same-side hand-association dropouts, and verified stable pose_action output on the source clip.
+
+### Main Changes
+
+- Preserved gesture finger/travel/timing thresholds while allowing gaps up to 0.35s between valid same-side wrist matches.
+- Added offline RKNN replay tooling, source/model provenance, and a no-image landmark fixture.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ce8ecce` | fix(vision): recognize beckoning through brief hand dropouts |
+
+### Testing
+
+- [OK] Vision suite: 665 passed, 3 explicit RGA parity skips; 0 failures.
+- [OK] Focused gesture + fixture/replay tests: 181 passed; visual contracts and tools/dev.py check passed.
+- [OK] RKNN/RGA on RK3588: 457 sampled frames, 0 backend errors, 15 discrete stable beckoning outputs in the positive interval.
+
+### Status
+
+[OK] **Completed**
