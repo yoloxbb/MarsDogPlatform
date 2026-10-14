@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/vision-gesture-pose.md","reason":"Existing GesturePose taxonomy, temporal thresholds, conflict precedence, and frozen ROS/public output contract being tuned by this task."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Backend quality and test expectations for changes to Vision classification behavior."}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"Requires searching for existing gesture and replay helpers before adding rules or tools."}
+{"file":".trellis/tasks/10-14-vision-beckoning-positive/research/rknn_beckoning_diagnostics.md","reason":"Records the real RKNN positive replay observations, current failure gates, models, and fixture/privacy boundaries."}
