@@ -8,6 +8,7 @@ import time
 
 from .visual_presence_contract import (
     OWNER_PRESENCE_EVENT,
+    OWNER_RECALL_GESTURE_EVENT,
     VISUAL_POSTURE_ACTIONS,
     VISUAL_POSTURE_EVENT_NAMES,
     VISUAL_PRESENCE_EVENT_NAMES,
@@ -97,6 +98,50 @@ def _advance_owner_posture_snapshot(self, data) -> None:
     self._owner_posture_snapshot_id = snapshot_id.strip()
 
 
+def _advance_owner_recall_snapshot(self, data) -> None:
+    """Track accepted source order for owner-recall candidate provenance."""
+    epoch = data.get("vision_epoch")
+    sequence = data.get("sequence")
+    snapshot_id = data.get("snapshot_id")
+    source_id = data.get("source_observation_id")
+    if (
+        data.get("observation_status") != "valid"
+        or not isinstance(epoch, str) or not epoch.strip()
+        or isinstance(sequence, bool) or not isinstance(sequence, int) or sequence <= 0
+        or not isinstance(snapshot_id, str) or not snapshot_id.strip()
+        or not isinstance(source_id, str) or not source_id.strip()
+    ):
+        return
+    epoch = epoch.strip()
+    retired = getattr(self, "_owner_recall_retired_epochs", set())
+    if epoch in retired:
+        return
+    current_epoch = getattr(self, "_owner_recall_snapshot_epoch", "")
+    if epoch != current_epoch:
+        if current_epoch:
+            retired.add(current_epoch)
+        self._owner_recall_retired_epochs = retired
+    elif sequence <= getattr(self, "_owner_recall_snapshot_sequence", 0):
+        return
+    self._owner_recall_snapshot_epoch = epoch
+    self._owner_recall_snapshot_sequence = sequence
+    self._owner_recall_snapshot_id = snapshot_id.strip()
+
+
+def owner_recall_snapshot_is_current(self) -> bool:
+    """Reject delayed or retired snapshots for recall candidates."""
+    epoch = getattr(self, "_owner_recall_snapshot_epoch", "")
+    return bool(
+        epoch
+        and self._cached_observation_status == "valid"
+        and self._cached_vision_epoch == epoch
+        and self._cached_visual_sequence
+        == getattr(self, "_owner_recall_snapshot_sequence", None)
+        and self._cached_visual_snapshot_id
+        == getattr(self, "_owner_recall_snapshot_id", "")
+    )
+
+
 def owner_posture_snapshot_is_current(self) -> bool:
     """Reject cached posture context overwritten by delayed or retired packets."""
     epoch = getattr(self, "_owner_posture_snapshot_epoch", "")
@@ -143,6 +188,7 @@ def consume_visual_event(self, msg, *, direct_events):
     dispatch_events: list[tuple[str, str]] = []
     with self._lock:
         _advance_owner_posture_snapshot(self, data)
+        _advance_owner_recall_snapshot(self, data)
         received_at = time.monotonic()
         previous_received_at = self._visual_cache_updated_at
         self._visual_cache_updated_at = received_at
@@ -340,6 +386,11 @@ def consume_visual_event(self, msg, *, direct_events):
                 if (
                     event_type in VISUAL_POSTURE_EVENT_NAMES
                     and not owner_posture_snapshot_is_current(self)
+                ):
+                    continue
+                if (
+                    event_type == OWNER_RECALL_GESTURE_EVENT
+                    and not owner_recall_snapshot_is_current(self)
                 ):
                     continue
                 if event_type in VISUAL_POSTURE_EVENT_NAMES and not any(

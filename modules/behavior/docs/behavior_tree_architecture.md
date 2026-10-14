@@ -107,7 +107,7 @@
 | 3 | `/internal_need/state` | `std_msgs/String` (JSON) | BEST_EFFORT, depth=5 | V2 完整需求状态 + 相关性 | **否** |
 | 4 | `/internal_need/signal_event` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | V2 等级变化 → 需求行为候选 | **是**（RECOVERED 除外） |
 | 5 | `/perception/audio_event` | `std_msgs/String` (JSON) | RELIABLE, depth=10 | 音频指令 → 外部交互候选 | **是**（白名单） |
-| 6 | `/perception/visual_event` | `std_msgs/String` (JSON v1) | BEST_EFFORT, depth=5 | 场景缓存 + STRANGER 融合 + FALL/STOP 白名单 | **是**（仅白名单） |
+| 6 | `/perception/visual_event` | `std_msgs/String` (JSON v1) | BEST_EFFORT, depth=5 | 场景缓存 + STRANGER 融合 + FALL/STOP/主人在场、姿态、召唤白名单 | **是**（仅白名单） |
 
 ### 2.2 `state` vs `signal_event` 的分工
 
@@ -390,6 +390,7 @@ TOILET、CLEAN、SLEEP 是条件指令：在任何候选入池或会话修改之
     ├── EVT_VISION_STOP_GESTURE → respond_stop_gesture (Lv1, sp=12)
     ├── EVT_VISION_OWNER_PRESENT → owner_greet (Lv1, sp=12, semantic_rank=3)
     ├── EVT_VISION_OWNER_BEND_SQUAT → approach_owner (Lv1, sp=12, semantic_rank=3)
+    ├── EVT_VISION_OWNER_RECALL_GESTURE → approach_owner (Lv1, sp=12, semantic_rank=3)
     ├── EVT_VISION_FAMILY_PRESENT → familiar_person_greet (Lv1, sp=12, semantic_rank=3)
     ├── EVT_VISION_STRANGER_PRESENT → stranger_observe (Lv1, sp=12, semantic_rank=3)
     └── 其余 events 不直接创建行为候选

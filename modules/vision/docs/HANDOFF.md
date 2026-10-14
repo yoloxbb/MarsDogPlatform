@@ -80,6 +80,16 @@ Topic 中断去重。该事件不改变现有 `EVT_VISION_MASTER` 的 Emotion/�
 retained-only target 不当作姿态解除。新事件只发布到 `/perception/visual_event`，不映射 Emotion，
 也不调用行为或动作接口。
 
+主人招手/挥手召唤使用独立状态快照事件 `EVT_VISION_OWNER_RECALL_GESTURE`。它只消费同一当前主人
+目标的稳定精确 GesturePose 类别 `beckoning` 或 `waving`；产品语义确认两者都表示召唤。检测器不能
+判断动态挥手是否带有问候意图，因此任何稳定 `waving` 都按召唤；静态 `arms_raised` 不触发。由于公开
+`pose_action=arm_raise_wave` 会合并挥手和静态举手，事件使用 Vision 内部稳定 `recognized_actions[]`
+并在 ROS v1 序列化前移除诊断字段。一个连续招手/挥手周期只分配一个 event ID；只有不同且有效的新
+观测确认同一当前主人目标的两个召唤类别均解除，且建立该实例的来源同侧有效可判定后才重新武装。
+私有诊断只复用现有 BECKONING 手部/手指来源有效性、同侧 `0.35 s` 连续性与 WAVING 腕/肩来源有效性；
+不参与触发分类或改变算法。无效数据、手部漏检/歧义、断流、过期数据或目标/epoch 切换不能伪装成
+解除。Behavior 将其作为互动候选交给统一仲裁；当前已登记 Action 只实现靠近阶段，没有靠近后等待互动信号的执行能力。
+
 ## 4. 人体候选和 `active_target` 使用规则
 
 下游运动控制必须同时满足：

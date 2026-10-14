@@ -37,6 +37,15 @@ def build_visual_snapshot(self, raw: dict[str, Any] | Any, *, finite_positive, f
     event["_source_observation_age_sec"] = raw_dict.get(
         "_source_observation_age_sec"
     )
+    # GesturePose diagnostics are private same-inference evidence for Vision's
+    # owner recall state machine. They are removed before the v1 packet leaves
+    # the producer; the public pose_action projection intentionally remains
+    # unchanged and cannot distinguish waving from a static raised arm.
+    event["_gesture_diagnostics"] = raw_dict.get("_gesture_diagnostics")
+    raw_gesture_target = raw_dict.get("active_target")
+    if isinstance(raw_gesture_target, dict):
+        event["_gesture_target_id"] = raw_gesture_target.get("target_id", "")
+        event["_gesture_track_id"] = raw_gesture_target.get("track_id", 0)
     target_snapshot = self._target_manager.get_snapshot()
     vision_epoch = str(
         target_snapshot.get("vision_epoch", "")

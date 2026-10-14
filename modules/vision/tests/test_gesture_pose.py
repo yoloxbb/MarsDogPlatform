@@ -21,6 +21,10 @@ from marsdog_vision_interaction.providers.gesture_pose_engine import (
     pose_landmarks_from_objects,
 )
 from marsdog_vision_interaction.providers.pose_action import PoseActionClassifier
+from marsdog_vision_interaction.core.owner_recall_gesture_event_state import (
+    OwnerRecallGestureEventConfig,
+    OwnerRecallGestureEventState,
+)
 
 
 def _pose(kind: str = "standing") -> tuple[PoseLandmark, ...]:
@@ -866,6 +870,34 @@ def _beckoning_raw(snapshot: dict) -> float:
     return next(item["score"] for item in snapshot["raw_scores"] if item["name"] == "beckoning")
 
 
+def _owner_recall_observation(snapshot: dict, source_id: str) -> dict:
+    target = {
+        "vision_epoch": "vision-1",
+        "target_id": "vision-1:human:7",
+        "target_type": "human",
+        "track_id": 7,
+        "identity": "owner",
+        "identity_state": "confirmed_known",
+        "tracking_state": "tracking",
+        "last_seen_age_ms": 0.0,
+    }
+    return {
+        "vision_epoch": "vision-1",
+        "snapshot_id": f"vision-1:{source_id}",
+        "sequence": int(source_id.rsplit(":", 1)[-1]),
+        "source_observation_id": source_id,
+        "observation_status": "valid",
+        "_source_observation_age_sec": 0.0,
+        "_source_owner_target_ids": [target["target_id"]],
+        "_source_human_target_ids": [target["target_id"]],
+        "human_candidates": [dict(target)],
+        "active_target": dict(target),
+        "_gesture_target_id": target["target_id"],
+        "_gesture_track_id": target["track_id"],
+        "_gesture_diagnostics": snapshot,
+    }
+
+
 @pytest.mark.parametrize("side", ("left", "right"))
 @pytest.mark.parametrize("mirrored", (False, True))
 @pytest.mark.parametrize("inward", (False, True))
@@ -935,6 +967,105 @@ def test_beckoning_invalid_source_clears_its_stable_history(failure: str) -> Non
     assert _beckoning_raw(snapshot) == 0.0
     assert snapshot["pose_action"] != "beckoning"
     assert all(item["name"] != "beckoning" for item in snapshot["recognized_actions"])
+
+
+@pytest.mark.parametrize(
+    "failure", (
+        "gap", "missing_hand", "other_hand", "invalid_fingers",
+        "ambiguous_wrists", "history_expired",
+    )
+)
+def test_owner_recall_does_not_rearm_on_invalid_beckoning_source(
+    failure: str,
+) -> None:
+    classifier = PoseActionClassifier()
+    event_state = OwnerRecallGestureEventState(OwnerRecallGestureEventConfig())
+    stable_snapshot = None
+    stable_event_id = ""
+    for index, finger_state in enumerate(
+        ("open", "closed", "open", "closed", "open", "open", "open")
+    ):
+        stable_snapshot = _beckoning_snapshot(
+            classifier, finger_state, 130.0 + index * 0.1
+        )
+        emitted = event_state.update(
+            _owner_recall_observation(stable_snapshot, f"frame:{index + 1}"),
+            now=130.0 + index * 0.1,
+        )
+        if emitted.active:
+            stable_event_id = emitted.event_id
+    assert stable_snapshot is not None
+    assert stable_event_id
+
+    pose = _frontal_beckoning_pose("left")
+    hand = _beckoning_hand_at_wrist(pose[15].x, pose[15].y, state="open")
+    right_hand = None
+    observed_at = 130.7
+    if failure == "gap":
+        observed_at = 131.3
+    elif failure == "history_expired":
+        # Evict every prior valid hand source from the 30-frame detector
+        # history. The first returning source must establish continuity,
+        # rather than treating the empty history as release confirmation.
+        for index in range(30):
+            missing_at = 130.7 + index * 0.1
+            snapshot = classifier.update(
+                track_id=7, pose_landmarks=pose, left_hand=None, now=missing_at,
+            )
+            held = event_state.update(
+                _owner_recall_observation(snapshot, f"frame:{index + 8}"),
+                now=missing_at,
+            )
+            assert held.active
+            assert held.event_id == stable_event_id
+        observed_at = 133.7
+    elif failure == "missing_hand":
+        hand = None
+    elif failure == "other_hand":
+        hand = None
+        right_hand = _beckoning_hand_at_wrist(
+            pose[16].x,
+            pose[16].y,
+            state="open",
+            camera_polarity=-1.0,
+        )
+    elif failure == "invalid_fingers":
+        points = list(hand)
+        for start in (5, 9, 13, 17):
+            points[start + 1 : start + 4] = [points[start]] * 3
+        hand = tuple(points)
+    elif failure == "ambiguous_wrists":
+        pose = tuple(
+            replace(point, x=pose[15].x, y=pose[15].y)
+            if index == 16 else point
+            for index, point in enumerate(pose)
+        )
+    missing_source_snapshot = classifier.update(
+        track_id=7,
+        pose_landmarks=pose,
+        left_hand=hand,
+        right_hand=right_hand,
+        now=observed_at,
+    )
+    assert all(
+        item["name"] != "beckoning"
+        for item in missing_source_snapshot["recognized_actions"]
+    )
+    held = event_state.update(
+        _owner_recall_observation(missing_source_snapshot, "frame:38"),
+        now=observed_at,
+    )
+    assert held.active
+    assert held.event_id == stable_event_id
+
+    if failure == "history_expired":
+        confirmed_at = observed_at + 0.1
+        snapshot = _beckoning_snapshot(classifier, "open", confirmed_at)
+        released = event_state.update(
+            _owner_recall_observation(snapshot, "frame:39"), now=confirmed_at,
+        )
+        assert not released.active
+        assert released.transition == "EXIT"
 
 
 def test_beckoning_cycles_expire_and_duplicate_shapes_do_not_add_cycles() -> None:

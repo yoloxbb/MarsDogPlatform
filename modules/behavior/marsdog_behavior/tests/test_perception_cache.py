@@ -548,6 +548,34 @@ def _owner_bend_squat_payload(
     }
 
 
+def _owner_recall_payload(
+    *, snapshot: int, epoch: str = "vision-1", status: str = "valid"
+) -> dict:
+    event_name = "EVT_VISION_OWNER_RECALL_GESTURE"
+    return {
+        "schema_version": 1,
+        "vision_epoch": epoch,
+        "snapshot_id": f"{epoch}:{snapshot}",
+        "sequence": snapshot,
+        "source_observation_id": f"camera-frame-{snapshot}",
+        "observation_status": status,
+        "events": [event_name],
+        "event_instances": {
+            event_name: {"event_id": "owner-recall-cycle-1"}
+        },
+        "human_candidates": [{
+            "identity": "owner",
+            "identity_state": "confirmed_known",
+            "tracking_state": "tracking",
+            "target_type": "human",
+            "target_id": f"{epoch}:human:7",
+            "track_id": 7,
+            "vision_epoch": epoch,
+            "last_seen_age_ms": 0.0,
+        }],
+    }
+
+
 def _category_presence_payload(
     event_name: str,
     *,
@@ -619,6 +647,86 @@ def test_owner_posture_instance_deduplicates_hold_snapshots_and_timeout() -> Non
     assert received == [
         ("EVT_VISION_OWNER_BEND_SQUAT", "vision-1:1")
     ]
+
+
+def test_owner_recall_instance_deduplicates_hold_snapshots_and_timeout() -> None:
+    adapter = _adapter()
+    received: list[tuple[str, str]] = []
+    adapter.set_on_visual_event(
+        lambda event, payload: received.append((event, payload["snapshot_id"]))
+        or True
+    )
+    adapter._on_visual_ros2(_Message(_owner_recall_payload(snapshot=1)))
+    adapter._on_visual_ros2(_Message(_owner_recall_payload(snapshot=2)))
+    adapter._visual_cache_updated_at = (
+        time.monotonic() - adapter.VISUAL_CACHE_TIMEOUT_SEC - 0.1
+    )
+    adapter._on_visual_ros2(_Message(_owner_recall_payload(snapshot=3)))
+
+    assert received == [
+        ("EVT_VISION_OWNER_RECALL_GESTURE", "vision-1:1")
+    ]
+
+
+def test_owner_recall_rejects_invalid_and_out_of_order_snapshots() -> None:
+    adapter = _adapter()
+    received: list[str] = []
+    adapter.set_on_visual_event(
+        lambda event, _payload: received.append(event) or True
+    )
+    invalid = _owner_recall_payload(snapshot=1, status="invalid")
+    adapter._on_visual_ros2(_Message(invalid))
+    assert received == []
+
+    current = _owner_recall_payload(snapshot=2)
+    adapter._on_visual_ros2(_Message(current))
+    event = "EVT_VISION_OWNER_RECALL_GESTURE"
+    candidate = {"params": {
+        "visual_target": dict(current["human_candidates"][0]),
+        "visual_event_instance_id": "owner-recall-cycle-1",
+        "vision_epoch": "vision-1",
+        "snapshot_id": "vision-1:2",
+        "source_observation_id": "camera-frame-2",
+    }}
+    assert adapter.visual_presence_candidate_is_current(
+        candidate, event_type=event
+    )
+
+    adapter._on_visual_ros2(_Message(_owner_recall_payload(snapshot=1)))
+    assert received == [event]
+    assert not adapter.visual_presence_candidate_is_current(
+        candidate, event_type=event
+    )
+
+    adapter._on_visual_ros2(_Message(current))
+    assert adapter.visual_presence_candidate_is_current(
+        candidate, event_type=event
+    )
+
+
+def test_owner_recall_rejects_old_epoch_candidate_after_epoch_switch() -> None:
+    adapter = _adapter()
+    event = "EVT_VISION_OWNER_RECALL_GESTURE"
+    adapter.set_on_visual_event(lambda _event, _payload: True)
+    old = _owner_recall_payload(snapshot=1, epoch="vision-1")
+    adapter._on_visual_ros2(_Message(old))
+    old_candidate = {"params": {
+        "visual_target": dict(old["human_candidates"][0]),
+        "visual_event_instance_id": "owner-recall-cycle-1",
+        "vision_epoch": "vision-1",
+        "snapshot_id": old["snapshot_id"],
+        "source_observation_id": old["source_observation_id"],
+    }}
+    new = _owner_recall_payload(snapshot=1, epoch="vision-2")
+    new["event_instances"][event]["event_id"] = "owner-recall-cycle-2"
+    adapter._on_visual_ros2(_Message(new))
+    assert not adapter.visual_presence_candidate_is_current(
+        old_candidate, event_type=event
+    )
+    adapter._on_visual_ros2(_Message(old))
+    assert not adapter.visual_presence_candidate_is_current(
+        old_candidate, event_type=event
+    )
 
 
 def test_owner_posture_does_not_dispatch_invalid_or_released_pose() -> None:

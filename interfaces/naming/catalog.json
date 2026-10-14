@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source_sha256": {
-    "modules/behavior/config/event_intent_map.yaml": "d894136120b1eed906e67c52f5d0b7e4c0231976583456d6ef3a93cc6b3f7aff",
+    "modules/behavior/config/event_intent_map.yaml": "61ce50c405e79b67c2f98f15509c8fbf5df401206ecbab5fc06372aa907d6b16",
     "modules/behavior/config/intent_action_pool.yaml": "fb978f85bbf9c49ed873735857c10e831ffbd48a56d31f4ee0ea0eea29d83a1d",
     "modules/behavior/config/behavior_categories.yaml": "ac877386c8e71aec0aec4ca93af227b7e6be9f9da769af40d70f50edd220ab10",
     "modules/behavior/config/emotion_behavior_map.yaml": "2e6e4e83fed3a606fbbed43f0986eb94753a741105ca13d255b66ecbad5632be",
@@ -1647,6 +1647,21 @@
     {
       "source": "visual_direct",
       "event": "EVT_VISION_OWNER_BEND_SQUAT",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "owner_approach_response",
+      "selection": "intent_pool",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "approach_owner"
+      ],
+      "executor_behaviors": [
+        "approach_owner"
+      ]
+    },
+    {
+      "source": "visual_direct",
+      "event": "EVT_VISION_OWNER_RECALL_GESTURE",
       "context": "default",
       "category": "external_interaction",
       "intent": "owner_approach_response",

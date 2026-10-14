@@ -16,7 +16,7 @@
 | Topic | 类型 | QoS | 作用 |
 |---|---|---|---|
 | `/perception/audio_event` | String JSON v2 | RELIABLE 10 | 唤醒、授权具体指令、会话结束 |
-| `/perception/visual_event` | String JSON v1 | BEST_EFFORT 5 | STRANGER 融合情绪；FALL/STOP_GESTURE 与主人在场生成直驱候选 |
+| `/perception/visual_event` | String JSON v1 | BEST_EFFORT 5 | STRANGER 融合情绪；FALL/STOP_GESTURE、主人在场/姿态/召唤生成直驱候选 |
 | `/emotion/state` | String JSON | BEST_EFFORT 5 | 权威情绪当前状态 |
 | `/emotion/signal_event` | String JSON | RELIABLE 10 | 情绪上升沿候选 |
 | `/internal_need/state` | String JSON | BEST_EFFORT 5 | 权威需求当前状态 |
@@ -222,6 +222,15 @@ Topic 中断清除去重记忆。Vision 以不同有效源观测确认目标满 
 该姿态事件单独维护所有有效快照的 epoch/sequence 高水位，拒绝回退序号和已退休 epoch，派发前
 缓存也必须匹配最新接受的快照。epoch 为不透明值，只能识别已经见过并退休的 epoch，不能排序
 首次遇到的未知 epoch。已有在场事件的缓存与去重策略保持原规则。
+
+`EVT_VISION_OWNER_RECALL_GESTURE` 是与弯腰/蹲下分离的主人召唤动作事件，接受 GesturePose 已稳定确认
+的精确 `beckoning` 或 `waving` 类别；产品语义将两者都视作召唤，检测器不能区分挥手问候意图，
+静态 `arms_raised` 不触发。事件沿用稳定 event ID 与活动状态快照；同目标有效观测确认两个类别都解除，
+且建立实例的类别/来源同侧有效可判定后才重新武装。BECKONING 手部漏检/几何无效/同侧连续性中断，
+WAVING 腕/肩来源缺失，或无效/过期数据、缓存中断、目标切换和 epoch 变化都不能伪装成解除。候选绑定新鲜、唯一、
+同 epoch 的 confirmed owner，进入同一 L2 仲裁并在派发前重验；不直控动作、不改变 Emotion。映射复用
+`owner_approach_response` → `approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER`，仅覆盖靠近；
+`ACT_VISUAL_RECALL_APPROACH` 是产品标签，现无已登记的主人互动等待 Action。
 
 ## 6. 情绪持续表达
 

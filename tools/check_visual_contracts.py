@@ -108,6 +108,104 @@ def _owner_posture_probe(output, owner_payload):
     }
 
 
+def _owner_recall_probe(output, owner_payload):
+    """Check recall event routing without changing the frozen v1 corpus."""
+    event = "EVT_VISION_OWNER_RECALL_GESTURE"
+    probe_dir = output / "owner-recall-probe"
+    probe_dir.mkdir(parents=True, exist_ok=True)
+    payload = deepcopy(owner_payload)
+    payload["events"] = ["EVT_VISION_MASTER", event]
+    payload["event_instances"] = {event: {"event_id": "owner-recall-probe-cycle-1"}}
+    producer = run_stage("vision", {"owner_recall": payload}, probe_dir, WORKER)
+    produced = producer["observed"]["owner_recall"]
+    for field in (
+        "events", "event_instances", "source_observation_id", "observation_status",
+        "vision_epoch", "snapshot_id", "sequence",
+    ):
+        if produced.get(field) != payload[field]:
+            raise RuntimeError(f"Vision changed owner recall metadata {field}")
+    produced_targets = produced.get("human_candidates")
+    if not isinstance(produced_targets, list) or len(produced_targets) != 1:
+        raise RuntimeError("Vision producer did not preserve the owner recall target")
+    for field in (
+        "identity", "identity_state", "tracking_state", "target_type", "target_id",
+        "track_id", "vision_epoch", "last_seen_age_ms",
+    ):
+        if produced_targets[0].get(field) != payload["human_candidates"][0][field]:
+            raise RuntimeError(f"Vision changed owner recall target field {field}")
+
+    wire = json.dumps(produced, ensure_ascii=False)
+    repeated = deepcopy(produced)
+    repeated.update(snapshot_id="owner-probe-epoch:2", sequence=2)
+    behavior = run_stage("behavior", [{"id": "recall", "steps": [
+        {"wire": wire},
+        {"wire": json.dumps(repeated, ensure_ascii=False)},
+        {"advance": 1.1, "wire": json.dumps({
+            **repeated, "snapshot_id": "owner-probe-epoch:3", "sequence": 3,
+        }, ensure_ascii=False)},
+    ]}], probe_dir, WORKER)
+    steps = behavior["observed"]["recall"]
+    if any(step["error"] for step in steps) or len(steps[0]["candidates"]) != 1:
+        raise RuntimeError("Owner recall did not produce exactly one Behavior candidate")
+    candidate = steps[0]["candidates"][0]
+    target = candidate.get("target", {})
+    if (
+        candidate["behavior_name"] != "approach_owner"
+        or candidate["intent"] != "owner_approach_response"
+        or candidate["source"] != "visual_direct"
+        or candidate["trigger_event"] != event
+        or candidate["priority_level"] != 1
+        or candidate["semantic_rank"] != 3
+        or candidate["sub_priority"] != 12
+        or candidate["modality_rank"] != 2
+        or candidate["interrupt_policy"] != "safe_point"
+        or candidate["source_emotion"]
+        or candidate["params"]["visual_event_instance_id"] != "owner-recall-probe-cycle-1"
+        or candidate["params"]["snapshot_id"] != payload["snapshot_id"]
+        or candidate["params"]["source_observation_id"] != payload["source_observation_id"]
+        or target.get("target_id") != payload["human_candidates"][0]["target_id"]
+        or target.get("vision_epoch") != payload["vision_epoch"]
+        or any(step["candidates"] for step in steps[1:])
+    ):
+        raise RuntimeError("Owner recall bypassed L2 mapping, fresh target, or instance dedup")
+
+    control = deepcopy(produced)
+    control["events"] = ["EVT_VISION_MASTER"]
+    emotion = run_stage("emotion", [
+        {"id": "control", "steps": [{"wire": json.dumps(control, ensure_ascii=False)}]},
+        {"id": "recall", "steps": [{"wire": wire}]},
+    ], probe_dir, WORKER)
+    control_step = emotion["observed"]["control"][0]
+    recall_step = emotion["observed"]["recall"][0]
+    # Needs returns every input event as receipt metadata. Compare its state,
+    # owner-presence state, and the Emotion consumer's applied events.
+    if (
+        any(control_step[field] != recall_step[field]
+            for field in ("emotions", "demands", "owner_present"))
+        or control_step["accepted"][0] != recall_step["accepted"][0]
+    ):
+        raise RuntimeError("Owner recall changed Emotion/Needs output")
+
+    action = run_stage("action", [{"id": "recall", "steps": [{
+        "wire": wire, "resolve_behavior": candidate["behavior_name"],
+    }]}], probe_dir, WORKER)
+    _validate_owner_posture_action_resolution(
+        action["observed"]["recall"][0]["resolution"]
+    )
+    return {
+        "producer_module": producer["provenance"]["module_file"],
+        "behavior_module": behavior["provenance"]["module_file"],
+        "emotion_module": emotion["provenance"]["module_file"],
+        "action_module": action["provenance"]["module_file"],
+        "event_name": event,
+        "behavior": "approach_owner",
+        "action_unit": "ACT_INTERACT_APPROACH_OWNER_CLOSER",
+        "emotion_and_need_unchanged": True,
+        "instance_dedup_across_repeated_snapshots_and_cache_timeout": True,
+        "scope": "shared candidate/L2 route and registered resolver; no direct motion execution",
+    }
+
+
 def observe(output):
     fixtures = json.loads((FIXTURES / "cases.json").read_text())
     vision = run_stage("vision", fixtures["producers"], output, WORKER)
@@ -239,6 +337,7 @@ def observe(output):
         )
 
     owner_posture_provenance = _owner_posture_probe(output, owner_payload)
+    owner_recall_provenance = _owner_recall_probe(output, owner_payload)
 
     scenarios = []
     for case in fixtures["scenarios"]:
@@ -276,6 +375,7 @@ def observe(output):
         "master_emotion_and_need_unchanged": True,
     }
     provenance["owner_posture_probe"] = owner_posture_provenance
+    provenance["owner_recall_probe"] = owner_recall_provenance
     return ({stage: value["observed"] for stage, value in responses.items()}, provenance)
 
 

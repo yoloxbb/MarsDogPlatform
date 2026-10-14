@@ -52,7 +52,7 @@ flowchart LR
 | `/internal_need/state` | BEST_EFFORT, depth=5 | V2：更新完整需求状态和相关性 | 否 |
 | `/internal_need/signal_event` | RELIABLE, depth=10 | V2：同步等级变化，再映射需求行为 | 是（RECOVERED 除外） |
 | `/perception/audio_event` | RELIABLE, depth=10 | schema v2；唤醒/终态与可执行具体指令精确白名单 | 是 |
-| `/perception/visual_event` | BEST_EFFORT, depth=5 | 缓存场景；STRANGER 情绪融合；FALL/STOP/OWNER/FAMILY/STRANGER_PRESENT 直驱白名单 | 是（仅白名单） |
+| `/perception/visual_event` | BEST_EFFORT, depth=5 | 缓存场景；STRANGER 情绪融合；FALL/STOP 与主人在场/姿态/召唤白名单 | 是（仅白名单） |
 
 情绪 V2 的 `state` 和 `signal_event` 分工：
 

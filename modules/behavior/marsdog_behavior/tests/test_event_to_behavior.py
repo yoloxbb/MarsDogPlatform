@@ -2232,6 +2232,116 @@ class TestVisualDirectToBehavior:
         assert candidate.params["source_observation_id"] == "camera-frame-52"
         assert candidate.ttl_sec == pytest.approx(0.49)
 
+    @staticmethod
+    def _owner_recall_payload(**target_updates):
+        target = {
+            "identity": "owner",
+            "identity_state": "confirmed_known",
+            "tracking_state": "tracking",
+            "target_type": "human",
+            "target_id": "epoch-1:human:7",
+            "track_id": 7,
+            "vision_epoch": "epoch-1",
+            "last_seen_age_ms": 10.0,
+        }
+        target.update(target_updates)
+        return {
+            "schema_version": 1,
+            "vision_epoch": "epoch-1",
+            "snapshot_id": "epoch-1:62",
+            "sequence": 62,
+            "source_observation_id": "camera-frame-62",
+            "observation_status": "valid",
+            "header": {"stamp": 1786417000.62, "frame_id": "camera_link"},
+            "events": ["EVT_VISION_OWNER_RECALL_GESTURE"],
+            "event_instances": {
+                "EVT_VISION_OWNER_RECALL_GESTURE": {
+                    "event_id": "owner-recall-cycle-1"
+                }
+            },
+            "human_candidates": [target],
+        }
+
+    def test_owner_recall_maps_into_existing_l2_approach_candidate(self, node):
+        payload = self._owner_recall_payload()
+        candidate = node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_RECALL_GESTURE", payload
+        )
+
+        assert candidate is not None
+        assert candidate.source == "visual_direct"
+        assert candidate.trigger_event == "EVT_VISION_OWNER_RECALL_GESTURE"
+        assert candidate.behavior_name == "approach_owner"
+        assert candidate.intent == "owner_approach_response"
+        assert candidate.source_emotion == ""
+        assert candidate.priority_level == 1
+        assert candidate.sub_priority == 12
+        assert candidate.semantic_rank == 3
+        assert candidate.interrupt_policy == "safe_point"
+        assert candidate.target_required is True
+        assert candidate.target["target_id"] == "epoch-1:human:7"
+        assert candidate.params["visual_event_instance_id"] == (
+            "owner-recall-cycle-1"
+        )
+        assert candidate.params["snapshot_id"] == "epoch-1:62"
+        assert candidate.params["source_observation_id"] == "camera-frame-62"
+        assert candidate.ttl_sec == pytest.approx(0.49)
+
+    @pytest.mark.parametrize(
+        "target_updates",
+        [
+            {"identity": "family_member_1"},
+            {"identity": "unknown", "identity_state": "confirmed_unknown"},
+            {"identity_state": "candidate"},
+            {"tracking_state": "temporarily_lost"},
+            {"last_seen_age_ms": 500.0},
+            {"track_id": 0},
+        ],
+    )
+    def test_owner_recall_rejects_non_owner_or_invalid_target(
+        self, node, target_updates
+    ):
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_RECALL_GESTURE",
+            self._owner_recall_payload(**target_updates),
+        ) is None
+
+    def test_owner_recall_requires_unique_same_snapshot_target_and_instance(
+        self, node
+    ):
+        payload = self._owner_recall_payload()
+        second = dict(payload["human_candidates"][0])
+        second.update({"target_id": "epoch-1:human:8", "track_id": 8})
+        payload["human_candidates"].append(second)
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_RECALL_GESTURE", payload
+        ) is None
+
+        payload = self._owner_recall_payload()
+        payload.pop("event_instances")
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_RECALL_GESTURE", payload
+        ) is None
+
+        payload = self._owner_recall_payload()
+        payload["observation_status"] = "invalid"
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_OWNER_RECALL_GESTURE", payload
+        ) is None
+
+    def test_owner_recall_visual_topic_reaches_pool_once_and_revalidates(self, node):
+        payload = self._owner_recall_payload()
+        node.perception._on_visual_ros2(_make_string_msg(payload))
+        node.perception._on_visual_ros2(_make_string_msg(payload))
+
+        queued = node.candidate_pool.candidates
+        assert len(queued) == 1
+        assert queued[0]["behavior_name"] == "approach_owner"
+        assert queued[0]["params"]["visual_event_instance_id"] == (
+            "owner-recall-cycle-1"
+        )
+        assert node._candidate_allowed_during_interaction(queued[0]) is True
+
     @pytest.mark.parametrize(
         "target_updates",
         [

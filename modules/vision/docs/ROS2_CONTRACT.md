@@ -225,6 +225,7 @@ z 与身体 z。可靠腕点关联和可重复的多指屈伸周期仍是必要�
 | `EVT_VISION_STOP_GESTURE` | 满足姿态门控且任一 `hands[].hand_action=stop_gesture` | `active_target.identity/identity_state/tracking_state`、`hands[]` |
 | `EVT_VISION_OWNER_PRESENT` | 新鲜、不同的有效源观测中，当前帧人体关联到 `owner/confirmed_known/tracking` 并连续达到配置 `enter_duration_sec`（默认 1.0 秒） | `observation_status`、`source_observation_id`、同包 `human_candidates[]`；活动实例见 `event_instances` |
 | `EVT_VISION_OWNER_BEND_SQUAT` | 同一当前源目标为 `owner/confirmed_known/tracking`，其公共 `pose_action` 为 `bend_over` 或 `squat_down`，不同有效源观测稳定满 1.0 秒 | `observation_status`、`source_observation_id`、同包 owner `human_candidates[]` 的 `target_id/track_id/pose_action`；活动实例见 `event_instances` |
+| `EVT_VISION_OWNER_RECALL_GESTURE` | 当前主人目标同一源观测的稳定精确 `recognized_actions[]` 包含 `beckoning` 或 `waving`；GesturePose 已完成其原有时序确认 | `observation_status`、`source_observation_id`、同包唯一 owner `human_candidates[]`、内部手势目标匹配；活动实例见 `event_instances` |
 | `EVT_VISION_FAMILY_PRESENT` | 当前源帧关联到 `family_member_1..4/confirmed_known/tracking`，不同有效源观测连续达到配置 `enter_duration_sec`（默认 1.0 秒） | `observation_status`、`source_observation_id`、同包 `human_candidates[]`；活动实例见 `event_instances` |
 | `EVT_VISION_STRANGER_PRESENT` | 当前源帧关联到 `unknown/confirmed_unknown/tracking`，不同有效源观测连续达到配置 `enter_duration_sec`（默认 1.0 秒） | 同上 |
 | `EVT_VISION_FOOD` | 满足姿态门控且 `pose_action=holding_dog_food` | `active_target.identity/identity_state/tracking_state`、`active_target.held_object`、`tracked_objects[]` |
@@ -291,6 +292,42 @@ GesturePose 静态姿态窗口为最近 10 次更新至少 6 次分数 `>=0.50` 
 同一当前 source target 的公共姿态清除才释放 latch。仅由 tracker 保留的行不用于退出或重武装。
 目标切换或 `vision_epoch` 改变会丢弃旧目标周期；新目标必须重新满足完整 1.0 秒进入时长。
 
+`EVT_VISION_OWNER_RECALL_GESTURE` 是瞬时召唤动作形成的活动状态快照，用一次 `ENTER/TRIGGER`
+表示一次连续手势，不添加进入/退出延时或通用 confidence。Vision 只消费已稳定的内部
+`_gesture_diagnostics.recognized_actions[]` 精确名称：`beckoning`（招手示意过来）和 `waving`
+（挥手）都按产品语义表示召唤；GesturePose 当前不能判断 `waving` 是否带有问候意图，因此每个稳定
+`waving` 结果都视为召唤。公开 `pose_action=arm_raise_wave` 会合并 `waving` 与静态
+`arms_raised`，所以事件不从该兼容字段推断；单独 `arms_raised` 不触发，且不阻止召唤手势解除。
+
+事件只绑定该同一源推理所关联的唯一当前主人 `owner/confirmed_known/tracking` 目标，要求正数
+`track_id`、新鲜跟踪、相同 `vision_epoch`，且手势来源 `target_id/track_id` 与该目标一致。熟悉人、
+陌生人、身份未确认、失效/过期或有歧义的目标均不能触发。GesturePose 原有稳定输出已承担动作
+确认，不另加事件层阈值。一个实例在 `events[]` 和
+`event_instances.EVT_VISION_OWNER_RECALL_GESTURE.event_id` 中保持到有效解除；连续观测中
+`beckoning` 与 `waving` 互相切换仍是同一实例。只有同一当前主人目标的不同、新鲜且有效源观测
+确认两个稳定类别都已清除，且建立该实例的类别/同侧来源在当前观测中有效可判定，才移除事件并
+重新武装；之后新的稳定召唤可生成新实例。私有 `recall_gesture_evidence` 复用 BECKONING 的左右手
+有效归属、手指几何及既有 `0.35 s` 同侧有效观测间隔，以及 WAVING 的左右腕/肩关键点有效性；它只
+限定解除条件，不参与触发类别、分数或检测阈值。
+
+重复 `source_observation_id` 不触发第二次识别或释放。无效/过期推理、短暂 Topic 中断、相机断流、
+推理失败、缺少手势诊断或当前源目标缺失都不是释放证据；已活动实例保留，Behavior 只在恢复后的
+有效新鲜快照上考虑候选。手部漏检、无效手指几何、腕点归属歧义、同侧有效观测间隔超过 GesturePose
+已有连续性阈值或腕/肩来源缺失，也不能通过空 `recognized_actions[]` 解除。目标或 epoch 切换会撤下
+旧实例并保持 disarmed；新上下文必须先在不同的有效源观测中确认召唤类别集合为空，且之前涉及的
+来源同侧有效可判定，才能重新武装，旧目标上下文不会被拼接到新 epoch。
+同侧有效手部历史全部过期后，首次恢复的 BECKONING 来源只建立连续性，不能作为解除证据；
+后续同侧有效观测在既有连续性范围内才可确认解除。当前源目标身份/跟踪切换时，即使手势诊断缺失，
+也先撤下旧实例，避免旧召唤与新主人目标组成候选。
+这些私有诊断和目标标识在 ROS 序列化前移除，不增加 v1 字段或 ROS 接口。
+
+BehaviorTree 按 event ID 跨重复状态快照和缓存中断去重，以同包唯一当前主人目标创建
+`owner_approach_response` → `approach_owner` 候选，使用 L2 `external_interaction`、
+`semantic_rank=3`、`sub_priority=12`、`safe_point` 进入统一仲裁，并在派发前重验最新有效快照、
+epoch、事件实例及目标新鲜度。该路径不直接调用 Action，也不增加 Emotion 映射。现有执行能力为
+靠近阶段 `ACT_INTERACT_APPROACH_OWNER_CLOSER`；产品名 `ACT_VISUAL_RECALL_APPROACH` 仅是别名，
+现有系统没有靠近后等待主人互动信号的已登记 Action。固定时长 `ACT_BASIC_WAIT` 不是该能力。
+
 BehaviorTree 只消费同一有效快照中的活动实例，并再次校验唯一新鲜主人目标及其公共姿态，
 再将候选送入既有 L2 多源仲裁。新事件不进入 Emotion 事件映射，也不改变主人身份/情绪事件。
 具体行为能力映射见应用契约和 Behavior 文档。
@@ -313,6 +350,8 @@ BehaviorTree 只消费同一有效快照中的活动实例，并再次校验唯�
 - `EVT_VISION_OWNER_PRESENT`、`EVT_VISION_FAMILY_PRESENT`、
   `EVT_VISION_STRANGER_PRESENT` 在 ENTER 后作为活动状态重复发布到 EXIT；行为树按各自
   `event_instances` 中的稳定 `event_id` 去重，并在视觉 Topic 暂时中断后继续按同一实例去重。
+- `EVT_VISION_OWNER_RECALL_GESTURE` 在稳定 `beckoning`/`waving` 期间保留一个实例，只有有效同目标
+  GesturePose 解除观测才移除；Behavior 按该周期 ID 去重，Topic 中断不重新生成候选。
 - 平滑后的动作仍有效时，对应情绪或手势事件会重复。
 - 跌倒状态机内部的 `fall_event_triggered` 只在确认帧为一次边沿，但正式
   `EVT_VISION_FALL` 来自短暂保持的 `fallen_down` 兼容动作，可能出现在多个

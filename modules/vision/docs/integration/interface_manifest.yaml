@@ -137,6 +137,17 @@ topics:
           invalid_observation: "breaks pending entry; preserves an active event and cannot count as pose release"
           target_switch: "discard old target cycle; a new target must satisfy full entry duration"
           event_instance_field: event_instances.EVT_VISION_OWNER_BEND_SQUAT.event_id
+      EVT_VISION_OWNER_RECALL_GESTURE:
+        condition: current_confirmed_owner_with_stable_beckoning_or_waving_action
+        identity_gate: "owner / confirmed_known / tracking"
+        gesture_gate: "exact stable recognized_actions name beckoning|waving on same target"
+        release_gate: "distinct valid same-owner source observation with both accepted names absent and valid source evidence for the same action side(s) that established the cycle"
+        state_policy:
+          active_set: "added on first stable recall action; retained while beckoning or waving remains stable or its same-side release evidence is unavailable"
+          retrigger_cooldown: none
+          invalid_observation: "preserves event instance; missing/ambiguous hand or wrist evidence cannot count as gesture release"
+          target_switch_or_epoch_change: "retires old public instance and stays disarmed until a distinct current-owner clear observation with valid same-side source evidence"
+          event_instance_field: event_instances.EVT_VISION_OWNER_RECALL_GESTURE.event_id
       EVT_VISION_FAMILY_PRESENT:
         condition: enrolled_family_member_currently_tracked_in_distinct_valid_source_observations_for_1s
         identity_gate: "family_member_1..4 / confirmed_known / tracking"

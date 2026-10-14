@@ -459,7 +459,7 @@ Visual state changed: track=<id> tracking=<state> identity=<name> identity_state
 | GP-012 | 蜷缩：下蹲/收拢身体，使头、躯干和四肢呈明显蜷缩 | `curled_up`（P2/posture） | `pose_action=body_curled_up` | `EVT_VISION_MASTER_SAD` |
 | GP-013 | 驼背：在可可靠判断二维面向方向时，前弯未达到 `bend_over` 确认分数，但旧驼背规则有足够证据；明显前弯按 GP-026 验收 | `hunched`（P2/posture） | `pose_action=hunched_back`，受同层/更高层姿态优先级影响 | `EVT_VISION_MASTER_SAD` |
 | GP-014 | 举手：至少一侧手腕高于肩部并保持 | `arms_raised`（P3/gesture） | `pose_action=arm_raise_wave` | `EVT_VISION_MASTER_HAPPY` |
-| GP-015 | 挥手：手臂举起后做连续往返挥动 | `waving`（P3/dynamic） | `pose_action=arm_raise_wave` | `EVT_VISION_MASTER_HAPPY` |
+| GP-015 | 挥手：手臂举起后做连续往返挥动 | `waving`（P3/dynamic） | `pose_action=arm_raise_wave` | `EVT_VISION_MASTER_HAPPY`；当前主人稳定类别另触发召唤 `EVT_VISION_OWNER_RECALL_GESTURE` |
 | GP-016 | V 字手势：同一只手伸出食指和中指形成 V 字 | `victory`（P3/gesture） | `hand_action=victory` | `EVT_VISION_MASTER_HAPPY` |
 | GP-017 | 跳跃：全身起跳；脚踝裁切时做肩髋整体抬升并正常回落 | `jumping`（P3/dynamic） | `pose_action=jump` | `EVT_VISION_MASTER_HAPPY` |
 | GP-018 | 张开双臂：双臂向两侧明显展开，可伴轻微前倾并保持 | `arms_open`（P3/gesture） | `pose_action=lean_forward_arms_open` | `EVT_VISION_MASTER_HAPPY` |
@@ -472,7 +472,7 @@ Visual state changed: track=<id> tracking=<state> identity=<name> identity_state
 | GP-025 | 低运动：自然站立或坐下并长时间基本不动 | `low_motion`（P4/activity） | `pose_action=neutral_stand_sit` | `EVT_VISION_MASTER_NEUTRAL` |
 | GP-026 | 弯腰关注：在侧向/斜向可判断面向时明显前倾并保持；手可不入镜，也可撑一侧/两侧膝盖或抬起一只手呼唤 | `bend_over`（P4/posture） | `pose_action=bend_over`（弯腰） | 无；仅姿态字段，不派生事件 |
 | GP-027 | 蹲下关注：明显降低髋部并弯曲膝盖，保持半蹲或更深；轻微屈膝和普通椅坐作反例 | `squat_down`（P4/posture） | `pose_action=squat_down`（蹲下） | 无；仅姿态字段，不派生事件 |
-| GP-028 | 招手示意过来：同一侧手腕关联到当前人体，同一只手至少两次多指伸开—屈曲—重新伸开；直指手臂挥动、静态举手和静态指点作反例 | `beckoning`（P3/dynamic） | `pose_action=beckoning`（招手，示意过来） | 无；仅姿态字段，不派生事件 |
+| GP-028 | 招手示意过来：同一侧手腕关联到当前人体，同一只手至少两次多指伸开—屈曲—重新伸开；直指手臂挥动、静态举手和静态指点作反例 | `beckoning`（P3/dynamic） | `pose_action=beckoning`（招手，示意过来） | 当前主人稳定类别触发 `EVT_VISION_OWNER_RECALL_GESTURE` |
 
 GP-026/027 都按最近 10 次姿态更新中至少 6 次分数 `>=0.50` 确认，活动后窗口支持数
 仍有至少 3/10 时保持；单帧候选只能查看 `raw_scores[]`，不能算稳定命中。该窗口按
@@ -505,6 +505,13 @@ GP-028 只在当前 `active_target` 的 hand wrist 能唯一对应到可见 Pose
 不创建新周期。已确认招手在 P3 内优先于泛化举手/挥手，泛化动作可继续出现在诊断中。
 同侧 Pointing 当帧抑制且仅清全部可归属该手的历史来源，未知/其他手历史保留。
 验证独立另一手 pointing 和 Stop 应使用真实关键点，确认其原有输出与优先级。
+
+主人召唤事件只消费同一当前确认主人目标上的稳定 `beckoning`/`waving` 类别；用户定义两者都表示
+召唤，静态 `arms_raised` 不触发。状态测试还要把真实分类器输出接到事件状态机，覆盖稳定招手后手部
+漏检、无效手指、歧义腕点、同侧有效关联超过既有 `0.35 s` 连续间隔，以及另一只手替代等情况：
+`recognized_actions[]` 暂时为空时，只要建立事件的同侧来源不可判定，就保持原 event ID，不解除或
+重新武装。恢复后的新鲜有效来源确认召唤类别解除后，才允许后续新手势触发新实例。该事件不改变公开
+`pose_action`、跌倒/Stop 行为或 Emotion，并经 `/perception/visual_event` 交由 Behavior 仲裁。
 
 
 GP-013 使用现有二维关键点估计面向方向：双耳可信时，鼻尖须越过双耳水平投影区间至少 0.08 倍肩宽；仅单耳可信时，鼻尖须越过该耳至少 0.45 倍肩宽，才把肩髋位移解释为有方向的前弯。

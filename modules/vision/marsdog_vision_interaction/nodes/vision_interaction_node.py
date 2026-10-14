@@ -52,6 +52,10 @@ from marsdog_vision_interaction.core.owner_posture_event_state import (
     OwnerPostureEventConfig,
     OwnerPostureEventState,
 )
+from marsdog_vision_interaction.core.owner_recall_gesture_event_state import (
+    OwnerRecallGestureEventConfig,
+    OwnerRecallGestureEventState,
+)
 from marsdog_vision_interaction.core.presence_event_state import (
     PresenceEventConfig,
     PresenceEventState,
@@ -75,6 +79,7 @@ from marsdog_vision_interaction.messages.visual_event_types import (
     EVT_VISION_FAMILY_PRESENT,
     EVT_VISION_OWNER_BEND_SQUAT,
     EVT_VISION_OWNER_PRESENT,
+    EVT_VISION_OWNER_RECALL_GESTURE,
     EVT_VISION_STRANGER_PRESENT,
 )
 from marsdog_vision_interaction.providers.base import BaseProvider
@@ -122,16 +127,21 @@ def _apply_presence_event_states(
     presence_states: tuple[tuple[str, Any], ...],
     *,
     now: float,
+    event_state_observations: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Merge state-event cycles into v1 without replacing other event data."""
     events = event.get("events")
     event["events"] = list(events) if isinstance(events, list) else []
     raw_instances = event.get("event_instances")
     instances = dict(raw_instances) if isinstance(raw_instances, dict) else {}
+    state_observations = event_state_observations or {}
     for event_name, state in presence_states:
         if state is None:
             continue
-        snapshot = state.update(event, now=now)
+        snapshot = state.update(
+            state_observations.get(event_name, event),
+            now=now,
+        )
         if snapshot.active:
             if event_name not in event["events"]:
                 event["events"].append(event_name)
@@ -147,6 +157,9 @@ def _apply_presence_event_states(
         "_source_family_target_ids",
         "_source_stranger_target_ids",
         "_source_observation_age_sec",
+        "_gesture_diagnostics",
+        "_gesture_target_id",
+        "_gesture_track_id",
     ):
         event.pop(key, None)
     if instances:
@@ -447,6 +460,12 @@ class VisionInteractionNode(Node):
         self._owner_posture_event_state = OwnerPostureEventState(
             OwnerPostureEventConfig.from_mapping(
                 self._config.get("owner_posture_events")
+            ),
+            source_freshness_sec=self._camera_stale_timeout_sec,
+        )
+        self._owner_recall_gesture_event_state = OwnerRecallGestureEventState(
+            OwnerRecallGestureEventConfig.from_mapping(
+                self._config.get("owner_recall_gesture_events")
             ),
             source_freshness_sec=self._camera_stale_timeout_sec,
         )
@@ -1327,12 +1346,32 @@ class VisionInteractionNode(Node):
                 EVT_VISION_OWNER_BEND_SQUAT,
                 getattr(self, "_owner_posture_event_state", None),
             ),
+            (
+                EVT_VISION_OWNER_RECALL_GESTURE,
+                getattr(self, "_owner_recall_gesture_event_state", None),
+            ),
         )
         presence_now = time.monotonic()
+        recall_observation = dict(event)
+        if isinstance(raw.get("_gesture_diagnostics"), dict):
+            recall_observation["_gesture_diagnostics"] = raw[
+                "_gesture_diagnostics"
+            ]
+            raw_active = raw.get("active_target")
+            if isinstance(raw_active, dict):
+                recall_observation["_gesture_target_id"] = raw_active.get(
+                    "target_id", ""
+                )
+                recall_observation["_gesture_track_id"] = raw_active.get(
+                    "track_id", 0
+                )
         event = _apply_presence_event_states(
             event,
             presence_states,
             now=presence_now,
+            event_state_observations={
+                EVT_VISION_OWNER_RECALL_GESTURE: recall_observation,
+            },
         )
         # Cache exactly the complete packet that is published.  VisionTask
         # query_targets only ever copies this atomic snapshot; it never

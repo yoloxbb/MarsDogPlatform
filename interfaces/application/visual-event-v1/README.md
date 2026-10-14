@@ -76,6 +76,34 @@ BehaviorTree 将此事件映射为 `owner_approach_response` 意图，并通过�
 目前只确认“靠近主人”执行阶段可复用；尾摆与抬头观察没有匹配且经验证的执行能力，因此不声称
 已执行完整 `ACT_OWNER_APPROACH_RESPONSE`。Vision 不直接下发动作，此事件不进入 Emotion 映射。
 
+### 主人招手/挥手召唤（v1 可选状态事件）
+
+`EVT_VISION_OWNER_RECALL_GESTURE` 表示同一当前确认主人目标的一次召唤动作型 `TRIGGER`。
+Vision 复用 GesturePose 已有稳定精确内部类别：`beckoning`（招手示意过来）和 `waving`
+（挥手）都按产品语义表示召唤。检测器不判断 `waving` 的问候意图，因此所有稳定的 `waving`
+分类都触发召唤；静态举手 `arms_raised` 不触发。`waving` 与 `arms_raised` 虽在公开
+`pose_action=arm_raise_wave` 中合并，事件使用同一推理结果的稳定 `recognized_actions[]`
+区分它们，内部诊断不进入 v1 JSON。
+
+触发要求当前源帧的唯一目标为 `owner/confirmed_known/tracking`，目标仍新鲜有效、track ID 为正，且
+手势诊断绑定的 `target_id/track_id` 与其一致。熟悉人、陌生人、未确认身份、失效/过期目标和歧义主人
+均不能触发。事件使用现有 `events[]` 字符串状态与
+`event_instances.EVT_VISION_OWNER_RECALL_GESTURE.event_id` 可选字段：第一个稳定召唤观测加入事件并
+分配 ID；`beckoning` 与 `waving` 连续转换时维持同一实例。只有不同、新鲜、有效的同一主人观测确认
+两种稳定类别都已解除，且建立该实例的类别/同侧来源当前有效可判定时，才从 `events[]` 和
+`event_instances` 移除并重新武装；静态 `arms_raised` 不阻止解除。私有来源诊断复用 BECKONING 的同侧
+有效手部/手指几何及既有 `0.35 s` 连续性，以及 WAVING 的同侧腕/肩关键点有效性；不改变触发类别、
+分数或 GesturePose 阈值。重复源观测、10 Hz 快照重复、无效或过期观测、推理失败、相机/Topic 中断、
+缺少/歧义手部或腕点证据及缺少当前主人目标都不能充当解除证据。目标或 epoch 切换会使旧实例失效，
+并要求新上下文先有一条不同的有效主人清除观测，且旧周期同侧来源可判定，才能重新武装。
+
+BehaviorTree 只在当前有效 v1 快照中按事件 ID 去重，并绑定同包唯一新鲜主人目标；候选进入统一 L2
+`external_interaction` 仲裁（rank 3、subpriority 12、`safe_point`），派发前按最新 epoch、事件实例和
+目标上下文重验。它不直接控制运动，也不新增 Emotion 映射。产品标签 `ACT_VISUAL_RECALL_APPROACH`
+映射为现有链路 `owner_approach_response` → `approach_owner` →
+`ACT_INTERACT_APPROACH_OWNER_CLOSER`；目前只有靠近能力，没有登记的“到主人面前并等待互动”阶段。
+固定 3 秒 `ACT_BASIC_WAIT` 不代表等待主人互动。
+
 ### 家人与陌生人在场状态事件（v1 可选扩展）
 
 `EVT_VISION_FAMILY_PRESENT` 和 `EVT_VISION_STRANGER_PRESENT` 复用上述活动状态、

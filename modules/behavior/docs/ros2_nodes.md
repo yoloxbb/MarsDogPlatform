@@ -363,9 +363,9 @@ signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢�
   "header": {"stamp": 1786417000.1, "frame_id": "camera_link"},
   "active_target": {"track_id": 7, "pose_action": "fallen_down"},
   "hands": [{"hand_action": "stop_gesture"}],
-  "events": ["EVT_VISION_FALL", "EVT_VISION_STOP_GESTURE", "EVT_VISION_OWNER_PRESENT", "EVT_VISION_OWNER_BEND_SQUAT", "EVT_VISION_FAMILY_PRESENT", "EVT_VISION_STRANGER_PRESENT"],
+  "events": ["EVT_VISION_FALL", "EVT_VISION_STOP_GESTURE", "EVT_VISION_OWNER_PRESENT", "EVT_VISION_OWNER_BEND_SQUAT", "EVT_VISION_OWNER_RECALL_GESTURE", "EVT_VISION_FAMILY_PRESENT", "EVT_VISION_STRANGER_PRESENT"],
   "observation_status": "valid",
-  "event_instances": {"EVT_VISION_OWNER_PRESENT": {"event_id": "owner-cycle-42"}, "EVT_VISION_OWNER_BEND_SQUAT": {"event_id": "owner-posture-cycle-42"}, "EVT_VISION_FAMILY_PRESENT": {"event_id": "family-cycle-42"}, "EVT_VISION_STRANGER_PRESENT": {"event_id": "stranger-cycle-42"}},
+  "event_instances": {"EVT_VISION_OWNER_PRESENT": {"event_id": "owner-cycle-42"}, "EVT_VISION_OWNER_BEND_SQUAT": {"event_id": "owner-posture-cycle-42"}, "EVT_VISION_OWNER_RECALL_GESTURE": {"event_id": "owner-recall-cycle-42"}, "EVT_VISION_FAMILY_PRESENT": {"event_id": "family-cycle-42"}, "EVT_VISION_STRANGER_PRESENT": {"event_id": "stranger-cycle-42"}},
   "human_candidates": [{"identity": "owner", "identity_state": "confirmed_known", "tracking_state": "tracking", "target_id": "epoch-1:human:7", "track_id": 7, "vision_epoch": "epoch-1", "pose_action": "bend_over", "last_seen_age_ms": 20.0}]
 }
 ```
@@ -379,17 +379,28 @@ signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢�
 | `EVT_VISION_STOP_GESTURE` | `respond_stop_gesture` | Lv1, `sub_priority=12` | 8s |
 | `EVT_VISION_OWNER_PRESENT` | `owner_greet` | Lv1, `sub_priority=12`, `semantic_rank=3` | ≤0.5s |
 | `EVT_VISION_OWNER_BEND_SQUAT` | `approach_owner` | Lv1, `sub_priority=12`, `semantic_rank=3`, `safe_point` | ≤0.5s |
+| `EVT_VISION_OWNER_RECALL_GESTURE` | `approach_owner` | Lv1, `sub_priority=12`, `semantic_rank=3`, `safe_point` | ≤0.5s |
 | `EVT_VISION_FAMILY_PRESENT` | `familiar_person_greet` | Lv1, `sub_priority=12`, `semantic_rank=3` | ≤0.5s |
 | `EVT_VISION_STRANGER_PRESENT` | `stranger_observe` | Lv1, `sub_priority=12`, `semantic_rank=3` | ≤0.5s |
 
 该 Topic 是 10 Hz 状态快照。同一事件连续出现时只生成一次候选；FALL/STOP 事件先从
-`events[]` 消失、之后再出现才会重新触发。三个在场事件和主人姿态事件用可选 `event_instances` 的 ID 跨
+`events[]` 消失、之后再出现才会重新触发。三个在场事件和主人姿态/召唤事件用可选 `event_instances` 的 ID 跨
 重复快照和短暂 Topic 超时去重；新候选要求有效观测、同类目标已确认跟踪、事件 ID、epoch
 和新鲜唯一目标。目标 TTL 上限为 500 ms，选择时再次对照最新快照验证。其余 `EVT_VISION_*`
 仍只作为场景/情绪上下文，不直接生成候选。主人姿态候选还要求同一 owner target 当前仍有
 `bend_over` 或 `squat_down` 姿态，并在派发前重新验证。它经统一 L2 仲裁映射到
 `approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER`，只覆盖靠近主人；尾摆和抬头观察尚无
 可验证 Action 能力。三个在场 Behavior 当前都没有 Action 模板，因此候选不会执行问候或观察动作。
+
+`EVT_VISION_OWNER_RECALL_GESTURE` 由 Vision 的稳定精确 `beckoning`/`waving` 类别触发；用户语义确认
+两者均为召唤，静态 `arms_raised` 不触发，检测器不能区分动态挥手中的问候意图。该 v1 活动状态实例
+只在有效同目标主人观测确认两类召唤动作都解除，且建立实例的来源同侧有效可判定后退出；重复快照、
+Topic/相机中断、推理失败、过期观测、手部漏检或 wrist/shoulder 来源缺失和目标/epoch 切换不作为释放。
+BECKONING 沿用同侧 0.35 秒连续有效归属约束。Behavior 按实例去重并维护专用 epoch/sequence 高水位，派发前
+重验当前唯一主人目标与快照。事件经 `owner_approach_response` → `approach_owner` 进入统一 L2 仲裁，
+复用 `ACT_INTERACT_APPROACH_OWNER_CLOSER` 靠近阶段；固定时长 `ACT_BASIC_WAIT` 不提供主人互动等待，
+所以没有已登记的完整“靠近后等待互动”能力。`ACT_VISUAL_RECALL_APPROACH` 只是产品标签，不是 ROS
+事件或 Action unit。
 
 ### 4.7 `/behavior/result_event`
 

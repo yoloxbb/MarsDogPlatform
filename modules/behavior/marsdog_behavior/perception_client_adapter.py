@@ -27,6 +27,7 @@ from __future__ import annotations
 from . import visual_event_consumer
 from .visual_presence_contract import (
     OWNER_PRESENCE_EVENT,
+    OWNER_RECALL_GESTURE_EVENT,
     VISUAL_PRESENCE_EVENT_NAMES,
     VISUAL_PRESENCE_EVENT_QUALIFIERS,
     VISUAL_POSTURE_ACTIONS,
@@ -421,6 +422,11 @@ class PerceptionClientAdapter:
             if (
                 event_type in VISUAL_POSTURE_EVENT_NAMES
                 and not visual_event_consumer.owner_posture_snapshot_is_current(self)
+            ):
+                return False
+            if (
+                event_type == OWNER_RECALL_GESTURE_EVENT
+                and not visual_event_consumer.owner_recall_snapshot_is_current(self)
             ):
                 return False
             cache_age = now - self._visual_cache_updated_at

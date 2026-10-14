@@ -21,6 +21,10 @@ from marsdog_vision_interaction.core.owner_posture_event_state import (
     OwnerPostureEventConfig,
     OwnerPostureEventState,
 )
+from marsdog_vision_interaction.core.owner_recall_gesture_event_state import (
+    OwnerRecallGestureEventConfig,
+    OwnerRecallGestureEventState,
+)
 from marsdog_vision_interaction.core.presence_event_state import (
     PresenceEventConfig,
     PresenceEventState,
@@ -367,6 +371,92 @@ def test_owner_posture_event_publication_adds_holds_and_removes_active_instance(
     )
     assert "EVT_VISION_MASTER" in released["events"]
     assert "EVT_VISION_OWNER_PRESENT" in released["events"]
+
+
+def test_owner_recall_publication_uses_private_stable_actions_and_v1_instance() -> None:
+    from marsdog_vision_interaction.nodes.vision_interaction_node import (
+        _apply_presence_event_states,
+    )
+
+    event_name = "EVT_VISION_OWNER_RECALL_GESTURE"
+    target_id = "epoch:human:7"
+    state = OwnerRecallGestureEventState(
+        OwnerRecallGestureEventConfig(), source_freshness_sec=0.5
+    )
+    states = ((event_name, state),)
+
+    def observation(sequence, *, actions=(), status="valid"):
+        target = {
+            "vision_epoch": "epoch",
+            "target_id": target_id,
+            "target_type": "human",
+            "track_id": 7,
+            "identity": "owner",
+            "identity_state": "confirmed_known",
+            "tracking_state": "tracking",
+            "last_seen_age_ms": 0.0,
+        }
+        return {
+            "schema_version": 1,
+            "vision_epoch": "epoch",
+            "snapshot_id": f"epoch:{sequence}",
+            "sequence": sequence,
+            "source_observation_id": f"frame:{sequence}",
+            "_source_observation_age_sec": 0.0,
+            "_source_owner_target_ids": [target_id],
+            "_source_human_target_ids": [target_id],
+            "observation_status": status,
+            "events": ["EVT_VISION_MASTER"],
+            "human_candidates": [dict(target)],
+            "active_target": dict(target),
+            "_gesture_target_id": target_id,
+            "_gesture_track_id": 7,
+            "_gesture_diagnostics": {
+                "recognized_actions": [{"name": action} for action in actions],
+                "recall_gesture_evidence": {
+                    name: {
+                        "valid_sides": ["left", "right"],
+                        "release_sides": ["left", "right"],
+                        "active_sides": ["left"] if name in actions else [],
+                    }
+                    for name in ("beckoning", "waving")
+                },
+                "raw_scores": [{"name": "beckoning", "score": 0.0}],
+            },
+        }
+
+    trigger = observation(1, actions=("beckoning",))
+    packet = _apply_presence_event_states(
+        trigger,
+        states,
+        now=10.0,
+        event_state_observations={event_name: trigger},
+    )
+    event_id = packet["event_instances"][event_name]["event_id"]
+    assert event_name in packet["events"]
+    assert packet["event_instances"][event_name] == {"event_id": event_id}
+    assert "EVT_VISION_MASTER" in packet["events"]
+    assert not any(key.startswith("_") for key in packet)
+
+    invalid = observation(2, status="invalid")
+    packet = _apply_presence_event_states(
+        invalid,
+        states,
+        now=10.1,
+        event_state_observations={event_name: invalid},
+    )
+    assert packet["event_instances"][event_name]["event_id"] == event_id
+
+    release = observation(3)
+    packet = _apply_presence_event_states(
+        release,
+        states,
+        now=10.2,
+        event_state_observations={event_name: release},
+    )
+    assert event_name not in packet["events"]
+    assert event_name not in packet.get("event_instances", {})
+    assert "EVT_VISION_MASTER" in packet["events"]
 
 
 def test_observation_cache_keeps_source_identity_and_marks_latest_inference_failure() -> None:

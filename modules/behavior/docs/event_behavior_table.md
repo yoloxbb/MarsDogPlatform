@@ -12,6 +12,7 @@
 | `EVT_VISION_STOP_GESTURE` | `respond_stop_gesture` | 1 | 12 | 8s |
 | `EVT_VISION_OWNER_PRESENT` | `owner_greet` | 1 | 12 | ≤0.5s |
 | `EVT_VISION_OWNER_BEND_SQUAT` | `approach_owner` | 1 | 12 | ≤0.5s |
+| `EVT_VISION_OWNER_RECALL_GESTURE` | `approach_owner` | 1 | 12 | ≤0.5s |
 | `EVT_VISION_FAMILY_PRESENT` | `familiar_person_greet` | 1 | 12 | ≤0.5s |
 | `EVT_VISION_STRANGER_PRESENT` | `stranger_observe` | 1 | 12 | ≤0.5s |
 
@@ -21,7 +22,7 @@
 `hands` 到 `params_json`。FALL/STOP 以原样、区分大小写的 `behavior_name` 发送给
 `/execute_behavior`。
 
-在场候选与主人姿态候选都携带同一视觉快照中的唯一匹配目标、epoch、快照和源观测标识；TTL 不超过该
+在场候选与主人姿态/召唤候选都携带同一视觉快照中的唯一匹配目标、epoch、快照和源观测标识；TTL 不超过该
 目标剩余的 500 ms 新鲜期。它们是 `external_interaction` Lv1 候选，使用
 `semantic_rank=3` 和 `safe_point` 进入统一仲裁。
 
@@ -32,10 +33,21 @@
 `ACT_INTERACT_APPROACH_OWNER_CLOSER`。当前可复用的执行能力只有靠近主人；没有经验证的尾摆及抬头观察
 阶段，不创建或声明完整的 `ACT_OWNER_APPROACH_RESPONSE`。
 
+`EVT_VISION_OWNER_RECALL_GESTURE` 只由稳定精确 `beckoning` 或 `waving` 类别触发，按产品语义两者
+均表示召唤；Vision 不区分挥手问候意图，静态 `arms_raised` 不触发。Vision 要求同一当前帧唯一
+`owner/confirmed_known/tracking` 目标，并通过 `event_instances` 为一个连续召唤周期只生成一个候选。
+有效同目标观测确认两种稳定类别均清除，并确认建立实例的来源同侧有效可判定后才解除/重新武装。
+BECKONING 手部漏检/几何无效/连续性中断及 WAVING 腕/肩来源缺失不会被当作有效清除。无效观测、断流、
+过期数据或目标/epoch 切换不会错误解除；候选在仲裁和派发前按最新目标、epoch 与快照重验。该事件不影响 Emotion。
+
+`ACT_VISUAL_RECALL_APPROACH` 是产品侧名称，不是 ROS 事件名或 Action unit。它映射到既有
+`owner_approach_response` → `approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER`。现有 Action
+只执行主人靠近阶段，没有已登记的主人互动等待能力；固定时长 `ACT_BASIC_WAIT` 不满足该能力。
+
 `/perception/visual_event` 是 10 Hz 状态快照，不是一次性边沿总线。连续包中的
-FALL/STOP 同名事件只在首次出现时触发；先消失后再出现时才重新触发。三个在场事件分别由
+FALL/STOP 同名事件只在首次出现时触发；先消失后再出现时才重新触发。在场、主人姿态和召唤事件分别由
 `event_instances.<event>.event_id` 标识一个 ENTER 周期，重复快照和短暂 Topic 中断恢复都不
-会再次创建候选；EXIT 和冷却后重新进入会使用新实例 ID。只有有效观测和同类唯一新鲜目标可
+会再次创建候选；有效解除后新的召唤周期会使用新实例 ID。只有有效观测和同类唯一新鲜目标可
 建候选，仲裁前会再次检查事件实例、epoch 和目标新鲜度。候选池还会对 queued/in-flight 的
 同名 Behavior 做二次去重。
 

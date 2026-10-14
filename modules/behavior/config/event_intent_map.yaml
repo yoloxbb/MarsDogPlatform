@@ -696,6 +696,14 @@ visual_direct:
     ttl_sec: 0.5  # bounded by the current visual target freshness window
     interrupt_policy: safe_point
 
+  EVT_VISION_OWNER_RECALL_GESTURE:
+    category: external_interaction
+    intent: owner_approach_response
+    semantic_rank: 3  # interactive owner gesture is not a safety event
+    sub_priority: 12
+    ttl_sec: 0.5  # bounded by the current visual target freshness window
+    interrupt_policy: safe_point
+
   EVT_VISION_FAMILY_PRESENT:
     category: external_interaction
     intent: familiar_person_greet

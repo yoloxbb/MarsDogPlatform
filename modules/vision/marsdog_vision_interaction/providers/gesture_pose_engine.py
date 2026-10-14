@@ -350,6 +350,8 @@ class BeckoningEvidence:
     right_score: float = 0.0
     left_source_valid: bool = False
     right_source_valid: bool = False
+    left_release_valid: bool = False
+    right_release_valid: bool = False
 
     @property
     def score(self) -> float:
@@ -844,6 +846,7 @@ def _beckoning_evidence(
     now_s = samples[-1].monotonic_s
     scores: dict[str, float] = {"left": 0.0, "right": 0.0}
     source_valid: dict[str, bool] = {"left": False, "right": False}
+    release_valid: dict[str, bool] = {"left": False, "right": False}
     for side in ("left", "right"):
         current_assignment = _beckoning_hand_assignments(samples[-1].data)
         if current_assignment is None:
@@ -855,6 +858,16 @@ def _beckoning_evidence(
         if _beckoning_finger_state(current_hand) == "unknown":
             continue
         source_valid[side] = True
+        previous_valid_times = []
+        for sample in samples[:-1]:
+            assignment = _beckoning_hand_assignments(sample.data)
+            hand = assignment[1].get(side) if assignment is not None else None
+            if hand is not None and _beckoning_finger_state(hand) != "unknown":
+                previous_valid_times.append(sample.monotonic_s)
+        release_valid[side] = (
+            bool(previous_valid_times)
+            and now_s - previous_valid_times[-1] <= _BECKONING_MAX_GAP_S
+        )
 
         segment: list[tuple[float, str, frozenset[int], tuple[float, ...]]] = []
         previous_time: float | None = None
@@ -930,6 +943,8 @@ def _beckoning_evidence(
         right_score=scores["right"],
         left_source_valid=source_valid["left"],
         right_source_valid=source_valid["right"],
+        left_release_valid=release_valid["left"],
+        right_release_valid=release_valid["right"],
     )
 
 
@@ -5360,6 +5375,9 @@ class BehaviorResult:
     jump_status: JumpEventStatus
     feature_ms: float
     recognition_ms: float
+    beckoning_evidence: BeckoningEvidence = field(
+        default_factory=BeckoningEvidence
+    )
     face_covering_detector: dict[str, object] = field(default_factory=dict)
 
     @property
@@ -5460,6 +5478,7 @@ class BehaviorEngine:
             jump_status=jump_status,
             feature_ms=feature_ms,
             recognition_ms=recognition_ms,
+            beckoning_evidence=beckoning,
             face_covering_detector=self._recognizer.face_covering_diagnostics,
         )
 

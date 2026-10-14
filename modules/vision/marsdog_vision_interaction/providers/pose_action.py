@@ -273,6 +273,11 @@ class PoseActionClassifier:
             right_hand,
         )
         raw_score_map = result.raw_score_map
+        beckoning_evidence = result.beckoning_evidence
+        waving_side_evidence = {
+            "left": result.features.pose.left_wrist_above_shoulder,
+            "right": result.features.pose.right_wrist_above_shoulder,
+        }
         ankle_stomp_available = (
             temporal.max_ankle_vertical_speed is not None
             and temporal.ankle_vertical_range_ratio is not None
@@ -431,6 +436,54 @@ class PoseActionClassifier:
                 }
                 for action in result.actions
             ],
+            # Private release provenance for the owner-recall event.  These
+            # values reuse the classifier's existing source-valid evidence;
+            # they do not alter action scores, smoothing, or public ROS fields.
+            "recall_gesture_evidence": {
+                "beckoning": {
+                    "valid_sides": [
+                        side
+                        for side, valid in (
+                            ("left", beckoning_evidence.left_source_valid),
+                            ("right", beckoning_evidence.right_source_valid),
+                        )
+                        if valid
+                    ],
+                    "release_sides": [
+                        side
+                        for side, valid in (
+                            ("left", beckoning_evidence.left_release_valid),
+                            ("right", beckoning_evidence.right_release_valid),
+                        )
+                        if valid
+                    ],
+                    "active_sides": [
+                        side
+                        for side, score in (
+                            ("left", beckoning_evidence.left_score),
+                            ("right", beckoning_evidence.right_score),
+                        )
+                        if score > 0.0
+                    ],
+                },
+                "waving": {
+                    "valid_sides": [
+                        side
+                        for side, above_shoulder in waving_side_evidence.items()
+                        if above_shoulder is not None
+                    ],
+                    "release_sides": [
+                        side
+                        for side, above_shoulder in waving_side_evidence.items()
+                        if above_shoulder is not None
+                    ],
+                    "active_sides": [
+                        side
+                        for side, above_shoulder in waving_side_evidence.items()
+                        if above_shoulder is True
+                    ],
+                },
+            },
             "raw_scores": [
                 {
                     "name": name.value,
