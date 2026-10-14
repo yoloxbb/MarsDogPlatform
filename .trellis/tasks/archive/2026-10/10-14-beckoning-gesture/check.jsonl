@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/vision-gesture-pose.md", "reason": "Review taxonomy, priorities, smoothing, conflict, projection, and test obligations."}
+{"file": ".trellis/tasks/10-14-beckoning-gesture/prd.md", "reason": "Check each product requirement and user-selected scope boundary."}
+{"file": ".trellis/tasks/10-14-beckoning-gesture/design.md", "reason": "Check implementation against signed orientation limits and compatibility design."}
+{"file": ".trellis/tasks/10-14-beckoning-gesture/research/technical-feasibility.md", "reason": "Check implementation against source constraints and documented risk."}
+{"file": ".trellis/tasks/10-14-beckoning-gesture/research/evidence.md", "reason": "Cross-check public taxonomy, event boundary, and published action-count updates."}

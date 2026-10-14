@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/vision-gesture-pose.md", "reason": "Enforce action taxonomy, dynamic smoothing, conflict, adapter, and test contracts."}
+{"file": ".trellis/tasks/10-14-beckoning-gesture/prd.md", "reason": "Product scope, active_target boundary, pose-only decision, and acceptance criteria."}
+{"file": ".trellis/tasks/10-14-beckoning-gesture/design.md", "reason": "Implementation boundaries, orientation fail-closed rule, and compatibility design."}
+{"file": ".trellis/tasks/10-14-beckoning-gesture/research/technical-feasibility.md", "reason": "Source-backed extension points, geometry limitations, and suggested regression matrix."}
