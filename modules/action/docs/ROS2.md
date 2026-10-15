@@ -13,7 +13,7 @@ marsdog_interfaces
           ▲
           │
 marsdog_behavior                  marsdog_action_executor
-Behavior Tree / Action Client ──► /execute_behavior Action Server
+Behavior Tree / Action Client ──► /action/execute_behavior Action Server
                                            │
                                            └─► ACT_* / controller / simulator
 ```
@@ -65,7 +65,7 @@ return GoalResponse.REJECT
 | 属性 | 值 |
 |---|---|
 | Node | `action_executor_node` |
-| Action | `/execute_behavior` |
+| Action | `/action/execute_behavior` |
 | 类型 | `marsdog_interfaces/action/ExecuteBehavior` |
 | 行为数量 | 73 |
 | 运行时动作数量 | 182 |
@@ -320,7 +320,7 @@ Lite3 在 Nav2 前执行底盘导航预检，Nav2 终态后确认退出遥控并
 
 ```bash
 ros2 action send_goal --feedback \
-  /execute_behavior \
+  /action/execute_behavior \
   marsdog_interfaces/action/ExecuteBehavior \
   "{goal_id: 'sim-001', behavior_id: 'ui-001', \
     behavior_name: 'sit_down', priority_level: 5, \
@@ -331,7 +331,7 @@ ros2 action send_goal --feedback \
 
 ```bash
 ros2 action send_goal --feedback \
-  /execute_behavior \
+  /action/execute_behavior \
   marsdog_interfaces/action/ExecuteBehavior \
   "{goal_id: 'sim-stop-001', behavior_id: 'ui-stop-001', \
     behavior_name: 'emergency_stop', priority_level: 6, \
@@ -350,7 +350,7 @@ ros2 topic echo /debug/execute_behavior/result
 
 ```bash
 ros2 action send_goal \
-  /execute_behavior \
+  /action/execute_behavior \
   marsdog_interfaces/action/ExecuteBehavior \
   "{goal_id: 'old-001', behavior_id: 'old-001', \
     behavior_name: 'wagTailFast', priority_level: 5, \
@@ -446,12 +446,12 @@ ros2 launch marsdog_action_executor action_executor.launch.py \
 YAML 精确地点名路由及保留随机目标 `K` 复用正式 Service 和状态 Topic：
 
 ```text
-/waypoint_nav/task   marsdog_voice_interaction/srv/VoiceTask
-/waypoint_nav/status std_msgs/msg/String JSON
+/navigation/task   marsdog_interfaces/srv/NavigationTask
+/navigation/status std_msgs/msg/String JSON
 ```
 
 随机行为不再由 Action 生成 Pose 或在固定点中抽选；每次调用
-`/waypoint_nav/task` 并发送 `task_type="goto_place"`、`place="K"`，由
+`/navigation/task` 并发送 `task_type="goto_place"`、`place="K"`，由
 `waypoint_nav` 使用实时 `/map` 选点。
 
 启动时必须同时启用所选底盘和导航。Lite3 示例：
@@ -461,8 +461,8 @@ ros2 launch marsdog_action_executor action_executor.launch.py \
   chassis_type:=lite3 \
   lite3_enabled:=true \
   navigation_enabled:=true \
-  waypoint_nav_service_name:=/waypoint_nav/task \
-  waypoint_nav_status_topic:=/waypoint_nav/status \
+  waypoint_nav_service_name:=/navigation/task \
+  waypoint_nav_status_topic:=/navigation/status \
   waypoint_nav_cancel_confirmation_timeout_sec:=5.0 \
   navigation_preempt_lock_wait_sec:=8.0 \
   navigation_result_timeout_sec:=300.0

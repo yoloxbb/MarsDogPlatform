@@ -11,22 +11,22 @@
 | 行为决策 | modules/behavior/marsdog_behavior | BT 选择目标、仲裁和请求抢占，不直接操作 Nav2 |
 | 动作与导航适配 | modules/action/marsdog_action_executor/adapters/waypoint_nav_adapter.py；config/navigation_waypoints.yaml | Action 负责阶段、Goal 归属、外部能力反馈和行为终态 |
 | 航点服务 | robotics/ros2/src/waypoint_nav | 地点解析、Nav2 Goal 生命周期、持久化、查询与恢复锁 |
-| UWB / 局部跟随避障 | robotics/ros2/src/go2_uwb_behavior、go2_uwb_local_follow | 保留原有 action/topic、超时和停止接口；包名中的 go2 不代表本轮改为另一设备协议 |
+| UWB / 局部跟随避障 | robotics/ros2/src/go2_uwb_behavior、go2_uwb_local_follow | 端点迁到 /motion/*；保留超时和停止语义；包名中的 go2 不代表本轮改为另一设备协议 |
 | 公共登记 | interfaces/registry.json；interfaces/application/EXTERNAL_CAPABILITIES.md | 公开端点和类型；不提供未拿到的嵌入式内部实现 |
 
 航点详细依据是 [原接口及置顶修订](../../robotics/ros2/src/waypoint_nav/docs/INTERFACE.md)。
 其置顶的 operator recovery amendment 优先于后面的旧说明：
 普通 cancel 不能解除 RECOVERY_REQUIRED。需要改协议时，Action 消费端与航点服务一起
-评审和验证；不得为了消除依赖而直接重命名历史 ROS 类型。
+评审和验证；本次经批准迁移为 NavigationTask，字段和业务状态机保持一致。
 
 ## 公开协议与关键约束
 
 | 端点 | 类型 | 约束 |
 | --- | --- | --- |
-| /execute_behavior | marsdog_interfaces/action/ExecuteBehavior | BT→Action；取消接受不等于旧 Goal 已终止 |
-| /waypoint_nav/task | marsdog_voice_interaction/srv/VoiceTask | 历史类型复用必须保留；不是视觉 VisionTask，也不是语音任务语义 |
-| /waypoint_nav/status | std_msgs/msg/String JSON | 先持久化后发布；Topic 不重放，丢消息通过 query 补偿 |
-| /waypoint_nav/markers | visualization_msgs/msg/MarkerArray | 可视化，不是完成证据 |
+| /action/execute_behavior | marsdog_interfaces/action/ExecuteBehavior | BT→Action；取消接受不等于旧 Goal 已终止 |
+| /navigation/task | marsdog_interfaces/srv/NavigationTask | 公共导航专用类型；不再复用 VoiceTask |
+| /navigation/status | std_msgs/msg/String JSON | 先持久化后发布；Topic 不重放，丢消息通过 query 补偿 |
+| /navigation/markers | visualization_msgs/msg/MarkerArray | 可视化，不是完成证据 |
 | /navigate_to_pose | nav2_msgs/action/NavigateToPose | 航点服务→Nav2；真实终态决定导航是否结束 |
 
 所有航点 params_json 都是 object，包含 protocol_version="1.0" 和

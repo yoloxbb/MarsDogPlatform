@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "assets": {
+    "modules/vision/marsdog_vision_interaction/web/dashboard.html": {
+      "scope": "preserved_preexisting_revision",
+      "original_sha256": "9247e1cdd783baddab6fe44555fa8c354438c0f9c2f63b9b338e657b4a65dcc5",
+      "effective_sha256": "fa9418622ccc5315145c9710cb79fb5c1911d7a4b0b4c7d324df8fb1f6bdd949",
+      "original_commit": "93d7ebe0ca14c25e449a158a417a23cce53edf92",
+      "review": "Preserve the existing UI correction: confirmed_unknown tracking targets can open the pose event gate, matching the visual event contract. Only the helper and displayed explanation changed."
+    },
+    "robotics/ros2/src/robot_slam_bringup/config/navigate_through_poses_no_backup.xml": {
+      "scope": "preserved_preexisting_revision",
+      "original_sha256": "3fe4c4a7c74a1b23ab3428476020f7eef8aaa3eeb56ad976273b6795d5418bbf",
+      "effective_sha256": "b3704210a0b6fe721d468b6cd865d7b18c14b03dd65434f0a5861dc862bba008",
+      "original_commit": "cb6590d5ec4b55ab07129f0fa1cbb4d1209c2122",
+      "review": "Preserve the existing recovery policy: reject empty paths, allow movement recovery only for occupied start, and do not treat failed replanning at a free start as successful recovery. Verified separately by the existing recovery tree and transport tests."
+    },
+    "robotics/ros2/src/robot_slam_bringup/config/navigate_to_pose_no_backup.xml": {
+      "scope": "preserved_preexisting_revision",
+      "original_sha256": "3a44a0540e2251609625af9d7700c68e258202b6563aa9f06ad27f0c9da18fae",
+      "effective_sha256": "1d79cf0514816b50579c45cc77176812fd6d87164bcf8662272b9e3f011ad315",
+      "original_commit": "cb6590d5ec4b55ab07129f0fa1cbb4d1209c2122",
+      "review": "Preserve the existing recovery policy: reject empty paths, allow movement recovery only for occupied start, and do not treat failed replanning at a free start as successful recovery. Verified separately by the existing recovery tree and transport tests."
+    },
+    "robotics/ros2/src/robot_slam_bringup/launch/nav.launch.py": {
+      "scope": "preserved_preexisting_revision",
+      "original_sha256": "9ad32dfc4e3add852e40acbcd2eea714fe25b646d9b6f825466cc2c36d6c9076",
+      "effective_sha256": "8b8725dcf86026fea1b62299f9821c64f8571bb2460618c93fd5363d1c845168",
+      "original_commit": "e2fcc773fa5872137379def0cc76147dfd89c189",
+      "review": "Preserve the existing multi-robot profile launch, explicit TF/odometry ownership, print-only/frames-only modes and localization/map configuration. Includes pre-existing SLAM tuning; this record is source-preservation review, not model-quality or hardware acceptance. No launch or tuning values were changed by this refactor."
+    }
+  }
+}

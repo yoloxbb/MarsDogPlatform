@@ -177,12 +177,12 @@ class BehaviorFeedback:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ExecuteBehavior Action — /execute_behavior
+# ExecuteBehavior Action — /action/execute_behavior
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @dataclass
 class ExecuteBehaviorGoal:
-    """Goal for the /execute_behavior Action.
+    """Goal for the /action/execute_behavior Action.
 
     Sent by behavior_tree_node to action_executor_node.
     """

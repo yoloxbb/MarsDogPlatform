@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-12",
+  "source_base": "c21c3bf",
+  "source_state": "dirty working tree",
+  "sha256": {
+    "evidence/preflight-check.log": "56775cb4b92c84af930380d827e031ccb3c530f33640d381ca8a99ebbee610bd",
+    "evidence/behavior-scenario.xml": "3193e12804c105e0dcdbf307237df159359bf4508548e64c9f84890758cbde94",
+    "evidence/behavior-scenario.log": "96d0cae9eb19c2f02a1fcc5976aa12b4caa5b9a0f7d619c74a05b47818918d67",
+    "evidence/action-scenario.xml": "6e2aa6226e426bd8970eca45b560dc93521bde6ca5e8a6bd77f9299cab9b8756",
+    "evidence/action-scenario.log": "95398fd5d5ef558f590099c913bb337f00e415509239232f46fcce1ece1befa0",
+    "evidence/voice-scenario-humble.xml": "3502200d2d3e57f97721fca7090ecd2272ebc05b08051532cd89d152d50f7cda",
+    "evidence/voice-scenario-humble.log": "c2a33bc518874da166e50c90f88f18977a510766cb2979b6d4d4a68302ee26aa",
+    "evidence/vision-scenario-humble.xml": "cbaa95268462593085806c5b1cb5ef2c1937489fe3d92a1bc72088b8ee140a09",
+    "evidence/vision-scenario-humble.log": "a06fc9ddd54b122dc29b585fb05b93d8010c5037f1f53a7a20a224d10a8b0db6",
+    "capabilities.json": "e09e1b7c17dae45c4669566f81b9cbcddbe5b06228253443c749ef3a3fdb3a27",
+    "CAPABILITY_ROUTES.md": "49da938a677278c2b3e5ffccf57ed52440976efa740ec98a20625949292ea8bf",
+    "selected-tests.json": "566efdecacaf8c028b55417b195b5f6e229df5fe70a6022609ba03c6c050c977",
+    "verification.json": "c6f0d27855870bb67e790c927277a83299f6e62c1766f256f419dbeb7141d41f",
+    "source-drift-review.json": "c6271a58f6a25c2bcabc05a0051f25b2f6b35bbd7516d95b948736eadaed3c29",
+    "evidence/post-check.log": "4d15b5ca7d4bf82004dc6a681e4dc5a051277c81e485585e6bf2ab9b0efab175"
+  }
+}

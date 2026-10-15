@@ -13,7 +13,7 @@ spec.loader.exec_module(fixture)
 
 def test_actual_action_client_navigation_and_cancel():
     # Fail, do not skip, if the explicitly requested ROS environment is missing.
-    assert fixture.rclpy is not None, "Load Humble, VoiceTask and Nav2 interfaces"
+    assert fixture.rclpy is not None, "Load Humble, NavigationTask and Nav2 interfaces"
     from marsdog_action_executor.adapters.waypoint_nav_adapter import Ros2WaypointNavClient
     case = fixture.WireIntegrationTests()
     case.setUp()

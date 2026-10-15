@@ -2,7 +2,7 @@
 
 Tree 已将 `follow_owner` 和 `play_alone` 设为 `lifecycle_scope=behavior`、
 `completion_policy=until_preempted`、`cancel_on_voice_idle=false`，并向
-`/execute_behavior` 发送 `timeout_sec=0`。`interaction_id` 仅用于来源关联，
+`/action/execute_behavior` 发送 `timeout_sec=0`。`interaction_id` 仅用于来源关联，
 Goal 的独立身份是 `behavior_id`/`goal_id`。语音 idle 会关闭会话级
 `/behavior/attention_tracking`，不取消这两个行为。当前 Action 尚不兼容这份
 长期 Goal 契约；部署前须完成以下修改。
@@ -22,7 +22,7 @@ Goal 的独立身份是 `behavior_id`/`goal_id`。语音 idle 会关闭会话级
 - 将当前“短期确认 Goal + 会话级后台 UWB 跟随”合并为**一个**长期
   `follow_owner` Goal。Tree 不再通过 attention 通道发送跟随启用指令
   （`enabled=true`、`mode=follow_owner`）。
-- Go2 外部 UWB 进程链和 Lite3 `/go2/follow_uwb` 各自只能由该 Goal
+- Go2 外部 UWB 进程链和 Lite3 `/motion/follow_uwb` 各自只能由该 Goal
   启动一次。Goal 在跟随时保持 RUNNING，持续检查进程/服务、目标失联和
   控制器状态，不能每隔数秒由 Tree 重复下发。
 - CancelGoal、显式停止、急停、失败及节点退出均须停止 UWB 和底盘输出。
@@ -32,7 +32,7 @@ Goal 的独立身份是 `behavior_id`/`goal_id`。语音 idle 会关闭会话级
 
 ## 3. `play_alone`
 
-- Lite3 保留现有 `/go2/random_roam` 链路，在**同一个** Behavior Goal 内
+- Lite3 保留现有 `/motion/random_roam` 链路，在**同一个** Behavior Goal 内
   循环“RandomRoam → 成功 Result → 确认停稳 → 随机玩耍姿态 → 周期 Feedback”。
   不通过 waypoint `K`、直接 `/cmd_vel` 或重复 Tree Goal 实现循环。
 - 每次漫游和姿态仍有各自有限预算；漫游拒绝、业务码非 SUCCESS、目标丢失、

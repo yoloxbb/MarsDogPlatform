@@ -1,0 +1,32 @@
+# Examples are motion stages; BT/perception supplies fresh goals and decisions.
+frisbee_approach:
+  mode: approach
+  target_id: frisbee
+  target_source: vision
+  parameters: {desired_distance_m: 0.65, max_linear_speed: 0.3, timeout_sec: 25.0, lock_target_position: true, face_target_when_holding: true}
+return_to_owner:
+  mode: approach
+  target_id: owner
+  target_source: uwb
+  parameters: {desired_distance_m: 0.7, max_linear_speed: 0.4, timeout_sec: 30.0}
+walk_with_owner:
+  mode: follow
+  target_id: owner
+  target_source: uwb
+  parameters: {desired_distance_m: 1.2, distance_deadband_m: 0.12, distance_reengage_m: 0.25, duration_sec: 120.0, timeout_sec: 130.0, lost_target_policy: pause, lost_target_timeout_sec: 2.0}
+curious_nearby_exploration:
+  mode: explore
+  parameters: {min_radius_m: 0.6, max_radius_m: 1.5, goal_count: 4, goal_pause_sec: 1.5, boundary_radius_m: 2.0, sector_width_rad: 3.14, blocked_policy: resample, max_retries: 2, timeout_sec: 90.0, random_seed: 42}
+playful_orbit:
+  mode: orbit
+  target_id: owner
+  target_source: uwb
+  parameters: {orbit_radius_m: 1.2, orbit_turns: 0.5, orbit_direction: 1, max_linear_speed: 0.3, lock_orbit_center: true, timeout_sec: 40.0}
+short_local_goal:
+  mode: move
+  goal: {frame_id: base_footprint, x: 1.0, y: 0.3, yaw: 0.0}
+  parameters: {max_linear_speed: 0.3, position_tolerance_m: 0.12, require_final_yaw: true, timeout_sec: 20.0, planner: {prediction_time: 1.5, weight_obstacle: 4.0}}
+look_back:
+  mode: turn
+  goal: {frame_id: base_footprint, x: 0.0, y: 0.0, yaw: 1.57}
+  parameters: {max_angular_speed: 0.6, yaw_tolerance_rad: 0.1, timeout_sec: 10.0}

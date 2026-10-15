@@ -2,11 +2,31 @@
 import json
 import os
 from pathlib import Path
+import platform
 import shlex
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 CYCLONE_XML = '<CycloneDDS><Domain><General><MaxMessageSize>1200B</MaxMessageSize><FragmentSize>1000B</FragmentSize><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><MaxAutoParticipantIndex>64</MaxAutoParticipantIndex><Peers><Peer Address="127.0.0.1"/></Peers></Discovery></Domain></CycloneDDS>'
+SYSTEM_ROS_PACKAGES = (
+    "ros-humble-nav2-msgs", "ros-humble-rmw-cyclonedds-cpp",
+    "ros-humble-cyclonedds", "ros-humble-iceoryx-binding-c",
+    "ros-humble-iceoryx-posh", "ros-humble-iceoryx-hoofs",
+    "ros-humble-image-geometry",
+)
+
+
+def check_system_ros_dependencies():
+    missing = []
+    for package in SYSTEM_ROS_PACKAGES:
+        result = subprocess.run(
+            ["dpkg-query", "-W", "-f=${db:Status-Status} ${Architecture}", package],
+            capture_output=True, text=True,
+        )
+        if result.returncode or result.stdout.strip() != "installed arm64":
+            missing.append(package)
+    if missing:
+        raise RuntimeError("Missing system ROS Humble packages: " + ", ".join(missing))
 
 def clean_environment():
     env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1", PYTHONUNBUFFERED="1", CUDA_VISIBLE_DEVICES="")
@@ -18,6 +38,9 @@ def clean_environment():
     return env
 
 def add_ros_dependencies(env):
+    if platform.machine() == "aarch64":
+        check_system_ros_dependencies()
+        return env
     lock = json.loads((ROOT / "third_party/local-ros-deps.lock.json").read_text())
     def prepend(key, paths):
         env[key] = os.pathsep.join([str(p) for p in paths if p.exists()] + ([env[key]] if env.get(key) else []))

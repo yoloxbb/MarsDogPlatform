@@ -1,0 +1,14 @@
+# Copy to ~/.config/marsdog/uwb-roundtrip/lingmao_chassis_measured.yaml.
+# Replace null ONLY with actual measurements. This example is intentionally
+# rejected for real motion; it is not a measured robot configuration.
+local_motion_server:
+  ros__parameters:
+    min_linear_speed: null       # m/s, > 0 and <= 1.0
+    target_braking_decel: null   # m/s^2, > 0 and <= 0.70
+    # Optional measured delay and uncertainty overrides:
+    # target_reaction_sec: ...
+    # target_position_margin_m: ...
+local_velocity_planner_node:
+  ros__parameters:
+    min_linear_speed: null       # Must equal the server value.
+    max_linear_decel: null       # Must equal target_braking_decel.

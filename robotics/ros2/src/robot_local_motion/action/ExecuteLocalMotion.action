@@ -1,0 +1,23 @@
+# Modes: move, approach, follow, orbit, explore, turn.
+# A base-frame fixed goal is transformed ONCE, at acceptance, into odom.
+string mode
+geometry_msgs/PoseStamped goal
+string target_id
+string target_source
+# Versioned, strictly validated per-task JSON; see config/parameter_schema.json.
+string parameters_json
+---
+# SUCCEEDED, CANCELED, TIMEOUT, INPUT_LOST, BLOCKED, NO_PROGRESS,
+# NO_VALID_GOAL, TARGET_OUT_OF_RANGE, DISTANCE_LIMIT, CONFIG_ERROR,
+# CONTROL_CONFLICT, STOP_UNCONFIRMED.
+string outcome
+string message
+bool stop_confirmed
+geometry_msgs/PoseStamped final_pose
+string effective_parameters_json
+---
+string state
+float64 distance_m
+float64 progress
+float64 elapsed_sec
+geometry_msgs/PoseStamped current_pose

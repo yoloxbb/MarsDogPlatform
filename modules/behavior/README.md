@@ -32,7 +32,7 @@
 │  情绪相关性：state.emotions.<name>.triggered + 视觉人/无人路由  │
 │  需求相关性：state.demands.<name>.triggered                     │
 │  Hunger/Social/Exploration：视觉 Service → 食物/目标/物品上下文 │
-│  Action Client → /execute_behavior                            │
+│  Action Client → /action/execute_behavior                            │
 │  发布 → /behavior/result_event                                │
 │                                                              │
 │  visual_event: FALL/STOP 直接候选；其余事件仅缓存场景 │
@@ -45,7 +45,7 @@
                        │
 ┌──────────────────────▼───────────────────────────────────────┐
 │ marsdog_action_executor — 独立下游项目                          │
-│  Action Server: /execute_behavior                             │
+│  Action Server: /action/execute_behavior                             │
 │  维护具体动作序列 (action_catalog)                              │
 │  Goal → Feedback(progress/action) → Result                    │
 └──────────────────────────────────────────────────────────────┘
@@ -84,7 +84,7 @@ marsdog_behavior/                   # ← 仓库根目录软链接到 ~/ros2_ws/
 │   ├── execution_manager.py        # 独立执行管理兼容模块
 │   ├── result_event_mapper.py      # → /behavior/result_event
 │   ├── perception_client_adapter.py # 感知适配（audio白名单 + 视觉服务/缓存）
-│   ├── action_client_adapter.py    # Action Client → /execute_behavior
+│   ├── action_client_adapter.py    # Action Client → /action/execute_behavior
 │   ├── ros2_compat.py              # ROS2/Standalone 兼容层
 │   ├── interfaces.py               # Python 数据结构（BehaviorSignal 等）
 │   ├── mock_action_executor_node.py # [待删除] 内置 Mock 执行器
@@ -272,7 +272,7 @@ Action 目前只完成一次 UWB 随机漫游和姿态动作，尚需支持同�
 
 普通抢占统一要求最新 Feedback 为 `safe_to_interrupt=true`，且状态不能是
 `DISPATCHED` 或 `RECOVERY_REQUIRED`。抢占只先进入 `CANCEL_REQUESTED`；Tree 保留
-旧 Goal 和导航锁，等 `/execute_behavior` 的真实 Result 后才下发替代 Goal。
+旧 Goal 和导航锁，等 `/action/execute_behavior` 的真实 Result 后才下发替代 Goal。
 `emergency_stop` 可绕过安全点立即请求取消，但不能把取消受理当作执行已经停止。
 
 ### 情绪/需求相关性
@@ -355,7 +355,7 @@ LOG_FILE=/tmp/bt.log uv run python -m marsdog_behavior.ros_node
 
 | Action | 方向 | 说明 |
 |--------|------|------|
-| `/execute_behavior` | Client → Server | 下发 behavior_name 给动作执行器 |
+| `/action/execute_behavior` | Client → Server | 下发 behavior_name 给动作执行器 |
 
 ### Service Client
 
@@ -368,9 +368,9 @@ LOG_FILE=/tmp/bt.log uv run python -m marsdog_behavior.ros_node
 
 以下 Topic 是动作执行器或可视化工具的**调试接口**，不作为行为树项目的正式依赖：
 
-- `/execute_behavior/goal` — debug
-- `/execute_behavior/feedback` — debug
-- `/execute_behavior/result` — debug
+- `/debug/execute_behavior/goal` — debug
+- `/debug/execute_behavior/feedback` — debug
+- `/debug/execute_behavior/result` — debug
 
 ## 职责边界
 
@@ -380,7 +380,7 @@ LOG_FILE=/tmp/bt.log uv run python -m marsdog_behavior.ros_node
 2. 维护候选行为池（同名 queued/in-flight 唯一占位、TTL、来源记录）
 3. 按优先级、抢占规则、冷却、超时和情绪/需求 `triggered` 相关性选择行为
 4. 执行前判断 interactive / solo
-5. 通过 Action Client 向 `/execute_behavior` 下发 `behavior_name`
+5. 通过 Action Client 向 `/action/execute_behavior` 下发 `behavior_name`
 6. 接收执行器 feedback/result
 7. 发布 `/behavior/result_event`
 8. 缓存 `humans / active_target / tracked_objects`，作为视觉服务不可用时的回退
@@ -395,7 +395,7 @@ LOG_FILE=/tmp/bt.log uv run python -m marsdog_behavior.ros_node
 4. `ACT_POSTURE_xxx` 等底层动作 ID 的正式维护 → 由 `marsdog_action_executor` 负责
 5. 真实电机、舵机、云台、导航控制 → 由 `marsdog_action_executor` 负责
 6. 重复定义 `ExecuteBehavior.action` → 由 `marsdog_interfaces` 负责
-7. 暴露 `/execute_behavior/goal|feedback|result` 作为正式业务 topic
+7. 暴露 `/debug/execute_behavior/goal|feedback|result` 作为正式业务 topic
 
 ## 依赖包
 

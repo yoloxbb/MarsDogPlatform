@@ -17,8 +17,9 @@ PATHS = {
     "stereo_slam_legacy_bringup": "slam_ws/src/stereo_slam_legacy_bringup",
     "go2_uwb_local_follow": "go2_follow_ws/src/go2_uwb_local_follow",
     "go2_uwb_behavior": "go2_follow_ws/src/go2_uwb_behavior",
+    "robot_local_motion": "robotics/ros2/src/robot_local_motion",
 }
-TEST_PACKAGES = ["uwb_aoa_pkg", "go2_uwb_local_follow", "go2_uwb_behavior", "person_3d_localization"]
+TEST_PACKAGES = ["uwb_aoa_pkg", "go2_uwb_local_follow", "go2_uwb_behavior", "person_3d_localization", "robot_local_motion"]
 
 def main():
     parser = argparse.ArgumentParser()
@@ -61,7 +62,7 @@ def main():
         env = local_transport(add_ros_dependencies(json.loads(result.stdout.splitlines()[-1])), 211)
         if args.legacy_source:
             source = args.legacy_source.resolve()
-            paths = [source / s for s in PATHS.values()] + [source / "go2_follow_ws/src/uwb"]
+            paths = [source / s for n, s in PATHS.items() if n != 'robot_local_motion'] + [source / "go2_follow_ws/src/uwb"]
         else:
             assert args.uwb_source, "Explicit pinned UWB source required"
             paths = [ROOT / "robotics/ros2/src" / n for n in PATHS] + [args.uwb_source.resolve()]
@@ -72,11 +73,12 @@ def main():
                  "--event-handlers", "console_direct+", "--cmake-args", "-DBUILD_TESTING=ON",
                  "-DBUILD_UWB_VENDOR_DRIVER=OFF", "-DPython3_EXECUTABLE=" + str(tools / "bin/python"),
                  "-DPYTHON_EXECUTABLE=" + str(tools / "bin/python")])
+        test_packages = [p for p in TEST_PACKAGES if not args.legacy_source or p != 'robot_local_motion']
         # Original algorithm and transport tests only. Historical lint debt is separate.
         code = run([str(tools / "bin/colcon"), "--log-base", str(out / "test-log"), "test",
                     "--base-paths", *map(str, paths),
                     "--build-base", str(out / "build"), "--install-base", str(out / "install"),
-                    "--packages-select", *TEST_PACKAGES, "--executor", "sequential",
+                    "--packages-select", *test_packages, "--executor", "sequential",
                     "--event-handlers", "console_direct+", "--return-code-on-test-failure",
                     "--ctest-args", "-R", "^test_", "--output-on-failure"], check=False)
         run([str(tools / "bin/colcon"), "test-result", "--test-result-base", str(out / "build"),
@@ -92,7 +94,7 @@ def main():
         assert counts["tests"] > 0, "No functional tests ran"
         assert not any(counts[k] for k in ("failures", "errors", "skipped")), counts
         ctest = []
-        for package in TEST_PACKAGES:
+        for package in test_packages:
             results = sorted((out / "build" / package / "Testing").glob("*/Test.xml"))
             assert results, "Missing CTest results for " + package
             for test in ET.parse(results[-1]).getroot().findall("./Testing/Test"):
@@ -102,7 +104,7 @@ def main():
                 "ctest": ctest, "status": "PASS_WITH_EXPLICIT_LIMITS" if code == 0 else "FAIL",
                 "counts": counts, "junit_reports": [str(f.relative_to(out)) for f in junit],
                 "source_paths": list(map(str, paths)), "functional_test_returncode": code,
-                "build_packages": list(PATHS) + ["uwb_aoa_pkg"], "test_packages": TEST_PACKAGES,
+                "build_packages": [p for p in PATHS if not args.legacy_source or p != 'robot_local_motion'] + ["uwb_aoa_pkg"], "test_packages": test_packages,
                 "commands": commands,
                 "limits": ["No hardware/device launch", "ARM64 UWB vendor algorithm disabled by original option",
                            "behavior_ext_plugins requires unavailable Nav2 libraries; excluded",

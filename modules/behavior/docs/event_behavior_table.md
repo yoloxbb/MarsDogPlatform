@@ -15,7 +15,7 @@
 `priority_level=1`；`.2` 通过候选内部 `sub_priority=12` 表示“视觉”。
 这些 Behavior 会保留 `trigger_event`、`visual_header`、`active_target` 和
 `hands` 到 `params_json`。FALL/STOP 以原样、区分大小写的 `behavior_name` 发送给
-`/execute_behavior`。
+`/action/execute_behavior`。
 
 `/perception/visual_event` 是 10 Hz 状态快照，不是一次性边沿总线。连续包中的
 同名事件只在首次出现时触发；先消失后再出现时才重新触发。候选池还会

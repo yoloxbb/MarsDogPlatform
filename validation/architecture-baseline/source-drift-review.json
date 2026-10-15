@@ -1,0 +1,6 @@
+{
+  "path": "robotics/ros2/LINGMAO_COMMUNICATION.md",
+  "snapshot_sha256": "044928ba783c0bb8c592f54ad8eb7a01faec27c3ceb556ec6ee3a5dcf1c2e2d4",
+  "reviewed_sha256": "45744f665026c8f489dca116ba218a0db829110863a9bc439c5ae0f15fb0f401",
+  "reason": "Concurrent communication-document update inspected; preserve it unchanged. No runtime source drift."
+}

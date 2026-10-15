@@ -10,11 +10,15 @@ import xml.etree.ElementTree as ET
 import pytest
 import yaml
 
-from integration.naming.config_compatibility import FIXTURE, assert_reviewed_config
+from integration.naming.config_compatibility import (
+    FIXTURE, ASSET_FIXTURE, assert_reviewed_config, assert_reviewed_asset,
+    restore_reviewed_interface_names,
+)
 
 REPO = Path(__file__).resolve().parents[3]
 BASELINE = json.loads((Path(__file__).resolve().parents[1] / "baseline/sources.json").read_text())
 REVIEWED_CONFIGS = json.loads(FIXTURE.read_text())["configs"]
+REVIEWED_ASSETS = json.loads(ASSET_FIXTURE.read_text())["assets"]
 
 
 @pytest.mark.parametrize("module", ["emotion", "behavior", "action", "voice", "vision"])
@@ -31,8 +35,18 @@ def test_migration_preserves_wire_and_default_assets(module):
     assert protected, "No protected protocol/config files were selected"
     for name, record in protected.items():
         path = source / name
+        if module == "action" and name == "action/ExecuteBehavior.action":
+            # Authorized retirement: only the unchanged public IDL is generated.
+            assert not path.exists()
+            public = REPO / "interfaces/ros2/marsdog_interfaces/action/ExecuteBehavior.action"
+            retired = json.loads((REPO / "integration/naming/interface_migration.json").read_text())["retired_assets"][path.relative_to(REPO).as_posix()]
+            assert retired["original_sha256"] == record["sha256"]
+            fields = [" ".join(line.split("#", 1)[0].split()) for line in public.read_text().splitlines()
+                      if line.split("#", 1)[0].strip()]
+            assert fields == retired["fields"]
+            continue
         assert path.is_file(), name
-        actual_bytes = path.read_bytes()
+        actual_bytes = restore_reviewed_interface_names(path.read_bytes(), path.relative_to(REPO).as_posix())
         if name == "package.xml":
             # Logging refactor permits exactly this public infrastructure dependency.
             # Removing the one literal addition must recover every frozen byte/XML element.
@@ -40,23 +54,36 @@ def test_migration_preserves_wire_and_default_assets(module):
             assert actual_bytes.count(addition) == 1
             actual_bytes = actual_bytes.replace(addition, b"", 1)
         if module == "action" and name == "package.xml":
-            # The sole approved manifest change declares the already preferred
-            # public action type. Compare every other XML element to baseline.
+            # Explicit public dependencies introduced after migration. The
+            # frozen original is never replaced; every other element is exact.
             frozen_xml = (REPO / "integration/migration/fixtures/action-package-original.xml").read_bytes()
             assert hashlib.sha256(frozen_xml).hexdigest() == record["sha256"]
             original = ET.fromstring(frozen_xml)
             actual = ET.fromstring(actual_bytes)
             assert actual.tag == original.tag and actual.attrib == original.attrib
-            added = [n for n in actual if n.tag == "exec_depend" and n.text == "marsdog_interfaces"]
-            assert len(added) == 1
-            actual.remove(added[0])
+            for dependency in ('marsdog_interfaces', 'robot_local_motion', 'person_3d_localization'):
+                added = [n for n in actual if n.tag == "exec_depend" and n.text == dependency]
+                assert len(added) == 1, dependency
+                actual.remove(added[0])
+            # Public interface migration removes only these obsolete dependencies.
+            for tag, text in (("depend", "marsdog_voice_interaction"),
+                              ("buildtool_depend", "rosidl_default_generators"),
+                              ("member_of_group", "rosidl_interface_packages")):
+                removed = [n for n in original if n.tag == tag and n.text == text]
+                assert len(removed) == 1, (tag, text)
+                original.remove(removed[0])
             normalize = lambda root: [(n.tag, n.attrib, (n.text or "").strip(), [(c.tag, (c.text or "").strip()) for c in n]) for n in root]
             assert normalize(actual) == normalize(original)
         elif path.relative_to(REPO).as_posix() in REVIEWED_CONFIGS:
-            # Reviewed naming cleanup preserves effective defaults. Original
-            # migration hashes remain frozen; all other assets stay byte-exact.
+            # Explicit reviews preserve original migration evidence and check
+            # every value outside the reviewed changes; all other assets stay byte-exact.
             review = REVIEWED_CONFIGS[path.relative_to(REPO).as_posix()]
-            assert_reviewed_config(yaml.safe_load(path.read_text()), review, record["sha256"])
+            assert_reviewed_config(yaml.safe_load(actual_bytes), review, record["sha256"])
+        elif path.relative_to(REPO).as_posix() in REVIEWED_ASSETS:
+            # Preserve reviewed revisions that predate this refactor. This is
+            # not a claim that their algorithms/config equal the migration era.
+            review = REVIEWED_ASSETS[path.relative_to(REPO).as_posix()]
+            assert_reviewed_asset(actual_bytes, review, record['sha256'])
         else:
             assert hashlib.sha256(actual_bytes).hexdigest() == record["sha256"], name
         actual_mode = "100755" if path.stat().st_mode & 0o111 else "100644"
@@ -74,6 +101,14 @@ def test_robotics_migration_preserves_idl_and_default_configs():
         if not (relative.startswith(("config/", "launch/")) or Path(relative).suffix in {".msg", ".srv", ".action"}):
             continue
         actual = REPO / mapping[prefix] / relative
-        assert hashlib.sha256(actual.read_bytes()).hexdigest() == record["sha256"], name
+        actual_bytes = restore_reviewed_interface_names(actual.read_bytes(), actual.relative_to(REPO).as_posix())
+        review = REVIEWED_CONFIGS.get(actual.relative_to(REPO).as_posix())
+        if review:
+            assert_reviewed_config(yaml.safe_load(actual_bytes), review, record['sha256'])
+        elif actual.relative_to(REPO).as_posix() in REVIEWED_ASSETS:
+            review = REVIEWED_ASSETS[actual.relative_to(REPO).as_posix()]
+            assert_reviewed_asset(actual_bytes, review, record['sha256'])
+        else:
+            assert hashlib.sha256(actual_bytes).hexdigest() == record["sha256"], name
         checked += 1
     assert checked > 0

@@ -171,7 +171,7 @@ def test_recharge_navigation_uses_long_timeout_and_blocks_emotion_preemption() -
 
     # Six seconds used to exceed the generic Lv0 timeout (5 s), cancel Nav2,
     # and let the queued emotion execute.  Recharge must remain authoritative.
-    runtime.blackboard._behavior_start_time = time.time() - 6.0
+    runtime.blackboard._behavior_start_time = time.monotonic() - 6.0
     runtime.blackboard.emotion_module.update_state("Joy", 90, True)
     runtime.candidate_pool.add(
         "expressJoyAlone",

@@ -79,9 +79,9 @@ flowchart TB
 | `/internal_need/state`、`/internal_need/signal_event` | String，版本字符串 `"2.0"` | 数值、阈值、等级、levelEvent 必须一致 |
 | `/perception/voice/task` | `marsdog_voice_interaction/srv/VoiceTask` | 语音任务与会话 hold / release |
 | `/perception/vision/task` | `marsdog_vision_interaction/srv/VisionTask` | 场景、人物、物体与目标查询 |
-| `/execute_behavior` | `marsdog_interfaces/action/ExecuteBehavior` | Goal、Feedback、Result、Cancel；ACK 不代表终态 |
+| `/action/execute_behavior` | `marsdog_interfaces/action/ExecuteBehavior` | Goal、Feedback、Result、Cancel；ACK 不代表终态 |
 | `/behavior/result_event` | String JSON | 需求行为的 STARTED / 结果事件，不是同名生成消息类型 |
-| `/waypoint_nav/task` | 历史复用 VoiceTask；协议 `"1.0"` | Action 请求导航；到达和取消都需要终态证据 |
+| `/navigation/task` | 历史复用 VoiceTask；协议 `"1.0"` | Action 请求导航；到达和取消都需要终态证据 |
 
 VoiceTask 和 VisionTask 即使字段相同也不是同一个 ROS 类型。跨模块协议见 [interfaces/application](../../interfaces/application/README.md)，运行连接登记见 [registry.json](../../interfaces/registry.json)。
 

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MarsDog 第二批重构交付 · 2026-10-13</title>
+<style>
+:root{color-scheme:light;--paper:#f5f5f5;--ink:#2d3142;--accent:#bf4520}*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.8 "Microsoft YaHei","PingFang SC",sans-serif}
+main{max-width:1140px;margin:auto;padding:48px 36px 72px}h1{font-size:34px;line-height:1.4;margin:10px 0 16px}h2{font-size:23px;margin-top:36px}
+p{margin:12px 0}.eyebrow{color:var(--accent);font-size:14px;font-weight:700;letter-spacing:2px}.lead{font-size:19px}.muted{font-size:14px;color:#687082}
+.card{background:white;border:1px solid #dedfe5;border-radius:10px;padding:18px 24px;margin:20px 0}.notice{background:#fff1e9;border-left:4px solid var(--accent);padding:14px 20px}
+.pill{display:inline-block;border-radius:16px;padding:3px 12px;margin:3px 8px 3px 0;background:#e7f3ec;color:#245c46;font-size:13px}
+table{width:100%;border-collapse:collapse;background:white;font-size:14px}th,td{border:1px solid #dedfe5;padding:12px;text-align:left;vertical-align:top}th{background:#ebecef}
+code{font:13px/1.6 Consolas,monospace;overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#ebecef;padding:18px;border-radius:8px;font-size:13px}li{margin:8px 0}summary{cursor:pointer;font-weight:700}a{color:var(--accent)}
+@media(max-width:700px){main{padding:24px 16px}h1{font-size:27px}.scroll{overflow-x:auto}table{min-width:580px}.card{padding:14px 18px}}
+@media print{body{background:white}main{padding:10mm}h2{break-after:avoid}tr,.card{break-inside:avoid}}
+</style></head><body><main>
+<div class="eyebrow">MARSDOG · RUNTIME BOUNDARIES · 02</div>
+<h1>计时、阶段结果与语音编排已完成本批重构</h1>
+<p class="lead">13 个源码、测试和工具文件已写入板端。新增 22 个顶层测试，保留现有 ROS 类型、事件字段、配置、动作路由与需求结算规则。</p>
+<p><span class="pill">BT 566 项通过</span><span class="pill">Action 450 项通过 / 32 项跳过</span><span class="pill">ROS 回调 37 项通过</span></p>
+<p class="muted">日期：2026-10-13 · 板端：192.168.5.101 · 项目：/home/marsdog/MarsDogPlatform<br>分支：codex/reusable-local-motion · HEAD：c21c3bf60e1a96550507d0fa9f2c329a7eb74ec3<br>数字按 JUnit 统计；BT 和 Action 的通过数各包含 2 个子测试。各验证层有重叠，不合计为独立场景总数。</p>
+<div class="notice">交付状态为“源码已更新、隔离安装已验证”。没有切换现有运行安装或重启生产服务。真实 ROS 测试仅在 localhost 的独立测试域运行，Action 使用模拟 I/O；未做实机运动验收。综合迁移检查仍有 3 项既有资产差异，Vision 干净安装仍有平台兼容问题。</div>
+
+<h2>1 · 持续时间与业务时间分开</h2>
+<div class="scroll"><table><thead><tr><th>范围</th><th>现在的决策依据</th><th>兼容边界</th></tr></thead><tbody>
+<tr><td>行为超时</td><td>Blackboard 在启动时记录单调时钟，超时按实际经过时间判断。</td><td>超时仍只请求取消；等待真实终态，不提前释放执行占用。</td></tr>
+<tr><td>行为冷却</td><td>set_cooldown 同时记录单调截止时间；后续系统时间调整不改变冷却长度。</td><td>cooldown_until 保留原来的日历时间供诊断。旧调用方直接写入该字典时，在首次读取时换算一次。</td></tr>
+<tr><td>候选 TTL</td><td>入池时保留 created_at 的既有年龄，转换为单调截止时间；清理、去重和选择共用它。</td><td>created_at 字段及排序保持不变。非正 TTL 保持原语义；过期不释放已经派发行为的占用。</td></tr>
+</tbody></table></div>
+<p>测试注入两套可控时钟，覆盖系统时间前跳、回拨、过期后重新入队、重复候选 ID 和在途占用。单调时间保存在本地附属状态中，不混入事件或 ROS 消息。</p>
+<p class="muted">范围限于 BT 超时、冷却、候选 TTL，以及语音协调器的可注入时钟。没有改造全部情绪衰减或模拟执行器计时，也没有解决跨进程时钟同步。候选入池之前的时间偏差仍沿用既有 created_at 语义。</p>
+
+<h2>2 · 循环动作的失败和取消正确向上返回</h2>
+<p>修正 <code>StageExecutor._execute_loop</code> 忽略单元结果并无条件标记完成的问题。当前模板没有启用 <code>loop_random</code>；本批修复该已存在的可配置分支。</p>
+<div class="scroll"><table><thead><tr><th>发生的情况</th><th>阶段处理</th><th>完成记录</th></tr></thead><tbody>
+<tr><td>必需阶段没有可选单元或单元失败</td><td>返回失败，交给现有 ResultEvaluator 处理。</td><td>不加入 completed_stages。</td></tr>
+<tr><td>可选阶段失败 / failure_policy=skip_stage</td><td>按既有布尔接口允许跳过，并结束本阶段循环。</td><td>不伪造阶段完成。</td></tr>
+<tr><td>开始前、单元结束或间隔等待时取消</td><td>返回取消原因和失败的阶段结果；取消不能被可选策略变成成功。</td><td>不加入 completed_stages。</td></tr>
+<tr><td>全部循环成功 / 原来允许的零次循环</td><td>保留原有成功语义。</td><td>仅正常完成时记录。</td></tr>
+</tbody></table></div>
+<p>循环间隔改为最多 50 ms 一段的可取消等待。这个数字是软件轮询间隔，不代表底盘物理停车时延。未新增运动协议、StageOutcome 枚举、重试算法或物理停止证明。</p>
+
+<h2>3 · 语音交互策略从节点中拆出</h2>
+<p>原来的函数依赖完整节点及大量私有属性。现在由独立协调器接收明确的状态和能力端口；节点适配层负责连接现有客户端，旧的 12 个函数入口继续转发。</p>
+<div class="scroll"><table><thead><tr><th>组件</th><th>负责什么</th><th>不再承担什么</th></tr></thead><tbody>
+<tr><td><code>voice_engagement.py</code></td><td>保留旧函数签名，委托给协调器。</td><td>不包含场景判断。</td></tr>
+<tr><td><code>voice_engagement_adapter.py</code></td><td>将节点持有的 session、generation 和现有客户端映射为状态及端口。</td><td>不决定身份、目标、靠近和等待策略。</td></tr>
+<tr><td><code>voice_engagement_coordinator.py</code></td><td>处理 hold、身份等待、目标获取、靠近候选、会话关闭和迟到回调。</td><td>不接收 ROS 节点，不访问节点私有属性。</td></tr>
+</tbody></table></div>
+<div class="card"><p><strong>已有场景流转：</strong>唤醒与转向 → 身份确认 → 获取视觉目标 → 构造靠近候选 → 候选池与运行时仲裁 → Action 执行 → 原有结果回调与会话等待。</p>
+<p>协调器通过八组能力交互：会话租约、目标查询、候选池、交互执行取消、情绪延后、注意力发布、靠近候选构造、日志。仲裁和 Goal 生命周期继续由现有运行时持有。</p>
+<p><strong>中断与迟到：</strong>关闭当前会话只清理相应候选和待处理交互，并请求取消该交互正在执行的行为；迟到目标不能推动已替换的会话。旧 hold 迟到成功时释放捕获的 token，避免旧租约滞留。</p></div>
+<p>新增纯组件测试覆盖主人链路、陌生人等待、查询超时、会话替换、迟到 hold、身份冲突、关闭与取消。测试只用普通状态对象和端口替身，无需构建 ROS 节点。</p>
+<p class="muted">当前会话的权威状态仍由原节点持有，适配层保持这一点；本批不是全系统单一事件循环迁移。三类靠近接口仍按此前设计区分，本批不新增模式路由或导航几何转换。</p>
+
+<h2>4 · 验证结果与限制</h2>
+<div class="scroll"><table><thead><tr><th>检查</th><th>结果</th><th>说明</th></tr></thead><tbody>
+<tr><td>平台门禁 dev.py check</td><td>通过</td><td>架构 / 标识检查、122 项平台测试、13 项日志基础设施测试。</td></tr>
+<tr><td>BT 全量源码测试</td><td>566 通过，0 跳过</td><td>含本批时钟、语音端口测试及首批故障恢复测试。</td></tr>
+<tr><td>Action 全量源码测试</td><td>450 通过，32 跳过</td><td>9 项 PySide2；22 项 rclpy；1 个 local_motion ROS 测试模块在收集时跳过。</td></tr>
+<tr><td>Action Humble 回调</td><td>37 通过，0 跳过</td><td>真实回调与生成类型，替身协作者，不创建硬件节点。</td></tr>
+<tr><td>声音事件契约</td><td>46 场景通过</td><td>Voice → BT / Emotion，独立模块解释器与源码来源核验。</td></tr>
+<tr><td>需求与情绪状态契约</td><td>34 场景通过</td><td>保留既有权威输入、阈值和恢复规则。</td></tr>
+<tr><td>综合迁移 / 结算契约</td><td>22 通过，3 失败</td><td>其中 Action → BT → Needs 结果链路 15 场景通过；失败项见下文。</td></tr>
+<tr><td>干净 wheel 安装</td><td>BT / Action / Emotion / Voice 通过；Vision 失败</td><td>含组件导入与源码哈希。BT 修复为按现有锁文件离线安装，并验证依赖一致性。</td></tr>
+<tr><td>独立 ROS 安装构建</td><td>3 包构建通过，7 个关键组件哈希一致</td><td>独立安装 BT / Action / Observability，沿用已有生成接口 underlay；未覆盖运行安装。</td></tr>
+<tr><td>安装后取消传输</td><td>通过</td><td>真实 DDS + 替身 Action 服务。Cancel ACK 后继续持有原 Goal，约 0.362 秒后收到终态。</td></tr>
+<tr><td>安装后进程退出</td><td>SIGINT / SIGTERM 均通过</td><td>模拟 Lite3 I/O；退出前观察到零速度指令，进程正常回收，没有物理控制话题发布者。</td></tr>
+</tbody></table></div>
+<p>先在隔离源码副本运行完整 BT / Action 回归，再写回板端并通过正式 <code>dev.py test</code> 复验。最后的工具调整只重复了受影响的安装检查与平台门禁。</p>
+<details><summary>未通过门禁的具体原因</summary><ul>
+<li>Action 的 <code>package.xml</code> 已增加 <code>robot_local_motion</code> 依赖，与冻结迁移基线不同。</li>
+<li>Vision 的 <code>config/vision.yaml</code> 与旧默认配置哈希不同。</li>
+<li>导航的 <code>robot_slam_bringup/config/nav.yaml</code> 与旧默认配置哈希不同。</li>
+<li>Vision 锁文件可在默认缓存完成依赖安装，但 <code>uv pip check</code> 报 <code>nvidia-cusparselt-cu13</code> 为不同平台构建。需要 Vision 负责人单独处理平台锁与运行时选择；本批未改锁文件。</li>
+</ul><p>前三项与首批验证一致，未通过修改冻结基线或覆盖他人配置来消除。Action 纯测试的跳过项也没有计为通过，ROS 回调检查单独列出。</p></details>
+
+<h2>5 · 交付、恢复与后续</h2>
+<p>原始快照包含 579 个文件。13 个变更文件逐一核对最终哈希，其余快照文件哈希均不变。板端原有未提交修改保留，HEAD 未改变，没有新增提交。</p>
+<pre>板端源码：/home/marsdog/MarsDogPlatform
+备份：out/refactor-phase2-20261013/before-apply/
+最终变更清单：out/refactor-phase2-20261013/final-manifest.json
+验证摘要：out/refactor-phase2-20261013/delivery-summary.json
+隔离 ROS 安装：out/refactor-phase2-20261013/ros/install/
+交付说明：docs/development/runtime-refactor-phase2-20261013.html</pre>
+<p>配套压缩包包含本批补丁、13 个最终文件、变更前副本、哈希清单及原始报告。恢复时先核对待恢复文件仍等于清单的 after 哈希，再按文件恢复备份；新增文件仅在没有后续修改时移除。不要使用整个仓库 reset 覆盖团队工作。</p>
+<p>后续仍需推进：三类靠近的统一请求 / 反馈 / 取消 / 结果契约，以及视觉观测到局部 / 地图目标的几何边界；未知终态的执行端对账；跨进程状态 epoch / revision；更多场景逐步迁入独立协调器。本批提供了可测试的组件边界，不表示整个系统重构已经结束。</p>
+<p class="muted">新增测试位置：modules/behavior/tests/test_monotonic_decisions.py、test_voice_coordinator_ports.py；modules/action/tests/test_loop_stage_outcomes.py。安装组件清单已登记新增协调器、适配层和计时 / 阶段组件。</p>
+</main></body></html>

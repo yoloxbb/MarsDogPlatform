@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "authorization": "User approved migration without compatibility, 2026-10-15. See docs/development/INTERFACE_MIGRATION_20261015.md.",
+  "assets": {
+    "modules/action/config/navigation_waypoints.yaml": {
+      "before_sha256": "835cf3c35ce9146be392811ae74c2ddac3efef5291356d40a31c62926144ac5e",
+      "after_sha256": "7c3b73bf138de5a25271d55e9f2c9d46603cfedef577c9da5420fd9bd49b2b6e",
+      "replacements": [
+        {
+          "before": "/waypoint_nav/task",
+          "after": "/navigation/task"
+        },
+        {
+          "before": "/waypoint_nav/status",
+          "after": "/navigation/status"
+        }
+      ]
+    },
+    "modules/action/config/uwb_follow.yaml": {
+      "before_sha256": "8e13635f70fa44534403cf6694995ddd3052e72536c778d40dc196209bb16036",
+      "after_sha256": "b3d4f763aeb3237e27ed9942cef78e6e124d3757ade54c15fb0f70bb90624adb",
+      "replacements": [
+        {
+          "before": "/go2/",
+          "after": "/motion/"
+        }
+      ]
+    },
+    "modules/action/launch/action_executor.launch.py": {
+      "before_sha256": "160badb427ffff1fabfde1b8eb145bd8436d4403bc591597ce7b59ff2b3e8ec4",
+      "after_sha256": "11d00a88cb35283c28dda26bd11ea9e2dbfe24faddea2945845f605aca4d39bf",
+      "replacements": [
+        {
+          "before": "/waypoint_nav/task",
+          "after": "/navigation/task"
+        },
+        {
+          "before": "/waypoint_nav/status",
+          "after": "/navigation/status"
+        },
+        {
+          "before": "Shared named-waypoint VoiceTask service",
+          "after": "Shared named-waypoint NavigationTask service"
+        }
+      ]
+    },
+    "robotics/ros2/src/go2_uwb_behavior/config/behavior_controller.yaml": {
+      "before_sha256": "27b0a0067da6d86301774dd4079d86ae89487c13dd3fd8df8ab7150807d7aae3",
+      "after_sha256": "7781084926b0aeb6dd6515be422c19218848e25011515024d4744f2f2bdc124a",
+      "replacements": [
+        {
+          "before": "/go2/",
+          "after": "/motion/"
+        }
+      ]
+    }
+  },
+  "retired_assets": {
+    "modules/action/action/ExecuteBehavior.action": {
+      "original_sha256": "269f18ea9cb42e2e2d162bb399579a30f75859207e4b8a28ba9732c7eac197d8",
+      "public_idl": "interfaces/ros2/marsdog_interfaces/action/ExecuteBehavior.action",
+      "fields": [
+        "string goal_id",
+        "string behavior_id",
+        "string behavior_name",
+        "int32 priority_level",
+        "string params_json",
+        "float64 timeout_sec",
+        "---",
+        "string goal_id",
+        "string behavior_id",
+        "string behavior_name",
+        "string status",
+        "string result",
+        "string reason",
+        "float64 reward",
+        "string emotion_delta_json",
+        "string need_delta_json",
+        "string metadata_json",
+        "---",
+        "string goal_id",
+        "string behavior_id",
+        "string behavior_name",
+        "string status",
+        "float64 progress",
+        "bool safe_to_interrupt",
+        "string current_action",
+        "string message"
+      ]
+    }
+  }
+}

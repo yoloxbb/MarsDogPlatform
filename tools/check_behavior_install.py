@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import shutil
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,10 +48,21 @@ def main():
         run([args.uv, "build", "--wheel", "--out-dir", str(work / "wheels"), str(source)])
         wheels = list((work / "wheels").glob("*.whl"))
         assert len(wheels) == 1
-        run([args.uv, "venv", "--python", args.python, str(work / "venv")])
-        python = work / "venv/bin/python"
         observability_wheel = build_wheel(run, args.uv, work)
-        run([args.uv, "pip", "install", "--python", str(python), str(wheels[0]), observability_wheel])
+        # Replay the existing lock, as the Voice/Vision checks do. Offline
+        # caches can contain locked wheels without registry index metadata.
+        project = work / "modules/behavior"
+        project.mkdir(parents=True)
+        for name in ("pyproject.toml", "uv.lock"):
+            shutil.copy2(source / name, project / name)
+        # Never let a developer override point this check at a shared venv.
+        env.pop("UV_PROJECT_ENVIRONMENT", None)
+        run([args.uv, "sync", "--project", str(project), "--locked", "--no-dev",
+             "--no-install-project", "--python", args.python])
+        python = project / ".venv/bin/python"
+        run([args.uv, "pip", "install", "--python", str(python), "--no-deps",
+             str(wheels[0]), observability_wheel])
+        run([args.uv, "pip", "check", "--python", str(python)])
         probe = """
 import hashlib,json,importlib.metadata,importlib.util
 from marsdog_behavior import config_paths
@@ -72,12 +84,13 @@ print(json.dumps({
         observation = json.loads(run([str(python), "-B", "-c", probe]))
         observation["components"] = check_installed_components(run, python, source)
         assert set(observation["scripts"]) == {"behavior-tree-demo", "marsdog-standalone", "behavior_tree_node"}
-        assert Path(observation["module_file"]).is_relative_to(work / "venv")
+        assert Path(observation["module_file"]).is_relative_to(project / ".venv")
         expected = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                     for p in (source / "config").glob("*.yaml")}
         assert observation["config_hashes"] == expected
         assert observation["behavior_count"] > 0 and not observation["rclpy_installed"]
         result = {"status": "PASS", "scope": "clean BT wheel; no ROS; unmodified config bytes",
+                  "lock_sha256": hashlib.sha256((source / "uv.lock").read_bytes()).hexdigest(),
                   "observation": observation}
         (output / "result.json").write_text(json.dumps(result, indent=2) + "\n")
         print(json.dumps(result, indent=2))

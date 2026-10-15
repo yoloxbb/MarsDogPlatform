@@ -21,7 +21,7 @@ def main():
     node = rclpy.create_node("marsdog_local_acceptance_probe")
     topics = [
         "/perception/audio_event", "/perception/visual_event", "/behavior/result_event",
-        "/internal_need/state", "/emotion/state", "/waypoint_nav/status",
+        "/internal_need/state", "/emotion/state", "/navigation/status",
         "/development/nav2_events", "/development/lite3_io",
         "/debug/execute_behavior/goal", "/debug/execute_behavior/result",
     ]

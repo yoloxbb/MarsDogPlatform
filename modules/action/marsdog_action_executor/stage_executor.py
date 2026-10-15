@@ -86,6 +86,13 @@ class StageExecutor:
         loop_policy = stage_config.get("loop_policy")
 
         ctx.current_stage = stage_id
+        # A stage boundary is already a safe point. Never start another unit
+        # (or its stationary hold) after cancellation was observed here.
+        if self._interrupt.cancel_requested or ctx.cancel_requested:
+            ctx.cancel_requested = True
+            ctx.metadata['unit_failure_state'] = 'canceled'
+            ctx.metadata['unit_failure_reason'] = 'canceled_before_stage'
+            return StageResult(stage_id, False, '', 'canceled_before_stage')
         ctx.motion_state = str(stage_config.get("motion_state", "active"))
         self._apply_stage_motion_state(ctx)
         logger.info(
@@ -104,6 +111,9 @@ class StageExecutor:
 
         # ── Select candidate(s) ───────────────────────────────────────
         candidates = self._get_candidates(stage_config)
+        approach = ctx.params.get('approach')
+        if isinstance(approach, dict) and any(c.get('unit_id') == approach.get('unit_id') for c in candidates):
+            candidates = [c for c in candidates if c.get('unit_id') == approach['unit_id']]
         available_candidates = [
             candidate
             for candidate in candidates
@@ -204,14 +214,15 @@ class StageExecutor:
     ) -> bool:
         """Return whether this runtime has a controller for the candidate."""
         unit_id = str(candidate.get("unit_id", ""))
-        route = self._controller_routes.get(
-            unit_id,
-            self._controller_routes.get("_default", "mock"),
-        )
+        if bool(getattr(self._controller_adapters.get('local_motion'), 'active', False)):
+            return False
+        route = self._route_for(unit_id, ctx)
         if route in (None, "", "mock"):
             return True
         adapter = self._controller_adapters.get(route)
-        if adapter is None:
+        if adapter is None and route != 'local_motion' and not (
+                isinstance(ctx.params.get('approach'), dict)
+                and ctx.params['approach'].get('unit_id') == unit_id):
             mobility_adapter = self._controller_adapters.get(
                 "behavior_mobility"
             )
@@ -235,6 +246,17 @@ class StageExecutor:
             "execute_task" if unit_type == "task" else "execute_step"
         )
         return callable(getattr(adapter, required_method, None))
+
+    def _route_for(self, unit_id: str, ctx: ExecutionContext) -> str:
+        approach = ctx.params.get('approach')
+        if isinstance(approach, dict) and approach.get('unit_id') == unit_id:
+            from .approach_request import route_for
+            return route_for(approach)
+        request = ctx.params.get('local_motion')
+        if isinstance(request, dict) and request.get('unit_id') == unit_id:
+            return 'local_motion'
+        return self._controller_routes.get(
+            unit_id, self._controller_routes.get('_default', 'mock'))
 
     def _select_best(
         self,
@@ -278,7 +300,9 @@ class StageExecutor:
         rng: random.Random,
     ) -> StageResult:
         """Execute a loop_random stage."""
-        stage_id = stage_config.get("stage_id") or stage_config.get("stage_name") or "loop"
+        stage_id = stage_config.get("stage_id") or stage_config.get("stage_name") or stage_config.get("phase", "loop")
+        required = stage_config.get("required", True)
+        failure_policy = stage_config.get("failure_policy", "abort")
         loop = stage_config.get("loop_policy", {})
         min_loops = int(loop.get("min", loop.get("min_loops", 0)))
         max_loops = int(loop.get("max", loop.get("max_loops", 3)))
@@ -286,18 +310,45 @@ class StageExecutor:
         num_loops = rng.randint(min_loops, max_loops)
 
         last_unit = ""
+        if self._interrupt.cancel_requested or ctx.cancel_requested:
+            return self._canceled_loop(stage_id, last_unit, ctx)
         for i in range(num_loops):
+            if self._interrupt.cancel_requested or ctx.cancel_requested:
+                return self._canceled_loop(stage_id, last_unit, ctx)
             candidate = self._select_best(
                 self._get_candidates(stage_config), ctx, "random_one", rng,
             )
-            if candidate:
-                self._execute_unit(candidate, ctx)
-                last_unit = candidate.get("unit_id", "")
+            if not candidate:
+                return StageResult(
+                    stage_id, not required or failure_policy == "skip_stage",
+                    last_unit, f"no_eligible_action for stage {stage_id}")
+            last_unit = candidate.get("unit_id", "")
+            succeeded = self._execute_unit(candidate, ctx)
+            if (self._interrupt.cancel_requested or ctx.cancel_requested
+                    or (not succeeded and ctx.metadata.get("unit_failure_state") == "canceled")):
+                return self._canceled_loop(stage_id, last_unit, ctx)
+            if not succeeded:
+                return StageResult(
+                    stage_id, not required or failure_policy == "skip_stage",
+                    last_unit, str(ctx.metadata.get("unit_failure_reason", "unit failed")))
             if i < num_loops - 1:
-                time.sleep(interval)
+                deadline = time.monotonic() + max(0.0, interval)
+                while time.monotonic() < deadline:
+                    if self._interrupt.cancel_requested or ctx.cancel_requested:
+                        return self._canceled_loop(stage_id, last_unit, ctx)
+                    time.sleep(min(0.05, max(0.0, deadline - time.monotonic())))
 
         ctx.completed_stages.append(stage_id)
         return StageResult(stage_id, True, last_unit, f"loop completed ({num_loops} iterations)")
+
+    @staticmethod
+    def _canceled_loop(stage_id: str, unit_id: str, ctx: ExecutionContext) -> StageResult:
+        reason = (ctx.metadata.get("unit_failure_reason")
+                  if ctx.metadata.get("unit_failure_state") == "canceled" else None)
+        reason = str(reason or "loop canceled")
+        ctx.metadata["unit_failure_state"] = "canceled"
+        ctx.metadata["unit_failure_reason"] = reason
+        return StageResult(stage_id, False, unit_id, reason)
 
     def _execute_unit(
         self,
@@ -309,17 +360,20 @@ class StageExecutor:
         ctx.current_unit = unit_id
         ctx.metadata.pop("unit_failure_state", None)
         ctx.metadata.pop("unit_failure_reason", None)
+        if bool(getattr(self._controller_adapters.get('local_motion'), 'active', False)):
+            ctx.metadata['unit_failure_state'] = 'controller_error'
+            ctx.metadata['unit_failure_reason'] = 'local_motion_recovery_required'
+            return False
 
         # Get unit metadata from catalog
         meta = self._catalog.get(unit_id, {})
         merged = {**meta, **unit_config}
         unit_type = merged.get("unit_type", "atomic_action")
-        route = self._controller_routes.get(
-            unit_id,
-            self._controller_routes.get("_default", "mock"),
-        )
+        route = self._route_for(unit_id, ctx)
         adapter = self._controller_adapters.get(route)
-        if adapter is None:
+        if adapter is None and route != 'local_motion' and not (
+                isinstance(ctx.params.get('approach'), dict)
+                and ctx.params['approach'].get('unit_id') == unit_id):
             mobility_adapter = self._controller_adapters.get(
                 "behavior_mobility"
             )

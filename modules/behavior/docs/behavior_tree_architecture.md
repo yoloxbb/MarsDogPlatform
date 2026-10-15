@@ -25,7 +25,7 @@
 │  ┌─────────────────────────────────────────────────────────────────────┐     │
 │  │ BehaviorTreeRosNode (ros_node.py)                                    │     │
 │  │   - 6 个 ROS2 Subscription 回调                                       │     │
-│  │   - 1 个 Action Client: /execute_behavior                            │     │
+│  │   - 1 个 Action Client: /action/execute_behavior                            │     │
 │  │   - 1 个 Publisher: /behavior/result_event                           │     │
 │  │   - 1 个 Timer: 100ms tick                                           │     │
 │  └──────────────────────────────┬──────────────────────────────────────┘     │
@@ -80,13 +80,13 @@
 │  └─────────────────────────────────────────────────────────────────────┘     │
 └──────────────────────────────────┬───────────────────────────────────────────┘
                                    │
-                         /execute_behavior Action
+                         /action/execute_behavior Action
                          (Goal / Feedback / Result)
                                    │
 ┌──────────────────────────────────▼───────────────────────────────────────────┐
 │                     marsdog_action_executor（独立项目）                         │
 │                                                                              │
-│  Action Server: /execute_behavior                                            │
+│  Action Server: /action/execute_behavior                                            │
 │  Goal {behavior_name, priority_level, params_json, timeout_sec}              │
 │    → 动作序列编排                                                             │
 │    → Feedback {progress, safe_to_interrupt, current_action}                  │
@@ -636,7 +636,7 @@ update() 每次 tick 的执行流程:
 
 Goal 生命周期为 `SENDING → RUNNING → CANCEL_REQUESTED → TERMINAL`。
 `cancel_goal_async()` 返回或取消请求被受理只表示 `CANCEL_REQUESTED`；只有
-`/execute_behavior` 的真实 Result 可以进入 `TERMINAL`。因此取消期间不会清除
+`/action/execute_behavior` 的真实 Result 可以进入 `TERMINAL`。因此取消期间不会清除
 `current_goal_id`、Goal Handle、Future、in-flight reservation，也不会生成本地
 `CANCELED`/`TIMEOUT` 结果。
 
@@ -700,7 +700,7 @@ def evaluate_preemption(active_priority, active_value, active_name,
 
 ## 7. 下游连接：行为执行与结果回传
 
-### 7.1 Action Client: /execute_behavior
+### 7.1 Action Client: /action/execute_behavior
 
 **Goal 消息** ([interfaces.py](../marsdog_behavior/interfaces.py#L183-L213)):
 

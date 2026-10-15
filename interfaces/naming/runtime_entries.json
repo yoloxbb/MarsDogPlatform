@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "scope": "Explicitly reviewed code paths; not an exhaustive runtime call graph",
+  "entries": [
+    {
+      "id": "wake_authorized_approach",
+      "source": "audio_session",
+      "events": ["EVT_VOICE_WAKEUP"],
+      "executor_behaviors": ["approach_voice_caller"],
+      "owner_role": "BehaviorTree",
+      "condition": "After wake orientation and authorized speaker lookup; matching session generation, bound human target and identity checks; no intervening command",
+      "code": [
+        {
+          "path": "modules/behavior/marsdog_behavior/voice_engagement_coordinator.py",
+          "symbol": "VoiceEngagementCoordinator.on_wake_speaker_resolved"
+        },
+        {
+          "path": "modules/behavior/marsdog_behavior/intent_mapper.py",
+          "symbol": "IntentMapper.build_voice_approach_candidate"
+        }
+      ]
+    }
+  ]
+}

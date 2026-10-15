@@ -104,7 +104,7 @@ class TestBehaviorAction(unittest.TestCase):
         self.latest_compute_enable = None
         self.target_sub = self.node.create_subscription(
             PoseStamped,
-            "/go2/random_roam/target",
+            "/motion/random_roam/target",
             self._target_callback,
             10,
         )
@@ -118,13 +118,13 @@ class TestBehaviorAction(unittest.TestCase):
             compute_qos,
         )
         self.action_client = ActionClient(
-            self.node, RandomRoam, "/go2/random_roam"
+            self.node, RandomRoam, "/motion/random_roam"
         )
         self.follow_action_client = ActionClient(
-            self.node, FollowUwb, "/go2/follow_uwb"
+            self.node, FollowUwb, "/motion/follow_uwb"
         )
         self.behavior_client = self.node.create_client(
-            SetBehavior, "/go2/set_behavior"
+            SetBehavior, "/motion/set_behavior"
         )
         self.robot_x = 0.0
         self.robot_y = 0.0

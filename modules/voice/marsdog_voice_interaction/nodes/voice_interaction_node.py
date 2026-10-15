@@ -9,6 +9,7 @@ from marsdog_voice_interaction.messages import task_service
 from marsdog_voice_interaction.core import task_router
 
 from marsdog_voice_interaction.core import speech_pipeline
+from ..core import speech_pipeline_adapter
 
 from marsdog_voice_interaction.core import interaction_session
 
@@ -1422,7 +1423,7 @@ class VoiceInteractionNode(Node):
         )
 
     def _is_short_asr_text(self, raw_text: str, language: str) -> bool:
-        return speech_pipeline.is_short_asr_text(self, raw_text, language)
+        return speech_pipeline.is_short_asr_text(speech_pipeline_adapter.for_node(self), raw_text, language)
 
     def _select_kws_candidate(
         self,
@@ -1432,7 +1433,7 @@ class VoiceInteractionNode(Node):
         language: str,
         direct_match: Any = None,
     ) -> tuple[dict[str, Any] | None, str]:
-        return speech_pipeline.select_kws_candidate(self, text=text, raw_text=raw_text, language=language, direct_match=direct_match)
+        return speech_pipeline.select_kws_candidate(speech_pipeline_adapter.for_node(self), text=text, raw_text=raw_text, language=language, direct_match=direct_match)
 
     def _refresh_for_asr_result(self, text: Any) -> bool:
         """Refresh on non-blank ASR text, before semantic routing or rejection."""
@@ -1499,21 +1500,21 @@ class VoiceInteractionNode(Node):
         speaker_confidence: float,
         pipeline_started: float,
     ) -> bool:
-        return speech_pipeline.publish_selected_kws_candidate(self, candidate, reason=reason, text=text, language=language, utterance_id=utterance_id, speaker_id=speaker_id, speaker_confidence=speaker_confidence, pipeline_started=pipeline_started)
+        return speech_pipeline.publish_selected_kws_candidate(speech_pipeline_adapter.for_node(self), candidate, reason=reason, text=text, language=language, utterance_id=utterance_id, speaker_id=speaker_id, speaker_confidence=speaker_confidence, pipeline_started=pipeline_started)
 
     def _process_speech(
         self,
         audio_data: dict[str, Any],
         utterance_id: str | None = None,
     ) -> bool:
-        return speech_pipeline.process_speech(self, audio_data, utterance_id, ThreadPoolExecutor=ThreadPoolExecutor, logger=logger, speaker_to_voice_event=speaker_to_voice_event)
+        return speech_pipeline.process_speech(speech_pipeline_adapter.for_node(self), audio_data, utterance_id, ThreadPoolExecutor=ThreadPoolExecutor, logger=logger, speaker_to_voice_event=speaker_to_voice_event)
 
     def _complete_intent(
         self, parsed_intent: dict[str, Any] | None, *, text: str,
         utterance_id: str, utterance_wake_id: str, asr_result: dict[str, Any],
         speaker_id: str, confidence: float, pipeline_started: float, intent_started: float,
     ) -> bool:
-        return speech_pipeline.complete_intent(self, parsed_intent, text=text, utterance_id=utterance_id, utterance_wake_id=utterance_wake_id, asr_result=asr_result, speaker_id=speaker_id, confidence=confidence, pipeline_started=pipeline_started, intent_started=intent_started, _UNKNOWN_INTENT=_UNKNOWN_INTENT, object_resolution_slots=object_resolution_slots, route_classification_events=route_classification_events)
+        return speech_pipeline.complete_intent(speech_pipeline_adapter.for_node(self), parsed_intent, text=text, utterance_id=utterance_id, utterance_wake_id=utterance_wake_id, asr_result=asr_result, speaker_id=speaker_id, confidence=confidence, pipeline_started=pipeline_started, intent_started=intent_started, _UNKNOWN_INTENT=_UNKNOWN_INTENT, object_resolution_slots=object_resolution_slots, route_classification_events=route_classification_events)
 
     def _start_interaction_capture(self, audio: BaseProvider) -> None:
         if getattr(self, "_pending_intent", None) is not None:
@@ -1728,7 +1729,7 @@ class VoiceInteractionNode(Node):
     def _parse_intent(
         self, text: str, *, raw_text: str | None = None,
     ) -> dict[str, Any] | None:
-        return speech_pipeline.parse_intent(self, text, raw_text=raw_text, logger=logger)
+        return speech_pipeline.parse_intent(speech_pipeline_adapter.for_node(self), text, raw_text=raw_text, logger=logger)
 
     @staticmethod
     def _clean_text(text: str) -> str:

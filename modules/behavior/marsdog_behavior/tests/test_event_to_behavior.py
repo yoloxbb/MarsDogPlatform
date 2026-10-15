@@ -2642,7 +2642,7 @@ class TestPreemption:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Test 6: BehaviorCandidate → /execute_behavior Goal format
+# Test 6: BehaviorCandidate → /action/execute_behavior Goal format
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class TestGoalFormat:

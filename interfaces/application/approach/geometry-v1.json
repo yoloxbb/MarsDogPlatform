@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "target_id": "contract:human:1",
+  "coordinate_space": "original_image_pixels",
+  "image_header": {"stamp": 123.25, "frame_id": "camera_optical"},
+  "image_width": 640,
+  "image_height": 480,
+  "bbox": {"x_offset": 128, "y_offset": 48, "width": 256, "height": 384}
+}

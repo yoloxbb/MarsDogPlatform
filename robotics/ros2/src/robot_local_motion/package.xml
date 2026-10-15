@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>robot_local_motion</name><version>0.1.0</version>
+  <description>Opt-in target-neutral local motion tasks over the existing MPPI planner.</description>
+  <maintainer email="dev@marsdog.local">MarsDog</maintainer><license>Apache-2.0</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>rosidl_default_generators</build_depend>
+  <depend>geometry_msgs</depend><depend>std_msgs</depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <exec_depend>rclpy</exec_depend><exec_depend>rcl_interfaces</exec_depend>
+  <exec_depend>nav_msgs</exec_depend><exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>sensor_msgs_py</exec_depend><exec_depend>diagnostic_msgs</exec_depend>
+  <exec_depend>tf2_ros</exec_depend><depend>go2_uwb_local_follow</depend>
+  <exec_depend>uwb_aoa_pkg</exec_depend><exec_depend>psmisc</exec_depend>
+  <exec_depend>go2_uwb_behavior</exec_depend><exec_depend>python3-numpy</exec_depend>
+  <exec_depend>launch_ros</exec_depend><exec_depend>ament_index_python</exec_depend>
+  <exec_depend>std_srvs</exec_depend><exec_depend>action_msgs</exec_depend><exec_depend>python3-yaml</exec_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

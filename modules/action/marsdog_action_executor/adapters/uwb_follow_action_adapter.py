@@ -4,9 +4,9 @@ The follow feature no longer belongs to this repository's process pipeline.
 The upstream package ``go2_uwb_behavior`` owns the whole loop -- UWB input,
 planning and the /cmd_vel output -- and exposes it as:
 
-    /go2/follow_uwb     action   FollowUwb
-    /go2/random_roam    action   RandomRoam      (uwb_roam_adapter.py)
-    /go2/set_behavior   service  SetBehavior     (accepts IDLE=0 / STOP=2)
+    /motion/follow_uwb     action   FollowUwb
+    /motion/random_roam    action   RandomRoam      (uwb_roam_adapter.py)
+    /motion/set_behavior   service  SetBehavior     (accepts IDLE=0 / STOP=2)
 
 Launching ``uwb_aoa_pkg`` or ``local_follow.launch.py`` ourselves is now
 forbidden (docs/上层对接与部署.md §4.1): they publish /cmd_vel as well, and
@@ -69,7 +69,7 @@ _WAIT_TIMEOUT = "timeout"
 
 
 class Ros2FollowUwbClient:
-    """Synchronous facade over the asynchronous ``/go2/follow_uwb`` action.
+    """Synchronous facade over the asynchronous ``/motion/follow_uwb`` action.
 
     Modelled on ``Ros2Nav2SpinClient`` in ``wake_orientation_adapter``: the
     same polling wait loop, the same late-goal cancel callback, and the same
@@ -81,7 +81,7 @@ class Ros2FollowUwbClient:
         self,
         node: Any,
         *,
-        action_name: str = "/go2/follow_uwb",
+        action_name: str = "/motion/follow_uwb",
         server_timeout_sec: float = 5.0,
         should_stop: Callable[[], bool] | None = None,
     ) -> None:
@@ -297,7 +297,7 @@ class Ros2FollowUwbClient:
 
 
 class Ros2SetBehaviorClient:
-    """Synchronous facade over the ``/go2/set_behavior`` mode service.
+    """Synchronous facade over the ``/motion/set_behavior`` mode service.
 
     Only IDLE and STOP are accepted by the server; FOLLOW and ROAM are
     rejected.  Following is engaged by the action goal instead.
@@ -307,7 +307,7 @@ class Ros2SetBehaviorClient:
         self,
         node: Any,
         *,
-        service_name: str = "/go2/set_behavior",
+        service_name: str = "/motion/set_behavior",
         server_timeout_sec: float = 5.0,
     ) -> None:
         from go2_uwb_behavior.srv import SetBehavior
@@ -371,8 +371,8 @@ class UwbFollowActionAdapter:
         *,
         enabled: bool,
         node: Any = None,
-        follow_action: str = "/go2/follow_uwb",
-        set_behavior_service: str = "/go2/set_behavior",
+        follow_action: str = "/motion/follow_uwb",
+        set_behavior_service: str = "/motion/set_behavior",
         server_timeout_sec: float = 5.0,
         ready_timeout_sec: float = 4.0,
         prepare_motion: Callable[..., bool] | None = None,

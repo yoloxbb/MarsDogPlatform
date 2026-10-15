@@ -21,7 +21,7 @@
 | `/internal_need/state` | `std_msgs/msg/String` JSON v2 | RELIABLE, KEEP_LAST 10 | InternalNeed | Behavior Tree |
 | `/internal_need/signal_event` | `std_msgs/msg/String` JSON | RELIABLE, KEEP_LAST 10 | InternalNeed | Behavior Tree |
 | `/behavior/attention_tracking` | `std_msgs/msg/String` JSON | RELIABLE, KEEP_LAST 10 | Behavior Tree | Action |
-| `/execute_behavior` | `marsdog_interfaces/action/ExecuteBehavior` | Action | Action Server | Behavior Tree Client |
+| `/action/execute_behavior` | `marsdog_interfaces/action/ExecuteBehavior` | Action | Action Server | Behavior Tree Client |
 | `/behavior/result_event` | `std_msgs/msg/String` JSON | RELIABLE, KEEP_LAST 10 | Behavior Tree | InternalNeed |
 | `/cmd_vel` | `geometry_msgs/msg/Twist` | 默认 depth 10 | Action | AGV base controller |
 | `/debug/execute_behavior/{goal,feedback,result}` | `std_msgs/msg/String` JSON | 默认 RELIABLE depth 10 | Action | 调试界面 |
@@ -299,7 +299,7 @@ float64 latency_ms
 
 Action 必须以 `interaction_id` 和最新 `enabled` 状态为准。Action 正在执行正式 Behavior 时，后台跟踪控制暂停，避免两个控制器同时写 `/cmd_vel`。
 
-## 6. `/execute_behavior`
+## 6. `/action/execute_behavior`
 
 权威类型：`marsdog_interfaces/action/ExecuteBehavior`。
 

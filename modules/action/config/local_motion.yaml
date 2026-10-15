@@ -1,0 +1,15 @@
+# Explicit per-request override; no existing controller route changes.
+enabled: false
+action_name: /robot_local_motion/execute
+command_topic: /robot_local_motion/command
+base_frame: base_footprint
+# Movement-only stages; manipulation and posture stages cannot be redirected.
+allowed_units:
+  - ACT_INTERACT_FOLLOW_OWNER
+  - ACT_INTERACT_APPROACH_OWNER
+  - ACT_INTERACT_APPROACH_OWNER_CLOSER
+  - ACT_INTERACT_RETURN_OWNER
+  - ACT_APPROACH_VISUAL_TARGET
+  - ACT_UWB_RANDOM_ROAM
+  - ACT_NAV_WALK_RANDOM
+  - ACT_CIRCLE_AROUND

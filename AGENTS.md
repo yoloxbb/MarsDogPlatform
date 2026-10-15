@@ -1,5 +1,8 @@
 # MarsDog platform working rules
 
+- Before module work, read [shared naming and Git conventions](docs/development/AGENT_DEVELOPMENT_CONVENTIONS.md).
+  Read specialized architecture and protocol documents when the task touches those boundaries;
+  suggestions in the shared conventions remain proposals until adopted.
 - Read README.md and the relevant module migration record in docs/migration before changing implementation.
 - Main-repository migration is established. New development belongs here; do not restart repository moves.
 - Read CONTRIBUTING.md and docs/development/WORKFLOW.md. Do not invent hardware behavior.

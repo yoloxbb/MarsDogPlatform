@@ -377,12 +377,12 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "waypoint_nav_service_name",
-                default_value="/waypoint_nav/task",
-                description="Shared named-waypoint VoiceTask service",
+                default_value="/navigation/task",
+                description="Shared named-waypoint NavigationTask service",
             ),
             DeclareLaunchArgument(
                 "waypoint_nav_status_topic",
-                default_value="/waypoint_nav/status",
+                default_value="/navigation/status",
                 description="Shared named-waypoint JSON status topic",
             ),
             DeclareLaunchArgument(

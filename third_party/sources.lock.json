@@ -37,9 +37,9 @@
       "subtree": "",
       "tree": "8629857b041ff1b750a702457fdcbdaaf3877050",
       "archive": "rtabmap-91faa21-all-refs.bundle",
-      "archive_sha256": "88b65a50e1aae713637a832283f802f111dafb7c0228fbb5fe98b8003eddcbf3",
+      "archive_sha256": "fa24a5be6599bf12f798ab76356cf1ce867c1e90ae58fbe11ef04d9c62dcca98",
       "destination": ".external/rtabmap",
-      "provenance": "UPSTREAM_VERSIONS.md: core e321999b; wrapper 2eef2b32. Initial snapshot may contain edits; full upstream delta UNKNOWN"
+      "provenance": "UPSTREAM_VERSIONS.md: core e321999b; wrapper 2eef2b32. Initial snapshot may contain edits; full upstream delta UNKNOWN; rebundled 2026-10-10 from github.com/sun-under-bird/rtabmap_ws @ feature/openvins-leg-velocity-aiding (91faa212)"
     }
   }
 }

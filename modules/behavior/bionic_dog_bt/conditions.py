@@ -11,10 +11,8 @@ from __future__ import annotations
 
 from .behavior_tree_node import Node, Status
 from .blackboard import Blackboard
-from .constants import STATUS_RUNNING, EMOTION_BEHAVIOR_MAP, NEED_BEHAVIOR_MAP
-from .logger import get_logger, LogEvent
-
-_log = get_logger("conditions")
+from .constants import STATUS_RUNNING
+from .relevance import is_trigger_relevant
 
 
 class ActiveLevelCondition(Node):
@@ -79,61 +77,7 @@ class BehaviorRelevanceCondition(Node):
         if active is None:
             return Status.SUCCESS
 
-        # ── Emotion-triggered: V2 authoritative triggered boolean ───────────
-        if active.need_type == "emotional":
-            emotion_name = active.params.get("source_emotion")
-
-            if emotion_name is None:
-                emotion_name = EMOTION_BEHAVIOR_MAP.get(active.behavior_name)
-            if emotion_name is None:
-                _log.event(LogEvent.RELEVANCE_FAIL,
-                           behavior_name=active.behavior_name,
-                           reason="missing_source_emotion")
-                bb.active_behavior = None
-                return Status.FAILURE
-
-            if not bb.emotion_module.is_triggered(emotion_name):
-                em_state = bb.emotion_module.get_emotion(emotion_name)
-                current_val = em_state.current_value if em_state else 0.0
-                _log.event(LogEvent.RELEVANCE_FAIL,
-                           behavior_name=active.behavior_name,
-                           emotion=emotion_name,
-                           current=round(current_val, 1),
-                           triggered=False)
-                bb.active_behavior = None  # Clear stale candidate
-                return Status.FAILURE
-            _log.event(LogEvent.RELEVANCE_PASS,
-                       behavior_name=active.behavior_name,
-                       emotion=emotion_name,
-                       triggered=True)
+        if is_trigger_relevant(active.behavior_name, active.need_type, active.params, bb):
             return Status.SUCCESS
-
-        # ── Need-triggered: V2 authoritative triggered boolean ──────────────
-        if (
-            active.params.get("source") == "need"
-            or active.need_type in (
-                "physiological",
-                "physiological_urgent",
-                "psychological",
-            )
-        ):
-            need_name = active.params.get("source_need")
-            if need_name is None:
-                need_name = NEED_BEHAVIOR_MAP.get(active.behavior_name)
-
-            if need_name is not None:
-                if not bb.need_module.is_triggered(need_name):
-                    _log.event(LogEvent.RELEVANCE_FAIL,
-                               behavior_name=active.behavior_name,
-                               need=need_name,
-                               need_level=bb.need_module.get_level(need_name))
-                    bb.active_behavior = None  # Clear stale candidate
-                    return Status.FAILURE
-                _log.event(LogEvent.RELEVANCE_PASS,
-                           behavior_name=active.behavior_name,
-                           need=need_name,
-                           triggered=True)
-                return Status.SUCCESS
-
-        # ── All other trigger types pass through ─────────────────────────────
-        return Status.SUCCESS
+        bb.active_behavior = None  # Only unstarted work is discarded.
+        return Status.FAILURE

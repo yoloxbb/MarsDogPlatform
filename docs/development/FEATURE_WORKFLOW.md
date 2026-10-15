@@ -1,5 +1,9 @@
 # 能力清单与功能草稿
 
+新功能先填写 [功能规格](templates/FEATURE_SPEC.md)，明确功能负责人、相关模块和失败/取消验收。
+当前配置快照与交付维度见 [能力基线](../architecture/CAPABILITY_BASELINE.md)，
+跨五个开发角色的实例见 [叫过来场景](scenarios/CALLER_APPROACH.md)。
+
 先用原配置生成能力清单，再决定修改哪个模块。工具不会创建新的运行时总控或业务 common。
 
 ## 查看能力
@@ -39,6 +43,11 @@ JSON 还列出每个阶段是否必选、候选 Unit、部分/全部候选是否
 
 ## 新功能起点
 
+事件分流与发布时的能力快照使用 [事件清单](../../interfaces/naming/EVENT_ROUTING.md)。
+能力输出现已单独包含触觉预设、社交反应上下文和登记的唤醒靠近路径；
+查看 `EVENT_ROUTES.md`、`capability_backlog.json`、`release_manifest.json`。
+代码入口索引并非穷举；配置可用性、软件验证、板端部署和硬件验收仍是独立维度。
+
 下面只生成一个复用现有 `sit_down` 模板的开发示例，并不启用新口令：
 
 ~~~bash
@@ -47,6 +56,14 @@ python3 -B tools/marsdog.py new-feature welcome_demo \
 python3 -B tools/marsdog.py new-feature \
   --check out/feature-drafts/welcome_demo/feature.json
 ~~~
+
+草稿名称复用仓库的标识校验规则；连续或末尾下划线等不规范的新 ID 会被拒绝。
+可用 `--product-action-label ACT_WELCOME_PRODUCT` 或草稿中的 `product_action_label`
+明确指定 Voice 产品动作标签，它不要求与事件同后缀，也不是 Action 的 Unit ID。
+旧版草稿省略此字段时保留原命名建议，但生成结果会把建议值显式写入 `feature.json`；
+实施前仍须由所属模块确认，运行时不通过前缀推导关系。
+新增事件须在 Voice 的 `messages/voice_event_types.py` 中显式声明，并维护词库与消费方映射；
+仅填写同后缀产品标签不能注册事件。现有词库的事件值和已登记的历史行为拼写保持不变。
 
 已有目录拒绝覆盖；事件、command_id、intent 冲突或不存在的模板会被拒绝。
 草稿包含名称与短语、带目标位置的配置片段、Voice/BT/Action 契约测试，

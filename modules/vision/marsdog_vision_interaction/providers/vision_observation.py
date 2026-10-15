@@ -243,6 +243,7 @@ class VisionObservationProvider(BaseProvider):
         self._pending_frame_stamp: float = 0.0
         self._pending_frame_id: str = "camera_link"
         self._cached_observation: dict[str, Any] = {}
+        self._pending_geometry_source = None
         self._inference_lock = threading.RLock()
         self._worker_stop = False
         self._worker: threading.Thread | None = None
@@ -855,6 +856,11 @@ class VisionObservationProvider(BaseProvider):
             if self._pending_frame is not None:
                 self._replaced_pending_frame_count += 1
             self._pending_frame = frame
+            self._pending_geometry_source = (
+                (float(stamp), frame_id, time.monotonic())
+                if (not isinstance(stamp, bool) and isinstance(stamp, (int, float))
+                    and math.isfinite(stamp) and stamp > 0
+                    and isinstance(frame_id, str) and frame_id.strip()) else None)
             self._pending_frame_stamp = float(stamp or time.time())
             self._pending_frame_id = str(frame_id or "camera_link")
             self._frame_condition.notify()
@@ -900,6 +906,7 @@ class VisionObservationProvider(BaseProvider):
                 frame = self._pending_frame
                 frame_stamp = self._pending_frame_stamp
                 frame_id = self._pending_frame_id
+                geometry_source = self._pending_geometry_source
                 self._pending_frame = None
                 self._pending_frame_stamp = 0.0
             if frame is None:
@@ -911,12 +918,26 @@ class VisionObservationProvider(BaseProvider):
                     "stamp": float(frame_stamp or time.time()),
                     "frame_id": str(frame_id or "camera_link"),
                 }
+                obs["_geometry_source"] = geometry_source
                 with self._lock:
                     self._latest_frame = frame
                     self._cached_observation = obs
                     self._inferred_frame_count += 1
             except Exception as exc:
                 logger.error("Frame processing error: %s", exc, exc_info=True)
+
+    def get_geometry_observation(self, target_id: str, max_age_sec: float) -> dict:
+        with self._lock:
+            obs = self._cached_observation
+            source = obs.get("_geometry_source")
+            roi = obs.get("_geometry_rois", {}).get(target_id)
+            if source is None or roi is None or not 0 <= time.monotonic()-source[2] <= max_age_sec:
+                return {"ok": False, "error_code": "original_image_geometry_unavailable", "target_id": target_id}
+            width, height = obs["_geometry_size"]
+            return {"ok": True, "target_id": target_id,
+                    "coordinate_space": "original_image_pixels",
+                    "image_header": {"stamp": source[0], "frame_id": source[1]},
+                    "image_width": width, "image_height": height, "bbox": dict(roi)}
 
     def run_inference_exclusive(self, operation: Any) -> Any:
         """Run an operation while the shared YuNet/SFace models are idle."""
@@ -1251,7 +1272,11 @@ class VisionObservationProvider(BaseProvider):
                 "landmarks": [],
             })
 
+        from marsdog_vision_interaction.core.geometry_observation import frame_geometry
         result = {
+            "_geometry_rois": frame_geometry(obs.get("humans", []), human_candidates,
+                frame.shape[1], frame.shape[0], stereo_split=stereo_split),
+            "_geometry_size": (frame.shape[1], frame.shape[0]),
             "vision_epoch": target_snapshot["vision_epoch"],
             "active_target": active_dict,
             "human_candidates": human_candidates,

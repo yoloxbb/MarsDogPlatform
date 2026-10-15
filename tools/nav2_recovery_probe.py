@@ -15,7 +15,7 @@ def main():
     assert os.environ.get("ROS_LOCALHOST_ONLY") == "1"
     import rclpy
     from rclpy.qos import qos_profile_sensor_data
-    from marsdog_voice_interaction.srv import VoiceTask
+    from marsdog_interfaces.srv import NavigationTask
     from std_srvs.srv import SetBool
     from std_msgs.msg import String
     from geometry_msgs.msg import PoseStamped, Twist
@@ -24,12 +24,12 @@ def main():
 
     rclpy.init()
     node = rclpy.create_node("marsdog_nav2_failure_contracts")
-    client = node.create_client(VoiceTask, "/waypoint_nav/task")
+    client = node.create_client(NavigationTask, "/navigation/task")
     freeze = node.create_client(SetBool, "/development/nav2/freeze")
     active = node.create_client(GetState, "/bt_navigator/get_state")
     statuses, poses, velocities, paths, cases = {}, [], [], [], []
     subscriptions = [
-        node.create_subscription(String, "/waypoint_nav/status",
+        node.create_subscription(String, "/navigation/status",
             lambda m: statuses.update({json.loads(m.data)["task_id"]: json.loads(m.data)}), qos_profile_sensor_data),
         node.create_subscription(PoseStamped, "/development/nav2/pose",
             lambda m: poses.append((m.pose.position.x, m.pose.position.y)), 10),
@@ -56,7 +56,7 @@ def main():
     def task(kind, task_id=None, **params):
         nonlocal counter
         counter += 1
-        request = VoiceTask.Request(task_id=task_id or f"probe-query-{counter}", task_type=kind,
+        request = NavigationTask.Request(task_id=task_id or f"probe-query-{counter}", task_type=kind,
             params_json=json.dumps(dict(protocol_version="1.0", client_id="marsdog_action_executor", **params)))
         response = call(client, request)
         return response.success, json.loads(response.result_json)

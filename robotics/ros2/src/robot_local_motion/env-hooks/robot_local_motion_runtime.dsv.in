@@ -1,0 +1,1 @@
+prepend-non-duplicate;PYTHONPATH;lib/python@Python3_VERSION_MAJOR@.@Python3_VERSION_MINOR@/site-packages

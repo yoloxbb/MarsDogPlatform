@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 import re
 from runtime_environment import ROOT
-from check_identifiers import CATALOG, check_freshness
+from check_identifiers import CATALOG, PATTERNS, check_freshness
 
 REQUIRED_CASES = ("positive_command", "negated_command", "wrong_command_id",
                   "duplicate_event", "cancel_during_execution", "unsupported_capability")
@@ -26,11 +26,14 @@ def validate_proposal(proposal, catalog):
         errors.append("unsupported proposal schema")
     if not re.fullmatch(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*", str(proposal.get("name", ""))):
         errors.append("feature name must use lower_snake_case")
-    for key, pattern in (("event", r"EVT_VOICE_COMMAND_[A-Z0-9_]+"),
-                         ("command_id", r"CMD_[A-Z0-9_]+"),
-                         ("intent", r"[a-z][a-z0-9_]*")):
-        if not re.fullmatch(pattern, str(proposal.get(key, ""))):
+    for key, kind in (("event", "event"), ("command_id", "command"), ("intent", "intent")):
+        if not re.fullmatch(PATTERNS[kind], proposal[key]):
             errors.append("invalid " + key)
+    if not proposal["event"].startswith("EVT_VOICE_COMMAND_"):
+        errors.append("event must belong to EVT_VOICE_COMMAND")
+    label = proposal.get("product_action_label", "ACT_" + proposal["event"].removeprefix("EVT_VOICE_COMMAND_"))
+    if not isinstance(label, str) or not re.fullmatch(PATTERNS["product_action_label"], label):
+        errors.append("invalid product_action_label")
     if not str(proposal.get("phrase", "")).strip():
         errors.append("phrase is required")
     if proposal.get("behavior") not in catalog["behaviors"]:
@@ -48,6 +51,10 @@ def create(proposal, destination, catalog):
     errors = validate_proposal(proposal, catalog)
     if errors:
         raise ValueError("; ".join(errors))
+    # Preserve schema-v1 drafts that omitted a product label. This is a draft
+    # naming suggestion only, recorded explicitly before any owning config edit.
+    proposal = dict(proposal)
+    proposal.setdefault("product_action_label", "ACT_" + proposal["event"].removeprefix("EVT_VOICE_COMMAND_"))
     destination.mkdir(parents=True, exist_ok=False)
     def write(name, value):
         (destination / name).write_text(value, encoding="utf-8")
@@ -61,7 +68,7 @@ def create(proposal, destination, catalog):
         },
         "voice_command": {"command_key": proposal["name"].upper(), "command_id": proposal["command_id"],
                           "event_type": proposal["event"], "phrases": [proposal["phrase"]],
-                          "action_name": "ACT_" + proposal["event"].removeprefix("EVT_VOICE_COMMAND_"), "control": "DO", "core": False},
+                          "action_name": proposal["product_action_label"], "control": "DO", "core": False},
         "behavior_event": {proposal["event"]: {"category": "external_interaction", "intent": proposal["intent"],
                                              "expected_command_id": proposal["command_id"], "sub_priority": 1}},
         "intent_pool": {proposal["intent"]: {"candidates": [proposal["behavior"]]}},
@@ -162,6 +169,7 @@ def main(argv=None):
     parser.add_argument("--behavior")
     parser.add_argument("--event")
     parser.add_argument("--command-id")
+    parser.add_argument("--product-action-label", help="Explicit Voice product label; not an Action unit_id")
     parser.add_argument("--output", type=Path, help="New draft directory; refuses to overwrite")
     parser.add_argument("--check", type=Path, help="Validate a draft feature.json without activating it")
     args = parser.parse_args(argv)
@@ -178,6 +186,8 @@ def main(argv=None):
                 "event": args.event or "EVT_VOICE_COMMAND_" + args.name.upper(),
                 "command_id": args.command_id or "CMD_" + args.name.upper(),
                 "intent": "command_" + args.name}
+    if args.product_action_label is not None:
+        proposal["product_action_label"] = args.product_action_label
     destination = args.output or ROOT / "out/feature-drafts" / args.name
     try:
         create(proposal, destination, catalog)

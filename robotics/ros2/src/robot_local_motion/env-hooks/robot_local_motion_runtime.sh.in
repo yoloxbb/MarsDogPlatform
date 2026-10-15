@@ -1,0 +1,1 @@
+ament_prepend_unique_value PYTHONPATH "$AMENT_CURRENT_PREFIX/lib/python@Python3_VERSION_MAJOR@.@Python3_VERSION_MINOR@/site-packages"

@@ -1,0 +1,29 @@
+local_motion_server:
+  ros__parameters:
+    enable_motion: false
+    cmd_vel_topic: /robot_local_motion/cmd_vel
+    enforce_exclusive_output: true
+    allow_unbounded_approach: false
+    base_frame: base_footprint
+    odom_frame: odom
+    odom_child_frame: base_footprint
+    odom_topic: /leg_odom2
+    obstacle_topic: /robot_local_motion/rolling_obstacle
+    # Current Lite3 executable limits; other chassis require measured profiles.
+    max_linear_speed: 0.8
+    min_linear_speed: 0.25
+    max_angular_speed: 1.5
+    min_stand_off_distance: 0.5
+    max_goal_distance: 3.0
+    max_task_timeout: 3600.0
+    # Circumscribed radius of the existing 0.68 x 0.38 m footprint + 0.02 m margin.
+    robot_radius: 0.42
+    odom_timeout_sec: 0.1
+    obstacle_timeout_sec: 0.7
+    planner_timeout_sec: 0.2
+    stop_timeout_sec: 5.0
+    stop_hold_sec: 0.4
+    stop_linear_threshold: 0.08
+    stop_angular_threshold: 0.15
+    stop_position_threshold: 0.015
+    stop_yaw_threshold: 0.04

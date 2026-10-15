@@ -318,23 +318,23 @@ private:
       "planner_diagnostics_topic", "/go2_uwb_local_follow/planner_diagnostics");
     cmd_vel_topic_ = declare_parameter<std::string>("cmd_vel_topic", "/cmd_vel");
     diagnostics_topic_ = declare_parameter<std::string>(
-      "diagnostics_topic", "/go2/behavior_diagnostics");
+      "diagnostics_topic", "/motion/behavior_diagnostics");
     follow_diagnostics_topic_ = declare_parameter<std::string>(
       "follow_diagnostics_topic", "/go2_uwb_local_follow/follow_diagnostics");
     roam_target_topic_ = declare_parameter<std::string>(
-      "roam_target_topic", "/go2/random_roam/target");
+      "roam_target_topic", "/motion/random_roam/target");
     play_center_topic_ = declare_parameter<std::string>(
-      "play_center_topic", "/go2/random_roam/play_center");
+      "play_center_topic", "/motion/random_roam/play_center");
     compute_enable_topic_ = declare_parameter<std::string>(
       "compute_enable_topic", "/go2_uwb_behavior/compute_enable");
     behavior_service_name_ = declare_parameter<std::string>(
-      "behavior_service_name", "/go2/set_behavior");
+      "behavior_service_name", "/motion/set_behavior");
     follow_action_name_ = declare_parameter<std::string>(
-      "follow_action_name", "/go2/follow_uwb");
+      "follow_action_name", "/motion/follow_uwb");
     orbit_action_name_ = declare_parameter<std::string>(
-      "orbit_action_name", "/go2/orbit_uwb_once");
+      "orbit_action_name", "/motion/orbit_uwb_once");
     roam_action_name_ = declare_parameter<std::string>(
-      "roam_action_name", "/go2/random_roam");
+      "roam_action_name", "/motion/random_roam");
     default_mode_ = declare_parameter<std::string>("default_mode", "IDLE");
     enable_motion_ = declare_parameter<bool>("enable_motion", true);
     publish_idle_velocity_ = declare_parameter<bool>("publish_idle_velocity", true);

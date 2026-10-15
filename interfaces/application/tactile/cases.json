@@ -1,0 +1,6 @@
+[
+  {"event": "EVT_TACTILE_HEAD_PET", "behavior": "expressJoyAlone", "deltas": {"Joy": 25, "Calm": 15, "Excite": 5}},
+  {"event": "EVT_TACTILE_EAR_TOUCH", "behavior": "expressJoyAlone", "deltas": {"Joy": 20, "Calm": 10}},
+  {"event": "EVT_TACTILE_NOSE_TOUCH", "behavior": "expressCuriosityAlone", "deltas": {"Curious": 12, "Calm": 5}},
+  {"event": "EVT_TACTILE_BODY_STROKE", "behavior": null, "deltas": {"Joy": 20, "Calm": 15}}
+]

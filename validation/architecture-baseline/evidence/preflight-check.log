@@ -1,0 +1,203 @@
++ /usr/bin/python3 -B /home/marsdog/MarsDogPlatform/tools/check_architecture.py
+{"status": "PASS", "errors": [], "ros_packages": 17, "interfaces": 25}
++ /usr/bin/python3 -B /home/marsdog/MarsDogPlatform/tools/check_identifiers.py
+{
+  "status": "PASS_WITH_KNOWN_GAPS",
+  "errors": [],
+  "counts": {
+    "declared_event_routes": 125,
+    "voice_commands": 82,
+    "intent_pools": 116,
+    "action_templates": 74,
+    "action_units": 183,
+    "known_missing_template_routes": 49,
+    "voice_events_without_declared_route": 5,
+    "non_catalog_audio_routes": 5
+  },
+  "scope": "Declared default YAML graph only; no execution/hardware/ASR accuracy claims. Code-only, conditional authorization and deployed override paths need runtime contracts."
+}
++ /usr/bin/python3 -B -m unittest discover -s integration/platform/tests -v
+test_exact_observation_passes (test_audio_contract_gate.AudioContractGateTests) ... ok
+test_installed_stale_copy_is_rejected (test_audio_contract_gate.AudioContractGateTests) ... ok
+test_mismatch_fails_without_updating_oracle (test_audio_contract_gate.AudioContractGateTests) ... ok
+test_missing_baseline_cannot_pass (test_audio_contract_gate.AudioContractGateTests) ... ok
+test_missing_environment_replaces_stale_success (test_audio_contract_gate.AudioContractGateTests) ... ok
+test_timeout_replaces_stale_success (test_audio_contract_gate.AudioContractGateTests) ... ok
+test_all_installed_process_generations_are_required (test_business_scenarios.BusinessScenarioGateTests) ... ok
+test_complete_run_is_accepted (test_business_scenarios.BusinessScenarioGateTests) ... ok
+test_domain_adapter_and_hardware_evidence_are_required (test_business_scenarios.BusinessScenarioGateTests) ... ok
+test_exit_failure_overrides_pass_report (test_business_scenarios.BusinessScenarioGateTests) ... ok
+test_leaked_forced_wrong_or_duplicate_process_cannot_pass (test_business_scenarios.BusinessScenarioGateTests) ... ok
+test_malformed_observation_is_failure (test_business_scenarios.BusinessScenarioGateTests) ... ok
+test_partial_duplicate_or_failed_case_cannot_pass (test_business_scenarios.BusinessScenarioGateTests) ... ok
+test_stopped_descendant_is_terminated_after_observer_exit (test_business_scenarios.BusinessScenarioGateTests) ... ok
+test_components_do_not_depend_on_ros_shell_or_foreign_business (test_contract_harness.ComponentBoundaryTests) ... ok
+test_bad_worker_response_replaces_stale_success (test_contract_harness.ContractHarnessTests) ... ok
+test_empty_baseline_cannot_certify_zero_work (test_contract_harness.ContractHarnessTests) ... ok
+test_exact_observation_has_no_skips (test_contract_harness.ContractHarnessTests) ... ok
+test_foreign_business_import_rejected (test_contract_harness.ContractHarnessTests) ... ok
+test_foreign_environment_rejected (test_contract_harness.ContractHarnessTests) ... ok
+test_mismatch_preserves_oracle_and_fails (test_contract_harness.ContractHarnessTests) ... ok
+test_missing_baseline_replaces_stale_success (test_contract_harness.ContractHarnessTests) ... ok
+test_missing_environment_replaces_stale_success (test_contract_harness.ContractHarnessTests) ... ok
+test_missing_ros_in_service_gate_rejected (test_contract_harness.ContractHarnessTests) ... ok
+test_ros_contamination_rejected (test_contract_harness.ContractHarnessTests) ... ok
+test_stale_wheel_rejected (test_contract_harness.ContractHarnessTests) ... ok
+test_timeout_replaces_stale_success (test_contract_harness.ContractHarnessTests) ... ok
+test_worker_failure_rejected (test_contract_harness.ContractHarnessTests) ... ok
+test_corrupt_model_never_starts_worker (test_cpu_intent_replay.CPUIntentReplayTests) ... {"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmpxyqsvao0/runs/20261012T085926536972Z/result.json"}
+ok
+test_failed_model_report_is_retained (test_cpu_intent_replay.CPUIntentReplayTests) ... {"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmpeneulkqv/runs/20261012T085926540646Z/result.json"}
+ok
+test_incomplete_or_non_cpu_report_cannot_pass (test_cpu_intent_replay.CPUIntentReplayTests) ... {"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmpcxfyg797/runs/20261012T085926546186Z/result.json"}
+{"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmpcxfyg797/runs/20261012T085926549691Z/result.json"}
+{"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmpcxfyg797/runs/20261012T085926552693Z/result.json"}
+{"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmpcxfyg797/runs/20261012T085926555848Z/result.json"}
+ok
+test_source_drift_refuses_acceptance (test_cpu_intent_replay.CPUIntentReplayTests) ... {"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmppab7_yk7/runs/20261012T085926560825Z/result.json"}
+ok
+test_timeout_reaps_only_owned_group (test_cpu_intent_replay.CPUIntentReplayTests) ... {"status": "FAIL", "model_acceptance": false, "report": "/tmp/tmpwf_6n94e/runs/20261012T085926572254Z/result.json"}
+ok
+test_bad_hash_and_size_never_publish (test_cpu_model_assets.AssetIntegrityTests) ... ok
+test_existing_corrupt_file_is_preserved_and_rejected (test_cpu_model_assets.AssetIntegrityTests) ... ok
+test_extract_verified_bytes_and_reuse_without_fetch (test_cpu_model_assets.AssetIntegrityTests) ... ok
+test_interrupted_source_does_not_publish_or_leave_temporary_file (test_cpu_model_assets.AssetIntegrityTests) ... ok
+test_traversal_absolute_windows_and_symlink_escape_rejected (test_cpu_model_assets.AssetIntegrityTests) ... ok
+test_zip_duplicate_names_rejected (test_cpu_model_assets.AssetIntegrityTests) ... ok
+test_zip_traversal_and_symlinks_rejected_before_extraction (test_cpu_model_assets.AssetIntegrityTests) ... ok
+test_archives_never_default_to_sibling_legacy_tree (test_developer_workflow.DeveloperWorkflowTests) ... ok
+test_behavior_preserves_both_test_trees (test_developer_workflow.DeveloperWorkflowTests) ... ok
+test_environment_rejects_ambient_module_and_ros_overlays (test_developer_workflow.DeveloperWorkflowTests) ... ok
+test_failures_empty_suites_and_skips_are_not_full_passes (test_developer_workflow.DeveloperWorkflowTests) ... ok
+test_missing_environment_replaces_stale_pass_report (test_developer_workflow.DeveloperWorkflowTests) ... {
+  "status": "FAIL",
+  "module": "emotion",
+  "error": "Run tools/dev.py setup emotion first"
+}
+ok
+test_setup_has_one_module_and_locked_dependencies (test_developer_workflow.DeveloperWorkflowTests) ... ok
+test_vision_setup_installs_rknn_runtime_after_sync (test_developer_workflow.DeveloperWorkflowTests) ... ok
+test_vision_setup_stops_after_sync_failure (test_developer_workflow.DeveloperWorkflowTests) ... ok
+test_voice_pure_and_humble_are_explicit (test_developer_workflow.DeveloperWorkflowTests) ... ok
+test_cmake_variable_relative_path_remains_relative (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_existing_view_is_idempotent_and_rejects_changes (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_relative_library_symlink_is_preserved (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_relocates_only_existing_absolute_payload_paths (test_extended_ros_preparation.DependencyRelocationTests) ... ok
+test_generated_sql_stays_in_copy_and_other_edits_are_rejected (test_extended_ros_preparation.VendorBuildCopyTests) ... ok
+test_polluted_sealed_snapshot_is_rejected (test_extended_ros_preparation.VendorBuildCopyTests) ... ok
+test_command_route_cannot_silently_drop_identity_validation (test_identifier_contracts.IdentifierContractTests) ... ok
+test_exception_for_one_context_cannot_hide_a_new_broken_route (test_identifier_contracts.IdentifierContractTests) ... ok
+test_executor_override_is_checked_separately_from_bt_identity (test_identifier_contracts.IdentifierContractTests) ... ok
+test_invalid_refresh_cannot_write_catalog_or_expand_exceptions (test_identifier_contracts.IdentifierContractTests) ... {
+  "status": "FAIL",
+  "errors": [
+    "unknown action unit: give_paw/action -> ACT_INTERACT_GIVE_PAW"
+  ],
+  "counts": {
+    "declared_event_routes": 1,
+    "voice_commands": 1,
+    "intent_pools": 1,
+    "action_templates": 1,
+    "action_units": 0,
+    "known_missing_template_routes": 0,
+    "voice_events_without_declared_route": 0,
+    "non_catalog_audio_routes": 0
+  },
+  "scope": "Declared default YAML graph only; no execution/hardware/ASR accuracy claims. Code-only, conditional authorization and deployed override paths need runtime contracts."
+}
+ok
+test_missing_pool_and_category_do_not_look_like_valid_routes (test_identifier_contracts.IdentifierContractTests) ... ok
+test_new_missing_template_fails_but_explicit_old_gap_is_reported (test_identifier_contracts.IdentifierContractTests) ... ok
+test_new_mixed_case_unit_requires_explicit_compatibility_review (test_identifier_contracts.IdentifierContractTests) ... ok
+test_product_label_is_not_an_action_unit_reference (test_identifier_contracts.IdentifierContractTests) ... ok
+test_social_reaction_must_reference_a_declared_emotion_route (test_identifier_contracts.IdentifierContractTests) ... ok
+test_source_and_generator_changes_invalidate_snapshot (test_identifier_contracts.IdentifierContractTests) ... ok
+test_unknown_unit_cannot_hide_behind_a_registered_template (test_identifier_contracts.IdentifierContractTests) ... ok
+test_unreferenced_pool_is_visible_but_not_claimed_unreachable (test_identifier_contracts.IdentifierContractTests) ... ok
+test_voice_command_id_mismatch_and_duplicate_are_errors (test_identifier_contracts.IdentifierContractTests) ... ok
+test_canonical_bundle_does_not_fall_back_when_incomplete (test_model_directories.ModelDirectoryTests) ... ok
+test_existing_cpu_assets_remain_readable_with_notice (test_model_directories.ModelDirectoryTests) ... ok
+test_explicit_external_root_never_uses_legacy_assets (test_model_directories.ModelDirectoryTests) ... ok
+test_fresh_checkout_defaults (test_model_directories.ModelDirectoryTests) ... ok
+test_relative_environment_root_is_rejected (test_model_directories.ModelDirectoryTests) ... ok
+test_changed_asset_during_run_refuses_acceptance (test_perception_replay.ReplayPreflightTests) ... {"status": "FAIL", "report": "/tmp/tmp9kok_8m6/runs/20261012T085926662425Z-47407/result.json", "model_acceptance": false}
+ok
+test_check_only_and_blocked_never_invoke_module (test_perception_replay.ReplayPreflightTests) ... {"status": "READY", "report": "/tmp/tmp11zg4wdw/runs/20261012T085926666442Z-47407/result.json", "model_acceptance": false}
+{"status": "BLOCKED_MISSING_ASSETS", "report": "/tmp/tmp11zg4wdw/runs/20261012T085926668502Z-47407/result.json", "model_acceptance": false}
+ok
+test_cli_corrupt_manifest_records_failure (test_perception_replay.ReplayPreflightTests) ... {"status": "FAIL", "report": "/tmp/tmpx5qdeonv/runs/20261012T085926671469Z-47407/result.json", "model_acceptance": false}
+ok
+test_cpu_format_and_sha_required (test_perception_replay.ReplayPreflightTests) ... ok
+test_failed_inference_is_retained_and_other_module_still_runs (test_perception_replay.ReplayPreflightTests) ... {"status": "FAIL", "report": "/tmp/tmpryswxc3_/evidence/20261012T085926675598Z-47407/result.json", "model_acceptance": false}
+ok
+test_hashes_and_relative_paths (test_perception_replay.ReplayPreflightTests) ... ok
+test_interrupt_reaps_real_worker_and_records_failure (test_perception_replay.ReplayPreflightTests) ... ok
+test_missing_and_tampered_assets_are_distinct (test_perception_replay.ReplayPreflightTests) ... ok
+test_negative_image_needs_explicit_annotation (test_perception_replay.ReplayPreflightTests) ... ok
+test_rejects_accelerator_and_mock_settings (test_perception_replay.ReplayPreflightTests) ... ok
+test_requires_real_annotations_and_unique_ids (test_perception_replay.ReplayPreflightTests) ... ok
+test_subprocess_exit_and_missing_sample_cannot_report_pass (test_perception_replay.ReplayPreflightTests) ... ok
+test_timeout_kills_owned_process_group (test_perception_replay.ReplayPreflightTests) ... ok
+test_voice_default_catalog_has_recorded_hash (test_perception_replay.ReplayPreflightTests) ... ok
+test_complete_run (test_recording_diagnostics.DecisionGateTests) ... ok
+test_incomplete_cases_leaks_hardware_and_source_imports_fail (test_recording_diagnostics.DecisionGateTests) ... ok
+test_capability_routes_do_not_promote_missing_or_blocked_templates (test_recording_diagnostics.FeatureDraftTests) ... ok
+test_collisions_and_unknown_capabilities_are_rejected_before_writing (test_recording_diagnostics.FeatureDraftTests) ... ok
+test_custom_event_keeps_product_label_consistent (test_recording_diagnostics.FeatureDraftTests) ... ok
+test_draft_does_not_activate_or_overwrite_and_tests_are_real (test_recording_diagnostics.FeatureDraftTests) ... ok
+test_complete_trial_and_failed_expectation_are_separate (test_recording_diagnostics.RecordingTrialTests) ... ok
+test_html_escapes_data_and_keeps_unrelated_turn_out_of_trace (test_recording_diagnostics.RecordingTrialTests) ... ok
+test_incomplete_or_forged_success_fails (test_recording_diagnostics.RecordingTrialTests) ... ok
+test_malformed_evidence_fails_without_crashing (test_recording_diagnostics.RecordingTrialTests) ... ok
+test_no_goal_requires_matching_rejection_or_no_execution_request (test_recording_diagnostics.RecordingTrialTests) ... ok
+test_observed_gating_is_valid_but_not_success (test_recording_diagnostics.RecordingTrialTests) ... ok
+test_wav_validation_rejects_format_and_truncation (test_recording_diagnostics.RecordingTrialTests) ... ok
+test_wrong_turn_duplicate_terminal_and_fake_asr_fail (test_recording_diagnostics.RecordingTrialTests) ... ok
+test_dirty_source_and_existing_destination_fail_without_overwrite (test_source_handoff.SourceHandoffTests) ... ok
+test_roundtrip_preserves_history_and_tags_without_environment (test_source_handoff.SourceHandoffTests) ... ok
+test_tampered_bundle_fails (test_source_handoff.SourceHandoffTests) ... ok
+test_verify_rejects_manifest_path_escape (test_source_handoff.SourceHandoffTests) ... ok
+test_wrong_vendor_is_rejected_before_output_creation (test_source_handoff.SourceHandoffTests) ... ok
+test_active_logs_over_budget_are_reported_and_never_removed (test_unified_logging.UnifiedLogToolsTests) ... ok
+test_component_severity_and_event_filters_include_native_ros_origin (test_unified_logging.UnifiedLogToolsTests) ... ok
+test_identity_types_and_explicit_other_session_are_not_joined (test_unified_logging.UnifiedLogToolsTests) ... ok
+test_prune_only_closed_managed_logs_preserves_audio_config_and_active_runs (test_unified_logging.UnifiedLogToolsTests) ... ok
+test_reader_keeps_valid_rows_and_reports_partial_or_wrong_schema (test_unified_logging.UnifiedLogToolsTests) ... ok
+test_reader_rejects_wrong_field_types_and_query_limits_after_filtering (test_unified_logging.UnifiedLogToolsTests) ... ok
+test_run_identity_shared_and_close_marks_ownership (test_unified_logging.UnifiedLogToolsTests) ... ok
+test_session_query_links_goal_only_terminal_without_matching_other_turn (test_unified_logging.UnifiedLogToolsTests) ... ok
+test_symlink_escape_and_newly_active_run_cannot_be_pruned (test_unified_logging.UnifiedLogToolsTests) ... ok
+test_behavior_chain_requires_its_own_navigation_and_safety_evidence (test_voice_cpu_ros.CPUROSReportTests) ... ok
+test_execution_violation_fails_both_gates (test_voice_cpu_ros.CPUROSReportTests) ... ok
+test_failed_observer_does_not_leave_a_real_descendant_running (test_voice_cpu_ros.CPUROSReportTests) ... ok
+test_flow_mode_cannot_hide_transport_failure (test_voice_cpu_ros.CPUROSReportTests) ... ok
+test_flow_mode_records_quality_failure_but_does_not_block_integration (test_voice_cpu_ros.CPUROSReportTests) ... ok
+test_mock_or_incomplete_evidence_cannot_pass (test_voice_cpu_ros.CPUROSReportTests) ... ok
+test_quality_failure_remains_distinct_from_real_transport (test_voice_cpu_ros.CPUROSReportTests) ... ok
+
+----------------------------------------------------------------------
+Ran 122 tests in 4.057s
+
+OK
++ /usr/bin/python3 -B -m unittest discover -s tests -v
+test_adapter_does_not_change_global_logger_class_and_record_is_single_copy (test_runtime.LogTests) ... ok
+test_async_contexts_do_not_leak (test_runtime.LogTests) ... ok
+test_bounded_queue_never_waits_for_blocked_sink_and_reserves_priority (test_runtime.LogTests) ... MarsDog structured logging degraded; inspect log health counters.
+ok
+test_broken_sink_is_counted_and_does_not_throw_into_caller (test_runtime.LogTests) ... MarsDog structured logging degraded; inspect log health counters.
+ok
+test_disabled_mode_has_no_files (test_runtime.LogTests) ... ok
+test_fields_are_not_repeated_in_message_and_standard_kwargs_survive (test_runtime.LogTests) ... ok
+test_python_logging_once_and_exceptions_preserved (test_runtime.LogTests) ... ok
+test_queue_overflow_does_not_suppress_retry_of_same_transition (test_runtime.LogTests) ... MarsDog structured logging degraded; inspect log health counters.
+ok
+test_repeat_reason_changes_and_secret_fields (test_runtime.LogTests) ... ok
+test_restart_changes_instance_but_preserves_run (test_runtime.LogTests) ... ok
+test_runtime_level_updates_explicit_events_and_python_diagnostics (test_runtime.LogTests) ... ok
+test_thread_context_capture_isolated_and_reset (test_runtime.LogTests) ... ok
+test_utf8_rotation_and_oversized_json_stay_bounded (test_runtime.LogTests) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.088s
+
+OK

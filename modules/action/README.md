@@ -8,16 +8,15 @@
 
 ## 严格行为树契约
 
-运行时唯一行为来源是
-[config/behavior_tree_actions.yaml](config/behavior_tree_actions.yaml)：
+运行时计划由 [原动作计划](config/behavior_tree_actions.yaml) 与
+[新增表达预设](config/behavior_presets.yaml) 合并：
 
-- 73 个可执行行为；
-- 269 条候选动作记录；
-- 182 个唯一 `ACT_*`；
-- 行为名和动作名均大小写敏感；
-- 不加载旧行为模板；
-- 不解析旧行为 alias；
-- 不向运行时动作目录暴露新表之外的动作。
+- 原 74 个计划保持不变，新增 33 个表达预设，共 107 个名称；
+- 共 308 条候选记录、183 个唯一 `ACT_*`；
+- 精确名称、大小写敏感，不解析别名；新增预设不能覆盖原计划；
+- 预设完成仅表示表达阶段完成，默认底盘能力与代偿门控仍生效。
+
+语义、预算和延期能力见 [预设说明](../../docs/development/SOCIAL_EXPRESSION_PRESETS.md)。
 
 例如：
 
@@ -62,14 +61,14 @@ StageExecutor
 
 | 接口 | 类型 | 用途 |
 |---|---|---|
-| `/execute_behavior` | `marsdog_interfaces/action/ExecuteBehavior` | 正式行为调用 |
+| `/action/execute_behavior` | `marsdog_interfaces/action/ExecuteBehavior` | 正式行为调用 |
 | `/debug/execute_behavior/goal` | `std_msgs/msg/String` JSON | Goal 可视化 |
 | `/debug/execute_behavior/feedback` | `std_msgs/msg/String` JSON | Stage/动作/进度 |
 | `/debug/execute_behavior/result` | `std_msgs/msg/String` JSON | 终态可视化 |
 | `/cmd_vel` | `geometry_msgs/msg/Twist` | Lite3 速度输出及外部 UWB 链路 |
 | `/api/sport/request` | `unitree_api/msg/Request` | 可选 Unitree Go2 高层动作输出 |
-| `/waypoint_nav/task` | `marsdog_voice_interaction/srv/VoiceTask` | YAML 精确地点名及保留随机目标 `K` |
-| `/waypoint_nav/status` | `std_msgs/msg/String` JSON | 点位运行态/终态 |
+| `/navigation/task` | `marsdog_interfaces/srv/NavigationTask` | YAML 精确地点名及保留随机目标 `K` |
+| `/navigation/status` | `std_msgs/msg/String` JSON | 点位运行态/终态 |
 | `/spin` | `nav2_msgs/action/Spin` | 按唤醒声源角度闭环转向 |
 
 Feedback 在每个 Stage 执行完成后发布一次，不是固定 10Hz。
@@ -83,7 +82,7 @@ export ROS_LOCALHOST_ONLY=0
 ```
 
 只把动作执行器放到 Domain 1 会导致 Domain 0 的行为树无法发现
-`/execute_behavior`。
+`/action/execute_behavior`。
 
 ## 主要文件
 
@@ -166,14 +165,14 @@ ros2 launch marsdog_action_executor action_executor.launch.py \
   chassis_type:=lite3 \
   lite3_enabled:=true \
   navigation_enabled:=true \
-  waypoint_nav_service_name:=/waypoint_nav/task \
-  waypoint_nav_status_topic:=/waypoint_nav/status
+  waypoint_nav_service_name:=/navigation/task \
+  waypoint_nav_status_topic:=/navigation/status
 ```
 
 固定路由使用 `config/navigation_waypoints.yaml` 中与
 `$HOME/.ros/waypoints.yaml` 完全一致的地点名称（当前为卧室、充电桩、
 厨房、卫生间、客厅）。随机行为不再由 Action 在固定点中抽选，而是唯一调用
-`/waypoint_nav/task` 并发送 `task_type="goto_place"`、`place="K"`；
+`/navigation/task` 并发送 `task_type="goto_place"`、`place="K"`；
 `waypoint_nav` 根据实时 `/map` 生成安全目标。`K` 是保留入口，不写入
 `waypoints.yaml`。
 
@@ -190,7 +189,7 @@ ros2 launch marsdog_action_executor action_executor.launch.py \
 `chassis_type` 只接受 `go2` 或 `lite3`。73 个行为引用的 182 个动作均有明确 Go2 路径：171 个 SportMode 映射，
 其余使用 Nav2、UWB、视觉或唤醒专用适配器；`quiet` 是无身体动作的音频策略。
 当前 Go2 `follow_owner` 使用外接 FTDI UWB 与 `go2_uwb_local_follow` 进程链路；
-Lite3 使用 `/go2/follow_uwb` Action 和 `/go2/set_behavior` Service。
+Lite3 使用 `/motion/follow_uwb` Action 和 `/motion/set_behavior` Service。
 完整映射、视觉约束和真机验收步骤见
 [Go2 ROS2 动作集成说明](docs/GO2_ROS2_INTEGRATION.md)。
 “过来/靠近/回来”由 Tree 先绑定已确认的主人视觉目标，Action 再通过
@@ -321,7 +320,7 @@ APP 语音、软急停、翻身和跳跃指令不会进入行为映射。太空�
 
 ```bash
 ros2 action send_goal --feedback \
-  /execute_behavior \
+  /action/execute_behavior \
   marsdog_interfaces/action/ExecuteBehavior \
   "{goal_id: 't1', behavior_id: 'sim-t1', \
     behavior_name: 'sit_down', priority_level: 5, \

@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import math
 import time
+from .motion_ownership import controllers_for_node, unresolved_controllers
 from .execution_context import parse_params_json_object
 from .goal_contract import _debug_goal_from_request
 
@@ -37,16 +38,14 @@ def on_goal(self, goal_request, *, goal_response):
     if not math.isfinite(timeout_value):
         return goal_response.REJECT
 
-    if (name != "emergency_stop" and any(
-        getattr(adapter, "recovery_required", False)
-        for adapter in (
-            getattr(self, "_uwb_roam_adapter", None),
-            self._uwb_follow_adapter,
-            getattr(self, "_person_nav_approach_adapter", None),
-        )
-    )):
-        self.get_logger().error("Rejected goal: controller terminal unknown; recovery required")
-        return goal_response.REJECT
+    unresolved = unresolved_controllers(controllers_for_node(self))
+    ownership = getattr(self, '_motion_ownership', None)
+    if name != "emergency_stop":
+        if unresolved:
+            self.get_logger().error("Rejected goal: unresolved motion ownership: " + ','.join(unresolved))
+            return goal_response.REJECT
+        if ownership is not None and ownership.current is None:
+            ownership.reconcile(unresolved)
 
     if name in self._acceptable_behaviors:
         if name != "emergency_stop":
@@ -62,9 +61,16 @@ def on_goal(self, goal_request, *, goal_response):
             with self._goal_reservation_lock:
                 if self._reserved_goal_id is not None:
                     return goal_response.REJECT
+                if ownership is not None and ownership.reserve(str(gid)) is None:
+                    return goal_response.REJECT
                 self._reserved_goal_id = str(gid)
         if name == "emergency_stop":
+            if ownership is not None and ownership.current is not None:
+                ownership.request_stop(ownership.current.goal_id)
             self._interrupt.request_cancel()
+            approach = getattr(self, '_approach_navigation_adapter', None)
+            if approach is not None:
+                approach.emergency_stop()
             self._behavior_sounds.stop()
             if getattr(self, "_uwb_roam_adapter", None) is not None:
                 self._uwb_roam_adapter.emergency_stop()
@@ -114,7 +120,17 @@ def on_cancel(self, goal_handle, *, cancel_response):
     if (self._long_goal_id is not None
             and str(goal_handle.request.goal_id) != self._long_goal_id):
         return cancel_response.REJECT
+    ownership = getattr(self, '_motion_ownership', None)
+    if ownership is not None:
+        lease = self._goal_motion_leases.get(id(goal_handle))
+        if lease is None or lease != ownership.current:
+            return cancel_response.REJECT
+        if not ownership.request_stop(str(goal_handle.request.goal_id)):
+            return cancel_response.REJECT
     self._interrupt.request_cancel()
+    approach = getattr(self, '_approach_navigation_adapter', None)
+    if approach is not None:
+        approach.cancel_task()
     self._behavior_sounds.stop()
     if (self._long_goal_id is not None
             and goal_handle.request.behavior_name == "play_alone"
@@ -154,6 +170,9 @@ def on_cancel(self, goal_handle, *, cancel_response):
 
 def on_accepted(self, goal_handle):
     """Kick off async execution when goal is accepted."""
+    if (getattr(self, "_motion_ownership", None) is not None
+            and goal_handle.request.behavior_name != "emergency_stop"):
+        self._goal_motion_leases[id(goal_handle)] = self._motion_ownership.current
     goal_handle.execute()
 
     g = goal_handle.request

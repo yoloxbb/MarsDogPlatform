@@ -6,12 +6,59 @@ runtime path one authoritative implementation.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from numbers import Integral
+
 from .constants import (
     INTERRUPT_IMMEDIATE,
     INTERRUPT_NON_INTERRUPTIBLE,
     INTERRUPT_SAFE_POINT,
     SAME_LEVEL_PREEMPTION_DELTA,
 )
+
+
+def integer_rank(value, name: str) -> int:
+    """Ranks are nonnegative integers; never truncate display labels like 2.1."""
+    if isinstance(value, bool):
+        raise ValueError(f"{name} must be a nonnegative integer")
+    if isinstance(value, Integral):
+        number = int(value)
+    elif isinstance(value, str) and value.strip().isascii() and value.strip().isdigit():
+        number = int(value.strip())
+    else:
+        raise ValueError(f"{name} must be a nonnegative integer")
+    if number < 0:
+        raise ValueError(f"{name} must be a nonnegative integer")
+    return number
+
+
+def behavior_rank(params=None, fallback=0) -> int:
+    """sub_priority is the config name; legacy behavior_rank keeps precedence.
+
+    Resolve in memory, without inserting fields into an event or Action Goal.
+    """
+    values = params if isinstance(params, Mapping) else {}
+    return integer_rank(values.get("behavior_rank", values.get("sub_priority", fallback)),
+                        "sub_priority")
+
+
+def priority_label(priority_level, params=None, *, sub_priority=0) -> str:
+    """Human label only; semantic and modality ranks still precede sub-rank."""
+    return f"{integer_rank(priority_level, 'priority_level')}.{behavior_rank(params, sub_priority)}"
+
+
+def candidate_priority_key(candidate: Mapping) -> tuple:
+    """One queue ordering shared by the pool, mapper and compatibility selector."""
+    raw = candidate.get("params")
+    params = dict(raw) if isinstance(raw, Mapping) else {}
+    for name, default in (("semantic_rank", 3), ("modality_rank", 3), ("sub_priority", 0)):
+        params.setdefault(name, candidate.get(name, default))
+    return (
+        *priority_key(candidate["priority_level"], params),
+        candidate.get("emotion_priority", 50),
+        -candidate.get("value", 50.0),
+        -candidate.get("created_at", 0.0),
+    )
 
 
 def priority_key(
@@ -23,10 +70,10 @@ def priority_key(
     """Order event meaning before sensor source, then behavior detail."""
     values = params if isinstance(params, dict) else {}
     return (
-        int(priority_level),
-        int(values.get("semantic_rank", 3)),
-        int(values.get("modality_rank", 3)),
-        int(values.get("behavior_rank", values.get("sub_priority", sub_priority))),
+        integer_rank(priority_level, "priority_level"),
+        integer_rank(values.get("semantic_rank", 3), "semantic_rank"),
+        integer_rank(values.get("modality_rank", 3), "modality_rank"),
+        behavior_rank(values, sub_priority),
     )
 
 

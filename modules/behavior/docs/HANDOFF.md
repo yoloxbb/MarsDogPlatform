@@ -4,7 +4,7 @@
 
 ## 1. 本项目负责什么
 
-行为树是四项目的决策中心：接收语音、视觉、情绪和内部需求，把事件映射为语义 `behavior_name`，通过真正的延迟优先级队列完成仲裁、抢占和超时，再调用 `/execute_behavior`。它不维护 `ACT_*` 动作细节，也不直接发布 `/cmd_vel`。
+行为树是四项目的决策中心：接收语音、视觉、情绪和内部需求，把事件映射为语义 `behavior_name`，通过真正的延迟优先级队列完成仲裁、抢占和超时，再调用 `/action/execute_behavior`。它不维护 `ACT_*` 动作细节，也不直接发布 `/cmd_vel`。
 
 - 节点：`behavior_tree_node`
 - 入口：`ros2 launch marsdog_behavior behavior_tree.launch.py`
@@ -27,7 +27,7 @@
 | 接口 | 类型 | 作用 |
 |---|---|---|
 | `/perception/vision/task` | `VisionTask` Client | 人/物上下文路由 |
-| `/execute_behavior` | `ExecuteBehavior` Action Client | 发送语义行为 |
+| `/action/execute_behavior` | `ExecuteBehavior` Action Client | 发送语义行为 |
 | `/behavior/attention_tracking` | String JSON, RELIABLE 10 | 控制语音会话级视角；长期跟随由 `follow_owner` Goal 持有 |
 | `/behavior/goal_lease` | String JSON, RELIABLE 10 | 每 0.1 秒按 `goal_id`/`behavior_id` 为运行中的 `follow_owner`、`play_alone` 续租；Action 超过 2 秒未收到续租即停车失败 |
 | `/behavior/result_event` | String JSON, RELIABLE 10 | 把需求行为结果回传 InternalNeed |
@@ -261,7 +261,7 @@ ros2 launch marsdog_behavior behavior_tree.launch.py
 env PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 uv run pytest
 ros2 topic echo /behavior/attention_tracking
 ros2 topic echo /behavior/result_event
-ros2 action info /execute_behavior
+ros2 action info /action/execute_behavior
 ```
 
 当前系统 ROS 环境中的 `launch_testing` 插件与项目 pytest 版本不兼容，因此上述
@@ -285,7 +285,7 @@ ros2 action info /execute_behavior
 - Tree：`command_play_alone` → `play_alone`，Lv1 / sub_priority=1，立即中断策略，外层无截止时间，冷却 0.2 秒；语音 idle 不取消。
 - 沿用 AudioEvent v2 校验：`dispatch_role=specific_command`、匹配的 `specific_event_type`、`should_trigger_behavior_tree=true`；错误命令 ID 或禁止触发时不产生候选。
 - 下发独立语义 `behavior_name=play_alone`；Voice 的 `ACT_PLAY_ALONE` 仅为提示，不由 Tree 直接执行。
-- Action 当前仅实现一次 `uwb_roam` → `play`，尚未实现同一 Goal 内循环。`ACT_UWB_RANDOM_ROAM` 通过 `/go2/random_roam` 发起 UWB 随机漫游，圆心由服务端冻结在调用时 UWB 位置；默认半径 0.5–2.0 米、请求超时 30 秒。Tree 无需传入点位或坐标。
+- Action 当前仅实现一次 `uwb_roam` → `play`，尚未实现同一 Goal 内循环。`ACT_UWB_RANDOM_ROAM` 通过 `/motion/random_roam` 发起 UWB 随机漫游，圆心由服务端冻结在调用时 UWB 位置；默认半径 0.5–2.0 米、请求超时 30 秒。Tree 无需传入点位或坐标。
 - 仅漫游返回 `STATUS_SUCCEEDED(4)` 且业务码 `SUCCESS(0)`，并经 Lite3 `finish_navigation()` 确认停稳后，才随机执行一个姿态动作：`ACT_GUARD_DOOR`（扭腰）、`ACT_SNIFF_BOWL_AND_WAIT_FOR_FOOD`（低头）或 `ACT_STRETCH`（降低身体后恢复）。漫游单元预算 40 秒，玩耍单元预算 5 秒。
 - 当前实现仅在 Lite3 且 `uwb_follow_enabled=true` 时注册 UWB 漫游适配器，需已启动对应 UWB 服务端。实现说明见 Action 仓库 `docs/PLAY_ALONE_LITE3.md`。
 - 完成必须依据真实 Action Result；取消确认 `CANCEL_REQUESTED` 不算完成。若下游失联、终态未知，不能释放控制权或启动下一动作。长期循环及内部有限超时要求见 [Action 修改需求](ACTION_LONG_RUNNING_GOALS_REQUIREMENTS.md)。部署需重建并重启相关节点，再验证实机 UWB 到点、姿态表现和取消停车。

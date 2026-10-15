@@ -13,17 +13,17 @@
 
 | 方向 | 接口 | 类型 | 作用 |
 |---|---|---|---|
-| 提供 | `/execute_behavior` | `marsdog_interfaces/action/ExecuteBehavior` | 正式业务控制 |
+| 提供 | `/action/execute_behavior` | `marsdog_interfaces/action/ExecuteBehavior` | 正式业务控制 |
 | 订阅 | `/behavior/attention_tracking` | String JSON, RELIABLE 10 | 会话级跟踪开关/模式 |
 | 订阅 | `/behavior/goal_lease` | String JSON, RELIABLE 10 | 长期 Goal 按 `goal_id`/`behavior_id` 续租 |
 | 订阅 | `/perception/visual_event` | String JSON, BEST_EFFORT 5 | 闭环目标数据 |
 | 发布 | `/cmd_vel` | `geometry_msgs/msg/Twist` | Lite3 速度输出及外部 UWB 链路 |
 | 调用 | `/spin` | `nav2_msgs/action/Spin` | 可选唤醒声源转向 |
-| 调用 | `/waypoint_nav/task` | `marsdog_voice_interaction/srv/VoiceTask` | YAML 精确地点名及保留随机目标 `K` |
-| 订阅 | `/waypoint_nav/status` | String JSON | 点位运行态/终态 |
+| 调用 | `/navigation/task` | `marsdog_interfaces/srv/NavigationTask` | YAML 精确地点名及保留随机目标 `K` |
+| 订阅 | `/navigation/status` | String JSON | 点位运行态/终态 |
 | 发布 | `/debug/execute_behavior/*` | String JSON | 可视化/调试，不是业务依赖 |
 
-正式 Action 定义只以 `/home/cat/xbb/marsdog_interfaces/action/ExecuteBehavior.action` 为准。本仓库 `action/ExecuteBehavior.action` 是兼容副本。
+正式 Action 定义唯一来源是 `interfaces/ros2/marsdog_interfaces/action/ExecuteBehavior.action`；旧包内副本已删除。
 
 ## 3. 行为执行契约
 
@@ -51,7 +51,7 @@ Result 的 `metadata_json` 用于动态业务结果。成功充电必须返回�
 模式：
 
 - `face_body_centering`：只转向，不前进。
-- `follow_owner`：由 `/execute_behavior` 长期 Goal 控制；Go2 使用外接 UWB 进程链，Lite3 使用 `go2_uwb_behavior` Action/Service。
+- `follow_owner`：由 `/action/execute_behavior` 长期 Goal 控制；Go2 使用外接 UWB 进程链，Lite3 使用 `go2_uwb_behavior` Action/Service。
 
 当前默认参数：
 
@@ -80,18 +80,18 @@ ros2 launch go2_uwb_local_follow local_follow.launch.py \
 ```
 
 **Lite3 不使用上面这条管线。** 它由操作员单独启动 `go2_uwb_behavior` 的
-`behavior_follow_roam.launch.py`，本执行器只发 Action Goal `/go2/follow_uwb`，
-并用 Service `/go2/set_behavior`（`IDLE=0` / `STOP=2`）解锁和急停。
+`behavior_follow_roam.launch.py`，本执行器只发 Action Goal `/motion/follow_uwb`，
+并用 Service `/motion/set_behavior`（`IDLE=0` / `STOP=2`）解锁和急停。
 **不要**在 Lite3 上启动 `local_follow.launch.py`、`uwb_follow_only.launch.py`
 或 `local_velocity_planner.launch.py`——它们都发 `/cmd_vel`，会和那条链打架。
 那条链在跑时，Lite3 的 twist 类动作会以 `lite3_control_conflict` 响亮失败。
 完整说明见 [UWB_FOLLOW_ROS2_INTERFACE.md](UWB_FOLLOW_ROS2_INTERFACE.md)。
 
-`follow_owner` 是一个长期 `/execute_behavior` Goal（`timeout_sec=0`），不再由
+`follow_owner` 是一个长期 `/action/execute_behavior` Goal（`timeout_sec=0`），不再由
 `/behavior/attention_tracking` 开启。Tree 每次 tick 在 `/behavior/goal_lease`
 按 `goal_id`/`behavior_id` 续租；语音 idle 只关闭会话级视觉居中，不停车。
 Action 启动一次 UWB，持续发布 Feedback。取消受理仅是 `CANCEL_REQUESTED`；
-Lite3 等内层 `/go2/follow_uwb` 真实 Result，Go2 确认进程退出和底盘停车，
+Lite3 等内层 `/motion/follow_uwb` 真实 Result，Go2 确认进程退出和底盘停车，
 然后才返回外层 `CANCELED`。目标丢失、控制器失败或租约过期返回 `FAILED`。
 旧 Goal 未终结时拒绝替代 Goal；抢占后默认不自动跟随。详见
 [长期 Goal 契约](UWB_FOLLOW_ROS2_INTERFACE.md)。
@@ -208,8 +208,8 @@ ros2 launch marsdog_action_executor action_executor.launch.py \
   uwb_follow_enabled:=true
 ```
 
-启用导航路由还需 `navigation_enabled:=true`，并保证 `/waypoint_nav/task`、
-`/waypoint_nav/status` 可用；随机导航也只通过该接口提交 `place="K"`。唤醒转向使用
+启用导航路由还需 `navigation_enabled:=true`，并保证 `/navigation/task`、
+`/navigation/status` 可用；随机导航也只通过该接口提交 `place="K"`。唤醒转向使用
 `/spin`，不使用时关闭 `wake_orientation_enabled`。
 
 唤醒角度输入帧固定为 `microphone_array`。Voice/BehaviorTree 透传原始角度，只有
@@ -257,7 +257,7 @@ Intensity 同时影响速度、幅度、五官形状和特效数量。Emergency 
 ```bash
 cd /home/cat/xbb/20260707_MarsDogAction
 uv run pytest
-ros2 action info /execute_behavior
+ros2 action info /action/execute_behavior
 ros2 topic info -v /cmd_vel
 ros2 topic echo /debug/execute_behavior/feedback
 ```
@@ -286,12 +286,12 @@ hash -r
 ros2 pkg prefix --share marsdog_behavior
 ros2 pkg prefix --share marsdog_action_executor
 python3 -c 'import inspect, marsdog_behavior.ros_node as t, marsdog_action_executor.ros_node as a; print(inspect.getfile(t)); print(inspect.getfile(a))'
-ros2 action info /execute_behavior -c
-ros2 action info /go2/follow_uwb -c
-ros2 action info /go2/random_roam -c
+ros2 action info /action/execute_behavior -c
+ros2 action info /motion/follow_uwb -c
+ros2 action info /motion/random_roam -c
 ros2 topic info /behavior/goal_lease -v
 ros2 topic info /cmd_vel -v
-ros2 topic echo /go2/behavior_diagnostics
+ros2 topic echo /motion/behavior_diagnostics
 ```
 
 上述软件检查不能代替真机验证 UWB 失联、控制器反馈、漫游停稳、姿态和取消停车。

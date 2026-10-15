@@ -11,7 +11,7 @@ try:
     import rclpy
     from nav_msgs.msg import OccupancyGrid
     from nav2_msgs.action import NavigateToPose
-    from marsdog_voice_interaction.srv import VoiceTask
+    from marsdog_interfaces.srv import NavigationTask
     from rclpy.action import ActionServer, CancelResponse, GoalResponse
     from rclpy.callback_groups import ReentrantCallbackGroup
     from rclpy.executors import MultiThreadedExecutor, SingleThreadedExecutor
@@ -24,6 +24,8 @@ except ImportError:
 
 @unittest.skipIf(rclpy is None, '需要板端 ROS 2 Humble 环境')
 class WireIntegrationTests(unittest.TestCase):
+
+    service_name = '/navigation/task'
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -65,8 +67,8 @@ class WireIntegrationTests(unittest.TestCase):
         self.dispatcher._waypoints_file = self.waypoints_file
         self.dispatcher._binding_error = ''
         self.client_node = rclpy.create_node('waypoint_nav_test_client')
-        self.client = self.client_node.create_client(
-            VoiceTask, '/waypoint_nav/task')
+        self.kind = NavigationTask
+        self.client = self.client_node.create_client(self.kind, self.service_name)
         self.executor = MultiThreadedExecutor(num_threads=4)
         for node in (self.fake, self.client_node):
             self.executor.add_node(node)
@@ -116,7 +118,7 @@ class WireIntegrationTests(unittest.TestCase):
         return GoalResponse.ACCEPT
 
     def _call(self, task_id, task_type, extra):
-        request = VoiceTask.Request()
+        request = self.kind.Request()
         request.task_id = task_id
         request.task_type = task_type
         request.params_json = json.dumps({

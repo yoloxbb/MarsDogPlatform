@@ -182,7 +182,7 @@ class _Logger:
 def _client_without_ros(call_service):
     client = Ros2WaypointNavClient.__new__(Ros2WaypointNavClient)
     client._node = SimpleNamespace(get_logger=lambda: _Logger())
-    client._service_name = "/waypoint_nav/task"
+    client._service_name = "/navigation/task"
     client._protocol_version = "1.0"
     client._client_id = "marsdog_action_executor"
     client._service_timeout_sec = 0.05

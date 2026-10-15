@@ -830,7 +830,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -839,7 +839,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -857,7 +857,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -866,7 +866,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -876,7 +876,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -885,7 +885,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -914,7 +914,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 10.0
+    timeout_sec: 25.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1061,7 +1061,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1070,7 +1070,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1079,7 +1079,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1088,7 +1088,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1097,7 +1097,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1106,7 +1106,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1134,7 +1134,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 8.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1143,7 +1143,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 8.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1161,7 +1161,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 8.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1170,7 +1170,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 8.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1179,7 +1179,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 8.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1188,7 +1188,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 8.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1197,7 +1197,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 8.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1207,7 +1207,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1216,7 +1216,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1225,7 +1225,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1234,7 +1234,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1243,7 +1243,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1252,7 +1252,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1261,7 +1261,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}
@@ -1298,7 +1298,7 @@ behaviors:
     priority_level: 1
     base_priority: 80
     interrupt_policy: immediate
-    timeout_sec: 5.0
+    timeout_sec: 15.0
     cooldown_sec: 0.2
     action_sequence: []
     style_modifiers: {}

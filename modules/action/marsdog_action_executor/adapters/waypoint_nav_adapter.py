@@ -207,14 +207,14 @@ def parse_waypoint_status(
 
 
 class Ros2WaypointNavClient:
-    """Synchronous facade over ``VoiceTask`` plus the JSON status topic."""
+    """Synchronous facade over ``NavigationTask`` plus the JSON status topic."""
 
     def __init__(
         self,
         node: Any,
         *,
-        service_name: str = "/waypoint_nav/task",
-        status_topic: str = "/waypoint_nav/status",
+        service_name: str = "/navigation/task",
+        status_topic: str = "/navigation/status",
         protocol_version: str = "1.0",
         client_id: str = "marsdog_action_executor",
         service_timeout_sec: float = 5.0,
@@ -223,13 +223,13 @@ class Ros2WaypointNavClient:
         terminal_retention_sec: float = 86400.0,
         should_stop: Callable[[], bool] | None = None,
     ) -> None:
-        from marsdog_voice_interaction.srv import VoiceTask
+        from marsdog_interfaces.srv import NavigationTask
         from rclpy.callback_groups import ReentrantCallbackGroup
         from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
         from std_msgs.msg import String
 
         self._node = node
-        self._service_type = VoiceTask
+        self._service_type = NavigationTask
         self._service_name = service_name
         self._status_topic = status_topic
         self._protocol_version = str(protocol_version)
@@ -265,7 +265,7 @@ class Ros2WaypointNavClient:
             callback_group=callback_group,
         )
         self._client = node.create_client(
-            VoiceTask,
+            NavigationTask,
             service_name,
             callback_group=callback_group,
         )

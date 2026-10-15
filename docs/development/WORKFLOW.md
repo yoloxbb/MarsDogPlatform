@@ -1,5 +1,9 @@
 # 模块边界与功能开发
 
+当前架构、环境与已知缺口见 [系统基线](../architecture/SYSTEM_BASELINE.md)。五人团队按照
+[责任表](../OWNERSHIP.md) 和 [工程规范](ENGINEERING_STANDARD.md) 开发；跨模块功能先填写
+[功能规格](templates/FEATURE_SPEC.md)，由功能负责人汇总链路验收。
+
 ## 已落地的依赖方向
 
 Vision/Voice 通过原有 ROS 事件与任务服务对接上层。BehaviorTree 决定做什么以及何时
@@ -7,13 +11,24 @@ Vision/Voice 通过原有 ROS 事件与任务服务对接上层。BehaviorTree �
 Action 通过现有适配边界请求导航/外部能力；它不是缺失的底层运控算法。
 不得通过 import 进入另一模块内部替代通信边界。
 
+业务行为按 [两类行为来源](../architecture/BEHAVIOR_DRIVES.md) 区分触发路径，不按感知模块分类。
+视觉、听觉、触觉中的部分事件直接生成候选，部分只影响情绪；具体事件是否同时走两条路径，
+须在功能规格中列明对应规则。情绪达到触发条件后生成内部候选，生理和心理需求也归内部触发。
+两类共用候选池、仲裁与 Action 执行。来源决定状态归属，优先级和动作模板单独定义；
+复用情绪表达模板的直驱行为不自动取得内部情绪的生命周期。触觉影响情绪的消费入口已存在，
+touch_direct 已有摸头、摸耳、碰鼻的软件预设与独立契约，实物采集仍待传感器。
+
 ~~~mermaid
 flowchart LR
   Vision -->|感知事件| BT[BehaviorTree]
   Voice -->|语音事件| BT
   BT -->|现有任务服务| Vision
   BT -->|现有任务服务| Voice
-  Needs[Emotion / Needs] -->|需求状态| BT
+  Vision -->|命中具体事件的内部状态规则| Needs[Emotion / Needs]
+  Voice -->|命中具体事件的内部状态规则| Needs
+  Touch[触觉] -->|已有情绪事件规则| Needs
+  Touch -->|命中触觉直驱预设| BT
+  Needs -->|内部状态及触发信号| BT
   BT -->|结果与证据| Needs
   BT -->|目标 / 取消| Action
   Action -->|反馈 / 终态| BT
@@ -83,7 +98,24 @@ RTAB 的本地定制 fork 保留，不能用随手下载的 upstream 覆盖。
 模型/构建输出/虚拟环境/设备私有配置不跟随功能 PR 提交。
 
 五模块已完成的职责划分与全部门禁见 [兼容性重构](../architecture/COMPATIBILITY_REFACTOR.md)。
+
+后续组件解耦和交付任务见 [渐进重构路线](../architecture/REFACTOR_ROADMAP.md)。
+首个代表切片为 [叫过来与唤醒靠近](scenarios/CALLER_APPROACH.md)：当前明确区分视觉目标查询、
+三维定位和导航执行。第四批已接入显式三模式靠近及几何调用，实机配准、TF 与停车仍需设备证据。
 跨领域协议入口见 [应用协议目录](../../interfaces/application/README.md)。
+第四批新增 [显式三模式靠近](../../interfaces/application/approach/README.md) 与
+[触觉直驱／情绪双消费](../../interfaces/application/tactile/README.md)。相关变更增加
+`python3 tools/check_approach_tactile_contracts.py`；安装后靠近 DDS probe 仅在 localhost domain 216 运行。
 
 业务场景与各门禁的覆盖关系见 [验收矩阵](BUSINESS_SCENARIOS.md)。
 导航/避障修改前先核对 [负责人交接](NAVIGATION_HANDOFF.md)，保留现有终态与恢复锁约束。
+
+第五批事件分流和能力快照沿用 `check_identifiers.py`、`capabilities.py`，使用方法见
+[事件清单与发布记录](../../interfaces/naming/EVENT_ROUTING.md)。纯清单/工具改动运行 `dev.py check`、
+`check_identifiers.py --live --python modules/action/.venv/bin/python` 和能力生成；
+报告引用不自动构成单项能力验收，原配置与冻结基线继续由原 owner 维护。
+
+第六批新增 33 个表达预设及 Stage 取消入口保护。剩余 16 个能力已登记具体接入依赖；
+详见 [社交表达预设与缺口处置](SOCIAL_EXPRESSION_PRESETS.md)。软件计划存在不代表底盘可用或真机验收通过。
+
+收尾版本新增 [显式协调端口和应用所有权](REFACTOR_CLOSEOUT.md)；Voice/Action 协调变更继续跑全量单测及安装，NavigationTask 变更跑新旧两种类型的航点 DDS 测试。

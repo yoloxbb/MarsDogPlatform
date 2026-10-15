@@ -21,6 +21,7 @@ from typing import Any, Optional
 
 import yaml
 
+from bionic_dog_bt.arbitration import candidate_priority_key
 from bionic_dog_bt.logger import get_logger
 from bionic_dog_bt.constants import EMOTION_V2_EVENT_TO_NAME, EMOTION_PRIORITY
 from .config_paths import get_config_dir
@@ -104,14 +105,16 @@ class BehaviorCandidate:
     @property
     def sort_key(self) -> tuple:
         """Sort key shared with queued and running priority comparison."""
-        return (
-            self.priority_level,
-            self.semantic_rank,
-            self.modality_rank,
-            self.sub_priority,
-            -(self.intensity or 0.0),
-            -self.created_at,
-        )
+        return candidate_priority_key({
+            "priority_level": self.priority_level,
+            "semantic_rank": self.semantic_rank,
+            "modality_rank": self.modality_rank,
+            "sub_priority": self.sub_priority,
+            "params": self.params,
+            "emotion_priority": self.emotion_priority,
+            "value": self.intensity if self.intensity is not None else 50.0,
+            "created_at": self.created_at,
+        })
 
     def to_pool_dict(self) -> dict:
         """Convert to the CandidatePool transport representation.

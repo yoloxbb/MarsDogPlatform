@@ -74,6 +74,7 @@ def _adapter() -> ActionClientAdapter:
     adapter._send_futures = {}
     adapter._result_futures = {}
     adapter._cancel_futures = {}
+    adapter._recovery = {}
     return adapter
 
 

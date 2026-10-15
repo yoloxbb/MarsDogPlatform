@@ -139,7 +139,7 @@ ros2 launch marsdog_behavior behavior_tree.launch.py
 行为树找不到公共 Action 类型时会退化到 Mock executor。联调真车时日志必须出现：
 
 ```text
-Executor: ActionClientAdapter → /execute_behavior
+Executor: ActionClientAdapter → /action/execute_behavior
 ```
 
 ## 3. 一分钟接口检查
@@ -150,7 +150,7 @@ ros2 topic info -v /perception/audio_event
 ros2 topic info -v /perception/visual_event
 ros2 topic info -v /emotion/state
 ros2 topic info -v /behavior/attention_tracking
-ros2 action info /execute_behavior
+ros2 action info /action/execute_behavior
 ros2 service type /perception/vision/task
 ros2 service type /perception/voice/task
 ```
@@ -165,7 +165,7 @@ ros2 service type /perception/voice/task
 - Vision → BT/Action 的 `/perception/visual_event` 连接
 - Emotion → Vision/BT 的 `/emotion/state` 连接
 - BT → Action 的 `/behavior/attention_tracking` 连接
-- `/execute_behavior` 一台 Server；不能同时启动两个动作执行器
+- `/action/execute_behavior` 一台 Server；不能同时启动两个动作执行器
 
 ## 4. 分链路冒烟测试
 
@@ -224,7 +224,7 @@ ros2 service call /perception/vision/task \
 ### 4.3 行为 Action
 
 ```bash
-ros2 action send_goal --feedback /execute_behavior \
+ros2 action send_goal --feedback /action/execute_behavior \
   marsdog_interfaces/action/ExecuteBehavior \
   "{goal_id: 'smoke-001', behavior_id: 'smoke-001', \
     behavior_name: 'sit_down', priority_level: 1, \

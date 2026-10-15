@@ -7,8 +7,10 @@
 
 ## 选择工作范围
 
-支持基线为 WSL2 中的 Ubuntu 22.04 / 系统 Python 3.10。源码应放 Linux 文件系统，
-避免 Windows 挂载盘的执行位和构建性能差异。Git、Python 已存在时，
+通用基线为 Ubuntu 22.04 / 系统 Python 3.10 / ROS Humble。原 WSL2 x86_64 开发路径保留；
+RK3588 ARM64 板端导航环境见 [构建说明](../../robotics/ros2/NAVIGATION_BUILD.md)，
+当前状态和验证范围见 [系统基线](../architecture/SYSTEM_BASELINE.md)。不同架构的虚拟环境和构建产物不可复用。
+WSL 源码应放 Linux 文件系统，避免 Windows 挂载盘的执行位和构建性能差异。Git、Python 已存在时，
 `python3 tools/dev.py check` 不需要 ROS、模型、原仓目录或 Python 第三方库。
 
 只开发 Emotion/BT/Action 的普通逻辑时不必构建整机。
@@ -27,8 +29,9 @@ python3 tools/dev.py setup behavior
 python3 tools/dev.py test behavior
 ~~~
 
-bootstrap 使用现有锁定 Linux x86_64 uv，下载需网络；已经有 uv 时使用
-`setup behavior --uv /absolute/path/to/uv`。下载缓存可通过 UV_CACHE_DIR 复用，
+bootstrap 使用现有锁定 Linux x86_64 uv，下载需网络；ARM64 板端不要运行该 x86_64 bootstrap，
+应使用已有、已核对架构与版本的原生 uv，执行 `setup behavior --uv /absolute/path/to/uv`。
+下载缓存可通过 UV_CACHE_DIR 复用，
 缓存不是运行时源码依赖。模块解释器均位于 modules/<name>/.venv/bin/python。
 
 | 模块 | 准备 | 日常测试 |

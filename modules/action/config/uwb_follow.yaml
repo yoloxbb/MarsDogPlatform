@@ -32,10 +32,10 @@ stop_publish_count: 3
 # or local_velocity_planner.launch.py alongside it -- all three publish
 # /cmd_vel and would fight the chain.
 ros_interface:
-  follow_action: /go2/follow_uwb
+  follow_action: /motion/follow_uwb
   # The only way to stop the chain, so a follow is refused outright when this
   # service is unreachable: never hand over /cmd_vel without a brake.
-  set_behavior_service: /go2/set_behavior
+  set_behavior_service: /motion/set_behavior
   server_timeout_sec: 5.0
   # Action/service discovery plus the pre-flight mode switch.  The upstream
   # deployment guide recommends relaxing 2.0 -> 4.0 for the first real run.

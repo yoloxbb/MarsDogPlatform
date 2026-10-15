@@ -47,7 +47,7 @@ def until(predicate, timeout=10):
 ])
 def test_behavior_navigation_chain(monkeypatch, tmp_path, scenario):
     assert os.environ.get("ROS_LOCALHOST_ONLY") == "1"
-    assert os.environ.get("ROS_DOMAIN_ID") == "89"
+    assert os.environ.get("ROS_DOMAIN_ID") == "213"
     assert wire.rclpy is not None
     from marsdog_action_executor import ros_node
     from marsdog_behavior.action_client_adapter import ActionClientAdapter
@@ -130,7 +130,7 @@ def test_behavior_navigation_chain(monkeypatch, tmp_path, scenario):
             stage["candidates"] = [c for c in stage["candidates"] if c["unit_id"] == unit]
             assert len(stage["candidates"]) == 1
         case.executor.add_node(action)
-        adapter = ActionClientAdapter(case.client_node, "/execute_behavior")
+        adapter = ActionClientAdapter(case.client_node, "/action/execute_behavior")
         assert adapter._client.wait_for_server(timeout_sec=5)
         behavior = "walk_to_random_point" if scenario == "complete_behavior" else "go_home"
         active = ActiveBehavior("chain-" + scenario, behavior, 1, 1.0, 1.0, "Energy")

@@ -12,11 +12,17 @@ import argparse
 import json
 from pathlib import Path
 import statistics
+import sys
 import time
 from typing import Any
 
 import cv2
 import numpy as np
+
+# Allow direct invocation from any working directory in a source checkout.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from marsdog_vision_interaction.utils.model_paths import vision_model_directory
 
 from marsdog_vision_interaction.providers.pose_backends import create_pose_backend
 
@@ -27,7 +33,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--model",
         type=Path,
-        default=Path(__file__).resolve().parents[2] / "models" / "vision" / "yolov8n-pose-fp16.rknn",
+        default=vision_model_directory(__file__) / "yolov8n-pose-fp16.rknn",
     )
     parser.add_argument("--video", type=Path, help="Optional video instead of repeated still frames")
     parser.add_argument("--frames", type=int, default=30)

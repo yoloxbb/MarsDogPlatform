@@ -17,7 +17,7 @@ ROAM_STATES = {
 
 class UwbRoamAdapter:
     def __init__(self, *, node=None, backend, should_stop=lambda: False,
-                 action_name="/go2/random_roam", client=None, goal_factory=None,
+                 action_name="/motion/random_roam", client=None, goal_factory=None,
                  brake_ready=lambda: True, brake_chain=lambda: True,
                  arm_chain=lambda: True):
         self._backend = backend

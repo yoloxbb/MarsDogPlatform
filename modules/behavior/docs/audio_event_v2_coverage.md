@@ -53,7 +53,7 @@ Tree 当前有 28 个基础音频执行入口：硬件 `EVT_VOICE_WAKEUP`、22 �
 另新增非核心词库指令 `PLAY_ALONE`（“自己去玩吧”）：
 `EVT_VOICE_COMMAND_PLAY_ALONE` + `CMD_PLAY_ALONE` → `command_play_alone` →
 `play_alone`，去随机位置自己玩。Lv1，长期 Goal（`timeout_sec=0`），冷却 0.2 秒。
-Tree 与 Action 已对齐：Action 的 `uwb_roam` 阶段调用 `/go2/random_roam`，
+Tree 与 Action 已对齐：Action 的 `uwb_roam` 阶段调用 `/motion/random_roam`，
 成功到点并确认停稳后进入 `play` 阶段，随机执行一个姿态动作，然后在同一 Goal 内重复。
 当前仅支持 Lite3 且 `uwb_follow_enabled=true`；实机联调仍需验证。
 
@@ -162,7 +162,7 @@ WAIT、RETURN、BRING、FETCH、STOP 五个兼容入口；硬件 WAKEUP 也不�
 Voice 目录里的 `action_name=ACT_*` 是参考动作名，Action 使用自身正式单元。本批
 新行为已建立独立的 `ACT_NAV_* / ACT_BASIC_* / ACT_CONTROL_* / ACT_INTERACT_*`
 映射；仍不能把 Voice 的 `action_name` 直接塞入
-`/execute_behavior.behavior_name`。
+`/action/execute_behavior.behavior_name`。
 
 `walk_to_random_point`、`go_out_to_play` 和 `go_home` 依赖 Action Nav2 配置，控制器
 不可用时失败关闭。演示配置中 GO_OUT 与 WALK 共用随机可导航区域，GO_HOME 暂复用

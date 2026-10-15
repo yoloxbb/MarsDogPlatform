@@ -1,22 +1,13 @@
-# Platform amendment: explicit operator recovery release
+# 当前协议补充：人工解除恢复锁
 
-This amendment supersedes any legacy instruction below that uses ordinary
-`cancel` to release a recovery lock. Approved on 2026-09-28.
+本节保留 2026-09-28 已批准的行为，优先于旧部署中用普通 cancel 解除恢复锁的做法；2026-10-11 对照当前代码核对。
 
-- `cancel` in RECOVERY_REQUIRED records cancellation intent and retains the lock;
-  only a confirmed Nav2 terminal result can resolve it automatically.
-- Explicit operator operation: task_type=`release_recovery`, with params_json
-  containing protocol_version="1.0", client_id="marsdog_action_executor",
-  target_task_id, and operator_confirmed_stopped=true (a JSON boolean).
-- The operator must first verify that the robot is stopped. This field is an
-  attestation, not authentication or a physical stop detector. Automated clients
-  must never generate this operation. Existing transport has no operator auth.
-- Missing/false/non-boolean confirmation: OPERATOR_CONFIRMATION_REQUIRED.
-  Non-recovery active task: NOT_IN_RECOVERY. Existing ownership/active/terminal
-  checks still apply. Success emits INTERRUPTED/RECOVERY_RELEASED, never success
-  or Nav2-confirmed cancellation. Status is persisted before the lock is released.
-- Deploy the updated Action parser with this server. Historical Action versions
-  reject RECOVERY_RELEASED. ROS service type and endpoint remain unchanged.
+- RECOVERY_REQUIRED 中普通 `cancel` 只记录取消意图并保留锁；确认 Nav2 真实终态才能自动解除。
+- 人工操作使用 `task_type=release_recovery`，params_json 包含协议版本 `1.0`、client_id=`marsdog_action_executor`、`target_task_id` 和严格 JSON 布尔值 `operator_confirmed_stopped=true`。
+- 操作员须先独立确认机器人已停止。该字段是人工声明，不是身份认证或物理停车检测；当前传输没有操作员鉴权，自动客户端不得生成此操作。
+- 确认缺失、false 或不是布尔值：OPERATOR_CONFIRMATION_REQUIRED；当前活动任务不在恢复态：NOT_IN_RECOVERY。原有所有权、活动任务与终态检查仍适用。
+- 释放成功先持久化 INTERRUPTED/RECOVERY_RELEASED，再解锁；不是导航成功，也不是 Nav2 确认的取消。
+- 上层 Action 解析器须支持 RECOVERY_RELEASED，旧版本会拒绝该结果；ROS 服务类型和端点保持原样。
 
 ---
 
@@ -34,11 +25,11 @@ This amendment supersedes any legacy instruction below that uses ordinary
 
 | 用途 | 名称 | 类型 |
 |---|---|---|
-| 导航、取消、查询 | `/waypoint_nav/task` | `marsdog_voice_interaction/srv/VoiceTask` |
-| 状态 | `/waypoint_nav/status` | `std_msgs/msg/String`，JSON |
-| 已校验点位标记 | `/waypoint_nav/markers` | `visualization_msgs/msg/MarkerArray` |
+| 导航、取消、查询、人工恢复释放 | `/navigation/task` | `marsdog_interfaces/srv/NavigationTask` |
+| 状态 | `/navigation/status` | `std_msgs/msg/String`，JSON |
+| 已校验点位标记 | `/navigation/markers` | `visualization_msgs/msg/MarkerArray` |
 
-继续复用板端已有的 `VoiceTask`，不新增接口包。Service 字段为：
+使用公共包 `marsdog_interfaces` 的 `NavigationTask`；需先编译并加载该接口包。表中名称为根 namespace 下的默认解析结果；本包不启动 Nav2 或地点编辑网页。Service 字段为：
 
 ```text
 string task_id
@@ -266,7 +257,7 @@ goal UUID 和发送意图，然后调用 `ActionClient.send_goal_async`。
 - `STATUS_UNKNOWN` 不能证明目标已停止，保持阻塞，新导航被拒绝。
 
 遇到长期 `RECOVERY_BLOCKED`，需在板端独立确认原 Nav2 目标已停止并
-完成安全处置；当前 v1 没有自动解除未知目标阻塞的管理接口。
+完成安全处置；随后可按本文开头协议执行人工 `release_recovery`。普通 cancel 不解除锁，也不会自动把 UNKNOWN 当成已停止。
 完整终态过期时转为永久 tombstone，同一 task ID 永不重用。
 
 ## 板端联调门槛

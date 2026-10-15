@@ -295,7 +295,7 @@ map → odom → base_footprint → camera_color_optical_frame
 ```text
 response.success == true
 response.navigation_required == true
-response.navigation_goal.header.frame_id == "map"
+response.navigation_goal.header.frame_id == Nav2 使用的全局 frame（默认 "map"）
 ```
 
 Python 侧核心映射关系：
@@ -309,7 +309,8 @@ nav_action_client.send_goal_async(goal)
 ```
 
 这是一次固定目标导航。本节点不会继续更新目标；当前普通
-`robot_slam_bringup/nav.launch.py` 和 `navigate_to_pose_no_backup.xml` 可以直接处理。
+`robot_slam_bringup/nav.launch.py` 可以处理。行为树 `navigate_to_pose_no_backup.xml`
+虽然保留旧文件名，实际包含 `BackUp` 恢复，不应据文件名推断绝不移动脱困。
 
 ## 9. 启动和联调检查
 
@@ -317,9 +318,12 @@ nav_action_client.send_goal_async(goal)
 
 ```bash
 source /opt/ros/humble/setup.bash
-source /home/bird/robot_ws_leg_velocity/slam_ws/install/setup.bash
+source /home/marsdog/MarsDogPlatform/out/rk3588-robotics/install/local_setup.bash
 ros2 launch person_3d_localization person_3d_localization.launch.py
 ```
+
+本包源码在 `robotics/ros2/src/person_3d_localization`；上述安装前缀须先按
+[公共构建说明](../../../README.md) 编译生成。节点不会启动相机或 Nav2。
 
 调用服务前依次检查：
 

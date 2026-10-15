@@ -115,7 +115,7 @@ error_reason = "unsupported_behavior: '<name>'"
 | `interrupt_manager.py` | immediate / safe_point / non_interruptible |
 | `posture_manager.py` | 执行后的姿态状态更新 |
 | `result_evaluator.py` | 行为终态评估 |
-| `ros_node.py` | `/execute_behavior` ROS2 Action Server |
+| `ros_node.py` | `/action/execute_behavior` ROS2 Action Server |
 | `debug_publishers.py` | Goal / Feedback / Result 调试 JSON |
 
 ## 5. 主要数据结构
@@ -196,8 +196,8 @@ Go2 的 182 个动作有效路由为：171 个 `go2`、4 个
 
 `follow_owner` 的 `ACT_INTERACT_FOLLOW_OWNER` 按底盘走两条实现：Go2 走
 外接 FTDI + `local_follow` 进程管线，Lite3 则是
-`go2_uwb_behavior` 的 **Action/Service 客户端**（`/go2/follow_uwb` +
-`/go2/set_behavior`）——那条链自己拥有 `/cmd_vel`，所以本执行器在 Lite3 上
+`go2_uwb_behavior` 的 **Action/Service 客户端**（`/motion/follow_uwb` +
+`/motion/set_behavior`）——那条链自己拥有 `/cmd_vel`，所以本执行器在 Lite3 上
 一个进程都不起。两条实现共享同一套公开方法面，`ros_node` 按 `chassis_type`
 选一个注册为 `uwb_follow` 路由，上层调用点不区分底盘。
 
@@ -208,7 +208,7 @@ twist 动作打架。Lite3 后端因此把它计入 `lite3_control_conflict` 的
 接口细节、四终端部署与排障见
 [UWB_FOLLOW_ROS2_INTERFACE.md](UWB_FOLLOW_ROS2_INTERFACE.md)。
 
-`follow_owner` 由 Tree 作为长期 `/execute_behavior` Goal 派发，
+`follow_owner` 由 Tree 作为长期 `/action/execute_behavior` Goal 派发，
 `timeout_sec=0` 只取消外层截止时间；内层健康检查与停车确认仍有有限时限。
 Go2 或 Lite3 跟随只启动一次，Goal 期间持续反馈。语音 idle 不取消该 Goal。
 Tree 用 `/behavior/goal_lease` 按 `goal_id`/`behavior_id` 续租；续租失效则
@@ -217,7 +217,7 @@ Action 在此期间保持执行锁。Lv0 急停可直接制动，Lv1 安全行�
 抢占后不自动恢复跟随。
 
 启用语义点位导航后，`navigation_waypoints.yaml` 先按 `behavior_name` 选择
-`$HOME/.ros/waypoints.yaml` 中的精确地点名并调用 `/waypoint_nav/task`；只有匹配
+`$HOME/.ros/waypoints.yaml` 中的精确地点名并调用 `/navigation/task`；只有匹配
 task_id 的真实成功终态到达后，
 StageExecutor 才从原行为树候选中选择精确
 `ACT_*`。到点后按该动作 ID 调用 Go2 SportMode 或 Lite3 动作计划。
@@ -318,7 +318,7 @@ Feedback 恢复当前行为。
 正式接口：
 
 ```text
-/execute_behavior
+/action/execute_behavior
 marsdog_interfaces/action/ExecuteBehavior
 ```
 

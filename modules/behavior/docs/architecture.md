@@ -22,7 +22,7 @@ flowchart LR
         RM[ResultEventMapper]
     end
 
-    EX[marsdog_action_executor<br/>/execute_behavior Action Server]
+    EX[marsdog_action_executor<br/>/action/execute_behavior Action Server]
     CONSUMER[emotion / internal_need 等结果消费者]
 
     E -->|state + signal_event| IO
@@ -40,7 +40,7 @@ flowchart LR
 - `CandidatePool` 是线程安全的候选队列。它不会在每个 tick 丢弃未选候选。
 - `BehaviorRuntime` 负责候选仲裁、`ActiveBehavior` 转换、BT tick，以及 STARTED/终态观察。
 - `bionic_dog_bt` 是无 ROS2 依赖的执行状态机；抢占规则只有一份，位于 `arbitration.py`。
-- `ActionClientAdapter` 只做 `/execute_behavior` 的异步通信适配。
+- `ActionClientAdapter` 只做 `/action/execute_behavior` 的异步通信适配。
 - 动作序列和硬件控制属于下游 `marsdog_action_executor`，本项目只发送语义 `behavior_name`。
 
 ## 2. 上游输入

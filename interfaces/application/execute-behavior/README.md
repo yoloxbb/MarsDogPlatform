@@ -1,8 +1,8 @@
 # ExecuteBehavior 与结果结算
 
-公开类型 marsdog_interfaces/action/ExecuteBehavior，端点 /execute_behavior。
+公开类型 marsdog_interfaces/action/ExecuteBehavior，端点 /action/execute_behavior。
 权威字段见 [公开 IDL](../../ros2/marsdog_interfaces/action/ExecuteBehavior.action)；
-历史 Action 包 IDL 与兼容导入仍保留。本轮不更改字段、状态或超时约定。
+Action 包内旧 IDL 与兼容导入已删除，公共包是唯一类型来源。本轮不更改字段、状态或超时约定。
 
 Goal 保留 goal_id、behavior_id、behavior_name、priority_level、params_json、
 timeout_sec。params_json 的 object 校验发生在接受前，异常 accepted 回调仍走原保护。

@@ -15,6 +15,7 @@ find_package(diagnostic_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rcl_interfaces REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(stereo_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -39,6 +40,7 @@ target_include_directories(follow_control_core PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 target_compile_features(follow_control_core PUBLIC cxx_std_17)
+set_target_properties(follow_control_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 add_library(local_planner_core
   src/local_planner_core.cpp
@@ -142,6 +144,7 @@ ament_target_dependencies(local_velocity_planner_node
   geometry_msgs
   nav_msgs
   rclcpp
+  rcl_interfaces
   sensor_msgs
 )
 

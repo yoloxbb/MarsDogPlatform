@@ -5,8 +5,8 @@ enabled: false
 # routes send the reserved target K so waypoint_nav generates a safe target
 # from the current /map.
 waypoint_nav:
-  service_name: /waypoint_nav/task
-  status_topic: /waypoint_nav/status
+  service_name: /navigation/task
+  status_topic: /navigation/status
   protocol_version: "1.0"
   client_id: marsdog_action_executor
   service_timeout_sec: 5.0

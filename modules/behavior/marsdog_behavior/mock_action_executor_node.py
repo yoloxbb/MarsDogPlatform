@@ -4,7 +4,7 @@
    The standalone action executor project replaces this entirely.
    This file is only kept for colcon entry point registration.
 
-Provides the /execute_behavior ROS2 Action server.
+Provides the /action/execute_behavior ROS2 Action server.
 Simulates long-running behavior execution with step-by-step progress.
 
 In production, this node would be replaced by a real action executor
@@ -105,14 +105,14 @@ class _ActiveGoal:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class MockActionExecutorNode(NodeBase):
-    """ROS2 Node providing the /execute_behavior Action Server.
+    """ROS2 Node providing the /action/execute_behavior Action Server.
 
     Accepts behavior execution goals, simulates step-by-step progress,
     and returns results. In production, this would be replaced by a node
     that drives real hardware.
     """
 
-    ACTION_NAME = "/execute_behavior"
+    ACTION_NAME = "/action/execute_behavior"
     TICK_RATE = 0.1  # 10Hz internal tick
 
     def __init__(self, node_name: str = "action_executor_node"):
@@ -136,7 +136,7 @@ class MockActionExecutorNode(NodeBase):
     # ── ROS2 Action Server setup ─────────────────────────────────────────────
 
     def _setup_ros2_action_server(self):
-        """Create ROS2 Action Server for /execute_behavior.
+        """Create ROS2 Action Server for /action/execute_behavior.
 
         Uses explicit goal/feedback/result callbacks so the mock execution
         engine drives the ROS2 Action feedback and result lifecycle.

@@ -1,0 +1,67 @@
+# Initial deployment profile. Minimum speed / deceleration below are inherited
+# OFFLINE placeholders, not Lingmao measurements. Real motion requires a separate
+# chassis_params_file with measured overrides (checked by the roundtrip launch).
+local_motion_server:
+  ros__parameters:
+    enable_motion: false
+    base_frame: base_footprint
+    odom_frame: odom
+    odom_child_frame: base_link
+    odom_topic: /odom
+    max_linear_speed: 1.0
+    min_linear_speed: 0.25
+    max_angular_speed: 1.2
+    min_stand_off_distance: 0.50
+    max_goal_distance: 10.0
+    robot_radius: 0.48
+    strict_target_arrival: true
+    allow_unbounded_approach: true
+    use_uwb_follow_control: true
+    target_arrival_samples: 5
+    target_braking_decel: 0.70
+    target_reaction_sec: 0.20
+    target_position_margin_m: 0.08
+
+local_velocity_planner_node:
+  ros__parameters:
+    # Conservative envelope derived from the current Lingmao navigation profile.
+    robot_length: 0.76
+    robot_width: 0.46
+    safety_margin: 0.02
+    min_linear_speed: 0.25
+    max_linear_speed: 1.0
+    max_angular_speed: 1.2
+    min_avoidance_angular_speed: 0.30
+    max_avoidance_angular_speed: 1.2
+    max_linear_accel: 0.50
+    max_linear_decel: 0.70
+    max_angular_accel: 1.0
+    enable_emergency_reverse: true
+    emergency_reverse_speed: 0.30
+    decision_topic: /robot_local_motion/planner_decision
+
+uwb_roundtrip_demo:
+  ros__parameters:
+    enable_motion: false
+    autostart: false
+    dwell_sec: 3.0
+    # Zero removes only the approach travel deadline; loss/progress/stop guards remain.
+    approach_timeout_sec: 0.0
+    acquire_timeout_sec: 20.0
+    frisbee_distance_m: 0.8
+    owner_distance_m: 1.0
+    max_linear_speed: 1.0
+    max_angular_speed: 1.2
+    max_goal_distance: 10.0
+    target_source: uwb_multitag
+    action_name: /uwb_roundtrip/local_motion/execute
+
+uwb_follow_controller_node:
+  ros__parameters:
+    # Full original controller; only role distance and pause state change at runtime.
+    follow_distance: 0.8
+    tracking_enabled: false
+    max_linear_speed: 1.0
+    max_angular_speed: 1.2
+    blind_rotation_max_speed: 1.2
+    max_target_distance: 10.0

@@ -27,12 +27,12 @@ Domain 1。否则页面可能看到一套行为节点，而动作执行器或底
 |---|---|---|---|---|
 | Voice 节点 | MarsDogVoiceInteraction | 麦克风音频 | `/perception/audio_event` | 生成 `EVT_VOICE_*` 事件；例如唤醒词及声源角度 |
 | Vision 节点 | MarsDogVisionInteraction | 相机图像/深度 | `/perception/visual_event`、`/perception/vision/object_detections`、`/perception/vision/task` | 生成人、动物、物体及手势观测，为闭环接近提供目标数据 |
-| `marsdog_behavior` | MarsDogTree | Voice/Vision/状态事件 | `/execute_behavior` Action Goal、`/behavior/attention_tracking` | 把上游事件映射为行为候选，仲裁优先级并派发精确 `behavior_name` |
-| `action_executor_node` | MarsDogAction | `/execute_behavior`，可选的视觉/跟踪输入 | 三个 `/debug/execute_behavior/*` Topic；可选 `/cmd_vel`、waypoint_nav/Nav2 调用 | 校验行为、选择每个 Stage 的 `ACT_*`、执行控制器并返回终态 |
+| `marsdog_behavior` | MarsDogTree | Voice/Vision/状态事件 | `/action/execute_behavior` Action Goal、`/behavior/attention_tracking` | 把上游事件映射为行为候选，仲裁优先级并派发精确 `behavior_name` |
+| `action_executor_node` | MarsDogAction | `/action/execute_behavior`，可选的视觉/跟踪输入 | 三个 `/debug/execute_behavior/*` Topic；可选 `/cmd_vel`、waypoint_nav/Nav2 调用 | 校验行为、选择每个 Stage 的 `ACT_*`、执行控制器并返回终态 |
 | `rosbridge_websocket` | rosbridge_suite | ROS2 Action/Topic | WebSocket JSON | ROS2 与外部网页之间的协议桥；不做业务决策 |
 | 外部 2D 页面 | Web/仿真程序 | rosbridge WebSocket | 页面状态、动画；可选 Action Goal/Cancel | 按 `goal_id` 展示行为生命周期，按 `current_action` 选择动画 |
 | Go2/Lite3 底盘驱动 | 底盘节点 | SportMode 或 `/cmd_vel`、`/simple_cmd` | 底盘实际运动及自身状态 | 执行速度或姿态指令；不是页面动画的数据源 |
-| waypoint_nav / Nav2 | 点位导航、Nav2 | `/waypoint_nav/task`、`/spin` | `/waypoint_nav/status`、Nav2 result、底盘控制 | 完成 YAML 精确地点名/`K` 随机目标导航和动态声源朝向 |
+| waypoint_nav / Nav2 | 点位导航、Nav2 | `/navigation/task`、`/spin` | `/navigation/status`、Nav2 result、底盘控制 | 完成 YAML 精确地点名/`K` 随机目标导航和动态声源朝向 |
 | Go2 UWB 跟随节点组 | `uwb_aoa_pkg`、`go2_uwb_local_follow` | UWB 串口、双目、里程计 | `/cmd_vel` | 仅 `chassis_type:=go2`；完成定位跟随、障碍感知和局部规划 |
 
 节点名以运行时实际启动配置为准；表中的 Topic/Action 名才是跨模块稳定边界。
@@ -46,7 +46,7 @@ Domain 1。否则页面可能看到一套行为节点，而动作执行器或底
 Voice / Vision / 状态生产者
   -> EVT_* 事件
   -> marsdog_behavior：映射、候选去重、优先级仲裁
-  -> /execute_behavior Goal {goal_id, behavior_name, params_json, ...}
+  -> /action/execute_behavior Goal {goal_id, behavior_name, params_json, ...}
   -> action_executor_node
        -> behavior_name -> ordered stages -> selected ACT_*
        -> controller route -> /cmd_vel、waypoint_nav 或 Nav2 /spin
@@ -60,7 +60,7 @@ Voice / Vision / 状态生产者
 ```text
 外部 2D 页面
   -> rosbridge Action client
-  -> /execute_behavior Goal
+  -> /action/execute_behavior Goal
   -> action_executor_node
   -> Debug Goal / Feedback / Result
   -> rosbridge
@@ -103,7 +103,7 @@ MarsDogTree 配置维护，不应在 Action 或页面中复制一份：
 
 | 用途 | ROS2 接口 | 类型 | 页面使用建议 |
 |---|---|---|---|
-| 发起/取消行为 | `/execute_behavior` | `marsdog_interfaces/action/ExecuteBehavior` | 正式业务接口 |
+| 发起/取消行为 | `/action/execute_behavior` | `marsdog_interfaces/action/ExecuteBehavior` | 正式业务接口 |
 | Goal 可视化 | `/debug/execute_behavior/goal` | `std_msgs/msg/String` | 调试订阅 |
 | Stage/动作/进度 | `/debug/execute_behavior/feedback` | `std_msgs/msg/String` | 当前页面展示接口 |
 | 终态可视化 | `/debug/execute_behavior/result` | `std_msgs/msg/String` | 当前页面展示接口 |
@@ -132,7 +132,7 @@ function onRosbridgeMessage(envelope) {
 `/spin` 让车头朝向声源。页面不要自行换算角度或直接调用 `/spin`。
 
 启用导航适配层后，睡眠、清洁、进食、排泄和充电等已配置行为会通过
-`/waypoint_nav/task` 先导航到 YAML 中的精确地点名；随机行为则提交保留目标
+`/navigation/task` 先导航到 YAML 中的精确地点名；随机行为则提交保留目标
 `K`。导航成功后再执行原行为树 Stage 对应的平台动作。页面仍只发送
 `ExecuteBehavior.Goal`，不要直接调用点位 Service 或发布 `/goal_pose`。点位与行为
 范围见 [waypoint_nav 点位适配说明](NAV2_WAYPOINT_INTEGRATION.md)。
@@ -178,7 +178,7 @@ float64 timeout_sec
 
 ```bash
 ros2 action send_goal --feedback \
-  /execute_behavior \
+  /action/execute_behavior \
   marsdog_interfaces/action/ExecuteBehavior \
   "{goal_id: 'sim-0001', behavior_id: 'ui-0001', \
     behavior_name: 'sit_down', priority_level: 5, \
@@ -584,7 +584,7 @@ Goal 被接受到首个 Feedback 之间应保持“执行中/导航中”，不�
 
 `ACT_INTERACT_FOLLOW_OWNER` 不是开环代理动作。`follow_owner` 的
 `timeout_sec=0` Goal 在 Go2 上持有外部 UWB 进程链，在 Lite3 上持有
-`/go2/follow_uwb` 内层 Action；持续 Feedback 和真实取消 Result 都属同一 Goal。
+`/motion/follow_uwb` 内层 Action；持续 Feedback 和真实取消 Result 都属同一 Goal。
 页面只按 `follow_owner` 与 `ACT_INTERACT_FOLLOW_OWNER` 展示，无需直连 UWB。
 页面直接发送有界 Goal 时仍可用 `config/action_catalog.yaml` 的 15 秒动作预算，
 Goal 的 `timeout_sec` 应大于该值。直接发送 `timeout_sec=0` 的长期 Goal 时，
@@ -615,7 +615,7 @@ Goal 的 `timeout_sec` 应大于该值。直接发送 `timeout_sec=0` 的长期 
 
 ## 9. 联调检查清单
 
-- [ ] `ros2 action info /execute_behavior` 能看到 Action Server。
+- [ ] `ros2 action info /action/execute_behavior` 能看到 Action Server。
 - [ ] 页面生成唯一 `goal_id` 和 `behavior_id`。
 - [ ] `params_json` 是字符串形式的合法 JSON。
 - [ ] Goal、Feedback、Result 能按 `goal_id` 关联。

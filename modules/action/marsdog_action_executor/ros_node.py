@@ -1,6 +1,6 @@
 """ROS2 Action Server node for the MarsDog action executor.
 
-Provides the ``/execute_behavior`` Action Server and optional debug topics.
+Provides the ``/action/execute_behavior`` Action Server and optional debug topics.
 
 Architecture (v2)::
 
@@ -19,7 +19,7 @@ Architecture (v2)::
     ResultEvaluator    ← behavior-level success condition
 
 Key interfaces:
-  - Action Server: ``/execute_behavior`` (marsdog_interfaces/action/ExecuteBehavior)
+  - Action Server: ``/action/execute_behavior`` (marsdog_interfaces/action/ExecuteBehavior)
   - Debug topics:   ``/debug/execute_behavior/goal|feedback|result``
 
 Run via::
@@ -32,7 +32,10 @@ from __future__ import annotations
 from marsdog_observability import configure, bind_context, emit, get_logger
 
 from .telemetry import goal_fields
+from .motion_ownership import MotionOwnership
 from . import goal_execution
+from .motion_ownership import MotionOwnership
+from . import goal_execution_adapter
 
 from . import goal_lifecycle
 
@@ -91,6 +94,7 @@ from .adapters.stationary_expression_adapter import (
 from .adapters.uwb_follow_adapter import UwbFollowAdapter
 from .adapters.uwb_follow_action_adapter import UwbFollowActionAdapter
 from .adapters.uwb_roam_adapter import UwbRoamAdapter
+from .adapters.local_motion_adapter import LocalMotionAdapter
 from .behavior_resolver import BehaviorResolver
 from .config_loader import ConfigLoader, installed_config_dir
 from .debug_publishers import DebugPublishers
@@ -260,12 +264,14 @@ if HAS_ROS2:
     class ActionExecutorNode(Node):
         """ROS2 node wrapping the v2 execution pipeline.
 
-        Action Server: ``/execute_behavior``
+        Action Server: ``/action/execute_behavior``
         Debug Topics:  ``/debug/execute_behavior/goal|feedback|result``
         """
 
         def __init__(self) -> None:
             super().__init__("action_executor_node")
+            self._motion_ownership = MotionOwnership()
+            self._goal_motion_leases = {}
             configure("action")
             self.get_logger().info(
                 "ROS transport: "
@@ -629,12 +635,12 @@ if HAS_ROS2:
                         node=self,
                         follow_action=str(
                             ros_interface.get(
-                                "follow_action", "/go2/follow_uwb"
+                                "follow_action", "/motion/follow_uwb"
                             )
                         ),
                         set_behavior_service=str(
                             ros_interface.get(
-                                "set_behavior_service", "/go2/set_behavior"
+                                "set_behavior_service", "/motion/set_behavior"
                             )
                         ),
                         server_timeout_sec=float(
@@ -655,9 +661,9 @@ if HAS_ROS2:
                     self.get_logger().info(
                         "go2_uwb_behavior follow client ready: "
                         f"action="
-                        f"{ros_interface.get('follow_action', '/go2/follow_uwb')}, "
+                        f"{ros_interface.get('follow_action', '/motion/follow_uwb')}, "
                         f"service="
-                        f"{ros_interface.get('set_behavior_service', '/go2/set_behavior')}"
+                        f"{ros_interface.get('set_behavior_service', '/motion/set_behavior')}"
                     )
                 else:
                     self._uwb_follow_adapter = UwbFollowAdapter(
@@ -955,11 +961,11 @@ if HAS_ROS2:
             waypoint_nav_config = navigation_config.get("waypoint_nav", {})
             self.declare_parameter(
                 "waypoint_nav_service_name",
-                str(waypoint_nav_config.get("service_name", "/waypoint_nav/task")),
+                str(waypoint_nav_config.get("service_name", "/navigation/task")),
             )
             self.declare_parameter(
                 "waypoint_nav_status_topic",
-                str(waypoint_nav_config.get("status_topic", "/waypoint_nav/status")),
+                str(waypoint_nav_config.get("status_topic", "/navigation/status")),
             )
             self.declare_parameter(
                 "waypoint_nav_protocol_version",
@@ -1489,6 +1495,41 @@ if HAS_ROS2:
                     "chassis backend"
                 )
 
+            # Opt-in client: reuse the selected chassis backend, keeping /cmd_vel
+            # publication in Action and consuming only stamped isolated commands.
+            local_config = self._config.local_motion_config
+            self._local_motion_adapter = None
+            if local_config.get('enabled', False):
+                if self._chassis_backend is None:
+                    raise RuntimeError('local_motion requires a selected chassis backend')
+                self._local_motion_adapter = LocalMotionAdapter(
+                    node=self, backend=self._chassis_backend,
+                    allowed_units=local_config['allowed_units'],
+                    action_name=local_config['action_name'],
+                    command_topic=local_config['command_topic'],
+                    base_frame=local_config['base_frame'],
+                    should_stop=lambda: self._interrupt.cancel_requested)
+                controller_adapters['local_motion'] = self._local_motion_adapter
+                from robot_local_motion.srv import ReleaseRecovery
+                def release_local_motion(request, response):
+                    response.released = bool(request.confirm_release and self._local_motion_adapter.recover())
+                    response.message = 'released' if response.released else 'local motion stop or chassis settlement is unconfirmed'
+                    return response
+                self._local_motion_recovery_service = self.create_service(
+                    ReleaseRecovery, '/action/local_motion_release_recovery', release_local_motion,
+                    callback_group=ReentrantCallbackGroup())
+
+            from .adapters.geometry_approach_transport import GeometryApproachTransport
+            self._approach_navigation_adapter = None
+            if self._twist_publisher is not None and VisionTask is not None:
+                self._approach_navigation_adapter = PersonNavApproachAdapter(
+                    GeometryApproachTransport(self, local_adapter=self._local_motion_adapter,
+                        nav_action=str(self.get_parameter("navigation_action_name").value)),
+                    self._twist_publisher, should_stop=lambda: self._interrupt.cancel_requested,
+                    chassis_backend=self._chassis_backend, allow_bound_target=True)
+                controller_adapters['approach_navigation'] = self._approach_navigation_adapter
+            self._approach_adapters = controller_adapters
+
             self._stage_executor = StageExecutor(
                 eligibility_checker=self._eligibility,
                 posture_manager=self._posture,
@@ -1633,7 +1674,7 @@ if HAS_ROS2:
             )
 
             # ── Debug publishers ────────────────────────────────────────
-            self._debug = DebugPublishers(self, enable_legacy=False)
+            self._debug = DebugPublishers(self)
 
             # ── Action Server ───────────────────────────────────────────
             self._action_callback_group = ReentrantCallbackGroup()
@@ -1648,7 +1689,7 @@ if HAS_ROS2:
                 self._action_server = ActionServer(
                     self,
                     _ExecuteBehavior,
-                    "/execute_behavior",
+                    "/action/execute_behavior",
                     execute_callback=self._on_execute,
                     goal_callback=self._on_goal,
                     cancel_callback=self._on_cancel,
@@ -1656,12 +1697,12 @@ if HAS_ROS2:
                     callback_group=self._action_callback_group,
                 )
                 self.get_logger().info(
-                    f"Action Server /execute_behavior started "
+                    f"Action Server /action/execute_behavior started "
                     f"(action from {action_source})."
                 )
 
             self.get_logger().info(
-                "ActionExecutorNode (v2) started — sole /execute_behavior server. "
+                "ActionExecutorNode (v2) started — sole /action/execute_behavior server. "
                 "Ensure no other marsdog_action_executor instance is running."
             )
 
@@ -1783,6 +1824,13 @@ if HAS_ROS2:
                         self._behavior_execution_lock.release()
 
         def _on_visual_event(self, message) -> None:
+            approach = getattr(self, '_approach_navigation_adapter', None)
+            if approach is not None:
+                try:
+                    payload = json.loads(message.data)
+                except (ValueError, TypeError):
+                    payload = None
+                approach.update_visual(payload if isinstance(payload, dict) else {})
             if not _dispatch_visual_event(
                 message.data,
                 attention_controller=self._attention_controller,
@@ -1821,6 +1869,8 @@ if HAS_ROS2:
                 return
             if getattr(getattr(self, "_uwb_roam_adapter", None), "active", False):
                 return
+            if getattr(getattr(self, '_local_motion_adapter', None), 'active', False):
+                return
             # Hold the same ownership mutex used by foreground behaviors across
             # both command calculation and publication.  This closes the
             # check-then-publish race where an old attention command could land
@@ -1848,7 +1898,7 @@ if HAS_ROS2:
                 started = time.monotonic()
                 emit("action.execution.started", goal_fields(goal_handle.request), kind="lifecycle")
                 try:
-                    result = await goal_execution.on_execute(self, goal_handle, make_result=_make_result)
+                    result = await goal_execution.on_execute(goal_execution_adapter.for_node(self), goal_handle, make_result=_make_result)
                 except Exception:
                     get_logger(__name__).exception("Action execution callback raised",
                         extra={"marsdog_event": "action.execution.crashed", "marsdog_kind": "lifecycle"})
@@ -1861,16 +1911,16 @@ if HAS_ROS2:
                 return result
 
         async def _execute_behavior(self, goal_handle):
-            return await goal_execution.execute_behavior(self, goal_handle, make_result=_make_result)
+            return await goal_execution.execute_behavior(goal_execution_adapter.for_node(self), goal_handle, make_result=_make_result)
 
         def _execute_long_behavior(
             self, goal_handle, ctx: ExecutionContext, stages: list[dict],
             started_wall: float,
         ):
-            return goal_execution.execute_long_behavior(self, goal_handle, ctx, stages, started_wall, make_result=_make_result)
+            return goal_execution.execute_long_behavior(goal_execution_adapter.for_node(self), goal_handle, ctx, stages, started_wall, make_result=_make_result)
 
         def _execute_emergency_stop(self, goal_handle):
-            return goal_execution.execute_emergency_stop(self, goal_handle, make_result=_make_result)
+            return goal_execution.execute_emergency_stop(goal_execution_adapter.for_node(self), goal_handle, make_result=_make_result)
 
         # ── Helpers ────────────────────────────────────────────────────
 
@@ -1962,6 +2012,12 @@ def main(args: list[str] | None = None) -> None:
         # skips this path; the external supervisor must stop the chassis then.
         node._interrupt.request_cancel()
         roam = getattr(node, "_uwb_roam_adapter", None)
+        approach = getattr(node, '_approach_navigation_adapter', None)
+        if approach is not None:
+            approach.cancel_task()
+        local_motion = getattr(node, '_local_motion_adapter', None)
+        if local_motion is not None:
+            local_motion.request_cancel()
         if roam is not None:
             roam.cancel_step()
         if node._uwb_follow_adapter is not None:

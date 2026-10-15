@@ -1,4 +1,5 @@
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import json
 import logging
 from pathlib import Path
@@ -165,6 +166,58 @@ class LogTests(unittest.TestCase):
         rows = [r for r in self.rows() if r["event_name"] == "waiting"]
         self.assertEqual(len(rows), 2)
         self.assertNotIn("secret", json.dumps(rows))
+
+    def test_repeated_event_does_not_render_unchanged_message(self):
+        class Message:
+            renders = 0
+
+            def __str__(self):
+                self.renders += 1
+                return "waiting for readiness"
+
+        message = Message()
+        session = Session("behavior", self.path, "repeat-render")
+        try:
+            for _ in range(3):
+                self.assertTrue(session.record(
+                    "waiting", {"reason": "cooldown"},
+                    repeat_key="candidate", message=message))
+            self.assertEqual(message.renders, 1)
+            self.assertTrue(session.record(
+                "waiting", {"reason": "cancel"},
+                repeat_key="candidate", message=message))
+            self.assertEqual(message.renders, 2)
+            self.assertEqual(session.snapshot()["coalesced"], 2)
+        finally:
+            self.assertTrue(session.close())
+        rows = [r for r in self.rows() if r["event_name"] == "waiting"]
+        self.assertEqual([r["fields"]["reason"] for r in rows],
+                         ["cooldown", "cancel"])
+
+    def test_concurrent_repeated_events_are_written_once(self):
+        workers = 6
+        render_barrier = threading.Barrier(workers)
+
+        class Message:
+            def __str__(self):
+                # All callers pass the initial lookup before any can enqueue.
+                render_barrier.wait(timeout=3)
+                return "waiting for readiness"
+
+        session = Session("behavior", self.path, "repeat-race")
+        try:
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                results = list(executor.map(
+                    lambda _: session.record(
+                        "waiting", {"reason": "cooldown"},
+                        repeat_key="candidate", message=Message()),
+                    range(workers)))
+            self.assertEqual(results, [True] * workers)
+            self.assertEqual(session.snapshot()["coalesced"], workers - 1)
+        finally:
+            self.assertTrue(session.close())
+        rows = [r for r in self.rows() if r["event_name"] == "waiting"]
+        self.assertEqual(len(rows), 1)
 
     def test_fields_are_not_repeated_in_message_and_standard_kwargs_survive(self):
         logger = get_logger("compat")

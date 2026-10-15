@@ -1,4 +1,4 @@
-"""持久化点位导航节点；VoiceTask 只负责请求受理和状态查询。"""
+"""持久化点位导航节点；NavigationTask 只负责请求受理和状态查询。"""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from action_msgs.msg import GoalStatus
 from action_msgs.srv import CancelGoal
 from geometry_msgs.msg import PoseStamped
 from nav2_msgs.action import NavigateToPose
+from marsdog_interfaces.srv import NavigationTask
 from nav_msgs.msg import OccupancyGrid
 from rclpy.action import ActionClient
 from rclpy.node import Node
@@ -23,7 +24,6 @@ from rclpy.qos import QoSDurabilityPolicy, QoSProfile
 from std_msgs.msg import String
 from unique_identifier_msgs.msg import UUID
 from visualization_msgs.msg import Marker, MarkerArray
-from marsdog_voice_interaction.srv import VoiceTask
 
 from .matcher import (
     RANDOM_PLACE_ALIASES,
@@ -93,7 +93,6 @@ class WaypointNavDispatcher(Node):
         self.declare_parameter('nav_action_name', '/navigate_to_pose')
         self.declare_parameter('client_id', 'marsdog_action_executor')
         self.declare_parameter('random_clearance_m', 0.35)
-
         self._waypoints_path = str(self.get_parameter('waypoints_file').value)
         self._frame_id = str(self.get_parameter('frame_id').value)
         self._retention_sec = float(self.get_parameter('terminal_retention_sec').value)
@@ -133,17 +132,18 @@ class WaypointNavDispatcher(Node):
         self._recovery_query_sent = False
         self._last_cleanup = 0.0
         self._status_publisher = self.create_publisher(
-            String, 'waypoint_nav/status', 10)
+            String, 'navigation/status', 10)
         # latched：RViz 晚于发布订阅也能显示点位。
         self._marker_publisher = self.create_publisher(
-            MarkerArray, 'waypoint_nav/markers',
+            MarkerArray, 'navigation/markers',
             QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL))
         # ---- Service ----
-        self.create_service(VoiceTask, 'waypoint_nav/task', self._handle_task)
+        self._task_service = self.create_service(
+            NavigationTask, 'navigation/task', self._handle_task)
         self._recover_startup()
         self.create_timer(0.1, self._tick)
         self._ok(
-            f'VoiceTask 服务已就绪: waypoint_nav/task，支持 task_type: '
+            f'导航任务服务已就绪，支持 task_type: '
             f'{"、".join(SUPPORTED_TASKS)}')
 
         self.get_logger().info(
@@ -152,7 +152,7 @@ class WaypointNavDispatcher(Node):
     # ---------- RViz 点位标记 ----------
 
     def _publish_markers(self) -> None:
-        """发布点位箭头与 id 文本到 waypoint_nav/markers；仅校验通过后调用。"""
+        """发布点位箭头与 id 文本到 navigation/markers；仅校验通过后调用。"""
         if self._waypoints_file is None:
             return
         array = MarkerArray()
@@ -200,7 +200,7 @@ class WaypointNavDispatcher(Node):
             array.markers.append(text)
         self._marker_publisher.publish(array)
         self.get_logger().info(
-            f'点位标记已发布到 waypoint_nav/markers（{len(self._waypoints_file.waypoints)} 个地点）')
+            f'点位标记已发布到 navigation/markers（{len(self._waypoints_file.waypoints)} 个地点）')
 
     # ---------- 地点文件 ----------
 

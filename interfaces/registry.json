@@ -187,7 +187,7 @@
       "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics"
     },
     {
-      "name": "/execute_behavior",
+      "name": "/action/execute_behavior",
       "type": "marsdog_interfaces/action/ExecuteBehavior",
       "provider": "action",
       "consumers": [
@@ -200,27 +200,10 @@
       "verification": "Source registered; see local smoke for observed CPU endpoints",
       "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
       "idl": "interfaces/ros2/marsdog_interfaces/action/ExecuteBehavior.action",
-      "idl_sha256": "d1f89f9a4c953f1fc9472dacb3c4e7c0886eab1b03ad7a1d59242833254f0a9a"
+      "idl_sha256": "2854c124fd28b7af6ea751488cf2872d21b86d9673a22d53391996b3b5bd7751"
     },
     {
-      "name": "/waypoint_nav/task",
-      "type": "marsdog_voice_interaction/srv/VoiceTask",
-      "provider": "waypoint",
-      "consumers": [
-        "action"
-      ],
-      "evidence": [
-        "modules/action/marsdog_action_executor/ros_node.py",
-        "robotics/ros2/src/waypoint_nav/waypoint_nav/waypoint_nav_dispatcher.py"
-      ],
-      "verification": "Source registered; see local smoke for observed CPU endpoints",
-      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
-      "idl": "modules/voice/srv/VoiceTask.srv",
-      "idl_sha256": "0462429dcab62ab1d63a246d0de077b133660310f29402b03048b9e275bedac4",
-      "contract": "Legacy VoiceTask request/result JSON; cancel accepted is distinct from terminal confirmation and operator release"
-    },
-    {
-      "name": "/waypoint_nav/status",
+      "name": "/navigation/status",
       "type": "std_msgs/msg/String",
       "provider": "waypoint",
       "consumers": [
@@ -231,8 +214,8 @@
         "robotics/ros2/src/waypoint_nav/waypoint_nav/waypoint_nav_dispatcher.py"
       ],
       "verification": "Source registered; see local smoke for observed CPU endpoints",
-      "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics",
-      "contract": "Legacy VoiceTask request/result JSON; cancel accepted is distinct from terminal confirmation and operator release"
+      "compatibility": "Breaking endpoint migration; NavigationTask only. Request/status fields and cancellation lifecycle are unchanged.",
+      "contract": "Durable admission, query, cancel and recovery release; cancel acceptance is not terminal confirmation."
     },
     {
       "name": "/person_3d_localization/locate_from_bbox",
@@ -248,7 +231,7 @@
       "idl_sha256": "2686bcd67ad1c53c9e4e06de6479b045424a6296eae77c344485273428f167aa"
     },
     {
-      "name": "/go2/follow_uwb",
+      "name": "/motion/follow_uwb",
       "type": "go2_uwb_behavior/action/FollowUwb",
       "provider": "robot",
       "consumers": [
@@ -264,7 +247,7 @@
       "idl_sha256": "b33fd479bd75affb515173b7d8a769f6528cd39dce12e56ec9c9b404a7dd34a6"
     },
     {
-      "name": "/go2/random_roam",
+      "name": "/motion/random_roam",
       "type": "go2_uwb_behavior/action/RandomRoam",
       "provider": "robot",
       "consumers": [
@@ -280,7 +263,7 @@
       "idl_sha256": "5613f33fc99c81b9b767d1655230dbf0c11aaef5921eb360ba0d1bc6782502b2"
     },
     {
-      "name": "/go2/set_behavior",
+      "name": "/motion/set_behavior",
       "type": "go2_uwb_behavior/srv/SetBehavior",
       "provider": "robot",
       "consumers": [
@@ -322,6 +305,148 @@
       ],
       "verification": "Source registered; see local smoke for observed CPU endpoints",
       "compatibility": "Retain type identity and source-defined JSON/timeout/cancel semantics"
+    },
+    {
+      "provider": "robotics",
+      "evidence": [
+        "robotics/ros2/src/robot_local_motion/robot_local_motion/server.py",
+        "modules/action/marsdog_action_executor/adapters/local_motion_adapter.py"
+      ],
+      "idl_sha256": "5ab2ce4e800ad139f191691a0641c834a49d206282cc16ed2112c1e53df94930",
+      "name": "/robot_local_motion/execute",
+      "verification": "Opt-in task interface; CPU/DDS and hardware validation are reported separately",
+      "idl": "robotics/ros2/src/robot_local_motion/action/ExecuteLocalMotion.action",
+      "type": "robot_local_motion/action/ExecuteLocalMotion",
+      "compatibility": "Additive v1 interface; existing endpoint IDL, routes and defaults are preserved",
+      "consumers": [
+        "action",
+        "behavior"
+      ]
+    },
+    {
+      "provider": "robotics",
+      "evidence": [
+        "robotics/ros2/src/robot_local_motion/robot_local_motion/server.py",
+        "modules/action/marsdog_action_executor/adapters/local_motion_adapter.py"
+      ],
+      "idl_sha256": "191ed30dfc1ff92da359282763cb77dab6f0cfc7264c73b97876f4c7803065de",
+      "name": "/robot_local_motion/target",
+      "verification": "Opt-in task interface; CPU/DDS and hardware validation are reported separately",
+      "idl": "robotics/ros2/src/robot_local_motion/msg/TargetObservation.msg",
+      "type": "robot_local_motion/msg/TargetObservation",
+      "compatibility": "Additive v1 interface; existing endpoint IDL, routes and defaults are preserved",
+      "consumers": [
+        "action",
+        "behavior"
+      ]
+    },
+    {
+      "provider": "robotics",
+      "evidence": [
+        "robotics/ros2/src/robot_local_motion/robot_local_motion/server.py",
+        "modules/action/marsdog_action_executor/adapters/local_motion_adapter.py"
+      ],
+      "idl_sha256": "6bd4b932a0424e7a44a1d2caa7d158ffcbf9470d3df21a685368907531b7c273",
+      "name": "/robot_local_motion/release_recovery",
+      "verification": "Opt-in task interface; CPU/DDS and hardware validation are reported separately",
+      "idl": "robotics/ros2/src/robot_local_motion/srv/ReleaseRecovery.srv",
+      "type": "robot_local_motion/srv/ReleaseRecovery",
+      "compatibility": "Additive v1 interface; existing endpoint IDL, routes and defaults are preserved",
+      "consumers": [
+        "action",
+        "behavior"
+      ]
+    },
+    {
+      "provider": "action",
+      "evidence": [
+        "robotics/ros2/src/robot_local_motion/robot_local_motion/server.py",
+        "modules/action/marsdog_action_executor/adapters/local_motion_adapter.py"
+      ],
+      "idl_sha256": "6bd4b932a0424e7a44a1d2caa7d158ffcbf9470d3df21a685368907531b7c273",
+      "name": "/action/local_motion_release_recovery",
+      "verification": "Opt-in task interface; CPU/DDS and hardware validation are reported separately",
+      "idl": "robotics/ros2/src/robot_local_motion/srv/ReleaseRecovery.srv",
+      "type": "robot_local_motion/srv/ReleaseRecovery",
+      "compatibility": "Additive v1 interface; existing endpoint IDL, routes and defaults are preserved",
+      "consumers": [
+        "action",
+        "behavior"
+      ]
+    },
+    {
+      "name": "/navigation/task",
+      "type": "marsdog_interfaces/srv/NavigationTask",
+      "provider": "waypoint",
+      "consumers": [
+        "action"
+      ],
+      "evidence": [
+        "modules/action/marsdog_action_executor/ros_node.py",
+        "robotics/ros2/src/waypoint_nav/waypoint_nav/waypoint_nav_dispatcher.py"
+      ],
+      "verification": "Source registered; see local smoke for observed CPU endpoints",
+      "compatibility": "Breaking endpoint migration; NavigationTask only. Request/status fields and cancellation lifecycle are unchanged.",
+      "idl": "interfaces/ros2/marsdog_interfaces/srv/NavigationTask.srv",
+      "idl_sha256": "b6e6b826f99d238a18d387d77db370e523e7362e1f8cd4036dde2695752790bf",
+      "contract": "Durable admission, query, cancel and recovery release; cancel acceptance is not terminal confirmation."
+    },
+    {
+      "name": "/navigation/markers",
+      "type": "visualization_msgs/msg/MarkerArray",
+      "provider": "waypoint",
+      "consumers": [],
+      "evidence": [
+        "robotics/ros2/src/waypoint_nav/waypoint_nav/waypoint_nav_dispatcher.py"
+      ],
+      "compatibility": "Breaking endpoint migration; no legacy aliases. Message fields unchanged.",
+      "verification": "Source registered; validate using tools/check_navigation_slice.py."
+    },
+    {
+      "name": "/motion/orbit_uwb_once",
+      "type": "go2_uwb_behavior/action/OrbitUwbOnce",
+      "provider": "robot",
+      "consumers": [],
+      "evidence": [
+        "robotics/ros2/src/go2_uwb_behavior/src/uwb_behavior_controller_node.cpp"
+      ],
+      "compatibility": "Breaking endpoint migration; no legacy aliases. Message fields unchanged.",
+      "verification": "Source registered; validate using tools/check_navigation_slice.py.",
+      "idl": "robotics/ros2/src/go2_uwb_behavior/action/OrbitUwbOnce.action",
+      "idl_sha256": "e3d08f2d0915eb31039b09a3e9e7a780106f11cdcf3a265188d2a2e1fe14a5e9"
+    },
+    {
+      "name": "/motion/behavior_diagnostics",
+      "type": "diagnostic_msgs/msg/DiagnosticArray",
+      "provider": "robot",
+      "consumers": [],
+      "evidence": [
+        "robotics/ros2/src/go2_uwb_behavior/src/uwb_behavior_controller_node.cpp"
+      ],
+      "compatibility": "Breaking endpoint migration; no legacy aliases. Message fields unchanged.",
+      "verification": "Source registered; validate using tools/check_navigation_slice.py."
+    },
+    {
+      "name": "/motion/random_roam/target",
+      "type": "geometry_msgs/msg/PoseStamped",
+      "provider": "robot",
+      "consumers": [],
+      "evidence": [
+        "robotics/ros2/src/go2_uwb_behavior/src/uwb_behavior_controller_node.cpp"
+      ],
+      "compatibility": "Breaking endpoint migration; no legacy aliases. Message fields unchanged.",
+      "verification": "Source registered; validate using tools/check_navigation_slice.py."
+    },
+    {
+      "name": "/motion/random_roam/play_center",
+      "type": "geometry_msgs/msg/PoseStamped",
+      "provider": "robot",
+      "consumers": [],
+      "evidence": [
+        "robotics/ros2/src/go2_uwb_behavior/src/uwb_behavior_controller_node.cpp"
+      ],
+      "compatibility": "Breaking endpoint migration; no legacy aliases. Message fields unchanged.",
+      "verification": "Source registered; validate using tools/check_navigation_slice.py."
     }
   ]
 }

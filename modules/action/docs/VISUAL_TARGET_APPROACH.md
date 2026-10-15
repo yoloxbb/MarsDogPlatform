@@ -5,7 +5,7 @@
 针对小车，具有明确人、动物或物体目标的行为使用统一两阶段结构：
 
 ```text
-Tree /execute_behavior Goal
+Tree /action/execute_behavior Goal
   behavior_name + params_json.target
     -> target_approach Stage
        ACT_APPROACH_VISUAL_TARGET

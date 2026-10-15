@@ -104,6 +104,15 @@ class Session:
             fields = _safe({**_context.get(), **(fields or {})})
             key = (event_name, str(repeat_key)) if repeat_key is not None else None
             signature = json.dumps(fields, sort_keys=True, ensure_ascii=False) if key else None
+            if key:
+                with self.lock:
+                    if self.stop.is_set():
+                        return False
+                    if self.last.get(key) == signature:
+                        self.stats["coalesced"] += 1
+                        return True
+            # Recheck under the enqueue lock below: concurrent callers can
+            # both miss this lookup. Only accepted records suppress repeats.
             context = {key: fields.pop(key) for key in _IDS if key in fields}
             row = {"log_schema_version": 2, "timestamp": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
                    "monotonic_ns": time.monotonic_ns(), "host": self.host, "run_id": self.run_id,

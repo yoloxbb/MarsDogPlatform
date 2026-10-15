@@ -177,7 +177,7 @@
 <text x="260" y="616" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">behavior_tree_node</text>
 <text x="260" y="632" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">candidate pool · arbiter · 10 Hz tick</text>
 <rect x="504" y="584" width="272" height="72" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
-<text x="640" y="616" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">/execute_behavior</text>
+<text x="640" y="616" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">/action/execute_behavior</text>
 <text x="640" y="632" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">marsdog_interfaces · Action</text>
 <rect x="824" y="584" width="408" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
 <text x="1028" y="616" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">action_executor_node</text>
@@ -202,7 +202,7 @@
 <tr><td><code>/perception/visual_event</code></td><td>String (JSON v1)</td><td>BEST_EFFORT · depth 5</td><td><code>vision_interaction_node</code></td><td>行为树 · 情绪引擎</td><td>10 Hz 场景快照 + 边沿事件</td><td><b>是</b>（仅 FALL / STOP_GESTURE）</td></tr>
 <tr><td><code>/perception/tactile_event</code></td><td>String (JSON)</td><td>RELIABLE · depth 10</td><td><code>one1000_tactile_node</code></td><td>情绪引擎 · 需求引擎</td><td>触摸事件（20 种）</td><td>否</td></tr>
 <tr><td><code>/behavior/result_event</code></td><td>String (JSON)</td><td>RELIABLE · depth 10</td><td><code>behavior_tree_node</code></td><td>情绪引擎 · 需求引擎</td><td>行为结果 → 需求/情绪结算</td><td>否（不参与去重）</td></tr>
-<tr><td><code>/execute_behavior</code></td><td>ExecuteBehavior.action</td><td>Action</td><td>服务端 <code>action_executor_node</code></td><td>客户端 <code>behavior_tree_node</code></td><td>Goal / Feedback / Result 三段</td><td>—</td></tr>
+<tr><td><code>/action/execute_behavior</code></td><td>ExecuteBehavior.action</td><td>Action</td><td>服务端 <code>action_executor_node</code></td><td>客户端 <code>behavior_tree_node</code></td><td>Goal / Feedback / Result 三段</td><td>—</td></tr>
 <tr><td><code>/perception/vision/task</code></td><td>PerceptionTask (srv)</td><td>Service</td><td>服务端 <code>vision_interaction_node</code></td><td>客户端 <code>action_executor_node</code></td><td>16 种 task_type 租用</td><td>—</td></tr>
 <tr><td><code>/perception/vision/object_detections</code></td><td>String (JSON)</td><td>RELIABLE · depth 10</td><td><code>vision_interaction_node</code></td><td>Action 侧</td><td>YOLOE 检测结果</td><td>否</td></tr>
 <tr><td><code>/perception/vision/enrollment_event</code></td><td>String (JSON)</td><td>RELIABLE · depth 10</td><td><code>vision_interaction_node</code></td><td>人机界面</td><td>人脸录入进度</td><td>否</td></tr>
@@ -226,7 +226,7 @@
 <tr><td><code>vision_emotion</code></td><td><code>Marsdog configs/emotions.yaml</code></td><td>17</td><td>视觉情绪事件只进情绪引擎，不生成行为候选</td></tr>
 </tbody>
 </table></div>
-  <h3>表 3 · <code>/execute_behavior</code> 三段契约</h3>
+  <h3>表 3 · <code>/action/execute_behavior</code> 三段契约</h3>
   <div class="tw"><table class="rt">
 <thead><tr><th>段</th><th>字段</th><th>类型</th><th>说明</th></tr></thead>
 <tbody>

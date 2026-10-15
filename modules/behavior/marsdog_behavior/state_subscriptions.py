@@ -5,6 +5,7 @@ The ROS node supplies blackboard, candidate and asynchronous-resolution ports.
 """
 from __future__ import annotations
 import json
+from .state_input_order import accept_state_input
 from bionic_dog_bt.constants import EMOTION_V2_EVENT_TO_NAME, NEED_LEVEL_NORMAL, NEED_LEVEL_OVERFLOW, NEED_LEVEL_URGENT, NEED_V2_ACTIVE_LEVELS, NEED_V2_EVENT_TO_STATE
 
 def _is_json_number(value) -> bool:
@@ -186,6 +187,8 @@ def on_emotion_state_ros2(self, msg):
             )
 
         for update in updates:
+            if not accept_state_input(self, "emotion", update[0], data):
+                continue
             self._blackboard.emotion_module.update_state(*update)
             emotion_name, _, triggered, _, _ = update
             if not triggered:
@@ -266,6 +269,9 @@ def on_emotion_signal_ros2(self, msg):
         # candidate_inject/select/start are the INFO-level audit trail. The
         # raw ingress record remains available at DEBUG for contract checks.
         self._logger.debug(f"/emotion/signal_event: {event_type}")
+
+        if not accept_state_input(self, "emotion", emotion_name, data):
+            return
 
         # Bridge the gap before the next 1Hz state snapshot. Recovery is
         # still authoritative from /emotion/state.triggered=false.
@@ -410,6 +416,8 @@ def on_need_state_ros2(self, msg):
 
         # Validate the full snapshot before applying any entry.
         for update in updates:
+            if not accept_state_input(self, "need", update["name"], data):
+                continue
             existing = self._blackboard.need_module.get_need(update["name"])
             existing_event = existing.level_event if existing else None
             self._blackboard.need_module.update_state(**update)
@@ -524,6 +532,9 @@ def on_need_signal_ros2(self, msg):
 
         self._logger.debug(
             f"/internal_need/signal_event: {event_type} demand={demand} level={level}")
+
+        if not accept_state_input(self, "need", demand, data):
+            return
 
         triggered = level != NEED_LEVEL_NORMAL
         urgent = (

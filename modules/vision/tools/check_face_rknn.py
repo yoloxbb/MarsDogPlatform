@@ -72,7 +72,8 @@ def pipeline_smoke(config, model_dir, image, iterations):
         vision.start()
         objects.start()
         assert vision.available and all(s['ready'] for s in vision.face_model_status.values())
-        assert vision._pose_landmarker is not None and vision._hand_landmarker is not None
+        assert vision.pose_model_status.get("ready"), vision.pose_model_status
+        assert vision.hand_model_status.get("ready"), vision.hand_model_status
         vision.sync_enrolled_to_throttle()
         # Serialize all direct calls with the existing observation/model lock.
         def run_vision():
@@ -94,14 +95,19 @@ def pipeline_smoke(config, model_dir, image, iterations):
         objects.stop()
 
 
-def main():
+def _parser():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--config', type=Path, default=Path('config/vision.yaml'))
+    parser.add_argument('--config', type=Path, default=Path(__file__).resolve().parents[1] / 'config/vision.yaml')
     parser.add_argument('--model-dir', type=Path)
-    parser.add_argument('--images', type=Path, default=Path('data/faces'))
+    parser.add_argument('--images', type=Path, default=Path(__file__).resolve().parents[1] / 'data/faces')
     parser.add_argument('--iterations', type=int, default=50)
     parser.add_argument('--with-pipeline', action='store_true')
     parser.add_argument('--report', type=Path)
+    return parser
+
+
+def main():
+    parser = _parser()
     args = parser.parse_args()
     if args.iterations < 1:
         parser.error('--iterations must be positive')

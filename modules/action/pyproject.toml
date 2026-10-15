@@ -26,7 +26,6 @@ packages = ["marsdog_action_executor"]
 [tool.hatch.build.targets.wheel.shared-data]
 "config" = "share/marsdog_action_executor/config"
 "launch" = "share/marsdog_action_executor/launch"
-"action" = "share/marsdog_action_executor/action"
 "package.xml" = "share/marsdog_action_executor/package.xml"
 
 [[tool.uv.index]]

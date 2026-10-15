@@ -8,6 +8,8 @@ import subprocess
 import tempfile
 import urllib.request
 
+from runtime_environment import check_system_ros_dependencies
+
 ROOT = Path(__file__).resolve().parents[1]
 
 def main():
@@ -15,6 +17,12 @@ def main():
     parser.add_argument("--cache", type=Path)
     parser.add_argument("--only", nargs="*")
     args = parser.parse_args()
+    if platform.machine() == "aarch64":
+        if args.cache or args.only:
+            parser.error("--cache and --only apply to the amd64 archive lock")
+        check_system_ros_dependencies()
+        print("System ROS Humble dependencies available", flush=True)
+        return
     assert platform.machine() == "x86_64", "This development lock is Ubuntu amd64 only"
     directory = ROOT / "out/ros-deps"
     directory.mkdir(parents=True, exist_ok=True)

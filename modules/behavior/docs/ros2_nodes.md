@@ -54,7 +54,7 @@ uv run python -m marsdog_behavior.standalone_demo
 
 | Action | 方向 | 说明 |
 |--------|------|------|
-| `/execute_behavior` | Client → Server | 下发 `behavior_name` 到 `marsdog_action_executor` |
+| `/action/execute_behavior` | Client → Server | 下发 `behavior_name` 到 `marsdog_action_executor` |
 
 ### Service Client
 
@@ -113,7 +113,7 @@ ros2 run marsdog_action_executor action_executor_node
 
 | Action | 方向 | 说明 |
 |--------|------|------|
-| `/execute_behavior` | ← Client | 接收 `behavior_name`，执行动作序列 |
+| `/action/execute_behavior` | ← Client | 接收 `behavior_name`，执行动作序列 |
 
 ### 发布的调试 Topic
 
@@ -407,7 +407,7 @@ signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢�
 `0..100`。终态发布后行为树会清空 `current_behavior/current_goal_id`；同一 tick
 内刚启动的抢占替代行为不会被误清理。
 
-### 4.8 `/execute_behavior` Goal（Action Client 下发）
+### 4.8 `/action/execute_behavior` Goal（Action Client 下发）
 
 ```json
 {
@@ -477,16 +477,16 @@ ros2 topic pub --once /internal_need/signal_event std_msgs/msg/String \
 │ /behavior_tree_node（本项目）                                      │
 │                                                                  │
 │  订阅 6 个 topic → IntentMapper → CandidatePool → BT tick (10Hz) │
-│  Action Client → /execute_behavior                                │
+│  Action Client → /action/execute_behavior                                │
 │  发布 → /behavior/result_event                                    │
 └──────────────────────────┬───────────────────────────────────────┘
                            │
 ┌──────────────────────────▼───────────────────────────────────────┐
 │ /action_executor_node（独立项目 marsdog_action_executor）          │
 │                                                                  │
-│  Action Server: /execute_behavior                                 │
+│  Action Server: /action/execute_behavior                                 │
 │  Goal → 动作序列 → Feedback (progress) → Result                   │
-│  调试 Topic: /execute_behavior/goal|feedback|result               │
+│  调试 Topic: /debug/execute_behavior/goal|feedback|result               │
 └──────────────────────────────────────────────────────────────────┘
 ```
 

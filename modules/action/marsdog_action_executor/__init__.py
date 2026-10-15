@@ -1,13 +1,13 @@
 """MarsDog Action Executor — bionic robot dog behavior execution engine.
 
 Receives behavior goals (``behavior_name``) from the upstream behavior tree via
-the ``/execute_behavior`` ROS2 Action Server, resolves them into staged action
+the ``/action/execute_behavior`` ROS2 Action Server, resolves them into staged action
 plans, and drives execution through a pluggable controller-adapter layer.
 
 Architecture (v2)::
 
     Behavior Tree (marsdog_behavior)
-        │  /execute_behavior Action goal
+        │  /action/execute_behavior Action goal
         ▼
     ros_node.py              ← ROS2 Action Server shell
         │

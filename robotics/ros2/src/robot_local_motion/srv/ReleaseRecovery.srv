@@ -1,0 +1,5 @@
+# Operator request: release the recovery lock only after fresh odometry confirms stop.
+bool confirm_release
+---
+bool released
+string message

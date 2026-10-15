@@ -600,9 +600,9 @@ class MockInputProvider:
         self._candidates.sort(key=lambda b: (
             *priority_key(b.priority_level, b.params), -b.value,
         ))
-        best = self._candidates[0]
+        best = None
 
-        # If best is in cooldown, try next candidates
+        # All cooling down means no dispatch, just like the production pool.
         for candidate in self._candidates:
             if not self._blackboard.is_in_cooldown(candidate.behavior_name):
                 best = candidate

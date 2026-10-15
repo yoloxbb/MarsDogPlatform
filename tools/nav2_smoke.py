@@ -22,7 +22,7 @@ def main():
     subscriptions = []
     for key, topic in [
         ("audio", "/perception/audio_event"), ("goals", "/debug/execute_behavior/goal"),
-        ("results", "/debug/execute_behavior/result"), ("waypoint", "/waypoint_nav/status"),
+        ("results", "/debug/execute_behavior/result"), ("waypoint", "/navigation/status"),
         ("visual", "/perception/visual_event"), ("needs", "/internal_need/state"),
         ("emotion", "/emotion/state")]:
         subscriptions.append(node.create_subscription(String, topic,

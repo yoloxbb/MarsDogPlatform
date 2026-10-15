@@ -6,13 +6,13 @@
 
 | 项目 | 内容 |
 | --- | --- |
-| Action 名称 | `/go2/orbit_uwb_once` |
+| Action 名称 | `/motion/orbit_uwb_once` |
 | Action 类型 | `go2_uwb_behavior/action/OrbitUwbOnce` |
 | 默认半径 | 1.0 米 |
 | 默认方向 | 逆时针 |
 | 默认超时 | 60 秒 |
 
-该 Action 由统一行为控制器提供。需启动 `behavior_follow_roam.launch.py`，并确保 UWB、`/leg_odom2`、双目障碍感知和局部规划器正常运行。`enable_motion:=false` 时接口和反馈仍可用，但底盘不会实际移动。
+该 Action 由统一行为控制器提供。需启动 `behavior_follow_roam.launch.py`，并确保 UWB、`/leg_odom2`、双目障碍感知和局部规划器正常运行。`enable_motion:=false` 时接口和反馈仍可用，本 Action 不输出非零底盘速度；此开关不约束其他控制源。launch 默认 true，首次静态检查显式传 false。
 
 ## 2. Goal 字段
 
@@ -26,12 +26,12 @@
 
 ## 3. 命令行调用
 
-先构建并加载工作空间（若本机尚未构建新接口）：
+先按 [公共构建说明](../../../README.md) 编译依赖与本包，加载相同的板端安装环境：
 
 ```bash
-cd /home/bird/robot_ws_leg_velocity_lite3/go2_follow_ws
-colcon build --symlink-install --packages-up-to go2_uwb_behavior
-source install_lite3/setup.bash
+source /opt/ros/humble/setup.bash
+source /home/marsdog/MarsDogPlatform/out/rk3588-rtabmap/use-rtabmap.sh
+source /home/marsdog/MarsDogPlatform/out/rk3588-robotics/install/local_setup.bash
 ```
 
 启动统一行为链路：
@@ -44,7 +44,7 @@ ros2 launch go2_uwb_behavior behavior_follow_roam.launch.py \
 调用一米半径、默认逆时针环绕：
 
 ```bash
-ros2 action send_goal /go2/orbit_uwb_once \
+ros2 action send_goal /motion/orbit_uwb_once \
   go2_uwb_behavior/action/OrbitUwbOnce \
   "{timeout_sec: 60.0, orbit_radius: 1.0, direction: 0}" --feedback
 ```
@@ -52,7 +52,7 @@ ros2 action send_goal /go2/orbit_uwb_once \
 顺时针调用示例：
 
 ```bash
-ros2 action send_goal /go2/orbit_uwb_once \
+ros2 action send_goal /motion/orbit_uwb_once \
   go2_uwb_behavior/action/OrbitUwbOnce \
   "{timeout_sec: 60.0, orbit_radius: 1.0, direction: -1}" --feedback
 ```
@@ -63,7 +63,7 @@ Feedback 约每 0.2 秒更新一次：
 
 | 字段 | 含义 |
 | --- | --- |
-| `state` | `STARTING`、`APPROACHING`、`ORBITING`、`INPUT_PAUSED` 或 `STOPPING` |
+| `state` | uint8 枚举：STARTING=0、APPROACHING=1、ORBITING=2、INPUT_PAUSED=3、STOPPING=4 |
 | `distance` | 当前 UWB 距离，米 |
 | `orbit_angle` | 当前累计环绕角度，弧度；完成一周时约为 `6.283` |
 | `elapsed_sec` | Action 已运行时间，秒 |
@@ -86,7 +86,7 @@ Feedback 约每 0.2 秒更新一次：
 | `PREEMPTED_BY_MODE` | 被 `IDLE` 或 `STOP` 模式请求抢占 |
 | `NOT_READY` | 启动就绪窗口内 UWB、里程计、障碍或规划器未就绪 |
 | `BLOCKED` | 局部规划器持续受阻 |
-| `INPUT_TIMEOUT` | 关键输入中断且未在恢复窗口内恢复，或 Nav2 启动 |
+| `INPUT_TIMEOUT` | 关键输入中断且未在恢复窗口内恢复；本包没有 Nav2 启动自动互锁 |
 | `TIMEOUT` | 超过 Goal 指定的总时限 |
 | `STOP_UNCONFIRMED` | 已尝试停车，但里程计未能确认停稳 |
 
@@ -112,7 +112,7 @@ class OrbitClient(Node):
         """初始化 Action 客户端。"""
         super().__init__("orbit_uwb_once_client")
         self._client = ActionClient(
-            self, OrbitUwbOnce, "/go2/orbit_uwb_once"
+            self, OrbitUwbOnce, "/motion/orbit_uwb_once"
         )
 
     def _on_feedback(self, message):
@@ -126,7 +126,7 @@ class OrbitClient(Node):
     def run_once(self):
         """发送一米半径的逆时针 Goal 并等待终态。"""
         if not self._client.wait_for_server(timeout_sec=5.0):
-            raise RuntimeError("未发现 /go2/orbit_uwb_once Action 服务端")
+            raise RuntimeError("未发现 /motion/orbit_uwb_once Action 服务端")
 
         goal = OrbitUwbOnce.Goal()
         goal.timeout_sec = 60.0
@@ -178,10 +178,10 @@ cancel_future = goal_handle.cancel_goal_async()
 rclpy.spin_until_future_complete(node, cancel_future)
 ```
 
-取消是异步请求；上层仍应等待 `goal_handle.get_result_async()` 返回 `CANCELED` 结果，确认控制器完成停车流程。
+取消是异步请求；上层仍应等待 `goal_handle.get_result_async()` 返回终态。当前实现取消停车等待超时时仍可能返回 `CANCELED`，因此它不能单独证明实际停稳；依赖停稳的后续动作还需核对底盘/新鲜里程计。详细数字结果码与停车判据见 [统一接口说明](UPSTREAM_API.md)。
 
 ## 6. 互斥与异常处理
 
 - 跟随、环绕和漫游 Action 全局互斥。若有任务正在运行，新 Goal 会被拒绝；上层应先取消当前 Goal 并等待其终态。
-- `STOP` 模式会锁定底盘并拒绝新任务；需要解除时调用 `/go2/set_behavior`，请求 `mode: 0`（`IDLE`）。
+- `STOP` 模式会锁定底盘并拒绝新任务；需要解除时调用 `/motion/set_behavior`，请求 `mode: 0`（`IDLE`）。
 - 遇到 `BLOCKED`、`INPUT_TIMEOUT`、`TIMEOUT` 或 `STOP_UNCONFIRMED` 时，不要触发依赖环绕成功的后续动作；先处理对应输入或停车状态。

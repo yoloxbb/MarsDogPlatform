@@ -1,0 +1,514 @@
+# Additive, adjustable social-expression defaults. No new controller protocols.
+# SUCCESS means required expression stages completed, not contact, diagnosis,
+# long-running guarding, preference/learning verification or need settlement.
+# Existing chassis proxy/unverified/enable gates remain authoritative.
+behaviors:
+  comfort_soothe:
+    behavior_name: comfort_soothe
+    preset_version: 1
+    completion_scope: expression_only
+    description: "安抚回应：轻柔低身示意"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_NUZZLE_HEAD}
+  comfort_reassure:
+    behavior_name: comfort_reassure
+    preset_version: 1
+    completion_scope: expression_only
+    description: "安抚回应：短暂安静停留"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_BASIC_WAIT}
+  pet_head:
+    behavior_name: pet_head
+    preset_version: 1
+    completion_scope: expression_only
+    description: "邀请摸头的姿态表达，不确认已经发生触摸"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_NUZZLE_HEAD}
+  hug:
+    behavior_name: hug
+    preset_version: 1
+    completion_scope: expression_only
+    description: "邀请拥抱的姿态表达，不主动贴靠或确认身体接触"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_ASK_CUDDLE}
+  refuse:
+    behavior_name: refuse
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应用户拒绝：保持当前姿态并停留"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_CONTROL_HOLD_POSITION}
+  refuse_play:
+    behavior_name: refuse_play
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应用户不想玩：保持当前姿态并停留"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_CONTROL_HOLD_POSITION}
+  dance:
+    behavior_name: dance
+    preset_version: 1
+    completion_scope: expression_only
+    description: "简短舞蹈预设：左右扭腰后抬头；受既有底盘策略限制"
+    runtime_budget_sec: 25.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_TWIST_WAIST_LEFT_RIGHT}
+      - stage_id: expression_2
+        order: 2
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_RAISE_HEAD}
+  stay_home:
+    behavior_name: stay_home
+    preset_version: 1
+    completion_scope: expression_only
+    description: "留守指令的短暂原地确认；不建立持续看家任务"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_BASIC_WAIT}
+  wait_return:
+    behavior_name: wait_return
+    preset_version: 1
+    completion_scope: expression_only
+    description: "等待指令的短暂原地确认；不声称已经等到主人归来"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_BASIC_WAIT}
+  greet_return:
+    behavior_name: greet_return
+    preset_version: 1
+    completion_scope: expression_only
+    description: "归来问候：友好姿态后轻柔低身示意"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_WAG_TAIL}
+      - stage_id: expression_2
+        order: 2
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_NUZZLE_HEAD}
+  farewell_bye:
+    behavior_name: farewell_bye
+    preset_version: 1
+    completion_scope: expression_only
+    description: "告别的友好姿态表达"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_WAG_TAIL}
+  farewell_goodbye:
+    behavior_name: farewell_goodbye
+    preset_version: 1
+    completion_scope: expression_only
+    description: "告别的友好姿态表达"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_WAG_TAIL}
+  respond_thought:
+    behavior_name: respond_thought
+    preset_version: 1
+    completion_scope: expression_only
+    description: "思考状的姿态回应，不生成事实性心理报告"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_STOP_OBSERVE_AND_TILT_HEAD}
+  respond_comfort:
+    behavior_name: respond_comfort
+    preset_version: 1
+    completion_scope: expression_only
+    description: "舒适询问的轻松姿态回应，不推断传感器状态"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_COMFY_STRETCH}
+  respond_like:
+    behavior_name: respond_like
+    preset_version: 1
+    completion_scope: expression_only
+    description: "喜好询问的友好姿态回应，不写入偏好记忆"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_WAG_TAIL}
+  respond_fun:
+    behavior_name: respond_fun
+    preset_version: 1
+    completion_scope: expression_only
+    description: "玩耍询问的友好姿态回应，不写入偏好记忆"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_WAG_TAIL}
+  respond_understand:
+    behavior_name: respond_understand
+    preset_version: 1
+    completion_scope: expression_only
+    description: "听到询问后的注意姿态，不声称语义理解通过验证"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_STOP_OBSERVE_AND_TILT_HEAD}
+  show_skill:
+    behavior_name: show_skill
+    preset_version: 1
+    completion_scope: expression_only
+    description: "展示已有左右扭腰动作，非能力清单播报"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_TWIST_WAIST_LEFT_RIGHT}
+  respond_food_preference:
+    behavior_name: respond_food_preference
+    preset_version: 1
+    completion_scope: expression_only
+    description: "食物偏好询问的注意姿态，不选择食物或结算饥饿"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_STOP_OBSERVE_AND_TILT_HEAD}
+  tired:
+    behavior_name: tired
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应主人负面感受的原地低头陪伴表达；不导航或推断健康状况"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_OWNER_UNHAPPY}
+  annoyed:
+    behavior_name: annoyed
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应主人负面感受的原地低头陪伴表达；不导航或推断健康状况"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_OWNER_UNHAPPY}
+  downcast:
+    behavior_name: downcast
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应主人负面感受的原地低头陪伴表达；不导航或推断健康状况"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_OWNER_UNHAPPY}
+  depressed:
+    behavior_name: depressed
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应主人负面感受的原地低头陪伴表达；不导航或推断健康状况"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_OWNER_UNHAPPY}
+  stressed:
+    behavior_name: stressed
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应主人负面感受的原地低头陪伴表达；不导航或推断健康状况"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_OWNER_UNHAPPY}
+  lonely:
+    behavior_name: lonely
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应主人负面感受的原地低头陪伴表达；不导航或推断健康状况"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_OWNER_UNHAPPY}
+  unwell:
+    behavior_name: unwell
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应主人负面感受的原地低头陪伴表达；不导航或推断健康状况"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_OWNER_UNHAPPY}
+  cheerful:
+    behavior_name: cheerful
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应主人积极感受的友好姿态表达"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_WAG_TAIL}
+  happy:
+    behavior_name: happy
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应主人积极感受的友好姿态表达"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_WAG_TAIL}
+  great_form:
+    behavior_name: great_form
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应主人积极感受的友好姿态表达"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_WAG_TAIL}
+  great:
+    behavior_name: great
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应主人积极感受的友好姿态表达"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_WAG_TAIL}
+  wonderful_day:
+    behavior_name: wonderful_day
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应主人积极感受的友好姿态表达"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_WAG_TAIL}
+  lucky:
+    behavior_name: lucky
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应主人积极感受的友好姿态表达"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_WAG_TAIL}
+  relaxed:
+    behavior_name: relaxed
+    preset_version: 1
+    completion_scope: expression_only
+    description: "回应主人轻松感受的舒展姿态表达"
+    runtime_budget_sec: 15.0
+    success_condition: all_required_stages_completed
+    stages:
+      - stage_id: expression_1
+        order: 1
+        selection_policy: random_one
+        required: true
+        failure_policy: abort
+        candidates:
+          - {unit_id: ACT_COMFY_STRETCH}

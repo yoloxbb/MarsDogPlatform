@@ -1,0 +1,500 @@
+{
+  "repository": "/home/marsdog/MarsDogPlatform/",
+  "head": "c21c3bf60e1a96550507d0fa9f2c329a7eb74ec3",
+  "dirty": true,
+  "date": "2026-10-12",
+  "figures": [
+    {
+      "id": "m01",
+      "title": "听觉：从声音到有授权的事件",
+      "status": "现有实现",
+      "sources": [
+        [
+          "modules/voice/marsdog_voice_interaction/core/speech_pipeline.py",
+          17
+        ],
+        [
+          "modules/voice/marsdog_voice_interaction/core/task_router.py",
+          1
+        ],
+        [
+          "modules/voice/marsdog_voice_interaction/core/interaction_session.py",
+          1
+        ],
+        [
+          "modules/behavior/marsdog_behavior/audio_contract.py",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "m02",
+      "title": "视觉：观测、目标与查询",
+      "status": "现有实现",
+      "sources": [
+        [
+          "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+          1077
+        ],
+        [
+          "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+          2013
+        ],
+        [
+          "modules/behavior/marsdog_behavior/perception_client_adapter.py",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "m03",
+      "title": "内部需求与情绪：权威状态和边沿信号",
+      "status": "现有实现",
+      "sources": [
+        [
+          "modules/emotion/marsdog_core/need_system.py",
+          46
+        ],
+        [
+          "modules/emotion/marsdog_core/emotion_system.py",
+          42
+        ],
+        [
+          "modules/emotion/marsdog_ros2/common/state_publication.py",
+          1
+        ],
+        [
+          "modules/emotion/marsdog_ros2/behavior_result_adapter.py",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "m04",
+      "title": "行为树：把观测转为受生命周期约束的任务",
+      "status": "现有实现",
+      "sources": [
+        [
+          "modules/behavior/marsdog_behavior/runtime.py",
+          40
+        ],
+        [
+          "modules/behavior/marsdog_behavior/candidate_pool.py",
+          104
+        ],
+        [
+          "modules/behavior/bionic_dog_bt/actions.py",
+          55
+        ],
+        [
+          "modules/behavior/marsdog_behavior/voice_engagement.py",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "m05",
+      "title": "动作系统：从行为 Goal 到设备执行",
+      "status": "现有实现",
+      "sources": [
+        [
+          "modules/action/marsdog_action_executor/goal_execution.py",
+          20
+        ],
+        [
+          "modules/action/marsdog_action_executor/stage_executor.py",
+          1
+        ],
+        [
+          "modules/action/marsdog_action_executor/units/unit_executors.py",
+          1
+        ],
+        [
+          "modules/action/marsdog_action_executor/config_loader.py",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "m06",
+      "title": "SLAM 与地图导航：定位、规划和执行",
+      "status": "现有实现",
+      "sources": [
+        [
+          "robotics/ros2/src/robot_slam_bringup/launch/nav.launch.py",
+          84
+        ],
+        [
+          "robotics/ros2/src/robot_slam_bringup/config/nav.yaml",
+          100
+        ],
+        [
+          "robotics/ros2/src/robot_slam_bringup/launch/openvins_rtabmap.launch.py",
+          270
+        ],
+        [
+          "robotics/ros2/src/waypoint_nav/README.md",
+          1
+        ],
+        [
+          "modules/action/marsdog_action_executor/adapters/waypoint_nav_adapter.py",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "m07",
+      "title": "局部运动：可选服务与现有 UWB 路径",
+      "status": "现有实现",
+      "sources": [
+        [
+          "robotics/ros2/src/robot_local_motion/README.md",
+          1
+        ],
+        [
+          "robotics/ros2/src/go2_uwb_local_follow/README.md",
+          1
+        ],
+        [
+          "robotics/ros2/src/go2_uwb_behavior/README.md",
+          1
+        ],
+        [
+          "modules/action/marsdog_action_executor/local_motion_request.py",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "s01",
+      "title": "系统总览：观测 → 决策 → 执行 → 结果",
+      "status": "现有实现",
+      "sources": [
+        [
+          "docs/architecture/SYSTEM_BASELINE.md",
+          1
+        ],
+        [
+          "interfaces/registry.json",
+          1
+        ],
+        [
+          "docs/architecture/EVENT_BEHAVIOR_ACTION.md",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "s02",
+      "title": "七种对象：事件不等于动作",
+      "status": "现有实现",
+      "sources": [
+        [
+          "docs/architecture/CAPABILITY_BASELINE.md",
+          1
+        ],
+        [
+          "interfaces/naming/catalog.json",
+          1
+        ],
+        [
+          "modules/action/marsdog_action_executor/behavior_resolver.py",
+          1
+        ],
+        [
+          "modules/action/marsdog_action_executor/goal_parser.py",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "s03",
+      "title": "哪些输入能够激活候选",
+      "status": "现有实现",
+      "sources": [
+        [
+          "modules/behavior/marsdog_behavior/audio_contract.py",
+          1
+        ],
+        [
+          "modules/behavior/marsdog_behavior/intent_mapper.py",
+          1
+        ],
+        [
+          "modules/behavior/marsdog_behavior/perception_client_adapter.py",
+          1
+        ],
+        [
+          "modules/behavior/marsdog_behavior/candidate_pool.py",
+          240
+        ]
+      ]
+    },
+    {
+      "id": "s04",
+      "title": "选择与抢占资格：先比较语义顺序",
+      "status": "现有实现",
+      "sources": [
+        [
+          "modules/behavior/marsdog_behavior/candidate_pool.py",
+          104
+        ],
+        [
+          "modules/behavior/bionic_dog_bt/arbitration.py",
+          33
+        ],
+        [
+          "modules/behavior/marsdog_behavior/runtime.py",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "s05",
+      "title": "中断门：反馈、策略与紧急停止",
+      "status": "现有实现",
+      "sources": [
+        [
+          "modules/behavior/bionic_dog_bt/arbitration.py",
+          144
+        ],
+        [
+          "modules/behavior/bionic_dog_bt/actions.py",
+          21
+        ],
+        [
+          "modules/action/marsdog_action_executor/goal_execution.py",
+          20
+        ]
+      ]
+    },
+    {
+      "id": "s06",
+      "title": "正常执行时序：成功是证据链的结果",
+      "status": "现有实现",
+      "sources": [
+        [
+          "modules/behavior/marsdog_behavior/result_event_mapper.py",
+          1
+        ],
+        [
+          "modules/action/marsdog_action_executor/goal_execution.py",
+          1
+        ],
+        [
+          "modules/emotion/marsdog_core/need_system.py",
+          99
+        ]
+      ]
+    },
+    {
+      "id": "s07",
+      "title": "抢占时序：先取消旧 Goal，再交接新 Goal",
+      "status": "现有实现",
+      "sources": [
+        [
+          "modules/behavior/bionic_dog_bt/actions.py",
+          123
+        ],
+        [
+          "modules/behavior/marsdog_behavior/runtime.py",
+          1
+        ],
+        [
+          "modules/action/marsdog_action_executor/adapters/waypoint_nav_adapter.py",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "s08",
+      "title": "Goal 生命周期：发送、运行、取消等待、终态",
+      "status": "现有实现",
+      "sources": [
+        [
+          "modules/behavior/bionic_dog_bt/actions.py",
+          80
+        ],
+        [
+          "modules/behavior/bionic_dog_bt/blackboard.py",
+          1
+        ],
+        [
+          "modules/behavior/marsdog_behavior/candidate_pool.py",
+          170
+        ]
+      ]
+    },
+    {
+      "id": "s09",
+      "title": "唤醒交互状态机：转向、身份、找人、接近、等待",
+      "status": "现有实现",
+      "sources": [
+        [
+          "modules/behavior/marsdog_behavior/voice_interaction_session.py",
+          1
+        ],
+        [
+          "modules/behavior/marsdog_behavior/voice_engagement.py",
+          158
+        ],
+        [
+          "modules/behavior/marsdog_behavior/voice_engagement.py",
+          342
+        ]
+      ]
+    },
+    {
+      "id": "s10",
+      "title": "导航终态未知：停止请求后的恢复约束",
+      "status": "现有实现",
+      "sources": [
+        [
+          "modules/action/marsdog_action_executor/adapters/waypoint_nav_adapter.py",
+          37
+        ],
+        [
+          "modules/action/marsdog_action_executor/adapters/waypoint_nav_adapter.py",
+          466
+        ],
+        [
+          "robotics/ros2/src/waypoint_nav/README.md",
+          1
+        ],
+        [
+          "robotics/ros2/src/robot_local_motion/README.md",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "s11",
+      "title": "结果回流：释放执行权与领域结算分开",
+      "status": "现有实现",
+      "sources": [
+        [
+          "modules/behavior/marsdog_behavior/result_event_mapper.py",
+          1
+        ],
+        [
+          "modules/emotion/marsdog_core/need_system.py",
+          153
+        ],
+        [
+          "modules/emotion/marsdog_core/battery_observation.py",
+          1
+        ],
+        [
+          "modules/emotion/marsdog_core/energy_behavior.py",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "s12",
+      "title": "人物接近：当前断点与待接入几何",
+      "status": "现状 + 待接入",
+      "sources": [
+        [
+          "modules/action/marsdog_action_executor/adapters/person_nav_approach_adapter.py",
+          213
+        ],
+        [
+          "modules/action/marsdog_action_executor/adapters/person_nav_approach_adapter.py",
+          338
+        ],
+        [
+          "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py",
+          2013
+        ],
+        [
+          "robotics/ros2/src/person_3d_localization/srv/LocateFromBbox.srv",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "s13",
+      "title": "重构目标：明确领域边界与唯一运动控制权",
+      "status": "建议目标 · 未实施",
+      "sources": [
+        [
+          "docs/architecture/REFACTOR_ROADMAP.md",
+          1
+        ],
+        [
+          "docs/architecture/SYSTEM_BASELINE.md",
+          1
+        ],
+        [
+          "docs/development/ENGINEERING_STANDARD.md",
+          1
+        ]
+      ]
+    }
+  ],
+  "source_hashes": {
+    "modules/voice/marsdog_voice_interaction/core/speech_pipeline.py": "8deccb381a69e5616ed8f78a9740368a93a3bff7b7b31607843a473cc1392135",
+    "modules/voice/marsdog_voice_interaction/core/task_router.py": "edbb4bbbf9cbaf2f64503ca510f851b61487f4a2f348bf4ae2aaddac47cba80a",
+    "modules/voice/marsdog_voice_interaction/core/interaction_session.py": "9536343cf77683dbe484bd42830f58afbfb5fa6efcaccd9cbe25fe537e438bb2",
+    "modules/behavior/marsdog_behavior/audio_contract.py": "2862276653981002cc0ae84a9f50f3dc706190cf005edaa4d18afc7ebd57ea6f",
+    "modules/vision/marsdog_vision_interaction/nodes/vision_interaction_node.py": "1f3864625c3af91396440fe3bb99da9322e11fff226b3d877b2f08459b5a7330",
+    "modules/behavior/marsdog_behavior/perception_client_adapter.py": "3e850f43d3143e9e9eb376001abf7978870ee40b15a4cadc478df167a74a9549",
+    "modules/emotion/marsdog_core/need_system.py": "e51e2582ad52692ee91bbb5f946acfa421d3482b42dbb208b85cb6411d8e3b2b",
+    "modules/emotion/marsdog_core/emotion_system.py": "29e15c4431e18dd7a13054c11dd4f3d8313bf398aaf98121bc982c7fb29b60ce",
+    "modules/emotion/marsdog_ros2/common/state_publication.py": "987c9d1baeb32341b03d26211bc291453c0b904a6690464708aceeacd248bf91",
+    "modules/emotion/marsdog_ros2/behavior_result_adapter.py": "4ea9c98e9ec5d27e869bf07847c2a9bbbb0adcc7ba7d53242e6fb7330817da92",
+    "modules/behavior/marsdog_behavior/runtime.py": "0135a1a721e2bd1fdb52af2dfa8fee25e85fe70cf8573915eb96436d4a655d26",
+    "modules/behavior/marsdog_behavior/candidate_pool.py": "2d120ee88b181e56a12a13902e457f6bd6fec2914177b7c4ae619632076ac4a6",
+    "modules/behavior/bionic_dog_bt/actions.py": "e7a74e75f541c754e83336a6cf81f5e1db7b1949bcea3f8902d0ed8254ef7a48",
+    "modules/behavior/marsdog_behavior/voice_engagement.py": "031c85de34231e64e7a6c7b4b106c3b6a5137f2f8c5803960a812f7832d4de5e",
+    "modules/action/marsdog_action_executor/goal_execution.py": "6a288054e43d5270399a82f24cb2da04a1d6f0f3d2ab41e7f829941fab43c78a",
+    "modules/action/marsdog_action_executor/stage_executor.py": "d31939f09bc0618ecaf0177a783748287c22c8fea4304b6d95242a44ce4996d6",
+    "modules/action/marsdog_action_executor/units/unit_executors.py": "9e4191db2a720e903e79f6dd65622bedbc54904ff8bdfb0049c126523c9ecbdd",
+    "modules/action/marsdog_action_executor/config_loader.py": "c9b39252544c10b66d2d54e6d533310b14b113da2ec534a107bb9fe784dde189",
+    "robotics/ros2/src/robot_slam_bringup/launch/nav.launch.py": "70c3b54637ceaec9f8cf21382fd09ca117374050c65b6309a6ed5be3522cec59",
+    "robotics/ros2/src/robot_slam_bringup/config/nav.yaml": "f51cbd7962c71ce46e619bf05102ffc214fec4973cc38db8de8ac00bc01ee96f",
+    "robotics/ros2/src/robot_slam_bringup/launch/openvins_rtabmap.launch.py": "c79104de3bd304f94ed1739903fddc3c66c72ef2213ad5bf835962a7eab88c15",
+    "robotics/ros2/src/waypoint_nav/README.md": "ff586db2f61ac656568778c65d423681c8e8933174580ceee8cec7bb235f0938",
+    "modules/action/marsdog_action_executor/adapters/waypoint_nav_adapter.py": "3d22de5d70b4b1d3ff835050f04677ebb4a88ef71714076a4e88687ad12c773d",
+    "robotics/ros2/src/robot_local_motion/README.md": "0ecac9444802e6c7e02dafc51bda87f0afe8f21ce6806193f2292d4e21deea03",
+    "robotics/ros2/src/go2_uwb_local_follow/README.md": "60366a0dd99b05c8b998112077cd5a25dd48c42d6840cecefbbfeda4c18ac1dd",
+    "robotics/ros2/src/go2_uwb_behavior/README.md": "0a6f2cf8e0ea445fa281cac993940d99c91c7043d18696283f5c02c92ed58d93",
+    "modules/action/marsdog_action_executor/local_motion_request.py": "65f7b44eb25159642753a13eaf8c4b43eb76330ef52657ef663de93fe96c3ff0",
+    "docs/architecture/SYSTEM_BASELINE.md": "69ba74caca8d5df37702f79112cb53254d718f59afe0c1a1e76b2ca0af056783",
+    "interfaces/registry.json": "c63522c0691c3237e3cdda7572834e9843d8d6cd08d5aea68815e1f983fd4088",
+    "docs/architecture/EVENT_BEHAVIOR_ACTION.md": "5b017850dcfdc96b32b5933d7fce97a06708303897160343f6a6f00db43aa100",
+    "docs/architecture/CAPABILITY_BASELINE.md": "34f88b44d0a8351af00fd9a48dcbfae2c5c5cb05c0ab0ca45237392474756394",
+    "interfaces/naming/catalog.json": "e44d3b18f3b506911ec118914b1156a610335ec1b18cb0b9ced4d016d6b6f673",
+    "modules/action/marsdog_action_executor/behavior_resolver.py": "7842b08514a432f5403b909b99471fd6f9c75ff277c1cc0e3dfee6378a7a6a1e",
+    "modules/action/marsdog_action_executor/goal_parser.py": "f427745a05f0326a4d43c5aa6de469124163e558750dfe52cad447e08f8f3363",
+    "modules/behavior/marsdog_behavior/intent_mapper.py": "4938f63a742800cba0b8c1f9a1f1917e645c86523b60164a985b8dc64e6ff1a6",
+    "modules/behavior/bionic_dog_bt/arbitration.py": "7c07dab78e66d1f4005b62f6fecdd559481de462f84eff0f779fa83a96c6c68f",
+    "modules/behavior/marsdog_behavior/result_event_mapper.py": "63141daa6136d1c190d5ac3b7df19a9ad02f31bc30495c1f8c40e6efe8e29412",
+    "modules/behavior/bionic_dog_bt/blackboard.py": "8df9b818118e69d3cb0c4486ab2dc6b82e6881d3d9e5d07cdae17f88939a1d65",
+    "modules/behavior/marsdog_behavior/voice_interaction_session.py": "2588c48a73ae382e8b31a9a2899222a879e636cdb9952e097f13670c069a29b0",
+    "modules/emotion/marsdog_core/battery_observation.py": "0ffd75ec6154c0ac36cb6f4f9996fbc6ffc462ddaa52af1e5cd1c2115ed1732b",
+    "modules/emotion/marsdog_core/energy_behavior.py": "a2d0bfc5fd063b074252bb00c736419cf084b9b2560fc84d4744de501cb5c988",
+    "modules/action/marsdog_action_executor/adapters/person_nav_approach_adapter.py": "45caaa10bde5cb42c883c70fb7de9d7c6423f0a1016bb1d31a3948add101c12b",
+    "robotics/ros2/src/person_3d_localization/srv/LocateFromBbox.srv": "2686bcd67ad1c53c9e4e06de6479b045424a6296eae77c344485273428f167aa",
+    "docs/architecture/REFACTOR_ROADMAP.md": "d768a23a40251b175c089c75d039c1664f43a641e57e7e239f0c64a633c473fa",
+    "docs/development/ENGINEERING_STANDARD.md": "ad592f81e1113f8ea14e69cb7c75d9a21f03b923014182625f985da645f6b48e"
+  },
+  "artifact_hashes": {
+    "index.html": "bd20b0055dcfaae32f7823688ee554933d8be66df177c6545f9900e2b2cac479",
+    "atlas-light.html": "039ca83dc7568ad50c07494a32e4f7b4e60f48a0b223f01ac57c0babde850859",
+    "atlas-dark.html": "bb4409d5102af5b51321680a632bb94b838eedcb6ca3d167884c0adba5ff6f05"
+  },
+  "validation": {
+    "accessible_svg_and_single_file_check": "passed for all 3 variants",
+    "render": {
+      "issues": [],
+      "mobile": {
+        "pageWidth": 390,
+        "viewport": 390,
+        "scrollers": true
+      },
+      "figures": 20
+    }
+  }
+}

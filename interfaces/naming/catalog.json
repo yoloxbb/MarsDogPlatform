@@ -1,14 +1,23 @@
 {
   "schema_version": 1,
   "source_sha256": {
-    "modules/behavior/config/event_intent_map.yaml": "0470603ef8e672e22dddb703b22876122a23c8765e66a4dd5d5e07196a5f58f5",
+    "modules/behavior/config/event_intent_map.yaml": "2f8090304d47da924a7221a979525bad8fb47eb470c2f0878d601d60b96a44f2",
     "modules/behavior/config/intent_action_pool.yaml": "c39d020be477fefbf98d77bb656fbc55e0b7e462d4da7b7e9a9d2cded4c49371",
     "modules/behavior/config/behavior_categories.yaml": "ac877386c8e71aec0aec4ca93af227b7e6be9f9da769af40d70f50edd220ab10",
     "modules/behavior/config/emotion_behavior_map.yaml": "2e6e4e83fed3a606fbbed43f0986eb94753a741105ca13d255b66ecbad5632be",
     "modules/voice/config/command_catalog.yaml": "cd2db640a624fc6efeaf0b970d31ed9209874380aa125db9db96b0fad8fadcdf",
     "modules/action/config/behavior_tree_actions.yaml": "59a5a4d28f62c3782441f725d689d05b6b7ec3b3fb963d9cf520854fa98629b1",
     "modules/action/config/action_catalog.yaml": "57bb56d2bedc9329cdd5411f5dd885ac57f49363033f5196554b9ebbc38eca5a",
-    "tools/identifier_catalog.py": "2583dff7171e19a6bfd898098e6e4f90c3129af544de7ff8c275e2c5fcea42a4"
+    "modules/action/config/behavior_presets.yaml": "87c9c64a9b0cd7b966f1ba172e055e2c1df7e2c5cc6cc54f7fdcd139f52e0e65",
+    "interfaces/naming/capability_decisions.json": "b87b257078f5926af0285dece7cd4dfbda2fb6d973e197c42bff45b872daa603",
+    "modules/behavior/config/tactile_events.yaml": "81c7dc3109d78b83d6145c2737b75b4574123ad0ca4d617e135a716ac625bd7f",
+    "modules/emotion/configs/emotions.yaml": "f7c6918d524cdc09c02cc952758cf39b33bf06d8062673ee09aaec9b66fe9d1c",
+    "interfaces/naming/runtime_entries.json": "3d8e2a34cc1969599e37114ed0d94293b0d18ba9f17b511b07016c4245c7a5f8",
+    "tools/identifier_catalog.py": "b01dd7e388d7986a94d498400b81c5c124d9928aa1724b1a5b0805be8d9daec4",
+    "tools/event_inventory.py": "63a1eb075b91c482585ca1dc4db49f0d4fd7dd9dd5bbfb908b2f6e5bfdf29ecb",
+    "tools/capability_decisions.py": "dc9baa1b8bc1a1c5bac65a58167830415c6b2e9d5956ad0c10da13630f8bc9a1",
+    "modules/behavior/marsdog_behavior/intent_mapper.py": "21cdd385f85a165e5c881d9aeff24f9ff4950e126e4e40182bc5cf74662c5777",
+    "modules/behavior/marsdog_behavior/voice_engagement_coordinator.py": "d4f37356cea46d193c656f30ed1718065e59c180c213d437216481af2d78e7a0"
   },
   "categories": [
     "emotion_expression",
@@ -3856,7 +3865,993 @@
           "ACT_SYSTEM_EMERGENCY_STOP"
         ]
       }
+    ],
+    "comfort_soothe": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_NUZZLE_HEAD"
+        ]
+      }
+    ],
+    "comfort_reassure": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_BASIC_WAIT"
+        ]
+      }
+    ],
+    "pet_head": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_NUZZLE_HEAD"
+        ]
+      }
+    ],
+    "hug": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_ASK_CUDDLE"
+        ]
+      }
+    ],
+    "refuse": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_CONTROL_HOLD_POSITION"
+        ]
+      }
+    ],
+    "refuse_play": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_CONTROL_HOLD_POSITION"
+        ]
+      }
+    ],
+    "dance": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_TWIST_WAIST_LEFT_RIGHT"
+        ]
+      },
+      {
+        "stage_id": "expression_2",
+        "units": [
+          "ACT_RAISE_HEAD"
+        ]
+      }
+    ],
+    "stay_home": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_BASIC_WAIT"
+        ]
+      }
+    ],
+    "wait_return": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_BASIC_WAIT"
+        ]
+      }
+    ],
+    "greet_return": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_WAG_TAIL"
+        ]
+      },
+      {
+        "stage_id": "expression_2",
+        "units": [
+          "ACT_NUZZLE_HEAD"
+        ]
+      }
+    ],
+    "farewell_bye": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_WAG_TAIL"
+        ]
+      }
+    ],
+    "farewell_goodbye": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_WAG_TAIL"
+        ]
+      }
+    ],
+    "respond_thought": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_STOP_OBSERVE_AND_TILT_HEAD"
+        ]
+      }
+    ],
+    "respond_comfort": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_COMFY_STRETCH"
+        ]
+      }
+    ],
+    "respond_like": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_WAG_TAIL"
+        ]
+      }
+    ],
+    "respond_fun": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_WAG_TAIL"
+        ]
+      }
+    ],
+    "respond_understand": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_STOP_OBSERVE_AND_TILT_HEAD"
+        ]
+      }
+    ],
+    "show_skill": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_TWIST_WAIST_LEFT_RIGHT"
+        ]
+      }
+    ],
+    "respond_food_preference": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_STOP_OBSERVE_AND_TILT_HEAD"
+        ]
+      }
+    ],
+    "tired": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_OWNER_UNHAPPY"
+        ]
+      }
+    ],
+    "annoyed": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_OWNER_UNHAPPY"
+        ]
+      }
+    ],
+    "downcast": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_OWNER_UNHAPPY"
+        ]
+      }
+    ],
+    "depressed": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_OWNER_UNHAPPY"
+        ]
+      }
+    ],
+    "stressed": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_OWNER_UNHAPPY"
+        ]
+      }
+    ],
+    "lonely": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_OWNER_UNHAPPY"
+        ]
+      }
+    ],
+    "unwell": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_OWNER_UNHAPPY"
+        ]
+      }
+    ],
+    "cheerful": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_WAG_TAIL"
+        ]
+      }
+    ],
+    "happy": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_WAG_TAIL"
+        ]
+      }
+    ],
+    "great_form": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_WAG_TAIL"
+        ]
+      }
+    ],
+    "great": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_WAG_TAIL"
+        ]
+      }
+    ],
+    "wonderful_day": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_WAG_TAIL"
+        ]
+      }
+    ],
+    "lucky": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_WAG_TAIL"
+        ]
+      }
+    ],
+    "relaxed": [
+      {
+        "stage_id": "expression_1",
+        "units": [
+          "ACT_COMFY_STRETCH"
+        ]
+      }
     ]
+  },
+  "expression_presets": [
+    "annoyed",
+    "cheerful",
+    "comfort_reassure",
+    "comfort_soothe",
+    "dance",
+    "depressed",
+    "downcast",
+    "farewell_bye",
+    "farewell_goodbye",
+    "great",
+    "great_form",
+    "greet_return",
+    "happy",
+    "hug",
+    "lonely",
+    "lucky",
+    "pet_head",
+    "refuse",
+    "refuse_play",
+    "relaxed",
+    "respond_comfort",
+    "respond_food_preference",
+    "respond_fun",
+    "respond_like",
+    "respond_thought",
+    "respond_understand",
+    "show_skill",
+    "stay_home",
+    "stressed",
+    "tired",
+    "unwell",
+    "wait_return",
+    "wonderful_day"
+  ],
+  "capability_decisions": {
+    "schema_version": 1,
+    "basis": "2026-10-13 用户授权补齐合理预设；设备能力和事实反馈不能由预设伪造。",
+    "behaviors": {
+      "comfort_soothe": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "安抚回应：轻柔低身示意",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "comfort_reassure": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "安抚回应：短暂安静停留",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "care_inquire": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "事实问答需要可信状态和回答接口，不用姿态表达代替状态事实",
+        "owner_roles": [
+          "BehaviorTree",
+          "Voice"
+        ],
+        "required_evidence": [
+          "fresh_state_observation",
+          "state_to_voice_response",
+          "response_playback_result"
+        ]
+      },
+      "pet_head": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "邀请摸头的姿态表达，不确认已经发生触摸",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "hug": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "邀请拥抱的姿态表达，不主动贴靠或确认身体接触",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "refuse": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应用户拒绝：保持当前姿态并停留",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "refuse_play": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应用户不想玩：保持当前姿态并停留",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "find_dad": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "家庭称谓与视觉身份尚无权威绑定，不替换成任意人",
+        "owner_roles": [
+          "BehaviorTree",
+          "Vision",
+          "SLAM",
+          "Action"
+        ],
+        "required_evidence": [
+          "family_role_identity_binding",
+          "identity_locked_search",
+          "localized_target_and_cancel_ack"
+        ]
+      },
+      "find_mom": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "家庭称谓与视觉身份尚无权威绑定，不替换成任意人",
+        "owner_roles": [
+          "BehaviorTree",
+          "Vision",
+          "SLAM",
+          "Action"
+        ],
+        "required_evidence": [
+          "family_role_identity_binding",
+          "identity_locked_search",
+          "localized_target_and_cancel_ack"
+        ]
+      },
+      "dance": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "简短舞蹈预设：左右扭腰后抬头；受既有底盘策略限制",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "bring_to_me": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "缺少目标实例选择及取放/找到结果闭环，不替换成随机物体动作",
+        "owner_roles": [
+          "Vision",
+          "SLAM",
+          "Action"
+        ],
+        "required_evidence": [
+          "object_instance_selection",
+          "target_localization",
+          "grasp_release_or_search_result_feedback",
+          "cancel_and_stop_confirmation"
+        ]
+      },
+      "give_me": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "缺少目标实例选择及取放/找到结果闭环，不替换成随机物体动作",
+        "owner_roles": [
+          "Vision",
+          "SLAM",
+          "Action"
+        ],
+        "required_evidence": [
+          "object_instance_selection",
+          "target_localization",
+          "grasp_release_or_search_result_feedback",
+          "cancel_and_stop_confirmation"
+        ]
+      },
+      "go_fetch": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "缺少目标实例选择及取放/找到结果闭环，不替换成随机物体动作",
+        "owner_roles": [
+          "Vision",
+          "SLAM",
+          "Action"
+        ],
+        "required_evidence": [
+          "object_instance_selection",
+          "target_localization",
+          "grasp_release_or_search_result_feedback",
+          "cancel_and_stop_confirmation"
+        ]
+      },
+      "bring_back": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "缺少目标实例选择及取放/找到结果闭环，不替换成随机物体动作",
+        "owner_roles": [
+          "Vision",
+          "SLAM",
+          "Action"
+        ],
+        "required_evidence": [
+          "object_instance_selection",
+          "target_localization",
+          "grasp_release_or_search_result_feedback",
+          "cancel_and_stop_confirmation"
+        ]
+      },
+      "fetch_ball": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "缺少目标实例选择及取放/找到结果闭环，不替换成随机物体动作",
+        "owner_roles": [
+          "Vision",
+          "SLAM",
+          "Action"
+        ],
+        "required_evidence": [
+          "object_instance_selection",
+          "target_localization",
+          "grasp_release_or_search_result_feedback",
+          "cancel_and_stop_confirmation"
+        ]
+      },
+      "find_toy": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "缺少目标实例选择及取放/找到结果闭环，不替换成随机物体动作",
+        "owner_roles": [
+          "Vision",
+          "SLAM",
+          "Action"
+        ],
+        "required_evidence": [
+          "object_instance_selection",
+          "target_localization",
+          "grasp_release_or_search_result_feedback",
+          "cancel_and_stop_confirmation"
+        ]
+      },
+      "stay_home": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "留守指令的短暂原地确认；不建立持续看家任务",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "wait_return": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "等待指令的短暂原地确认；不声称已经等到主人归来",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "greet_return": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "归来问候：友好姿态后轻柔低身示意",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "farewell_bye": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "告别的友好姿态表达",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "farewell_goodbye": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "告别的友好姿态表达",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "report_activity": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "事实问答需要可信状态和回答接口，不用姿态表达代替状态事实",
+        "owner_roles": [
+          "BehaviorTree",
+          "Voice"
+        ],
+        "required_evidence": [
+          "fresh_state_observation",
+          "state_to_voice_response",
+          "response_playback_result"
+        ]
+      },
+      "report_location": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "事实问答需要可信状态和回答接口，不用姿态表达代替状态事实",
+        "owner_roles": [
+          "BehaviorTree",
+          "Voice"
+        ],
+        "required_evidence": [
+          "fresh_state_observation",
+          "state_to_voice_response",
+          "response_playback_result"
+        ]
+      },
+      "report_state": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "事实问答需要可信状态和回答接口，不用姿态表达代替状态事实",
+        "owner_roles": [
+          "BehaviorTree",
+          "Voice"
+        ],
+        "required_evidence": [
+          "fresh_state_observation",
+          "state_to_voice_response",
+          "response_playback_result"
+        ]
+      },
+      "respond_thought": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "思考状的姿态回应，不生成事实性心理报告",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "respond_comfort": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "舒适询问的轻松姿态回应，不推断传感器状态",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "respond_like": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "喜好询问的友好姿态回应，不写入偏好记忆",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "respond_fun": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "玩耍询问的友好姿态回应，不写入偏好记忆",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "respond_understand": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "听到询问后的注意姿态，不声称语义理解通过验证",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "show_skill": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "展示已有左右扭腰动作，非能力清单播报",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "respond_learned": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "缺少学习任务身份和完成记录，不能用友好动作表示已经学会",
+        "owner_roles": [
+          "BehaviorTree",
+          "Voice"
+        ],
+        "required_evidence": [
+          "learning_task_id",
+          "persisted_learning_result",
+          "state_to_voice_response"
+        ]
+      },
+      "tired": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应主人负面感受的原地低头陪伴表达；不导航或推断健康状况",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "annoyed": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应主人负面感受的原地低头陪伴表达；不导航或推断健康状况",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "downcast": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应主人负面感受的原地低头陪伴表达；不导航或推断健康状况",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "depressed": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应主人负面感受的原地低头陪伴表达；不导航或推断健康状况",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "stressed": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应主人负面感受的原地低头陪伴表达；不导航或推断健康状况",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "lonely": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应主人负面感受的原地低头陪伴表达；不导航或推断健康状况",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "unwell": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应主人负面感受的原地低头陪伴表达；不导航或推断健康状况",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "cheerful": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应主人积极感受的友好姿态表达",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "happy": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应主人积极感受的友好姿态表达",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "great_form": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应主人积极感受的友好姿态表达",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "great": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应主人积极感受的友好姿态表达",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "relaxed": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应主人轻松感受的舒展姿态表达",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "wonderful_day": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应主人积极感受的友好姿态表达",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "lucky": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "回应主人积极感受的友好姿态表达",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      },
+      "eat_meal": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "饮食仪式与真实需求满足尚无统一结果契约，不用低头动作结算饥饿",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "feeding_scenario_contract",
+          "food_waypoint_or_target",
+          "observed_or_explicitly_simulated_need_result"
+        ]
+      },
+      "eat_snack": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "饮食仪式与真实需求满足尚无统一结果契约，不用低头动作结算饥饿",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "feeding_scenario_contract",
+          "food_waypoint_or_target",
+          "observed_or_explicitly_simulated_need_result"
+        ]
+      },
+      "eat_canned_food": {
+        "decision": "deferred_integration",
+        "completion_scope": "unavailable",
+        "reason": "饮食仪式与真实需求满足尚无统一结果契约，不用低头动作结算饥饿",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "feeding_scenario_contract",
+          "food_waypoint_or_target",
+          "observed_or_explicitly_simulated_need_result"
+        ]
+      },
+      "respond_food_preference": {
+        "decision": "implemented_preset",
+        "completion_scope": "expression_only",
+        "reason": "食物偏好询问的注意姿态，不选择食物或结算饥饿",
+        "owner_roles": [
+          "BehaviorTree",
+          "Action"
+        ],
+        "required_evidence": [
+          "selected_chassis_execution",
+          "physical_cancel_and_stop"
+        ]
+      }
+    }
   },
   "units": [
     "ACT_APPROACH_SLOWLY_SIDEWAYS",
@@ -4042,5 +5037,3680 @@
     "ACT_YAWN",
     "ACT_ZOOMIES",
     "ACT_ZOOMIE_CIRCLE"
-  ]
+  ],
+  "event_routing_version": 1,
+  "tactile_routes": [
+    {
+      "source": "touch_direct",
+      "event": "EVT_TACTILE_EAR_TOUCH",
+      "context": "STARTED",
+      "enabled": true,
+      "executor_behaviors": [
+        "expressJoyAlone"
+      ],
+      "configured_policy": {
+        "behavior_name": "expressJoyAlone",
+        "priority_level": 1,
+        "semantic_rank": 3,
+        "modality_rank": 3,
+        "sub_priority": 31,
+        "interrupt_policy": "safe_point",
+        "ttl_sec": 2.0,
+        "timeout_sec": 15.0,
+        "cooldown_sec": 5.0
+      },
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "touch_direct",
+      "event": "EVT_TACTILE_HEAD_PET",
+      "context": "STARTED",
+      "enabled": true,
+      "executor_behaviors": [
+        "expressJoyAlone"
+      ],
+      "configured_policy": {
+        "behavior_name": "expressJoyAlone",
+        "priority_level": 1,
+        "semantic_rank": 3,
+        "modality_rank": 3,
+        "sub_priority": 30,
+        "interrupt_policy": "safe_point",
+        "ttl_sec": 2.0,
+        "timeout_sec": 15.0,
+        "cooldown_sec": 5.0
+      },
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "touch_direct",
+      "event": "EVT_TACTILE_NOSE_TOUCH",
+      "context": "STARTED",
+      "enabled": true,
+      "executor_behaviors": [
+        "expressCuriosityAlone"
+      ],
+      "configured_policy": {
+        "behavior_name": "expressCuriosityAlone",
+        "priority_level": 1,
+        "semantic_rank": 3,
+        "modality_rank": 3,
+        "sub_priority": 32,
+        "interrupt_policy": "safe_point",
+        "ttl_sec": 2.0,
+        "timeout_sec": 15.0,
+        "cooldown_sec": 5.0
+      },
+      "owner_role": "BehaviorTree"
+    }
+  ],
+  "reaction_routes": [
+    {
+      "source": "audio_reaction",
+      "event": "EVT_VOICE_COMMAND_PRAISE",
+      "context": "Joy/human",
+      "executor_behaviors": [
+        "expressJoyWithHuman"
+      ],
+      "emotion_style": "Joy",
+      "weight": 1.0,
+      "configured_policy": {
+        "category": "external_interaction",
+        "intent": "audio_react_praise",
+        "expected_command_id": "CMD_PRAISE",
+        "expected_social": "PRAISE",
+        "sub_priority": 1,
+        "ttl_sec": 5.0,
+        "timeout_sec": 8.0,
+        "cooldown_sec": 2.0,
+        "interrupt_policy": "immediate",
+        "reactions": [
+          {
+            "emotion": "Joy",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Excite",
+            "weight": 1.0
+          }
+        ]
+      },
+      "selection": "weighted_emotion_then_context",
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "audio_reaction",
+      "event": "EVT_VOICE_COMMAND_PRAISE",
+      "context": "Joy/human/voice_waiting",
+      "executor_behaviors": [
+        "expressJoyInPlaceWithHuman"
+      ],
+      "emotion_style": "Joy",
+      "weight": 1.0,
+      "configured_policy": {
+        "category": "external_interaction",
+        "intent": "audio_react_praise",
+        "expected_command_id": "CMD_PRAISE",
+        "expected_social": "PRAISE",
+        "sub_priority": 1,
+        "ttl_sec": 5.0,
+        "timeout_sec": 8.0,
+        "cooldown_sec": 2.0,
+        "interrupt_policy": "immediate",
+        "reactions": [
+          {
+            "emotion": "Joy",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Excite",
+            "weight": 1.0
+          }
+        ]
+      },
+      "selection": "weighted_emotion_then_context",
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "audio_reaction",
+      "event": "EVT_VOICE_COMMAND_PRAISE",
+      "context": "Joy/solo",
+      "executor_behaviors": [
+        "expressJoyAlone"
+      ],
+      "emotion_style": "Joy",
+      "weight": 1.0,
+      "configured_policy": {
+        "category": "external_interaction",
+        "intent": "audio_react_praise",
+        "expected_command_id": "CMD_PRAISE",
+        "expected_social": "PRAISE",
+        "sub_priority": 1,
+        "ttl_sec": 5.0,
+        "timeout_sec": 8.0,
+        "cooldown_sec": 2.0,
+        "interrupt_policy": "immediate",
+        "reactions": [
+          {
+            "emotion": "Joy",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Excite",
+            "weight": 1.0
+          }
+        ]
+      },
+      "selection": "weighted_emotion_then_context",
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "audio_reaction",
+      "event": "EVT_VOICE_COMMAND_PRAISE",
+      "context": "Excite/human",
+      "executor_behaviors": [
+        "expressExcitementWithHuman"
+      ],
+      "emotion_style": "Excite",
+      "weight": 1.0,
+      "configured_policy": {
+        "category": "external_interaction",
+        "intent": "audio_react_praise",
+        "expected_command_id": "CMD_PRAISE",
+        "expected_social": "PRAISE",
+        "sub_priority": 1,
+        "ttl_sec": 5.0,
+        "timeout_sec": 8.0,
+        "cooldown_sec": 2.0,
+        "interrupt_policy": "immediate",
+        "reactions": [
+          {
+            "emotion": "Joy",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Excite",
+            "weight": 1.0
+          }
+        ]
+      },
+      "selection": "weighted_emotion_then_context",
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "audio_reaction",
+      "event": "EVT_VOICE_COMMAND_PRAISE",
+      "context": "Excite/human/voice_waiting",
+      "executor_behaviors": [
+        "expressExcitementInPlaceWithHuman"
+      ],
+      "emotion_style": "Excite",
+      "weight": 1.0,
+      "configured_policy": {
+        "category": "external_interaction",
+        "intent": "audio_react_praise",
+        "expected_command_id": "CMD_PRAISE",
+        "expected_social": "PRAISE",
+        "sub_priority": 1,
+        "ttl_sec": 5.0,
+        "timeout_sec": 8.0,
+        "cooldown_sec": 2.0,
+        "interrupt_policy": "immediate",
+        "reactions": [
+          {
+            "emotion": "Joy",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Excite",
+            "weight": 1.0
+          }
+        ]
+      },
+      "selection": "weighted_emotion_then_context",
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "audio_reaction",
+      "event": "EVT_VOICE_COMMAND_PRAISE",
+      "context": "Excite/solo",
+      "executor_behaviors": [
+        "expressExcitementAlone"
+      ],
+      "emotion_style": "Excite",
+      "weight": 1.0,
+      "configured_policy": {
+        "category": "external_interaction",
+        "intent": "audio_react_praise",
+        "expected_command_id": "CMD_PRAISE",
+        "expected_social": "PRAISE",
+        "sub_priority": 1,
+        "ttl_sec": 5.0,
+        "timeout_sec": 8.0,
+        "cooldown_sec": 2.0,
+        "interrupt_policy": "immediate",
+        "reactions": [
+          {
+            "emotion": "Joy",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Excite",
+            "weight": 1.0
+          }
+        ]
+      },
+      "selection": "weighted_emotion_then_context",
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "audio_reaction",
+      "event": "EVT_VOICE_COMMAND_SCOLD",
+      "context": "Anxiety/human",
+      "executor_behaviors": [
+        "expressAnxietyWithHuman"
+      ],
+      "emotion_style": "Anxiety",
+      "weight": 1.0,
+      "configured_policy": {
+        "category": "external_interaction",
+        "intent": "audio_react_scold",
+        "expected_command_id": "CMD_SCOLD",
+        "expected_social": "SCOLD",
+        "sub_priority": 1,
+        "ttl_sec": 5.0,
+        "timeout_sec": 8.0,
+        "cooldown_sec": 2.0,
+        "interrupt_policy": "immediate",
+        "reactions": [
+          {
+            "emotion": "Anxiety",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Curious",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Fear",
+            "weight": 1.0
+          }
+        ]
+      },
+      "selection": "weighted_emotion_then_context",
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "audio_reaction",
+      "event": "EVT_VOICE_COMMAND_SCOLD",
+      "context": "Anxiety/human/voice_waiting",
+      "executor_behaviors": [
+        "expressAnxietyInPlaceWithHuman"
+      ],
+      "emotion_style": "Anxiety",
+      "weight": 1.0,
+      "configured_policy": {
+        "category": "external_interaction",
+        "intent": "audio_react_scold",
+        "expected_command_id": "CMD_SCOLD",
+        "expected_social": "SCOLD",
+        "sub_priority": 1,
+        "ttl_sec": 5.0,
+        "timeout_sec": 8.0,
+        "cooldown_sec": 2.0,
+        "interrupt_policy": "immediate",
+        "reactions": [
+          {
+            "emotion": "Anxiety",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Curious",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Fear",
+            "weight": 1.0
+          }
+        ]
+      },
+      "selection": "weighted_emotion_then_context",
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "audio_reaction",
+      "event": "EVT_VOICE_COMMAND_SCOLD",
+      "context": "Anxiety/solo",
+      "executor_behaviors": [
+        "expressAnxietyAlone"
+      ],
+      "emotion_style": "Anxiety",
+      "weight": 1.0,
+      "configured_policy": {
+        "category": "external_interaction",
+        "intent": "audio_react_scold",
+        "expected_command_id": "CMD_SCOLD",
+        "expected_social": "SCOLD",
+        "sub_priority": 1,
+        "ttl_sec": 5.0,
+        "timeout_sec": 8.0,
+        "cooldown_sec": 2.0,
+        "interrupt_policy": "immediate",
+        "reactions": [
+          {
+            "emotion": "Anxiety",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Curious",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Fear",
+            "weight": 1.0
+          }
+        ]
+      },
+      "selection": "weighted_emotion_then_context",
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "audio_reaction",
+      "event": "EVT_VOICE_COMMAND_SCOLD",
+      "context": "Curious/human",
+      "executor_behaviors": [
+        "expressCuriosityWithHuman"
+      ],
+      "emotion_style": "Curious",
+      "weight": 1.0,
+      "configured_policy": {
+        "category": "external_interaction",
+        "intent": "audio_react_scold",
+        "expected_command_id": "CMD_SCOLD",
+        "expected_social": "SCOLD",
+        "sub_priority": 1,
+        "ttl_sec": 5.0,
+        "timeout_sec": 8.0,
+        "cooldown_sec": 2.0,
+        "interrupt_policy": "immediate",
+        "reactions": [
+          {
+            "emotion": "Anxiety",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Curious",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Fear",
+            "weight": 1.0
+          }
+        ]
+      },
+      "selection": "weighted_emotion_then_context",
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "audio_reaction",
+      "event": "EVT_VOICE_COMMAND_SCOLD",
+      "context": "Curious/human/voice_waiting",
+      "executor_behaviors": [
+        "expressCuriosityInPlaceWithHuman"
+      ],
+      "emotion_style": "Curious",
+      "weight": 1.0,
+      "configured_policy": {
+        "category": "external_interaction",
+        "intent": "audio_react_scold",
+        "expected_command_id": "CMD_SCOLD",
+        "expected_social": "SCOLD",
+        "sub_priority": 1,
+        "ttl_sec": 5.0,
+        "timeout_sec": 8.0,
+        "cooldown_sec": 2.0,
+        "interrupt_policy": "immediate",
+        "reactions": [
+          {
+            "emotion": "Anxiety",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Curious",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Fear",
+            "weight": 1.0
+          }
+        ]
+      },
+      "selection": "weighted_emotion_then_context",
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "audio_reaction",
+      "event": "EVT_VOICE_COMMAND_SCOLD",
+      "context": "Curious/solo",
+      "executor_behaviors": [
+        "expressCuriosityAlone"
+      ],
+      "emotion_style": "Curious",
+      "weight": 1.0,
+      "configured_policy": {
+        "category": "external_interaction",
+        "intent": "audio_react_scold",
+        "expected_command_id": "CMD_SCOLD",
+        "expected_social": "SCOLD",
+        "sub_priority": 1,
+        "ttl_sec": 5.0,
+        "timeout_sec": 8.0,
+        "cooldown_sec": 2.0,
+        "interrupt_policy": "immediate",
+        "reactions": [
+          {
+            "emotion": "Anxiety",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Curious",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Fear",
+            "weight": 1.0
+          }
+        ]
+      },
+      "selection": "weighted_emotion_then_context",
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "audio_reaction",
+      "event": "EVT_VOICE_COMMAND_SCOLD",
+      "context": "Fear/human",
+      "executor_behaviors": [
+        "expressFearWithHuman"
+      ],
+      "emotion_style": "Fear",
+      "weight": 1.0,
+      "configured_policy": {
+        "category": "external_interaction",
+        "intent": "audio_react_scold",
+        "expected_command_id": "CMD_SCOLD",
+        "expected_social": "SCOLD",
+        "sub_priority": 1,
+        "ttl_sec": 5.0,
+        "timeout_sec": 8.0,
+        "cooldown_sec": 2.0,
+        "interrupt_policy": "immediate",
+        "reactions": [
+          {
+            "emotion": "Anxiety",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Curious",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Fear",
+            "weight": 1.0
+          }
+        ]
+      },
+      "selection": "weighted_emotion_then_context",
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "audio_reaction",
+      "event": "EVT_VOICE_COMMAND_SCOLD",
+      "context": "Fear/human/voice_waiting",
+      "executor_behaviors": [
+        "expressFearInPlaceWithHuman"
+      ],
+      "emotion_style": "Fear",
+      "weight": 1.0,
+      "configured_policy": {
+        "category": "external_interaction",
+        "intent": "audio_react_scold",
+        "expected_command_id": "CMD_SCOLD",
+        "expected_social": "SCOLD",
+        "sub_priority": 1,
+        "ttl_sec": 5.0,
+        "timeout_sec": 8.0,
+        "cooldown_sec": 2.0,
+        "interrupt_policy": "immediate",
+        "reactions": [
+          {
+            "emotion": "Anxiety",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Curious",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Fear",
+            "weight": 1.0
+          }
+        ]
+      },
+      "selection": "weighted_emotion_then_context",
+      "owner_role": "BehaviorTree"
+    },
+    {
+      "source": "audio_reaction",
+      "event": "EVT_VOICE_COMMAND_SCOLD",
+      "context": "Fear/solo",
+      "executor_behaviors": [
+        "expressFearAlone"
+      ],
+      "emotion_style": "Fear",
+      "weight": 1.0,
+      "configured_policy": {
+        "category": "external_interaction",
+        "intent": "audio_react_scold",
+        "expected_command_id": "CMD_SCOLD",
+        "expected_social": "SCOLD",
+        "sub_priority": 1,
+        "ttl_sec": 5.0,
+        "timeout_sec": 8.0,
+        "cooldown_sec": 2.0,
+        "interrupt_policy": "immediate",
+        "reactions": [
+          {
+            "emotion": "Anxiety",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Curious",
+            "weight": 1.0
+          },
+          {
+            "emotion": "Fear",
+            "weight": 1.0
+          }
+        ]
+      },
+      "selection": "weighted_emotion_then_context",
+      "owner_role": "BehaviorTree"
+    }
+  ],
+  "code_entrypoints": [
+    {
+      "id": "wake_authorized_approach",
+      "source": "audio_session",
+      "events": [
+        "EVT_VOICE_WAKEUP"
+      ],
+      "executor_behaviors": [
+        "approach_voice_caller"
+      ],
+      "owner_role": "BehaviorTree",
+      "condition": "After wake orientation and authorized speaker lookup; matching session generation, bound human target and identity checks; no intervening command",
+      "code": [
+        {
+          "path": "modules/behavior/marsdog_behavior/voice_engagement_coordinator.py",
+          "symbol": "VoiceEngagementCoordinator.on_wake_speaker_resolved"
+        },
+        {
+          "path": "modules/behavior/marsdog_behavior/intent_mapper.py",
+          "symbol": "IntentMapper.build_voice_approach_candidate"
+        }
+      ]
+    }
+  ],
+  "emotion_effects": {
+    "EVT_AUDIO_LOUD": {
+      "deltas": {
+        "Fear": 40,
+        "Anxiety": 20,
+        "Excite": -10
+      },
+      "metadataMultipliers": [
+        {
+          "key": "loudnessDb",
+          "operator": "gt",
+          "value": 80,
+          "multiplier": 1.5
+        },
+        {
+          "key": "loudness_db",
+          "operator": "gt",
+          "value": 80,
+          "multiplier": 1.5
+        }
+      ]
+    },
+    "EVT_AUDIO_WITH_HUMAN": {
+      "deltas": {
+        "Calm": 10,
+        "Joy": 5
+      }
+    },
+    "EVT_VOICE_PRAISE": {
+      "deltas": {
+        "Joy": 30,
+        "Excite": 20,
+        "Calm": 5
+      },
+      "metadataMultipliers": [
+        {
+          "key": "masterId",
+          "operator": "truthy",
+          "multiplier": 1.2
+        },
+        {
+          "key": "master_id",
+          "operator": "truthy",
+          "multiplier": 1.2
+        },
+        {
+          "key": "speakerIsMaster",
+          "operator": "truthy",
+          "multiplier": 1.2
+        }
+      ]
+    },
+    "EVT_VOICE_SCOLD": {
+      "deltas": {
+        "Anxiety": 25,
+        "Fear": 15,
+        "Joy": -10
+      }
+    },
+    "EVT_VOICE_COMFORT": {
+      "deltas": {
+        "Anxiety": -25,
+        "Fear": -15,
+        "Calm": 20
+      }
+    },
+    "EVT_VOICE_COMMAND_KNOWN": {
+      "deltas": {
+        "Curious": 15,
+        "Calm": 10
+      }
+    },
+    "EVT_VOICE_COMMAND_UNKNOWN": {
+      "deltas": {
+        "Anxiety": 15,
+        "Curious": 10
+      }
+    },
+    "EVT_VOICE_HAPPY": {
+      "deltas": {
+        "Joy": 25,
+        "Excite": 15,
+        "Calm": 5
+      }
+    },
+    "EVT_VOICE_SAD": {
+      "deltas": {
+        "Anxiety": 15,
+        "Calm": -5
+      }
+    },
+    "EVT_VOICE_NEUTRAL": {
+      "deltas": {
+        "Calm": 5,
+        "Curious": 5
+      }
+    },
+    "EVT_VOICE_CALL_NAME": {
+      "deltas": {
+        "Joy": 20,
+        "Excite": 10
+      }
+    },
+    "EVT_VOICE_PLAY_INTERACTION": {
+      "deltas": {
+        "Excite": 15,
+        "Joy": 10
+      }
+    },
+    "EVT_VOICE_STATUS_CARE": {
+      "deltas": {
+        "Joy": 5,
+        "Calm": 10
+      }
+    },
+    "EVT_VOICE_POSITIVE_EMOTION": {
+      "deltas": {
+        "Joy": 15,
+        "Excite": 5
+      }
+    },
+    "EVT_VOICE_NEGATIVE_EMOTION": {
+      "deltas": {
+        "Calm": 15,
+        "Curious": 5,
+        "Excite": -15,
+        "Joy": -5
+      }
+    },
+    "EVT_VOICE_MASTER_ID": {
+      "deltas": {
+        "Calm": 15
+      }
+    },
+    "EVT_VOICE_STRANGER_ID": {
+      "deltas": {
+        "Fear": 15,
+        "Curious": 10
+      }
+    },
+    "EVT_TACTILE_HEAD_PET": {
+      "deltas": {
+        "Joy": 25,
+        "Calm": 15,
+        "Excite": 5
+      }
+    },
+    "EVT_TACTILE_NOSE_TOUCH": {
+      "deltas": {
+        "Curious": 10,
+        "Calm": 5
+      }
+    },
+    "EVT_TACTILE_EAR_TOUCH": {
+      "deltas": {
+        "Joy": 20,
+        "Calm": 10
+      }
+    },
+    "EVT_TACTILE_CHIN_RUB": {
+      "deltas": {
+        "Joy": 30,
+        "Calm": 10,
+        "Excite": 5
+      }
+    },
+    "EVT_TACTILE_FACE_TOUCH": {
+      "deltas": {
+        "Joy": 15,
+        "Anxiety": 10
+      }
+    },
+    "EVT_TACTILE_MUZZLE_GRAB": {
+      "deltas": {
+        "Fear": 35,
+        "Anxiety": 20
+      }
+    },
+    "EVT_TACTILE_PUT_IN_MOUTH": {
+      "deltas": {
+        "Fear": 40,
+        "Anxiety": 15
+      }
+    },
+    "EVT_TACTILE_BODY_STROKE": {
+      "deltas": {
+        "Joy": 20,
+        "Calm": 15
+      }
+    },
+    "EVT_TACTILE_BELLY_TRUST": {
+      "deltas": {
+        "Joy": 35,
+        "Calm": 15
+      }
+    },
+    "EVT_TACTILE_BELLY_TENSE": {
+      "deltas": {
+        "Fear": 20,
+        "Anxiety": 15
+      }
+    },
+    "EVT_TACTILE_PAW_HOLD": {
+      "deltas": {
+        "Curious": 10,
+        "Calm": 5
+      }
+    },
+    "EVT_TACTILE_PAW_PAD_SLEEP": {
+      "deltas": {
+        "Calm": 10
+      }
+    },
+    "EVT_TACTILE_PAW_PAD_WAKE": {
+      "deltas": {
+        "Fear": 25,
+        "Anxiety": 15
+      }
+    },
+    "EVT_TACTILE_HIP_ACCEPT": {
+      "deltas": {
+        "Joy": 15
+      }
+    },
+    "EVT_TACTILE_HIP_RESIST": {
+      "deltas": {
+        "Fear": 20,
+        "Anxiety": 15
+      }
+    },
+    "EVT_TACTILE_TAIL_GRAB": {
+      "deltas": {
+        "Fear": 30,
+        "Anxiety": 20
+      }
+    },
+    "EVT_VISION_MASTER_HAPPY": {
+      "deltas": {
+        "Joy": 30,
+        "Excite": 15,
+        "Calm": 5
+      }
+    },
+    "EVT_VISION_MASTER_SAD": {
+      "deltas": {
+        "Anxiety": 15,
+        "Calm": -5
+      }
+    },
+    "EVT_VISION_MASTER_NEUTRAL": {
+      "deltas": {
+        "Calm": 5,
+        "Curious": 5
+      }
+    },
+    "EVT_VISION_MASTER": {
+      "deltas": {
+        "Joy": 25,
+        "Excite": 15,
+        "Calm": 10
+      }
+    },
+    "EVT_VISION_STRANGER": {
+      "deltas": {
+        "Fear": 15,
+        "Curious": 20
+      }
+    },
+    "EVT_VISION_STRANGER_ALERT": {
+      "deltas": {
+        "Fear": 15,
+        "Curious": 20
+      }
+    },
+    "EVT_VISION_STRANGER_FRIEND": {
+      "deltas": {
+        "Excite": 10,
+        "Curious": 20
+      }
+    },
+    "EVT_VISION_FOOD": {
+      "deltas": {
+        "Excite": 35,
+        "Joy": 20,
+        "Curious": 10
+      }
+    },
+    "EVT_VISION_TOY": {
+      "deltas": {
+        "Excite": 30,
+        "Curious": 20,
+        "Joy": 15
+      }
+    },
+    "EVT_VISION_FALL": {
+      "deltas": {
+        "Anxiety": 20,
+        "Curious": 10
+      }
+    },
+    "EVT_VISION_STOP_GESTURE": {
+      "deltas": {
+        "Calm": 10,
+        "Curious": 15
+      }
+    },
+    "EVT_VISION_HAND_TO_NOSE": {
+      "deltas": {
+        "Curious": 15,
+        "Calm": 5
+      }
+    },
+    "EVT_VISION_HAND_TO_NOSE_FEAR": {
+      "deltas": {
+        "Fear": 15,
+        "Anxiety": 10
+      }
+    },
+    "EVT_VISION_ANIMAL_CALM": {
+      "deltas": {
+        "Calm": 10,
+        "Curious": 5
+      }
+    },
+    "EVT_VISION_ANIMAL_GREET": {
+      "deltas": {
+        "Excite": 15,
+        "Joy": 10
+      }
+    },
+    "EVT_VISION_ANIMAL_PLAY": {
+      "deltas": {
+        "Excite": 30,
+        "Joy": 20
+      }
+    },
+    "EVT_VISION_ANIMAL_BOUNDARY": {
+      "deltas": {
+        "Fear": 10,
+        "Curious": 15
+      }
+    }
+  },
+  "emotion_types": [
+    "Anxiety",
+    "Calm",
+    "Curious",
+    "Excite",
+    "Fear",
+    "Joy"
+  ],
+  "category_policies": {
+    "safety": {
+      "priority_level": 0,
+      "branch": "SafetyBranch",
+      "description": "系统级安全：精力、特殊生存避险（触觉/视觉/嗅觉应激）、立即停止"
+    },
+    "external_interaction": {
+      "priority_level": 1,
+      "branch": "ExternalInteractionBranch",
+      "description": "外部交互：触觉、听觉（语音唤醒/识别/声纹/声源定位/异响/复合情绪）、视觉、环境变化事件"
+    },
+    "urgent_physiology": {
+      "priority_level": 2,
+      "branch": "UrgentPhysiologyBranch",
+      "description": "生理紧急：排泄、困倦"
+    },
+    "normal_physiology": {
+      "priority_level": 3,
+      "branch": "NormalPhysiologyBranch",
+      "description": "生理常规：饥渴、清洁"
+    },
+    "psychological_need": {
+      "priority_level": 4,
+      "branch": "PsychologicalNeedBranch",
+      "description": "心理需求：社交、探索"
+    },
+    "emotion_expression": {
+      "priority_level": 5,
+      "branch": "EmotionExpressionBranch",
+      "description": "情绪表达：愉悦/兴奋、焦虑/恐惧、好奇"
+    },
+    "idle": {
+      "priority_level": 6,
+      "branch": "IdleBranch",
+      "description": "空闲：无活跃需求/情绪"
+    }
+  },
+  "emotion_deduplication_window_sec": 10,
+  "tactile_policy": {
+    "enabled": true,
+    "max_age_sec": 2.0,
+    "future_tolerance_sec": 0.5
+  },
+  "route_policies": {
+    "audio_direct|EVT_VOICE_WAKEUP|default": {
+      "category": "external_interaction",
+      "intent": "orient_to_sound",
+      "sub_priority": 1,
+      "ttl_sec": 2.0,
+      "timeout_sec": 8.0,
+      "cooldown_sec": 0.0,
+      "interrupt_policy": "immediate",
+      "params": {
+        "use_wake_angle": true
+      }
+    },
+    "audio_direct|EVT_VOICE_COMMAND_WALK|default": {
+      "category": "external_interaction",
+      "intent": "command_walk",
+      "expected_command_id": "CMD_WALK",
+      "sub_priority": 1,
+      "timeout_sec": 50.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_PLAY_ALONE|default": {
+      "category": "external_interaction",
+      "intent": "command_play_alone",
+      "expected_command_id": "CMD_PLAY_ALONE",
+      "sub_priority": 1,
+      "timeout_sec": 0.0,
+      "params": {
+        "lifecycle_scope": "behavior",
+        "completion_policy": "until_preempted",
+        "cancel_on_voice_idle": false
+      }
+    },
+    "audio_direct|EVT_VOICE_COMMAND_GO_OUT|default": {
+      "category": "external_interaction",
+      "intent": "command_go_out",
+      "expected_command_id": "CMD_GO_OUT",
+      "sub_priority": 1,
+      "timeout_sec": 50.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_GO_HOME|default": {
+      "category": "external_interaction",
+      "intent": "command_go_home",
+      "expected_command_id": "CMD_GO_HOME",
+      "sub_priority": 1,
+      "timeout_sec": 60.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_APPROACH|default": {
+      "category": "external_interaction",
+      "intent": "command_approach",
+      "expected_command_id": "CMD_APPROACH",
+      "sub_priority": 1,
+      "timeout_sec": 170.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_BACK_UP|default": {
+      "category": "external_interaction",
+      "intent": "command_back_up",
+      "expected_command_id": "CMD_BACK_UP",
+      "sub_priority": 1,
+      "timeout_sec": 6.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_SIT|default": {
+      "category": "external_interaction",
+      "intent": "command_sit",
+      "expected_command_id": "CMD_SIT",
+      "sub_priority": 1
+    },
+    "audio_direct|EVT_VOICE_COMMAND_LIE_DOWN|default": {
+      "category": "external_interaction",
+      "intent": "command_lie_down",
+      "expected_command_id": "CMD_LIE_DOWN",
+      "sub_priority": 1
+    },
+    "audio_direct|EVT_VOICE_COMMAND_STAND_UP|default": {
+      "category": "external_interaction",
+      "intent": "command_stand_up",
+      "expected_command_id": "CMD_STAND_UP",
+      "sub_priority": 1
+    },
+    "audio_direct|EVT_VOICE_COMMAND_STAND_STILL|default": {
+      "category": "external_interaction",
+      "intent": "command_stand_still",
+      "expected_command_id": "CMD_STAND_STILL",
+      "sub_priority": 1,
+      "timeout_sec": 10.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_HOLD_POSITION|default": {
+      "category": "external_interaction",
+      "intent": "command_hold_position",
+      "expected_command_id": "CMD_HOLD_POSITION",
+      "sub_priority": 1,
+      "timeout_sec": 10.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_WAIT|default": {
+      "category": "external_interaction",
+      "intent": "command_wait",
+      "expected_command_id": "CMD_WAIT",
+      "sub_priority": 1
+    },
+    "audio_direct|EVT_VOICE_COMMAND_COME|default": {
+      "category": "external_interaction",
+      "intent": "command_come_here",
+      "expected_command_id": "CMD_COME_HERE",
+      "sub_priority": 1,
+      "timeout_sec": 170.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_SHAKE_HAND|default": {
+      "category": "external_interaction",
+      "intent": "command_handshake",
+      "expected_command_id": "CMD_HAND",
+      "sub_priority": 1
+    },
+    "audio_direct|EVT_VOICE_COMMAND_HIGH_FIVE|default": {
+      "category": "external_interaction",
+      "intent": "command_high_five",
+      "expected_command_id": "CMD_FIVE",
+      "sub_priority": 1
+    },
+    "audio_direct|EVT_VOICE_COMMAND_FOLLOW|default": {
+      "category": "external_interaction",
+      "intent": "command_follow",
+      "expected_command_id": "CMD_FOLLOW",
+      "sub_priority": 1,
+      "timeout_sec": 0.0,
+      "params": {
+        "lifecycle_scope": "behavior",
+        "completion_policy": "until_preempted",
+        "cancel_on_voice_idle": false
+      }
+    },
+    "audio_direct|EVT_VOICE_COMMAND_ROLL_OVER|default": {
+      "category": "external_interaction",
+      "intent": "command_roll",
+      "expected_command_id": "CMD_ROLL",
+      "sub_priority": 1
+    },
+    "audio_direct|EVT_VOICE_COMMAND_SPIN|default": {
+      "category": "external_interaction",
+      "intent": "command_spin",
+      "expected_command_id": "CMD_SPIN",
+      "sub_priority": 1
+    },
+    "audio_direct|EVT_VOICE_COMMAND_RETURN|default": {
+      "category": "external_interaction",
+      "intent": "command_retrieve",
+      "expected_command_id": "CMD_BACK",
+      "sub_priority": 1,
+      "timeout_sec": 170.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_DROP|default": {
+      "category": "external_interaction",
+      "intent": "command_spit_out",
+      "expected_command_id": "CMD_SPIT",
+      "sub_priority": 1
+    },
+    "audio_direct|EVT_VOICE_COMMAND_QUIET|default": {
+      "category": "external_interaction",
+      "intent": "command_quiet",
+      "expected_command_id": "CMD_QUIET",
+      "sub_priority": 1,
+      "timeout_sec": 3.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_TOILET|default": {
+      "category": "external_interaction",
+      "intent": "command_toilet",
+      "expected_command_id": "CMD_TOILET",
+      "sub_priority": 1,
+      "timeout_sec": 60.0,
+      "need_gate": {
+        "demand": "Bladder",
+        "operator": "gt",
+        "threshold": 50.0
+      }
+    },
+    "audio_direct|EVT_VOICE_COMMAND_CLEAN|default": {
+      "category": "external_interaction",
+      "intent": "command_clean",
+      "expected_command_id": "CMD_CLEAN",
+      "sub_priority": 1,
+      "timeout_sec": 15.0,
+      "need_gate": {
+        "demand": "Cleanliness",
+        "operator": "gt",
+        "threshold": 40.0
+      }
+    },
+    "audio_direct|EVT_VOICE_COMMAND_SLEEP|default": {
+      "category": "external_interaction",
+      "intent": "command_sleep",
+      "expected_command_id": "CMD_SLEEP",
+      "sub_priority": 1,
+      "timeout_sec": 120.0,
+      "need_gate": {
+        "demand": "Sleepiness",
+        "operator": "gt",
+        "threshold": 50.0
+      }
+    },
+    "audio_direct|EVT_VOICE_COMMAND_PLAY_DEAD|default": {
+      "category": "external_interaction",
+      "intent": "command_play_dead",
+      "expected_command_id": "CMD_DEAD",
+      "sub_priority": 1
+    },
+    "audio_direct|EVT_VOICE_COMMAND_BRING|default": {
+      "category": "external_interaction",
+      "intent": "command_bring",
+      "expected_command_id": "CMD_BRING_OBJECT",
+      "sub_priority": 1
+    },
+    "audio_direct|EVT_VOICE_COMMAND_FETCH|default": {
+      "category": "external_interaction",
+      "intent": "command_fetch",
+      "expected_command_id": "CMD_FETCH_OBJECT",
+      "required_voice_slots": [
+        "object_name"
+      ],
+      "allowed_voice_slot_values": {
+        "object_name": [
+          "dog toy ball",
+          "dog frisbee toy",
+          "dog tug ring toy",
+          "dog collar",
+          "dog bowl",
+          "dog leash",
+          "dog treat bag",
+          "dog food can",
+          "dog bed",
+          "trash can",
+          "cardboard shipping box",
+          "sock",
+          "slipper",
+          "tissue paper",
+          "door",
+          "stairs",
+          "cat",
+          "dog"
+        ]
+      },
+      "sub_priority": 1
+    },
+    "audio_direct|EVT_VOICE_COMMAND_STOP|default": {
+      "category": "safety",
+      "intent": "emergency_stop",
+      "expected_command_id": "CMD_STOP",
+      "sub_priority": 1
+    },
+    "audio_direct|EVT_VOICE_COMMAND_COMFORT_DONT_BE_AFRAID|default": {
+      "category": "external_interaction",
+      "intent": "command_comfort_dont_be_afraid",
+      "expected_command_id": "CMD_COMFORT_DONT_BE_AFRAID",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_COMFORT_REASSURE|default": {
+      "category": "external_interaction",
+      "intent": "command_comfort_reassure",
+      "expected_command_id": "CMD_COMFORT_REASSURE",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_ASK_IF_HURTS|default": {
+      "category": "external_interaction",
+      "intent": "command_ask_if_hurts",
+      "expected_command_id": "CMD_ASK_IF_HURTS",
+      "sub_priority": 1,
+      "timeout_sec": 5.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OFFER_HEAD_FOR_PET|default": {
+      "category": "external_interaction",
+      "intent": "command_offer_head_for_pet",
+      "expected_command_id": "CMD_OFFER_HEAD_FOR_PET",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_SEEK_HUG|default": {
+      "category": "external_interaction",
+      "intent": "command_seek_hug",
+      "expected_command_id": "CMD_SEEK_HUG",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_REFUSE|default": {
+      "category": "external_interaction",
+      "intent": "command_refuse",
+      "expected_command_id": "CMD_REFUSE",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_REFUSE_PLAY|default": {
+      "category": "external_interaction",
+      "intent": "command_refuse_play",
+      "expected_command_id": "CMD_REFUSE_PLAY",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_FIND_DAD|default": {
+      "category": "external_interaction",
+      "intent": "command_find_dad",
+      "expected_command_id": "CMD_FIND_DAD",
+      "sub_priority": 1,
+      "timeout_sec": 20.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_FIND_MOM|default": {
+      "category": "external_interaction",
+      "intent": "command_find_mom",
+      "expected_command_id": "CMD_FIND_MOM",
+      "sub_priority": 1,
+      "timeout_sec": 20.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_DANCE|default": {
+      "category": "external_interaction",
+      "intent": "command_dance",
+      "expected_command_id": "CMD_DANCE",
+      "sub_priority": 1,
+      "timeout_sec": 25.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_BRING_TO_ME|default": {
+      "category": "external_interaction",
+      "intent": "command_bring_to_me",
+      "expected_command_id": "CMD_BRING_TO_ME",
+      "sub_priority": 1,
+      "timeout_sec": 20.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_GIVE_TO_ME|default": {
+      "category": "external_interaction",
+      "intent": "command_give_to_me",
+      "expected_command_id": "CMD_GIVE_TO_ME",
+      "sub_priority": 1,
+      "timeout_sec": 20.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_GO_GET_IT|default": {
+      "category": "external_interaction",
+      "intent": "command_go_get_it",
+      "expected_command_id": "CMD_GO_GET_IT",
+      "sub_priority": 1,
+      "timeout_sec": 20.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_BRING_IT_BACK|default": {
+      "category": "external_interaction",
+      "intent": "command_bring_it_back",
+      "expected_command_id": "CMD_BRING_IT_BACK",
+      "sub_priority": 1,
+      "timeout_sec": 20.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_FETCH_BALL|default": {
+      "category": "external_interaction",
+      "intent": "command_fetch_ball",
+      "expected_command_id": "CMD_FETCH_BALL",
+      "sub_priority": 1,
+      "timeout_sec": 20.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_FIND_TOY|default": {
+      "category": "external_interaction",
+      "intent": "command_find_toy",
+      "expected_command_id": "CMD_FIND_TOY",
+      "sub_priority": 1,
+      "timeout_sec": 20.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_STAY_HOME_ALONE|default": {
+      "category": "external_interaction",
+      "intent": "command_stay_home_alone",
+      "expected_command_id": "CMD_STAY_HOME_ALONE",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_WAIT_FOR_OWNER_RETURN|default": {
+      "category": "external_interaction",
+      "intent": "command_wait_for_owner_return",
+      "expected_command_id": "CMD_WAIT_FOR_OWNER_RETURN",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_GOING_OUT|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_going_out",
+      "expected_command_id": "CMD_OWNER_GOING_OUT",
+      "sub_priority": 1,
+      "timeout_sec": 25.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_RETURNED|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_returned",
+      "expected_command_id": "CMD_OWNER_RETURNED",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_BYE_BYE|default": {
+      "category": "external_interaction",
+      "intent": "command_bye_bye",
+      "expected_command_id": "CMD_BYE_BYE",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_GOODBYE|default": {
+      "category": "external_interaction",
+      "intent": "command_goodbye",
+      "expected_command_id": "CMD_GOODBYE",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_ASK_WHAT_DOING|default": {
+      "category": "external_interaction",
+      "intent": "command_ask_what_doing",
+      "expected_command_id": "CMD_ASK_WHAT_DOING",
+      "sub_priority": 1,
+      "timeout_sec": 5.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_ASK_WHERE_ARE_YOU|default": {
+      "category": "external_interaction",
+      "intent": "command_ask_where_are_you",
+      "expected_command_id": "CMD_ASK_WHERE_ARE_YOU",
+      "sub_priority": 1,
+      "timeout_sec": 5.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_ASK_WHATS_WRONG|default": {
+      "category": "external_interaction",
+      "intent": "command_ask_whats_wrong",
+      "expected_command_id": "CMD_ASK_WHATS_WRONG",
+      "sub_priority": 1,
+      "timeout_sec": 5.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_ASK_WHAT_THINKING|default": {
+      "category": "external_interaction",
+      "intent": "command_ask_what_thinking",
+      "expected_command_id": "CMD_ASK_WHAT_THINKING",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_ASK_IF_COMFORTABLE|default": {
+      "category": "external_interaction",
+      "intent": "command_ask_if_comfortable",
+      "expected_command_id": "CMD_ASK_IF_COMFORTABLE",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_ASK_IF_LIKES|default": {
+      "category": "external_interaction",
+      "intent": "command_ask_if_likes",
+      "expected_command_id": "CMD_ASK_IF_LIKES",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_ASK_IF_FUN|default": {
+      "category": "external_interaction",
+      "intent": "command_ask_if_fun",
+      "expected_command_id": "CMD_ASK_IF_FUN",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_ASK_IF_UNDERSTANDS|default": {
+      "category": "external_interaction",
+      "intent": "command_ask_if_understands",
+      "expected_command_id": "CMD_ASK_IF_UNDERSTANDS",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_ASK_ABILITIES|default": {
+      "category": "external_interaction",
+      "intent": "command_ask_abilities",
+      "expected_command_id": "CMD_ASK_ABILITIES",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_ASK_IF_LEARNED|default": {
+      "category": "external_interaction",
+      "intent": "command_ask_if_learned",
+      "expected_command_id": "CMD_ASK_IF_LEARNED",
+      "sub_priority": 1,
+      "timeout_sec": 5.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_EXPRESS_MISS_YOU|default": {
+      "category": "external_interaction",
+      "intent": "command_express_miss_you",
+      "expected_command_id": "CMD_EXPRESS_MISS_YOU",
+      "sub_priority": 1,
+      "timeout_sec": 25.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_TIRED|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_tired",
+      "expected_command_id": "CMD_OWNER_TIRED",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_ANNOYED|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_annoyed",
+      "expected_command_id": "CMD_OWNER_ANNOYED",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_UNHAPPY|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_unhappy",
+      "expected_command_id": "CMD_OWNER_UNHAPPY",
+      "sub_priority": 1,
+      "timeout_sec": 25.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_BAD_DAY|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_bad_day",
+      "expected_command_id": "CMD_OWNER_BAD_DAY",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_DEPRESSED|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_depressed",
+      "expected_command_id": "CMD_OWNER_DEPRESSED",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_STRESSED|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_stressed",
+      "expected_command_id": "CMD_OWNER_STRESSED",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_LONELY|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_lonely",
+      "expected_command_id": "CMD_OWNER_LONELY",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_UNWELL|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_unwell",
+      "expected_command_id": "CMD_OWNER_UNWELL",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_HAPPY|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_happy",
+      "expected_command_id": "CMD_OWNER_HAPPY",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_VERY_HAPPY|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_very_happy",
+      "expected_command_id": "CMD_OWNER_VERY_HAPPY",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_FEELING_GREAT|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_feeling_great",
+      "expected_command_id": "CMD_OWNER_FEELING_GREAT",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_FEELING_EXCELLENT|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_feeling_excellent",
+      "expected_command_id": "CMD_OWNER_FEELING_EXCELLENT",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_RELAXED|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_relaxed",
+      "expected_command_id": "CMD_OWNER_RELAXED",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_WONDERFUL_DAY|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_wonderful_day",
+      "expected_command_id": "CMD_OWNER_WONDERFUL_DAY",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_OWNER_FEELING_LUCKY|default": {
+      "category": "external_interaction",
+      "intent": "command_owner_feeling_lucky",
+      "expected_command_id": "CMD_OWNER_FEELING_LUCKY",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_EAT_MEAL|default": {
+      "category": "external_interaction",
+      "intent": "command_eat_meal",
+      "expected_command_id": "CMD_EAT_MEAL",
+      "sub_priority": 1,
+      "timeout_sec": 30.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_EAT_SNACK|default": {
+      "category": "external_interaction",
+      "intent": "command_eat_snack",
+      "expected_command_id": "CMD_EAT_SNACK",
+      "sub_priority": 1,
+      "timeout_sec": 30.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_EAT_CANNED_FOOD|default": {
+      "category": "external_interaction",
+      "intent": "command_eat_canned_food",
+      "expected_command_id": "CMD_EAT_CANNED_FOOD",
+      "sub_priority": 1,
+      "timeout_sec": 30.0
+    },
+    "audio_direct|EVT_VOICE_COMMAND_RESPOND_FOOD_PREFERENCE_QUERY|default": {
+      "category": "external_interaction",
+      "intent": "command_respond_food_preference_query",
+      "expected_command_id": "CMD_RESPOND_FOOD_PREFERENCE_QUERY",
+      "sub_priority": 1,
+      "timeout_sec": 15.0
+    },
+    "visual_direct|EVT_VISION_FALL|default": {
+      "category": "external_interaction",
+      "intent": "visual_fall_response",
+      "semantic_rank": 0,
+      "sub_priority": 12,
+      "ttl_sec": 8.0,
+      "interrupt_policy": "immediate"
+    },
+    "visual_direct|EVT_VISION_STOP_GESTURE|default": {
+      "category": "external_interaction",
+      "intent": "visual_stop_gesture_response",
+      "semantic_rank": 0,
+      "sub_priority": 12,
+      "ttl_sec": 8.0,
+      "interrupt_policy": "immediate"
+    },
+    "need|NEED_HUNGER_TRIGGERED|dog_food": {
+      "category": "normal_physiology",
+      "visual_required": "hunger_food_context",
+      "timeout_sec": 180.0,
+      "intent": "eat_normal",
+      "behavior_name": "eatNormally",
+      "variant": "food_visible"
+    },
+    "need|NEED_HUNGER_TRIGGERED|no_dog_food": {
+      "category": "normal_physiology",
+      "visual_required": "hunger_food_context",
+      "timeout_sec": 180.0,
+      "intent": "seek_food",
+      "behavior_name": "seekFood",
+      "variant": "food_search"
+    },
+    "need|NEED_HUNGER_OVERFLOW|dog_food": {
+      "category": "normal_physiology",
+      "visual_required": "hunger_food_context",
+      "timeout_sec": 180.0,
+      "intent": "eat_excited",
+      "behavior_name": "eatExcitedly",
+      "variant": "food_visible_urgent"
+    },
+    "need|NEED_HUNGER_OVERFLOW|no_dog_food": {
+      "category": "normal_physiology",
+      "visual_required": "hunger_food_context",
+      "timeout_sec": 180.0,
+      "intent": "seek_food_urgent",
+      "behavior_name": "seekFoodUrgently",
+      "variant": "food_search_urgent",
+      "params": {
+        "executor_behavior_name": "seekFood"
+      }
+    },
+    "need|NEED_BLADDER_TRIGGERED|default": {
+      "category": "urgent_physiology",
+      "intent": "request_elimination",
+      "behavior_name": "barkShortAlert",
+      "variant": "request"
+    },
+    "need|NEED_SLEEPINESS_TRIGGERED|default": {
+      "category": "urgent_physiology",
+      "intent": "settle_to_sleep",
+      "behavior_name": "sleepOnSide",
+      "variant": "light"
+    },
+    "need|NEED_SLEEPINESS_OVERFLOW|default": {
+      "category": "urgent_physiology",
+      "intent": "sleep_deep",
+      "behavior_name": "sleepNow",
+      "variant": "deep"
+    },
+    "need|NEED_CLEANLINESS_TRIGGERED|default": {
+      "category": "normal_physiology",
+      "intent": "groom_light",
+      "behavior_name": "lickPaws",
+      "variant": "light"
+    },
+    "need|NEED_ENERGY_TRIGGERED|default": {
+      "category": "safety",
+      "intent": "recover_energy",
+      "behavior_name": "restInPlace",
+      "variant": "low_energy",
+      "timeout_sec": 330.0
+    },
+    "need|NEED_ENERGY_OVERFLOW|default": {
+      "category": "safety",
+      "intent": "recharge_critical",
+      "behavior_name": "recharge",
+      "variant": "critical",
+      "timeout_sec": 330.0
+    },
+    "need|NEED_SOCIAL_TRIGGERED|human": {
+      "category": "psychological_need",
+      "visual_required": "social_target",
+      "sub_priority": 2,
+      "intent": "human_attention_interaction",
+      "behavior_name": "seekHumanInteraction",
+      "variant": "human_seek"
+    },
+    "need|NEED_SOCIAL_TRIGGERED|animal": {
+      "category": "psychological_need",
+      "visual_required": "social_target",
+      "sub_priority": 2,
+      "intent": "animal_boundary_test",
+      "behavior_name": "testAnimalBoundary",
+      "variant": "animal_boundary"
+    },
+    "need|NEED_SOCIAL_URGENT|human": {
+      "category": "psychological_need",
+      "visual_required": "social_target",
+      "sub_priority": 1,
+      "intent": "social_engage",
+      "behavior_name": "seekInteraction",
+      "variant": "human_engage"
+    },
+    "need|NEED_SOCIAL_URGENT|animal": {
+      "category": "psychological_need",
+      "visual_required": "social_target",
+      "sub_priority": 1,
+      "intent": "animal_social_greet",
+      "behavior_name": "greetAnimal",
+      "variant": "animal_greet"
+    },
+    "need|NEED_SOCIAL_OVERFLOW|human": {
+      "category": "psychological_need",
+      "visual_required": "social_target",
+      "sub_priority": 0,
+      "intent": "human_play_invite",
+      "behavior_name": "inviteHumanToPlay",
+      "variant": "human_play"
+    },
+    "need|NEED_SOCIAL_OVERFLOW|animal": {
+      "category": "psychological_need",
+      "visual_required": "social_target",
+      "sub_priority": 0,
+      "intent": "animal_play_invite",
+      "behavior_name": "inviteAnimalToPlay",
+      "variant": "animal_play"
+    },
+    "need|NEED_EXPLORATION_TRIGGERED|play_item": {
+      "category": "psychological_need",
+      "visual_required": "exploration_context",
+      "intent": "inspect_familiar_play_item",
+      "behavior_name": "inspectFamiliarPlayItem",
+      "variant": "play_item"
+    },
+    "need|NEED_EXPLORATION_TRIGGERED|trash_can": {
+      "category": "psychological_need",
+      "visual_required": "exploration_context",
+      "intent": "inspect_trash_can",
+      "behavior_name": "inspectTrashCan",
+      "variant": "trash_can"
+    },
+    "need|NEED_EXPLORATION_TRIGGERED|delivery_box": {
+      "category": "psychological_need",
+      "visual_required": "exploration_context",
+      "intent": "inspect_delivery_box",
+      "behavior_name": "inspectDeliveryBox",
+      "variant": "delivery_box"
+    },
+    "need|NEED_EXPLORATION_TRIGGERED|tissue": {
+      "category": "psychological_need",
+      "visual_required": "exploration_context",
+      "intent": "inspect_tissue",
+      "behavior_name": "inspectTissuePaper",
+      "variant": "tissue"
+    },
+    "need|NEED_EXPLORATION_TRIGGERED|door": {
+      "category": "psychological_need",
+      "visual_required": "exploration_context",
+      "intent": "inspect_door",
+      "behavior_name": "inspectDoor",
+      "variant": "door"
+    },
+    "need|NEED_EXPLORATION_TRIGGERED|dog_food": {
+      "category": "psychological_need",
+      "visual_required": "exploration_context",
+      "intent": "inspect_dog_food",
+      "behavior_name": "inspectDogFood",
+      "variant": "dog_food"
+    },
+    "need|NEED_EXPLORATION_TRIGGERED|unfamiliar_object": {
+      "category": "psychological_need",
+      "visual_required": "exploration_context",
+      "intent": "inspect_generic_object",
+      "behavior_name": "inspectObject",
+      "variant": "unfamiliar"
+    },
+    "need|NEED_EXPLORATION_TRIGGERED|empty": {
+      "category": "psychological_need",
+      "visual_required": "exploration_context",
+      "intent": "explore_space",
+      "behavior_name": "exploreRoom",
+      "variant": "room"
+    },
+    "emotion|EMO_CALM_TRIGGERED|human": {
+      "intent": "express_calm",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "calm",
+      "allow_repeat": true,
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressCalmWithHuman",
+      "voice_waiting_behavior_name": "expressCalmInPlaceWithHuman",
+      "interaction_mode": "interactive"
+    },
+    "emotion|EMO_CALM_TRIGGERED|human/voice_waiting": {
+      "intent": "express_calm",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "calm",
+      "allow_repeat": true,
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressCalmWithHuman",
+      "voice_waiting_behavior_name": "expressCalmInPlaceWithHuman",
+      "interaction_mode": "interactive"
+    },
+    "emotion|EMO_CALM_TRIGGERED|solo": {
+      "intent": "express_calm",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "calm",
+      "allow_repeat": true,
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressCalmAlone",
+      "interaction_mode": "solo"
+    },
+    "emotion|EMO_JOY_TRIGGERED|human": {
+      "intent": "express_joy",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "joy",
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressJoyWithHuman",
+      "voice_waiting_behavior_name": "expressJoyInPlaceWithHuman",
+      "interaction_mode": "interactive"
+    },
+    "emotion|EMO_JOY_TRIGGERED|human/voice_waiting": {
+      "intent": "express_joy",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "joy",
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressJoyWithHuman",
+      "voice_waiting_behavior_name": "expressJoyInPlaceWithHuman",
+      "interaction_mode": "interactive"
+    },
+    "emotion|EMO_JOY_TRIGGERED|solo": {
+      "intent": "express_joy",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "joy",
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressJoyAlone",
+      "interaction_mode": "solo"
+    },
+    "emotion|EMO_EXCITE_TRIGGERED|human": {
+      "intent": "express_excitement",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "excitement",
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressExcitementWithHuman",
+      "voice_waiting_behavior_name": "expressExcitementInPlaceWithHuman",
+      "interaction_mode": "interactive"
+    },
+    "emotion|EMO_EXCITE_TRIGGERED|human/voice_waiting": {
+      "intent": "express_excitement",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "excitement",
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressExcitementWithHuman",
+      "voice_waiting_behavior_name": "expressExcitementInPlaceWithHuman",
+      "interaction_mode": "interactive"
+    },
+    "emotion|EMO_EXCITE_TRIGGERED|solo": {
+      "intent": "express_excitement",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "excitement",
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressExcitementAlone",
+      "interaction_mode": "solo"
+    },
+    "emotion|EMO_ANXIETY_TRIGGERED|human": {
+      "intent": "express_anxiety",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "anxiety",
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressAnxietyWithHuman",
+      "voice_waiting_behavior_name": "expressAnxietyInPlaceWithHuman",
+      "interaction_mode": "interactive"
+    },
+    "emotion|EMO_ANXIETY_TRIGGERED|human/voice_waiting": {
+      "intent": "express_anxiety",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "anxiety",
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressAnxietyWithHuman",
+      "voice_waiting_behavior_name": "expressAnxietyInPlaceWithHuman",
+      "interaction_mode": "interactive"
+    },
+    "emotion|EMO_ANXIETY_TRIGGERED|solo": {
+      "intent": "express_anxiety",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "anxiety",
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressAnxietyAlone",
+      "interaction_mode": "solo"
+    },
+    "emotion|EMO_FEAR_TRIGGERED|human": {
+      "intent": "express_fear",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "fear",
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressFearWithHuman",
+      "voice_waiting_behavior_name": "expressFearInPlaceWithHuman",
+      "interaction_mode": "interactive"
+    },
+    "emotion|EMO_FEAR_TRIGGERED|human/voice_waiting": {
+      "intent": "express_fear",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "fear",
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressFearWithHuman",
+      "voice_waiting_behavior_name": "expressFearInPlaceWithHuman",
+      "interaction_mode": "interactive"
+    },
+    "emotion|EMO_FEAR_TRIGGERED|solo": {
+      "intent": "express_fear",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "fear",
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressFearAlone",
+      "interaction_mode": "solo"
+    },
+    "emotion|EMO_CURIOUS_TRIGGERED|human": {
+      "intent": "express_curiosity",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "curiosity",
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressCuriosityWithHuman",
+      "voice_waiting_behavior_name": "expressCuriosityInPlaceWithHuman",
+      "interaction_mode": "interactive"
+    },
+    "emotion|EMO_CURIOUS_TRIGGERED|human/voice_waiting": {
+      "intent": "express_curiosity",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "curiosity",
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressCuriosityWithHuman",
+      "voice_waiting_behavior_name": "expressCuriosityInPlaceWithHuman",
+      "interaction_mode": "interactive"
+    },
+    "emotion|EMO_CURIOUS_TRIGGERED|solo": {
+      "intent": "express_curiosity",
+      "priority_level": 5,
+      "sub_priority": 0,
+      "level": "LOW",
+      "variant": "curiosity",
+      "visual_required": "person_presence",
+      "result_mapping": null,
+      "behavior_name": "expressCuriosityAlone",
+      "interaction_mode": "solo"
+    }
+  },
+  "event_index": [
+    {
+      "event": "EMO_ANXIETY_TRIGGERED",
+      "direct_paths": [],
+      "internal_paths": [
+        "emotion|EMO_ANXIETY_TRIGGERED|human",
+        "emotion|EMO_ANXIETY_TRIGGERED|human/voice_waiting",
+        "emotion|EMO_ANXIETY_TRIGGERED|solo"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "EMO_CALM_TRIGGERED",
+      "direct_paths": [],
+      "internal_paths": [
+        "emotion|EMO_CALM_TRIGGERED|human",
+        "emotion|EMO_CALM_TRIGGERED|human/voice_waiting",
+        "emotion|EMO_CALM_TRIGGERED|solo"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "EMO_CURIOUS_TRIGGERED",
+      "direct_paths": [],
+      "internal_paths": [
+        "emotion|EMO_CURIOUS_TRIGGERED|human",
+        "emotion|EMO_CURIOUS_TRIGGERED|human/voice_waiting",
+        "emotion|EMO_CURIOUS_TRIGGERED|solo"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "EMO_EXCITE_TRIGGERED",
+      "direct_paths": [],
+      "internal_paths": [
+        "emotion|EMO_EXCITE_TRIGGERED|human",
+        "emotion|EMO_EXCITE_TRIGGERED|human/voice_waiting",
+        "emotion|EMO_EXCITE_TRIGGERED|solo"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "EMO_FEAR_TRIGGERED",
+      "direct_paths": [],
+      "internal_paths": [
+        "emotion|EMO_FEAR_TRIGGERED|human",
+        "emotion|EMO_FEAR_TRIGGERED|human/voice_waiting",
+        "emotion|EMO_FEAR_TRIGGERED|solo"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "EMO_JOY_TRIGGERED",
+      "direct_paths": [],
+      "internal_paths": [
+        "emotion|EMO_JOY_TRIGGERED|human",
+        "emotion|EMO_JOY_TRIGGERED|human/voice_waiting",
+        "emotion|EMO_JOY_TRIGGERED|solo"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "EVT_AUDIO_LOUD",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Fear": 40,
+          "Anxiety": 20,
+          "Excite": -10
+        },
+        "metadataMultipliers": [
+          {
+            "key": "loudnessDb",
+            "operator": "gt",
+            "value": 80,
+            "multiplier": 1.5
+          },
+          {
+            "key": "loudness_db",
+            "operator": "gt",
+            "value": 80,
+            "multiplier": 1.5
+          }
+        ]
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_AUDIO_WITH_HUMAN",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Calm": 10,
+          "Joy": 5
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_TACTILE_BELLY_TENSE",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Fear": 20,
+          "Anxiety": 15
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_TACTILE_BELLY_TRUST",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Joy": 35,
+          "Calm": 15
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_TACTILE_BODY_STROKE",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Joy": 20,
+          "Calm": 15
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_TACTILE_CHIN_RUB",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Joy": 30,
+          "Calm": 10,
+          "Excite": 5
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_TACTILE_EAR_TOUCH",
+      "direct_paths": [
+        "touch_direct|EVT_TACTILE_EAR_TOUCH|STARTED"
+      ],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Joy": 20,
+          "Calm": 10
+        }
+      },
+      "classification": "direct_and_emotion"
+    },
+    {
+      "event": "EVT_TACTILE_FACE_TOUCH",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Joy": 15,
+          "Anxiety": 10
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_TACTILE_HEAD_PET",
+      "direct_paths": [
+        "touch_direct|EVT_TACTILE_HEAD_PET|STARTED"
+      ],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Joy": 25,
+          "Calm": 15,
+          "Excite": 5
+        }
+      },
+      "classification": "direct_and_emotion"
+    },
+    {
+      "event": "EVT_TACTILE_HIP_ACCEPT",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Joy": 15
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_TACTILE_HIP_RESIST",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Fear": 20,
+          "Anxiety": 15
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_TACTILE_MUZZLE_GRAB",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Fear": 35,
+          "Anxiety": 20
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_TACTILE_NOSE_TOUCH",
+      "direct_paths": [
+        "touch_direct|EVT_TACTILE_NOSE_TOUCH|STARTED"
+      ],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Curious": 10,
+          "Calm": 5
+        }
+      },
+      "classification": "direct_and_emotion"
+    },
+    {
+      "event": "EVT_TACTILE_PAW_HOLD",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Curious": 10,
+          "Calm": 5
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_TACTILE_PAW_PAD_SLEEP",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Calm": 10
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_TACTILE_PAW_PAD_WAKE",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Fear": 25,
+          "Anxiety": 15
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_TACTILE_PUT_IN_MOUTH",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Fear": 40,
+          "Anxiety": 15
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_TACTILE_TAIL_GRAB",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Fear": 30,
+          "Anxiety": 20
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VISION_ANIMAL_BOUNDARY",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Fear": 10,
+          "Curious": 15
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VISION_ANIMAL_CALM",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Calm": 10,
+          "Curious": 5
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VISION_ANIMAL_GREET",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Excite": 15,
+          "Joy": 10
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VISION_ANIMAL_PLAY",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Excite": 30,
+          "Joy": 20
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VISION_FALL",
+      "direct_paths": [
+        "visual_direct|EVT_VISION_FALL|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Anxiety": 20,
+          "Curious": 10
+        }
+      },
+      "classification": "direct_and_emotion"
+    },
+    {
+      "event": "EVT_VISION_FOOD",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Excite": 35,
+          "Joy": 20,
+          "Curious": 10
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VISION_HAND_TO_NOSE",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Curious": 15,
+          "Calm": 5
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VISION_HAND_TO_NOSE_FEAR",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Fear": 15,
+          "Anxiety": 10
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VISION_MASTER",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Joy": 25,
+          "Excite": 15,
+          "Calm": 10
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VISION_MASTER_HAPPY",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Joy": 30,
+          "Excite": 15,
+          "Calm": 5
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VISION_MASTER_NEUTRAL",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Calm": 5,
+          "Curious": 5
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VISION_MASTER_SAD",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Anxiety": 15,
+          "Calm": -5
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VISION_STOP_GESTURE",
+      "direct_paths": [
+        "visual_direct|EVT_VISION_STOP_GESTURE|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Calm": 10,
+          "Curious": 15
+        }
+      },
+      "classification": "direct_and_emotion"
+    },
+    {
+      "event": "EVT_VISION_STRANGER",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Fear": 15,
+          "Curious": 20
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VISION_STRANGER_ALERT",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Fear": 15,
+          "Curious": 20
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VISION_STRANGER_FRIEND",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Excite": 10,
+          "Curious": 20
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VISION_TOY",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Excite": 30,
+          "Curious": 20,
+          "Joy": 15
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_CALL_NAME",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Joy": 20,
+          "Excite": 10
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_COMFORT",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Anxiety": -25,
+          "Fear": -15,
+          "Calm": 20
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_APPROACH",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_APPROACH|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_ASK_ABILITIES",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_ASK_ABILITIES|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_ASK_IF_COMFORTABLE",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_ASK_IF_COMFORTABLE|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_ASK_IF_FUN",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_ASK_IF_FUN|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_ASK_IF_HURTS",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_ASK_IF_HURTS|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_ASK_IF_LEARNED",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_ASK_IF_LEARNED|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_ASK_IF_LIKES",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_ASK_IF_LIKES|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_ASK_IF_UNDERSTANDS",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_ASK_IF_UNDERSTANDS|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_ASK_WHATS_WRONG",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_ASK_WHATS_WRONG|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_ASK_WHAT_DOING",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_ASK_WHAT_DOING|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_ASK_WHAT_THINKING",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_ASK_WHAT_THINKING|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_ASK_WHERE_ARE_YOU",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_ASK_WHERE_ARE_YOU|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_BACK_UP",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_BACK_UP|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_BRING",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_BRING|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_BRING_IT_BACK",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_BRING_IT_BACK|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_BRING_TO_ME",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_BRING_TO_ME|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_BYE_BYE",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_BYE_BYE|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_CALL_NAME",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "unmapped_in_scope"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_CLEAN",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_CLEAN|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_COME",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_COME|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_COMFORT_DONT_BE_AFRAID",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_COMFORT_DONT_BE_AFRAID|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_COMFORT_REASSURE",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_COMFORT_REASSURE|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_DANCE",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_DANCE|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_DROP",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_DROP|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_EAT_CANNED_FOOD",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_EAT_CANNED_FOOD|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_EAT_MEAL",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_EAT_MEAL|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_EAT_SNACK",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_EAT_SNACK|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_EXPRESS_MISS_YOU",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_EXPRESS_MISS_YOU|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_FETCH",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_FETCH|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_FETCH_BALL",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_FETCH_BALL|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_FIND_DAD",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_FIND_DAD|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_FIND_MOM",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_FIND_MOM|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_FIND_TOY",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_FIND_TOY|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_FOLLOW",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_FOLLOW|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_GIVE_TO_ME",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_GIVE_TO_ME|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_GOODBYE",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_GOODBYE|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_GO_GET_IT",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_GO_GET_IT|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_GO_HOME",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_GO_HOME|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_GO_OUT",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_GO_OUT|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_HIGH_FIVE",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_HIGH_FIVE|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_HOLD_POSITION",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_HOLD_POSITION|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_KNOWN",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Curious": 15,
+          "Calm": 10
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_LIE_DOWN",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_LIE_DOWN|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OFFER_HEAD_FOR_PET",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OFFER_HEAD_FOR_PET|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_ANNOYED",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_ANNOYED|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_BAD_DAY",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_BAD_DAY|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_DEPRESSED",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_DEPRESSED|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_FEELING_EXCELLENT",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_FEELING_EXCELLENT|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_FEELING_GREAT",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_FEELING_GREAT|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_FEELING_LUCKY",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_FEELING_LUCKY|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_GOING_OUT",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_GOING_OUT|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_HAPPY",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_HAPPY|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_LONELY",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_LONELY|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_RELAXED",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_RELAXED|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_RETURNED",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_RETURNED|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_STRESSED",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_STRESSED|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_TIRED",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_TIRED|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_UNHAPPY",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_UNHAPPY|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_UNWELL",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_UNWELL|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_VERY_HAPPY",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_VERY_HAPPY|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_OWNER_WONDERFUL_DAY",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_OWNER_WONDERFUL_DAY|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_PLAY",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "unmapped_in_scope"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_PLAY_ALONE",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_PLAY_ALONE|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_PLAY_DEAD",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_PLAY_DEAD|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_PRAISE",
+      "direct_paths": [
+        "audio_reaction|EVT_VOICE_COMMAND_PRAISE|Excite/human",
+        "audio_reaction|EVT_VOICE_COMMAND_PRAISE|Excite/human/voice_waiting",
+        "audio_reaction|EVT_VOICE_COMMAND_PRAISE|Excite/solo",
+        "audio_reaction|EVT_VOICE_COMMAND_PRAISE|Joy/human",
+        "audio_reaction|EVT_VOICE_COMMAND_PRAISE|Joy/human/voice_waiting",
+        "audio_reaction|EVT_VOICE_COMMAND_PRAISE|Joy/solo"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_QUIET",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_QUIET|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_REFUSE",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_REFUSE|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_REFUSE_PLAY",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_REFUSE_PLAY|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_RESPOND_EATING_QUERY",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "unmapped_in_scope"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_RESPOND_FOOD_PREFERENCE_QUERY",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_RESPOND_FOOD_PREFERENCE_QUERY|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_RESPOND_HUNGRY_QUERY",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "unmapped_in_scope"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_RESPOND_WANT_EAT_QUERY",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "unmapped_in_scope"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_RETURN",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_RETURN|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_ROLL_OVER",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_ROLL_OVER|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_SCOLD",
+      "direct_paths": [
+        "audio_reaction|EVT_VOICE_COMMAND_SCOLD|Anxiety/human",
+        "audio_reaction|EVT_VOICE_COMMAND_SCOLD|Anxiety/human/voice_waiting",
+        "audio_reaction|EVT_VOICE_COMMAND_SCOLD|Anxiety/solo",
+        "audio_reaction|EVT_VOICE_COMMAND_SCOLD|Curious/human",
+        "audio_reaction|EVT_VOICE_COMMAND_SCOLD|Curious/human/voice_waiting",
+        "audio_reaction|EVT_VOICE_COMMAND_SCOLD|Curious/solo",
+        "audio_reaction|EVT_VOICE_COMMAND_SCOLD|Fear/human",
+        "audio_reaction|EVT_VOICE_COMMAND_SCOLD|Fear/human/voice_waiting",
+        "audio_reaction|EVT_VOICE_COMMAND_SCOLD|Fear/solo"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_SEEK_HUG",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_SEEK_HUG|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_SHAKE_HAND",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_SHAKE_HAND|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_SIT",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_SIT|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_SLEEP",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_SLEEP|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_SPIN",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_SPIN|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_STAND_STILL",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_STAND_STILL|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_STAND_UP",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_STAND_UP|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_STAY_HOME_ALONE",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_STAY_HOME_ALONE|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_STOP",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_STOP|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_TOILET",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_TOILET|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_UNKNOWN",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Anxiety": 15,
+          "Curious": 10
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_WAIT",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_WAIT|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_WAIT_FOR_OWNER_RETURN",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_WAIT_FOR_OWNER_RETURN|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_COMMAND_WALK",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_COMMAND_WALK|default"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "EVT_VOICE_HAPPY",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Joy": 25,
+          "Excite": 15,
+          "Calm": 5
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_MASTER_ID",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Calm": 15
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_NEGATIVE_EMOTION",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Calm": 15,
+          "Curious": 5,
+          "Excite": -15,
+          "Joy": -5
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_NEUTRAL",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Calm": 5,
+          "Curious": 5
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_PLAY_INTERACTION",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Excite": 15,
+          "Joy": 10
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_POSITIVE_EMOTION",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Joy": 15,
+          "Excite": 5
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_PRAISE",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Joy": 30,
+          "Excite": 20,
+          "Calm": 5
+        },
+        "metadataMultipliers": [
+          {
+            "key": "masterId",
+            "operator": "truthy",
+            "multiplier": 1.2
+          },
+          {
+            "key": "master_id",
+            "operator": "truthy",
+            "multiplier": 1.2
+          },
+          {
+            "key": "speakerIsMaster",
+            "operator": "truthy",
+            "multiplier": 1.2
+          }
+        ]
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_SAD",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Anxiety": 15,
+          "Calm": -5
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_SCOLD",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Anxiety": 25,
+          "Fear": 15,
+          "Joy": -10
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_STATUS_CARE",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Joy": 5,
+          "Calm": 10
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_STRANGER_ID",
+      "direct_paths": [],
+      "internal_paths": [],
+      "emotion_rule": {
+        "deltas": {
+          "Fear": 15,
+          "Curious": 10
+        }
+      },
+      "classification": "emotion_only"
+    },
+    {
+      "event": "EVT_VOICE_WAKEUP",
+      "direct_paths": [
+        "audio_direct|EVT_VOICE_WAKEUP|default",
+        "code|wake_authorized_approach"
+      ],
+      "internal_paths": [],
+      "emotion_rule": null,
+      "classification": "direct_only"
+    },
+    {
+      "event": "NEED_BLADDER_TRIGGERED",
+      "direct_paths": [],
+      "internal_paths": [
+        "need|NEED_BLADDER_TRIGGERED|default"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "NEED_CLEANLINESS_TRIGGERED",
+      "direct_paths": [],
+      "internal_paths": [
+        "need|NEED_CLEANLINESS_TRIGGERED|default"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "NEED_ENERGY_OVERFLOW",
+      "direct_paths": [],
+      "internal_paths": [
+        "need|NEED_ENERGY_OVERFLOW|default"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "NEED_ENERGY_TRIGGERED",
+      "direct_paths": [],
+      "internal_paths": [
+        "need|NEED_ENERGY_TRIGGERED|default"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "NEED_EXPLORATION_TRIGGERED",
+      "direct_paths": [],
+      "internal_paths": [
+        "need|NEED_EXPLORATION_TRIGGERED|delivery_box",
+        "need|NEED_EXPLORATION_TRIGGERED|dog_food",
+        "need|NEED_EXPLORATION_TRIGGERED|door",
+        "need|NEED_EXPLORATION_TRIGGERED|empty",
+        "need|NEED_EXPLORATION_TRIGGERED|play_item",
+        "need|NEED_EXPLORATION_TRIGGERED|tissue",
+        "need|NEED_EXPLORATION_TRIGGERED|trash_can",
+        "need|NEED_EXPLORATION_TRIGGERED|unfamiliar_object"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "NEED_HUNGER_OVERFLOW",
+      "direct_paths": [],
+      "internal_paths": [
+        "need|NEED_HUNGER_OVERFLOW|dog_food",
+        "need|NEED_HUNGER_OVERFLOW|no_dog_food"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "NEED_HUNGER_TRIGGERED",
+      "direct_paths": [],
+      "internal_paths": [
+        "need|NEED_HUNGER_TRIGGERED|dog_food",
+        "need|NEED_HUNGER_TRIGGERED|no_dog_food"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "NEED_SLEEPINESS_OVERFLOW",
+      "direct_paths": [],
+      "internal_paths": [
+        "need|NEED_SLEEPINESS_OVERFLOW|default"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "NEED_SLEEPINESS_TRIGGERED",
+      "direct_paths": [],
+      "internal_paths": [
+        "need|NEED_SLEEPINESS_TRIGGERED|default"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "NEED_SOCIAL_OVERFLOW",
+      "direct_paths": [],
+      "internal_paths": [
+        "need|NEED_SOCIAL_OVERFLOW|animal",
+        "need|NEED_SOCIAL_OVERFLOW|human"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "NEED_SOCIAL_TRIGGERED",
+      "direct_paths": [],
+      "internal_paths": [
+        "need|NEED_SOCIAL_TRIGGERED|animal",
+        "need|NEED_SOCIAL_TRIGGERED|human"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    },
+    {
+      "event": "NEED_SOCIAL_URGENT",
+      "direct_paths": [],
+      "internal_paths": [
+        "need|NEED_SOCIAL_URGENT|animal",
+        "need|NEED_SOCIAL_URGENT|human"
+      ],
+      "emotion_rule": null,
+      "classification": "internal_trigger"
+    }
+  ],
+  "coverage": {
+    "scope": "Configured reactions, emotion influence, internal triggers and explicitly indexed runtime entries",
+    "code_paths_exhaustive": false,
+    "defaults": "Absent policy values remain runtime defaults; this view does not execute mapping logic",
+    "dual_path": "Independent consumers; immediate reaction and later internal expression require scenario-specific review"
+  }
 }

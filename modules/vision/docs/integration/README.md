@@ -20,7 +20,7 @@
 Emotion/InternalNeed ── state + signal_event ──> Behavior Tree
                                                      │
                      /behavior/attention_tracking ───┼────────┐
-                     /execute_behavior Action ───────┘        ▼
+                     /action/execute_behavior Action ───────┘        ▼
                                                        Action Executor
                                                    (物体流会话所有者)
                                                              │
@@ -45,8 +45,8 @@ Action Result ──> Behavior Tree ── /behavior/result_event ──> Intern
 |---|---|---|---|---|
 | 语音 | 待填写 | `MarsDogVoiceInteraction` | `docs/HANDOFF.md` | `/perception/audio_event`、`/perception/voice/task` |
 | 视觉 | 待填写 | `MarsDogVisionInteraction` | `docs/HANDOFF.md` | `/perception/visual_event`、`/perception/vision/object_detections`、`/perception/vision/task` |
-| 行为树 | 待填写 | `MarsDogTree` | `docs/HANDOFF.md` | `/execute_behavior` Client、`/behavior/result_event` |
-| 动作 | 待填写 | `MarsDogAction` | `docs/HANDOFF.md` | `/execute_behavior` Server、`/cmd_vel` |
+| 行为树 | 待填写 | `MarsDogTree` | `docs/HANDOFF.md` | `/action/execute_behavior` Client、`/behavior/result_event` |
+| 动作 | 待填写 | `MarsDogAction` | `docs/HANDOFF.md` | `/action/execute_behavior` Server、`/cmd_vel` |
 | 公共 Action 接口 | 待填写 | `marsdog_interfaces` | `action/ExecuteBehavior.action` | `marsdog_interfaces/action/ExecuteBehavior` |
 
 确定人员后应立即补齐负责人和联系方式；跨项目接口变更由生产者与所有直接消费者共同评审。

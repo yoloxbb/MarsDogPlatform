@@ -80,6 +80,9 @@ private:
   double cost_threshold_{0.0};
   bool visualization_{false};
   bool enable_strafe_{true};
+  bool require_start_occupied_{false};
+  int recovery_start_occupied_cost_{253};
+  double recovery_costmap_max_age_{5.0};
 };
 }  // namespace nav2_behaviors
 

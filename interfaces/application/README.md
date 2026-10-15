@@ -14,7 +14,7 @@
 
 从主仓根运行 `python3 -B tools/<门禁文件>`。前三种 JSON schema_version
 分别是整数 2、整数 1、字符串 "2.0"，不得以统一版本字段为由改写线上消息。
-VoiceTask/VisionTask 字段相同但 ROS 类型不同；既有 waypoint 对 VoiceTask 的依赖保留。
+VoiceTask/VisionTask 字段相同但 ROS 类型不同；waypoint 旧 VoiceTask 入口保留，新入口使用 NavigationTask，见下方迁移说明。
 
 cases.json 记录固定输入及负例；baseline.json 是重构前真实实现的输出。
 正常测试只读基线，输出 actual.json/result.json，差异必须失败，不得自动更新基线。
@@ -27,3 +27,11 @@ cases.json 记录固定输入及负例；baseline.json 是重构前真实实现�
 排障使用 [统一日志 v2](../observability/README.md) 的 behavior.* 观察；它不是线上 ROS 协议，不改变上述身份和版本。
 
 事件、意图、行为、动作及端点的命名和跨配置引用门禁见 [标识规范及目录](../naming/README.md)。
+
+## 2026-10-13 新增接口
+
+- [场景选择三种靠近方式](approach/README.md)
+- [触觉事件与双路径消费](tactile/README.md)
+- [主等级与子优先级](../../docs/architecture/PRIORITY_CONTRACT.md)
+
+- [导航自有任务类型与兼容切换](navigation-task/README.md)：共享任务存储与终态，显式选择新入口。

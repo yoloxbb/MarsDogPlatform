@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from event_inventory import CODE_SOURCES, extend
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCES = {
@@ -18,8 +19,14 @@ SOURCES = {
     "voice": "modules/voice/config/command_catalog.yaml",
     "templates": "modules/action/config/behavior_tree_actions.yaml",
     "units": "modules/action/config/action_catalog.yaml",
+    "presets": "modules/action/config/behavior_presets.yaml",
+    "capability_decisions": "interfaces/naming/capability_decisions.json",
+    "tactile": "modules/behavior/config/tactile_events.yaml",
+    "emotion_effects": "modules/emotion/configs/emotions.yaml",
+    "runtime_entries": "interfaces/naming/runtime_entries.json",
 }
-FINGERPRINT_PATHS = (*SOURCES.values(), "tools/identifier_catalog.py")
+FINGERPRINT_PATHS = (*SOURCES.values(), "tools/identifier_catalog.py",
+                     "tools/event_inventory.py", "tools/capability_decisions.py", *CODE_SOURCES)
 
 
 def fingerprints(root: Path) -> dict:
@@ -84,7 +91,12 @@ def collect(root: Path) -> dict:
                     })
 
     behaviors = {}
-    for name, template in data["templates"]["behaviors"].items():
+    templates = dict(data["templates"]["behaviors"])
+    presets = data["presets"]["behaviors"]
+    if set(templates) & set(presets):
+        raise ValueError("additive presets collide with reviewed templates")
+    templates.update(presets)
+    for name, template in templates.items():
         if template.get("behavior_name") != name:
             raise ValueError(f"behavior key/name mismatch: {name}")
         behaviors[name] = [{
@@ -102,7 +114,7 @@ def collect(root: Path) -> dict:
         "command_key": item["command_key"], "command_id": item["command_id"],
         "event": item["event_type"], "product_action_label": item.get("action_name", ""),
     } for item in data["voice"]["commands"]]
-    return {
+    catalog = {
         "schema_version": 1,
         "source_sha256": fingerprints(root),
         "categories": sorted(data["categories"]["categories"]),
@@ -116,8 +128,11 @@ def collect(root: Path) -> dict:
         } for event, entry in events["audio_reaction"].items()],
         "voice_commands": voice_commands,
         "behaviors": behaviors,
+        "expression_presets": sorted(presets),
+        "capability_decisions": data["capability_decisions"],
         "units": sorted(units),
     }
+    return extend(root, data, catalog)
 
 
 if __name__ == "__main__":

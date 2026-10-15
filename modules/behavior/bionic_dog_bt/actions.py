@@ -14,6 +14,7 @@ from typing import Protocol
 
 from .behavior_tree_node import Node, Status
 from .arbitration import evaluate_preemption
+from .drive_policy import resolve_drive
 from .blackboard import Blackboard
 from .datatypes import ExecutorFeedback, BehaviorFeedbackEvent
 from .logger import get_logger, LogEvent
@@ -37,7 +38,7 @@ class ExecutorInterface(Protocol):
     """Protocol that any executor must satisfy.
 
     Current implementation: MockActionExecutor (internal mock)
-    Future: ActionClientAdapter wrapping ROS2 Action Client → /execute_behavior
+    Future: ActionClientAdapter wrapping ROS2 Action Client → /action/execute_behavior
     """
 
     def send_goal(self, active) -> str: ...
@@ -219,11 +220,8 @@ class ExecuteActiveBehavior(Node):
         compatibility check here.
         """
         # ── Check person presence for emotion-triggered behaviors ────────────
-        source = active.params.get("source", "")
-        is_direct_audio = source == "audio_direct"
         if (
-            active.need_type == "emotional"
-            and not is_direct_audio
+            resolve_drive(active.params, active.need_type).state_domain == "emotion"
             and not active.params.get("visual_resolved")
         ):
             person = bb.perception_client.check_person()

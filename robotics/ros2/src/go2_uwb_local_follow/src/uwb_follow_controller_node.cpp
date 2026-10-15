@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "diagnostic_msgs/msg/diagnostic_array.hpp"
 #include "diagnostic_msgs/msg/diagnostic_status.hpp"
@@ -33,6 +34,7 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2/LinearMath/Vector3.h"
@@ -77,11 +79,14 @@ public:
     diagnostics_topic_ = declare_parameter<std::string>(
       "diagnostics_topic", "/go2_uwb_local_follow/follow_diagnostics");
     enable_motion_ = declare_parameter<bool>("enable_motion", true);
+    tracking_enabled_ = declare_parameter<bool>("tracking_enabled", true);
     control_frequency_ = declare_parameter<double>("control_frequency", 20.0);
     diagnostic_frequency_ = declare_parameter<double>("diagnostic_frequency", 2.0);
     target_timeout_sec_ = declare_parameter<double>("target_timeout_sec", 0.50);
     odom_timeout_sec_ = declare_parameter<double>("odom_timeout_sec", 0.20);
     transform_timeout_sec_ = declare_parameter<double>("transform_timeout_sec", 0.10);
+    max_target_distance_ = declare_parameter<double>(
+      "max_target_distance", std::numeric_limits<double>::max());
 
     config_.follow_distance = declare_parameter<double>("follow_distance", 1.0);
     config_.distance_deadband = declare_parameter<double>("distance_deadband", 0.08);
@@ -128,6 +133,41 @@ public:
       std::chrono::duration_cast<std::chrono::nanoseconds>(diagnostic_period),
       std::bind(&UwbFollowControllerNode::diagnosticTick, this));
     last_control_time_ = std::chrono::steady_clock::now();
+    parameter_callback_ = add_on_set_parameters_callback(
+      [this](const std::vector<rclcpp::Parameter> & parameters) {
+        auto candidate = config_;
+        bool tracking = tracking_enabled_;
+        rcl_interfaces::msg::SetParametersResult response;
+        response.successful = false;
+        try {
+          for (const auto & parameter : parameters) {
+            if (parameter.get_name() == "follow_distance") {
+              candidate.follow_distance = parameter.as_double();
+            } else if (parameter.get_name() == "tracking_enabled") {
+              tracking = parameter.as_bool();
+            }
+          }
+          if (!validateFollowConfig(candidate, &response.reason)) {
+            return response;
+          }
+          if (candidate.follow_distance != config_.follow_distance ||
+            tracking != tracking_enabled_)
+          {
+            config_ = candidate;
+            tracking_enabled_ = tracking;
+            {
+              std::lock_guard<std::mutex> lock(target_mutex_);
+              latest_target_ = TargetSnapshot{};
+              target_stamp_tracker_ = SourceStampTracker{};
+            }
+            publishImmediateStop(tracking ? "WAIT_TARGET" : "TRACKING_PAUSED");
+          }
+          response.successful = true;
+        } catch (const std::exception & exception) {
+          response.reason = exception.what();
+        }
+        return response;
+      });
 
     RCLCPP_INFO(
       get_logger(), "UWB follow controller started: target=%s odom=%s cmd=%s enable_motion=%s",
@@ -178,7 +218,8 @@ private:
     }
     if (!std::isfinite(target_timeout_sec_) || target_timeout_sec_ <= 0.0 ||
       !std::isfinite(odom_timeout_sec_) || odom_timeout_sec_ <= 0.0 ||
-      !std::isfinite(transform_timeout_sec_) || transform_timeout_sec_ <= 0.0)
+      !std::isfinite(transform_timeout_sec_) || transform_timeout_sec_ <= 0.0 ||
+      !std::isfinite(max_target_distance_) || max_target_distance_ <= 0.0)
     {
       throw std::invalid_argument("target, odom and transform timeouts must be positive");
     }
@@ -283,6 +324,11 @@ private:
     last_control_time_ = current_time;
     const double dt = std::clamp(measured_dt, 0.0, 2.0 / control_frequency_);
 
+    if (!tracking_enabled_) {
+      publishImmediateStop("TRACKING_PAUSED");
+      return;
+    }
+
     const TargetSnapshot target = targetSnapshot();
     if (!target.valid) {
       publishImmediateStop("WAIT_TARGET");
@@ -311,6 +357,10 @@ private:
     }
 
     FollowResult result = computeFollowTarget(target.x, target.y, config_);
+    if (result.distance > max_target_distance_) {
+      publishImmediateStop("TARGET_OUT_OF_RANGE");
+      return;
+    }
     const DynamicAngularBrakeResult brake = applyDynamicAngularBrake(
       result.heading, result.target_velocity.angular_z, odom.angular_z, config_, turn_direction_,
       angular_brake_latched_);
@@ -430,6 +480,10 @@ private:
       {"target_age_sec", formatDouble(target_age)},
       {"odom_age_sec", formatDouble(odom_age)},
       {"distance", have_result ? formatDouble(result.distance) : "n/a"},
+      {"follow_distance", formatDouble(config_.follow_distance)},
+      {"within_follow_distance",
+        have_result && result.within_follow_distance ? "true" : "false"},
+      {"tracking_enabled", tracking_enabled_ ? "true" : "false"},
       {"heading", have_result ? formatDouble(result.heading) : "n/a"},
       {"actual_wz", have_result ? formatDouble(result.actual_angular_z) : "n/a"},
       {"brake_angle", have_result ? formatDouble(result.brake_angle) : "n/a"},
@@ -461,11 +515,13 @@ private:
   std::string nominal_cmd_topic_;
   std::string diagnostics_topic_;
   bool enable_motion_{true};
+  bool tracking_enabled_{true};
   double control_frequency_{20.0};
   double diagnostic_frequency_{2.0};
   double target_timeout_sec_{0.50};
   double odom_timeout_sec_{0.20};
   double transform_timeout_sec_{0.10};
+  double max_target_distance_{std::numeric_limits<double>::max()};
   FollowConfig config_;
   int turn_direction_{0};
   bool angular_brake_latched_{false};
@@ -496,6 +552,7 @@ private:
   rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diagnostics_pub_;
   rclcpp::TimerBase::SharedPtr control_timer_;
   rclcpp::TimerBase::SharedPtr diagnostic_timer_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr parameter_callback_;
 };
 
 }  // namespace go2_uwb_local_follow

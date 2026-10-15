@@ -73,6 +73,7 @@ class ConfigLoader:
             config_dir = local if local.exists() or not installed.is_dir() else installed
         self._dir = Path(config_dir)
         self.behavior_tree_templates: dict[str, Any] = {}
+        self.behavior_presets: dict[str, Any] = {}
         self.action_catalog: dict[str, Any] = {}
         self.controller_routes: dict[str, Any] = {}
         self.safety_policies: dict[str, Any] = {}
@@ -81,6 +82,7 @@ class ConfigLoader:
         self.wake_orientation_config: dict[str, Any] = {}
         self.visual_target_approach_config: dict[str, Any] = {}
         self.uwb_follow_config: dict[str, Any] = {}
+        self.local_motion_config: dict[str, Any] = {}
         self.go2_sport_config: dict[str, Any] = {}
         self.lite3_action_config: dict[str, Any] = {}
         self._errors: list[str] = []
@@ -89,6 +91,7 @@ class ConfigLoader:
     # wrapper_key=None means the YAML top level IS the data (no unwrap needed).
     _CONFIG_FILES: list[tuple[str, str, str | None]] = [
         ("behavior_tree_actions.yaml", "behavior_tree_templates", "behaviors"),
+        ("behavior_presets.yaml", "behavior_presets", "behaviors"),
         ("action_catalog.yaml", "action_catalog", "action_units"),
         ("controller_routes.yaml", "controller_routes", None),
         ("safety_policies.yaml", "safety_policies", None),
@@ -101,6 +104,7 @@ class ConfigLoader:
             None,
         ),
         ("uwb_follow.yaml", "uwb_follow_config", None),
+        ("local_motion.yaml", "local_motion_config", None),
         ("go2_sport.yaml", "go2_sport_config", None),
         ("lite3_actions.yaml", "lite3_action_config", None),
     ]
@@ -119,9 +123,19 @@ class ConfigLoader:
 
     def load_all(self) -> None:
         """Load all config files and validate."""
+        self._errors = []
+        self.behavior_presets = {}
         for filename, attr, wrapper_key in self._CONFIG_FILES:
-            required = filename in self._REQUIRED_CONFIGS
+            required = filename in self._REQUIRED_CONFIGS or (
+                filename == "behavior_presets.yaml" and (self._dir / filename).exists())
             self._load_yaml(filename, attr, required=required, unwrap_key=wrapper_key)
+
+        from .behavior_presets import validate_presets
+        self._errors.extend(validate_presets(
+            self.behavior_presets, self.behavior_tree_templates, self.action_catalog))
+        # Reject collisions before merging: additive presets cannot replace a reviewed plan.
+        if not self._errors:
+            self.behavior_tree_templates.update(deepcopy(self.behavior_presets))
 
         referenced_actions = {
             candidate.get("unit_id")
@@ -165,7 +179,11 @@ class ConfigLoader:
 
         try:
             with open(filepath, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f)
+                if attr == "behavior_presets":
+                    from .behavior_presets import read_presets_yaml
+                    data = read_presets_yaml(f)
+                else:
+                    data = yaml.safe_load(f)
             if data is None:
                 if required:
                     self._errors.append(f"Empty config: {filepath}")
@@ -177,7 +195,7 @@ class ConfigLoader:
                 if required:
                     self._errors.append(f"Invalid config structure in {filepath}: expected dict, got {type(data).__name__}")
                 return
-            if attr == "behavior_tree_templates":
+            if attr in ("behavior_tree_templates", "behavior_presets"):
                 # YAML anchors may share stages; runtime templates must not share
                 # mutable objects across distinct behavior identities.
                 data = {name: deepcopy(template) for name, template in data.items()}
@@ -196,8 +214,26 @@ class ConfigLoader:
         self._validate_wake_orientation_config()
         self._validate_visual_target_approach_config()
         self._validate_uwb_follow_config()
+        self._validate_local_motion_config()
         self._validate_go2_sport_config()
         self._validate_lite3_action_config()
+
+    def _validate_local_motion_config(self) -> None:
+        config = self.local_motion_config
+        if not config:
+            return
+        if type(config.get('enabled')) is not bool:
+            self._errors.append('local_motion.yaml: enabled must be boolean')
+        for key in ('action_name', 'command_topic'):
+            if not isinstance(config.get(key), str) or not config[key].startswith('/'):
+                self._errors.append(f'local_motion.yaml: {key} must be an absolute ROS name')
+        if not isinstance(config.get('base_frame'), str) or not config['base_frame']:
+            self._errors.append('local_motion.yaml: base_frame is required')
+        from .local_motion_request import MOVEMENT_UNITS
+        units = config.get('allowed_units')
+        if (not isinstance(units, list) or not units or
+                any(not isinstance(u, str) or u not in MOVEMENT_UNITS or u not in self.action_catalog for u in units)):
+            self._errors.append('local_motion.yaml: allowed_units must contain known movement-only ACT units')
 
     def _validate_lite3_action_config(self) -> None:
         """Validate the fail-closed Lite3 simple-command action mapping."""

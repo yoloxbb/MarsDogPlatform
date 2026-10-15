@@ -14,7 +14,7 @@ ROS 名称和类型仍以 [interfaces/registry.json](../registry.json) 为准，
 | intent | 选择行为的语义入口 / BT | 小写下划线 | command_handshake |
 | behavior_name | 可调度行为的身份 / BT 与 Action 契约 | 新增统一小写下划线；承诺要完成什么 | give_paw |
 | unit_id | 行为阶段里的执行单元 / Action | ACT_* 大写下划线；描述具体执行能力 | ACT_INTERACT_GIVE_PAW |
-| topic / service / action endpoint | 承载通信的通道 / ROS 接口所有者 | 延续已有领域路径、小写下划线，并登记 ROS 种类与类型 | /perception/audio_event、/execute_behavior |
+| topic / service / action endpoint | 承载通信的通道 / ROS 接口所有者 | 延续已有领域路径、小写下划线，并登记 ROS 种类与类型 | /perception/audio_event、/action/execute_behavior |
 
 Voice 词库的 `action_name: ACT_SHAKE_HAND` 是**产品动作标签**，不是 Action 的 unit_id；
 `behavior` 是产品中文说明，也不是 BT 的 behavior_name。线上字段继续保留原名，
@@ -53,7 +53,7 @@ Voice 词库的 `action_name: ACT_SHAKE_HAND` 是**产品动作标签**，不是
 | /perception/audio_event | Topic，Voice 音频事件 envelope |
 | /perception/visual_event | Topic，既有视觉事件及快照 envelope；快照不等于激活信号 |
 | /emotion/state、/internal_need/state | Topic，状态与 signal_event；恢复/刷新不等于新事件 |
-| /execute_behavior | ROS Action，Goal/Feedback/Result 与取消生命周期 |
+| /action/execute_behavior | ROS Action，Goal/Feedback/Result 与取消生命周期 |
 | /behavior/result_event | Topic，当前由 BT 发布的 String JSON，限需求结算相关行为 |
 | VoiceTask / VisionTask | 不同的 ROS service 类型；字段相似不代表可互换 |
 
@@ -63,9 +63,11 @@ Voice 词库的 `action_name: ACT_SHAKE_HAND` 是**产品动作标签**，不是
 
 ## 4 自动目录和检查范围
 
-`tools/identifier_catalog.py` 只读取七份 owning YAML，不 import 业务模块：
+`tools/identifier_catalog.py` 读取 owning YAML，不 import 业务模块：
 Voice 词库；BT 的 event_intent_map、intent_action_pool、behavior_categories、
 emotion_behavior_map；Action 的 behavior_tree_actions、action_catalog。
+第五批增加触觉配置、Emotion eventRules 和明确登记的代码入口；原 125 条路由的统计口径保持独立。
+分流规则、能力快照与生成命令见 [事件分流清单](EVENT_ROUTING.md)。
 
 目录记录每条声明路由的上下文、BT 名称、executor_behavior_name 覆盖后的下游名称，
 情绪人物/独处/语音等待路线、社交情绪引用、动作阶段及 unit_id。

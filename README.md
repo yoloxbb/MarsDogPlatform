@@ -4,12 +4,13 @@ MarsDog 的统一开发主仓：视觉、语音、Emotion/Needs、行为树、Ac
 模块在这里开发、测试和提交。五个 Python 模块仍有独立包、锁文件和环境。
 原仓历史已迁入并保留来源记录；后续功能直接在本仓完成一个可评审的变更。
 
-当前支持 **WSL2 / Ubuntu 22.04 / Python 3.10 / ROS Humble 的 Lite3 CPU 开发环境**。
-没有实机；本机集成用明确的设备替身。开发板的系统、ABI、NPU SDK 尚待确认。
-目标是先完成软件协作和集成，再在板端构建、接入 Lite3。
+开发基线为 **Ubuntu 22.04 / Python 3.10 / ROS Humble**。保留 WSL2 Lite3 CPU 开发路径，
+并已有 RK3588 ARM64 板端导航构建记录；默认本机组合仍使用明确的设备替身。
+板端构建、模型运行和实机运动分别验收，不由软件链路通过推断硬件可用。
+当前模块边界、五人分工与部署范围见 [系统架构基线](docs/architecture/SYSTEM_BASELINE.md)。
 
 远端主仓：[yoloxbb/MarsDogPlatform](https://github.com/yoloxbb/MarsDogPlatform)（公开，可直接访问和克隆）。
-当前开发主线为 main，已包含截至 `978d263` 的五模块重构、功能开发工具与日志 v2。
+开发主线为 main；五模块重构、功能开发工具与日志 v2 已在 `978d263` 阶段进入主线，后续提交继续演进。
 后续功能从最新 main 创建分支；最新日志验收见 [日志 v2 记录](validation/logging-v2/README.md)。
 原标签 acceptance/five-module-software-20260930 和
 [主线收口记录](validation/mainline-acceptance/README.md) 保留为历史验收基线。
@@ -21,6 +22,9 @@ cd MarsDogPlatform
 
 ## 从这里开始
 
+- 系统与团队：[架构基线](docs/architecture/SYSTEM_BASELINE.md)、[五人责任表](docs/OWNERSHIP.md)、[重构任务](docs/architecture/REFACTOR_ROADMAP.md)
+- 开发约定：[工程规范](docs/development/ENGINEERING_STANDARD.md)、[功能规格模板](docs/development/templates/FEATURE_SPEC.md)
+- 本轮能力与代表场景：[能力基线](docs/architecture/CAPABILITY_BASELINE.md)、[叫过来链路及断点](docs/development/scenarios/CALLER_APPROACH.md)
 - 新成员：[开发快速开始](docs/development/QUICKSTART.md)
 - 新功能、提交与合并：[贡献指南](CONTRIBUTING.md)
 - 模块边界与跨模块变更：[开发流程](docs/development/WORKFLOW.md)
@@ -34,7 +38,7 @@ cd MarsDogPlatform
 - 兼容性整合：[五模块重构路线](docs/architecture/COMPATIBILITY_REFACTOR.md)
 - 业务验收：[场景矩阵与恢复门禁](docs/development/BUSINESS_SCENARIOS.md)
 - 导航协作：[负责人交接](docs/development/NAVIGATION_HANDOFF.md)
-- 当前事实：[迁移状态](docs/migration/STATUS.md)
+- 迁移历史：[迁移状态记录](docs/migration/STATUS.md)
 - Agent / 后续会话：[AGENTS.md](AGENTS.md)、[交接](HANDOFF_NEXT_SESSION.md)
 
 在本仓根目录执行，不需要原仓在旁边：
@@ -43,7 +47,7 @@ cd MarsDogPlatform
 # 仅标准库：架构/接口/依赖环检查 + 平台工具回归
 python3 tools/dev.py check
 
-# 一次准备、测试一个模块；已安装 uv 时可改用 --uv /absolute/path/to/uv
+# x86_64 开发机可用以下 bootstrap；ARM64 板端须提供原生 uv，见快速开始
 python3 tools/bootstrap_uv.py
 python3 tools/dev.py setup emotion
 python3 tools/dev.py test emotion
@@ -96,3 +100,5 @@ Action 保持 2.2.6，Vision/Voice 保持 1.x。模块内使用自己的 pyproje
 本仓已配置 GitHub 远端和 CI 工作流；各模块负责人、专用 Humble runner 与分支保护仍需团队配置。
 远端 CI 结果以 GitHub Actions 的实际运行记录为准，本地验收不代替远端运行。
 源码离线交付保留 Git 历史；模型、构建输出、虚拟环境和设备配置不进入主仓。
+
+应用重构当前交付与剩余设备条件见 [收尾与开发入口](docs/development/REFACTOR_CLOSEOUT.md)。

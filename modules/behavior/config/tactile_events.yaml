@@ -1,0 +1,36 @@
+# Event-by-event direct reactions. Emotion rules remain owned by Emotion.
+# Software presets requested by the user; physical tactile hardware is pending.
+enabled: true
+max_age_sec: 2.0
+future_tolerance_sec: 0.5
+events:
+  EVT_TACTILE_HEAD_PET:
+    behavior_name: expressJoyAlone
+    priority_level: 1
+    semantic_rank: 3
+    modality_rank: 3
+    sub_priority: 30
+    interrupt_policy: safe_point
+    ttl_sec: 2.0
+    timeout_sec: 15.0
+    cooldown_sec: 5.0
+  EVT_TACTILE_EAR_TOUCH:
+    behavior_name: expressJoyAlone
+    priority_level: 1
+    semantic_rank: 3
+    modality_rank: 3
+    sub_priority: 31
+    interrupt_policy: safe_point
+    ttl_sec: 2.0
+    timeout_sec: 15.0
+    cooldown_sec: 5.0
+  EVT_TACTILE_NOSE_TOUCH:
+    behavior_name: expressCuriosityAlone
+    priority_level: 1
+    semantic_rank: 3
+    modality_rank: 3
+    sub_priority: 32
+    interrupt_policy: safe_point
+    ttl_sec: 2.0
+    timeout_sec: 15.0
+    cooldown_sec: 5.0

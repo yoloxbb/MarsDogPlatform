@@ -13,11 +13,17 @@ import json
 from pathlib import Path
 import resource
 import statistics
+import sys
 import time
 from typing import Any
 
 import cv2
 import numpy as np
+
+# Allow direct invocation from any working directory in a source checkout.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from marsdog_vision_interaction.utils.model_paths import vision_model_directory
 
 from marsdog_vision_interaction.providers.hand_backends import create_hand_backend
 
@@ -25,7 +31,7 @@ from marsdog_vision_interaction.providers.hand_backends import create_hand_backe
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("image", type=Path, nargs="?", help="BGR image for static smoke")
-    parser.add_argument("--model-dir", type=Path, default=Path(__file__).resolve().parents[2] / "models" / "vision")
+    parser.add_argument("--model-dir", type=Path, default=vision_model_directory(__file__))
     parser.add_argument("--detector", default="hand_detector_fp16.rknn")
     parser.add_argument("--landmarks", default="hand_landmarks_detector_fp16.rknn")
     parser.add_argument("--video", type=Path, help="Optional video instead of repeated still frames")

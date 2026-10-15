@@ -13,7 +13,8 @@ import uuid
 from typing import Callable, Optional
 
 from bionic_dog_bt.logger import get_logger, LogEvent
-from bionic_dog_bt.arbitration import priority_key
+from bionic_dog_bt.arbitration import priority_key, candidate_priority_key
+from bionic_dog_bt.drive_policy import resolve_drive
 
 from .decision_trace import emit
 from .lifecycle import discard_unstarted_on_voice_idle
@@ -24,8 +25,14 @@ _log = get_logger("candidate_pool")
 class CandidatePool:
     """Thread-safe pool of behavior candidates with composite-key dedup."""
 
-    def __init__(self):
+    def __init__(self, *, monotonic: Callable[[], float] | None = None,
+                 wall_time: Callable[[], float] | None = None):
+        self._monotonic = monotonic or time.monotonic
+        self._wall_time = wall_time or time.time
         self._candidates: list[dict] = []
+        # Sidecar by object identity: callers may supply repeated candidate IDs.
+        # This clock-domain detail never enters a returned candidate or payload.
+        self._expires_at: dict[int, float] = {}
         self._seen_keys: set[tuple] = set()
         # behavior_name -> candidate/behavior id.  Selection reserves the
         # semantic behavior until its terminal lifecycle event is observed.
@@ -52,8 +59,9 @@ class CandidatePool:
         reaches a terminal state; it never permits concurrent duplicates.
         """
         with self._lock:
-            now = time.time()
-            self._discard_expired(now)
+            now = self._wall_time()
+            monotonic_now = self._monotonic()
+            self._discard_expired(monotonic_now)
 
             if behavior_name in self._inflight:
                 return False
@@ -72,6 +80,12 @@ class CandidatePool:
             candidate_params.setdefault("sub_priority", sub_priority)
             candidate_params.setdefault("semantic_rank", semantic_rank)
             candidate_params.setdefault("modality_rank", modality_rank)
+            try:
+                priority_key(priority_level, candidate_params)
+            except ValueError as error:
+                emit("candidate_rejected", {"behavior_name": behavior_name},
+                     reason="invalid_priority", detail=str(error))
+                return False
             self._seen_keys.add(key)
             self._candidates.append({
                 "behavior_name": behavior_name,
@@ -94,6 +108,12 @@ class CandidatePool:
                 "allow_repeat": allow_repeat,
                 "emotion_priority": emotion_priority,
             })
+            candidate = self._candidates[-1]
+            if ttl_sec > 0:
+                # Honor the existing created_at age at admission, then freeze
+                # the elapsed-time budget against later wall-clock changes.
+                self._expires_at[id(candidate)] = (
+                    monotonic_now + ttl_sec - (now - candidate["created_at"]))
             emit("candidate_queued", self._candidates[-1])
             _log.event(LogEvent.CANDIDATE_INJECT,
                        behavior_name=behavior_name,
@@ -123,20 +143,12 @@ class CandidatePool:
         by an authoritative state update, or their positive TTL expires.
         """
         with self._lock:
-            now = time.time()
+            now = self._monotonic()
             self._discard_expired(now)
             if not self._candidates:
                 return None
 
-            self._candidates.sort(key=lambda c: (
-                *priority_key(
-                    c["priority_level"], c["params"],
-                    sub_priority=c.get("sub_priority", 0),
-                ),
-                c.get("emotion_priority", 50),
-                -c["value"],
-                -c["created_at"],
-            ))
+            self._candidates.sort(key=candidate_priority_key)
             best_index = None
             for index, candidate in enumerate(self._candidates):
                 cooldown_ready = not blackboard.is_in_cooldown(
@@ -154,18 +166,20 @@ class CandidatePool:
                 return None
 
             best = self._candidates.pop(best_index)
-            self._seen_keys.discard(best["dedup_key"])
+            self._forget_queued(best)
             self._inflight[best["behavior_name"]] = best["candidate_id"]
 
-            emit("candidate_selected", best, ordering=[
-                *priority_key(best["priority_level"], best["params"],
-                              sub_priority=best.get("sub_priority", 0)),
-                best.get("emotion_priority", 50), -best["value"], -best["created_at"]])
+            emit("candidate_selected", best, ordering=list(candidate_priority_key(best)))
             _log.event(LogEvent.CANDIDATE_SELECT,
                        behavior_name=best["behavior_name"],
                        priority_level=best["priority_level"],
                        value=best["value"])
             return best
+
+    def _forget_queued(self, candidate: dict) -> None:
+        """Release queue-only bookkeeping; caller holds the pool lock."""
+        self._seen_keys.discard(candidate["dedup_key"])
+        self._expires_at.pop(id(candidate), None)
 
     def _discard_expired(self, now: float) -> None:
         """Discard candidates whose positive TTL has elapsed.
@@ -174,14 +188,11 @@ class CandidatePool:
         """
         retained = []
         for candidate in self._candidates:
-            ttl_sec = float(candidate.get("ttl_sec", 0.0))
-            expired = (
-                ttl_sec > 0
-                and now - float(candidate["created_at"]) >= ttl_sec
-            )
+            deadline = self._expires_at.get(id(candidate))
+            expired = deadline is not None and now >= deadline
             if expired:
                 emit("candidate_expired", candidate, reason="ttl_elapsed")
-                self._seen_keys.discard(candidate["dedup_key"])
+                self._forget_queued(candidate)
             else:
                 retained.append(candidate)
         self._candidates = retained
@@ -189,7 +200,7 @@ class CandidatePool:
     def is_duplicate(self, behavior_name: str, dedup_key: tuple = None) -> bool:
         """Check whether a behavior is queued or reserved in-flight."""
         with self._lock:
-            self._discard_expired(time.time())
+            self._discard_expired(self._monotonic())
             if behavior_name in self._inflight:
                 return True
             if any(
@@ -236,6 +247,7 @@ class CandidatePool:
             self._candidates.clear()
             self._seen_keys.clear()
             self._inflight.clear()
+            self._expires_at.clear()
 
     def discard_where(self, predicate: Callable[[dict], bool]) -> int:
         """Discard matching queued candidates without touching other work.
@@ -249,7 +261,7 @@ class CandidatePool:
             removed = 0
             for candidate in self._candidates:
                 if predicate(candidate):
-                    self._seen_keys.discard(candidate["dedup_key"])
+                    self._forget_queued(candidate)
                     removed += 1
                 else:
                     retained.append(candidate)
@@ -289,10 +301,10 @@ class CandidatePool:
                     or params.get("source_emotion")
                 )
                 if (
-                    candidate.get("need_type") == "emotional"
+                    resolve_drive(params, candidate.get("need_type", "")).state_domain == "emotion"
                     and source_emotion == emotion_name
                 ):
-                    self._seen_keys.discard(candidate["dedup_key"])
+                    self._forget_queued(candidate)
                     removed += 1
                 else:
                     retained.append(candidate)
@@ -310,7 +322,9 @@ class CandidatePool:
             removed = 0
             for candidate in self._candidates:
                 params = candidate.get("params", {})
-                is_need_candidate = params.get("source") == "need"
+                is_need_candidate = resolve_drive(
+                    params, candidate.get("need_type", "")
+                ).state_domain == "need"
                 source_need = params.get("source_need")
                 trigger_event = params.get("trigger_event", "")
                 if (
@@ -318,7 +332,7 @@ class CandidatePool:
                     and source_need == need_name
                     and trigger_event != current_event
                 ):
-                    self._seen_keys.discard(candidate["dedup_key"])
+                    self._forget_queued(candidate)
                     removed += 1
                 else:
                     retained.append(candidate)
@@ -327,11 +341,11 @@ class CandidatePool:
 
     def size(self) -> int:
         with self._lock:
-            self._discard_expired(time.time())
+            self._discard_expired(self._monotonic())
             return len(self._candidates)
 
     @property
     def candidates(self) -> list[dict]:
         with self._lock:
-            self._discard_expired(time.time())
+            self._discard_expired(self._monotonic())
             return list(self._candidates)

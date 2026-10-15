@@ -4,6 +4,7 @@ Owns callback sequencing, not ROS construction or controller algorithms. Locks,
 terminal result publication and resource cleanup retain their original ordering.
 """
 from __future__ import annotations
+from .goal_execution_ports import ExecutionRuntime
 import json
 from marsdog_observability import wrap_context
 import threading
@@ -14,9 +15,11 @@ from .stationary_policy import INPLACE_WITH_HUMAN_BEHAVIORS, validate_inplace_pl
 from .adapters.uwb_follow_action_adapter import UwbFollowActionAdapter
 from .adapters.waypoint_nav_adapter import WaypointNavStatus
 from .goal_contract import _normalise_goal_timeout, _outer_runtime_deadline, _navigation_cancel_won
+from .local_motion_request import validate_plan as validate_local_motion_plan
+from .approach_request import validate_plan as validate_approach_plan
 
 
-async def on_execute(self, goal_handle, *, make_result):
+async def on_execute(self: ExecutionRuntime, goal_handle, *, make_result):
     """Execute behavior; emergency stop bypasses serialization.
 
     When preempting a lower-priority goal, waits for the configured
@@ -26,19 +29,17 @@ async def on_execute(self, goal_handle, *, make_result):
     """
     request = goal_handle.request
     if request.behavior_name == "emergency_stop":
-        return self._execute_emergency_stop(goal_handle)
+        return self.ports.execute_emergency_stop(goal_handle)
 
-    if not self._behavior_execution_lock.acquire(blocking=False):
+    if not self.ports.behavior_execution_lock.acquire(blocking=False):
         # Preemption path: wait for old goal to finish cancelling
         lock_wait_sec = float(
-            self.get_parameter(
-                "navigation_preempt_lock_wait_sec"
-            ).value
+            self.ports.preempt_lock_wait_sec()
         )
         deadline = time.monotonic() + lock_wait_sec
         acquired = False
         while time.monotonic() < deadline:
-            if self._behavior_execution_lock.acquire(blocking=False):
+            if self.ports.behavior_execution_lock.acquire(blocking=False):
                 acquired = True
                 break
             time.sleep(0.05)
@@ -56,29 +57,64 @@ async def on_execute(self, goal_handle, *, make_result):
                 ),
                 reward=-1.0,
             )
+    ownership = self.ports.motion_ownership
+    lease = self.ports.motion_lease_for(goal_handle) if ownership is not None else None
+    execution_failed = False
     try:
-        self._current_priority = int(
+        if ownership is not None and (lease is None or not ownership.may_execute(lease)):
+            if goal_handle.is_cancel_requested:
+                goal_handle.canceled()
+                status, result = 'CANCELED', 'canceled'
+            else:
+                goal_handle.abort()
+                status, result = 'FAILED', 'failed'
+            return make_result(request.goal_id, getattr(request, 'behavior_id', request.goal_id),
+                               request.behavior_name, status=status, result=result,
+                               reason='motion_ownership_revoked_before_execution', reward=-1.0)
+        self.state.current_priority = int(
             getattr(request, "priority_level", 0)
         )
-        return await self._execute_behavior(goal_handle)
+        return await self.ports.execute_behavior(goal_handle)
+    except Exception:
+        execution_failed = True
+        if callable(self.ports.stop_motion):
+            self.ports.stop_motion()
+        raise
     finally:
-        self._behavior_sounds.stop()
-        if request.behavior_name in INPLACE_WITH_HUMAN_BEHAVIORS:
-            self._stationary_expression_adapter.cancel_step()
-            if self._chassis_backend is not None:
-                self._chassis_backend.hold_position()
-        self._behavior_execution_lock.release()
-        with self._goal_reservation_lock:
-            if self._reserved_goal_id == str(request.goal_id):
-                self._reserved_goal_id = None
-        with self._lease_lock:
-            self._lease_seen.pop((
-                str(request.goal_id),
-                str(getattr(request, "behavior_id", "") or request.goal_id),
-            ), None)
+        cleanup_failed = False
+        try:
+            self.ports.behavior_sounds.stop()
+            if request.behavior_name in INPLACE_WITH_HUMAN_BEHAVIORS:
+                self.ports.stationary_expression_adapter.cancel_step()
+                if self.ports.chassis_backend is not None:
+                    self.ports.chassis_backend.hold_position()
+        except Exception:
+            cleanup_failed = True
+            raise
+        finally:
+            if ownership is not None and lease is not None:
+                try:
+                    unresolved = self.ports.unresolved_motion()
+                except Exception:
+                    unresolved = ('controller_state_unavailable:operator_recovery_required',)
+                if execution_failed:
+                    unresolved += ('execution_failed:operator_recovery_required',)
+                if cleanup_failed:
+                    unresolved += ('cleanup_failed:operator_recovery_required',)
+                ownership.finish(lease, unresolved)
+            self.ports.forget_motion_lease(goal_handle)
+            self.ports.behavior_execution_lock.release()
+            with self.ports.goal_reservation_lock:
+                if self.state.reserved_goal_id == str(request.goal_id):
+                    self.state.reserved_goal_id = None
+            with self.ports.lease_lock:
+                self.ports.lease_seen.pop((
+                    str(request.goal_id),
+                    str(getattr(request, "behavior_id", "") or request.goal_id),
+                ), None)
 
 
-async def execute_behavior(self, goal_handle, *, make_result):
+async def execute_behavior(self: ExecutionRuntime, goal_handle, *, make_result):
     """Async execution callback — v2 pipeline."""
     goal_req = goal_handle.request
     gid = goal_req.goal_id
@@ -90,17 +126,17 @@ async def execute_behavior(self, goal_handle, *, make_result):
     behavior_started_wall = time.time()
     behavior_started_monotonic = time.monotonic()
 
-    self.get_logger().info(
+    self.ports.get_logger().info(
         f"[{gid}] Executing: {requested_name}"
     )
 
     # ── Step 1: Parse ──────────────────────────────────────────
-    ctx = self._goal_parser.parse_from_ros_goal(goal_req)
+    ctx = self.ports.goal_parser.parse_from_ros_goal(goal_req)
     ctx.runtime_deadline_monotonic = _outer_runtime_deadline(
         behavior_started_monotonic, runtime_timeout_sec,
     )
     if not ctx.is_valid:
-        self.get_logger().error(
+        self.ports.get_logger().error(
             f"[{gid}] Invalid params: {ctx.error_reason}"
         )
         goal_handle.abort()
@@ -112,9 +148,9 @@ async def execute_behavior(self, goal_handle, *, make_result):
         )
 
     # ── Step 2: Validate the exact behavior-tree name ───────────
-    ctx = self._behavior_resolver.resolve(ctx)
+    ctx = self.ports.behavior_resolver.resolve(ctx)
     if not ctx.is_valid:
-        self.get_logger().error(
+        self.ports.get_logger().error(
             f"[{gid}] Unresolvable behavior: {ctx.error_reason}"
         )
         goal_handle.abort()
@@ -127,9 +163,9 @@ async def execute_behavior(self, goal_handle, *, make_result):
         )
 
     canonical = ctx.resolved_behavior_name
-    self.get_logger().info(f"[{gid}] Validated: {canonical}")
+    self.ports.get_logger().info(f"[{gid}] Validated: {canonical}")
     ctx.runtime_feedback = lambda progress, action, message, safe: (
-        self._publish_feedback(
+        self.ports.publish_feedback(
             goal_handle,
             gid,
             behavior_id,
@@ -143,9 +179,9 @@ async def execute_behavior(self, goal_handle, *, make_result):
     )
 
     # ── Step 3: Get template & stages ──────────────────────────
-    template = self._config.get_behavior_template(canonical)
+    template = self.ports.config.get_behavior_template(canonical)
     if template is None:
-        self.get_logger().error(
+        self.ports.get_logger().error(
             f"[{gid}] No template for: {canonical}"
         )
         goal_handle.abort()
@@ -159,7 +195,7 @@ async def execute_behavior(self, goal_handle, *, make_result):
 
     stages = template.get("stages", [])
     if not stages:
-        self.get_logger().error(
+        self.ports.get_logger().error(
             f"[{gid}] Behavior {canonical} has no stages"
         )
         goal_handle.abort()
@@ -171,8 +207,20 @@ async def execute_behavior(self, goal_handle, *, make_result):
             reward=-1.0,
         )
 
-    if canonical in ("follow_owner", "play_alone") and runtime_timeout_sec <= 0:
-        return self._execute_long_behavior(
+    approach_error = validate_approach_plan(ctx.params, stages, self.ports.approach_adapters)
+    if approach_error:
+        goal_handle.abort()
+        return make_result(gid, behavior_id, requested_name, resolved_name=canonical,
+                           status='FAILED', result='failed', reason=approach_error, reward=-1.0)
+    local_error = validate_local_motion_plan(ctx.params, stages, self.ports.local_motion_adapter)
+    if local_error:
+        goal_handle.abort()
+        return make_result(gid, behavior_id, requested_name, resolved_name=canonical,
+                           status='FAILED', result='failed', reason=local_error, reward=-1.0)
+
+    if (canonical in ("follow_owner", "play_alone") and runtime_timeout_sec <= 0
+            and 'local_motion' not in ctx.params):
+        return self.ports.execute_long_behavior(
             goal_handle, ctx, stages, behavior_started_wall,
         )
 
@@ -181,7 +229,7 @@ async def execute_behavior(self, goal_handle, *, make_result):
     if isinstance(success_condition, dict):
         success_condition = success_condition.get("type")
 
-    self.get_logger().info(
+    self.ports.get_logger().info(
         f"[{gid}] Plan: {canonical} -> {len(stages)} stages"
     )
 
@@ -189,19 +237,19 @@ async def execute_behavior(self, goal_handle, *, make_result):
         canonical,
         ctx.params,
         stages,
-        self._controller_routes,
-        self._config.navigation_config,
+        self.ports.controller_routes,
+        self.ports.config.navigation_config,
     )
     if not inplace_check.valid:
         reason = inplace_check.reason
-        self._stationary_expression_adapter.cancel_step()
-        if self._chassis_backend is not None:
-            self._chassis_backend.hold_position()
-        self.get_logger().error(
+        self.ports.stationary_expression_adapter.cancel_step()
+        if self.ports.chassis_backend is not None:
+            self.ports.chassis_backend.hold_position()
+        self.ports.get_logger().error(
             f"[{gid}] In-place plan rejected: {reason}"
         )
         goal_handle.abort()
-        self._debug.publish_result(ExecutionResult(
+        self.ports.debug.publish_result(ExecutionResult(
             goal_id=gid,
             behavior_id=behavior_id,
             behavior_name=canonical,
@@ -221,47 +269,47 @@ async def execute_behavior(self, goal_handle, *, make_result):
     stage_results: dict[str, bool] = {}
 
     # Reset interrupt state
-    self._interrupt.reset()
-    self._posture.reset()
+    self.ports.interrupt.reset()
+    self.ports.posture.reset()
     if goal_handle.is_cancel_requested:
         # Do not let a cancel accepted while this Goal was waiting for
         # the execution lock be erased by the per-goal reset above.
-        self._interrupt.request_cancel()
+        self.ports.interrupt.request_cancel()
 
     if (
-        self._mobility_adapter is not None
-        and self._mobility_adapter.waypoint_for_behavior(canonical)
+        self.ports.mobility_adapter is not None
+        and self.ports.mobility_adapter.waypoint_for_behavior(canonical)
         is not None
     ):
         waypoint_name = (
-            self._mobility_adapter.waypoint_for_behavior(canonical)
+            self.ports.mobility_adapter.waypoint_for_behavior(canonical)
         )
         # Random behaviors request waypoint_nav's reserved live-map
         # target and use their own shorter timeout; semantic routes
         # keep the full fixed-waypoint budget.
         is_random_nav = (
             canonical
-            in self._mobility_adapter._random_navigation_behaviors
+            in self.ports.mobility_adapter._random_navigation_behaviors
         )
         if is_random_nav:
             nav_timeout = float(
-                self._config.navigation_config.get(
+                self.ports.config.navigation_config.get(
                     "random_navigation_result_timeout_sec"
                 )
-                or self._config.navigation_config.get(
+                or self.ports.config.navigation_config.get(
                     "result_timeout_sec", 300.0
                 )
             )
         else:
             nav_timeout = float(
-                self._config.navigation_config.get(
+                self.ports.config.navigation_config.get(
                     "result_timeout_sec", 300.0
                 )
             )
         remaining = ctx.remaining_runtime_sec(time.monotonic())
         if remaining is not None:
             nav_timeout = min(nav_timeout, remaining)
-        self.get_logger().info(
+        self.ports.get_logger().info(
             f"[{gid}] Navigation: {canonical} -> "
             f"waypoint {waypoint_name} "
             f"(timeout={nav_timeout:.0f}s)"
@@ -276,7 +324,7 @@ async def execute_behavior(self, goal_handle, *, make_result):
                 "RECOVERY_REQUIRED": 0.05,
                 "NAV2_SUCCEEDED": 0.20,
             }
-            self._publish_feedback(
+            self.ports.publish_feedback(
                 goal_handle,
                 gid,
                 behavior_id,
@@ -299,7 +347,7 @@ async def execute_behavior(self, goal_handle, *, make_result):
         navigation_ok = (
             nav_timeout > 0.0
             and not goal_handle.is_cancel_requested
-            and self._mobility_adapter.navigate_for_behavior(
+            and self.ports.mobility_adapter.navigate_for_behavior(
                 canonical,
                 timeout_sec=nav_timeout,
                 task_id=waypoint_task_id,
@@ -309,20 +357,20 @@ async def execute_behavior(self, goal_handle, *, make_result):
         if not navigation_ok:
             cancel_requested = (
                 goal_handle.is_cancel_requested
-                or self._interrupt.cancel_requested
+                or self.ports.interrupt.cancel_requested
             )
             waypoint_outcome = (
-                self._waypoint_nav_client.last_outcome
+                self.ports.waypoint_nav_client.last_outcome
                 if (
-                    self._waypoint_nav_client is not None
-                    and self._waypoint_nav_client.last_outcome.task_id
+                    self.ports.waypoint_nav_client is not None
+                    and self.ports.waypoint_nav_client.last_outcome.task_id
                     == waypoint_task_id
                 )
                 else None
             )
             mobility_error = str(
                 getattr(
-                    self._mobility_adapter,
+                    self.ports.mobility_adapter,
                     "last_error",
                     "",
                 )
@@ -367,12 +415,12 @@ async def execute_behavior(self, goal_handle, *, make_result):
                     f"navigation_{result_text}: "
                     f"waypoint={waypoint_name}"
                 )
-            self.get_logger().error(f"[{gid}] {reason}")
+            self.ports.get_logger().error(f"[{gid}] {reason}")
             if canceled:
                 goal_handle.canceled()
             else:
                 goal_handle.abort()
-            self._debug.publish_result(
+            self.ports.debug.publish_result(
                 ExecutionResult(
                     goal_id=gid,
                     behavior_id=behavior_id,
@@ -401,7 +449,7 @@ async def execute_behavior(self, goal_handle, *, make_result):
     # For target-bound behaviors, sound is part of the interaction and
     # must not start before target_approach succeeds. Behaviors without
     # an approach Stage still start audio with their first Stage.
-    sound_started = self._behavior_sounds.apply_control_behavior(
+    sound_started = self.ports.behavior_sounds.apply_control_behavior(
         canonical
     )
 
@@ -415,15 +463,15 @@ async def execute_behavior(self, goal_handle, *, make_result):
         # ── Cancel check ────────────────────────────────────
         if goal_handle.is_cancel_requested:
             ctx.cancel_requested = True
-            self._interrupt.request_cancel()
-            self.get_logger().info(f"[{gid}] Cancel — stopping at stage {stage_id}")
+            self.ports.interrupt.request_cancel()
+            self.ports.get_logger().info(f"[{gid}] Cancel — stopping at stage {stage_id}")
             break
 
         # ── Timeout check ────────────────────────────────────
         remaining = ctx.remaining_runtime_sec(time.monotonic())
         if remaining is not None and remaining <= 0.0:
             elapsed = time.time() - behavior_started_wall
-            self.get_logger().warning(
+            self.ports.get_logger().warning(
                 f"[{gid}] Timeout after {elapsed:.1f}s "
                 f"(limit: {runtime_timeout_sec:.1f}s)"
             )
@@ -435,18 +483,18 @@ async def execute_behavior(self, goal_handle, *, make_result):
             break
 
         # ── Execute stage ────────────────────────────────────
-        self.get_logger().info(
+        self.ports.get_logger().info(
             f"[{gid}] Stage {i+1}/{len(stages)}: {stage_id}"
         )
         if not sound_started and stage_id != "target_approach":
-            sound_path = self._behavior_sounds.play_for(canonical)
+            sound_path = self.ports.behavior_sounds.play_for(canonical)
             sound_started = True
             if sound_path is not None:
-                self.get_logger().info(
+                self.ports.get_logger().info(
                     f"[{gid}] Behavior sound started: {canonical} -> "
                     f"{sound_path.name}"
                 )
-        self._interrupt.apply_to_context(ctx)
+        self.ports.interrupt.apply_to_context(ctx)
 
         # Stage-scoped audio. Started after the context refresh so a
         # cancel that landed earlier this iteration starts nothing new,
@@ -454,25 +502,25 @@ async def execute_behavior(self, goal_handle, *, make_result):
         # cannot leak the stream into the rest of the behavior.
         # target_approach needs no guard here: no stage mapping ever
         # targets it, unlike the behavior-level start above.
-        with self._behavior_sounds.stage_sound(
+        with self.ports.behavior_sounds.stage_sound(
             canonical, stage_id
         ) as stage_sound_path:
             if stage_sound_path is not None:
-                self.get_logger().info(
+                self.ports.get_logger().info(
                     f"[{gid}] Stage sound started: {stage_id} -> "
                     f"{stage_sound_path.name}"
                 )
-            result = self._stage_executor.execute_stage(stage_cfg, ctx)
+            result = self.ports.stage_executor.execute_stage(stage_cfg, ctx)
 
         stage_results[stage_id] = result.success
-        self._interrupt.apply_to_context(ctx)
+        self.ports.interrupt.apply_to_context(ctx)
 
         # ── Publish feedback ─────────────────────────────────
         progress = round((i + 1) / len(stages), 4)
-        self._publish_feedback(
+        self.ports.publish_feedback(
             goal_handle, gid, behavior_id, canonical,
             progress, stage_id, result.unit_id,
-            self._interrupt.safe_to_interrupt,
+            self.ports.interrupt.safe_to_interrupt,
             f"Stage {i+1}/{len(stages)}: {result.unit_id} — "
             f"{'OK' if result.success else result.message}",
         )
@@ -481,7 +529,7 @@ async def execute_behavior(self, goal_handle, *, make_result):
         if not result.success:
             failure_policy = stage_cfg.get("failure_policy", "abort")
             required = stage_cfg.get("required", True)
-            self.get_logger().warning(
+            self.ports.get_logger().warning(
                 f"[{gid}] Stage {stage_id} failed: {result.message} "
                 f"(policy={failure_policy}, required={required})"
             )
@@ -490,12 +538,12 @@ async def execute_behavior(self, goal_handle, *, make_result):
             # skip_stage → continue to next stage
 
     # ── Step 6: Evaluate result ────────────────────────────────
-    behavior_result = self._result_evaluator.evaluate(
+    behavior_result = self.ports.result_evaluator.evaluate(
         ctx, stage_results, success_condition,
     )
 
     duration = time.time() - behavior_started_wall
-    self.get_logger().info(
+    self.ports.get_logger().info(
         f"[{gid}] Result: {behavior_result.status} "
         f"(success={behavior_result.success}, "
         f"stages={behavior_result.completed_stages}, "
@@ -520,6 +568,9 @@ async def execute_behavior(self, goal_handle, *, make_result):
 
     # ── Metadata for behaviors that report internal state ──────
     metadata: dict[str, object] = {}
+    if template.get('completion_scope') == 'expression_only':
+        metadata['completion_scope'] = 'expression_only'
+        metadata['preset_version'] = template['preset_version']
     target_approach_metadata = ctx.metadata.get("target_approach")
     if isinstance(target_approach_metadata, dict):
         metadata["target_approach"] = dict(
@@ -569,7 +620,7 @@ async def execute_behavior(self, goal_handle, *, make_result):
         need_delta_json="{}",
         metadata_json=metadata_json,
     )
-    self._debug.publish_result(exec_result)
+    self.ports.debug.publish_result(exec_result)
 
     return make_result(
         gid, behavior_id, requested_name,
@@ -587,7 +638,7 @@ async def execute_behavior(self, goal_handle, *, make_result):
     )
 
 
-def execute_long_behavior(self, goal_handle, ctx: ExecutionContext, stages: list[dict], started_wall: float, *, make_result):
+def execute_long_behavior(self: ExecutionRuntime, goal_handle, ctx: ExecutionContext, stages: list[dict], started_wall: float, *, make_result):
     """Run one leased Goal until cancellation or a real failure."""
     gid = str(goal_handle.request.goal_id)
     behavior_id = str(getattr(goal_handle.request, "behavior_id", "") or gid)
@@ -598,30 +649,30 @@ def execute_long_behavior(self, goal_handle, ctx: ExecutionContext, stages: list
     state = {"stage": "starting", "action": "", "safe": True}
     lease_lost = threading.Event()
     ticker_done = threading.Event()
-    self._long_goal_id = gid
-    self._interrupt.reset()
-    self._posture.reset()
+    self.state.long_goal_id = gid
+    self.ports.interrupt.reset()
+    self.ports.posture.reset()
     if goal_handle.is_cancel_requested:
-        self._interrupt.request_cancel()
+        self.ports.interrupt.request_cancel()
 
     def canceled() -> bool:
-        return bool(goal_handle.is_cancel_requested or self._interrupt.cancel_requested)
+        return bool(goal_handle.is_cancel_requested or self.ports.interrupt.cancel_requested)
 
     def tick() -> None:
         while not ticker_done.wait(0.5):
-            if self._lease_expired(gid, behavior_id, started):
+            if self.ports.lease_expired(gid, behavior_id, started):
                 lease_lost.set()
                 if name == "play_alone":
-                    roam_adapter = getattr(self, "_uwb_roam_adapter", None)
+                    roam_adapter = self.ports.uwb_roam_adapter
                     if roam_adapter is not None:
                         roam_adapter.cancel_step()
-                    self._stationary_expression_adapter.cancel_step()
-                    if (self._chassis_backend is not None
+                    self.ports.stationary_expression_adapter.cancel_step()
+                    if (self.ports.chassis_backend is not None
                             and not getattr(roam_adapter, "active", False)):
-                        self._chassis_backend.cancel_step()
-                elif self._uwb_follow_adapter is not None:
-                    self._uwb_follow_adapter.request_cancel()
-            self._publish_feedback(
+                        self.ports.chassis_backend.cancel_step()
+                elif self.ports.uwb_follow_adapter is not None:
+                    self.ports.uwb_follow_adapter.request_cancel()
+            self.ports.publish_feedback(
                 goal_handle, gid, behavior_id, name, 0.0,
                 state["stage"], state["action"],
                 bool(state["safe"] and not canceled() and not lease_lost.is_set()),
@@ -635,7 +686,7 @@ def execute_long_behavior(self, goal_handle, ctx: ExecutionContext, stages: list
     reason = "long_goal_failed"
     try:
         if name == "follow_owner":
-            adapter = self._uwb_follow_adapter
+            adapter = self.ports.uwb_follow_adapter
             if adapter is None:
                 reason = "uwb_follow_unavailable"
             elif canceled():
@@ -671,7 +722,7 @@ def execute_long_behavior(self, goal_handle, ctx: ExecutionContext, stages: list
                     status = "FAILED"
                     reason = adapter.last_error or "uwb_follow_terminal_unknown"
         else:
-            roam = getattr(self, "_uwb_roam_adapter", None)
+            roam = self.ports.uwb_roam_adapter
             if canceled():
                 status, reason = "CANCELED", "canceled_before_start"
             elif roam is None:
@@ -692,12 +743,12 @@ def execute_long_behavior(self, goal_handle, ctx: ExecutionContext, stages: list
                         state.update(stage=stage_id, action="", safe=True)
                         if canceled() or lease_lost.is_set():
                             break
-                        result = self._stage_executor.execute_stage(stage, ctx)
+                        result = self.ports.stage_executor.execute_stage(stage, ctx)
                         state["action"] = result.unit_id
                         if not result.success:
                             reason = str(ctx.metadata.get("unit_failure_reason") or result.message)
                             break
-                        self._publish_feedback(
+                        self.ports.publish_feedback(
                             goal_handle, gid, behavior_id, name, 0.0,
                             stage_id, result.unit_id, True,
                             f"cycle={cycle} stage={stage_id} complete",
@@ -723,30 +774,30 @@ def execute_long_behavior(self, goal_handle, ctx: ExecutionContext, stages: list
                 roam.cancel_step()
                 reason = "uwb_roam_terminal_unknown:operator_recovery_required"
                 status = "FAILED"
-            if self._chassis_backend is not None:
-                self._chassis_backend.emergency_stop()
+            if self.ports.chassis_backend is not None:
+                self.ports.chassis_backend.emergency_stop()
                 if (not terminal_unknown
-                        and self._chassis_backend.finish_navigation() is False):
+                        and self.ports.chassis_backend.finish_navigation() is False):
                     status = "FAILED"
-                    reason = (self._chassis_backend.last_error
+                    reason = (self.ports.chassis_backend.last_error
                               or "play_alone_stop_unconfirmed")
                     if roam is not None:
                         roam.recovery_required = True
     except Exception as exc:
         reason = f"long_goal_exception:{type(exc).__name__}:{exc}"
-        self.get_logger().error(reason)
-        if name == "follow_owner" and self._uwb_follow_adapter is not None:
-            self._uwb_follow_adapter.stop_confirmed(reason)
-        if name == "play_alone" and self._chassis_backend is not None:
-            self._chassis_backend.emergency_stop()
+        self.ports.get_logger().error(reason)
+        if name == "follow_owner" and self.ports.uwb_follow_adapter is not None:
+            self.ports.uwb_follow_adapter.stop_confirmed(reason)
+        if name == "play_alone" and self.ports.chassis_backend is not None:
+            self.ports.chassis_backend.emergency_stop()
     finally:
         ticker_done.set()
         thread.join(timeout=1.0)
         if name == "follow_owner" and isinstance(
-            self._uwb_follow_adapter, UwbFollowActionAdapter
+            self.ports.uwb_follow_adapter, UwbFollowActionAdapter
         ):
-            self._uwb_follow_adapter._long_goal_active = False
-        self._long_goal_id = None
+            self.ports.uwb_follow_adapter._long_goal_active = False
+        self.state.long_goal_id = None
 
     if status == "CANCELED":
         goal_handle.canceled()
@@ -758,7 +809,7 @@ def execute_long_behavior(self, goal_handle, ctx: ExecutionContext, stages: list
         reason=reason, reward=-1.0,
         metadata={"cycles_completed": cycles_completed},
     )
-    self._debug.publish_result(ExecutionResult(
+    self.ports.debug.publish_result(ExecutionResult(
         goal_id=gid, behavior_id=behavior_id, behavior_name=name,
         status=status,
         result="canceled" if status == "CANCELED" else "failed",
@@ -768,41 +819,47 @@ def execute_long_behavior(self, goal_handle, ctx: ExecutionContext, stages: list
     return result
 
 
-def execute_emergency_stop(self, goal_handle, *, make_result):
+def execute_emergency_stop(self: ExecutionRuntime, goal_handle, *, make_result):
     """Publish zero velocity immediately without waiting for another goal."""
-    self._behavior_sounds.stop()
-    roam = getattr(self, "_uwb_roam_adapter", None)
+    self.ports.behavior_sounds.stop()
+    roam = self.ports.uwb_roam_adapter
     if roam is not None:
         roam.emergency_stop()
-    self._stationary_expression_adapter.emergency_stop()
+    approach = self.ports.approach_navigation_adapter
+    if approach is not None:
+        approach.emergency_stop()
+    local_motion = self.ports.local_motion_adapter
+    if local_motion is not None:
+        local_motion.emergency_stop()
+    self.ports.stationary_expression_adapter.emergency_stop()
     goal_req = goal_handle.request
     gid = goal_req.goal_id
     behavior_id = getattr(goal_req, "behavior_id", gid)
     reason = "selected chassis backend disabled; no motion stop outlet"
-    if self._uwb_follow_adapter is not None:
-        self._uwb_follow_adapter.emergency_stop()
+    if self.ports.uwb_follow_adapter is not None:
+        self.ports.uwb_follow_adapter.emergency_stop()
         reason = "UWB follow stopped and chassis stop published"
-    if self._wake_orientation_adapter is not None:
-        self._wake_orientation_adapter.emergency_stop()
+    if self.ports.wake_orientation_adapter is not None:
+        self.ports.wake_orientation_adapter.emergency_stop()
         reason = "Nav2 Spin canceled"
-    if self._target_approach_adapter is not None:
-        self._target_approach_adapter.emergency_stop()
+    if self.ports.target_approach_adapter is not None:
+        self.ports.target_approach_adapter.emergency_stop()
         reason = "target approach canceled and chassis stop published"
-    if self._person_nav_approach_adapter is not None:
-        self._person_nav_approach_adapter.emergency_stop()
+    if self.ports.person_nav_approach_adapter is not None:
+        self.ports.person_nav_approach_adapter.emergency_stop()
         reason = "Nav2 caller approach cancel requested and chassis stop published"
-    if self._visual_target_approach_adapter is not None:
-        self._visual_target_approach_adapter.emergency_stop()
+    if self.ports.visual_target_approach_adapter is not None:
+        self.ports.visual_target_approach_adapter.emergency_stop()
         reason = (
             "visual target approach canceled and chassis stop "
             "published"
         )
-    if self._mobility_adapter is not None:
-        self._mobility_adapter.emergency_stop()
+    if self.ports.mobility_adapter is not None:
+        self.ports.mobility_adapter.emergency_stop()
         reason = "Nav2 canceled and chassis stop published"
-    if self._chassis_backend is not None:
-        self._chassis_backend.emergency_stop()
-        if self._mobility_adapter is None:
+    if self.ports.chassis_backend is not None:
+        self.ports.chassis_backend.emergency_stop()
+        if self.ports.mobility_adapter is None:
             reason = "chassis stop published"
 
     exec_result = ExecutionResult(
@@ -814,7 +871,7 @@ def execute_emergency_stop(self, goal_handle, *, make_result):
         reason=reason,
         reward=1.0,
     )
-    self._debug.publish_result(exec_result)
+    self.ports.debug.publish_result(exec_result)
     goal_handle.succeed()
     return make_result(
         gid,

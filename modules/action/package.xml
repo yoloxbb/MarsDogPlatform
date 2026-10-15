@@ -9,23 +9,21 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>
-  <buildtool_depend>rosidl_default_generators</buildtool_depend>
 
   <depend>rclpy</depend>
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>action_msgs</depend>
   <depend>nav2_msgs</depend>
-  <depend>marsdog_voice_interaction</depend>
   <depend>marsdog_vision_interaction</depend>
   <exec_depend>unitree_api</exec_depend>
   <exec_depend>unitree_go</exec_depend>
   <exec_depend>transfer_interfaces</exec_depend>
 
-  <!-- Public type selected by the integrated profile; local fallback remains. -->
   <exec_depend>marsdog_interfaces</exec_depend>
+  <exec_depend>robot_local_motion</exec_depend>
+  <exec_depend>person_3d_localization</exec_depend>
 
-  <member_of_group>rosidl_interface_packages</member_of_group>
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -1,0 +1,36 @@
+uwb_multitag_input:
+  ros__parameters:
+    # Data-only, opt-in. No velocity publisher and no invented mounting TF.
+    enable_serial: false
+    port: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AG00S82A-if00-port0
+    beacon_ids: ["0x87654322", "0x87654324"]
+    target_ids: ["0x87654322", "0x87654324"]
+    source: uwb_multitag
+    sensor_frame: uwb_link
+    angle_sign: -1.0
+    angle_offset_rad: 0.0
+    allow_observed_len33: true
+    raw_topic: /uwb/multitag/raw
+    target_topic: /robot_local_motion/target
+    diagnostics_topic: /uwb/multitag/diagnostics
+    publish_rate_hz_per_tag: 10.0
+    min_range_m: 0.05
+    max_range_m: 30.0
+    stale_timeout_sec: 0.7
+    smoothing_tau_sec: 0.15
+    max_step_m: 0.25
+    max_speed_mps: 2.0
+    max_gate_dt_sec: 0.2
+    acquire_samples: 3
+    reacquire_samples: 5
+    cluster_radius_m: 0.20
+    # A continuous large displacement stays invalid until it returns or a dropout/reconnect.
+    # Explicitly enable reacquisition when that behavior is needed for the scene.
+    allow_jump_reacquire: false
+    allow_sync_reset_after_stale: true
+    sync_reset_samples: 3
+    tag_overrides_json: '{}'
+    # Optional old PointStamped path MUST select one target, never interleave two IDs.
+    legacy_target_id: ''
+    legacy_point_topic: /uwb/target_point
+    legacy_target_frame: base_footprint

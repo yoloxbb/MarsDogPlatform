@@ -35,12 +35,20 @@ class YamlCatalogTests(unittest.TestCase):
                 value = read_yaml(ROOT / path)
                 assert_reviewed_config(value, record, record["original_sha256"])
                 changed = deepcopy(value)
-                if "/behavior/" in path:
+                if path == "modules/behavior/config/behaviors.yaml":
+                    changed["behaviors"]["dance"]["cooldown_sec"] = 999
+                elif path == "modules/behavior/config/event_intent_map.yaml":
+                    changed["audio_direct"]["EVT_VOICE_COMMAND_DANCE"]["sub_priority"] = 999
+                elif "/behavior/" in path:
                     changed["command_handshake"]["candidates"] = ["sit_down"]
                 elif "/action/" in path:
                     changed["behaviors"]["eatNormally"]["stages"][0]["candidates"][0]["unit_id"] = "ACT_BASIC_SIT"
                 elif path == "modules/voice/config/voice.yaml":
                     changed["providers"]["audio"]["config"]["vad_threshold"] = 0.75
+                elif path == "modules/vision/config/vision.yaml":
+                    changed['topics']['camera_stale_timeout_sec'] = 999
+                elif path == "robotics/ros2/src/robot_slam_bringup/config/nav.yaml":
+                    changed['velocity_smoother']['ros__parameters']['max_velocity'][0] = 999
                 else:
                     changed["commands"][0]["command_id"] = "CMD_WRONG"
                 with self.assertRaisesRegex(AssertionError, "semantics changed"):
@@ -48,9 +56,51 @@ class YamlCatalogTests(unittest.TestCase):
                 with self.assertRaisesRegex(AssertionError, "historical source evidence"):
                     assert_reviewed_config(value, record, "wrong_original_hash")
 
+    def test_reviewed_expression_budgets_allow_only_the_exact_scalars(self):
+        path = "modules/behavior/config/behaviors.yaml"
+        record = json.loads(FIXTURE.read_text())["configs"][path]
+        value = read_yaml(ROOT / path)
+        self.assertEqual(len(record["timeout_overrides"]), 33)
+        for name, change in record["timeout_overrides"].items():
+            changed = deepcopy(value)
+            changed["behaviors"][name]["timeout_sec"] = change["before"]
+            # Some existing 15s defaults need no numeric change; they are still explicit.
+            if change["before"] != change["after"]:
+                with self.assertRaisesRegex(AssertionError, "semantics changed"):
+                    assert_reviewed_config(changed, record, record["original_sha256"])
+        changed = deepcopy(value)
+        changed["behaviors"]["sit_down"]["timeout_sec"] = 999
+        with self.assertRaisesRegex(AssertionError, "semantics changed"):
+            assert_reviewed_config(changed, record, record["original_sha256"])
+        event_path = "modules/behavior/config/event_intent_map.yaml"
+        event_record = json.loads(FIXTURE.read_text())["configs"][event_path]
+        self.assertEqual(event_record['timeout_section'], 'audio_direct')
+        self.assertEqual(len(event_record['timeout_overrides']), 33)
+        events = read_yaml(ROOT / event_path)
+        events['audio_direct']['EVT_VOICE_COMMAND_DANCE']['timeout_sec'] = 1
+        with self.assertRaisesRegex(AssertionError, "semantics changed"):
+            assert_reviewed_config(events, event_record, event_record['original_sha256'])
+
     def test_live_extraction_matches_committed_graph(self):
         expected = json.loads((ROOT / "interfaces/naming/catalog.json").read_text())
         self.assertEqual(collect(ROOT), expected)
+
+    def test_each_reviewed_path_rejects_value_or_presence_drift(self):
+        records = json.loads(FIXTURE.read_text())["configs"]
+        for path, record in records.items():
+            for change in record.get('path_changes', []):
+                with self.subTest(path=path, field=change['path']):
+                    value = read_yaml(ROOT / path)
+                    cursor = value
+                    for key in change['path'][:-1]:
+                        cursor = cursor[key]
+                    key = change['path'][-1]
+                    if change['after_present']:
+                        cursor.pop(key)
+                    else:
+                        cursor[key] = change['before']
+                    with self.assertRaisesRegex(AssertionError, 'semantics changed'):
+                        assert_reviewed_config(value, record, record['original_sha256'])
 
 
 if __name__ == "__main__":

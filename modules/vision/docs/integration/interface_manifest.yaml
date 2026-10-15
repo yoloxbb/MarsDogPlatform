@@ -258,7 +258,7 @@ http_apis:
       delete_sample: DELETE /api/v1/faces/{name}/samples/{sample_id}
 
 actions:
-  /execute_behavior:
+  /action/execute_behavior:
     type: marsdog_interfaces/action/ExecuteBehavior
     server: action_executor
     clients: [behavior_tree]

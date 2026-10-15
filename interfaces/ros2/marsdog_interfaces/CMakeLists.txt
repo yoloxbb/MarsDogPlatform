@@ -7,6 +7,7 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(
   ${PROJECT_NAME}
   "action/ExecuteBehavior.action"
+  "srv/NavigationTask.srv"
   "msg/BehaviorExecutionEvent.msg"
   "msg/BehaviorResultEvent.msg"
 )

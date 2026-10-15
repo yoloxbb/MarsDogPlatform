@@ -2,7 +2,7 @@
 
 ⚠️ TEMPORARY — will be deleted when marsdog_action_executor is ready.
    Interface is formalized as ExecutorInterface in actions.py.
-   Replacement: ActionClientAdapter wrapping ROS2 Action Client → /execute_behavior.
+   Replacement: ActionClientAdapter wrapping ROS2 Action Client → /action/execute_behavior.
 
 Builds randomized action sequences from the action catalog.
 Falls back to YAML action_sequence if no catalog entry exists.

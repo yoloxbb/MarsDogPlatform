@@ -44,7 +44,7 @@ class ExecutionState(Enum):
 
 @dataclass
 class BehaviorGoal:
-    """Goal dispatched by the behavior tree to /execute_behavior.
+    """Goal dispatched by the behavior tree to /action/execute_behavior.
 
     Attributes:
         goal_id: Unique identifier (UUID from client).

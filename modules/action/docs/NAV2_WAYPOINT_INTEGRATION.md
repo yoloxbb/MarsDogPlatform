@@ -14,8 +14,8 @@ navigation_waypoints.yaml
   behavior_name -> semantic waypoint
       │
       ▼
-/waypoint_nav/task (marsdog_voice_interaction/srv/VoiceTask)
-      │ matching /waypoint_nav/status reaches SUCCEEDED/NAV2_SUCCEEDED
+/navigation/task (marsdog_interfaces/srv/NavigationTask)
+      │ matching /navigation/status reaches SUCCEEDED/NAV2_SUCCEEDED
       ▼
 原 behavior_tree_actions.yaml Stage 序列
       │ selected exact ACT_* remains unchanged
@@ -212,13 +212,13 @@ export ROS_LOCALHOST_ONLY=0
 启用前确认：
 
 ```bash
-ros2 service type /waypoint_nav/task
-ros2 topic info /waypoint_nav/status -v
+ros2 service type /navigation/task
+ros2 topic info /navigation/status -v
 ros2 node list
 ros2 topic info /cmd_vel -v
 ```
 
-Service 类型必须是 `marsdog_voice_interaction/srv/VoiceTask`，状态类型必须是
+Service 类型必须是 `marsdog_interfaces/srv/NavigationTask`，状态类型必须是
 `std_msgs/msg/String`。所有点位导航都要求 `waypoint_nav`、其下游 Nav2、定位、
 地图和所选底盘节点正常。停止 `teleop_twist_keyboard` 和手工
 `ros2 topic pub`，避免多个速度源抢占 `/cmd_vel`。
@@ -230,8 +230,8 @@ ros2 launch marsdog_action_executor action_executor.launch.py \
   chassis_type:=lite3 \
   lite3_enabled:=true \
   navigation_enabled:=true \
-  waypoint_nav_service_name:=/waypoint_nav/task \
-  waypoint_nav_status_topic:=/waypoint_nav/status \
+  waypoint_nav_service_name:=/navigation/task \
+  waypoint_nav_status_topic:=/navigation/status \
   waypoint_nav_cancel_confirmation_timeout_sec:=5.0 \
   waypoint_nav_terminal_retention_sec:=86400.0 \
   navigation_preempt_lock_wait_sec:=8.0 \
@@ -259,7 +259,7 @@ ros2 launch marsdog_action_executor action_executor.launch.py \
 
 ```bash
 ros2 action send_goal --feedback \
-  /execute_behavior \
+  /action/execute_behavior \
   marsdog_interfaces/action/ExecuteBehavior \
   "{goal_id: 'nav-sleep-001', behavior_id: 'nav-sleep-001', \
     behavior_name: 'sleepNow', priority_level: 1, \
@@ -270,7 +270,7 @@ ros2 action send_goal --feedback \
 
 ```bash
 ros2 action send_goal --feedback \
-  /execute_behavior \
+  /action/execute_behavior \
   marsdog_interfaces/action/ExecuteBehavior \
   "{goal_id: 'nav-eat-001', behavior_id: 'nav-eat-001', \
     behavior_name: 'eatNormally', priority_level: 1, \
@@ -314,7 +314,7 @@ Goal 的 `timeout_sec` 同时限制导航等待，必须覆盖现场最长导航
 
 ### 6.1 Action 与 waypoint_nav 的 JSON 契约
 
-三类请求继续复用 `marsdog_voice_interaction/srv/VoiceTask`。`task_id` 是请求自身
+导航请求统一使用 `marsdog_interfaces/srv/NavigationTask`。`task_id` 是请求自身
 ID；`target_task_id` 只出现在 `cancel/query` 的 `params_json` 中：
 
 ```jsonc
@@ -439,7 +439,7 @@ task_id tombstone，重复 `goto_place` 返回 `TASK_ID_RETIRED`，避免旧 ID 
 
 ## 7. 仿真页面
 
-页面仍只发送 `/execute_behavior` Goal，不直接调用 `/waypoint_nav/task`、
+页面仍只发送 `/action/execute_behavior` Goal，不直接调用 `/navigation/task`、
 `/goal_pose` 或 `/cmd_vel`。导航阶段 Feedback 的 `current_action` 为
 `WAYPOINT_NAV/<code>`，并只接受本任务的状态；到点后继续使用行为树选中的精确
 `ACT_*`。`safe_to_interrupt=true` 只透传服务端明确标记为可安全取消的运行阶段；

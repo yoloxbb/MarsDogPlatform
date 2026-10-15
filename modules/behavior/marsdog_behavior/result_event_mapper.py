@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import time
+import uuid
 from typing import Optional
 
 from bionic_dog_bt.constants import BEHAVIOR_ACTION_MAP
@@ -40,6 +41,9 @@ class ResultEventMapper:
     """
 
     def __init__(self):
+        # A producer restart must not collide with a still-running consumer's
+        # deduplication window. The wire event_id remains an opaque string.
+        self._producer_epoch = uuid.uuid4().hex
         self._seq: int = 0
         self._last_published_event_id: str = ""
 
@@ -50,7 +54,7 @@ class ResultEventMapper:
             return None
 
         action_type, demand_type, default_metadata = mapping
-        event_id = f"result-{self._seq:06d}"
+        event_id = f"result-{self._producer_epoch}-{self._seq:06d}"
         self._seq += 1
 
         payload = json.dumps({
@@ -86,7 +90,7 @@ class ResultEventMapper:
         # Battery metadata is opaque evidence. Do not create, clamp or repair
         # measurements; Needs validates the observation at consumption time.
 
-        event_id = f"result-{self._seq:06d}"
+        event_id = f"result-{self._producer_epoch}-{self._seq:06d}"
         self._seq += 1
 
         payload = json.dumps({

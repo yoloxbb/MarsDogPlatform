@@ -477,11 +477,9 @@ class CommandLexicon:
                 f"Command entry {index} reuses reserved non-catalog "
                 f"event_type {event_type!r}"
             )
-        derived_event = (
-            f"EVT_VOICE_COMMAND_{product_action_label[4:]}"
-            if product_action_label.startswith("ACT_") else ""
-        )
-        if event_type not in _KNOWN_VOICE_EVENTS and event_type != derived_event:
+        # Event declarations and catalog mappings are explicit. A product label
+        # is neither an event declaration nor an Action executor unit_id.
+        if event_type not in _KNOWN_VOICE_EVENTS:
             raise ValueError(
                 f"Command entry {index} uses undeclared event_type "
                 f"{event_type!r}"

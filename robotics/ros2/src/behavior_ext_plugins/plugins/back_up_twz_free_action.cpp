@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "behavior_ext_plugins/back_up_twz_free_action.hpp"
+#include "behavior_ext_plugins/occupied_start.hpp"
 #include "tf2/utils.h"
 
 namespace nav2_behaviors
@@ -104,6 +105,16 @@ void BackUpTwzFree::onConfigure()
     node,
     "enable_strafe", rclcpp::ParameterValue(true));
   node->get_parameter("enable_strafe", enable_strafe_);
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, "require_start_occupied", rclcpp::ParameterValue(false));
+  node->get_parameter("require_start_occupied", require_start_occupied_);
+  nav2_util::declare_parameter_if_not_declared(
+    node, "recovery_start_occupied_cost", rclcpp::ParameterValue(253));
+  node->get_parameter("recovery_start_occupied_cost", recovery_start_occupied_cost_);
+  nav2_util::declare_parameter_if_not_declared(
+    node, "recovery_costmap_max_age", rclcpp::ParameterValue(5.0));
+  node->get_parameter("recovery_costmap_max_age", recovery_costmap_max_age_);
 
   costmap_client_ = node->create_client<nav2_msgs::srv::GetCostmap>(service_name_);
   // 使用 transient_local 获取最近一张完整代价地图，即使恢复动作开始前没有新一帧也能搜索。
@@ -209,6 +220,16 @@ Status BackUpTwzFree::onRun(const std::shared_ptr<const BackUpAction::Goal> comm
     RCLCPP_ERROR(
       logger_, "Initial robot pose is not available in search frame %s.",
       search_frame_.c_str());
+    return Status::FAILED;
+  }
+
+  // 统一导航仅允许地图起点占用时移动；直接调用 action 也不能绕过此检查。
+  if (require_start_occupied_ && !behavior_ext_plugins::occupiedStart(
+      costmap, search_pose.pose.position.x, search_pose.pose.position.y,
+      node->now().seconds(), recovery_costmap_max_age_, recovery_start_occupied_cost_))
+  {
+    RCLCPP_WARN(node->get_logger(),
+      "Recovery motion rejected: start is free, unknown, outside the map, or map is stale.");
     return Status::FAILED;
   }
 

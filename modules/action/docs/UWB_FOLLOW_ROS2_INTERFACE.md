@@ -7,9 +7,9 @@ UWB 输入、规划、以及 `/cmd_vel` 输出。它对上层只暴露三个接�
 
 | 接口 | 类型 | 用途 |
 |---|---|---|
-| `/go2/follow_uwb` | Action `FollowUwb` | 跟着 UWB 信标走 |
-| `/go2/random_roam` | Action `RandomRoam` | 原地玩耍，走到随机点后**自动结束** |
-| `/go2/set_behavior` | Service `SetBehavior` | 只接受 `IDLE=0` / `STOP=2` |
+| `/motion/follow_uwb` | Action `FollowUwb` | 跟着 UWB 信标走 |
+| `/motion/random_roam` | Action `RandomRoam` | 原地玩耍，走到随机点后**自动结束** |
+| `/motion/set_behavior` | Service `SetBehavior` | 只接受 `IDLE=0` / `STOP=2` |
 
 两个 Action **全局互斥**：已有任务在跑时再发一个会直接 `accepted=false`。
 
@@ -27,13 +27,13 @@ UWB 输入、规划、以及 `/cmd_vel` 输出。它对上层只暴露三个接�
 
 ### 长期 Goal 的建立与结束
 
-Tree 发送一个 `follow_owner` `/execute_behavior` Goal，`timeout_sec=0`。
+Tree 发送一个 `follow_owner` `/action/execute_behavior` Goal，`timeout_sec=0`。
 `goal_id`/`behavior_id` 是 Goal 身份，`interaction_id` 只记录来源。Action 在同一个
 Goal 内启动一次控制器，持续发送阶段和 `safe_to_interrupt` Feedback，直到取消、
 控制器失败、UWB 目标失鲜、Tree 续租失效或节点退出。语音 idle 只关闭会话级
 `/behavior/attention_tracking`，不会停止跟随。
 
-Lite3 先确认 `/go2/follow_uwb` 和 `/go2/set_behavior` 可用，再调用
+Lite3 先确认 `/motion/follow_uwb` 和 `/motion/set_behavior` 可用，再调用
 `prepare_navigation(allow_uwb_chain=True)`，发送一次内层 `FollowUwb` Goal
 （`timeout_sec=0`）。取消先请求内层取消并发送 `STOP`，**等待内层真实 Result**，
 确认停稳后才返回外层 `CANCELED`。若 Result 或停车不能确认，锁定恢复状态并拒绝
@@ -126,7 +126,7 @@ T4 自己会拉起 6 个节点：`uwb_behavior_controller_node`、`uwb_target_ad
 
 ```bash
 ros2 action list | grep go2        # 三个接口都在
-ros2 action feedback /go2/follow_uwb
+ros2 action feedback /motion/follow_uwb
 ```
 
 ### 跟随时会频繁切模式
@@ -156,8 +156,8 @@ ros2 param set /lite3_twist_bridge idle_timeout 10.0
 
 | 现象 | 原因 |
 |---|---|
-| `uwb_follow_action_unavailable:/go2/follow_uwb` | T4 没起，或 DDS 域不一致 |
-| `uwb_set_behavior_unavailable:/go2/set_behavior` | 同上；这一条会让跟随**直接拒绝启动**（没有刹车就不交底盘） |
+| `uwb_follow_action_unavailable:/motion/follow_uwb` | T4 没起，或 DDS 域不一致 |
+| `uwb_set_behavior_unavailable:/motion/set_behavior` | 同上；这一条会让跟随**直接拒绝启动**（没有刹车就不交底盘） |
 | `lite3_control_conflict:...` | 新链在跑而你在跑 twist 动作。要么关掉 T4，要么改用跟随 |
 | `uwb_follow_failed:NOT_READY` | 就绪窗口太短，按 §4 放宽 `readiness_timeout_sec` |
 | `uwb_follow_failed:INPUT_TIMEOUT` | UWB 输入断了超过 3 s：看 T3 的信标与串口 |

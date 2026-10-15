@@ -258,14 +258,14 @@ audio_direct:
     intent: command_comfort_dont_be_afraid
     expected_command_id: CMD_COMFORT_DONT_BE_AFRAID
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_COMFORT_REASSURE:
     category: external_interaction
     intent: command_comfort_reassure
     expected_command_id: CMD_COMFORT_REASSURE
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_ASK_IF_HURTS:
     category: external_interaction
@@ -279,14 +279,14 @@ audio_direct:
     intent: command_offer_head_for_pet
     expected_command_id: CMD_OFFER_HEAD_FOR_PET
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_SEEK_HUG:
     category: external_interaction
     intent: command_seek_hug
     expected_command_id: CMD_SEEK_HUG
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   # B: 拒绝否定
   EVT_VOICE_COMMAND_REFUSE:
@@ -294,14 +294,14 @@ audio_direct:
     intent: command_refuse
     expected_command_id: CMD_REFUSE
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_REFUSE_PLAY:
     category: external_interaction
     intent: command_refuse_play
     expected_command_id: CMD_REFUSE_PLAY
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   # C: 找人
   EVT_VOICE_COMMAND_FIND_DAD:
@@ -324,7 +324,7 @@ audio_direct:
     intent: command_dance
     expected_command_id: CMD_DANCE
     sub_priority: 1
-    timeout_sec: 10.0
+    timeout_sec: 25.0
 
   # E: 取物
   EVT_VOICE_COMMAND_BRING_TO_ME:
@@ -440,42 +440,42 @@ audio_direct:
     intent: command_ask_what_thinking
     expected_command_id: CMD_ASK_WHAT_THINKING
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_ASK_IF_COMFORTABLE:
     category: external_interaction
     intent: command_ask_if_comfortable
     expected_command_id: CMD_ASK_IF_COMFORTABLE
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_ASK_IF_LIKES:
     category: external_interaction
     intent: command_ask_if_likes
     expected_command_id: CMD_ASK_IF_LIKES
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_ASK_IF_FUN:
     category: external_interaction
     intent: command_ask_if_fun
     expected_command_id: CMD_ASK_IF_FUN
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_ASK_IF_UNDERSTANDS:
     category: external_interaction
     intent: command_ask_if_understands
     expected_command_id: CMD_ASK_IF_UNDERSTANDS
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_ASK_ABILITIES:
     category: external_interaction
     intent: command_ask_abilities
     expected_command_id: CMD_ASK_ABILITIES
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_ASK_IF_LEARNED:
     category: external_interaction
@@ -497,14 +497,14 @@ audio_direct:
     intent: command_owner_tired
     expected_command_id: CMD_OWNER_TIRED
     sub_priority: 1
-    timeout_sec: 8.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_OWNER_ANNOYED:
     category: external_interaction
     intent: command_owner_annoyed
     expected_command_id: CMD_OWNER_ANNOYED
     sub_priority: 1
-    timeout_sec: 8.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_OWNER_UNHAPPY:
     category: external_interaction
@@ -518,84 +518,84 @@ audio_direct:
     intent: command_owner_bad_day
     expected_command_id: CMD_OWNER_BAD_DAY
     sub_priority: 1
-    timeout_sec: 8.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_OWNER_DEPRESSED:
     category: external_interaction
     intent: command_owner_depressed
     expected_command_id: CMD_OWNER_DEPRESSED
     sub_priority: 1
-    timeout_sec: 8.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_OWNER_STRESSED:
     category: external_interaction
     intent: command_owner_stressed
     expected_command_id: CMD_OWNER_STRESSED
     sub_priority: 1
-    timeout_sec: 8.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_OWNER_LONELY:
     category: external_interaction
     intent: command_owner_lonely
     expected_command_id: CMD_OWNER_LONELY
     sub_priority: 1
-    timeout_sec: 8.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_OWNER_UNWELL:
     category: external_interaction
     intent: command_owner_unwell
     expected_command_id: CMD_OWNER_UNWELL
     sub_priority: 1
-    timeout_sec: 8.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_OWNER_HAPPY:
     category: external_interaction
     intent: command_owner_happy
     expected_command_id: CMD_OWNER_HAPPY
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_OWNER_VERY_HAPPY:
     category: external_interaction
     intent: command_owner_very_happy
     expected_command_id: CMD_OWNER_VERY_HAPPY
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_OWNER_FEELING_GREAT:
     category: external_interaction
     intent: command_owner_feeling_great
     expected_command_id: CMD_OWNER_FEELING_GREAT
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_OWNER_FEELING_EXCELLENT:
     category: external_interaction
     intent: command_owner_feeling_excellent
     expected_command_id: CMD_OWNER_FEELING_EXCELLENT
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_OWNER_RELAXED:
     category: external_interaction
     intent: command_owner_relaxed
     expected_command_id: CMD_OWNER_RELAXED
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_OWNER_WONDERFUL_DAY:
     category: external_interaction
     intent: command_owner_wonderful_day
     expected_command_id: CMD_OWNER_WONDERFUL_DAY
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   EVT_VOICE_COMMAND_OWNER_FEELING_LUCKY:
     category: external_interaction
     intent: command_owner_feeling_lucky
     expected_command_id: CMD_OWNER_FEELING_LUCKY
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
   # J: 饮食直驱
   EVT_VOICE_COMMAND_EAT_MEAL:
@@ -624,7 +624,7 @@ audio_direct:
     intent: command_respond_food_preference_query
     expected_command_id: CMD_RESPOND_FOOD_PREFERENCE_QUERY
     sub_priority: 1
-    timeout_sec: 5.0
+    timeout_sec: 15.0
 
 # ═══════════════════════════════════════════════════════════════════════════
 # audio_reaction — 词库社交反应

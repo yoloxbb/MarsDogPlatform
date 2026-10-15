@@ -4,12 +4,12 @@
 `CMD_PLAY_ALONE` → `command_play_alone` → `play_alone`。
 Tree 负责 AudioEvent v2 的 specific_command、匹配事件、命令 ID、允许触发校验，
 以及 Lv1 / sub_priority=1、立即中断、长期 Goal（`timeout_sec=0`）。
-Action 接收 `/execute_behavior` 的精确行为名 `play_alone`，不直接订阅语音事件。
+Action 接收 `/action/execute_behavior` 的精确行为名 `play_alone`，不直接订阅语音事件。
 
 同一个 Behavior Goal 内重复以下完整周期，直到取消或失败：
 
 1. `uwb_roam` 必需阶段：`ACT_UWB_RANDOM_ROAM` → Lite3 专用 `uwb_roam` 客户端。
-   先完成 Lite3 站立/控制权预检，再发送 `/go2/random_roam`。
+   先完成 Lite3 站立/控制权预检，再发送 `/motion/random_roam`。
    Goal 为 `random_seed=0, timeout_sec=30, min_radius=0.5, max_radius=2.0`；
    剩余预算不足时缩短 timeout，低于可安全发送的预算则拒绝。
    圆心由服务端冻结在调用时 UWB 位置，不使用地图点位 `K`。

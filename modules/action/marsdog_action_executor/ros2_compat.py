@@ -29,22 +29,20 @@ except ImportError:
 
 # ── ExecuteBehavior action message ────────────────────────────────────────────
 #
-# Priority order:
-#   1. marsdog_interfaces.action.ExecuteBehavior  (official public interface)
-#   2. marsdog_action_executor.action.ExecuteBehavior  (historical, deprecated)
+# Only the public interface package supplies ExecuteBehavior.
 
 _EXECUTE_BEHAVIOR_ACTION = None
 _EXECUTE_BEHAVIOR_SOURCE = None  # track which package provided it
 
 
 def _try_import_action():
-    """Attempt to import ExecuteBehavior from the preferred packages."""
+    """Load ExecuteBehavior from the public interface package."""
     global _EXECUTE_BEHAVIOR_ACTION, _EXECUTE_BEHAVIOR_SOURCE
 
     if not HAS_ROS2:
         return
 
-    # 1) Preferred: marsdog_interfaces (public interface package)
+    # The public type is required for ROS transport.
     try:
         from marsdog_interfaces.action import ExecuteBehavior  # type: ignore[import-untyped]
 
@@ -55,27 +53,12 @@ def _try_import_action():
     except ImportError:
         pass
 
-    # 2) Fallback: local definition (deprecated, for transition)
-    try:
-        from marsdog_action_executor.action import ExecuteBehavior  # type: ignore[import-untyped]
-
-        _EXECUTE_BEHAVIOR_ACTION = ExecuteBehavior
-        _EXECUTE_BEHAVIOR_SOURCE = "marsdog_action_executor (deprecated)"
-        logger.warning(
-            "ExecuteBehavior imported from marsdog_action_executor.action — "
-            "this is DEPRECATED. Migrate to marsdog_interfaces."
-        )
-    except ImportError:
-        _EXECUTE_BEHAVIOR_ACTION = None
-        _EXECUTE_BEHAVIOR_SOURCE = None
 
 
 def get_execute_behavior_action():
     """Return the ExecuteBehavior action class, or None if unavailable.
 
-    Attempts to import from:
-      1. ``marsdog_interfaces.action.ExecuteBehavior`` (official)
-      2. ``marsdog_action_executor.action.ExecuteBehavior`` (deprecated fallback)
+    Loads only ``marsdog_interfaces.action.ExecuteBehavior``.
 
     Returns:
         The action class, or None.

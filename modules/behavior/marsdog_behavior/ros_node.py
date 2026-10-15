@@ -8,12 +8,13 @@ Subscriptions:
   /emotion/signal_event      — V2 threshold rising-edge events
   /internal_need/state       — V2 current need states (periodic)
   /internal_need/signal_event — V2 need level-change events (event-driven)
+  /perception/tactile_event   — exact configured direct reactions; shared arbitration
 
 Publishers:
   /behavior/result_event     — demand behavior STARTED / COMPLETED / etc.
 
 Action Client:
-  /execute_behavior — sends goals to marsdog_action_executor
+  /action/execute_behavior — sends goals to marsdog_action_executor
 
 Internal delegation:
   candidate_pool.py       — candidate collection + selection
@@ -29,6 +30,7 @@ from __future__ import annotations
 from marsdog_observability import configure
 
 from . import voice_engagement
+from .state_input_order import StateInputOrder
 
 from . import state_subscriptions
 from .state_subscriptions import _is_json_number, _need_level_event, _need_level_from_value, _parse_need_thresholds
@@ -41,6 +43,7 @@ from collections import deque
 import yaml
 
 from bionic_dog_bt.blackboard import Blackboard
+from bionic_dog_bt.drive_policy import resolve_drive
 from bionic_dog_bt.constants import (
     EMOTION_PRIORITY,
     EMOTION_V2_EVENT_TO_NAME,
@@ -60,6 +63,7 @@ from .perception_client_adapter import PerceptionClientAdapter
 from .intent_mapper import IntentMapper, BehaviorCandidate
 from .decision_trace import emit
 from .runtime import BehaviorRuntime
+from .tactile_events import TactileEventConsumer
 from .voice_interaction_session import (
     ACQUIRING_TARGET,
     APPROACHING,
@@ -163,6 +167,7 @@ class BehaviorTreeRosNode(NodeBase):
 
         # ── Internal runtime ─────────────────────────────────────────────
         self._blackboard = Blackboard()
+        self._state_input_order = StateInputOrder()
 
         # ── Config path ──────────────────────────────────────────────────
         if config_path is None:
@@ -227,6 +232,8 @@ class BehaviorTreeRosNode(NodeBase):
         self._tree = self._runtime.tree
         self._candidate_pool = self._runtime.candidate_pool
         self._result_mapper = ResultEventMapper()
+        self._tactile_events = TactileEventConsumer.from_file(
+            get_config_file("tactile_events.yaml"), self._add_candidate)
 
         # ── State tracking ───────────────────────────────────────────────
         self._running = True
@@ -268,37 +275,12 @@ class BehaviorTreeRosNode(NodeBase):
         yaml_loader = YAMLLoader(config_path)
 
         if self._ros2_ready:
-            # Prefer marsdog_interfaces (public), fallback to marsdog_action_executor
-            action_type = None
-            action_pkg = None
-            import traceback as _tb
-            try:
-                from marsdog_interfaces.action import ExecuteBehavior as EB1
-                action_type = EB1
-                action_pkg = "marsdog_interfaces"
-            except Exception as _e:
-                self._logger.warn(f"marsdog_interfaces.action import failed: {_e}")
-            if action_type is None:
-                try:
-                    from marsdog_action_executor.action import ExecuteBehavior as EB2
-                    action_type = EB2
-                    action_pkg = "marsdog_action_executor"
-                except Exception as _e:
-                    self._logger.warn(f"marsdog_action_executor.action import failed: {_e}")
-
-            if action_type is not None:
-                from .action_client_adapter import ActionClientAdapter
-                self._executor = ActionClientAdapter(self, "/execute_behavior")
-                self._using_real_executor = True
-                self._logger.info(
-                    f"Executor: ActionClientAdapter → /execute_behavior "
-                    f"(via {action_pkg}.action)")
-                return  # Success — skip fallback
-
-            self._logger.warn(
-                "ExecuteBehavior action type not found; "
-                "falling back to MockActionExecutor. "
-                "Build: colcon build --packages-select marsdog_interfaces")
+            # A ROS deployment must have the public type; missing IDL is a startup error.
+            from .action_client_adapter import ActionClientAdapter
+            self._executor = ActionClientAdapter(self, "/action/execute_behavior")
+            self._using_real_executor = True
+            self._logger.info("Executor: /action/execute_behavior (marsdog_interfaces)")
+            return
 
         # Fallback: use MockActionExecutor
         from bionic_dog_bt.mock_action_executor import MockActionExecutor
@@ -346,6 +328,9 @@ class BehaviorTreeRosNode(NodeBase):
             String, self.NEED_SIGNAL_TOPIC,
             self._on_need_signal_ros2, qos_reliable)
 
+        self.create_subscription(
+            String, "/perception/tactile_event", self._on_tactile_event_ros2, qos_reliable)
+
         # Publisher: only /behavior/result_event
         self._result_pub = self.create_publisher(
             String, self.RESULT_EVENT_TOPIC, qos_reliable)
@@ -386,6 +371,9 @@ class BehaviorTreeRosNode(NodeBase):
         return state_subscriptions.on_need_signal_ros2(self, msg)
 
     # ── Audio Direct Handler ──────────────────────────────────────────────
+
+    def _on_tactile_event_ros2(self, msg):
+        return self._tactile_events.consume(msg)
 
     def _on_visual_direct(self, event_type: str, data: dict) -> None:
         """Map a whitelisted visual event into the candidate pipeline."""
@@ -1456,7 +1444,9 @@ class BehaviorTreeRosNode(NodeBase):
         current_before = self._blackboard.current_behavior
         outcome = self._runtime.tick()
 
-        if outcome.started_behavior is not None:
+        if (outcome.started_behavior is not None
+                and resolve_drive(outcome.started_behavior.params,
+                                  outcome.started_behavior.need_type).state_domain == "emotion"):
             source_emotion = str(
                 outcome.started_behavior.params.get("source_emotion", "")
             )
@@ -1470,10 +1460,11 @@ class BehaviorTreeRosNode(NodeBase):
                     current_before,
                     outcome.completed_event,
                 )
-                self._schedule_emotion_continuation(
-                    str(current_before.params.get("source_emotion", "")),
-                    str(outcome.completed_event.status),
-                )
+                if resolve_drive(current_before.params, current_before.need_type).state_domain == "emotion":
+                    self._schedule_emotion_continuation(
+                        str(current_before.params.get("source_emotion", "")),
+                        str(outcome.completed_event.status),
+                    )
             self._flush_pending_emotions()
 
         # RESPOND_EATING_QUERY 打断进食后，看向主人完成时恢复进食。

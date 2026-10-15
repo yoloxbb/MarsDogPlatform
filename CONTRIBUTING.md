@@ -2,6 +2,9 @@
 
 本仓是新增功能的唯一开发入口。历史独立仓与归档用于追溯，不再双向同步业务修改。
 先读 [快速开始](docs/development/QUICKSTART.md) 和 [模块边界](docs/development/WORKFLOW.md)。
+当前总体约定见 [架构基线](docs/architecture/SYSTEM_BASELINE.md) 与 [工程规范](docs/development/ENGINEERING_STANDARD.md)。
+新功能先填写 [功能规格](docs/development/templates/FEATURE_SPEC.md)，指定功能负责人和受影响模块评审人；
+开发与验收可以从 [叫过来场景](docs/development/scenarios/CALLER_APPROACH.md) 的分层示例开始。
 
 ## 一次变更的流程
 
@@ -12,6 +15,10 @@
 5. 提交源码、必要配置、对应锁文件及文档；不提交 out、.venv、.external、权重或录音。
 6. 按 PR 模板写清触发条件、变更后行为、验证范围与未覆盖项；公开接口变更由生产方和消费方共同评审。
 7. CI 与评审完成后合并。远端为 yoloxbb/MarsDogPlatform；分支保护和专用 Humble runner 尚待配置，本地通过不能记作 hosted CI 通过。
+
+跨模块功能由功能负责人汇总端到端结果；发布由当期集成负责人记录源码、配置、依赖、模型、overlay、
+能力变化及回滚。兼任规则见 [责任表](docs/OWNERSHIP.md)。缺模板、策略阻断、运行时检查、板端和实机证据分别记录，
+不得用配置检查通过替代功能验收。远端保护与 runner 的实际状态应由集成负责人核实。
 
 依赖变更只在受影响模块更新、评审并提交锁文件；不要顺手升级算法、模型 runtime 或 ROS。
 `dev.py setup` 使用 --locked，发现锁不同步应失败，不自动重解依赖。

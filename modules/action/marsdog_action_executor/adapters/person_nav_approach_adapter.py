@@ -1,6 +1,6 @@
 """One-shot person localization followed by one Nav2 goal.
 
-The Vision service owns bbox/depth synchronization.  This adapter never
+Vision owns image provenance; a geometry transport may call depth/TF. This adapter never
 drives toward a bounding box. Explicit approach commands bind one fresh
 human track from the visual event stream before requesting localization.
 """
@@ -32,8 +32,10 @@ class PersonNavApproachAdapter:
 
     def __init__(self, transport: Any, publish_stop: Any, *,
                  should_stop=None, chassis_backend=None,
-                 target_acquire_timeout_sec: float = TARGET_ACQUIRE_TIMEOUT_SEC):
+                 target_acquire_timeout_sec: float = TARGET_ACQUIRE_TIMEOUT_SEC,
+                 allow_bound_target: bool = False):
         self._transport = transport
+        self._allow_bound_target = allow_bound_target
         self._publish_stop = publish_stop
         self._should_stop = should_stop or (lambda: False)
         self._chassis_backend = chassis_backend
@@ -93,7 +95,8 @@ class PersonNavApproachAdapter:
 
     @property
     def recovery_required(self) -> bool:
-        return bool(getattr(self._transport, "recovery_required", False))
+        return (bool(getattr(self._transport, "recovery_required", False))
+                or bool(getattr(getattr(self._transport, "local_adapter", None), "active", False)))
 
     def cancel_task(self) -> None:
         self._cancel.set()
@@ -130,6 +133,9 @@ class PersonNavApproachAdapter:
             "target_id": str(target.get("target_id", "")) if isinstance(target, Mapping) else "",
             "target_identity": str(target.get("identity", "")) if isinstance(target, Mapping) else "",
         }
+        approach = getattr(ctx, 'params', {}).get('approach')
+        if isinstance(approach, Mapping):
+            metadata['approach_mode'] = approach.get('mode')
         ctx.metadata["target_approach"] = metadata
         self._feedback(ctx, metadata["state"], 1.0 if success else 0.0)
         return TargetApproachResult(success, reason, metadata, canceled, timed_out)
@@ -137,7 +143,8 @@ class PersonNavApproachAdapter:
     def execute_task(self, unit_config: Mapping[str, Any], ctx: Any,
                      timeout_sec: float) -> TargetApproachResult:
         unit_id = str(unit_config.get("unit_id", ""))
-        if unit_id != self.ACTION_ID and unit_id not in self.OWNER_ACTION_BEHAVIORS:
+        bound_generic = self._allow_bound_target and unit_id == "ACT_APPROACH_VISUAL_TARGET"
+        if unit_id != self.ACTION_ID and unit_id not in self.OWNER_ACTION_BEHAVIORS and not bound_generic:
             return self._finish(ctx, False, "unsupported_action")
         target = getattr(ctx, "target", None)
         params = getattr(ctx, "params", {})
@@ -153,9 +160,11 @@ class PersonNavApproachAdapter:
                                 "family_member_1", "family_member_2",
                                 "family_member_3", "family_member_4"}))):
                 return self._finish(ctx, False, "wake_identity_not_authorized")
-        elif (getattr(ctx, "resolved_behavior_name", "")
+        elif not bound_generic and (getattr(ctx, "resolved_behavior_name", "")
                 != self.OWNER_ACTION_BEHAVIORS[unit_id]):
             return self._finish(ctx, False, "owner_target_not_authorized")
+        if bound_generic and (not isinstance(target, Mapping) or target.get("target_type") != "human"):
+            return self._finish(ctx, False, "human_target_required")
         if params.get("strict_target_lock") is not True or params.get("allow_target_switch") is not False:
             return self._finish(ctx, False, "target_lock_required")
         try:
@@ -175,7 +184,7 @@ class PersonNavApproachAdapter:
             deadline = time.monotonic() + budget
             if self._should_stop():
                 return self._finish(ctx, False, "canceled_before_localization", canceled=True)
-            if unit_id != self.ACTION_ID:
+            if unit_id != self.ACTION_ID and not bound_generic:
                 self._feedback(ctx, "acquiring_human_target", 0.05)
                 target = self._acquire_human_target(deadline)
                 if target is None:
@@ -226,8 +235,11 @@ class PersonNavApproachAdapter:
             if self._cancel.is_set() or self._should_stop():
                 return self._finish(ctx, False, "canceled_before_navigation", canceled=True)
             self._feedback(ctx, "navigating_to_person", 0.5)
-            prepare = getattr(self._chassis_backend, "prepare_navigation", None)
-            finish = getattr(self._chassis_backend, "finish_navigation", None)
+            # LocalMotion owns its chassis preflight and confirmed settlement.
+            local_mode = params.get("approach", {}).get("mode") == "local_nav"
+            chassis = None if local_mode and self._allow_bound_target else self._chassis_backend
+            prepare = getattr(chassis, "prepare_navigation", None)
+            finish = getattr(chassis, "finish_navigation", None)
             try:
                 prepared = not callable(prepare) or bool(prepare())
             except Exception as exc:
@@ -244,9 +256,14 @@ class PersonNavApproachAdapter:
                         False, True, "canceled_before_navigation"
                     )
                 else:
-                    success, canceled, nav_reason = self._transport.navigate(
-                        pose, deadline, self._cancel
-                    )
+                    selected = getattr(self._transport, "navigate_approach", None)
+                    if callable(selected):
+                        success, canceled, nav_reason = selected(
+                            pose, deadline, self._cancel, ctx=ctx, unit_config=unit_config)
+                    else:
+                        success, canceled, nav_reason = self._transport.navigate(
+                            pose, deadline, self._cancel
+                        )
             except Exception as exc:
                 self._transport.recovery_required = True
                 success, canceled, nav_reason = (
@@ -349,7 +366,7 @@ class Ros2PersonApproachTransport:
             return None, "canceled_before_localization"
         request = self._vision_type.Request()
         request.task_id = "person-locate-" + uuid.uuid4().hex
-        request.task_type = "locate_person_once"
+        request.task_type = getattr(self, "vision_task_type", "locate_person_once")
         request.params_json = json.dumps({"target_id": target_id})
         future = self._vision.call_async(request)
         response_deadline = min(deadline, time.monotonic() + self._service_timeout)

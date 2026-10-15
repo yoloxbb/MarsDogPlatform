@@ -143,6 +143,25 @@ class TestPlannerRecovery(unittest.TestCase):
         self.fixed_stamp = None
         self.robot_x = 0.0
         self.point = (2.0, 2.0, 0.2)
+        # Each test creates fresh DDS endpoints. Its short fault/recovery windows
+        # must start after discovery, rather than also measuring discovery time.
+        inputs = ((self.nominal_pub, 2), (self.odom_pub, 3), (self.cloud_pub, 1),
+                  (self.map_odom_pub, 1), (self.map_input_pub, 1),
+                  (self.raw_pub, 1), (self.reverse_pub, 1))
+        discovery_deadline = time.monotonic() + 8.0
+        while time.monotonic() < discovery_deadline:
+            if (all(pub.get_subscription_count() >= count for pub, count in inputs)
+                    and self.node.count_publishers('/map_test/cloud') > 0
+                    and self.follow_commands and self.reverse_commands
+                    and self.commands and self.states):
+                self.follow_commands.clear()
+                self.reverse_commands.clear()
+                self.commands.clear()
+                self.states.clear()
+                return
+            rclpy.spin_once(self.node, timeout_sec=0.05)
+        self.node.destroy_node()
+        self.fail('DDS test endpoints did not match before the discovery deadline')
 
     def tearDown(self):
         """销毁测试接口."""

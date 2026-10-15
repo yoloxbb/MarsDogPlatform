@@ -12,6 +12,8 @@ def run_task(self, task_type: str, params: dict[str, Any]):
         return {"ok": True, **vision.check_person()}  # type: ignore[attr-defined]
     if task_type == "query_targets":
         return self._query_targets(params)
+    if task_type == "locate_person_geometry":
+        return self._locate_person_geometry(params)
     if task_type == "locate_person_once":
         return self._locate_person_once(params)
     if task_type == "detect_objects":

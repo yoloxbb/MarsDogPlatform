@@ -9,26 +9,9 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(action_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(marsdog_voice_interaction REQUIRED)
 
-# NOTE: ExecuteBehavior.action has been migrated to marsdog_interfaces.
-# The ros_node will prefer marsdog_interfaces.action.ExecuteBehavior when
-# available, but we still generate the local copy as a fallback during
-# the transition period.  Remove this block once marsdog_interfaces is
-# available in all workspaces.
-find_package(rosidl_default_generators REQUIRED)
-rosidl_generate_interfaces(
-  ${PROJECT_NAME}
-  "action/ExecuteBehavior.action"
-)
-
-# Install our Python modules
-install(
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/marsdog_action_executor/
-  DESTINATION ${PYTHON_INSTALL_DIR}/marsdog_action_executor
-  FILES_MATCHING PATTERN "*.py"
-  PATTERN "__pycache__" EXCLUDE
-)
+# The public ROS types are provided by marsdog_interfaces.
+ament_python_install_package(${PROJECT_NAME})
 
 # Install launcher scripts
 install(

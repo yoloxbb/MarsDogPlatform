@@ -2037,6 +2037,16 @@ class VisionInteractionNode(Node):
             "target": target,
         }
 
+    def _locate_person_geometry(self, params: dict[str, Any]) -> dict[str, Any]:
+        current = self._locate_person_once(params)
+        if not current.get("ok"):
+            return current
+        provider = self._providers.get("vision")
+        query = getattr(provider, "get_geometry_observation", None)
+        if not callable(query):
+            return {"ok": False, "error_code": "geometry_provider_unavailable"}
+        return query(current["target_id"], self._target_current_timeout_sec)
+
     def _run_task(self, task_type: str, params: dict[str, Any]) -> dict[str, Any]:
         return task_router.run_task(self, task_type, params)
 

@@ -46,7 +46,7 @@ def main():
                 deadline = time.monotonic() + 15
                 while time.monotonic() < deadline:
                     rclpy.spin_once(node, timeout_sec=0.05)
-                    ready = "/execute_behavior/_action/send_goal" in dict(node.get_service_names_and_types())
+                    ready = "/action/execute_behavior/_action/send_goal" in dict(node.get_service_names_and_types())
                     if ready and node.get_publishers_info_by_topic("/development/lite3_io"):
                         break
                     assert proc.poll() is None, "Action exited before ROS action became ready"

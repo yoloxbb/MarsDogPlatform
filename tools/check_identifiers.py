@@ -9,6 +9,7 @@ import subprocess
 
 from identifier_catalog import ROOT, fingerprints
 from runtime_environment import clean_environment
+from event_inventory import analyze as analyze_events
 
 CATALOG = "interfaces/naming/catalog.json"
 EXCEPTIONS = "interfaces/naming/compatibility_exceptions.json"
@@ -129,6 +130,8 @@ def analyze(catalog):
 def validate(catalog, exceptions):
     findings = analyze(catalog)
     errors = list(findings["errors"])
+    if "event_routing_version" in catalog:
+        errors.extend(analyze_events(catalog))
     if exceptions["schema_version"] != 1:
         errors.append("unsupported exception schema")
     for key in ("missing_templates", "legacy_spellings", "voice_without_route", "non_catalog_audio_routes"):
@@ -151,10 +154,17 @@ def validate(catalog, exceptions):
             "known_missing_template_routes": len(findings["missing_templates"]),
             "voice_events_without_declared_route": len(findings["voice_without_route"]),
             "non_catalog_audio_routes": len(findings["non_catalog_audio_routes"]),
+            "tactile_routes": len(catalog.get("tactile_routes", [])),
+            "reaction_variants": len(catalog.get("reaction_routes", [])),
+            "indexed_runtime_entries": len(catalog.get("code_entrypoints", [])),
+            "emotion_influence_events": len(catalog.get("emotion_effects", {})),
+            "dual_path_events": sum(r["classification"] == "direct_and_emotion"
+                                    for r in catalog.get("event_index", [])),
         },
         "findings": {key: value for key, value in findings.items() if key != "errors"},
-        "scope": "Declared default YAML graph only; no execution/hardware/ASR accuracy claims. "
-                 "Code-only, conditional authorization and deployed override paths need runtime contracts.",
+        "scope": "Declared YAML routes, tactile, emotion influence, reaction variants and indexed code entries; "
+                 "code coverage is not exhaustive. No execution/hardware/ASR accuracy claims. "
+                 "Conditional authorization and deployed override paths need runtime contracts.",
     }
 
 
@@ -185,6 +195,9 @@ def main():
             catalog = json.loads((ROOT / CATALOG).read_text())
         check_freshness(catalog, ROOT)
         report = validate(catalog, json.loads((ROOT / EXCEPTIONS).read_text()))
+        if catalog.get("event_routing_version") != 1:
+            report["errors"].append("event routing inventory missing; refresh catalog")
+            report["status"] = "FAIL"
         if args.live and catalog != json.loads((ROOT / CATALOG).read_text()):
             report["errors"].append("committed catalog differs from live extraction")
             report["status"] = "FAIL"

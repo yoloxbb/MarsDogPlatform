@@ -19,6 +19,7 @@
 #include <iomanip>
 #include <limits>
 #include <memory>
+#include <map>
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
@@ -35,6 +36,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 
@@ -95,6 +97,7 @@ public:
       "selected_path_topic", "/go2_uwb_local_follow/selected_path");
     diagnostics_topic_ = declare_parameter<std::string>(
       "diagnostics_topic", "/go2_uwb_local_follow/planner_diagnostics");
+    decision_topic_ = declare_parameter<std::string>("decision_topic", "");
 
     enable_motion_ = declare_parameter<bool>("enable_motion", false);
     control_frequency_ = declare_parameter<double>("control_frequency", 20.0);
@@ -195,6 +198,47 @@ public:
     self_filter_y_abs_ = declare_parameter<double>("self_filter_y_abs", 0.20);
     max_obstacle_points_ = declare_parameter<int>("max_obstacle_points", 5000);
     validateParameters();
+    // Legacy launch paths keep this off and retain their startup-only settings.
+    if (declare_parameter<bool>("enable_task_parameters", false)) {
+      deployment_limits_ = motion_limits_;
+      deployment_clearance_ = sampling_config_.minimum_safe_clearance;
+      deployment_ttc_ = sampling_config_.minimum_ttc;
+      deployment_reverse_enabled_ = emergency_reverse_config_.enabled;
+      // Publish the startup profile as a read-only snapshot. A restarted task
+      // owner must not mistake the previous task's overrides for new defaults.
+      const std::vector<std::string> task_names = {
+        "max_linear_speed", "max_angular_speed", "max_linear_accel", "max_linear_decel",
+        "max_angular_accel", "prediction_time", "mppi_batch_size", "mppi_iteration_count",
+        "mppi_temperature", "mppi_linear_noise_std", "mppi_angular_noise_std",
+        "mppi_noise_correlation", "mppi_random_seed", "min_avoidance_angular_speed",
+        "max_avoidance_angular_speed", "obstacle_influence_distance", "minimum_safe_clearance",
+        "minimum_ttc", "weight_follow_linear", "weight_follow_angular", "weight_smooth_linear",
+        "weight_smooth_angular", "weight_obstacle", "weight_progress",
+        "avoidance_direction_hold_sec", "enable_emergency_reverse"};
+      std::ostringstream startup;
+      startup << std::setprecision(17) << "{";
+      bool first = true;
+      for (const auto & name : task_names) {
+        const auto parameter = get_parameter(name);
+        if (!first) {startup << ",";}
+        first = false;
+        startup << "\"" << name << "\":";
+        if (parameter.get_type() == rclcpp::ParameterType::PARAMETER_BOOL) {
+          startup << (parameter.as_bool() ? "true" : "false");
+        } else if (parameter.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER) {
+          startup << parameter.as_int();
+        } else {
+          startup << parameter.as_double();
+        }
+      }
+      startup << "}";
+      rcl_interfaces::msg::ParameterDescriptor startup_descriptor;
+      startup_descriptor.read_only = true;
+      declare_parameter<std::string>(
+        "task_parameter_defaults_json", startup.str(), startup_descriptor);
+      task_parameters_callback_ = add_on_set_parameters_callback(
+        std::bind(&LocalVelocityPlannerNode::configureTask, this, std::placeholders::_1));
+    }
     pose_buffer_config_.max_pose_extrapolation_sec = odom_timeout_sec_;
     pose_buffer_ = OdomPoseBuffer(pose_buffer_config_);
 
@@ -215,6 +259,9 @@ public:
     selected_path_pub_ = create_publisher<nav_msgs::msg::Path>(selected_path_topic_, 10);
     diagnostics_pub_ = create_publisher<diagnostic_msgs::msg::DiagnosticArray>(
       diagnostics_topic_, 10);
+    if (!decision_topic_.empty()) {
+      decision_pub_ = create_publisher<diagnostic_msgs::msg::DiagnosticArray>(decision_topic_, 10);
+    }
 
     const auto control_period = std::chrono::duration<double>(1.0 / control_frequency_);
     control_timer_ = create_wall_timer(
@@ -308,6 +355,123 @@ private:
   };
 
   // 检查话题、时效、运动学、MPPI、代价权重、足迹和障碍过滤参数。
+  rcl_interfaces::msg::SetParametersResult configureTask(
+    const std::vector<rclcpp::Parameter> & parameters)
+  {
+    rcl_interfaces::msg::SetParametersResult result;
+    result.successful = false;
+    // A task can only configure a stopped planner. The task owner confirms pose
+    // stationarity as well; here fresh measured twist and zero nominal are required.
+    {
+      std::lock_guard<std::mutex> lock(input_mutex_);
+      const double age = std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - odom_snapshot_.receipt_time).count();
+      if (!odom_snapshot_.valid || age > odom_timeout_sec_ ||
+        std::abs(odom_snapshot_.velocity.linear_x) > 0.08 ||
+        std::abs(odom_snapshot_.velocity.angular_z) > 0.15 ||
+        std::abs(nominal_snapshot_.velocity.linear_x) > 1e-6 ||
+        std::abs(nominal_snapshot_.velocity.angular_z) > 1e-6 ||
+        std::abs(last_command_.linear_x) > 1e-6 ||
+        std::abs(last_command_.angular_z) > 1e-6)
+      {
+        result.reason = "task parameters require fresh stationary odometry and zero command";
+        return result;
+      }
+    }
+    auto limits = motion_limits_;
+    auto trajectory = trajectory_config_;
+    auto sampling = sampling_config_;
+    auto mppi = mppi_config_;
+    auto reverse = emergency_reverse_config_;
+    double hold = avoidance_direction_hold_sec_;
+    // Work on copies, then validate the complete transaction before committing.
+    std::map<std::string, double *> doubles = {
+      {"max_linear_speed", &limits.max_linear_speed},
+      {"max_angular_speed", &limits.max_angular_speed},
+      {"max_linear_accel", &limits.max_linear_accel},
+      {"max_linear_decel", &limits.max_linear_decel},
+      {"max_angular_accel", &limits.max_angular_accel},
+      {"prediction_time", &trajectory.prediction_time},
+      {"mppi_temperature", &mppi.temperature},
+      {"mppi_linear_noise_std", &mppi.linear_noise_std},
+      {"mppi_angular_noise_std", &mppi.angular_noise_std},
+      {"mppi_noise_correlation", &mppi.noise_correlation},
+      {"min_avoidance_angular_speed", &sampling.min_avoidance_angular_speed},
+      {"max_avoidance_angular_speed", &sampling.max_avoidance_angular_speed},
+      {"obstacle_influence_distance", &sampling.obstacle_influence_distance},
+      {"minimum_safe_clearance", &sampling.minimum_safe_clearance},
+      {"minimum_ttc", &sampling.minimum_ttc},
+      {"weight_follow_linear", &sampling.weight_follow_linear},
+      {"weight_follow_angular", &sampling.weight_follow_angular},
+      {"weight_smooth_linear", &sampling.weight_smooth_linear},
+      {"weight_smooth_angular", &sampling.weight_smooth_angular},
+      {"weight_obstacle", &sampling.weight_obstacle},
+      {"weight_progress", &sampling.weight_progress},
+      {"avoidance_direction_hold_sec", &hold},
+    };
+    try {
+      for (const auto & parameter : parameters) {
+        const auto name = parameter.get_name();
+        const auto found = doubles.find(name);
+        if (found != doubles.end()) {
+          const double value = parameter.as_double();
+          if (!std::isfinite(value)) {throw std::invalid_argument("non-finite " + name);}
+          *found->second = value;
+        } else if (name == "mppi_batch_size") {
+          const auto value = parameter.as_int();
+          if (value < 8 || value > 256) {throw std::invalid_argument("batch size outside [8,256]");}
+          mppi.batch_size = static_cast<int>(value);
+        } else if (name == "mppi_iteration_count") {
+          const auto value = parameter.as_int();
+          if (value < 1 || value > 5) {throw std::invalid_argument("iterations outside [1,5]");}
+          mppi.iteration_count = static_cast<int>(value);
+        } else if (name == "mppi_random_seed") {
+          const auto value = parameter.as_int();
+          if (value < 0 || value > 2147483647) {throw std::invalid_argument("invalid seed");}
+          mppi.random_seed = static_cast<std::uint32_t>(value);
+        } else if (name == "enable_emergency_reverse") {
+          reverse.enabled = parameter.as_bool();
+        } else {
+          throw std::invalid_argument("immutable or unsupported task parameter: " + name);
+        }
+      }
+      std::string reason;
+      if (!validateMotionLimits(limits, &reason) ||
+        !validateTrajectoryConfig(trajectory, &reason) ||
+        !validateVelocitySamplingConfig(sampling, &reason) ||
+        !validateMppiConfig(mppi, &reason) ||
+        !validateEmergencyReverseConfig(reverse, limits, &reason))
+      {throw std::invalid_argument(reason);}
+      if (limits.max_linear_speed > deployment_limits_.max_linear_speed ||
+        limits.max_angular_speed > deployment_limits_.max_angular_speed ||
+        limits.max_linear_accel > deployment_limits_.max_linear_accel ||
+        limits.max_linear_decel > deployment_limits_.max_linear_decel ||
+        limits.max_angular_accel > deployment_limits_.max_angular_accel ||
+        sampling.minimum_safe_clearance < deployment_clearance_ ||
+        sampling.minimum_ttc < deployment_ttc_ ||
+        (reverse.enabled && !deployment_reverse_enabled_))
+      {throw std::invalid_argument("task parameters cannot weaken deployment limits");}
+      if (trajectory.prediction_time < 0.5 || trajectory.prediction_time > 3.0 ||
+        hold < 0.0 || hold > 3.0 ||
+        sampling.max_avoidance_angular_speed > limits.max_angular_speed ||
+        sampling.min_avoidance_angular_speed > sampling.max_avoidance_angular_speed)
+      {throw std::invalid_argument("invalid task prediction/avoidance limits");}
+    } catch (const std::exception & exception) {
+      result.reason = exception.what();
+      return result;
+    }
+    motion_limits_ = limits;
+    trajectory_config_ = trajectory;
+    sampling_config_ = sampling;
+    mppi_config_ = mppi;
+    emergency_reverse_config_ = reverse;
+    avoidance_direction_hold_sec_ = hold;
+    mppi_optimizer_.reset();
+    resetEmergencyRecovery();
+    result.successful = true;
+    return result;
+  }
+
   void validateParameters()
   {
     std::string reason;
@@ -1008,6 +1172,28 @@ private:
     }
 
     const auto stamp = now();
+    // Optional coordination evidence for the SAME command. It does not alter planning.
+    if (decision_pub_) {
+      diagnostic_msgs::msg::DiagnosticArray decision;
+      decision.header.stamp = stamp;
+      decision.header.frame_id = base_frame_;
+      diagnostic_msgs::msg::DiagnosticStatus entry;
+      entry.name = get_fully_qualified_name();
+      entry.message = state;
+      const std::vector<std::pair<std::string, std::string>> values = {
+        {"enable_motion", enable_motion_ ? "true" : "false"},
+        {"emergency_recovery_active", status.emergency_recovery_active ? "true" : "false"},
+        {"final_v", formatDouble(status.final_command.linear_x, 12)},
+        {"final_w", formatDouble(status.final_command.angular_z, 12)},
+        {"max_reverse_speed", formatDouble(motion_limits_.max_reverse_speed, 12)}};
+      for (const auto & value : values) {
+        diagnostic_msgs::msg::KeyValue item;
+        item.key = value.first; item.value = value.second;
+        entry.values.push_back(item);
+      }
+      decision.status.push_back(entry);
+      decision_pub_->publish(decision);
+    }
     publishStampedVelocity(planned_cmd_pub_, status.planned, stamp);
     publishStampedVelocity(final_cmd_pub_, status.final_command, stamp);
 
@@ -1169,6 +1355,7 @@ private:
   std::string cmd_vel_topic_;
   std::string selected_path_topic_;
   std::string diagnostics_topic_;
+  std::string decision_topic_;
 
   bool enable_motion_{false};
   double control_frequency_{20.0};
@@ -1185,6 +1372,11 @@ private:
   TrajectoryConfig trajectory_config_;
   FootprintConfig footprint_config_;
   MotionLimits motion_limits_;
+  MotionLimits deployment_limits_;
+  double deployment_clearance_{0.05};
+  double deployment_ttc_{0.20};
+  bool deployment_reverse_enabled_{true};
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr task_parameters_callback_;
   VelocitySamplingConfig sampling_config_;
   MppiConfig mppi_config_;
   MppiOptimizer mppi_optimizer_;
@@ -1234,6 +1426,7 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr selected_path_pub_;
   rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diagnostics_pub_;
+  rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr decision_pub_;
   rclcpp::TimerBase::SharedPtr control_timer_;
 };
 

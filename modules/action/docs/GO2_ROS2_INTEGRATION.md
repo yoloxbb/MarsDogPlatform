@@ -53,7 +53,7 @@ SportMode `Move`/`StopMove` 请求。导航地点名、随机目标 `K`、Nav2 G
 
 - [Unitree ROS2 中文说明](https://github.com/unitreerobotics/unitree_ros2/blob/master/README%20_zh.md)
 - [官方 SportClient 请求定义](https://github.com/unitreerobotics/unitree_ros2/blob/master/example/src/include/common/ros2_sport_client.h)
-- [官方 Go2 Sport 示例](https://github.com/unitreerobotics/unitree_ros2/blob/master/example/src/src/go2/go2_sport_client.cpp)
+- [官方 Go2 Sport 示例](https://github.com/unitreerobotics/unitree_ros2/blob/master/example/src/src/motion/go2_sport_client.cpp)
 
 ## 3. 当前指令映射
 

@@ -199,6 +199,42 @@ class FeatureDraftTests(unittest.TestCase):
                 self.assertFalse(destination.exists())
         self.assertTrue(validate_proposal(None, self.catalog))
 
+    def test_new_names_use_the_canonical_identifier_rules(self):
+        for change in ({"event": "EVT_VOICE_COMMAND__TEST"},
+                       {"event": "EVT_VOICE_COMMAND_TEST_"},
+                       {"event": "EVT_VOICE_COMMAND_1"},
+                       {"command_id": "CMD_1TEST"}, {"command_id": "CMD_TEST__ID"},
+                       {"intent": "command__test"}, {"intent": "command_test_"}):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as temp:
+                destination = Path(temp) / "draft"
+                with self.assertRaises(ValueError):
+                    create({**self.proposal(), **change}, destination, self.catalog)
+                self.assertFalse(destination.exists())
+
+    def test_explicit_product_label_is_independent_of_event_and_unit(self):
+        proposal = {**self.proposal(), "product_action_label": "ACT_WELCOME_PRODUCT"}
+        with tempfile.TemporaryDirectory() as temp:
+            destination = Path(temp) / "draft"
+            create(proposal, destination, self.catalog)
+            fragments = json.loads((destination / "config_fragments.json").read_text())
+            self.assertEqual(fragments["voice_command"]["action_name"], "ACT_WELCOME_PRODUCT")
+            self.assertEqual(fragments["voice_command"]["event_type"], proposal["event"])
+            self.assertEqual(fragments["intent_pool"][proposal["intent"]]["candidates"], ["sit_down"])
+            self.assertNotIn("ACT_WELCOME_PRODUCT", self.catalog["units"])
+
+    def test_invalid_explicit_product_label_is_rejected(self):
+        for label in (None, [], "ACT_bad", "ACT_TEST__LABEL", "ACT_"):
+            with self.subTest(label=label):
+                self.assertTrue(validate_proposal({**self.proposal(), "product_action_label": label}, self.catalog))
+
+    def test_draft_keeps_existing_legacy_behavior_spelling(self):
+        proposal = {**self.proposal(), "behavior": "expressJoyAlone"}
+        with tempfile.TemporaryDirectory() as temp:
+            destination = Path(temp) / "draft"
+            create(proposal, destination, self.catalog)
+            fragments = json.loads((destination / "config_fragments.json").read_text())
+            self.assertEqual(fragments["intent_pool"][proposal["intent"]]["candidates"], ["expressJoyAlone"])
+
     def test_custom_event_keeps_product_label_consistent(self):
         with tempfile.TemporaryDirectory() as temp:
             destination = Path(temp) / "draft"
@@ -210,6 +246,8 @@ class FeatureDraftTests(unittest.TestCase):
         catalog = {"routes": [
             {"executor_behaviors": ["missing"]}, {"executor_behaviors": ["blocked"]},
             {"executor_behaviors": ["ready"]}], "source_sha256": {}, "voice_commands": [], "social_reactions": []}
+        for number, row in enumerate(catalog["routes"]):
+            row.update(source="audio_direct", event="EVT_TEST_" + str(number), context="default")
         action = {"behaviors": {"blocked": {"configuration_status": "blocked"},
                                 "ready": {"configuration_status": "runtime_check_required"}}}
         report = combine(catalog, action)

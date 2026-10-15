@@ -1,0 +1,82 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MarsDog 首批重构交付 · 2026-10-13</title>
+<style>
+:root{color-scheme:light;--paper:#f5f5f5;--ink:#2d3142;--accent:#bf4520}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.8 "Microsoft YaHei","PingFang SC",sans-serif}
+main{max-width:1140px;margin:auto;padding:48px 36px 80px}h1{font-size:34px;line-height:1.35;margin:12px 0}h2{font-size:23px;margin:34px 0 14px}
+p{margin:12px 0}.eyebrow{color:var(--accent);font-weight:700;letter-spacing:2px}.muted{color:#687082;font-size:14px}
+.lead{font-size:19px}.card{background:white;padding:20px 24px;border:1px solid #e0e2e7;border-radius:10px;margin:18px 0}
+.notice{border-left:4px solid var(--accent);padding:12px 20px;background:#fff1e9}.pill{display:inline-block;color:#245c46;background:#e7f3ec;border-radius:16px;padding:3px 12px;margin-right:6px;font-size:13px}
+table{width:100%;border-collapse:collapse;background:white;font-size:14px}th,td{padding:12px 14px;text-align:left;border:1px solid #e0e2e7;vertical-align:top}th{background:#ebecef}code{font:13px/1.6 Consolas,monospace;overflow-wrap:anywhere}li{margin:8px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#ebecef;padding:16px;border-radius:8px;font-size:13px}
+@media(max-width:700px){main{padding:24px 16px}h1{font-size:27px}table{font-size:12px}td,th{padding:8px}.scroll{overflow-x:auto}}
+@media print{body{background:white}main{padding:10mm}.card,table{break-inside:avoid}h2{break-after:avoid}}
+</style><main>
+<div class="eyebrow">MARSDOG · RUNTIME BOUNDARIES · 01</div>
+<h1>首批重构已写入板端源码</h1>
+<p class="lead">本批落地 Action 未知终态处理、结算事件编号隔离和状态输入防乱序，共 8 个代码/测试文件。现有业务优先级、行为映射、ROS 接口与默认配置保持兼容。</p>
+<p><span class="pill">BT 552 条通过</span><span class="pill">状态契约 34 场景通过</span><span class="pill">结算链路 15 场景通过</span></p>
+<p class="muted">日期：2026-10-13 · 主机：192.168.5.101 · 项目：/home/marsdog/MarsDogPlatform<br>分支：codex/reusable-local-motion · 起始 HEAD：c21c3bf60e1a96550507d0fa9f2c329a7eb74ec3</p>
+<div class="notice">已修改并验证源码，尚未重新打包、部署或启动机器人节点。综合迁移检查为 22 通过、3 失败，失败项涉及本批未修改的既有资产差异，详见下文。不能将本次结果解释为整机验收通过。</div>
+
+<h2>1 · 动作生命周期：未知结果保留占用</h2>
+<div class="card"><p>原来：Action 结果通信失败会被合成为业务 FAILURE，BT 随后释放原 Goal；此时执行端可能仍在运行。</p>
+<p>现在：发送结果不明、Goal 响应异常、Result 查询异常或 ROS 返回非终态状态，均进入内部 <code>RECOVERY_REQUIRED</code>。不生成结算，不删除原 Goal，也不因异常发出替代 Goal。</p>
+<p>仍持有服务端 handle 时，每次失败后至少等待 1 秒再查询 Result；存在未完成查询时不重复查询。保留取消意图，迟到的 handle 仍收到取消请求。真正的终态到达后，沿用原有结算与清理流程，并忽略已结束 Goal 的迟到回调。</p></div>
+<table><thead><tr><th>收到的事实</th><th>客户端处理</th><th>是否可释放占用</th></tr></thead><tbody>
+<tr><td>客户端不可用 / 未发送 / 服务端明确拒绝</td><td>明确 FAILURE</td><td>按原有终态消费流程释放</td></tr>
+<tr><td>Goal/Result 通信异常，执行结果不明</td><td>RECOVERY_REQUIRED；保留 Goal、handle、取消意图</td><td>否</td></tr>
+<tr><td>Cancel 确认或超时触发取消</td><td>等待原动作真实 Result</td><td>否</td></tr>
+<tr><td>原 Goal 的真实终态 Result</td><td>保留原 behavior_id/name；结算一次并清理</td><td>是</td></tr>
+</tbody></table>
+<p class="muted">边界：无 handle、Result 永久不返回或服务端已遗忘 Goal 时，不会自动解锁。此类情况仍需执行端状态对账及人工确认；本批没有加入新的运动占用协议或物理停止证明。安全急停通道需要独立设计，不能依赖上述普通 Goal 等待逻辑。</p>
+
+<h2>2 · 结算编号：重启不碰撞，重放仍去重</h2>
+<p><code>event_id</code> 从进程内纯递增序号改为 <code>result-&lt;随机实例标识&gt;-&lt;序号&gt;</code>。JSON 字段、动作类型、需求类型、结果映射和结算规则保持不变。</p>
+<p>独立进程验证：两个 BT 进程分别生成结果，同一个 Needs 实例按“首次、重放、重启后新结果、再重放”消费，接受序列为 <code>[true, false, true, false]</code>。Hunger 从 100 变为 60，两个新事件各结算一次。</p>
+<p class="muted">这解决编号重用问题；没有实现持久化 exactly-once。重复投递必须重用原已序列化事件，不能重新调用 mapper 生成新编号。</p>
+
+<h2>3 · 状态输入：同一需求/情绪共用时间水位</h2>
+<p>新增 <code>StateInputOrder</code>，由 BT 的状态与信号回调共用。先完整验证消息，再按“领域 + 情绪/需求名称”判断时间顺序；旧消息不再回写镜像、清除新候选或启动过时的视觉查询。</p>
+<p>兼容现有 V2：相同时间戳仍接收，无时间戳消息仍按旧语义处理且不降低水位；布尔、字符串和非有限时间戳被拒绝。不同情绪或需求的时间水位互不影响。</p>
+<div class="notice">该兼容补丁只过滤已观察到的更旧时间戳。时钟回拨、生产者 epoch 变化、BT 重启后的历史重放、同时间戳的逻辑顺序，仍需后续 epoch/revision 契约解决。</div>
+
+<h2>4 · 验证记录</h2>
+<table><thead><tr><th>检查</th><th>结果</th><th>实际覆盖</th></tr></thead><tbody>
+<tr><td>新增故障回归</td><td>12 个顶层测试通过</td><td>发送异常、结果异常、取消意图、迟到回调、终态一次消费、编号重启、状态/信号双向乱序、无效消息</td></tr>
+<tr><td>隔离副本 BT 全套</td><td>549 通过</td><td>首轮 11 个新增测试与现有模块用例；之后补充发送异常测试</td></tr>
+<tr><td>板端实际源码 · tools/dev.py test behavior</td><td>552 通过，0 失败，0 跳过</td><td>模块独立 .venv；计数采用 pytest/JUnit 原始报告，包含 subTest 条目</td></tr>
+<tr><td>tools/dev.py check</td><td>通过</td><td>架构与标识规范 + 122 项平台测试 + 13 项可观测性测试</td></tr>
+<tr><td>tools/check_state_contracts.py</td><td>34 场景通过；0 跳过</td><td>Emotion/BT 独立进程，冻结状态协议，7 组生产端观测</td></tr>
+<tr><td>Action → BT → Needs</td><td>15 场景通过</td><td>成功、取消、超时、重复、充电证据与非需求行为过滤</td></tr>
+<tr><td>两个 BT 进程 → 同一 Needs 实例</td><td>通过</td><td>新结果接受，原结果重放拒绝；验证 __file__ 指向项目源码</td></tr>
+<tr><td>tools/check_contracts.py 完整迁移检查</td><td>22 通过、3 失败</td><td>业务结算用例通过；以下 3 项冻结资产检查失败</td></tr>
+</tbody></table>
+<ol>
+<li><code>modules/action/package.xml</code> 已包含 <code>robot_local_motion</code> 依赖，与历史迁移 XML 基线不一致。本批未改此文件；当前哈希与重构前评审快照一致。</li>
+<li><code>modules/vision/config/vision.yaml</code> 与历史冻结配置哈希不一致。本批未改此文件；当前哈希与重构前评审快照一致。</li>
+<li><code>robotics/ros2/src/robot_slam_bringup/config/nav.yaml</code> 与冻结配置哈希不一致，应用本批补丁之前已在 Git 工作区显示修改。导航开发中的变更予以保留。</li>
+</ol>
+<p>未修改冻结基线以消除失败；这些差异需要对应模块负责人核对当前配置及基线适用范围。所有本批验证均为纯软件测试，未连接真实 ROS 生产域或执行机器人动作。</p>
+
+<h2>5 · 变更清单与恢复依据</h2>
+<div class="scroll"><table><thead><tr><th>相对项目根目录的文件</th><th>操作</th></tr></thead><tbody><tr><td><code>modules/behavior/bionic_dog_bt/constants.py</code></td><td>修改</td></tr><tr><td><code>modules/behavior/marsdog_behavior/action_client_adapter.py</code></td><td>修改</td></tr><tr><td><code>modules/behavior/marsdog_behavior/result_event_mapper.py</code></td><td>修改</td></tr><tr><td><code>modules/behavior/marsdog_behavior/ros_node.py</code></td><td>修改</td></tr><tr><td><code>modules/behavior/marsdog_behavior/state_input_order.py</code></td><td>新增</td></tr><tr><td><code>modules/behavior/marsdog_behavior/state_subscriptions.py</code></td><td>修改</td></tr><tr><td><code>modules/behavior/marsdog_behavior/tests/test_action_client_adapter.py</code></td><td>修改</td></tr><tr><td><code>modules/behavior/tests/test_runtime_fault_boundaries.py</code></td><td>新增</td></tr></tbody></table></div>
+<p>每个已有文件均在应用前校验 SHA-256，与评审快照一致后才备份和替换；应用后再次校验 8 个文件与交付补丁一致。没有提交、重置或覆盖其他人的导航修改。</p>
+<pre>代码与测试：/home/marsdog/MarsDogPlatform/modules/behavior/
+变更清单：out/refactor-20261013/applied-manifest.json
+原文件备份：out/refactor-20261013/before-apply/
+最终模块报告：out/refactor-20261013/behavior-applied/result.json
+总体记录：out/refactor-20261013/validation-summary.json
+跨进程复现：python3 -B out/refactor-20261013/check_result_restart.py</pre>
+<p>回退时只处理 manifest 中的文件，先确认当前哈希仍等于 after；恢复 before-apply 中的 6 个原文件，并移除本批新增的 2 个文件。若任何文件已被后续开发修改，应人工合并，不能覆盖整个工作区。</p>
+
+<h2>6 · 后续重构范围</h2>
+<p>本批完成已复现的运行边界修复，尚未完成整个系统重构。后续按可独立验收的批次推进：</p>
+<ol>
+<li>计时与执行结果：将 timeout/cooldown/TTL 的耗时计算切换到可注入的单调时钟；修正未使用的 loop_random 分支失败传播；补时钟跳变与失败路径测试。</li>
+<li>编排层拆分：将语音参与、情绪续行、需求视觉查询和候选生成从 ROS 回调迁入应用组件；通过明确的输入、输出和窄接口代替传递整个 node/self。</li>
+<li>靠近能力与运动占用：分别保留纯视觉靠近、视觉定位换算后的局部导航靠近、地图坐标/点位导航靠近三个接口。场景策略选择接口，统一 Goal、反馈、取消、停止证据与终态契约；坐标换算和导航内部实现与 SLAM 负责人协作。</li>
+<li>输入与运行可靠性：升级 epoch/revision 状态契约；隔离阻塞识别任务与服务器等待；设计失联对账、运动资源仲裁和独立安全停止机制。</li>
+</ol>
+<p class="muted">说明：三类靠近接口的规划仍以此前架构图册为准。本批没有增加导航算法、改变动作参数或接管 SLAM 的在开发代码。</p>
+</main></html>

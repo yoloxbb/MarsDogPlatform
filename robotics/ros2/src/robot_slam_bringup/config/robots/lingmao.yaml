@@ -1,0 +1,98 @@
+# 宇泛官网链接的 Cyvet 官方文档及 ROS2 Motion Bridge 配置。
+# 外置 D435i 的安装位置属于用户设备配置，官网无法提供。
+schema_version: 1
+robot: lingmao
+label: 宇泛灵猫 Cyvet
+launch:
+  base_frame: base_footprint  # Nav2 / RTAB-Map 使用重力对齐的平面坐标系。
+  body_frame: base_link      # URDF 机身与相机安装使用的物理坐标系。
+  odom_child_frame: base_link  # 保留官方 /odom 消息的原始 child_frame_id。
+  split_base_frames: true
+  start_robot_state_publisher: true
+  publish_sensor_tf: true  # 按用户要求启用模型推定初版，后续用实测值替换。
+  odom_frame: odom
+  map_frame: map
+  sensor_frame: camera_infra1_optical_frame
+  odom_topic: /odom
+  nav2_odom_topic: /odom_nav  # Nav2 要求 Reliable，relay 保留消息内容和时间戳转发。
+  cmd_vel_topic: /cmd_vel
+  stereo_odom_topic: /vo
+  database_path: ~/.ros/rtabmap_lingmao_d435i_mppi.db
+  description_package: cyvet_description
+  description_file: robots/cyvet/urdf/cyvet.urdf
+  description_root_frame: BASE_LINK  # 官方原文件的根名称；运行时统一重命名为 body_frame（base_link）。
+  publish_odom_tf: true  # 本包独占 odom -> base_footprint 与机身高度边。
+body_geometry:
+  height: 0.36  # 用户提供的导航站姿下 base_link 原点到地面高度，单位 m。 2026-10-14 用户校正下调 2 cm。
+  height_source: measured_standing_height
+  attitude_source: odometry  # 旧版 bridge 仅 yaw，无法恢复真实机身 roll/pitch。
+sensor_mount:
+  parent_frame: base_link
+  child_frame: camera_link
+  xyz: [0.289, 0.0, 0.114]  # 官方机身 STL 前沿 x_max、上表面 z_max，取毫米初值。
+  rpy: [0.0, 0.0, 0.0]    # 初版假设水平朝前，后续按实际安装调整，单位 rad。
+  placement: front_top_center  # 用户确认机身最前端正上方中间；不能据此推算完整外参。
+  calibration_status: initial_model_estimate
+  estimate_basis: official_BASE_LINK_mesh_bounds
+  model_bounds_m: [0.288711578, 0.113681100]
+uwb_mount:
+  parent_frame: camera_link
+  child_frame: uwb_link
+  xyz: [-0.04, 0.0, -0.05]  # 用户提供：相机后方 4 cm、下方 5 cm；单位 m。
+  rpy: [0.0, 0.0, 0.0]     # 相对相机无旋转，朝向随相机。
+  calibration_status: user_supplied_relative_offset
+description_joint_aliases:  # 运行时 URDF 使用当前 bridge 实测 JointState 名称，保留官方原文件。
+  FL_ABAD_JOINT: leftFrontLeg.hip
+  FL_HIP_JOINT: leftFrontLeg.thigh
+  FL_KNEE_JOINT: leftFrontLeg.calf
+  FR_ABAD_JOINT: rightFrontLeg.hip
+  FR_HIP_JOINT: rightFrontLeg.thigh
+  FR_KNEE_JOINT: rightFrontLeg.calf
+  RL_ABAD_JOINT: leftRearLeg.hip
+  RL_HIP_JOINT: leftRearLeg.thigh
+  RL_KNEE_JOINT: leftRearLeg.calf
+  RR_ABAD_JOINT: rightRearLeg.hip
+  RR_HIP_JOINT: rightRearLeg.thigh
+  RR_KNEE_JOINT: rightRearLeg.calf
+nav2_overrides:
+  local_costmap:
+    local_costmap:
+      ros__parameters:
+        footprint: "[[0.38, 0.23], [0.38, -0.23], [-0.38, -0.23], [-0.38, 0.23]]"
+  global_costmap:
+    global_costmap:
+      ros__parameters:
+        footprint: "[[0.38, 0.23], [0.38, -0.23], [-0.38, -0.23], [-0.38, 0.23]]"
+  controller_server:
+    ros__parameters:
+      FollowPath:
+        vx_max: 0.30
+        vx_min: -0.15
+        wz_max: 0.60
+  behavior_server:
+    ros__parameters:
+      robot_radius: 0.45
+      enable_strafe: true  # 用户确认：允许脱困按自由方向横移。
+  velocity_smoother:
+    ros__parameters:
+      max_velocity: [0.30, 0.0, 0.60]
+      min_velocity: [-0.15, 0.0, -0.60]
+      max_accel: [0.50, 0.0, 1.0]
+      max_decel: [-1.0, 0.0, -1.5]
+provenance:
+  official_product: https://uniubi.com/shop/buy?product=air
+  official_documents: https://github.com/uniubi-ai/uniubi-docs
+  docs_commit: 939d9c7286c35089c3464a2fbd04e67914b510a1
+  ros2_repository: https://github.com/uniubi-ai/uniubi_ros2
+  ros2_commit: 6e6edc057e4e232659566f0dc05e1b18393d5e1b
+  description_repository: https://github.com/uniubi-ai/uniubi_robot_description
+  description_commit: 8aa1acba3cde0ec2dfc2e1dc2b4fa609a06087c9
+  standing_dimensions_m: [0.672, 0.355, 0.432]
+  lying_dimensions_m: [0.718, 0.410, 0.178]
+  vendor_max_speed_mps: 3.0
+  footprint_basis: 官网外形尺寸推导的对称初始包络，含约 20 mm 以上余量；不是厂家认证的动态足端包络。
+  speed_basis: 本项目保守导航初值，非厂家限速；需实机确认后再调大。
+  bridge_contract: nav_msgs/msg/Odometry 输入与 geometry_msgs/msg/Twist 输出，默认 bridge namespace 为空。
+  control_boundary: 本入口不申请控制权、不切换动作；cmd_vel 需要外部按官方流程进入 Walk 控制状态。
+  firmware_compatibility: Cyvet-V1.00.002 及以上使用记录的 main；旧固件按官方 Cyvet-V1.00.001 标签选择兼容桥。
+  outstanding: [本机 D435i 安装外参, 设备 SN 与接入网卡, 实际固件版本, 步态与载荷下的碰撞包络]

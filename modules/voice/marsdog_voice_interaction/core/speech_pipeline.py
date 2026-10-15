@@ -4,6 +4,7 @@ Provider algorithms, authorization and event ordering remain unchanged. Callback
 factories and protocol helpers are supplied by the shell to retain old entrypoints.
 """
 from __future__ import annotations
+from .speech_pipeline_ports import SpeechRuntime
 
 from marsdog_observability import bind_context, wrap_context
 import re
@@ -14,14 +15,14 @@ from .interaction_state_machine import Trigger
 from ..messages.voice_event_types import EVT_VOICE_COMMAND_KNOWN
 
 
-def process_speech(self, audio_data: dict[str, Any], utterance_id: str | None=None, *, ThreadPoolExecutor, logger, speaker_to_voice_event):
-    pipeline_started = time.perf_counter()
-    utterance_wake_id = getattr(self, "_latest_wake_id", "")
-    self._state_machine.trigger(Trigger.SPEECH_START)
-    utterance_id = utterance_id or uuid.uuid4().hex
-    asr = self._providers.get("asr")
-    speaker = self._providers.get("speaker")
-    asr_started = time.perf_counter()
+def process_speech(self: SpeechRuntime, audio_data: dict[str, Any], utterance_id: str | None=None, *, ThreadPoolExecutor, logger, speaker_to_voice_event):
+    pipeline_started = self.ports.perf_counter()
+    utterance_wake_id = self.state.latest_wake_id
+    self.ports.state_machine.trigger(Trigger.SPEECH_START)
+    utterance_id = utterance_id or self.ports.new_utterance_id()
+    asr = self.ports.providers.get("asr")
+    speaker = self.ports.providers.get("speaker")
+    asr_started = self.ports.perf_counter()
     asr_failed = False
     try:
         asr_result = (
@@ -32,26 +33,26 @@ def process_speech(self, audio_data: dict[str, Any], utterance_id: str | None=No
         logger.error("ASR failed: %s", exc)
         asr_result = {}
         asr_failed = True
-    asr_latency_ms = (time.perf_counter() - asr_started) * 1000.0
+    asr_latency_ms = (self.ports.perf_counter() - asr_started) * 1000.0
     raw_text = str(asr_result.get("asr_text") or "")
-    if self._wakeup_supersedes_utterance(utterance_wake_id):
+    if self.ports.wakeup_supersedes_utterance(utterance_wake_id):
         return False
-    self._refresh_for_asr_result(raw_text)
-    self._trace(
+    self.ports.refresh_for_asr_result(raw_text)
+    self.ports.trace(
         "stage_complete",
         stage="asr",
         result=("error" if asr_failed else "ok" if raw_text else "empty"),
-        interaction_id=self._interaction_id,
+        interaction_id=self.state.interaction_id,
         utterance_id=utterance_id,
         latency_ms=round(asr_latency_ms, 2),
         language=str(asr_result.get("language", "")),
         text_length=len(raw_text),
     )
 
-    speaker_started = time.perf_counter()
+    speaker_started = self.ports.perf_counter()
     speaker_failed = False
     try:
-        with self._speaker_operation_lock:
+        with self.ports.speaker_operation_lock:
             speaker_result = (
                 speaker.verify(audio_data)  # type: ignore[attr-defined]
                 if speaker is not None else {}
@@ -60,12 +61,12 @@ def process_speech(self, audio_data: dict[str, Any], utterance_id: str | None=No
         logger.error("Speaker verification failed: %s", exc)
         speaker_result = {}
         speaker_failed = True
-    speaker_latency_ms = (time.perf_counter() - speaker_started) * 1000.0
+    speaker_latency_ms = (self.ports.perf_counter() - speaker_started) * 1000.0
     speaker_id = str(speaker_result.get("speaker_id", "unknown"))
     confidence = float(speaker_result.get("confidence", 0))
-    if self._wakeup_supersedes_utterance(utterance_wake_id):
+    if self.ports.wakeup_supersedes_utterance(utterance_wake_id):
         return False
-    self._trace(
+    self.ports.trace(
         "stage_complete",
         stage="speaker",
         result=(
@@ -73,7 +74,7 @@ def process_speech(self, audio_data: dict[str, Any], utterance_id: str | None=No
             if speaker_failed
             else "matched" if speaker_id != "unknown" else "unknown"
         ),
-        interaction_id=self._interaction_id,
+        interaction_id=self.state.interaction_id,
         utterance_id=utterance_id,
         latency_ms=round(speaker_latency_ms, 2),
         speaker_id=speaker_id,
@@ -81,22 +82,22 @@ def process_speech(self, audio_data: dict[str, Any], utterance_id: str | None=No
         reason=str(speaker_result.get("reason", "")),
         score_margin=speaker_result.get("score_margin"),
     )
-    self._publish({
+    self.ports.publish({
         "event_type": speaker_to_voice_event(speaker_id),
         "utterance_id": utterance_id,
         "speaker_id": speaker_id,
         "speaker_confidence": confidence,
     })
 
-    text = self._clean_text(raw_text)
+    text = self.ports.clean_text(raw_text)
     if not text:
-        arbitration_started = time.perf_counter()
-        selected_kws, arbitration_reason = self._select_kws_candidate(
+        arbitration_started = self.ports.perf_counter()
+        selected_kws, arbitration_reason = self.ports.select_kws_candidate(
             text="",
             raw_text=raw_text,
             language=str(asr_result.get("language", "")),
         )
-        self._trace_recognition_arbitration(
+        self.ports.trace_recognition_arbitration(
             result=(
                 "kws_selected"
                 if selected_kws is not None else "none_selected"
@@ -108,7 +109,7 @@ def process_speech(self, audio_data: dict[str, Any], utterance_id: str | None=No
             started=arbitration_started,
         )
         if selected_kws is not None:
-            return self._publish_selected_kws_candidate(
+            return self.ports.publish_selected_kws_candidate(
                 selected_kws,
                 reason=arbitration_reason,
                 text="",
@@ -118,19 +119,19 @@ def process_speech(self, audio_data: dict[str, Any], utterance_id: str | None=No
                 speaker_confidence=confidence,
                 pipeline_started=pipeline_started,
             )
-        self._state_machine.trigger(Trigger.SPEECH_END)
-        self._trace(
+        self.ports.state_machine.trigger(Trigger.SPEECH_END)
+        self.ports.trace(
             "utterance_complete",
             result="empty_asr",
-            interaction_id=self._interaction_id,
+            interaction_id=self.state.interaction_id,
             utterance_id=utterance_id,
             latency_ms=round(
-                (time.perf_counter() - pipeline_started) * 1000.0,
+                (self.ports.perf_counter() - pipeline_started) * 1000.0,
                 2,
             ),
         )
         return False
-    self._publish({
+    self.ports.publish({
         "event_type": "speech",
         "utterance_id": utterance_id,
         "asr_text": text,
@@ -140,27 +141,27 @@ def process_speech(self, audio_data: dict[str, Any], utterance_id: str | None=No
         "latency_ms": float(asr_result.get("latency_ms", 0)),
     })
 
-    lexicon_started = time.perf_counter()
-    if self._command_lexicon is None:
+    lexicon_started = self.ports.perf_counter()
+    if self.ports.command_lexicon is None:
         direct_match = None
-    elif getattr(self, "_command_fuzzy_matching", True):
-        direct_match = self._command_lexicon.match_fuzzy(text)
+    elif self.ports.command_fuzzy_matching:
+        direct_match = self.ports.command_lexicon.match_fuzzy(text)
     else:
-        direct_match = self._command_lexicon.match(text)
+        direct_match = self.ports.command_lexicon.match(text)
     lexicon_latency_ms = (
-        time.perf_counter() - lexicon_started
+        self.ports.perf_counter() - lexicon_started
     ) * 1000.0
-    self._trace(
+    self.ports.trace(
         "stage_complete",
         stage="command_lexicon",
         result=(
             "matched"
             if direct_match is not None
             else "no_match"
-            if self._command_lexicon is not None
+            if self.ports.command_lexicon is not None
             else "unavailable"
         ),
-        interaction_id=self._interaction_id,
+        interaction_id=self.state.interaction_id,
         utterance_id=utterance_id,
         latency_ms=round(lexicon_latency_ms, 3),
         command_key=(
@@ -221,14 +222,14 @@ def process_speech(self, audio_data: dict[str, Any], utterance_id: str | None=No
             if direct_match is not None else False
         ),
     )
-    arbitration_started = time.perf_counter()
-    selected_kws, arbitration_reason = self._select_kws_candidate(
+    arbitration_started = self.ports.perf_counter()
+    selected_kws, arbitration_reason = self.ports.select_kws_candidate(
         text=text,
         raw_text=raw_text,
         language=str(asr_result.get("language", "")),
         direct_match=direct_match,
     )
-    self._trace_recognition_arbitration(
+    self.ports.trace_recognition_arbitration(
         result=(
             "kws_selected"
             if selected_kws is not None else "asr_selected"
@@ -241,7 +242,7 @@ def process_speech(self, audio_data: dict[str, Any], utterance_id: str | None=No
         started=arbitration_started,
     )
     if selected_kws is not None:
-        return self._publish_selected_kws_candidate(
+        return self.ports.publish_selected_kws_candidate(
             selected_kws,
             reason=arbitration_reason,
             text=text,
@@ -276,15 +277,15 @@ def process_speech(self, audio_data: dict[str, Any], utterance_id: str | None=No
                 "speaker_confidence": confidence,
                 "latency_ms": round(lexicon_latency_ms, 3),
             })
-            self._publish(known_event)
+            self.ports.publish(known_event)
             published_event_types.append(
                 str(known_event["event_type"])
             )
         if direct_event.get("should_trigger_behavior_tree"):
-            self._state_machine.trigger(Trigger.INTENT_PARSED)
+            self.ports.state_machine.trigger(Trigger.INTENT_PARSED)
         else:
-            self._state_machine.trigger(Trigger.SPEECH_END)
-        self._publish(direct_event)
+            self.ports.state_machine.trigger(Trigger.SPEECH_END)
+        self.ports.publish(direct_event)
         published_event_types.append(final_event_type)
         completion_result = (
             "published_known_and_specific"
@@ -295,42 +296,42 @@ def process_speech(self, audio_data: dict[str, Any], utterance_id: str | None=No
             if direct_event.get("should_trigger_behavior_tree")
             else "published_catalog_event"
         )
-        self._trace(
+        self.ports.trace(
             "utterance_complete",
             result=completion_result,
-            interaction_id=self._interaction_id,
+            interaction_id=self.state.interaction_id,
             utterance_id=utterance_id,
             event_type=final_event_type,
             published_event_types=published_event_types,
             intent_source="command_lexicon",
             latency_ms=round(
-                (time.perf_counter() - pipeline_started) * 1000.0,
+                (self.ports.perf_counter() - pipeline_started) * 1000.0,
                 2,
             ),
         )
         return True
 
-    intent_started = time.perf_counter()
+    intent_started = self.ports.perf_counter()
     context = dict(text=text, utterance_id=utterance_id,
                    utterance_wake_id=utterance_wake_id, asr_result=asr_result,
                    speaker_id=speaker_id, confidence=confidence,
                    pipeline_started=pipeline_started, intent_started=intent_started)
-    provider = self._providers.get("intent_llm")
+    provider = self.ports.providers.get("intent_llm")
     if getattr(provider, "background_intent", False) and provider.is_available():
-        if getattr(self, "_pending_intent", None) is not None:
+        if self.state.pending_intent is not None:
             raise RuntimeError("An intent computation is already pending")
-        if getattr(self, "_intent_executor", None) is None:
-            self._intent_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="cpu-intent")
-        with bind_context(interaction_id=self._interaction_id, utterance_id=utterance_id):
-            future = self._intent_executor.submit(wrap_context(self._parse_intent), text, raw_text=raw_text)
-        self._pending_intent = (self._interaction_id, context, future)
+        if self.state.intent_executor is None:
+            self.state.intent_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="cpu-intent")
+        with bind_context(interaction_id=self.state.interaction_id, utterance_id=utterance_id):
+            future = self.state.intent_executor.submit(wrap_context(self.ports.parse_intent), text, raw_text=raw_text)
+        self.state.pending_intent = (self.state.interaction_id, context, future)
         return True
-    parsed_intent = self._parse_intent(text, raw_text=raw_text)
-    return self._complete_intent(parsed_intent, **context)
+    parsed_intent = self.ports.parse_intent(text, raw_text=raw_text)
+    return self.ports.complete_intent(parsed_intent, **context)
 
 
-def complete_intent(self, parsed_intent: dict[str, Any] | None, *, text: str, utterance_id: str, utterance_wake_id: str, asr_result: dict[str, Any], speaker_id: str, confidence: float, pipeline_started: float, intent_started: float, _UNKNOWN_INTENT, object_resolution_slots, route_classification_events):
-    if self._wakeup_supersedes_utterance(utterance_wake_id):
+def complete_intent(self: SpeechRuntime, parsed_intent: dict[str, Any] | None, *, text: str, utterance_id: str, utterance_wake_id: str, asr_result: dict[str, Any], speaker_id: str, confidence: float, pipeline_started: float, intent_started: float, _UNKNOWN_INTENT, object_resolution_slots, route_classification_events):
+    if self.ports.wakeup_supersedes_utterance(utterance_wake_id):
         return False
     if parsed_intent is None:
         routed_events = [dict(_UNKNOWN_INTENT)]
@@ -341,9 +342,9 @@ def complete_intent(self, parsed_intent: dict[str, Any] | None, *, text: str, ut
         )
         object_slots: list[dict[str, str]] = []
         if parsed_intent_name in {"FETCH", "FIND_TOY"}:
-            object_started = time.perf_counter()
+            object_started = self.ports.perf_counter()
             object_slots, object_supported = object_resolution_slots(
-                getattr(self, "_object_target_resolver", None),
+                self.ports.object_target_resolver,
                 text,
             )
             object_fields = {
@@ -352,7 +353,7 @@ def complete_intent(self, parsed_intent: dict[str, Any] | None, *, text: str, ut
                 )
                 for slot in object_slots
             }
-            self._trace(
+            self.ports.trace(
                 "stage_complete",
                 stage="object_target",
                 result=(
@@ -360,7 +361,7 @@ def complete_intent(self, parsed_intent: dict[str, Any] | None, *, text: str, ut
                         "object_match_source", "unsupported"
                     )
                 ),
-                interaction_id=self._interaction_id,
+                interaction_id=self.state.interaction_id,
                 utterance_id=utterance_id,
                 object_name=object_fields.get("object_name", "NONE"),
                 object_mention=object_fields.get("object_mention", ""),
@@ -371,7 +372,7 @@ def complete_intent(self, parsed_intent: dict[str, Any] | None, *, text: str, ut
                     "object_catalog_version", ""
                 ),
                 latency_ms=round(
-                    (time.perf_counter() - object_started) * 1000.0,
+                    (self.ports.perf_counter() - object_started) * 1000.0,
                     3,
                 ),
             )
@@ -394,20 +395,20 @@ def complete_intent(self, parsed_intent: dict[str, Any] | None, *, text: str, ut
         event.get("should_trigger_behavior_tree")
         for event in routed_events
     ):
-        self._state_machine.trigger(Trigger.INTENT_PARSED)
+        self.ports.state_machine.trigger(Trigger.INTENT_PARSED)
     else:
-        self._state_machine.trigger(Trigger.SPEECH_END)
+        self.ports.state_machine.trigger(Trigger.SPEECH_END)
     routed_event_types = [
         str(event.get("event_type", "")) for event in routed_events
     ]
     intent_latency_ms = (
-        time.perf_counter() - intent_started
+        self.ports.perf_counter() - intent_started
     ) * 1000.0
-    self._trace(
+    self.ports.trace(
         "stage_complete",
         stage="intent",
         result=result,
-        interaction_id=self._interaction_id,
+        interaction_id=self.state.interaction_id,
         utterance_id=utterance_id,
         event_types=routed_event_types,
         social=str(
@@ -435,26 +436,26 @@ def complete_intent(self, parsed_intent: dict[str, Any] | None, *, text: str, ut
             "speaker_confidence": confidence,
             "latency_ms": round(intent_latency_ms, 2),
         })
-        self._publish(event)
-    self._trace(
+        self.ports.publish(event)
+    self.ports.trace(
         "utterance_complete",
         result=(
             "published"
             if routed_events
             else "classified_no_business_event"
         ),
-        interaction_id=self._interaction_id,
+        interaction_id=self.state.interaction_id,
         utterance_id=utterance_id,
         event_types=routed_event_types,
         latency_ms=round(
-            (time.perf_counter() - pipeline_started) * 1000.0,
+            (self.ports.perf_counter() - pipeline_started) * 1000.0,
             2,
         ),
     )
     return True
 
 
-def select_kws_candidate(self, *, text: str, raw_text: str, language: str, direct_match: Any=None):
+def select_kws_candidate(self: SpeechRuntime, *, text: str, raw_text: str, language: str, direct_match: Any=None):
     """Select one deferred KWS result or explain why ASR owns the turn.
 
     Division of labor: long ASR text owns the turn.  A short KWS candidate
@@ -463,14 +464,14 @@ def select_kws_candidate(self, *, text: str, raw_text: str, language: str, direc
     """
 
     candidates = [
-        dict(event) for event in self._command_tracker.kws_candidates
+        dict(event) for event in self.ports.command_tracker.kws_candidates
     ]
     if not candidates:
         return None, "no_kws_candidate"
     if len(candidates) != 1:
         return None, "multiple_kws_candidates"
     candidate = candidates[0]
-    policy = self._effective_kws_arbitration()
+    policy = self.ports.effective_kws_arbitration()
     if not text:
         if policy["kws_fallback_on_asr_empty"]:
             return candidate, "empty_asr_single_candidate"
@@ -487,7 +488,7 @@ def select_kws_candidate(self, *, text: str, raw_text: str, language: str, direc
         return candidate, "configured_kws_priority_alias"
     if (
         policy["asr_long_text_wins"]
-        and not self._is_short_asr_text(raw_text, language)
+        and not self.ports.is_short_asr_text(raw_text, language)
     ):
         return None, "long_asr_text"
     if (
@@ -502,10 +503,10 @@ def select_kws_candidate(self, *, text: str, raw_text: str, language: str, direc
     return candidate, "short_asr_kws_preferred"
 
 
-def is_short_asr_text(self, raw_text: str, language: str):
+def is_short_asr_text(self: SpeechRuntime, raw_text: str, language: str):
     """Classify ASR text for KWS preference without changing semantics."""
 
-    policy = self._effective_kws_arbitration()
+    policy = self.ports.effective_kws_arbitration()
     value = str(raw_text).strip()
     language = str(language).strip().lower()
     ascii_words = re.findall(r"[A-Za-z0-9]+", value)
@@ -516,24 +517,24 @@ def is_short_asr_text(self, raw_text: str, language: str):
             <= int(policy["short_max_words_en"])
         )
     return (
-        0 < len(self._clean_text(value))
+        0 < len(self.ports.clean_text(value))
         <= int(policy["short_max_chars_zh"])
     )
 
 
-def publish_selected_kws_candidate(self, candidate: dict[str, Any], *, reason: str, text: str, language: str, utterance_id: str, speaker_id: str, speaker_confidence: float, pipeline_started: float):
+def publish_selected_kws_candidate(self: SpeechRuntime, candidate: dict[str, Any], *, reason: str, text: str, language: str, utterance_id: str, speaker_id: str, speaker_confidence: float, pipeline_started: float):
     """Publish one KWS-selected result group after final arbitration."""
 
     event = dict(candidate)
     command_key = str(event.get("action", "")).strip().upper()
     event_type = str(event.get("event_type", ""))
     catalog_command = (
-        self._command_lexicon.get_command(command_key)
-        if self._command_lexicon is not None and command_key else None
+        self.ports.command_lexicon.get_command(command_key)
+        if self.ports.command_lexicon is not None and command_key else None
     )
     candidate_latency_ms = float(event.get("latency_ms", 0.0))
     decision_latency_ms = (
-        time.perf_counter() - pipeline_started
+        self.ports.perf_counter() - pipeline_started
     ) * 1000.0
     audit_slots = [
         {"key": "recognition_strategy", "value": "kws_candidate"},
@@ -591,19 +592,19 @@ def publish_selected_kws_candidate(self, candidate: dict[str, Any], *, reason: s
             "latency_ms": round(decision_latency_ms, 2),
             "slots": known_slots,
         })
-        self._publish(known_event)
+        self.ports.publish(known_event)
         published_event_types.append(EVT_VOICE_COMMAND_KNOWN)
 
     if event.get("should_trigger_behavior_tree"):
-        self._state_machine.trigger(Trigger.INTENT_PARSED)
+        self.ports.state_machine.trigger(Trigger.INTENT_PARSED)
     else:
-        self._state_machine.trigger(Trigger.SPEECH_END)
-    self._publish(event)
+        self.ports.state_machine.trigger(Trigger.SPEECH_END)
+    self.ports.publish(event)
     published_event_types.append(event_type)
-    self._trace(
+    self.ports.trace(
         "utterance_complete",
         result="published_kws_selected",
-        interaction_id=self._interaction_id,
+        interaction_id=self.state.interaction_id,
         utterance_id=utterance_id,
         event_type=event_type,
         published_event_types=published_event_types,
@@ -614,9 +615,9 @@ def publish_selected_kws_candidate(self, candidate: dict[str, Any], *, reason: s
     return True
 
 
-def parse_intent(self, text: str, *, raw_text: str | None=None, logger):
+def parse_intent(self: SpeechRuntime, text: str, *, raw_text: str | None=None, logger):
     for name in ("intent_llm", "intent_rule"):
-        provider = self._providers.get(name)
+        provider = self.ports.providers.get(name)
         if provider is None or not provider.is_available():
             continue
         try:

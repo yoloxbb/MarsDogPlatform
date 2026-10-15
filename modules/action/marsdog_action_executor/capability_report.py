@@ -63,7 +63,11 @@ def report(config_dir=None, *, chassis="lite3", runtime=None):
                            "conditions_require_runtime": True})
         blocked = any(s["required"] and s["all_candidates_blocked"] for s in stages)
         behaviors[name] = {"configuration_status": "blocked" if blocked else "runtime_check_required",
-                           "stages": stages, "hardware_acceptance": "unknown"}
+                           "stages": stages, "hardware_acceptance": "unknown",
+                           "definition_kind": "expression_preset" if name in config.behavior_presets else "reviewed_plan",
+                           "completion_scope": template.get("completion_scope"),
+                           "description": template.get("description"),
+                           "runtime_budget_sec": template.get("runtime_budget_sec")}
     folder = config.config_dir
     return {"schema_version": 1, "chassis": chassis, "runtime_overrides": runtime,
             "config_dir": str(folder), "module_file": __file__,

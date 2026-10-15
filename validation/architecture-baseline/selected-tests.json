@@ -1,0 +1,92 @@
+[
+  {
+    "module": "behavior",
+    "command": [
+      "/home/marsdog/MarsDogPlatform/modules/behavior/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "tests/test_voice_engagement.py",
+      "marsdog_behavior/tests/test_runtime_architecture.py",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "--junitxml=/home/marsdog/MarsDogPlatform/out/architecture-rollout/behavior-scenario.xml"
+    ],
+    "returncode": 0,
+    "counts": {
+      "tests": 52,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "scope": "selected existing unit tests with substitutes; no ROS graph or hardware acceptance"
+  },
+  {
+    "module": "action",
+    "command": [
+      "/home/marsdog/MarsDogPlatform/modules/action/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "tests/test_person_nav_approach_adapter.py",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "--junitxml=/home/marsdog/MarsDogPlatform/out/architecture-rollout/action-scenario.xml"
+    ],
+    "returncode": 0,
+    "counts": {
+      "tests": 16,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "scope": "selected existing unit tests with substitutes; no ROS graph or hardware acceptance"
+  },
+  {
+    "module": "voice",
+    "command": [
+      "/home/marsdog/MarsDogPlatform/modules/voice/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "tests/test_session_recovery.py",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "--junitxml=/home/marsdog/MarsDogPlatform/out/architecture-rollout/voice-scenario-humble.xml"
+    ],
+    "returncode": 0,
+    "counts": {
+      "tests": 58,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "scope": "selected unit tests with Humble imports; substitute objects; not DDS or hardware acceptance"
+  },
+  {
+    "module": "vision",
+    "command": [
+      "/home/marsdog/MarsDogPlatform/modules/vision/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "tests/test_visual_locate_task.py",
+      "tests/test_wake_target_snapshot.py",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "--junitxml=/home/marsdog/MarsDogPlatform/out/architecture-rollout/vision-scenario-humble.xml"
+    ],
+    "returncode": 0,
+    "counts": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "scope": "selected unit tests with Humble imports; substitute objects; not DDS or hardware acceptance"
+  }
+]

@@ -9,6 +9,7 @@ when cache is stale or unavailable.
 from __future__ import annotations
 
 from typing import Optional
+from bionic_dog_bt.drive_policy import resolve_drive
 
 
 class InteractionResolver:
@@ -47,11 +48,7 @@ class InteractionResolver:
         Returns:
             Updated params dict with 'interactive' and 'target_identity' set.
         """
-        if need_type != "emotional":
-            return params
-
-        # Direct audio events already carry their interaction context.
-        if params.get("source") == "audio_direct":
+        if resolve_drive(params, need_type).state_domain != "emotion":
             return params
 
         person = self.check_person()

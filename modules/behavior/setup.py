@@ -27,6 +27,7 @@ setup(
             "config/emotion_behavior_map.yaml",
             "config/legacy_behavior_aliases.yaml",
             "config/voice_engagement.yaml",
+            "config/tactile_events.yaml",
         ]),
         ("share/ament_index/resource_index/packages",
          ["resource/marsdog_behavior"]),

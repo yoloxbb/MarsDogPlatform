@@ -372,7 +372,7 @@ def test_runtime_releases_selected_candidate_that_was_not_dispatched():
 def test_runtime_timeout_stays_cancel_requested_until_real_result():
     runtime, executor = _deferred_runtime()
     runtime.blackboard.current_behavior.timeout_sec = 0.01
-    runtime.blackboard._behavior_start_time = time.time() - 1.0
+    runtime.blackboard._behavior_start_time = time.monotonic() - 1.0
 
     outcome = runtime.tick()
 

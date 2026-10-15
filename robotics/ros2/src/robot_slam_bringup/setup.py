@@ -25,16 +25,21 @@ setup(
             os.path.join('share', package_name, 'config'),
             glob('config/*.yaml') + glob('config/*.xml'),
         ),
+        (
+            os.path.join('share', package_name, 'config', 'robots'),
+            glob('config/robots/*.yaml'),
+        ),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='yahboom',
     maintainer_email='your.email@example.com',
-    description='GO2 D435i and HB stereo SLAM bringup package.',
+    description='Lite3, GO2 and Cyvet D435i stereo SLAM and navigation bringup.',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'odometry_tf_relay = robot_slam_bringup.odometry_tf_relay:main',
             (
                 'd435i_extrinsics_relay = '
                 'robot_slam_bringup.d435i_extrinsics_relay:main'

@@ -1,4 +1,4 @@
-# /execute_behavior — long-running behavior execution Action
+# /action/execute_behavior — long-running behavior execution Action
 #
 # Client: /behavior_tree_node (marsdog_behavior)
 # Server: /action_executor_node (marsdog_action_executor)

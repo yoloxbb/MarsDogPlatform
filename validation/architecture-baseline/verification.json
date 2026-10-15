@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "checked_at_utc": "2026-10-12T09:17:50.392750+00:00",
+  "source_commit": "c21c3bf60e1a96550507d0fa9f2c329a7eb74ec3",
+  "branch": "codex/reusable-local-motion",
+  "dev_check_exit": 0,
+  "diff_check_exit": 0,
+  "diff_check_output": "",
+  "document_links_checked": 131,
+  "document_issues": [],
+  "protected_files": 957,
+  "protected_drift": [],
+  "applied_content_drift": [],
+  "runtime_behavior_changed": false,
+  "complete_caller_approach": "NOT_IMPLEMENTED_GEOMETRY_BRIDGE",
+  "hardware_acceptance": "NOT_RUN"
+}

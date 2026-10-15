@@ -11,15 +11,15 @@ uwb_behavior_controller_node:
     planner_cmd_topic: /go2_uwb_behavior/planner_cmd_vel  # 局部规划器输出的避障速度输入话题
     planner_diagnostics_topic: /go2_uwb_local_follow/planner_diagnostics  # 规划器诊断输入话题，用于识别规划受阻状态
     cmd_vel_topic: /cmd_vel  # 最终底盘速度输出话题；实机连接由启动文件配置
-    diagnostics_topic: /go2/behavior_diagnostics  # 当前节点运行状态与异常诊断的输出话题
+    diagnostics_topic: /motion/behavior_diagnostics  # 当前节点运行状态与异常诊断的输出话题
     follow_diagnostics_topic: /go2_uwb_local_follow/follow_diagnostics  # FOLLOW 控制状态与距离、角度误差的诊断输出话题
-    roam_target_topic: /go2/random_roam/target  # 当前漫游目标点的可视化输出话题
-    play_center_topic: /go2/random_roam/play_center  # 经过迟滞处理的漫游采样中心输出话题
+    roam_target_topic: /motion/random_roam/target  # 当前漫游目标点的可视化输出话题
+    play_center_topic: /motion/random_roam/play_center  # 经过迟滞处理的漫游采样中心输出话题
     compute_enable_topic: /go2_uwb_behavior/compute_enable  # Action 执行期间开启双目点云重计算的门控话题
-    behavior_service_name: /go2/set_behavior  # 兼容 IDLE 与 STOP 的服务名；FOLLOW/ROAM 应使用 Action
-    follow_action_name: /go2/follow_uwb  # 启动、取消 UWB 持续跟随并接收反馈的 Action 名
-    orbit_action_name: /go2/orbit_uwb_once  # 接近 UWB 目标并环绕一周的单次 Action 名
-    roam_action_name: /go2/random_roam  # 启动、取消漫游并接收反馈和结果的 Action 名
+    behavior_service_name: /motion/set_behavior  # 兼容 IDLE 与 STOP 的服务名；FOLLOW/ROAM 应使用 Action
+    follow_action_name: /motion/follow_uwb  # 启动、取消 UWB 持续跟随并接收反馈的 Action 名
+    orbit_action_name: /motion/orbit_uwb_once  # 接近 UWB 目标并环绕一周的单次 Action 名
+    roam_action_name: /motion/random_roam  # 启动、取消漫游并接收反馈和结果的 Action 名
 
     default_mode: IDLE  # 空闲启动，收到 FollowUwb 或 RandomRoam Action 后才启用感知与运动
     enable_motion: true  # 运动输出开关；false 时向底盘输出零速度

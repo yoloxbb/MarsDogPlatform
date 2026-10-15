@@ -12,10 +12,19 @@ bt_navigator:
     bt_loop_duration: 20          # BT 循环周期，单位 ms
     default_server_timeout: 20    # 下游响应超时，单位 ms
     wait_for_service_timeout: 10000  # 等待服务上线，单位 ms
+    recovery_search_costmap_topic: global_costmap/costmap_raw
+    recovery_start_occupied_cost: 253  # 仅致命/内切障碍；unknown 不允许移动脱困
+    recovery_costmap_max_age: 5.0
+    # After recovery, wait for new sensor observations and a subsequent local costmap.
+    recovery_observation_timeout: 5.0
+    recovery_observation_topics: ["/local_grid_obstacle", "/local_grid_ground"]
+    recovery_fresh_costmap_topic: local_costmap/costmap_raw
+    recovery_costmap_update_topic: local_costmap/published_footprint
     # 恢复动作按失败轮次轮换：清局部图并等待、根据全局图向自由空间动态移动 0.15～1.0 m。
     default_nav_to_pose_bt_xml: "SLAM_WS_SHARE/config/navigate_to_pose_no_backup.xml"  # 单点导航行为树
     default_nav_through_poses_bt_xml: "SLAM_WS_SHARE/config/navigate_through_poses_no_backup.xml"  # 多点导航行为树
     plugin_lib_names:  # 行为树节点插件库
+      - behavior_ext_recovery_condition_bt_node
       - nav2_compute_path_to_pose_action_bt_node
       - nav2_compute_path_through_poses_action_bt_node
       - nav2_smooth_path_action_bt_node
@@ -338,7 +347,7 @@ global_costmap:
         plugin: "nav2_costmap_2d::StaticLayer"  # 静态地图图层插件
         enabled: True  # 启用静态地图层
         map_topic: /map  # RTAB-Map 占据栅格
-        map_subscribe_transient_local: False  # 使用普通地图订阅
+        map_subscribe_transient_local: True  # 接收 RTAB-Map 缓存的地图，定位时地图未更新也能加载。
         subscribe_to_updates: True  # 接收地图增量更新
 
       stvl_layer:  # 全局时空体素动态障碍层配置
@@ -494,6 +503,9 @@ behavior_server:
     max_recovery_distance: 1.0  # 单次恢复最大移动距离，避免长距离盲走，单位 m
     recovery_time_margin: 1.5  # 在“距离/速度”基础上预留的动作时间，单位 s
     search_costmap_topic: "global_costmap/costmap_raw"  # 优先缓存全局代价地图，避免恢复动作等待同步服务
+    require_start_occupied: true
+    recovery_start_occupied_cost: 253
+    recovery_costmap_max_age: 5.0
     service_name: "global_costmap/get_costmap"  # 使用静态地图与全局动态层搜索已知自由空间
     free_threshold: 5  # 至少找到 5 个低代价栅格才按质心移动，否则直线后退
     cost_threshold: 20.0  # 接受低代价膨胀区；拒绝高代价膨胀区、未知区和占用区

@@ -125,7 +125,9 @@ def test_behavior_tree_mapping_matches_reviewed_contract() -> None:
     loader = _load()
     mapping = _mapping(loader)
 
-    assert set(mapping) == EXPECTED_BEHAVIORS
+    assert EXPECTED_BEHAVIORS <= set(mapping)
+    assert set(mapping) - EXPECTED_BEHAVIORS == set(loader.behavior_presets)
+    mapping = {name: mapping[name] for name in EXPECTED_BEHAVIORS}
     assert sum(
         len(stage)
         for stages in mapping.values()

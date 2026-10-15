@@ -1,11 +1,11 @@
-"""Action Client Adapter — bridges the BT's ExecutorInterface to /execute_behavior.
+"""Action Client Adapter — bridges the BT's ExecutorInterface to /action/execute_behavior.
 
 Implements ExecutorInterface so ExecuteActiveBehavior can use a real
 ROS2 Action Client without changing its code. When marsdog_action_executor
 is running, this adapter replaces MockActionExecutor.
 
 Usage:
-    self._executor = ActionClientAdapter(self, "/execute_behavior")
+    self._executor = ActionClientAdapter(self, "/action/execute_behavior")
 
 Requires:
     colcon build --packages-select marsdog_interfaces  (to compile ExecuteBehavior.action)
@@ -22,6 +22,7 @@ from typing import Optional
 
 from bionic_dog_bt.constants import (
     GOAL_CANCEL_REQUESTED,
+    GOAL_RECOVERY_REQUIRED,
     GOAL_RUNNING,
     GOAL_SENDING,
     GOAL_TERMINAL,
@@ -37,7 +38,7 @@ class ActionClientAdapter:
     synchronous polling by the BT tick loop.
     """
 
-    def __init__(self, node, action_name: str = "/execute_behavior"):
+    def __init__(self, node, action_name: str = "/action/execute_behavior"):
         self._node = node
         self._action_name = action_name
         self._lock = threading.Lock()
@@ -59,27 +60,17 @@ class ActionClientAdapter:
         self._send_futures: dict[str, object] = {}
         self._result_futures: dict[str, object] = {}
         self._cancel_futures: dict[str, object] = {}
+        # Unknown transport outcomes retain ownership. Never turn them into
+        # a synthetic terminal result or automatically resend a motion Goal.
+        self._recovery: dict[str, dict] = {}
 
         if HAS_ROS2:
             self._init_action_client()
 
     def _init_action_client(self):
-        """Create rclpy Action Client for /execute_behavior."""
+        """Create rclpy Action Client for /action/execute_behavior."""
         from rclpy.action import ActionClient
-        try:
-            # Prefer marsdog_interfaces (public interface package)
-            from marsdog_interfaces.action import ExecuteBehavior
-        except ImportError:
-            try:
-                # Fallback: try marsdog_action_executor
-                from marsdog_action_executor.action import ExecuteBehavior
-            except ImportError:
-                self._node.get_logger().warn(
-                    "ExecuteBehavior action not found. "
-                    "Build marsdog_interfaces first: "
-                    "colcon build --packages-select marsdog_interfaces")
-                self._action_type = None
-                return
+        from marsdog_interfaces.action import ExecuteBehavior
 
         self._action_type = ExecuteBehavior
         self._client = ActionClient(
@@ -131,14 +122,18 @@ class ActionClientAdapter:
         goal_msg.params_json = json.dumps(active.params)
         goal_msg.timeout_sec = active.timeout_sec
 
-        send_goal_future = self._client.send_goal_async(
-            goal_msg,
-            feedback_callback=lambda fb: self._on_feedback(active.behavior_id, fb),
-        )
-        send_goal_future.add_done_callback(
-            lambda fut: self._on_goal_response(active.behavior_id, fut))
+        try:
+            send_goal_future = self._client.send_goal_async(
+                goal_msg,
+                feedback_callback=lambda fb: self._on_feedback(active.behavior_id, fb),
+            )
+        except Exception as exc:
+            self._mark_unknown(active.behavior_id, f"goal dispatch outcome unknown: {exc}")
+            return active.behavior_id
         with self._lock:
             self._send_futures[active.behavior_id] = send_goal_future
+        send_goal_future.add_done_callback(
+            lambda fut: self._on_goal_response(active.behavior_id, fut))
 
         return active.behavior_id
 
@@ -150,7 +145,11 @@ class ActionClientAdapter:
                 return False
             if lifecycle == GOAL_CANCEL_REQUESTED:
                 return True
-            self._goal_lifecycle[goal_id] = GOAL_CANCEL_REQUESTED
+            recovery = self._recovery.get(goal_id)
+            if recovery is not None:
+                recovery["cancel_requested"] = True
+            else:
+                self._goal_lifecycle[goal_id] = GOAL_CANCEL_REQUESTED
             handle = self._goal_handles.get(goal_id)
 
         # If send_goal_async is still pending, _on_goal_response will issue the
@@ -161,8 +160,20 @@ class ActionClientAdapter:
         return True
 
     def tick(self) -> None:
-        """No-op: feedback/results arrive asynchronously via ROS2 callbacks."""
-        pass
+        """Retry only Result queries for retained handles, never motion Goals."""
+        now = time.monotonic()
+        with self._lock:
+            retry = []
+            for goal_id, recovery in self._recovery.items():
+                handle = self._goal_handles.get(goal_id)
+                pending = self._result_futures.get(goal_id)
+                if (handle is not None and pending is None
+                        and now >= recovery["retry_at"]):
+                    recovery["retry_at"] = now + 1.0
+                    recovery["query_attempts"] += 1
+                    retry.append((goal_id, handle))
+        for goal_id, handle in retry:
+            self._query_result(goal_id, handle)
 
     def get_feedback(self, goal_id: str) -> Optional[object]:
         """Get latest cached feedback for a goal."""
@@ -213,6 +224,7 @@ class ActionClientAdapter:
             self._send_futures.pop(goal_id, None)
             self._result_futures.pop(goal_id, None)
             self._cancel_futures.pop(goal_id, None)
+            self._recovery.pop(goal_id, None)
 
     def has_goal(self, goal_id: str) -> bool:
         """Check if a goal is still active."""
@@ -230,11 +242,7 @@ class ActionClientAdapter:
         try:
             goal_handle = future.result()
         except Exception as exc:
-            self._cache_failure(
-                goal_id,
-                self._behavior_name(goal_id),
-                f"goal request failed: {exc}",
-            )
+            self._mark_unknown(goal_id, f"goal response unknown: {exc}")
             return
 
         if not goal_handle.accepted:
@@ -247,19 +255,18 @@ class ActionClientAdapter:
             return
 
         with self._lock:
+            if self._goal_lifecycle.get(goal_id) in (None, GOAL_TERMINAL):
+                return
             cancel_requested = (
                 self._goal_lifecycle.get(goal_id) == GOAL_CANCEL_REQUESTED
+                or self._recovery.get(goal_id, {}).get("cancel_requested", False)
             )
             self._goal_handles[goal_id] = goal_handle
-            if not cancel_requested:
+            if self._goal_lifecycle.get(goal_id) != GOAL_RECOVERY_REQUIRED and not cancel_requested:
                 self._goal_lifecycle[goal_id] = GOAL_RUNNING
 
         emit("goal_accepted", goal_id=goal_id)
-        result_future = goal_handle.get_result_async()
-        with self._lock:
-            self._result_futures[goal_id] = result_future
-        result_future.add_done_callback(
-            lambda fut: self._on_result(goal_id, fut))
+        self._query_result(goal_id, goal_handle)
         if cancel_requested:
             self._request_handle_cancel(goal_id, goal_handle)
 
@@ -267,6 +274,8 @@ class ActionClientAdapter:
         fb = feedback_msg.feedback
         requested_name = self._behavior_name(goal_id)
         with self._lock:
+            if self._goal_lifecycle.get(goal_id) in (None, GOAL_TERMINAL):
+                return
             self._feedback_cache[goal_id] = {
                 'goal_id': fb.goal_id,
                 'behavior_name': requested_name or fb.behavior_name,
@@ -277,19 +286,27 @@ class ActionClientAdapter:
             }
 
     def _on_result(self, goal_id: str, future):
+        with self._lock:
+            if self._goal_lifecycle.get(goal_id) in (None, GOAL_TERMINAL):
+                return
+            current = self._result_futures.get(goal_id)
+            if current is not None and current is not future:
+                return  # Superseded query callback cannot overwrite newer truth.
+            self._result_futures.pop(goal_id, None)
         try:
-            result = future.result().result
+            wrapped = future.result()
+            if hasattr(wrapped, "status") and wrapped.status not in (4, 5, 6):
+                raise ValueError(f"nonterminal Action status: {wrapped.status}")
+            result = wrapped.result
         except Exception as exc:
-            self._cache_failure(
-                goal_id,
-                self._behavior_name(goal_id),
-                f"result request failed: {exc}",
-            )
+            self._mark_unknown(goal_id, f"result outcome unknown: {exc}")
             return
 
         emit("action_terminal", goal_id=goal_id, status=result.status,
              result=result.result, reason=result.reason)
         with self._lock:
+            if self._goal_lifecycle.get(goal_id) in (None, GOAL_TERMINAL):
+                return
             self._result_cache[goal_id] = {
                 # Correlate by the client-side Goal ID captured by this
                 # callback, never by whichever Goal is currently active.
@@ -310,6 +327,41 @@ class ActionClientAdapter:
                 ),
             }
             self._goal_lifecycle[goal_id] = GOAL_TERMINAL
+            self._recovery.pop(goal_id, None)
+
+    def _query_result(self, goal_id: str, handle) -> None:
+        try:
+            future = handle.get_result_async()
+        except Exception as exc:
+            self._mark_unknown(goal_id, f"result query failed: {exc}")
+            return
+        with self._lock:
+            if self._goal_lifecycle.get(goal_id) in (None, GOAL_TERMINAL):
+                return
+            self._result_futures[goal_id] = future
+        future.add_done_callback(lambda fut: self._on_result(goal_id, fut))
+
+    def _mark_unknown(self, goal_id: str, reason: str) -> None:
+        with self._lock:
+            lifecycle = self._goal_lifecycle.get(goal_id)
+            if lifecycle in (None, GOAL_TERMINAL):
+                return
+            old = self._recovery.get(goal_id, {})
+            self._recovery[goal_id] = {
+                "reason": reason,
+                "cancel_requested": lifecycle == GOAL_CANCEL_REQUESTED or old.get("cancel_requested", False),
+                "retry_at": time.monotonic() + 1.0,
+                "query_attempts": old.get("query_attempts", 0),
+            }
+            self._goal_lifecycle[goal_id] = GOAL_RECOVERY_REQUIRED
+        emit("goal_recovery_required", goal_id=goal_id, reason=reason)
+        self._node.get_logger().error(f"Action outcome unknown; ownership retained: {goal_id} ({reason})")
+
+    def get_recovery_status(self, goal_id: str) -> dict | None:
+        """Diagnostic snapshot; this method cannot release execution ownership."""
+        with self._lock:
+            state = self._recovery.get(goal_id)
+            return dict(state) if state is not None else None
 
     def _request_handle_cancel(self, goal_id: str, goal_handle) -> None:
         """Issue CancelGoal without treating its response as completion."""
@@ -343,10 +395,12 @@ class ActionClientAdapter:
         behavior_name: str,
         reason: str,
     ) -> None:
-        """Expose asynchronous transport failures through ExecutorInterface."""
+        """Expose definite rejection or an unsent Goal as terminal failure."""
         emit("action_terminal", goal_id=goal_id, behavior_name=behavior_name,
              status="FAILURE", reason=reason)
         with self._lock:
+            if self._goal_lifecycle.get(goal_id) in (None, GOAL_TERMINAL):
+                return
             self._result_cache[goal_id] = {
                 "goal_id": goal_id,
                 "behavior_name": behavior_name,

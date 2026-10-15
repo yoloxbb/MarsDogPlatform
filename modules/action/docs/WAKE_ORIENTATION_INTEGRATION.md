@@ -20,7 +20,7 @@ marsdog_behavior
     wake_frame_id
               │
               ▼
-/execute_behavior
+/action/execute_behavior
               │
               ▼
 ACT_INTERACT_RESPOND_CALL
@@ -195,7 +195,7 @@ ros2 action send_goal --feedback \
 
 ```bash
 ros2 action send_goal --feedback \
-  /execute_behavior \
+  /action/execute_behavior \
   marsdog_interfaces/action/ExecuteBehavior \
   "{goal_id: 'wake-test-001', behavior_id: 'wake-test-001', \
     behavior_name: 'respond_owner_call', priority_level: 1, \
@@ -222,7 +222,7 @@ ros2 topic echo /debug/execute_behavior/result
 
 ## 6. 仿真页面
 
-页面仍然只调用 `/execute_behavior` 或显示行为树发出的 Goal，不直接调用
+页面仍然只调用 `/action/execute_behavior` 或显示行为树发出的 Goal，不直接调用
 `/spin` 和 `/cmd_vel`。
 
 对于 `respond_owner_call`，Goal Debug JSON 的 `params` 会包含：
