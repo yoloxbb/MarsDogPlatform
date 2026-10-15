@@ -404,3 +404,35 @@ Added a privacy-minimized RKNN positive trace, fixed beckoning continuity across
 ### Status
 
 [OK] **Completed**
+
+
+## Session 13: 稳定可见玩具事件
+<!-- trellis-session: v=2 fp=126e0cf59b29e54c -->
+
+**Date**: 2026-10-15
+**Task**: 稳定可见玩具事件
+**Branch**: `codex/vision-face-emotion`
+
+### Summary
+
+实现 EVT_VISION_TOY 稳定可见事件、Behavior L2 候选与 Emotion 单周期处理；保留既有检测激活策略、v1 契约和 Action 安全边界。检测仅支持现有三类玩具标签；标准检测 0 Hz，既有 2 Hz 手持流需跟踪到人。
+
+### Main Changes
+
+- 新增不同新鲜物体结果推进的 ENTER/HOLD/EXIT 与 3 秒重触发冷却，处理失效结果为未知。
+- 接入玩具候选池与 Emotion 实例去重；保留 held_object 与现有 Action fail-closed 能力。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `20bc14a` | feat(vision): add stable visible toy event |
+
+### Testing
+
+- [OK] dev.py check；Vision 716 通过、3 个 RGA skip；Behavior 623 通过；Emotion 378 通过；视觉契约 34 场景通过。
+- [OK] 无真实 ROS transport 或硬件测试。
+
+### Status
+
+[OK] **Completed**
