@@ -33,9 +33,13 @@ from .visual_presence_contract import (
     VISUAL_POSTURE_ACTIONS,
     VISUAL_POSTURE_EVENT_NAMES,
     VISUAL_PRESENCE_TARGET_MAX_AGE_MS,
+    VISUAL_OBJECT_EVENT_NAMES,
+    VISUAL_OBJECT_TARGET_MAX_AGE_MS,
+    supported_toy_target_age_ms,
 )
 
 import json
+import math
 import threading
 import time
 from typing import Optional, Callable
@@ -100,6 +104,7 @@ _DIRECT_VISUAL_EVENTS = {
     "EVT_VISION_FALL",
     "EVT_VISION_STOP_GESTURE",
     *VISUAL_PRESENCE_EVENT_NAMES,
+    *VISUAL_OBJECT_EVENT_NAMES,
 }
 _OWNER_PRESENCE_EVENT = OWNER_PRESENCE_EVENT
 
@@ -170,6 +175,10 @@ class PerceptionClientAdapter:
         self._cached_visual_events: set[str] = set()
         self._cached_observation_status: str = ""
         self._cached_visual_event_instances: dict = {}
+        self._visual_object_snapshot_epoch = ""
+        self._visual_object_snapshot_sequence = 0
+        self._visual_object_snapshot_id = ""
+        self._visual_object_retired_epochs: set[str] = set()
         self._consumed_owner_presence_instance_id: str = ""
         self._pending_owner_presence_instance_id: str = ""
         self._consumed_visual_presence_instance_ids: dict[str, str] = {}
@@ -513,6 +522,107 @@ class PerceptionClientAdapter:
                 "snapshot_id": self._cached_visual_snapshot_id,
                 "snapshot_sequence": self._cached_visual_sequence,
                 "source_observation_id": self._cached_source_observation_id,
+                "visual_header": dict(self._cached_visual_header),
+            })
+            return True
+
+    def visual_object_candidate_is_current(
+        self,
+        candidate: dict,
+        *,
+        event_type: str,
+    ) -> bool:
+        """Revalidate an object event and its bound toy against latest v1 state."""
+        if event_type not in VISUAL_OBJECT_EVENT_NAMES:
+            return False
+        params = candidate.get("params") if isinstance(candidate, dict) else None
+        target = params.get("visual_target") if isinstance(params, dict) else None
+        if not isinstance(target, dict):
+            return False
+        expected_event_id = str(
+            params.get("visual_event_instance_id", "")
+        ).strip()
+        expected_epoch = str(params.get("vision_epoch", "")).strip()
+        expected_target_id = str(target.get("target_id", "")).strip()
+        expected_track_id = target.get("track_id")
+        if (
+            not expected_event_id
+            or not expected_epoch
+            or not expected_target_id
+            or isinstance(expected_track_id, bool)
+            or not isinstance(expected_track_id, int)
+            or expected_track_id <= 0
+        ):
+            return False
+
+        now = time.monotonic()
+        with self._lock:
+            if (
+                not visual_event_consumer.visual_object_snapshot_is_current(self)
+                or self._visual_cache_updated_at <= 0.0
+                or now - self._visual_cache_updated_at < 0.0
+                or now - self._visual_cache_updated_at > self.VISUAL_CACHE_TIMEOUT_SEC
+                or event_type not in self._cached_visual_events
+                or self._cached_vision_epoch != expected_epoch
+                or self._cached_visual_event_instances.get(event_type, "")
+                != expected_event_id
+            ):
+                return False
+
+            by_target_id = {}
+            for current in self._cached_objects:
+                source_age_ms = supported_toy_target_age_ms(
+                    current, expected_epoch
+                )
+                if source_age_ms is None:
+                    continue
+                current_age_ms = source_age_ms + (
+                    now - self._visual_cache_updated_at
+                ) * 1000.0
+                if (
+                    math.isfinite(current_age_ms)
+                    and 0.0 <= source_age_ms
+                    and current_age_ms < VISUAL_OBJECT_TARGET_MAX_AGE_MS
+                    and str(current.get("target_id", "")).strip()
+                    == expected_target_id
+                    and current.get("track_id") == expected_track_id
+                ):
+                    target_id = str(current["target_id"])
+                    prior = by_target_id.get(target_id)
+                    current_confidence = current.get(
+                        "detection_confidence",
+                        current.get("confidence", 0.0),
+                    )
+                    try:
+                        current_confidence = float(current_confidence)
+                    except (TypeError, ValueError):
+                        current_confidence = 0.0
+                    if prior is None or current_age_ms < prior[1]:
+                        by_target_id[target_id] = (
+                            current,
+                            current_age_ms,
+                            current_confidence,
+                        )
+            qualified = list(by_target_id.values())
+            if len(qualified) != 1:
+                return False
+
+            fresh_target, current_age_ms, _ = qualified[0]
+            fresh_target = dict(fresh_target)
+            fresh_target.update({
+                "last_seen_age_ms": current_age_ms,
+                "snapshot_id": self._cached_visual_snapshot_id,
+                "snapshot_sequence": self._cached_visual_sequence,
+            })
+            params.update({
+                "visual_target": fresh_target,
+                "active_target": dict(fresh_target),
+                "target": dict(fresh_target),
+                "target_track_id": fresh_target.get("track_id"),
+                "target_resolution": "same_snapshot_visual_object",
+                "vision_epoch": self._cached_vision_epoch,
+                "snapshot_id": self._cached_visual_snapshot_id,
+                "snapshot_sequence": self._cached_visual_sequence,
                 "visual_header": dict(self._cached_visual_header),
             })
             return True

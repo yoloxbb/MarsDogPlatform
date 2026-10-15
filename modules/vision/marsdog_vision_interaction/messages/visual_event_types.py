@@ -24,7 +24,6 @@ EVT_VISION_ANIMAL_BOUNDARY = "EVT_VISION_ANIMAL_BOUNDARY"
 _SPECIAL_ACTION_EVENTS = {
     "fallen_down": EVT_VISION_FALL,
     "stop_gesture": EVT_VISION_STOP_GESTURE,
-    "holding_toy": EVT_VISION_TOY,
     "holding_dog_food": EVT_VISION_FOOD,
 }
 

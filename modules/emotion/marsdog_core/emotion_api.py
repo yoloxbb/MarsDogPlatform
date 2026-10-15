@@ -10,6 +10,9 @@ from .rules import IsConditionMatched
 from .types import ClampValue, EmotionType, NormalizeActionResultType, NormalizeEmotionType
 
 
+MAX_PROCESSED_TOY_EVENT_INSTANCE_IDS = 256
+
+
 class EmotionAPI:
     """情绪 API 混入类。"""
 
@@ -45,13 +48,19 @@ class EmotionAPI:
         except (TypeError, ValueError):
             return False
 
-    def ApplyEmotionEvent(self, eventName: object, metadata: dict[str, Any] | None = None) -> bool:
+    def ApplyEmotionEvent(
+        self,
+        eventName: object,
+        metadata: dict[str, Any] | None = None,
+        *,
+        eventInstanceId: str | None = None,
+    ) -> bool:
         """根据外部 EVT_* 事件映射更新情绪值。"""
         event = str(eventName)
         mapping = self.GetEmotionEventMappingValue(event)
         if not mapping:
             return False
-        if not self._TryAcceptEmotionEventValue(event):
+        if not self._TryAcceptEmotionEventValue(event, eventInstanceId=eventInstanceId):
             return False
 
         eventMetadata = dict(metadata or {})
@@ -91,8 +100,18 @@ class EmotionAPI:
         """获取当前外部同名情绪事件去重窗口秒数。"""
         return float(getattr(self, "eventDeduplicationWindowSeconds", 10.0))
 
-    def _TryAcceptEmotionEventValue(self, eventName: str) -> bool:
+    def _TryAcceptEmotionEventValue(
+        self,
+        eventName: str,
+        *,
+        eventInstanceId: str | None = None,
+    ) -> bool:
         """同名事件在窗口内只接受首次，满窗口或时钟回退时重新接受。"""
+        if eventName == "EVT_VISION_TOY" and isinstance(eventInstanceId, str):
+            normalizedId = eventInstanceId.strip()
+            if normalizedId:
+                return self._TryAcceptToyEventInstanceValue(normalizedId)
+
         windowSeconds = self.GetEmotionEventDeduplicationWindowSecondsValue()
         timestamp = float(self._eventTimeProvider())
         if not isfinite(timestamp):
@@ -106,6 +125,20 @@ class EmotionAPI:
                 return False
 
         self.state.lastEmotionEventAcceptedAt[eventName] = timestamp
+        return True
+
+    def _TryAcceptToyEventInstanceValue(self, eventInstanceId: str) -> bool:
+        """按完整玩具可见周期去重，不受通用同名时间窗口影响。"""
+        processedIds = self.state.processedToyEventInstanceIds
+        processedOrder = self.state.processedToyEventInstanceIdOrder
+        if eventInstanceId in processedIds:
+            return False
+
+        processedIds.add(eventInstanceId)
+        processedOrder.append(eventInstanceId)
+        while len(processedOrder) > MAX_PROCESSED_TOY_EVENT_INSTANCE_IDS:
+            expiredId = processedOrder.pop(0)
+            processedIds.discard(expiredId)
         return True
 
     def ApplyEmotionDecay(self, elapsedSeconds: float = 1.0) -> dict[str, int]:

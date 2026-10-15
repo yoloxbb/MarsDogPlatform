@@ -81,9 +81,28 @@ class MarsdogEmotionSystem(EmotionAPI, PersonalityAPI):
     def OnVisualEvent(self, metadata: dict[str, Any] | None = None) -> list[str]:
         """处理新版 `/perception/visual_event.events[]` 情绪事件。"""
         payload = dict(metadata or {})
+        eventInstances = payload.get("event_instances")
+        toyInstance = (
+            eventInstances.get("EVT_VISION_TOY")
+            if isinstance(eventInstances, dict)
+            else None
+        )
+        toyEventInstanceId = (
+            toyInstance.get("event_id")
+            if isinstance(toyInstance, dict)
+            and isinstance(toyInstance.get("event_id"), str)
+            else None
+        )
         appliedEvents: list[str] = []
         for eventName in self._GetStringList(payload.get("events", [])):
-            if self.ApplyEmotionEvent(eventName, payload):
+            eventInstanceId = (
+                toyEventInstanceId if eventName == "EVT_VISION_TOY" else None
+            )
+            if self.ApplyEmotionEvent(
+                eventName,
+                payload,
+                eventInstanceId=eventInstanceId,
+            ):
                 appliedEvents.append(eventName)
         return appliedEvents
 

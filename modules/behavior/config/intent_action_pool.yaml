@@ -280,6 +280,9 @@ familiar_person_greet:
 stranger_observe:
   candidates: [stranger_observe]
 
+toy_found_play:
+  candidates: [inspectFamiliarPlayItem]
+
 express_joy:
   candidates: [expressJoy]
 

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "source_sha256": {
-    "modules/behavior/config/event_intent_map.yaml": "61ce50c405e79b67c2f98f15509c8fbf5df401206ecbab5fc06372aa907d6b16",
-    "modules/behavior/config/intent_action_pool.yaml": "fb978f85bbf9c49ed873735857c10e831ffbd48a56d31f4ee0ea0eea29d83a1d",
+    "modules/behavior/config/event_intent_map.yaml": "a630cb71d0d6095c8c826cf7d67a9fc75b96590b930a027fb5007e16adfa0108",
+    "modules/behavior/config/intent_action_pool.yaml": "3f208524a31cb6031c3edf2d204339508e2205627ada2c8a1099c87fa1755a14",
     "modules/behavior/config/behavior_categories.yaml": "ac877386c8e71aec0aec4ca93af227b7e6be9f9da769af40d70f50edd220ab10",
     "modules/behavior/config/emotion_behavior_map.yaml": "2e6e4e83fed3a606fbbed43f0986eb94753a741105ca13d255b66ecbad5632be",
     "modules/voice/config/command_catalog.yaml": "cd2db640a624fc6efeaf0b970d31ed9209874380aa125db9db96b0fad8fadcdf",
@@ -268,6 +268,9 @@
     ],
     "stranger_observe": [
       "stranger_observe"
+    ],
+    "toy_found_play": [
+      "inspectFamiliarPlayItem"
     ],
     "express_joy": [
       "expressJoy"
@@ -1702,6 +1705,21 @@
       ],
       "executor_behaviors": [
         "stranger_observe"
+      ]
+    },
+    {
+      "source": "visual_direct",
+      "event": "EVT_VISION_TOY",
+      "context": "default",
+      "category": "external_interaction",
+      "intent": "toy_found_play",
+      "selection": "intent_pool",
+      "expected_command_id": null,
+      "bt_behaviors": [
+        "inspectFamiliarPlayItem"
+      ],
+      "executor_behaviors": [
+        "inspectFamiliarPlayItem"
       ]
     },
     {

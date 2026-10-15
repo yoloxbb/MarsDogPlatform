@@ -64,6 +64,11 @@ from marsdog_vision_interaction.core.held_object_pose import (
     HELD_OBJECT_LABELS,
     HeldObjectPoseManager,
     HeldObjectPoseStatus,
+    TOY_LABELS,
+)
+from marsdog_vision_interaction.core.toy_presence_event_state import (
+    ToyPresenceEventConfig,
+    ToyPresenceEventState,
 )
 from marsdog_vision_interaction.core.object_detection_session import (
     ObjectDetectionSessionManager,
@@ -81,6 +86,7 @@ from marsdog_vision_interaction.messages.visual_event_types import (
     EVT_VISION_OWNER_PRESENT,
     EVT_VISION_OWNER_RECALL_GESTURE,
     EVT_VISION_STRANGER_PRESENT,
+    EVT_VISION_TOY,
 )
 from marsdog_vision_interaction.providers.base import BaseProvider
 from marsdog_vision_interaction.utils.config_loader import (
@@ -115,11 +121,7 @@ _CAMERA_QOS = QoSProfile(
 )
 
 _ANIMAL_LABELS = {"cat", "dog"}
-_TOY_LABELS = {
-    "dog toy ball",
-    "dog frisbee toy",
-    "dog tug ring toy",
-}
+_TOY_LABELS = TOY_LABELS
 
 
 def _apply_presence_event_states(
@@ -162,6 +164,32 @@ def _apply_presence_event_states(
         "_gesture_track_id",
     ):
         event.pop(key, None)
+    if instances:
+        event["event_instances"] = instances
+    else:
+        event.pop("event_instances", None)
+    return normalize_visual_event(event)
+
+
+def _apply_toy_presence_event_state(
+    event: dict[str, Any],
+    state: ToyPresenceEventState | None,
+) -> dict[str, Any]:
+    """Serialize the object-result state without advancing it here."""
+    if state is None:
+        return event
+    snapshot = state.snapshot()
+    events = event.get("events")
+    events = list(events) if isinstance(events, list) else []
+    events = [name for name in events if name != EVT_VISION_TOY]
+    raw_instances = event.get("event_instances")
+    instances = dict(raw_instances) if isinstance(raw_instances, dict) else {}
+    if snapshot.active:
+        events.append(EVT_VISION_TOY)
+        instances[EVT_VISION_TOY] = {"event_id": snapshot.event_id}
+    else:
+        instances.pop(EVT_VISION_TOY, None)
+    event["events"] = events
     if instances:
         event["event_instances"] = instances
     else:
@@ -604,6 +632,13 @@ class VisionInteractionNode(Node):
                     self._object_cache_timeout_sec,
                 )
             ),
+        )
+        self._toy_presence_event_state = ToyPresenceEventState(
+            ToyPresenceEventConfig.from_mapping(
+                self._config.get("toy_presence_events")
+            ),
+            source_freshness_sec=self._object_target_current_timeout_sec,
+            result_max_age_sec=self._object_cache_timeout_sec,
         )
         self._stereo_enabled = bool(
             vision_runtime_config.get("stereo_enabled", False)
@@ -1329,6 +1364,11 @@ class VisionInteractionNode(Node):
             emotion_classification=emotion_classification,
             now=time.monotonic(),
         )
+        with self._state_lock:
+            event = _apply_toy_presence_event_state(
+                event,
+                getattr(self, "_toy_presence_event_state", None),
+            )
         presence_states = (
             (
                 EVT_VISION_OWNER_PRESENT,
@@ -1773,7 +1813,7 @@ class VisionInteractionNode(Node):
 
         started = time.perf_counter()
         try:
-            frame, observation_stamp, frame_id = (
+            frame, observation_stamp, frame_id, source_monotonic = (
                 self._frame_for_tasks_with_metadata()
             )
             objects = detector.detect_objects(  # type: ignore[attr-defined]
@@ -1790,13 +1830,18 @@ class VisionInteractionNode(Node):
                     error=detector_error,
                     observation_stamp=observation_stamp,
                     frame_id=frame_id,
+                    source_monotonic=source_monotonic,
                     stream=stream,
                     request=self._object_request_metadata(params),
                 )
                 return {"ok": False, "error": detector_error}
 
+            if not isinstance(objects, list) or any(
+                not isinstance(item, dict) for item in objects
+            ):
+                raise ValueError("object detector returned malformed detections")
             normalized_objects = [
-                dict(item) for item in objects if isinstance(item, dict)
+                dict(item) for item in objects
             ]
             tracked_objects = self._record_object_result(
                 normalized_objects,
@@ -1805,8 +1850,12 @@ class VisionInteractionNode(Node):
                 latency_ms=latency_ms,
                 observation_stamp=observation_stamp,
                 frame_id=frame_id,
+                source_monotonic=source_monotonic,
                 stream=stream,
                 request=self._object_request_metadata(params),
+                toy_target_labels=VisionInteractionNode._normalize_toy_target_labels(
+                    params
+                ),
             )
             return {"ok": True, "objects": tracked_objects}
         except Exception as exc:
@@ -1817,6 +1866,9 @@ class VisionInteractionNode(Node):
                 status="error",
                 latency_ms=latency_ms,
                 error=str(exc),
+                observation_stamp=locals().get("observation_stamp"),
+                frame_id=locals().get("frame_id"),
+                source_monotonic=locals().get("source_monotonic"),
                 stream=stream,
                 request=self._object_request_metadata(params),
             )
@@ -2051,8 +2103,10 @@ class VisionInteractionNode(Node):
         error: str = "",
         observation_stamp: float | None = None,
         frame_id: str | None = None,
+        source_monotonic: float | None = None,
         stream: dict[str, Any] | None = None,
         request: dict[str, Any] | None = None,
+        toy_target_labels: list[str] | None = None,
         stop_reason: str = "",
     ) -> list[dict[str, Any]]:
         now_monotonic = time.monotonic()
@@ -2104,6 +2158,39 @@ class VisionInteractionNode(Node):
                 ]
                 self._latest_objects_monotonic = now_monotonic
 
+        toy_state = getattr(self, "_toy_presence_event_state", None)
+        if toy_state is not None:
+            try:
+                source_stamp = float(observation_stamp)
+            except (TypeError, ValueError):
+                source_stamp = 0.0
+            source_observation_id = (
+                f"{resolved_frame_id}:{source_stamp:.9f}"
+                if (
+                    math.isfinite(source_stamp)
+                    and source_stamp > 0.0
+                    and resolved_frame_id.strip()
+                )
+                else ""
+            )
+            with self._state_lock:
+                toy_state.update(
+                    {
+                        "vision_epoch": str(
+                            getattr(self, "_vision_epoch", "") or ""
+                        ),
+                        "source_observation_id": source_observation_id,
+                        "source_observation_monotonic": source_monotonic,
+                        "status": status,
+                        "objects": objects if status == "ok" else [],
+                        "target_labels_valid": isinstance(
+                            toy_target_labels, list
+                        ),
+                        "target_labels": toy_target_labels,
+                    },
+                    now=now_monotonic,
+                )
+
         if stream is None:
             snapshot = getattr(
                 self, "_effective_object_stream_snapshot", None
@@ -2151,6 +2238,17 @@ class VisionInteractionNode(Node):
             error=error,
         )
         return [copy.deepcopy(item) for item in published_objects]
+
+    @staticmethod
+    def _normalize_toy_target_labels(
+        params: dict[str, Any],
+    ) -> list[str] | None:
+        try:
+            return ObjectDetectionSessionManager.normalize_target_labels(
+                params.get("target_labels")
+            )
+        except (TypeError, ValueError):
+            return None
 
     @staticmethod
     def _object_request_metadata(params: dict[str, Any]) -> dict[str, Any]:
@@ -2315,14 +2413,14 @@ class VisionInteractionNode(Node):
         return frame[y1:y2, x1:x2] if x2 > x1 and y2 > y1 else None
 
     def _frame_for_tasks(self) -> np.ndarray | None:
-        frame, _, _ = VisionInteractionNode._frame_for_tasks_with_metadata(
+        frame, _, _, _ = VisionInteractionNode._frame_for_tasks_with_metadata(
             self
         )
         return frame
 
     def _frame_for_tasks_with_metadata(
         self,
-    ) -> tuple[np.ndarray | None, float, str]:
+    ) -> tuple[np.ndarray | None, float, str, float]:
         with self._state_lock:
             frame = self._latest_frame
             latest_camera_monotonic = self._latest_camera_monotonic
@@ -2333,21 +2431,21 @@ class VisionInteractionNode(Node):
                 getattr(self, "_latest_camera_frame_id", "camera_link")
             )
         if self._vision_is_mock:
-            return frame, camera_stamp, frame_id
+            return frame, camera_stamp, frame_id, latest_camera_monotonic
         if (
             frame is None
             or latest_camera_monotonic <= 0.0
             or time.monotonic() - latest_camera_monotonic
             > self._camera_stale_timeout_sec
         ):
-            return None, camera_stamp, frame_id
+            return None, camera_stamp, frame_id, latest_camera_monotonic
         selected, _ = select_camera_view(
             frame,
             stereo_enabled=self._stereo_enabled,
             view=self._stereo_view,
             min_aspect_ratio=self._stereo_min_aspect_ratio,
         )
-        return selected, camera_stamp, frame_id
+        return selected, camera_stamp, frame_id, latest_camera_monotonic
 
     @staticmethod
     def _decode_image(message: Image) -> np.ndarray | None:

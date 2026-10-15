@@ -11,6 +11,7 @@ from .visual_presence_contract import (
     OWNER_RECALL_GESTURE_EVENT,
     VISUAL_POSTURE_ACTIONS,
     VISUAL_POSTURE_EVENT_NAMES,
+    VISUAL_OBJECT_EVENT_NAMES,
     VISUAL_PRESENCE_EVENT_NAMES,
 )
 
@@ -128,6 +129,46 @@ def _advance_owner_recall_snapshot(self, data) -> None:
     self._owner_recall_snapshot_id = snapshot_id.strip()
 
 
+def _advance_visual_object_snapshot(self, data) -> None:
+    """Remember the newest ordered v1 snapshot for object-event dispatch."""
+    epoch = data.get("vision_epoch")
+    sequence = data.get("sequence")
+    snapshot_id = data.get("snapshot_id")
+    if (
+        not isinstance(epoch, str) or not epoch.strip()
+        or isinstance(sequence, bool) or not isinstance(sequence, int) or sequence <= 0
+        or not isinstance(snapshot_id, str) or not snapshot_id.strip()
+    ):
+        return
+    epoch = epoch.strip()
+    retired = getattr(self, "_visual_object_retired_epochs", set())
+    if epoch in retired:
+        return
+    current_epoch = getattr(self, "_visual_object_snapshot_epoch", "")
+    if epoch != current_epoch:
+        if current_epoch:
+            retired.add(current_epoch)
+        self._visual_object_retired_epochs = retired
+    elif sequence <= getattr(self, "_visual_object_snapshot_sequence", 0):
+        return
+    self._visual_object_snapshot_epoch = epoch
+    self._visual_object_snapshot_sequence = sequence
+    self._visual_object_snapshot_id = snapshot_id.strip()
+
+
+def visual_object_snapshot_is_current(self) -> bool:
+    """Reject delayed or retired packets before dispatching object candidates."""
+    epoch = getattr(self, "_visual_object_snapshot_epoch", "")
+    return bool(
+        epoch
+        and self._cached_vision_epoch == epoch
+        and self._cached_visual_sequence
+        == getattr(self, "_visual_object_snapshot_sequence", None)
+        and self._cached_visual_snapshot_id
+        == getattr(self, "_visual_object_snapshot_id", "")
+    )
+
+
 def owner_recall_snapshot_is_current(self) -> bool:
     """Reject delayed or retired snapshots for recall candidates."""
     epoch = getattr(self, "_owner_recall_snapshot_epoch", "")
@@ -189,6 +230,7 @@ def consume_visual_event(self, msg, *, direct_events):
     with self._lock:
         _advance_owner_posture_snapshot(self, data)
         _advance_owner_recall_snapshot(self, data)
+        _advance_visual_object_snapshot(self, data)
         received_at = time.monotonic()
         previous_received_at = self._visual_cache_updated_at
         self._visual_cache_updated_at = received_at
@@ -226,7 +268,9 @@ def consume_visual_event(self, msg, *, direct_events):
         raw_event_instances = data.get("event_instances")
         cached_presence_ids = {}
         if isinstance(raw_event_instances, dict):
-            for event_name in VISUAL_PRESENCE_EVENT_NAMES:
+            for event_name in (
+                VISUAL_PRESENCE_EVENT_NAMES | VISUAL_OBJECT_EVENT_NAMES
+            ):
                 instance = raw_event_instances.get(event_name)
                 raw_event_id = (
                     instance.get("event_id")
@@ -368,7 +412,7 @@ def consume_visual_event(self, msg, *, direct_events):
         for event_type in event_types:
             if event_type not in current_direct_events:
                 continue
-            if event_type in VISUAL_PRESENCE_EVENT_NAMES:
+            if event_type in VISUAL_PRESENCE_EVENT_NAMES | VISUAL_OBJECT_EVENT_NAMES:
                 event_id = _presence_instance_id(self, event_type)
                 consumed_id = _consumed_presence_instance_id(
                     self, event_type
@@ -378,9 +422,15 @@ def consume_visual_event(self, msg, *, direct_events):
                 )
                 if (
                     self._on_visual_event is None
-                    or self._cached_observation_status != "valid"
+                    or (event_type in VISUAL_PRESENCE_EVENT_NAMES
+                        and self._cached_observation_status != "valid")
                     or not event_id
                     or event_id in {consumed_id, pending_id}
+                ):
+                    continue
+                if (
+                    event_type in VISUAL_OBJECT_EVENT_NAMES
+                    and not visual_object_snapshot_is_current(self)
                 ):
                     continue
                 if (

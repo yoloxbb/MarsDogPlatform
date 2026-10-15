@@ -99,6 +99,8 @@ def BuildEmotionEventCatalogMarkdownValue(emotionConfig: dict[str, Any]) -> str:
         "本目录的唯一数据来源是 `configs/emotions.yaml:eventRules`。基础增量会继续乘以",
         "当前性格系数，最终情绪值限制在 `0-100`；只有下表明确列出的规则才使用元数据倍率。",
         f"同名外部事件在 `{deduplicationWindowSeconds:g}` 秒内只计算一次，不同事件互不影响。",
+        "视觉玩具事件若带 `event_instances.EVT_VISION_TOY.event_id`，则按实例 ID 去重：",
+        "同一周期只应用一次，新 ID 不受通用同名时间窗口限制；旧载荷没有实例 ID 时仍按窗口处理。",
         "",
     ]
     groupNames = ("声音输入", "触摸输入", "视觉输入", "其他输入")
@@ -115,9 +117,12 @@ def BuildEmotionEventCatalogMarkdownValue(emotionConfig: dict[str, Any]) -> str:
             ]
         )
         for row in groupRows:
+            baseEmotionDeltas = row["base_emotion_deltas"]
+            if row["event_type"] == "EVT_VISION_TOY":
+                baseEmotionDeltas += "；同一事件实例周期只应用一次"
             lines.append(
                 "| `{event_type}` | {base_emotion_deltas} | {metadata_multipliers} |".format(
-                    **row
+                    **{**row, "base_emotion_deltas": baseEmotionDeltas}
                 )
             )
         lines.append("")

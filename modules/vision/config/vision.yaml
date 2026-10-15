@@ -99,6 +99,14 @@ stranger_presence_events:
   exit_duration_sec: 2.0
   retrigger_delay_sec: 3.0
 
+# A scene-level toy fact fed only by object results from existing detection
+# tasks. It does not activate or change the cadence of any detector stream.
+toy_presence_events:
+  enabled: true
+  enter_duration_sec: 1.0
+  exit_duration_sec: 2.0
+  retrigger_delay_sec: 3.0
+
 # Aligned RealSense depth is the only source allowed to populate a target
 # range. Missing/stale depth, invalid CameraInfo, a timestamp mismatch or an
 # unsupported encoding leaves range_valid=false and therefore forbids motion.

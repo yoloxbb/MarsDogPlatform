@@ -230,7 +230,8 @@ unavailable` 时，本轮真实模型测试不得判为通过。
 | STOP-01 | 停止手势 | 正例、挥手、指点、抱臂反例 | 手部特征、黄色事件记录 | `hands[]`、`EVT_VISION_STOP_GESTURE` | 3/5 帧稳定；反例不触发；身份门控有效 |
 | JUMP-01 | 跳跃 | 全身/缺脚踝原地跳；快速起立、踮脚、走路反例 | 识别通道、起跳/回落证据、肩/髋/脚速度 | `jump_detector`、`recognized_actions` | 全身两帧共同上升；半身要求肩髋上升后回落；身份门控有效 |
 | STOMP-01 | 跺脚 | 全身/缺脚踝跺脚；抬腿保持、跳跃、走路反例 | 脚踝/膝部通道、速度、幅度、换向 | `stomp_detector`、`recognized_actions` | 完成局部抬落周期；身体中心稳定；3/5帧确认；身份门控有效 |
-| HOLD-01 | 手持玩具/狗粮 | 手持正例；地面、桌面、远离手腕反例 | 手持状态和关联证据 | `active_target.held_object`、TOY/FOOD事件 | 两个物体结果确认；只关联当前人；身份门控有效 |
+| HOLD-01 | 手持玩具/狗粮 | 手持正例；地面、桌面、远离手腕反例 | 手持状态和关联证据 | `active_target.held_object`；玩具另由场景状态产生 `EVT_VISION_TOY`，狗粮仍走 `EVT_VISION_FOOD` | 手持字段保留原两次物体结果和身份门控；玩具事件无身份门控 |
+| TOY-01 | 可见未手持玩具 | 三个支持标签；重复框、短漏检、多个玩具、无人身份 | 场景事件状态和事件实例 | `EVT_VISION_TOY`、`event_instances.EVT_VISION_TOY.event_id` | 只由现有物体任务结果按 1/2/3 秒状态时序发布 |
 | FALL-01 | 跌倒 | 直立布防→受控快速躺倒；静态躺卧 | 跌倒状态、红色事件记录 | `Fall event confirmed`、`fall_detector` | 真转换触发一次边沿；静态躺卧不触发；30 s 冷却 |
 | STRANGER-01 | 陌生人情绪细分 | 陌生人、已知人；情绪状态变化/过期/非法 | 视觉事件和历史 | `/emotion/state` 订阅、`events[]` | Anxiety/Fear → Alert；无 Alert 且 Joy/Excite/Calm → Friend；无效状态 → Stranger |
 | EVT-01 | 视觉事件流 | 人/动作进入、保持、离开 | ENTER/ACTIVE/EXIT | `vision_epoch/sequence/events[]` | Topic 约 10 Hz；生命周期正确压缩；序号递增 |
@@ -551,13 +552,14 @@ GP-024 不能只看躯干倾角：清晰躺卧还需近水平的大腿方向；�
 
 下面两项不属于25个 GesturePose 原始标签，而是 Pose/Hand 与物体结果关联后产生：
 
-| 用例 ID | 测试输入 | 诊断名称与确认条件 | 预期兼容字段 | 身份门禁打开时的正式事件 |
+| 用例 ID | 测试输入 | 诊断名称与确认条件 | 预期兼容字段 | 相关正式事件 |
 |---|---|---|---|---|
-| MM-001 | 手持支持的玩具并让物体靠近有效手腕 | `candidate_action=holding_toy`；两个阳性物体结果后 `action=holding_toy` | `pose_action=holding_toy`、标签“手持玩具” | `EVT_VISION_TOY` |
+| MM-001 | 手持支持的玩具并让物体靠近有效手腕 | `candidate_action=holding_toy`；两个阳性物体结果后 `action=holding_toy` | `pose_action=holding_toy`、标签“手持玩具” | 同一可见玩具状态机在不同物体源观测稳定 1 秒后发布 `EVT_VISION_TOY`，不增加第二条手持事件 |
 | MM-002 | 手持狗碗、狗粮罐或狗粮袋并靠近有效手腕 | `candidate_action=holding_dog_food`；两个阳性物体结果后 `action=holding_dog_food` | `pose_action=holding_dog_food`、标签“手持狗粮” | `EVT_VISION_FOOD` |
 
-只在画面、地面或桌面上检测到对应物体不算手持姿态，也不能下发 TOY/FOOD。详细的
-同步时间、腕部距离、两次证据和反例要求见5.10节。
+只在画面、地面或桌面上检测到对应物体不算手持姿态；但有效可见玩具仍可通过独立的
+场景级状态机发布 `EVT_VISION_TOY`，不要求腕部关联或人物身份。狗粮事件仍要求已确认
+手持姿态。详细的同步时间、腕部距离、两次证据和反例要求见5.10节。
 
 #### 5.6.4 名称折叠与事件共用关系
 
@@ -592,7 +594,8 @@ GP-024 不能只看躯干倾角：清晰躺卧还需近水平的大腿方向；�
 | 没有检测到人脸 | 可保留 GesturePose 诊断 | 通常没有 Master/Stranger，也不得有 Happy | 只判识别层和门禁层 |
 | 已知身份但 `temporarily_lost` | 可保留旧诊断 | 不得发布新的姿态事件 | 门禁 PASS |
 
-其他动作把 Happy 换成上表对应的 Sad/Neutral/Fall/Stop/TOY/FOOD 即可。注意
+其他姿态/手势动作把 Happy 换成上表对应的 Sad/Neutral/Fall/Stop 即可。TOY 是独立的
+物体场景状态；FOOD 仍由已确认手持姿态产生。注意
 `EVT_VISION_MASTER` 只表示当前主目标身份非 `unknown` 且存在人脸观察，不等于身份已
 达到 `confirmed_known`；姿态事件仍必须单独检查 `pose_event_gate=open`。
 
@@ -633,7 +636,7 @@ Vision 事件路由正确率 = 门禁打开且期望事件正确次数 / 门禁�
 | `EVT_VISION_MASTER_NEUTRAL` | GP-022、GP-023、GP-025 折叠出的 `neutral_stand_sit` | 是 | `pose_state`、`recognized_actions[]`、`pose_action` |
 | `EVT_VISION_FALL` | GP-001 跌倒状态机确认 | 是 | `fall_detector`、`pose_action=fallen_down` |
 | `EVT_VISION_STOP_GESTURE` | GP-002 Stop 时序确认 | 是 | 手部特征、`hands[].hand_action=stop_gesture` |
-| `EVT_VISION_TOY` | MM-001 手持玩具确认 | 是 | `active_target.held_object`、`pose_action=holding_toy` |
+| `EVT_VISION_TOY` | 现有物体任务检测到支持玩具标签并稳定可见 1 秒；手持和未手持共用同一场景状态 | 否 | `tracked_objects[]`、`event_instances.EVT_VISION_TOY.event_id`；手持诊断另看 `active_target.held_object` |
 | `EVT_VISION_FOOD` | MM-002 手持狗粮确认 | 是 | `active_target.held_object`、`pose_action=holding_dog_food` |
 
 `EVT_VISION_ANIMAL_CALM/GREET/PLAY/BOUNDARY` 虽然已声明常量，但当前没有生成路径，
@@ -880,10 +883,11 @@ rg '"record":"held_object_evaluation"' /tmp/marsdog_vision_qa/HOLD-01/*.jsonl
 2. 将相同物体放在地上、桌面或人物框内但远离双手，均不得出现手持姿态。
 3. 只让物体靠近手腕不到一次检测周期，然后移开，不得达到 `confirmed`。
 4. 两个人同时入镜，把物体放在非当前目标手中，不得关联到当前目标。
-5. `unknown/confirmed_unknown` 陌生人手持时，除独立陌生人事件外，`events[]` 应出现
-   对应的 TOY/FOOD；`unknown_candidate` 或 `unverified` 陌生人只保留结构化姿态。
-6. 已确认主人/家人手持时，分别出现 `EVT_VISION_TOY/EVT_VISION_FOOD`；物体单独
-   出现不得再触发这两个事件。
+5. `unknown/confirmed_unknown` 陌生人手持时，已确认手持结构仍写入目标；玩具事件按
+   同一场景级稳定状态产生，不读取身份；`EVT_VISION_FOOD` 仍保留原身份门控。
+6. 已确认主人/家人手持支持玩具时，保留 `held_object` 与 `pose_action=holding_toy`，
+   并由可见玩具状态机产生一个 `EVT_VISION_TOY` 周期；未手持玩具只要现有检测流有效也可
+   产生同一事件。狗粮仍需手腕关联确认后产生 `EVT_VISION_FOOD`。
 7. 人物离开后内部物体流最多保持2秒；通过页面启动显式流时，应立即显示显式
    session，停止后人物仍在则自动恢复手持判断流。
 
@@ -978,9 +982,9 @@ Vision events[] -> Viewer ENTER/ACTIVE/EXIT
 
 | Class ID | 精确 `label` | 中文说明 | 当前正式事件用途 |
 |---:|---|---|---|
-| 0 | `dog toy ball` | 狗玩具球 | 手腕关联确认后可生成 `EVT_VISION_TOY` |
-| 1 | `dog frisbee toy` | 狗飞盘玩具 | 手腕关联确认后可生成 `EVT_VISION_TOY` |
-| 2 | `dog tug ring toy` | 狗拉扯环玩具 | 手腕关联确认后可生成 `EVT_VISION_TOY` |
+| 0 | `dog toy ball` | 狗玩具球 | 不同有效物体观测稳定可见 1 秒后可生成场景级 `EVT_VISION_TOY` |
+| 1 | `dog frisbee toy` | 狗飞盘玩具 | 不同有效物体观测稳定可见 1 秒后可生成场景级 `EVT_VISION_TOY` |
+| 2 | `dog tug ring toy` | 狗拉扯环玩具 | 不同有效物体观测稳定可见 1 秒后可生成场景级 `EVT_VISION_TOY` |
 | 3 | `dog collar` | 狗项圈 | 仅物体检测/跟踪，不生成专用事件 |
 | 4 | `dog bowl` | 狗碗 | 手腕关联确认后可生成 `EVT_VISION_FOOD` |
 | 5 | `dog leash` | 狗牵引绳 | 仅物体检测/跟踪，不生成专用事件 |

@@ -120,6 +120,34 @@ BehaviorTree 将两个 ENTER 周期分别映射到 `familiar_person_greet` 和 `
 这两个 Behavior 当前没有 Action 模板，因此候选被记录或排入仲裁不代表歪头、摇尾、注视、
 保持距离或警觉动作已执行；Action 会沿现有 unsupported-template 边界拒绝它们。
 
+### 看见玩具状态事件
+
+`EVT_VISION_TOY` 表示场景中至少有一个稳定可见的受支持玩具。已有手持玩具也属于这个状态；
+原 `active_target.held_object` 诊断数据继续保留，但 `holding_toy` 不再绕过玩具稳定计时单独
+生成一个事件。玩具标签只复用 Vision 现有 Provider 中的 `dog toy ball`、`dog frisbee toy`、
+`dog tug ring toy`，不把狗粮或其他物品扩展为本事件。
+
+事件只消费原有物体检测任务的结果和该任务已有的置信度门限。不同、有效且新鲜的源物体观测
+推进可配置状态时序：默认 `T_enter=1.0s` 后 ENTER；HOLD 保持同一
+`event_instances.EVT_VISION_TOY.event_id`；成功、有效且标签范围覆盖全部三类玩具的负观测持续
+`T_exit=2.0s` 后 EXIT 并移除事件与 ID；EXIT 后默认 `T_retrigger=3.0s` 冷却，冷却结束仍需
+完整重新满足 `T_enter`。多框、多个玩具和重复 10 Hz 快照都按一个场景状态处理，不按框重复触发。
+
+只有事件周期会产生一次 Behavior 候选；HOLD 快照不会重复生成候选。Emotion 沿用
+`EVT_VISION_TOY` 原有 Excite +30、Curious +20、Joy +15 映射，并按事件 ID 对每个周期只处理
+一次。检测失败、相机断流、过期结果、无效快照和不能覆盖全部玩具标签的空结果均表示观测未知，
+不能推进 EXIT；未知输入打断未完成的进入/退出连续计时，活动事件 ID 保持。
+
+检测激活方式不因该事件改变。标准 Vision 配置常规物体推理为 0 Hz；受限手持流仍是在有人被跟踪
+时以 2 Hz 运行。已有一次性/持续检测会话也可提供观测，但没有人物跟踪且没有其他活动检测会话时
+不会有玩具检测输入，因此不能自主发现玩具。
+
+Behavior 将 ENTER 映射为物品类 `external_interaction` 候选，并经统一 L2 仲裁路由至已有
+`inspectFamiliarPlayItem`。`ACT_TOY_FOUND_PLAY` 是候选产品标签，不是 Action `unit_id`。该行为
+需要 Action 绑定当前新鲜玩具目标并先通过 `ACT_APPROACH_VISUAL_TARGET`；现有视觉物体数据若只有
+二维框且没有有效米制范围，接近会按 Action 当前策略 fail closed。事件或候选不代表靠近、嗅闻、
+叼取或玩耍已经执行成功。
+
 Vision 可在当前检测人脸及 `debug_faces` 中附加可选字段
 `facial_expression: {expression, confidence}`。`expression` 是模型八类结果之一，
 `confidence` 是胜出类别原始 softmax 概率；调试快照可带

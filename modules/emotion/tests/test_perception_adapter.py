@@ -65,6 +65,86 @@ class PerceptionAdapterTest(unittest.TestCase):
         self.assertEqual(system.GetEmotionValue("Excite"), 30)
         self.assertEqual(system.GetEmotionValue("Curious"), 23)
 
+    def test_toy_event_instance_is_applied_once_across_long_hold(self):
+        """同一个玩具周期即使 HOLD 超过通用窗口也只应用一次。"""
+        now = [100.0]
+        system = MarsdogEmotionSystem(eventTimeProvider=lambda: now[0])
+        payload = {
+            "events": ["EVT_VISION_TOY"],
+            "event_instances": {"EVT_VISION_TOY": {"event_id": "toy-cycle-1"}},
+        }
+
+        self.assertEqual(ApplyVisualEventMessage(system, payload), ["EVT_VISION_TOY"])
+        firstEmotions = system.GetAllEmotions()
+        now[0] += 15.0
+        self.assertEqual(ApplyVisualEventMessage(system, payload), [])
+        self.assertEqual(system.GetAllEmotions(), firstEmotions)
+
+    def test_new_toy_event_instance_bypasses_generic_same_name_window(self):
+        """新的玩具周期可在同名十秒窗口内独立应用一次。"""
+        now = [100.0]
+        system = MarsdogEmotionSystem(eventTimeProvider=lambda: now[0])
+
+        first = {
+            "events": ["EVT_VISION_TOY"],
+            "event_instances": {"EVT_VISION_TOY": {"event_id": "toy-cycle-1"}},
+        }
+        second = {
+            "events": ["EVT_VISION_TOY"],
+            "event_instances": {"EVT_VISION_TOY": {"event_id": "toy-cycle-2"}},
+        }
+
+        self.assertEqual(ApplyVisualEventMessage(system, first), ["EVT_VISION_TOY"])
+        firstEmotions = system.GetAllEmotions()
+        now[0] += 1.0
+        self.assertEqual(ApplyVisualEventMessage(system, second), ["EVT_VISION_TOY"])
+        self.assertEqual(
+            system.GetEmotionValue("Excite") - firstEmotions["Excite"],
+            30,
+        )
+        self.assertEqual(
+            system.GetEmotionValue("Curious") - firstEmotions["Curious"],
+            23,
+        )
+        self.assertEqual(system.GetEmotionValue("Joy") - firstEmotions["Joy"], 15)
+
+    def test_duplicate_toy_event_strings_with_one_instance_apply_once(self):
+        """同一快照重复列出玩具事件仍只按一个实例增量一次。"""
+        system = MarsdogEmotionSystem(eventTimeProvider=lambda: 100.0)
+
+        events = ApplyVisualEventMessage(
+            system,
+            {
+                "events": ["EVT_VISION_TOY", "EVT_VISION_TOY"],
+                "event_instances": {
+                    "EVT_VISION_TOY": {"event_id": "toy-cycle-duplicate"}
+                },
+            },
+        )
+
+        self.assertEqual(events, ["EVT_VISION_TOY"])
+        self.assertEqual(system.GetEmotionValue("Excite"), 30)
+        self.assertEqual(system.GetEmotionValue("Curious"), 23)
+        self.assertEqual(system.GetEmotionValue("Joy"), 15)
+
+    def test_legacy_toy_visual_event_without_instance_keeps_name_window(self):
+        """没有实例 ID 的 schema v1 老载荷仍使用既有同名时间窗口。"""
+        now = [100.0]
+        system = MarsdogEmotionSystem(eventTimeProvider=lambda: now[0])
+        legacyPayload = {"events": ["EVT_VISION_TOY"]}
+
+        self.assertEqual(
+            ApplyVisualEventMessage(system, legacyPayload), ["EVT_VISION_TOY"]
+        )
+        firstEmotions = system.GetAllEmotions()
+        now[0] += 9.0
+        self.assertEqual(ApplyVisualEventMessage(system, legacyPayload), [])
+        self.assertEqual(system.GetAllEmotions(), firstEmotions)
+        now[0] += 1.0
+        self.assertEqual(
+            ApplyVisualEventMessage(system, legacyPayload), ["EVT_VISION_TOY"]
+        )
+
     def test_tactile_event_updates_emotion_system(self):
         """ONE1000 摸头事件应进入既有触觉情绪映射。"""
         system = MarsdogEmotionSystem()

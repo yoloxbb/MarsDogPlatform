@@ -206,6 +206,154 @@ def _owner_recall_probe(output, owner_payload):
     }
 
 
+def _toy_event_probe(output):
+    """Exercise visible-toy v1 routing without changing the frozen corpus."""
+    event = "EVT_VISION_TOY"
+    probe_dir = output / "toy-event-probe"
+    probe_dir.mkdir(parents=True, exist_ok=True)
+    target = {
+        "vision_epoch": "toy-probe-epoch",
+        "target_id": "toy-probe-epoch:object:5",
+        "target_type": "object",
+        "object_kind": "toy",
+        "track_id": 5,
+        "object_track_id": 5,
+        "label": "dog toy ball",
+        "tracking_state": "tracking",
+        "confidence": 0.82,
+        "detection_confidence": 0.82,
+        "last_seen_age_ms": 0.0,
+        "source_sequence": 11,
+        "source_snapshot_id": "toy-probe-epoch:object-result:11",
+        "range_valid": False,
+        "distance_m": None,
+    }
+    payload = {
+        "schema_version": 1,
+        "vision_epoch": "toy-probe-epoch",
+        "snapshot_id": "toy-probe-epoch:visual:1",
+        "sequence": 1,
+        "source_observation_id": "toy-probe-frame-1",
+        # This is the existing human-provider status, not toy validity.
+        "observation_status": "invalid",
+        "header": {"stamp": 1000, "frame_id": "camera"},
+        "events": [event],
+        "event_instances": {event: {"event_id": "toy-probe-cycle-1"}},
+        "tracked_objects": [target],
+    }
+    producer = run_stage(
+        "vision", {"toy": payload}, probe_dir, WORKER
+    )
+    produced = producer["observed"]["toy"]
+    for key in (
+        "events", "event_instances", "source_observation_id",
+        "observation_status", "vision_epoch",
+    ):
+        if produced.get(key) != payload[key]:
+            raise RuntimeError(f"Vision changed visible-toy v1 field {key}")
+    produced_objects = produced.get("tracked_objects")
+    if not isinstance(produced_objects, list) or len(produced_objects) != 1:
+        raise RuntimeError("Vision dropped the visible-toy v1 target")
+    for key in (
+        "target_id", "track_id", "label", "range_valid", "distance_m",
+    ):
+        if produced_objects[0].get(key) != target[key]:
+            raise RuntimeError(f"Vision changed visible-toy target field {key}")
+
+    wire = json.dumps(produced, ensure_ascii=False)
+    repeated = deepcopy(produced)
+    repeated.update(snapshot_id="toy-probe-epoch:visual:2", sequence=2)
+    behavior = run_stage("behavior", [{"id": "toy", "steps": [
+        {"wire": wire},
+        {"wire": json.dumps(repeated, ensure_ascii=False)},
+        {"advance": 1.1, "wire": json.dumps(repeated, ensure_ascii=False)},
+    ]}], probe_dir, WORKER)
+    steps = behavior["observed"]["toy"]
+    if any(step["error"] for step in steps):
+        raise RuntimeError("Visible-toy Behavior consumer raised an error")
+    if len(steps[0]["candidates"]) != 1 or any(
+        step["candidates"] for step in steps[1:]
+    ):
+        raise RuntimeError("Visible-toy event did not deduplicate across HOLD")
+    candidate = steps[0]["candidates"][0]
+    if (
+        candidate.get("trigger_event") != event
+        or candidate.get("intent") != "toy_found_play"
+        or candidate.get("behavior_name") != "inspectFamiliarPlayItem"
+        or candidate.get("source") != "visual_direct"
+        or candidate.get("priority_level") != 1
+        or candidate.get("semantic_rank") != 3
+        or candidate.get("sub_priority") != 12
+        or candidate.get("modality_rank") != 2
+        or candidate.get("interrupt_policy") != "safe_point"
+        or candidate.get("target", {}).get("label") != "dog toy ball"
+        or candidate.get("params", {}).get("visual_event_instance_id")
+        != "toy-probe-cycle-1"
+        or candidate.get("params", {}).get("product_action_label")
+        != "ACT_TOY_FOUND_PLAY"
+        or candidate.get("target", {}).get("range_valid") is not False
+    ):
+        raise RuntimeError("Visible toy bypassed its target/L2/Action boundary")
+
+    hold_after_window = deepcopy(produced)
+    emotion = run_stage("emotion", [{"id": "toy", "steps": [
+        {"wire": wire},
+        {"advance": 11.0, "wire": json.dumps(hold_after_window, ensure_ascii=False)},
+        {"advance": 1.0, "wire": json.dumps({
+            **hold_after_window,
+            "events": [event, event],
+            "event_instances": {event: {"event_id": "toy-probe-cycle-2"}},
+        }, ensure_ascii=False)},
+    ]}], probe_dir, WORKER)
+    emotion_steps = emotion["observed"]["toy"]
+    if (
+        emotion_steps[0]["accepted"][0].get("events") != [event]
+        or emotion_steps[1]["accepted"][0].get("events")
+        or emotion_steps[2]["accepted"][0].get("events") != [event]
+    ):
+        raise RuntimeError("Toy Emotion was not applied once per event ID")
+
+    action = run_stage("action", [{"id": "toy", "steps": [{
+        "wire": wire,
+        "resolve_behavior": candidate["behavior_name"],
+    }]}], probe_dir, WORKER)
+    resolution = action["observed"]["toy"][0]["resolution"]
+    expected_units = [
+        "ACT_APPROACH_VISUAL_TARGET",
+        "ACT_IGNORE_SLIPPERS_SOCKS_OR_TOY",
+        "ACT_BITE_AND_SHAKE_SLIPPERS_SOCKS_OR_TOY",
+        "ACT_POUNCE_ON_SLIPPERS_SOCKS_OR_TOY",
+        "ACT_CARRY_SLIPPERS_SOCKS_OR_TOY_TO_OWNER",
+        "ACT_PAW_AT_SLIPPERS_SOCKS_OR_TOY",
+        "ACT_SNIFF_SLIPPERS_SOCKS_OR_TOY",
+    ]
+    if (
+        resolution.get("is_valid") is not True
+        or resolution.get("behavior_name") != "inspectFamiliarPlayItem"
+        or resolution.get("unit_ids") != expected_units
+        or resolution.get("units_registered") is not True
+        or "ACT_TOY_FOUND_PLAY" in resolution.get("unit_ids", [])
+    ):
+        raise RuntimeError("Toy candidate resolved to an unsupported Action unit")
+    return {
+        "producer_module": producer["provenance"]["module_file"],
+        "behavior_module": behavior["provenance"]["module_file"],
+        "emotion_module": emotion["provenance"]["module_file"],
+        "action_module": action["provenance"]["module_file"],
+        "event_name": event,
+        "supported_labels": [
+            "dog toy ball", "dog frisbee toy", "dog tug ring toy",
+        ],
+        "behavior": "inspectFamiliarPlayItem",
+        "candidate_product_label": "ACT_TOY_FOUND_PLAY",
+        "action_unit_ids": expected_units,
+        "event_id_dedup_and_emotion_once": True,
+        "human_observation_status_is_not_toy_gate": True,
+        "range_missing_fails_closed_at_action_boundary": True,
+        "scope": "v1 producer/consumer route and Action resolver only; no hardware/motion execution",
+    }
+
+
 def observe(output):
     fixtures = json.loads((FIXTURES / "cases.json").read_text())
     vision = run_stage("vision", fixtures["producers"], output, WORKER)
@@ -338,6 +486,7 @@ def observe(output):
 
     owner_posture_provenance = _owner_posture_probe(output, owner_payload)
     owner_recall_provenance = _owner_recall_probe(output, owner_payload)
+    toy_event_provenance = _toy_event_probe(output)
 
     scenarios = []
     for case in fixtures["scenarios"]:
@@ -376,6 +525,7 @@ def observe(output):
     }
     provenance["owner_posture_probe"] = owner_posture_provenance
     provenance["owner_recall_probe"] = owner_recall_provenance
+    provenance["toy_event_probe"] = toy_event_provenance
     return ({stage: value["observed"] for stage, value in responses.items()}, provenance)
 
 

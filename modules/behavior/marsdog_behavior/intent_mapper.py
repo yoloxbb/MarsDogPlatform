@@ -32,6 +32,9 @@ from .visual_presence_contract import (
     VISUAL_POSTURE_ACTIONS,
     VISUAL_POSTURE_EVENT_NAMES,
     VISUAL_PRESENCE_TARGET_MAX_AGE_MS,
+    VISUAL_OBJECT_EVENT_NAMES,
+    VISUAL_OBJECT_TARGET_MAX_AGE_MS,
+    resolve_toy_event_target,
 )
 
 _log = get_logger("intent_mapper")
@@ -703,11 +706,24 @@ class IntentMapper:
                 )
                 return None
 
+        object_event_target = None
+        object_event_id = ""
+        if event_type in VISUAL_OBJECT_EVENT_NAMES:
+            object_event_target, object_event_id = resolve_toy_event_target(
+                data, event_type
+            )
+            if object_event_target is None:
+                _log.debug(
+                    "Rejecting %s: no fresh supported toy target in the active snapshot",
+                    event_type,
+                )
+                return None
+
         active_target = data.get("active_target")
-        if presence_target is not None:
+        if presence_target is not None or object_event_target is not None:
             # Do not leak a different legacy active_target into a presence
             # candidate when its subject is not the current largest target.
-            active_target = presence_target
+            active_target = presence_target or object_event_target
         hands = data.get("hands")
         faces = data.get("faces")
         vision_epoch = str(data.get("vision_epoch", "")).strip()
@@ -759,6 +775,23 @@ class IntentMapper:
                 "target_resolution": "same_snapshot_visual_presence",
                 "visual_resolved": True,
             })
+        elif object_event_target is not None:
+            target = dict(object_event_target)
+            target_age_sec = float(target["last_seen_age_ms"]) / 1000.0
+            remaining_target_lifetime = (
+                VISUAL_OBJECT_TARGET_MAX_AGE_MS / 1000.0 - target_age_sec
+            )
+            if remaining_target_lifetime <= 0.0:
+                return None
+            ttl_sec = min(ttl_sec, remaining_target_lifetime)
+            params.update({
+                "visual_target": dict(target),
+                "visual_event_instance_id": object_event_id,
+                "target_track_id": target.get("track_id"),
+                "target_label": target.get("label"),
+                "target_resolution": "same_snapshot_visual_object",
+                "visual_resolved": True,
+            })
         candidate = BehaviorCandidate(
             source="visual_direct",
             source_emotion="",
@@ -784,7 +817,9 @@ class IntentMapper:
             ),
             interrupt_policy=str(entry.get("interrupt_policy", "immediate")),
             interactive=presence_target is not None,
-            target_required=presence_target is not None,
+            target_required=(
+                presence_target is not None or object_event_target is not None
+            ),
             target=target,
             interaction_mode=(
                 "interactive" if presence_target is not None else "solo"

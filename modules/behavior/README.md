@@ -35,7 +35,7 @@
 │  Action Client → /execute_behavior                            │
 │  发布 → /behavior/result_event                                │
 │                                                              │
-│  visual_event: FALL/STOP 直接候选；其余事件仅缓存场景 │
+│  visual_event: 视觉直驱白名单经同一候选池仲裁          │
 │  其他 audio_event: IGNORED → 由 emotion_engine 消费            │
 │                                                              │
 │  内部模块：                                                    │
@@ -212,8 +212,10 @@ ros2 launch marsdog_behavior behavior_tree.launch.py
 | **visual_direct** | `EVT_VISION_STOP_GESTURE` | `visual_stop_gesture_response` → `respond_stop_gesture` |
 | **visual_direct** | `EVT_VISION_OWNER_PRESENT` | `owner_greet` → `owner_greet` (Action 模板缺失) |
 | **visual_direct** | `EVT_VISION_OWNER_BEND_SQUAT` | `owner_approach_response` → `approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER` |
+| **visual_direct** | `EVT_VISION_OWNER_RECALL_GESTURE` | `owner_approach_response` → `approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER` |
 | **visual_direct** | `EVT_VISION_FAMILY_PRESENT` | `familiar_person_greet` → `familiar_person_greet` (Action 模板缺失) |
 | **visual_direct** | `EVT_VISION_STRANGER_PRESENT` | `stranger_observe` → `stranger_observe` (Action 模板缺失) |
+| **visual_direct** | `EVT_VISION_TOY` | `toy_found_play` → `inspectFamiliarPlayItem` |
 | **need** | `NEED_HUNGER_TRIGGERED` | `hunger_seek_food` |
 | **emotion** | `EMO_JOY_TRIGGERED` | `expressJoyWithHuman` / `expressJoyInPlaceWithHuman` / `expressJoyAlone` (Lv5) |
 
@@ -256,7 +258,7 @@ Action 目前只完成一次 UWB 随机漫游和姿态动作，尚需支持同�
 | audio | `EVT_VOICE_PRAISE / SCOLD / HAPPY / SAD / NEUTRAL` | → emotion_engine_node |
 | audio | `EVT_VOICE_COMMAND_PRAISE / SCOLD` | 精确词库 `audio_reaction`，生成一次性 Lv1 反应 |
 | audio | `EVT_VOICE_INTENT_COMMAND_KNOWN / EVT_VOICE_INTENT_NEUTRAL / EVT_VOICE_INTENT_UNKNOWN / EVT_VOICE_INTENT_STATUS_CARE` | 语义摘要或诊断，不生成动作 |
-| visual | 除 `EVT_VISION_FALL / EVT_VISION_STOP_GESTURE` 外的 `EVT_VISION_*` | 不直接生成候选；场景字段作为视觉服务回退 |
+| visual | 未列入直接事件白名单的 `EVT_VISION_*` | 不直接生成候选；场景字段作为视觉服务回退 |
 
 > 详见 [docs/event_behavior_table.md](docs/event_behavior_table.md) 和
 > [docs/behavior_tree_architecture.md](docs/behavior_tree_architecture.md)。

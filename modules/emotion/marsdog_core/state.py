@@ -58,6 +58,8 @@ class MarsdogState:
     personality: dict[str, int] = field(default_factory=GetDefaultPersonalityParams)
     lastEmotionEventResult: dict[str, Any] = field(default_factory=dict)
     lastEmotionEventAcceptedAt: dict[str, float] = field(default_factory=dict)
+    processedToyEventInstanceIds: set[str] = field(default_factory=set)
+    processedToyEventInstanceIdOrder: list[str] = field(default_factory=list)
     debugLogEnabled: bool = False
     demandLockActive: bool = False
     lastDemandLockState: bool | None = None
@@ -81,6 +83,8 @@ class MarsdogState:
         self.personality = GetDefaultPersonalityParams()
         self.lastEmotionEventResult = {}
         self.lastEmotionEventAcceptedAt = {}
+        self.processedToyEventInstanceIds = set()
+        self.processedToyEventInstanceIdOrder = []
         self.debugLogEnabled = False
         self.demandLockActive = False
         self.lastDemandLockState = None

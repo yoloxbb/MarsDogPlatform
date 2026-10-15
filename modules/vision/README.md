@@ -221,17 +221,27 @@ Ultralytics 的 RKNNBackend 通过 `rknn-toolkit-lite2` 在 RK3588 NPU 上执行
 Provider 只对 RKNN 模型已有类别做不区分大小写的精确标签过滤。
 
 正式配置仍以 `inference_rate_hz=0` 启动；当视觉正在跟踪人物时，会启用可让路的
-`vision-human-holding` 内部流，以2 Hz检查玩具/狗粮。物体框必须接近当前人物的
-有效 Pose/Hand 手腕；置信度至少0.35，并在1.5秒内得到两个不同阳性物体结果后，
-才把当前人物写为 `pose_action=holding_toy`（手持玩具）
-或 `holding_dog_food`（手持狗粮）。人物离开2秒后停止自动推理，显式 Action 或
-Debug session 始终优先。两个阳性结果之间允许一次短暂漏检；物体可随伸出的手部分
-超出人物框，但远离手腕的地面或桌面物体仍不会成为手持证据。
+`vision-human-holding` 内部流，以 2 Hz 检查玩具/狗粮。该流仍使用现有的
+`held_pose_confidence=0.35`、手腕关联、1.5 秒双阳性确认和单次漏检容忍来生成
+`pose_action=holding_toy/holding_dog_food` 与 `held_object` 诊断；它没有扩展为常开检测。
+人物离开 2 秒后停止自动推理，显式 Action 或 Debug session 始终优先。
 
-`EVT_VISION_TOY/FOOD` 现在只由上述已确认手持姿态产生，并遵守姿态事件门控：当前目标
-必须为 `tracking`，且身份为固定人脸库中的 `confirmed_known`，或为
-`unknown/confirmed_unknown`。地面、桌面或其他人附近仅出现对应物体，只保留
-`tracked_objects[]`，不再发布 TOY/FOOD 事件。跌倒姿态优先，不会被手持结果覆盖。
+`EVT_VISION_TOY` 是由已有物体检测任务结果驱动的场景级状态事件，适用的现有标签只有
+`dog toy ball`、`dog frisbee toy`、`dog tug ring toy`。物体结果中至少出现一个有效玩具，
+不同源观测稳定达到 `T_enter=1.0s` 后进入；HOLD 沿用同一
+`event_instances.EVT_VISION_TOY.event_id`。完整玩具标签范围的有效空结果连续达到
+`T_exit=2.0s` 才退出；随后 `T_retrigger=3.0s` 冷却，冷却后需重新稳定 1 秒。状态
+由物体结果回调推进，不由 10 Hz 快照推进；重复同帧结果、重复框和多个玩具都只表示
+一个场景事件。窄标签过滤的空结果、失败/过期推理和相机断流是未知，不能证明玩具消失。
+
+手持和未手持玩具共用这个事件状态；手持时 `held_object` 与 `pose_action=holding_toy`
+仍按原有关联规则保留，但不再单独产生第二个玩具事件。普通可见事件不要求人物或身份。
+现有激活策略意味着标准配置常规物体推理为 0 Hz，手持上下文流仅在有人跟踪时以 2 Hz
+运行；无人被跟踪且没有其他物体检测会话时，Vision 无法自主发现玩具。现有结果由
+提供方的置信度设置过滤，事件层不另设通用置信度阈值。
+
+`EVT_VISION_FOOD` 仍只由已确认 `holding_dog_food` 姿态产生，并遵守原有身份门控；
+食物事件和其他物品不属于本次玩具可见事件。
 
 更新后先停止旧的视觉 launch。在主仓 Vision 模块内重新构建和 source，再启动
 调试页面；此流程适用于新增人脸表情后端、配置和 OSD 页面：

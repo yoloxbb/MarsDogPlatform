@@ -15,6 +15,7 @@
 | `EVT_VISION_OWNER_RECALL_GESTURE` | `approach_owner` | 1 | 12 | ≤0.5s |
 | `EVT_VISION_FAMILY_PRESENT` | `familiar_person_greet` | 1 | 12 | ≤0.5s |
 | `EVT_VISION_STRANGER_PRESENT` | `stranger_observe` | 1 | 12 | ≤0.5s |
+| `EVT_VISION_TOY` | `toy_found_play` → `inspectFamiliarPlayItem` | 1 | 12 | ≤0.5s |
 
 `Lv1.2` 是本项目的表述约定，实际 Action Goal 仍只有整数
 `priority_level=1`；`.2` 通过候选内部 `sub_priority=12` 表示“视觉”。
@@ -44,11 +45,22 @@ BECKONING 手部漏检/几何无效/连续性中断及 WAVING 腕/肩来源缺�
 `owner_approach_response` → `approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER`。现有 Action
 只执行主人靠近阶段，没有已登记的主人互动等待能力；固定时长 `ACT_BASIC_WAIT` 不满足该能力。
 
+`EVT_VISION_TOY` 是场景级“至少一个支持玩具稳定可见”状态。Behavior 只消费一个活动
+`event_instances.EVT_VISION_TOY.event_id`，并从同一 schema v1 快照的 `tracked_objects[]`
+绑定一个新鲜、跟踪中且标签受支持的目标；重复框和多个玩具仍只形成一个候选。它不要求
+人物身份，也不使用顶层 `observation_status`（该字段描述现有人体 Provider）。候选按
+物品类 `external_interaction` Lv1、`semantic_rank=3`、`sub_priority=12`、
+`modality_rank=2`、`safe_point` 进入统一仲裁，TTL 不超过目标剩余的新鲜时间。
+`ACT_TOY_FOUND_PLAY` 仅是候选 metadata 产品标签，实际 Behavior 复用
+`inspectFamiliarPlayItem`。该 Action 模板先要求 `ACT_APPROACH_VISUAL_TARGET`，目标只有二维框
+时没有米制距离，Action 会按现有策略拒绝接近，不代表嗅闻、叼取或玩耍已成功。
+
 `/perception/visual_event` 是 10 Hz 状态快照，不是一次性边沿总线。连续包中的
-FALL/STOP 同名事件只在首次出现时触发；先消失后再出现时才重新触发。在场、主人姿态和召唤事件分别由
+FALL/STOP 同名事件只在首次出现时触发；先消失后再出现时才重新触发。在场、主人姿态、召唤和玩具事件分别由
 `event_instances.<event>.event_id` 标识一个 ENTER 周期，重复快照和短暂 Topic 中断恢复都不
-会再次创建候选；有效解除后新的召唤周期会使用新实例 ID。只有有效观测和同类唯一新鲜目标可
-建候选，仲裁前会再次检查事件实例、epoch 和目标新鲜度。候选池还会对 queued/in-flight 的
+会再次创建候选；有效解除后新周期会使用新实例 ID。人物事件要求同类唯一新鲜目标；玩具事件
+从新鲜玩具目标中按检测置信度、标签和跟踪 ID 确定一个目标。仲裁前会再次检查事件实例、epoch
+和目标新鲜度。候选池还会对 queued/in-flight 的
 同名 Behavior 做二次去重。
 
 当前 Action 模板没有 `owner_greet`、`familiar_person_greet` 或 `stranger_observe`，所以

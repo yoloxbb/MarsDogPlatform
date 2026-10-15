@@ -150,7 +150,9 @@ Energy 在凌晨需求锁定和睡眠期间仍持续衰减，并由需求 Tick �
 - `GetDominantEmotion()`：返回当前值最高的情绪。
 - `ApplyEmotionDelta(emotionType, delta)`：按增量修改情绪。
 - `ApplyEmotionEvent(eventName, metadata=None)`：按 `configs/emotions.yaml:eventRules`
-  应用外部事件；同名事件在 `eventDeduplicationWindowSeconds` 窗口内只计算一次。
+  应用外部事件；普通同名事件按 `eventDeduplicationWindowSeconds` 去重。视觉玩具
+  事件由 `OnVisualEvent` 传入 `event_instances.EVT_VISION_TOY.event_id` 后按周期 ID
+  去重，新 ID 不受通用同名窗口影响。
 - `GetEmotionEventDeduplicationWindowSecondsValue()`：读取当前外部同名事件去重窗口秒数。
 - `GetEmotionEventMappingValue(eventName)`：读取指定事件映射。
 - `GetLastEmotionEventResultValue()`：读取最近一次情绪事件计算结果。

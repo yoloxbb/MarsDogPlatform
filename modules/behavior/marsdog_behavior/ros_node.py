@@ -58,7 +58,10 @@ from .config_paths import get_config_file
 from .result_event_mapper import ResultEventMapper
 from .perception_client_adapter import PerceptionClientAdapter
 from .intent_mapper import IntentMapper, BehaviorCandidate
-from .visual_presence_contract import VISUAL_PRESENCE_EVENT_NAMES
+from .visual_presence_contract import (
+    VISUAL_OBJECT_EVENT_NAMES,
+    VISUAL_PRESENCE_EVENT_NAMES,
+)
 from .decision_trace import emit
 from .runtime import BehaviorRuntime
 from .voice_interaction_session import (
@@ -930,6 +933,14 @@ class BehaviorTreeRosNode(NodeBase):
             if (
                 event_type in VISUAL_PRESENCE_EVENT_NAMES
                 and not self._perception.visual_presence_candidate_is_current(
+                    candidate,
+                    event_type=event_type,
+                )
+            ):
+                return False
+            if (
+                event_type in VISUAL_OBJECT_EVENT_NAMES
+                and not self._perception.visual_object_candidate_is_current(
                     candidate,
                     event_type=event_type,
                 )

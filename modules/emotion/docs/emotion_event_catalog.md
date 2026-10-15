@@ -5,6 +5,8 @@
 本目录的唯一数据来源是 `configs/emotions.yaml:eventRules`。基础增量会继续乘以
 当前性格系数，最终情绪值限制在 `0-100`；只有下表明确列出的规则才使用元数据倍率。
 同名外部事件在 `10` 秒内只计算一次，不同事件互不影响。
+视觉玩具事件若带 `event_instances.EVT_VISION_TOY.event_id`，则按实例 ID 去重：
+同一周期只应用一次，新 ID 不受通用同名时间窗口限制；旧载荷没有实例 ID 时仍按窗口处理。
 
 ## 声音输入
 
@@ -61,7 +63,7 @@
 | `EVT_VISION_STRANGER_ALERT` | 恐惧（Fear）+15、好奇（Curious）+20 | 无 |
 | `EVT_VISION_STRANGER_FRIEND` | 兴奋（Excite）+10、好奇（Curious）+20 | 无 |
 | `EVT_VISION_FOOD` | 兴奋（Excite）+35、愉悦（Joy）+20、好奇（Curious）+10 | 无 |
-| `EVT_VISION_TOY` | 兴奋（Excite）+30、好奇（Curious）+20、愉悦（Joy）+15 | 无 |
+| `EVT_VISION_TOY` | 兴奋（Excite）+30、好奇（Curious）+20、愉悦（Joy）+15；同一事件实例周期只应用一次 | 无 |
 | `EVT_VISION_FALL` | 焦虑（Anxiety）+20、好奇（Curious）+10 | 无 |
 | `EVT_VISION_STOP_GESTURE` | 平静（Calm）+10、好奇（Curious）+15 | 无 |
 | `EVT_VISION_HAND_TO_NOSE` | 好奇（Curious）+15、平静（Calm）+5 | 无 |

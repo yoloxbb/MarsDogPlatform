@@ -163,10 +163,19 @@ Curious 触发时回退 `EVT_VISION_STRANGER`。Vision 不订阅 `/internal_need
 
 正式配置以 `inference_rate_hz=0` 启动，不运行全天候固定物体流。人物处于
 `tracking` 时，Vision 使用可让路的 `vision-human-holding` 内部流以2 Hz判断
-`holding_toy/holding_dog_food`；无人2秒后停止。Action 通过
+`holding_toy/holding_dog_food`，并将其中有效玩具结果送入同一 `EVT_VISION_TOY` 状态机；
+无人2秒后停止。有效的一次识别结果也可作为进入稳定计时的第一条证据，但单次结果
+不能满足完整 `T_enter`。Action 通过
 `VisionTask.set_object_detection` 开启带 `session_id` 和租约的数据流；默认2 Hz、
 最大5 Hz，并始终比内部流优先。视觉不负责搜索、靠近、目标丢失运动或
 `/cmd_vel`。所有物体推理与单次Service串行访问RKNN，不会并发执行。
+
+可见玩具只使用现有 `dog toy ball`、`dog frisbee toy`、`dog tug ring toy` 标签。
+不同且新鲜的物体结果持续可见 1 秒才发布 `EVT_VISION_TOY`；完整玩具标签范围的有效
+未检出结果持续 2 秒才退出，退出后冷却 3 秒再允许重新进入。状态按场景内至少一个玩具
+聚合，重复框和多个玩具不产生多份事件。物体结果失败、过期、断流或空结果来自不完整的
+标签过滤请求时按未知处理。已有配置和频率不变；无人跟踪且没有显式检测会话时没有
+结果供状态机发现玩具。
 
 ```json
 {

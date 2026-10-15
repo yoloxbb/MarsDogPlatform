@@ -466,6 +466,10 @@ finalDelta = round(baseDelta * k_emotion * metadataMultiplier)
 `eventDeduplicationWindowSeconds=10`：首次事件正常计算，距上次接受事件不足10个
 真实秒的同名事件被忽略，满10秒后可以再次计算；不同事件互不影响。去重使用本机
 单调时钟，不使用输入消息中的 `timestamp`。配置为 `0` 时关闭该去重。
+视觉玩具状态事件若包含
+`event_instances.EVT_VISION_TOY.event_id`，同一事件实例只计算一次；不同实例不受
+上述通用同名窗口限制。实例 ID 最近 256 个保留在运行态中。旧版视觉载荷未提供
+实例 ID 时仍按通用同名窗口去重。
 
 性格系数：
 

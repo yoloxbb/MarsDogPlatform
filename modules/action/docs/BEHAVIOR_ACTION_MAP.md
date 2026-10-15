@@ -82,6 +82,17 @@ target_approach
 原动作。具体目标字段、停止距离和零速度出口见
 [视觉目标接近说明](VISUAL_TARGET_APPROACH.md)。
 
+玩具可见事件复用 `inspectFamiliarPlayItem`：Action 先执行必需的
+`ACT_APPROACH_VISUAL_TARGET`，成功后才从现有 `ACT_IGNORE_SLIPPERS_SOCKS_OR_TOY`、
+`ACT_BITE_AND_SHAKE_SLIPPERS_SOCKS_OR_TOY`、`ACT_POUNCE_ON_SLIPPERS_SOCKS_OR_TOY`、
+`ACT_CARRY_SLIPPERS_SOCKS_OR_TOY_TO_OWNER`、`ACT_PAW_AT_SLIPPERS_SOCKS_OR_TOY`、
+`ACT_SNIFF_SLIPPERS_SOCKS_OR_TOY` 阶段候选中选择。候选 label `ACT_TOY_FOUND_PLAY` 不对应
+Action `unit_id`，也不强制其中某个最终单元。
+
+Vision 当前物体记录若只有二维框而没有有效米制范围，不能满足视觉目标接近策略；Action 会让必需
+接近阶段 fail closed，并阻止检查阶段继续。不得从框大小/位置估算距离或把候选的创建解释为靠近、
+嗅闻、叼取或玩耍已经执行。
+
 ### 情绪表达
 
 ```text

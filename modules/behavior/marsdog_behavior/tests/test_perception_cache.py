@@ -458,6 +458,110 @@ def test_direct_visual_events_fire_once_per_appearance() -> None:
     ) == 2
 
 
+def test_toy_event_instance_deduplicates_hold_and_cache_recovery() -> None:
+    adapter = _adapter()
+    received: list[tuple[str, str]] = []
+    adapter.set_on_visual_event(
+        lambda event, payload: received.append(
+            (event, payload["event_instances"][event]["event_id"])
+        ) or True
+    )
+    first = _toy_event_payload(snapshot=1)
+    adapter._on_visual_ros2(_Message(first))
+    adapter._on_visual_ros2(_Message(_toy_event_payload(snapshot=2)))
+    adapter._visual_cache_updated_at = (
+        time.monotonic() - adapter.VISUAL_CACHE_TIMEOUT_SEC - 0.1
+    )
+    adapter._on_visual_ros2(_Message(_toy_event_payload(snapshot=3)))
+
+    assert received == [("EVT_VISION_TOY", "toy-cycle-1")]
+
+
+def test_toy_event_retries_until_fresh_target_and_deduplicates_duplicate_rows():
+    adapter = _adapter()
+    received: list[int] = []
+
+    def accept_when_target_exists(_event, payload):
+        received.append(payload["sequence"])
+        return bool(payload.get("tracked_objects"))
+
+    adapter.set_on_visual_event(accept_when_target_exists)
+    adapter._on_visual_ros2(_Message(_toy_event_payload(snapshot=1, objects=[])))
+    target = _toy_target()
+    adapter._on_visual_ros2(_Message(_toy_event_payload(
+        snapshot=2, objects=[target, dict(target)]
+    )))
+    adapter._on_visual_ros2(_Message(_toy_event_payload(
+        snapshot=3, objects=[target, dict(target)]
+    )))
+
+    assert received == [1, 2]
+
+
+def test_toy_event_retriggers_only_for_a_new_event_instance_id():
+    adapter = _adapter()
+    received: list[str] = []
+    adapter.set_on_visual_event(
+        lambda event, payload: received.append(
+            payload["event_instances"][event]["event_id"]
+        ) or True
+    )
+
+    adapter._on_visual_ros2(_Message(_toy_event_payload(snapshot=1)))
+    adapter._on_visual_ros2(_Message(_toy_event_payload(snapshot=2)))
+    adapter._on_visual_ros2(_Message(_toy_event_payload(
+        snapshot=3, event_id="toy-cycle-2"
+    )))
+
+    assert received == ["toy-cycle-1", "toy-cycle-2"]
+
+
+def test_toy_event_rejects_out_of_order_snapshot_for_dispatch():
+    adapter = _adapter()
+    received: list[int] = []
+    adapter.set_on_visual_event(
+        lambda _event, payload: received.append(payload["sequence"]) or True
+    )
+
+    adapter._on_visual_ros2(_Message(_toy_event_payload(snapshot=2)))
+    adapter._on_visual_ros2(_Message(_toy_event_payload(snapshot=1)))
+
+    assert received == [2]
+
+
+def test_toy_candidate_revalidation_checks_cycle_and_current_target():
+    adapter = _adapter()
+    payload = _toy_event_payload(snapshot=1)
+    adapter.set_on_visual_event(lambda _event, _payload: True)
+    adapter._on_visual_ros2(_Message(payload))
+    candidate = {"params": {
+        "visual_target": dict(payload["tracked_objects"][0]),
+        "visual_event_instance_id": "toy-cycle-1",
+        "vision_epoch": "vision-1",
+        "snapshot_id": payload["snapshot_id"],
+    }}
+
+    assert adapter.visual_object_candidate_is_current(
+        candidate, event_type="EVT_VISION_TOY"
+    )
+    new_cycle = _toy_event_payload(snapshot=2, event_id="toy-cycle-2")
+    adapter._on_visual_ros2(_Message(new_cycle))
+    assert not adapter.visual_object_candidate_is_current(
+        candidate, event_type="EVT_VISION_TOY"
+    )
+
+    candidate["params"]["visual_event_instance_id"] = "toy-cycle-2"
+    expired = _toy_event_payload(
+        snapshot=3,
+        event_id="toy-cycle-2",
+        objects=[_toy_target(age_ms=500.0)],
+    )
+    adapter._on_visual_ros2(_Message(expired))
+    assert not adapter.visual_object_candidate_is_current(
+        candidate, event_type="EVT_VISION_TOY"
+    )
+
+
 def test_visual_event_rejects_wrong_schema_and_non_string_events() -> None:
     adapter = _adapter()
     received: list[str] = []
@@ -516,6 +620,50 @@ def _owner_presence_payload(*, snapshot: int, epoch: str = "vision-1") -> dict:
             "vision_epoch": epoch,
             "last_seen_age_ms": 0.0,
         }],
+    }
+
+
+def _toy_target(
+    *, target_id="vision-1:object:11", track_id=11,
+    label="dog toy ball", age_ms=100.0, source_sequence=21,
+):
+    return {
+        "vision_epoch": "vision-1",
+        "target_id": target_id,
+        "target_type": "object",
+        "track_id": track_id,
+        "object_track_id": track_id,
+        "label": label,
+        "object_kind": "toy",
+        "tracking_state": "tracking",
+        "last_seen_age_ms": age_ms,
+        "confidence": 0.8,
+        "detection_confidence": 0.8,
+        "source_sequence": source_sequence,
+        "source_snapshot_id": (
+            f"vision-1:object-result:{source_sequence}"
+        ),
+        "range_valid": False,
+        "distance_m": None,
+    }
+
+
+def _toy_event_payload(*, snapshot=1, event_id="toy-cycle-1", objects=None):
+    return {
+        "schema_version": 1,
+        "vision_epoch": "vision-1",
+        "snapshot_id": f"vision-1:{snapshot}",
+        "sequence": snapshot,
+        # This is human-provider status, and must not gate object events.
+        "observation_status": "invalid",
+        "source_observation_id": f"camera-frame-{snapshot}",
+        "events": ["EVT_VISION_TOY"],
+        "event_instances": {
+            "EVT_VISION_TOY": {"event_id": event_id}
+        },
+        "tracked_objects": list(
+            [_toy_target()] if objects is None else objects
+        ),
     }
 
 

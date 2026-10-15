@@ -16,7 +16,7 @@
 | Topic | 类型 | QoS | 作用 |
 |---|---|---|---|
 | `/perception/audio_event` | String JSON v2 | RELIABLE 10 | 唤醒、授权具体指令、会话结束 |
-| `/perception/visual_event` | String JSON v1 | BEST_EFFORT 5 | STRANGER 融合情绪；FALL/STOP_GESTURE、主人在场/姿态/召唤生成直驱候选 |
+| `/perception/visual_event` | String JSON v1 | BEST_EFFORT 5 | STRANGER 融合情绪；FALL/STOP_GESTURE、主人在场/姿态/召唤、玩具状态进入直驱候选 |
 | `/emotion/state` | String JSON | BEST_EFFORT 5 | 权威情绪当前状态 |
 | `/emotion/signal_event` | String JSON | RELIABLE 10 | 情绪上升沿候选 |
 | `/internal_need/state` | String JSON | BEST_EFFORT 5 | 权威需求当前状态 |
@@ -231,6 +231,14 @@ WAVING 腕/肩来源缺失，或无效/过期数据、缓存中断、目标切�
 同 epoch 的 confirmed owner，进入同一 L2 仲裁并在派发前重验；不直控动作、不改变 Emotion。映射复用
 `owner_approach_response` → `approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER`，仅覆盖靠近；
 `ACT_VISUAL_RECALL_APPROACH` 是产品标签，现无已登记的主人互动等待 Action。
+
+`EVT_VISION_TOY` 是场景级玩具状态事件，按事件实例 ID 对 HOLD 去重；只从同一 v1 快照中绑定
+新鲜、跟踪中的支持玩具目标，不要求人物身份或人体 `observation_status`。它进入共享候选池，按
+物品类 external-interaction Lv1 / sub-priority 12 / safe-point 仲裁，映射到
+`toy_found_play` → `inspectFamiliarPlayItem`。`ACT_TOY_FOUND_PLAY` 是候选 metadata，不是 Action unit；
+现有 Action 需要米制目标范围，只有二维框时会拒绝接近，不能把候选解释为动作已成功。Vision 标准
+物体常开推理仍为 0 Hz，受限 2 Hz 手持检测流仍要求有人跟踪；无人且无其他活动检测会话时没有
+可发现玩具的输入。
 
 ## 6. 情绪持续表达
 

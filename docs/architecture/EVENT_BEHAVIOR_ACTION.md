@@ -127,13 +127,13 @@ Voice 的 `speech_pipeline.py` 编排 ASR、声纹、KWS、词库与意图输出
 
 ### 3.2 视觉入口
 
-当前 BT 视觉直驱白名单包含 `EVT_VISION_FALL`、`EVT_VISION_STOP_GESTURE` 和四个状态
+当前 BT 视觉直驱白名单包含 `EVT_VISION_FALL`、`EVT_VISION_STOP_GESTURE` 和六个状态
 事件：`EVT_VISION_OWNER_PRESENT`、`EVT_VISION_OWNER_BEND_SQUAT`、
-`EVT_VISION_FAMILY_PRESENT`、`EVT_VISION_STRANGER_PRESENT`。FALL/STOP 沿用出现边沿去重。presence 事件在 Vision
-状态机 ENTER 后留在活动集合，HOLD 快照保持事件不变，达到有效负观测 `T_exit=2.0s` 后
-移除；连续有效合格目标观测满 `T_enter=1.0s` 才能 ENTER，EXIT 后从该 EXIT 时刻开始冷却
-`T_retrigger=3.0s`。重复同一源观测不推进计时。无效推理、相机断流或观测过期不会作为目标
-缺席；恢复后需要新的有效观测继续状态判定。
+`EVT_VISION_OWNER_RECALL_GESTURE`、`EVT_VISION_FAMILY_PRESENT`、
+`EVT_VISION_STRANGER_PRESENT`、`EVT_VISION_TOY`。FALL/STOP 沿用出现边沿去重。Vision
+状态事件按各自事件契约维持 ENTER/HOLD/EXIT 生命周期；重复同一源观测不推进计时。玩具事件的
+`T_enter=1.0s`、`T_exit=2.0s`、`T_retrigger=3.0s` 及未知观测规则见下文。无效推理、相机断流
+或观测过期不会被当作玩具缺席；恢复后需要新的有效物体观测继续状态判定。
 
 主人事件仅接受 `owner/confirmed_known/tracking`，家人事件接受登记家人
 `family_member_1..4/confirmed_known/tracking`，陌生人事件接受
@@ -150,6 +150,23 @@ Voice 的 `speech_pipeline.py` 编排 ASR、声纹、KWS、词库与意图输出
 创建候选，并在派发前复验。该互动姿态候选按 `external_interaction` 的 L2 顺序进入统一仲裁：
 `owner_approach_response` → `approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER`。
 Action 当前只支持映射中的靠近主人阶段；尾摆和抬头观察能力缺失。新事件不写 Emotion。
+
+`EVT_VISION_TOY` 是场景级玩具状态，不走上面的人物身份与目标门控。Vision 仅使用现有
+`dog toy ball`、`dog frisbee toy`、`dog tug ring toy` 标签，并按不同有效物体观测累计
+`T_enter=1.0s` / `T_exit=2.0s`；EXIT 后默认冷却 3.0 秒。不能覆盖所有玩具标签的空结果、失败推理、
+过期结果和断流是未知。Behavior 对每个事件实例只创建一次 `toy_found_play` 候选，按
+`external_interaction` Lv1、rank 3、sub-priority 12、`safe_point` 进入统一仲裁，路由至
+`inspectFamiliarPlayItem`。Emotion 沿用玩具原有增量，每个事件 ID 只处理一次。
+
+schema v1 顶层 `observation_status` 保持其现有人体/视觉 Provider 语义，不作为玩具结果有效性的门控。
+玩具状态由物体结果回调校验；Behavior 以同一快照里的玩具事件 ID 和新鲜受支持物体目标绑定候选，
+不会因为当前没有有效人物观测而拒绝一个有效物体事件。
+
+标准 Vision 配置的常规物体推理仍为 0 Hz；受限后台物体流只在有人被跟踪时以 2 Hz 运行。
+本事件不改变检测激活策略，因此无人跟踪且没有其他检测会话时没有可用观测。Action 的
+`inspectFamiliarPlayItem` 先要求 `ACT_APPROACH_VISUAL_TARGET`，随后才选择已有的玩具/物品检查单元；
+二维框不提供米制距离，目标没有有效范围时接近阶段按现有策略失败，不宣称完成了玩耍动作。
+候选产品标签 `ACT_TOY_FOUND_PLAY` 不是已登记的 Action unit。
 
 `EVT_VISION_MASTER` 仍表示已登记的非 unknown 身份，继续由 Emotion/需求系统按原语义消费；
 主人直驱事件不会替代该事件，也不会增加重复情绪增量。

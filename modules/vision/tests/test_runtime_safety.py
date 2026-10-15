@@ -11,6 +11,7 @@ from marsdog_vision_interaction.core.face_enrollment_manager import (
     set_storage_root,
 )
 from marsdog_vision_interaction.core.held_object_pose import (
+    HELD_OBJECT_LABELS,
     HeldObjectPoseStatus,
 )
 from marsdog_vision_interaction.core.owner_presence_event_state import (
@@ -28,6 +29,10 @@ from marsdog_vision_interaction.core.owner_recall_gesture_event_state import (
 from marsdog_vision_interaction.core.presence_event_state import (
     PresenceEventConfig,
     PresenceEventState,
+)
+from marsdog_vision_interaction.core.toy_presence_event_state import (
+    ToyPresenceEventConfig,
+    ToyPresenceEventState,
 )
 from marsdog_vision_interaction.core.object_detection_session import (
     ObjectDetectionSessionManager,
@@ -1237,6 +1242,79 @@ def test_object_stream_skips_an_occupied_inference_slot() -> None:
     assert result["busy"] is True
 
 
+@pytest.mark.parametrize("detector_result", [None, {}, [None], [{}, None]])
+def test_malformed_detector_response_is_unknown_for_toy_state(
+    monkeypatch, detector_result,
+) -> None:
+    state = ToyPresenceEventState(
+        ToyPresenceEventConfig(), source_freshness_sec=0.75,
+    )
+    toy = {
+        "label": "dog toy ball", "confidence": 0.8,
+        "x": 0.2, "y": 0.2, "w": 0.1, "h": 0.1,
+    }
+    for sequence, at in enumerate((10.0, 10.5, 11.0, 11.5), 1):
+        snapshot = state.update({
+            "vision_epoch": "toy-shape-epoch",
+            "source_observation_id": f"frame-{sequence}",
+            "source_observation_monotonic": at,
+            "status": "ok",
+            "objects": [toy] if at < 11.5 else [],
+            "target_labels_valid": True,
+            "target_labels": [],
+        }, now=at)
+    assert snapshot.active
+    event_id = snapshot.event_id
+    monkeypatch.setattr(vision_node_module.time, "monotonic", lambda: 12.0)
+    monkeypatch.setattr(
+        vision_node_module, "vision_trace", lambda *_args, **_fields: None
+    )
+    publisher = _Publisher()
+    fake_node = SimpleNamespace(
+        _providers={"object": SimpleNamespace(
+            detect_objects=lambda _frame, _params: detector_result,
+            last_error="",
+        )},
+        _object_inference_lock=threading.Lock(),
+        _state_lock=threading.Lock(),
+        _object_sequence=0,
+        _vision_epoch="toy-shape-epoch",
+        _latest_camera_frame_id="camera_link",
+        _latest_objects=[],
+        _latest_objects_monotonic=0.0,
+        _object_tracks={},
+        _toy_presence_event_state=state,
+        _object_pub=publisher,
+        _frame_for_tasks_with_metadata=lambda: (None, 1012.0, "camera_link", 12.0),
+        _object_request_metadata=lambda _params: {},
+    )
+    fake_node._record_object_result = MethodType(
+        VisionInteractionNode._record_object_result, fake_node,
+    )
+
+    result = VisionInteractionNode._run_object_detection(
+        fake_node, {}, source="stream", wait_for_slot=False,
+    )
+
+    assert result["ok"] is False
+    assert result["error"] == "object detector returned malformed detections"
+    assert json.loads(publisher.messages[-1].data)["status"] == "error"
+    assert state.snapshot().event_id == event_id
+    # An error clears the pending negative interval instead of advancing it.
+    for sequence, at in enumerate((12.5, 13.0, 13.5), 6):
+        after_error = state.update({
+            "vision_epoch": "toy-shape-epoch",
+            "source_observation_id": f"frame-{sequence}",
+            "source_observation_monotonic": at,
+            "status": "ok",
+            "objects": [],
+            "target_labels_valid": True,
+            "target_labels": [],
+        }, now=at)
+        assert after_error.active
+        assert after_error.event_id == event_id
+
+
 def test_debug_viewer_consumes_periodic_object_topic() -> None:
     fake_viewer = SimpleNamespace(
         _lock=threading.Lock(),
@@ -1469,7 +1547,7 @@ def test_all_pose_events_allow_confirmed_stranger_identity() -> None:
     assert VisionInteractionNode._derive_events(legacy_identity) == []
 
 
-def test_held_object_pose_reuses_toy_food_events_with_identity_gate() -> None:
+def test_held_toy_keeps_pose_data_without_bypassing_stable_toy_state() -> None:
     object_only = {
         "faces": [],
         "hands": [],
@@ -1495,7 +1573,6 @@ def test_held_object_pose_reuses_toy_food_events_with_identity_gate() -> None:
     }
     assert VisionInteractionNode._derive_events(holding_toy) == [
         "EVT_VISION_MASTER",
-        "EVT_VISION_TOY",
     ]
     holding_food = {
         **holding_toy,
@@ -1508,6 +1585,97 @@ def test_held_object_pose_reuses_toy_food_events_with_identity_gate() -> None:
         "EVT_VISION_MASTER",
         "EVT_VISION_FOOD",
     ]
+
+
+def test_existing_two_hz_held_stream_feeds_one_stable_toy_event(
+    monkeypatch,
+) -> None:
+    monotonic_values = iter((10.0, 10.5, 11.0))
+    monkeypatch.setattr(
+        vision_node_module.time,
+        "monotonic",
+        lambda: next(monotonic_values),
+    )
+    monkeypatch.setattr(
+        VisionInteractionNode,
+        "_fuse_human_depth",
+        staticmethod(lambda _self, _objects, *, observation_stamp: None),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        vision_node_module, "vision_trace", lambda *_args, **_fields: None
+    )
+
+    publisher = _Publisher()
+    state = ToyPresenceEventState(
+        ToyPresenceEventConfig.from_mapping(None),
+        source_freshness_sec=0.75,
+        result_max_age_sec=2.0,
+    )
+    fake_node = SimpleNamespace(
+        _state_lock=threading.Lock(),
+        _object_sequence=0,
+        _vision_epoch="held-toy-epoch",
+        _latest_camera_frame_id="camera_color_optical_frame",
+        _latest_objects=[],
+        _latest_objects_monotonic=0.0,
+        _object_tracks={},
+        _next_object_track_id=1,
+        _object_target_persistence_sec=2.0,
+        _toy_presence_event_state=state,
+        _object_pub=publisher,
+    )
+    toy = {
+        "label": "dog toy ball",
+        "x": 0.2,
+        "y": 0.3,
+        "w": 0.1,
+        "h": 0.1,
+        "confidence": 0.21,
+    }
+    for sequence in range(3):
+        VisionInteractionNode._record_object_result(
+            fake_node,
+            [toy],
+            source="stream",
+            status="ok",
+            latency_ms=10.0,
+            observation_stamp=1000.0 + sequence * 0.5,
+            frame_id="camera_color_optical_frame",
+            source_monotonic=10.0 + sequence * 0.5,
+            request={"target_labels": list(HELD_OBJECT_LABELS)},
+            toy_target_labels=list(HELD_OBJECT_LABELS),
+        )
+
+    state_snapshot = state.snapshot()
+    assert state_snapshot.active is True
+    assert state_snapshot.transition == "HOLD"
+    visual = {
+        "events": ["EVT_VISION_MASTER"],
+        "event_instances": {"EVT_VISION_MASTER": {"event_id": "human-1"}},
+        "active_target": {
+            "held_object": {
+                "state": "confirmed",
+                "action": "holding_toy",
+                "object_label": "dog toy ball",
+            },
+            "pose_action": "holding_toy",
+        },
+    }
+    merged = vision_node_module._apply_toy_presence_event_state(
+        visual,
+        state,
+    )
+    assert "EVT_VISION_TOY" in merged["events"]
+    assert merged["event_instances"]["EVT_VISION_TOY"]["event_id"] == (
+        state_snapshot.event_id
+    )
+    assert merged["event_instances"]["EVT_VISION_MASTER"]["event_id"] == (
+        "human-1"
+    )
+    assert merged["active_target"]["held_object"]["object_label"] == (
+        "dog toy ball"
+    )
 
 
 def test_held_object_pose_updates_only_matching_person_and_preserves_fall() -> None:

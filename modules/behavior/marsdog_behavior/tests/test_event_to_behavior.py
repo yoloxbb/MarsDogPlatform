@@ -2128,6 +2128,125 @@ class TestVisualDirectToBehavior:
         assert queued[0]["sub_priority"] == 12
 
     @staticmethod
+    def _toy_payload(*, snapshot=1, event_id="toy-cycle-1", objects=None):
+        if objects is None:
+            objects = [{
+                "vision_epoch": "vision-1",
+                "target_id": "vision-1:object:11",
+                "target_type": "object",
+                "track_id": 11,
+                "object_track_id": 11,
+                "label": "dog toy ball",
+                "object_kind": "toy",
+                "confidence": 0.81,
+                "detection_confidence": 0.81,
+                "tracking_state": "tracking",
+                "last_seen_age_ms": 100.0,
+                "source_sequence": 21,
+                "source_snapshot_id": "vision-1:object-result:21",
+                "range_valid": False,
+                "distance_m": None,
+            }]
+        return {
+            "schema_version": 1,
+            "vision_epoch": "vision-1",
+            "snapshot_id": f"vision-1:{snapshot}",
+            "sequence": snapshot,
+            # This status belongs to the human provider.  A valid toy target
+            # and active object event are independent of human observation.
+            "observation_status": "invalid",
+            "active_target": {},
+            "tracked_objects": objects,
+            "events": ["EVT_VISION_TOY"],
+            "event_instances": {
+                "EVT_VISION_TOY": {"event_id": event_id}
+            },
+        }
+
+    def test_toy_event_maps_to_one_existing_inspection_candidate(self, node):
+        candidate = node._intent_mapper.map_visual_event(
+            "EVT_VISION_TOY", self._toy_payload()
+        )
+
+        assert candidate is not None
+        assert candidate.intent == "toy_found_play"
+        assert candidate.behavior_name == "inspectFamiliarPlayItem"
+        assert candidate.source == "visual_direct"
+        assert candidate.trigger_event == "EVT_VISION_TOY"
+        assert candidate.priority_level == 1
+        assert candidate.semantic_rank == 3
+        assert candidate.sub_priority == 12
+        assert candidate.modality_rank == 2
+        assert candidate.interrupt_policy == "safe_point"
+        assert candidate.target_required is True
+        assert candidate.interactive is False
+        assert candidate.target["target_id"] == "vision-1:object:11"
+        assert candidate.target["range_valid"] is False
+        assert candidate.target["distance_m"] is None
+        assert candidate.params["visual_event_instance_id"] == "toy-cycle-1"
+        assert candidate.params["product_action_label"] == "ACT_TOY_FOUND_PLAY"
+        assert candidate.ttl_sec == pytest.approx(0.4)
+
+    def test_toy_event_selects_one_deterministic_target_without_identity_gate(
+        self, node
+    ):
+        first = self._toy_payload()["tracked_objects"][0]
+        second = {
+            **first,
+            "target_id": "vision-1:object:12",
+            "track_id": 12,
+            "object_track_id": 12,
+            "label": "dog frisbee toy",
+            "confidence": 0.92,
+            "detection_confidence": 0.92,
+            "source_sequence": 22,
+            "source_snapshot_id": "vision-1:object-result:22",
+        }
+        payload = self._toy_payload(objects=[first, second])
+
+        candidate = node._intent_mapper.map_visual_event(
+            "EVT_VISION_TOY", payload
+        )
+
+        assert candidate is not None
+        assert candidate.target["target_id"] == "vision-1:object:12"
+        assert candidate.params["target_label"] == "dog frisbee toy"
+        assert "humans" not in payload and payload["active_target"] == {}
+
+    @pytest.mark.parametrize("mutation", ["missing_instance", "unsupported", "stale", "lost"])
+    def test_toy_event_requires_fresh_supported_tracked_object(
+        self, node, mutation
+    ):
+        payload = self._toy_payload()
+        if mutation == "missing_instance":
+            payload["event_instances"] = {}
+        elif mutation == "unsupported":
+            payload["tracked_objects"][0]["label"] = "dog food"
+        elif mutation == "stale":
+            payload["tracked_objects"][0]["last_seen_age_ms"] = 500.0
+        else:
+            payload["tracked_objects"][0]["tracking_state"] = "temporarily_lost"
+
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_TOY", payload
+        ) is None
+
+    def test_toy_event_topic_enters_shared_candidate_pool_once(self, node):
+        payload = self._toy_payload()
+        node.perception._on_visual_ros2(_make_string_msg(payload))
+        node.perception._on_visual_ros2(_make_string_msg({
+            **payload,
+            "snapshot_id": "vision-1:2",
+            "sequence": 2,
+        }))
+
+        [queued] = node.candidate_pool.candidates
+        assert queued["behavior_name"] == "inspectFamiliarPlayItem"
+        assert queued["priority_level"] == 1
+        assert queued["params"]["product_action_label"] == "ACT_TOY_FOUND_PLAY"
+        assert queued["params"]["category"] == "external_interaction"
+
+    @staticmethod
     def _owner_payload(**target_updates):
         target = {
             "identity": "owner",

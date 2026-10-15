@@ -196,8 +196,8 @@ z 与身体 z。可靠腕点关联和可重复的多指屈伸周期仍是必要�
 检测置信度至少0.35、Pose与物体源帧时间差不超过0.75秒，且1.5秒内两个不同阳性
 物体推理结果成立。两个阳性结果之间允许一次短暂漏检；物体可随伸出的手部分超出
 人物框，但远离手腕的物体仍被拒绝。它们分别显示为“手持玩具/手持狗粮”；除
-`fallen_down` 外可覆盖普通兼容
-`pose_action`，但仍受同一固定身份事件门控。
+`fallen_down` 外可覆盖普通兼容 `pose_action`。该手持姿态仍要求当前目标处于跟踪状态，
+但不是可见玩具事件的身份门控。
 
 `active_target.held_object.rejection_reason` 给出最近一次未成立原因，包括
 `object_not_detected`、`unsupported_label`、`low_confidence`、`no_valid_wrist`、
@@ -229,10 +229,17 @@ z 与身体 z。可靠腕点关联和可重复的多指屈伸周期仍是必要�
 | `EVT_VISION_FAMILY_PRESENT` | 当前源帧关联到 `family_member_1..4/confirmed_known/tracking`，不同有效源观测连续达到配置 `enter_duration_sec`（默认 1.0 秒） | `observation_status`、`source_observation_id`、同包 `human_candidates[]`；活动实例见 `event_instances` |
 | `EVT_VISION_STRANGER_PRESENT` | 当前源帧关联到 `unknown/confirmed_unknown/tracking`，不同有效源观测连续达到配置 `enter_duration_sec`（默认 1.0 秒） | 同上 |
 | `EVT_VISION_FOOD` | 满足姿态门控且 `pose_action=holding_dog_food` | `active_target.identity/identity_state/tracking_state`、`active_target.held_object`、`tracked_objects[]` |
-| `EVT_VISION_TOY` | 满足姿态门控且 `pose_action=holding_toy` | `active_target.identity/identity_state/tracking_state`、`active_target.held_object`、`tracked_objects[]` |
+| `EVT_VISION_TOY` | 有效物体任务对至少一个支持标签稳定识别达到 `T_enter=1.0s`；手持与未手持玩具共用状态，正命中不要求请求覆盖全部玩具标签 | `tracked_objects[]` 中同帧的玩具目标、`event_instances.EVT_VISION_TOY.event_id`；手持诊断仍在 `active_target.held_object` |
 
-手持玩具只接受 `dog toy ball/dog frisbee toy/dog tug ring toy`；手持狗粮只接受
-`dog bowl/dog food can/dog treat bag`。只检测到物体但没有手腕关联时不得产生事件。
+可见玩具只接受现有模型标签 `dog toy ball/dog frisbee toy/dog tug ring toy`；手持狗粮仍只接受
+`dog bowl/dog food can/dog treat bag`。玩具状态按场景内至少一个玩具聚合，不按框触发。
+即使任务只请求其中一个玩具标签，有效正命中仍可开始或推进 ENTER；只有负结果要求标签范围
+未过滤或覆盖全部三个玩具标签，才能证明没有检出玩具。
+事件仅由不同且新鲜的物体结果推进：`T_enter=1.0s` 后 ENTER，HOLD 保持同一事件 ID，
+完整玩具标签范围中的有效未检出连续达到 `T_exit=2.0s` 后 EXIT，随后冷却
+`T_retrigger=3.0s`，再重新满足完整 ENTER。窄标签过滤的空结果、推理错误、过期结果
+和断流均为未知，不会结束事件。标准配置保持物体常开 0 Hz；现有手持检测流仍仅在
+有人跟踪时按 2 Hz 工作，因此无人跟踪且没有其他检测会话时不能自主发现玩具。
 
 表情事件由独立的 Vision 去抖策略提供：连续新鲜且不同源帧达到 1.0 秒后进入；类别变化、
 置信度低于阈值、表情结果缺失/过期或主人跟踪失效持续 0.5 秒后退出。重复的视觉事件

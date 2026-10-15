@@ -170,8 +170,20 @@ topics:
         condition: tracked_confirmed_known_or_unknown_confirmed_unknown_with_holding_dog_food_pose
         labels: [dog bowl, dog food can, dog treat bag]
       EVT_VISION_TOY:
-        condition: tracked_confirmed_known_or_unknown_confirmed_unknown_with_holding_toy_pose
+        condition: supported_toy_label_stably_visible_in_valid_object_results
         labels: [dog toy ball, dog frisbee toy, dog tug ring toy]
+        identity_gate: none
+        state_policy:
+          scope: scene_level_at_least_one_supported_toy
+          enter_duration_sec: 1.0
+          exit_duration_sec: 2.0
+          retrigger_delay_sec: 3.0
+          timing_source: distinct_fresh_object_results
+          active_set: "added after ENTER, retained with one event_id during HOLD, removed after T_exit of complete valid negatives"
+          negative_scope: "unfiltered or includes all three supported toy labels"
+          unknown_observation: "failed, stale, interrupted, or label-incomplete results do not count as absence"
+          event_instance_field: event_instances.EVT_VISION_TOY.event_id
+          held_toy: "included in the same scene cycle; existing active_target.held_object and pose_action data remain"
     reserved_not_emitted_events:
       - EVT_VISION_ANIMAL_CALM
       - EVT_VISION_ANIMAL_GREET
@@ -348,7 +360,14 @@ invariants:
   vision_held_object_confirmation: two_positive_results_with_one_intermediate_miss_allowed
   vision_held_object_max_pose_object_sync_delta_sec: 0.75
   vision_held_object_wrist_distance_ratio: 0.16
-  vision_toy_food_event_policy: tracked_confirmed_known_or_confirmed_unknown_person_holding_pose_only
+  vision_toy_presence_event_policy: "existing object task results only; no detector activation change; no-human/no-other-session means no autonomous discovery"
+  vision_toy_labels: [dog toy ball, dog frisbee toy, dog tug ring toy]
+  vision_toy_t_enter_sec: 1.0
+  vision_toy_t_exit_sec: 2.0
+  vision_toy_t_retrigger_sec: 3.0
+  vision_toy_timing_source: distinct_fresh_object_results_not_10_hz_visual_snapshots
+  vision_toy_held_object_pose_policy: tracked_human_wrist_association_and_diagnostics_preserved
+  vision_food_event_policy: tracked_confirmed_known_or_confirmed_unknown_person_holding_pose_only
   vision_stop_gesture_policy: raised_command_zone_open_palm_with_temporal_stability
   vision_jump_policy: full_body_two_frames_or_cropped_one_strong_or_two_takeoff_frames_plus_return
   vision_stomp_policy: ankle_lift_return_cycle_or_cropped_knee_cycle_with_stable_body
