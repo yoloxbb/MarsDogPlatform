@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/vision-human-presence-events.md", "reason": "Review source validity, event lifecycle, candidate dedup, arbitration and compatibility against the aggregate presence contract."}
+{"file": ".trellis/spec/backend/vision-owner-posture-event.md", "reason": "Review invalid/stale evidence handling, ID stability, snapshot replay and pre-dispatch freshness patterns."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Review v1 round-trip, per-consumer ownership, candidate/action boundaries and cross-layer regression coverage."}
