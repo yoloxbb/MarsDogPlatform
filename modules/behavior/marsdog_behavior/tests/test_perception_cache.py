@@ -730,7 +730,7 @@ def _category_presence_payload(
     snapshot: int,
     epoch: str = "vision-1",
 ) -> dict:
-    is_family = event_name == "EVT_VISION_FAMILY_PRESENT"
+    is_family = event_name == "EVT_VISION_FAMILY_MEMBER"
     identity = "family_member_1" if is_family else "unknown"
     identity_state = "confirmed_known" if is_family else "confirmed_unknown"
     return {
@@ -1032,41 +1032,45 @@ def test_retired_owner_present_wire_event_is_ignored() -> None:
     assert received == []
 
 
-def test_legacy_stranger_face_fact_does_not_arm_presence_edge() -> None:
+@pytest.mark.parametrize(
+    "event_name",
+    ["EVT_VISION_FAMILY_MEMBER", "EVT_VISION_STRANGER"],
+)
+def test_instance_less_category_fact_does_not_arm_presence_edge(event_name: str) -> None:
     adapter = _adapter()
     received: list[str] = []
     adapter.set_on_visual_event(
         lambda event_type, _: received.append(event_type) or True
     )
 
-    # Frozen confirmed_unknown_fall snapshots carry this immediate face fact
-    # without a timed presence instance.
+    # Instance-less facts must not enter the active-edge cache. The frozen
+    # confirmed_unknown_fall case is a historical example for strangers.
     legacy_face_fact = {
         "schema_version": 1,
-        "events": ["EVT_VISION_STRANGER"],
+        "events": [event_name],
     }
     adapter._on_visual_ros2(_Message(legacy_face_fact))
 
     assert received == []
-    assert "EVT_VISION_STRANGER" not in adapter._active_direct_visual_events
+    assert event_name not in adapter._active_direct_visual_events
 
     # A later state event with its cycle ID is still dispatched, and HOLD
     # snapshots for that same cycle do not dispatch it again.
     first_state = _category_presence_payload(
-        "EVT_VISION_STRANGER", snapshot=1
+        event_name, snapshot=1
     )
     adapter._on_visual_ros2(_Message(first_state))
     held_state = _category_presence_payload(
-        "EVT_VISION_STRANGER", snapshot=2
+        event_name, snapshot=2
     )
     adapter._on_visual_ros2(_Message(held_state))
 
-    assert received == ["EVT_VISION_STRANGER"]
+    assert received == [event_name]
 
 
 @pytest.mark.parametrize(
     "event_name",
-    ["EVT_VISION_FAMILY_PRESENT", "EVT_VISION_STRANGER"],
+    ["EVT_VISION_FAMILY_MEMBER", "EVT_VISION_STRANGER"],
 )
 def test_category_presence_instance_deduplicates_snapshots_and_timeout(
     event_name: str,
@@ -1117,7 +1121,7 @@ def test_stranger_presence_instance_deduplicates_classification_changes() -> Non
 
 @pytest.mark.parametrize(
     "event_name",
-    ["EVT_VISION_FAMILY_PRESENT", "EVT_VISION_STRANGER"],
+    ["EVT_VISION_FAMILY_MEMBER", "EVT_VISION_STRANGER"],
 )
 def test_category_presence_retries_until_candidate_is_accepted(
     event_name: str,

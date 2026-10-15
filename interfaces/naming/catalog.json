@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source_sha256": {
-    "modules/behavior/config/event_intent_map.yaml": "0e8dcf6e77a00f7bf2de0a0f7668ce024fdfdf44d911a8ab975c34b7eda9c623",
+    "modules/behavior/config/event_intent_map.yaml": "52650d846729df597b8a38f9e0815da9797266eba1b88b68f2530f1862314cc8",
     "modules/behavior/config/intent_action_pool.yaml": "3f208524a31cb6031c3edf2d204339508e2205627ada2c8a1099c87fa1755a14",
     "modules/behavior/config/behavior_categories.yaml": "ac877386c8e71aec0aec4ca93af227b7e6be9f9da769af40d70f50edd220ab10",
     "modules/behavior/config/emotion_behavior_map.yaml": "2e6e4e83fed3a606fbbed43f0986eb94753a741105ca13d255b66ecbad5632be",
@@ -1679,7 +1679,7 @@
     },
     {
       "source": "visual_direct",
-      "event": "EVT_VISION_FAMILY_PRESENT",
+      "event": "EVT_VISION_FAMILY_MEMBER",
       "context": "default",
       "category": "external_interaction",
       "intent": "familiar_person_greet",

@@ -204,8 +204,8 @@ def test_runtime_rechecks_selected_candidate_gate_before_immediate_dispatch():
     assert runtime.candidate_pool.add(
         "familiar_person_greet",
         2,
-        candidate_id="family-presence-candidate",
-        params={"trigger_event": "EVT_VISION_FAMILY_PRESENT"},
+        candidate_id="family-member-candidate",
+        params={"trigger_event": "EVT_VISION_FAMILY_MEMBER"},
         ttl_sec=0.0,
     )
 
@@ -223,7 +223,7 @@ def test_runtime_rechecks_pending_presence_before_dispatch_after_cancel():
     runtime, executor = _deferred_runtime()
 
     def candidate_gate(candidate):
-        if candidate["params"].get("trigger_event") == "EVT_VISION_FAMILY_PRESENT":
+        if candidate["params"].get("trigger_event") == "EVT_VISION_FAMILY_MEMBER":
             return presence_is_current
         return True
 
@@ -231,8 +231,8 @@ def test_runtime_rechecks_pending_presence_before_dispatch_after_cancel():
     assert runtime.candidate_pool.add(
         "familiar_person_greet",
         1,
-        candidate_id="family-presence-candidate",
-        params={"trigger_event": "EVT_VISION_FAMILY_PRESENT"},
+        candidate_id="family-member-candidate",
+        params={"trigger_event": "EVT_VISION_FAMILY_MEMBER"},
         ttl_sec=0.0,
     )
 

@@ -59,6 +59,7 @@
 | `EVT_VISION_MASTER_SAD` | 焦虑（Anxiety）+15、平静（Calm）-5 | 无 |
 | `EVT_VISION_MASTER_NEUTRAL` | 平静（Calm）+5、好奇（Curious）+5 | 无 |
 | `EVT_VISION_MASTER` | 愉悦（Joy）+25、兴奋（Excite）+15、平静（Calm）+10 | 无 |
+| `EVT_VISION_FAMILY_MEMBER` | 愉悦（Joy）+25、兴奋（Excite）+15、平静（Calm）+10 | 无 |
 | `EVT_VISION_STRANGER` | 恐惧（Fear）+15、好奇（Curious）+20 | 无 |
 | `EVT_VISION_STRANGER_ALERT` | 恐惧（Fear）+15、好奇（Curious）+20 | 无 |
 | `EVT_VISION_STRANGER_FRIEND` | 兴奋（Excite）+10、好奇（Curious）+20 | 无 |

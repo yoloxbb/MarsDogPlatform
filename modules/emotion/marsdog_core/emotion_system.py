@@ -102,9 +102,15 @@ class MarsdogEmotionSystem(EmotionAPI, PersonalityAPI):
             }
             for eventName in eventNames
         )
+        # Owner and family presence now have separate wire events, but share
+        # the former known-person MASTER emotion mapping. If both are active
+        # in one snapshot, apply that shared increment once.
+        hasMasterEvent = "EVT_VISION_MASTER" in eventNames
         appliedEvents: list[str] = []
         for eventName in eventNames:
             if eventName == "EVT_VISION_STRANGER" and hasStrangerRefinement:
+                continue
+            if eventName == "EVT_VISION_FAMILY_MEMBER" and hasMasterEvent:
                 continue
             eventInstanceId = (
                 toyEventInstanceId if eventName == "EVT_VISION_TOY" else None

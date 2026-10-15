@@ -491,6 +491,116 @@ def _stranger_presence_probe(output):
     }
 
 
+def _family_member_probe(output, owner_payload):
+    """Check current family semantics beside the immutable v1 corpus."""
+    event = "EVT_VISION_FAMILY_MEMBER"
+    retired_event = "EVT_VISION_FAMILY_PRESENT"
+    event_id = "family-probe-cycle-1"
+    probe_dir = output / "family-member-probe"
+    probe_dir.mkdir(parents=True, exist_ok=True)
+    payload = deepcopy(owner_payload)
+    payload["events"] = [event]
+    payload["event_instances"] = {event: {"event_id": event_id}}
+    payload["human_candidates"][0]["identity"] = "family_member_1"
+    producer = run_stage("vision", {"family_member": payload}, probe_dir, WORKER)
+    produced = producer["observed"]["family_member"]
+    for field in ("events", "event_instances", "observation_status", "source_observation_id"):
+        if produced.get(field) != payload[field]:
+            raise RuntimeError(f"Vision changed family member metadata {field}")
+    targets = produced.get("human_candidates")
+    if (
+        not isinstance(targets, list)
+        or len(targets) != 1
+        or any(targets[0].get(field) != value
+               for field, value in payload["human_candidates"][0].items())
+    ):
+        raise RuntimeError("Vision changed family member target context")
+
+    wire = json.dumps(produced, ensure_ascii=False)
+    # A legacy bare fact has no canonical snapshot/target context. It must
+    # not arm the presence edge before a later valid timed cycle arrives.
+    bare = {"schema_version": 1, "events": [event]}
+    retired = deepcopy(produced)
+    retired["events"] = [retired_event]
+    retired["event_instances"] = {retired_event: {"event_id": event_id}}
+    repeated = deepcopy(produced)
+    repeated.update(snapshot_id="owner-probe-epoch:2", sequence=2,
+                    source_observation_id="family-probe-frame-2")
+    behavior = run_stage("behavior", [
+        {"id": "family-cycle", "steps": [
+            {"wire": json.dumps(bare, ensure_ascii=False)},
+            {"wire": wire},
+            {"wire": json.dumps(repeated, ensure_ascii=False)},
+            {"advance": 1.1, "wire": json.dumps({
+                **repeated, "snapshot_id": "owner-probe-epoch:3", "sequence": 3,
+                "source_observation_id": "family-probe-frame-3",
+            }, ensure_ascii=False)},
+        ]},
+        {"id": "retired-family", "steps": [
+            {"wire": json.dumps(retired, ensure_ascii=False)},
+        ]},
+    ], probe_dir, WORKER)
+    cycle = behavior["observed"]["family-cycle"]
+    if (
+        any(step["error"] for steps in behavior["observed"].values() for step in steps)
+        or cycle[0]["candidates"]
+        or event in cycle[0]["active_edges"]
+        or len(cycle[1]["candidates"]) != 1
+        or any(step["candidates"] for step in cycle[2:])
+        or behavior["observed"]["retired-family"][0]["candidates"]
+    ):
+        raise RuntimeError("Family event must route once per instance and reject bare/retired facts")
+    candidate = cycle[1]["candidates"][0]
+    if (
+        candidate.get("trigger_event") != event
+        or candidate.get("behavior_name") != "familiar_person_greet"
+        or candidate.get("intent") != "familiar_person_greet"
+        or candidate.get("params", {}).get("visual_event_instance_id") != event_id
+    ):
+        raise RuntimeError("Family member did not preserve its instance-bound familiar-person route")
+
+    emotion_payloads = {
+        "owner-control": owner_payload,
+        "family": produced,
+        "owner-and-family": {**produced, "events": ["EVT_VISION_MASTER", event]},
+        "family-and-owner": {**produced, "events": [event, "EVT_VISION_MASTER"]},
+    }
+    emotion = run_stage("emotion", [
+        {"id": name, "steps": [{"wire": json.dumps(value, ensure_ascii=False)}]}
+        for name, value in emotion_payloads.items()
+    ], probe_dir, WORKER)
+    control = emotion["observed"]["owner-control"][0]
+    for name in ("family", "owner-and-family", "family-and-owner"):
+        step = emotion["observed"][name][0]
+        if (
+            any(step[field] != control[field]
+                for field in ("emotions", "demands", "owner_present"))
+            or step["owner_present"] is not True
+            or step["accepted"][0] != {"events": [event if name == "family" else "EVT_VISION_MASTER"]}
+        ):
+            raise RuntimeError("Family event changed known-person Emotion/Needs effects or doubled them")
+
+    action = run_stage("action", [{"id": "family", "steps": [{
+        "resolve_behavior": candidate["behavior_name"],
+    }]}], probe_dir, WORKER)
+    resolution = action["observed"]["family"][0]["resolution"]
+    if resolution.get("is_valid") is not False or resolution.get("unit_ids") != []:
+        raise RuntimeError("Family greeting unexpectedly bypassed the unsupported Action boundary")
+    return {
+        "producer_module": producer["provenance"]["module_file"],
+        "behavior_module": behavior["provenance"]["module_file"],
+        "emotion_module": emotion["provenance"]["module_file"],
+        "action_module": action["provenance"]["module_file"],
+        "event_name": event,
+        "instance_bound_behavior_routes_once": True,
+        "bare_and_retired_facts_do_not_route": True,
+        "known_person_emotion_and_need_effects_preserved": True,
+        "coemitted_owner_and_family_delta_applied_once": True,
+        "unsupported_action_boundary_preserved": True,
+        "scope": "pure visual-event contract probe; no ROS transport or hardware",
+    }
+
+
 def observe(output):
     fixtures = json.loads((FIXTURES / "cases.json").read_text())
     vision = run_stage("vision", fixtures["producers"], output, WORKER)
@@ -683,6 +793,7 @@ def observe(output):
     owner_recall_provenance = _owner_recall_probe(output, owner_payload)
     toy_event_provenance = _toy_event_probe(output)
     stranger_presence_provenance = _stranger_presence_probe(output)
+    family_member_provenance = _family_member_probe(output, owner_payload)
 
     scenarios = []
     for case in fixtures["scenarios"]:
@@ -727,6 +838,7 @@ def observe(output):
     provenance["owner_recall_probe"] = owner_recall_provenance
     provenance["toy_event_probe"] = toy_event_provenance
     provenance["stranger_presence_probe"] = stranger_presence_provenance
+    provenance["family_member_probe"] = family_member_provenance
     return ({stage: value["observed"] for stage, value in responses.items()}, provenance)
 
 

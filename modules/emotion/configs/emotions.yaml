@@ -144,6 +144,9 @@
       "EVT_VISION_MASTER": {
         "deltas": {"Joy": 25, "Excite": 15, "Calm": 10}
       },
+      "EVT_VISION_FAMILY_MEMBER": {
+        "deltas": {"Joy": 25, "Excite": 15, "Calm": 10}
+      },
       "EVT_VISION_STRANGER": {
         "deltas": {"Fear": 15, "Curious": 20}
       },

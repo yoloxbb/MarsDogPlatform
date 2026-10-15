@@ -8,7 +8,7 @@ from marsdog_vision_interaction.core.presence_event_state import (
 )
 
 
-FAMILY = "EVT_VISION_FAMILY_PRESENT"
+FAMILY = "EVT_VISION_FAMILY_MEMBER"
 STRANGER = "EVT_VISION_STRANGER"
 
 

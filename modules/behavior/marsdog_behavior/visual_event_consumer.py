@@ -7,6 +7,7 @@ import json
 import time
 
 from .visual_presence_contract import (
+    FAMILY_MEMBER_EVENT,
     OWNER_PRESENCE_EVENT,
     OWNER_RECALL_GESTURE_EVENT,
     STRANGER_PRESENCE_EVENT,
@@ -410,14 +411,14 @@ def consume_visual_event(self, msg, *, direct_events):
             # Behavior direct event; a bare family/known-face MASTER stays
             # available to Emotion without appearing as an owner edge here.
             current_direct_events.discard(OWNER_PRESENCE_EVENT)
-        if (
-            STRANGER_PRESENCE_EVENT in current_direct_events
-            and not _presence_instance_id(self, STRANGER_PRESENCE_EVENT)
-        ):
-            # Historical producers can send an immediate stranger face fact.
-            # Only an instance-bound presence cycle is a Behavior event;
-            # leave an unqualified fact out of the active-edge cache.
-            current_direct_events.discard(STRANGER_PRESENCE_EVENT)
+        for event_type in (FAMILY_MEMBER_EVENT, STRANGER_PRESENCE_EVENT):
+            if (
+                event_type in current_direct_events
+                and not _presence_instance_id(self, event_type)
+            ):
+                # Only an instance-bound category cycle is a Behavior event;
+                # leave an unqualified fact out of the active-edge cache.
+                current_direct_events.discard(event_type)
         previous_direct_events = getattr(
             self, "_active_direct_visual_events", set()
         )

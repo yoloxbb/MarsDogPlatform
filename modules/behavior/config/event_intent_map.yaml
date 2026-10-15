@@ -704,7 +704,7 @@ visual_direct:
     ttl_sec: 0.5  # bounded by the current visual target freshness window
     interrupt_policy: safe_point
 
-  EVT_VISION_FAMILY_PRESENT:
+  EVT_VISION_FAMILY_MEMBER:
     category: external_interaction
     intent: familiar_person_greet
     semantic_rank: 3

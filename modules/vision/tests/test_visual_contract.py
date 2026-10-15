@@ -142,7 +142,7 @@ def test_visual_contract_preserves_optional_owner_event_metadata() -> None:
             visual_event_types.EVT_VISION_MASTER: {
                 "event_id": "epoch:owner-presence:3",
             },
-            visual_event_types.EVT_VISION_FAMILY_PRESENT: {
+            visual_event_types.EVT_VISION_FAMILY_MEMBER: {
                 "event_id": "epoch:family-presence:3",
             },
             visual_event_types.EVT_VISION_STRANGER: {
@@ -159,7 +159,7 @@ def test_visual_contract_preserves_optional_owner_event_metadata() -> None:
         visual_event_types.EVT_VISION_MASTER: {
             "event_id": "epoch:owner-presence:3",
         },
-        visual_event_types.EVT_VISION_FAMILY_PRESENT: {
+        visual_event_types.EVT_VISION_FAMILY_MEMBER: {
             "event_id": "epoch:family-presence:3",
         },
         visual_event_types.EVT_VISION_STRANGER: {
@@ -169,6 +169,43 @@ def test_visual_contract_preserves_optional_owner_event_metadata() -> None:
     }
     assert "observation_status" not in normalize_visual_event({})
     assert "source_observation_id" not in normalize_visual_event({})
+
+
+def test_family_face_fact_waits_for_the_family_presence_cycle() -> None:
+    observation = {
+        "faces": [{"track_id": 9, "recognized_user": "family_member_1"}],
+        "hands": [],
+        "active_target": {
+            "identity": "family_member_1",
+            "identity_state": "confirmed_known",
+            "tracking_state": "tracking",
+            "pose_action": "",
+        },
+    }
+
+    assert visual_event_derivation.derive_events(
+        observation,
+        identity_eligible=visual_event_derivation.pose_event_identity_eligible,
+    ) == []
+
+
+@pytest.mark.parametrize("identity", [[], {}, 42])
+def test_malformed_face_identity_is_rejected_without_raising(identity) -> None:
+    observation = {
+        "faces": [{"track_id": 9, "recognized_user": identity}],
+        "hands": [],
+        "active_target": {
+            "identity": identity,
+            "identity_state": "confirmed_known",
+            "tracking_state": "tracking",
+            "pose_action": "",
+        },
+    }
+
+    assert visual_event_derivation.derive_events(
+        observation,
+        identity_eligible=visual_event_derivation.pose_event_identity_eligible,
+    ) == []
 
 
 def test_visual_contract_normalizes_optional_debug_detection_arrays() -> None:

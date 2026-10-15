@@ -204,7 +204,7 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
         "confirmed_unknown",
     )
     presence_states = (
-        ("EVT_VISION_FAMILY_PRESENT", family),
+        ("EVT_VISION_FAMILY_MEMBER", family),
         ("EVT_VISION_STRANGER", stranger),
     )
 
@@ -253,7 +253,7 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
             observation(index + 1), presence_states, now=10.0 + index * 0.11
         )
     assert packet is not None
-    assert "EVT_VISION_FAMILY_PRESENT" in packet["events"]
+    assert "EVT_VISION_FAMILY_MEMBER" in packet["events"]
     assert "EVT_VISION_STRANGER" in packet["events"]
     assert "EVT_VISION_STRANGER_PRESENT" not in packet["events"]
     assert packet["event_instances"]["EVT_VISION_MASTER"] == {
@@ -262,7 +262,7 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
     assert packet["event_instances"]["UNRELATED_EVENT"] == {
         "event_id": "keep-me"
     }
-    family_event_id = packet["event_instances"]["EVT_VISION_FAMILY_PRESENT"][
+    family_event_id = packet["event_instances"]["EVT_VISION_FAMILY_MEMBER"][
         "event_id"
     ]
     stranger_event_id = packet["event_instances"]["EVT_VISION_STRANGER"][
@@ -276,7 +276,7 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
         presence_states,
         now=10.33,
     )
-    assert packet["event_instances"]["EVT_VISION_FAMILY_PRESENT"][
+    assert packet["event_instances"]["EVT_VISION_FAMILY_MEMBER"][
         "event_id"
     ] == family_event_id
     assert packet["event_instances"]["EVT_VISION_STRANGER"][
@@ -289,16 +289,16 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
             presence_states,
             now=10.44 + index * 0.11,
         )
-    assert "EVT_VISION_FAMILY_PRESENT" not in packet["events"]
+    assert "EVT_VISION_FAMILY_MEMBER" not in packet["events"]
     assert "EVT_VISION_STRANGER" not in packet["events"]
-    assert "EVT_VISION_FAMILY_PRESENT" not in packet["event_instances"]
+    assert "EVT_VISION_FAMILY_MEMBER" not in packet["event_instances"]
     assert "EVT_VISION_STRANGER" not in packet["event_instances"]
     assert packet["event_instances"]["EVT_VISION_MASTER"][
         "event_id"
     ] == "owner-cycle"
 
 
-def test_owner_presence_publishes_master_state_and_keeps_legacy_family_master() -> None:
+def test_owner_presence_publishes_master_state_and_suppresses_family_master_fact() -> None:
     from marsdog_vision_interaction.messages.visual_event_types import (
         EVT_VISION_MASTER,
     )
@@ -343,7 +343,7 @@ def test_owner_presence_publishes_master_state_and_keeps_legacy_family_master() 
             "source_observation_id": f"frame:{sequence}",
             "_source_observation_age_sec": 0.0,
             "observation_status": status,
-            # Face derivation is immediate; the node gates this only for owner.
+            # Owner and family face facts are filtered before state publication.
             "events": [EVT_VISION_MASTER] if present else [],
             "active_target": target if present else {},
             "_source_owner_target_ids": (
@@ -390,8 +390,26 @@ def test_owner_presence_publishes_master_state_and_keeps_legacy_family_master() 
         observation(9, identity="family_member_1"),
         11.6,
     )
-    assert EVT_VISION_MASTER in family["events"]
+    assert EVT_VISION_MASTER not in family["events"]
     assert EVT_VISION_MASTER not in family.get("event_instances", {})
+
+
+@pytest.mark.parametrize("identity", [[], {}, 42])
+def test_master_face_fact_suppression_handles_malformed_identity(identity) -> None:
+    from marsdog_vision_interaction.messages.visual_event_types import (
+        EVT_VISION_MASTER,
+    )
+    from marsdog_vision_interaction.nodes.vision_interaction_node import (
+        _suppress_owner_master_face_fact,
+    )
+
+    event = {
+        "active_target": {"identity": identity},
+        "events": [EVT_VISION_MASTER],
+    }
+
+    assert _suppress_owner_master_face_fact(event) is False
+    assert event["events"] == []
 
 
 def test_owner_posture_event_publication_adds_holds_and_removes_active_instance() -> None:

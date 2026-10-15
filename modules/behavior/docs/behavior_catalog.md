@@ -245,7 +245,7 @@
 | `EVT_VISION_MASTER`（活动 owner 实例） | `owner_greet` | 1 | 12 |
 | `EVT_VISION_OWNER_BEND_SQUAT` | `approach_owner` | 1 | 12 |
 | `EVT_VISION_OWNER_RECALL_GESTURE` | `approach_owner` | 1 | 12 |
-| `EVT_VISION_FAMILY_PRESENT` | `familiar_person_greet` | 1 | 12 |
+| `EVT_VISION_FAMILY_MEMBER` | `familiar_person_greet` | 1 | 12 |
 | `EVT_VISION_STRANGER`（活动在场实例） | `stranger_observe` | 1 | 12 |
 
 主人事件携带 `owner/confirmed_known/tracking` 目标和事件实例 ID，经统一仲裁；TTL 不超过

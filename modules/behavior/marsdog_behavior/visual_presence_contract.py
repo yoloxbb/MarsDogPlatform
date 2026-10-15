@@ -3,7 +3,7 @@
 OWNER_PRESENCE_EVENT = "EVT_VISION_MASTER"
 OWNER_BEND_SQUAT_EVENT = "EVT_VISION_OWNER_BEND_SQUAT"
 OWNER_RECALL_GESTURE_EVENT = "EVT_VISION_OWNER_RECALL_GESTURE"
-FAMILY_PRESENCE_EVENT = "EVT_VISION_FAMILY_PRESENT"
+FAMILY_MEMBER_EVENT = "EVT_VISION_FAMILY_MEMBER"
 STRANGER_PRESENCE_EVENT = "EVT_VISION_STRANGER"
 TOY_FOUND_EVENT = "EVT_VISION_TOY"
 
@@ -146,7 +146,7 @@ VISUAL_PRESENCE_EVENT_QUALIFIERS = {
     OWNER_PRESENCE_EVENT: (frozenset({"owner"}), "confirmed_known"),
     OWNER_BEND_SQUAT_EVENT: (frozenset({"owner"}), "confirmed_known"),
     OWNER_RECALL_GESTURE_EVENT: (frozenset({"owner"}), "confirmed_known"),
-    FAMILY_PRESENCE_EVENT: (
+    FAMILY_MEMBER_EVENT: (
         frozenset({
             "family_member_1", "family_member_2",
             "family_member_3", "family_member_4",

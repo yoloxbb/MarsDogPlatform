@@ -391,14 +391,14 @@ TOILET、CLEAN、SLEEP 是条件指令：在任何候选入池或会话修改之
     ├── EVT_VISION_MASTER + owner event ID/target → owner_greet (Lv1, sp=12, semantic_rank=3)
     ├── EVT_VISION_OWNER_BEND_SQUAT → approach_owner (Lv1, sp=12, semantic_rank=3)
     ├── EVT_VISION_OWNER_RECALL_GESTURE → approach_owner (Lv1, sp=12, semantic_rank=3)
-    ├── EVT_VISION_FAMILY_PRESENT → familiar_person_greet (Lv1, sp=12, semantic_rank=3)
+    ├── EVT_VISION_FAMILY_MEMBER → familiar_person_greet (Lv1, sp=12, semantic_rank=3)
     ├── EVT_VISION_STRANGER → stranger_observe (Lv1, sp=12, semantic_rank=3)
     └── 其余 events 不直接创建行为候选
 ```
 
 主人 MASTER、家人和陌生人状态路由按各自的事件周期 ID 去重。主人 MASTER 只有在现有主人状态机
-以不同有效源观测进入后才带有实例 ID；普通已知非主人（包括家人）的即时 MASTER face fact
-不创建主人候选。Behavior 校验同包身份、唯一新鲜目标和 epoch；短暂 Topic 超时不会清除已消费
+以不同有效源观测进入后才带有实例 ID；其它已知非主人即时 MASTER face fact 不创建主人候选，
+家人则只通过 `EVT_VISION_FAMILY_MEMBER` 进入候选路由。Behavior 校验同包身份、唯一新鲜目标和 epoch；短暂 Topic 超时不会清除已消费
 的周期记忆。陌生人的 Alert/Friend 分类事件不单独路由，避免分类变化为同一在场周期创建重复候选。主人/家人/陌生人候选的 Action 模板当前都缺失。
 
 主人弯腰/蹲下事件是独立活动状态：Vision 对同一确认主人目标的公共姿态用不同有效源观测稳定

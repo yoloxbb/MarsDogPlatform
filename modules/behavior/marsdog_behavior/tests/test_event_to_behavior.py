@@ -2670,7 +2670,7 @@ class TestVisualDirectToBehavior:
         ("event_type", "identity", "identity_state", "behavior_name"),
         [
             (
-                "EVT_VISION_FAMILY_PRESENT",
+                "EVT_VISION_FAMILY_MEMBER",
                 "family_member_3",
                 "confirmed_known",
                 "familiar_person_greet",
@@ -2735,9 +2735,9 @@ class TestVisualDirectToBehavior:
     @pytest.mark.parametrize(
         ("event_type", "identity", "identity_state"),
         [
-            ("EVT_VISION_FAMILY_PRESENT", "owner", "confirmed_known"),
-            ("EVT_VISION_FAMILY_PRESENT", "family_member_1", "candidate_known"),
-            ("EVT_VISION_FAMILY_PRESENT", [], "confirmed_known"),
+            ("EVT_VISION_FAMILY_MEMBER", "owner", "confirmed_known"),
+            ("EVT_VISION_FAMILY_MEMBER", "family_member_1", "candidate_known"),
+            ("EVT_VISION_FAMILY_MEMBER", [], "confirmed_known"),
             ("EVT_VISION_STRANGER", "family_member_1", "confirmed_known"),
             ("EVT_VISION_STRANGER", "unknown", "unknown_candidate"),
             ("EVT_VISION_STRANGER", {}, "confirmed_unknown"),
@@ -2775,20 +2775,20 @@ class TestVisualDirectToBehavior:
             "track_id": 8,
         }
         payload = self._visual_presence_payload(
-            "EVT_VISION_FAMILY_PRESENT",
+            "EVT_VISION_FAMILY_MEMBER",
             identity="family_member_1",
             identity_state="confirmed_known",
             targets=[first, second],
         )
         assert node._intent_mapper.map_visual_event(
-            "EVT_VISION_FAMILY_PRESENT", payload
+            "EVT_VISION_FAMILY_MEMBER", payload
         ) is None
 
     @pytest.mark.parametrize(
         ("event_type", "identity", "identity_state", "behavior_name"),
         [
             (
-                "EVT_VISION_FAMILY_PRESENT",
+                "EVT_VISION_FAMILY_MEMBER",
                 "family_member_3",
                 "confirmed_known",
                 "familiar_person_greet",
@@ -2837,7 +2837,7 @@ class TestVisualDirectToBehavior:
         ("event_type", "identity", "identity_state"),
         [
             ("EVT_VISION_MASTER", "owner", "confirmed_known"),
-            ("EVT_VISION_FAMILY_PRESENT", "family_member_1", "confirmed_known"),
+            ("EVT_VISION_FAMILY_MEMBER", "family_member_1", "confirmed_known"),
             ("EVT_VISION_STRANGER", "unknown", "confirmed_unknown"),
         ],
     )
@@ -2860,7 +2860,7 @@ class TestVisualDirectToBehavior:
             "target_id": "epoch-1:human:8",
             "track_id": 8,
         }
-        if event_type == "EVT_VISION_FAMILY_PRESENT":
+        if event_type == "EVT_VISION_FAMILY_MEMBER":
             second["identity"] = "family_member_2"
         refreshed["human_candidates"].append(second)
         node.perception._on_visual_ros2(_make_string_msg(refreshed))

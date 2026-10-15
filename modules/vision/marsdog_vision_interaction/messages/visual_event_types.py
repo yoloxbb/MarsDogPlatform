@@ -11,7 +11,7 @@ EVT_VISION_FALL = "EVT_VISION_FALL"
 EVT_VISION_STOP_GESTURE = "EVT_VISION_STOP_GESTURE"
 EVT_VISION_OWNER_BEND_SQUAT = "EVT_VISION_OWNER_BEND_SQUAT"
 EVT_VISION_OWNER_RECALL_GESTURE = "EVT_VISION_OWNER_RECALL_GESTURE"
-EVT_VISION_FAMILY_PRESENT = "EVT_VISION_FAMILY_PRESENT"
+EVT_VISION_FAMILY_MEMBER = "EVT_VISION_FAMILY_MEMBER"
 EVT_VISION_STRANGER_ALERT = "EVT_VISION_STRANGER_ALERT"
 EVT_VISION_STRANGER_FRIEND = "EVT_VISION_STRANGER_FRIEND"
 EVT_VISION_ANIMAL_CALM = "EVT_VISION_ANIMAL_CALM"
@@ -61,6 +61,17 @@ def pose_action_to_vision_event(action: str, identity_confirmed: bool) -> str:
 
 
 def face_identity_to_vision_event(identity: str) -> str:
+    if not isinstance(identity, str):
+        return ""
+    # Enrolled family members are published only through the stable family
+    # presence state machine, after its entry interval has completed.
+    if identity in {
+        "family_member_1",
+        "family_member_2",
+        "family_member_3",
+        "family_member_4",
+    }:
+        return ""
     return (
         EVT_VISION_MASTER
         if identity and identity != "unknown"

@@ -206,8 +206,9 @@ ros2 service call /perception/vision/task \
 
 Alert 优先于 Friend；活动周期内 `EVT_VISION_STRANGER` 在场事件始终保留，并可与一个细分事件同包出现。
 Emotion 同包有细分事件时只应用细分映射，否则应用通用 Stranger 映射。Behavior 只路由稳定 ID 的
-`EVT_VISION_STRANGER`，不为情绪分类创建额外候选。已知非主人 face fact 仍走即时 `EVT_VISION_MASTER*`；
-主人 `EVT_VISION_MASTER` 在确认状态机 ENTER 后进入活动快照。
+`EVT_VISION_STRANGER`，不为情绪分类创建额外候选。其它已知非主人 face fact 仍走即时
+`EVT_VISION_MASTER*`，已登记家人只走 `EVT_VISION_FAMILY_MEMBER` 稳定在场周期；主人
+`EVT_VISION_MASTER` 在确认状态机 ENTER 后进入活动快照。
 细分事件继续使用 Emotion 的现有基础映射和同名事件去重策略。
 
 ## 统一视觉调试页面

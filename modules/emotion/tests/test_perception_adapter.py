@@ -33,6 +33,17 @@ class PerceptionAdapterTest(unittest.TestCase):
         self.assertEqual(events, ["EVT_VISION_MASTER", "EVT_VISION_ANIMAL_GREET"])
         self.assertTrue(system.state.ownerPresent)
 
+    def test_family_member_visual_event_preserves_need_presence_side_effect(self):
+        system = MarsdogNeedSystem()
+
+        events = ApplyVisualEventMessage(
+            system,
+            {"events": ["EVT_VISION_FAMILY_MEMBER"]},
+        )
+
+        self.assertEqual(events, ["EVT_VISION_FAMILY_MEMBER"])
+        self.assertTrue(system.state.ownerPresent)
+
     def test_audio_event_updates_need_owner_presence(self):
         """主人声纹或叫名字事件应更新需求系统主人在场状态。"""
         system = MarsdogNeedSystem()
@@ -64,6 +75,36 @@ class PerceptionAdapterTest(unittest.TestCase):
         self.assertEqual(events, ["EVT_VISION_TOY"])
         self.assertEqual(system.GetEmotionValue("Excite"), 30)
         self.assertEqual(system.GetEmotionValue("Curious"), 23)
+
+    def test_family_member_keeps_known_person_emotion_mapping(self):
+        system = MarsdogEmotionSystem()
+        before = system.GetAllEmotions()
+
+        events = ApplyVisualEventMessage(
+            system,
+            {"events": ["EVT_VISION_FAMILY_MEMBER"]},
+        )
+
+        self.assertEqual(events, ["EVT_VISION_FAMILY_MEMBER"])
+        self.assertEqual(system.GetEmotionValue("Joy") - before["Joy"], 25)
+        self.assertEqual(system.GetEmotionValue("Excite") - before["Excite"], 15)
+        self.assertEqual(system.GetEmotionValue("Calm") - before["Calm"], 10)
+
+    def test_master_and_family_member_share_one_known_person_delta_per_snapshot(self):
+        system = MarsdogEmotionSystem()
+        before = system.GetAllEmotions()
+
+        events = ApplyVisualEventMessage(
+            system,
+            {
+                "events": ["EVT_VISION_MASTER", "EVT_VISION_FAMILY_MEMBER"],
+            },
+        )
+
+        self.assertEqual(events, ["EVT_VISION_MASTER"])
+        self.assertEqual(system.GetEmotionValue("Joy") - before["Joy"], 25)
+        self.assertEqual(system.GetEmotionValue("Excite") - before["Excite"], 15)
+        self.assertEqual(system.GetEmotionValue("Calm") - before["Calm"], 10)
 
     def test_toy_event_instance_is_applied_once_across_long_hold(self):
         """同一个玩具周期即使 HOLD 超过通用窗口也只应用一次。"""

@@ -129,7 +129,7 @@ Voice 的 `speech_pipeline.py` 编排 ASR、声纹、KWS、词库与意图输出
 
 当前 BT 视觉直驱白名单包含 `EVT_VISION_FALL`、`EVT_VISION_STOP_GESTURE` 和六个状态
 事件：带主人状态实例的 `EVT_VISION_MASTER`、`EVT_VISION_OWNER_BEND_SQUAT`、
-`EVT_VISION_OWNER_RECALL_GESTURE`、`EVT_VISION_FAMILY_PRESENT`、
+`EVT_VISION_OWNER_RECALL_GESTURE`、`EVT_VISION_FAMILY_MEMBER`、
 `EVT_VISION_STRANGER`、`EVT_VISION_TOY`。FALL/STOP 沿用出现边沿去重。Vision
 状态事件按各自事件契约维持 ENTER/HOLD/EXIT 生命周期；重复同一源观测不推进计时。玩具事件的
 `T_enter=1.0s`、`T_exit=2.0s`、`T_retrigger=3.0s` 及未知观测规则见下文。无效推理、相机断流
@@ -170,8 +170,8 @@ schema v1 顶层 `observation_status` 保持其现有人体/视觉 Provider 语�
 二维框不提供米制距离，目标没有有效范围时接近阶段按现有策略失败，不宣称完成了玩耍动作。
 候选产品标签 `ACT_TOY_FOUND_PLAY` 不是已登记的 Action unit。
 
-Emotion/Needs 继续按原逻辑处理 `EVT_VISION_MASTER`。已知非主人（包括家人）即时
-face fact 保持原路径，主人则在状态机 ENTER 后、每个活动快照上使用相同事件名。
+Emotion/Needs 继续按原逻辑处理 owner 的 `EVT_VISION_MASTER`。其它已知非主人即时
+MASTER face fact 保持原路径；家人使用 `EVT_VISION_FAMILY_MEMBER`，并保留原 Emotion/Needs 副作用。
 
 陌生人在场周期使用 `EVT_VISION_STRANGER`，并可在同一 `events[]` 附加一个 Emotion 细分事件；
 Behavior 只对带稳定 event ID 的 canonical 在场事件创建候选。人物与物体观测仍主要进入缓存或 Emotion，

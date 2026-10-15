@@ -81,7 +81,7 @@ from marsdog_vision_interaction.messages.visual_event import (
     normalize_visual_event,
 )
 from marsdog_vision_interaction.messages.visual_event_types import (
-    EVT_VISION_FAMILY_PRESENT,
+    EVT_VISION_FAMILY_MEMBER,
     EVT_VISION_MASTER,
     EVT_VISION_OWNER_BEND_SQUAT,
     EVT_VISION_OWNER_RECALL_GESTURE,
@@ -203,21 +203,34 @@ def _append_stranger_refinement(
 
 
 def _suppress_owner_master_face_fact(event: dict[str, Any]) -> bool:
-    """Gate an owner's immediate face fact and report an independent MASTER.
+    """Gate owner/family face facts and report an independent MASTER.
 
-    Known non-owner identities retain the legacy immediate MASTER event. The
-    owner event is emitted only by ``OwnerPresenceEventState`` below.
+    The owner event is emitted only by ``OwnerPresenceEventState`` below.
+    Enrolled family identities use their own presence state machine; only
+    other known non-owner identities retain the legacy immediate MASTER fact.
     """
     active_target = event.get("active_target")
     events = event.get("events")
-    if (
-        not isinstance(active_target, dict)
-        or active_target.get("identity") != "owner"
-    ):
-        return isinstance(events, (list, tuple)) and EVT_VISION_MASTER in events
-    if isinstance(events, list):
+    identity = (
+        active_target.get("identity")
+        if isinstance(active_target, dict)
+        else None
+    )
+    if not isinstance(identity, str) or not identity.strip() or identity == "unknown":
+        if isinstance(events, list):
+            event["events"] = [name for name in events if name != EVT_VISION_MASTER]
+        return False
+    is_owner_or_family = identity == "owner" or identity in {
+        "family_member_1",
+        "family_member_2",
+        "family_member_3",
+        "family_member_4",
+    }
+    if is_owner_or_family and isinstance(events, list):
         event["events"] = [name for name in events if name != EVT_VISION_MASTER]
-    return False
+    if is_owner_or_family:
+        return False
+    return isinstance(events, (list, tuple)) and EVT_VISION_MASTER in events
 
 
 def _apply_toy_presence_event_state(
@@ -1421,9 +1434,9 @@ class VisionInteractionNode(Node):
             emotion_classification=emotion_classification,
             now=time.monotonic(),
         )
-        # An immediate non-owner MASTER face fact can coexist with the owner
-        # state cycle. If the owner state is inactive, keep that independent
-        # family/known-identity fact while clearing only its state metadata.
+        # A legacy known non-owner MASTER face fact can coexist with the owner
+        # state cycle. Family identities are excluded above and use their own
+        # state event; preserve only unrelated known-identity facts here.
         legacy_master_fact = _suppress_owner_master_face_fact(event)
         with self._state_lock:
             event = _apply_toy_presence_event_state(
@@ -1436,7 +1449,7 @@ class VisionInteractionNode(Node):
                 getattr(self, "_owner_presence_event_state", None),
             ),
             (
-                EVT_VISION_FAMILY_PRESENT,
+                EVT_VISION_FAMILY_MEMBER,
                 getattr(self, "_family_presence_event_state", None),
             ),
             (

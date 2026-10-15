@@ -63,11 +63,11 @@ depth_fusion:
 退出，EXIT 后冷却 3.0 秒。活动状态写入 `events[]`，周期 ID 写入
 `event_instances.EVT_VISION_MASTER.event_id`。重复快照不推进源观测计时；相机断流、推理失败
 或结果过期发布可选 `observation_status=invalid`，只打断尚未完成的计时，不被解释为主人离开。
-`EVT_VISION_OWNER_PRESENT` 已退役。已知非主人 face-derived MASTER（包括家人）仍走原即时路径，
-Emotion/Needs 的 MASTER 处理保持不变；Behavior 要求 MASTER 周期 ID 和同包 owner 身份才能
-生成主人候选。
+`EVT_VISION_OWNER_PRESENT` 已退役。其它已知非主人 face-derived MASTER 仍走原即时路径；家人
+只由 `EVT_VISION_FAMILY_MEMBER` 的独立稳定状态周期表示。Emotion/Needs 已迁移家人原有副作用，
+Behavior 要求 MASTER 周期 ID 和同包 owner 身份才能生成主人候选。
 
-`EVT_VISION_FAMILY_PRESENT` 与 canonical 陌生人在场事件 `EVT_VISION_STRANGER` 分别维护已登记家人
+`EVT_VISION_FAMILY_MEMBER` 与 canonical 陌生人在场事件 `EVT_VISION_STRANGER` 分别维护已登记家人
 `family_member_1..4/confirmed_known/tracking` 和确认陌生人
 `unknown/confirmed_unknown/tracking` 的类别级活动周期。两者采用不同有效源观测推进的
 1.0 秒 ENTER、2.0 秒有效负观测 EXIT、EXIT 后 3.0 秒冷却和稳定 event ID；失效源观测只打断

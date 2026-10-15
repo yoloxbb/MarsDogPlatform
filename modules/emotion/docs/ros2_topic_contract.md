@@ -86,7 +86,8 @@
 ### 2.2 `/perception/visual_event`
 
 情绪节点只读取 `events` 数组，逐个应用情绪事件映射。
-需求节点目前只在 `events` 中出现 `EVT_VISION_MASTER` 时标记主人出现。
+需求节点在 `events` 中出现 `EVT_VISION_MASTER` 或 `EVT_VISION_FAMILY_MEMBER` 时保留
+`ownerPresent=true` 副作用；MASTER 表示主人，FAMILY_MEMBER 表示已确认家人。
 
 不会从 `faces / humans / hands / tracked_objects / active_target` 自动推断情绪事件。
 
@@ -126,7 +127,7 @@
 
 完整视觉基础增量见自动生成的
 [情绪事件映射目录](emotion_event_catalog.md#视觉输入)。需求节点只对
-`EVT_VISION_MASTER` 额外标记主人出现。
+`EVT_VISION_MASTER` 标记主人出现；`EVT_VISION_FAMILY_MEMBER` 保留原已知家人事件的需求副作用。
 
 陌生人在场时，Vision 在同一 `events[]` 中保留 `EVT_VISION_STRANGER`，并可附加一个
 `EVT_VISION_STRANGER_ALERT` 或 `EVT_VISION_STRANGER_FRIEND`。同包存在细分事件时，Emotion 只应用

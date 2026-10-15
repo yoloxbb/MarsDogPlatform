@@ -76,7 +76,10 @@ class MarsdogNeedSystem(
         """处理新版 `/perception/visual_event` 中会影响需求值的事件。"""
         payload = dict(metadata or {})
         emittedEvents = self._GetStringList(payload.get("events", []))
-        if "EVT_VISION_MASTER" in emittedEvents:
+        if (
+            "EVT_VISION_MASTER" in emittedEvents
+            or "EVT_VISION_FAMILY_MEMBER" in emittedEvents
+        ):
             self.OnOwnerPresenceChanged(True)
         return emittedEvents
 

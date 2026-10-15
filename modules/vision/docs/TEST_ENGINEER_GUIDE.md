@@ -596,8 +596,8 @@ GP-024 不能只看躯干倾角：清晰躺卧还需近水平的大腿方向；�
 
 其他姿态/手势动作把 Happy 换成上表对应的 Sad/Neutral/Fall/Stop 即可。TOY 是独立的
 物体场景状态；FOOD 仍由已确认手持姿态产生。注意，主人 `EVT_VISION_MASTER` 只有通过 owner
-presence 状态机 ENTER 后才发布；已知非主人（包括家人）的 face fact 仍可按原即时路径发布
-`EVT_VISION_MASTER`。因此事件名本身不能证明 owner 身份，行为消费者还必须验证 MASTER 实例
+presence 状态机 ENTER 后才发布；其它已知非主人 face fact 仍可按原即时路径发布
+`EVT_VISION_MASTER`，但家人只由稳定的 `EVT_VISION_FAMILY_MEMBER` 状态周期发布。因此事件名本身不能证明 owner 身份，行为消费者还必须验证 MASTER 实例
 元数据和同包确认主人目标。姿态事件仍必须单独检查 `pose_event_gate=open`。
 
 #### 5.6.6 动作专项判定与统计口径
@@ -624,11 +624,12 @@ Vision 事件路由正确率 = 门禁打开且期望事件正确次数 / 门禁�
 
 #### 5.6.7 当前正式事件库存
 
-当前代码实际可能写入 `/perception/visual_event.events[]` 的事件只有下表11种：
+当前代码实际可能写入 `/perception/visual_event.events[]` 的事件包括下表12种：
 
 | 正式事件 | 来源 | 是否需要姿态身份门禁 | 同包主要证据 |
 |---|---|---:|---|
-| `EVT_VISION_MASTER` | owner：当前源帧确认并跟踪，状态机 ENTER 后发布；已知非主人：有 `faces[]` 且主目标身份非空、非 `unknown` 时即时发布 | owner 状态路径要求 `owner/confirmed_known/tracking`；非主人即时事实本身不证明 `confirmed_known` | owner：状态字段、源观测和 `event_instances.EVT_VISION_MASTER.event_id`；非主人：`faces[]`、`active_target.identity/identity_state` |
+| `EVT_VISION_MASTER` | owner：当前源帧确认并跟踪，状态机 ENTER 后发布；其它已知非主人：有 `faces[]` 且身份非空、非 `unknown` 时即时发布；已登记家人除外 | owner 状态路径要求 `owner/confirmed_known/tracking`；其它非主人即时事实本身不证明 `confirmed_known` | owner：状态字段、源观测和 `event_instances.EVT_VISION_MASTER.event_id`；其它非主人：`faces[]`、`active_target.identity/identity_state` |
+| `EVT_VISION_FAMILY_MEMBER` | 当前源目标为 `family_member_1..4/confirmed_known/tracking` 并经不同有效观测稳定 1 秒后 ENTER；活动周期重复发布 | 是 | `observation_status`、`source_observation_id`、`human_candidates[]`、`event_instances.EVT_VISION_FAMILY_MEMBER.event_id` |
 | `EVT_VISION_STRANGER` | 当前源关联目标满足 `unknown/confirmed_unknown/tracking` 并经不同有效源观测达到陌生人在场 ENTER；整个活动周期重复发布 | 是 | `observation_status`、`source_observation_id`、`human_candidates[]`、`event_instances.EVT_VISION_STRANGER.event_id` |
 | `EVT_VISION_STRANGER_ALERT` | 陌生人在场周期活动、当前源关联陌生人脸存在且新鲜情绪中 Anxiety/Fear 已触发 | 是 | 同包在场证据、`faces[]`、`active_target.identity_state`、`/emotion/state` |
 | `EVT_VISION_STRANGER_FRIEND` | 陌生人在场周期活动、当前源关联陌生人脸存在、无 Alert 且 Joy/Excite/Calm 已触发 | 是 | 同上 |

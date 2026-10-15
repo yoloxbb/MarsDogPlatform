@@ -18,8 +18,8 @@ modules/vision/marsdog_vision_interaction/messages/visual_event.py。
 ### 主人 MASTER 状态（v1 可选扩展）
 
 对主人，`EVT_VISION_MASTER` 表示经过确认并跟踪的主人在场状态。该身份必须通过原有
-owner presence 状态机；原有 face-derived `EVT_VISION_MASTER` 即时路径只保留给已知非主人身份，
-包括家人。`EVT_VISION_OWNER_PRESENT` 已退役，不再发布或消费。此语义调整留在
+owner presence 状态机；原有 face-derived `EVT_VISION_MASTER` 即时路径只保留给其它已知非主人身份，
+已登记家人改走独立的稳定在场事件。`EVT_VISION_OWNER_PRESENT` 已退役，不再发布或消费。此语义调整留在
 `schema_version=1`，事件 envelope、required fields 和 ROS 接口不变。
 
 owner MASTER 使用可选字段 `observation_status`、`source_observation_id` 和
@@ -37,8 +37,7 @@ HOLD 期间事件和 MASTER event ID 保持；有效观测中连续未识别满 
 EXIT 时启动 `T_retrigger=3.0s` 冷却，期间不允许重新 ENTER。无效观测不充当负检测；恢复后
 需要有效的新源观测继续判断。三个时序参数沿用 Vision 的现有可配置默认值。
 
-Emotion/Needs 保持现有 MASTER 映射：每条带有活动 MASTER 的视觉快照继续按既有逻辑处理。
-因此已知非主人 face fact 保持原有 Emotion/Needs 行为，owner 则在 MASTER ENTER 后、每条
+Emotion/Needs 对其它已知非主人 MASTER face fact 保持原有处理；主人则在 MASTER ENTER 后、每条
 HOLD 快照上触发现有处理。Behavior 只有收到 MASTER event ID、有效来源元数据和同快照唯一
 `owner / confirmed_known / tracking` 新鲜目标时，才创建 `owner_greet` 候选，并按 event ID 去重；
 家人身份、无 event ID 的 legacy MASTER face fact 不能产生主人候选。短暂 Topic 中断不会清除
@@ -113,13 +112,18 @@ BehaviorTree 只在当前有效 v1 快照中按事件 ID 去重，并绑定同�
 
 ### 家人与陌生人在场状态事件（v1 可选扩展）
 
-`EVT_VISION_FAMILY_PRESENT` 和 canonical 陌生人在场事件 `EVT_VISION_STRANGER` 复用上述活动状态、
+`EVT_VISION_FAMILY_MEMBER` 和 canonical 陌生人在场事件 `EVT_VISION_STRANGER` 复用上述活动状态、
 `observation_status`、`source_observation_id` 和 `event_instances.<event>.event_id` 规则，
 各自独立计时并维护一个类别级活动周期。家人只由身份属于 `family_member_1..4`、状态为
 `confirmed_known` 且正在 `tracking` 的当前源帧目标确认；陌生人只由身份 `unknown`、状态
 `confirmed_unknown` 且正在 `tracking` 的当前源帧目标确认。两者默认 `T_enter=1.0s`、
 `T_exit=2.0s`、`T_retrigger=3.0s`，可分别由
 `family_presence_events`、`stranger_presence_events` 配置。owner 身份仍只走主人事件。
+
+家人事件是家人身份唯一的公开 presence 事件：家人脸不再产生即时 `EVT_VISION_MASTER`。
+Emotion 将 `EVT_VISION_FAMILY_MEMBER` 映射为原家人 MASTER 增量（Joy +25、Excite +15、Calm +10）；
+若同一快照同时包含主人 MASTER 和家人事件，这份共用 known-person 增量只应用一次。Needs 收到
+家人事件时继续执行既有 `ownerPresent=true` 副作用；owner 本身仍由活动 MASTER 表达。
 
 BehaviorTree 将两个 ENTER 周期分别映射到 `familiar_person_greet` 和 `stranger_observe`
 候选，并按 event ID 去重。候选必须绑定同包、同 epoch 且唯一的新鲜目标；缺少或无法唯一

@@ -13,7 +13,7 @@
 | `EVT_VISION_MASTER`（仅活动主人实例 + owner 身份） | `owner_greet` | 1 | 12 | ≤0.5s |
 | `EVT_VISION_OWNER_BEND_SQUAT` | `approach_owner` | 1 | 12 | ≤0.5s |
 | `EVT_VISION_OWNER_RECALL_GESTURE` | `approach_owner` | 1 | 12 | ≤0.5s |
-| `EVT_VISION_FAMILY_PRESENT` | `familiar_person_greet` | 1 | 12 | ≤0.5s |
+| `EVT_VISION_FAMILY_MEMBER` | `familiar_person_greet` | 1 | 12 | ≤0.5s |
 | `EVT_VISION_STRANGER`（活动在场实例） | `stranger_observe` | 1 | 12 | ≤0.5s |
 | `EVT_VISION_TOY` | `toy_found_play` → `inspectFamiliarPlayItem` | 1 | 12 | ≤0.5s |
 
@@ -23,8 +23,9 @@
 `hands` 到 `params_json`。FALL/STOP 以原样、区分大小写的 `behavior_name` 发送给
 `/execute_behavior`。
 
-`EVT_VISION_MASTER` 的已知非主人即时 face fact（包括家人）不创建 `owner_greet`。
-只有 Vision 主人状态机发布的 MASTER 周期实例，以及同包确认主人身份，才进入主人路由。
+`EVT_VISION_MASTER` 的其它已知非主人即时 face fact 不创建 `owner_greet`；家人只经
+`EVT_VISION_FAMILY_MEMBER` 路由。只有 Vision 主人状态机发布的 MASTER 周期实例，以及同包确认主人身份，
+才进入主人路由。
 在场候选与主人姿态/召唤候选都携带同一视觉快照中的唯一匹配目标、epoch、快照和源观测标识；TTL 不超过该
 目标剩余的 500 ms 新鲜期。它们是 `external_interaction` Lv1 候选，使用
 `semantic_rank=3` 和 `safe_point` 进入统一仲裁。

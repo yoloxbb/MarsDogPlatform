@@ -32,7 +32,8 @@ def derive_events(
 ):
     events: list[str] = []
     active = observation.get("active_target", {})
-    identity = str(active.get("identity", "unknown"))
+    raw_identity = active.get("identity", "unknown")
+    identity = raw_identity if isinstance(raw_identity, str) else ""
     identity_confirmed = identity_eligible(active)
     if observation.get("faces"):
         if identity in ("", "unknown"):

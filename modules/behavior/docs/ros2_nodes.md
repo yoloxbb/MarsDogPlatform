@@ -363,9 +363,9 @@ signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢�
   "header": {"stamp": 1786417000.1, "frame_id": "camera_link"},
   "active_target": {"track_id": 7, "pose_action": "fallen_down"},
   "hands": [{"hand_action": "stop_gesture"}],
-  "events": ["EVT_VISION_FALL", "EVT_VISION_STOP_GESTURE", "EVT_VISION_MASTER", "EVT_VISION_OWNER_BEND_SQUAT", "EVT_VISION_OWNER_RECALL_GESTURE", "EVT_VISION_FAMILY_PRESENT", "EVT_VISION_STRANGER"],
+  "events": ["EVT_VISION_FALL", "EVT_VISION_STOP_GESTURE", "EVT_VISION_MASTER", "EVT_VISION_OWNER_BEND_SQUAT", "EVT_VISION_OWNER_RECALL_GESTURE", "EVT_VISION_FAMILY_MEMBER", "EVT_VISION_STRANGER"],
   "observation_status": "valid",
-  "event_instances": {"EVT_VISION_MASTER": {"event_id": "owner-cycle-42"}, "EVT_VISION_OWNER_BEND_SQUAT": {"event_id": "owner-posture-cycle-42"}, "EVT_VISION_OWNER_RECALL_GESTURE": {"event_id": "owner-recall-cycle-42"}, "EVT_VISION_FAMILY_PRESENT": {"event_id": "family-cycle-42"}, "EVT_VISION_STRANGER": {"event_id": "stranger-cycle-42"}},
+  "event_instances": {"EVT_VISION_MASTER": {"event_id": "owner-cycle-42"}, "EVT_VISION_OWNER_BEND_SQUAT": {"event_id": "owner-posture-cycle-42"}, "EVT_VISION_OWNER_RECALL_GESTURE": {"event_id": "owner-recall-cycle-42"}, "EVT_VISION_FAMILY_MEMBER": {"event_id": "family-cycle-42"}, "EVT_VISION_STRANGER": {"event_id": "stranger-cycle-42"}},
   "human_candidates": [{"identity": "owner", "identity_state": "confirmed_known", "tracking_state": "tracking", "target_id": "epoch-1:human:7", "track_id": 7, "vision_epoch": "epoch-1", "pose_action": "bend_over", "last_seen_age_ms": 20.0}, {"identity": "family_member_1", "identity_state": "confirmed_known", "tracking_state": "tracking", "target_id": "epoch-1:human:9", "track_id": 9, "vision_epoch": "epoch-1", "last_seen_age_ms": 20.0}, {"identity": "unknown", "identity_state": "confirmed_unknown", "tracking_state": "tracking", "target_id": "epoch-1:human:8", "track_id": 8, "vision_epoch": "epoch-1", "last_seen_age_ms": 20.0}]
 }
 ```
@@ -380,7 +380,7 @@ signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢�
 | `EVT_VISION_MASTER`（必须有活动 owner 实例和主人目标） | `owner_greet` | Lv1, `sub_priority=12`, `semantic_rank=3` | ≤0.5s |
 | `EVT_VISION_OWNER_BEND_SQUAT` | `approach_owner` | Lv1, `sub_priority=12`, `semantic_rank=3`, `safe_point` | ≤0.5s |
 | `EVT_VISION_OWNER_RECALL_GESTURE` | `approach_owner` | Lv1, `sub_priority=12`, `semantic_rank=3`, `safe_point` | ≤0.5s |
-| `EVT_VISION_FAMILY_PRESENT` | `familiar_person_greet` | Lv1, `sub_priority=12`, `semantic_rank=3` | ≤0.5s |
+| `EVT_VISION_FAMILY_MEMBER` | `familiar_person_greet` | Lv1, `sub_priority=12`, `semantic_rank=3` | ≤0.5s |
 | `EVT_VISION_STRANGER`（活动在场实例） | `stranger_observe` | Lv1, `sub_priority=12`, `semantic_rank=3` | ≤0.5s |
 
 该 Topic 是 10 Hz 状态快照。同一事件连续出现时只生成一次候选；FALL/STOP 事件先从
