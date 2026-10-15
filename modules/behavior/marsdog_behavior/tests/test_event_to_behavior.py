@@ -2676,7 +2676,7 @@ class TestVisualDirectToBehavior:
                 "familiar_person_greet",
             ),
             (
-                "EVT_VISION_STRANGER_PRESENT",
+                "EVT_VISION_STRANGER",
                 "unknown",
                 "confirmed_unknown",
                 "stranger_observe",
@@ -2714,14 +2714,33 @@ class TestVisualDirectToBehavior:
         assert candidate.ttl_sec == pytest.approx(0.49)
 
     @pytest.mark.parametrize(
+        "event_type",
+        [
+            "EVT_VISION_STRANGER_PRESENT",
+            "EVT_VISION_STRANGER_ALERT",
+            "EVT_VISION_STRANGER_FRIEND",
+        ],
+    )
+    def test_only_canonical_stranger_presence_routes_to_behavior(
+        self, node, event_type: str
+    ) -> None:
+        payload = self._visual_presence_payload(
+            event_type,
+            identity="unknown",
+            identity_state="confirmed_unknown",
+        )
+
+        assert node._intent_mapper.map_visual_event(event_type, payload) is None
+
+    @pytest.mark.parametrize(
         ("event_type", "identity", "identity_state"),
         [
             ("EVT_VISION_FAMILY_PRESENT", "owner", "confirmed_known"),
             ("EVT_VISION_FAMILY_PRESENT", "family_member_1", "candidate_known"),
             ("EVT_VISION_FAMILY_PRESENT", [], "confirmed_known"),
-            ("EVT_VISION_STRANGER_PRESENT", "family_member_1", "confirmed_known"),
-            ("EVT_VISION_STRANGER_PRESENT", "unknown", "unknown_candidate"),
-            ("EVT_VISION_STRANGER_PRESENT", {}, "confirmed_unknown"),
+            ("EVT_VISION_STRANGER", "family_member_1", "confirmed_known"),
+            ("EVT_VISION_STRANGER", "unknown", "unknown_candidate"),
+            ("EVT_VISION_STRANGER", {}, "confirmed_unknown"),
         ],
     )
     def test_family_and_stranger_presence_reject_wrong_identity(
@@ -2775,7 +2794,7 @@ class TestVisualDirectToBehavior:
                 "familiar_person_greet",
             ),
             (
-                "EVT_VISION_STRANGER_PRESENT",
+                "EVT_VISION_STRANGER",
                 "unknown",
                 "confirmed_unknown",
                 "stranger_observe",
@@ -2819,7 +2838,7 @@ class TestVisualDirectToBehavior:
         [
             ("EVT_VISION_MASTER", "owner", "confirmed_known"),
             ("EVT_VISION_FAMILY_PRESENT", "family_member_1", "confirmed_known"),
-            ("EVT_VISION_STRANGER_PRESENT", "unknown", "confirmed_unknown"),
+            ("EVT_VISION_STRANGER", "unknown", "confirmed_unknown"),
         ],
     )
     def test_presence_revalidation_rejects_a_second_current_target(

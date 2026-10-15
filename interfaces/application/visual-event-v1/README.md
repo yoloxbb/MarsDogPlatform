@@ -113,7 +113,7 @@ BehaviorTree 只在当前有效 v1 快照中按事件 ID 去重，并绑定同�
 
 ### 家人与陌生人在场状态事件（v1 可选扩展）
 
-`EVT_VISION_FAMILY_PRESENT` 和 `EVT_VISION_STRANGER_PRESENT` 复用上述活动状态、
+`EVT_VISION_FAMILY_PRESENT` 和 canonical 陌生人在场事件 `EVT_VISION_STRANGER` 复用上述活动状态、
 `observation_status`、`source_observation_id` 和 `event_instances.<event>.event_id` 规则，
 各自独立计时并维护一个类别级活动周期。家人只由身份属于 `family_member_1..4`、状态为
 `confirmed_known` 且正在 `tracking` 的当前源帧目标确认；陌生人只由身份 `unknown`、状态
@@ -123,7 +123,9 @@ BehaviorTree 只在当前有效 v1 快照中按事件 ID 去重，并绑定同�
 
 BehaviorTree 将两个 ENTER 周期分别映射到 `familiar_person_greet` 和 `stranger_observe`
 候选，并按 event ID 去重。候选必须绑定同包、同 epoch 且唯一的新鲜目标；缺少或无法唯一
-确认目标时拒绝候选。现有 `EVT_VISION_STRANGER` 及其 Emotion 消费语义保持不变。
+确认目标时拒绝候选。陌生人只在同一在场周期内附加一个 `EVT_VISION_STRANGER_ALERT` 或
+`EVT_VISION_STRANGER_FRIEND` 情绪分类事件；二者不创建额外 Behavior 候选。Emotion 有分类事件时
+只应用分类映射，避免同一快照重复应用陌生人情绪增量。
 这两个 Behavior 当前没有 Action 模板，因此候选被记录或排入仲裁不代表歪头、摇尾、注视、
 保持距离或警觉动作已执行；Action 会沿现有 unsupported-template 边界拒绝它们。
 

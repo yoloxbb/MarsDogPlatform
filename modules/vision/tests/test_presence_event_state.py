@@ -9,7 +9,7 @@ from marsdog_vision_interaction.core.presence_event_state import (
 
 
 FAMILY = "EVT_VISION_FAMILY_PRESENT"
-STRANGER = "EVT_VISION_STRANGER_PRESENT"
+STRANGER = "EVT_VISION_STRANGER"
 
 
 def _state(event_name: str) -> PresenceEventState:

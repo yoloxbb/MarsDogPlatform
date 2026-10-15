@@ -712,7 +712,7 @@ visual_direct:
     ttl_sec: 0.5
     interrupt_policy: safe_point
 
-  EVT_VISION_STRANGER_PRESENT:
+  EVT_VISION_STRANGER:
     category: external_interaction
     intent: stranger_observe
     semantic_rank: 3

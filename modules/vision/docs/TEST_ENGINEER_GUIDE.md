@@ -629,9 +629,9 @@ Vision 事件路由正确率 = 门禁打开且期望事件正确次数 / 门禁�
 | 正式事件 | 来源 | 是否需要姿态身份门禁 | 同包主要证据 |
 |---|---|---:|---|
 | `EVT_VISION_MASTER` | owner：当前源帧确认并跟踪，状态机 ENTER 后发布；已知非主人：有 `faces[]` 且主目标身份非空、非 `unknown` 时即时发布 | owner 状态路径要求 `owner/confirmed_known/tracking`；非主人即时事实本身不证明 `confirmed_known` | owner：状态字段、源观测和 `event_instances.EVT_VISION_MASTER.event_id`；非主人：`faces[]`、`active_target.identity/identity_state` |
-| `EVT_VISION_STRANGER` | 当前有陌生人脸，但情绪状态缺失、过期、非法或无匹配分类 | 否 | `faces[]`、`active_target.identity_state` |
-| `EVT_VISION_STRANGER_ALERT` | 陌生人 + 新鲜情绪中 Anxiety/Fear 已触发 | 否 | `faces[]`、`active_target.identity_state`、`/emotion/state` |
-| `EVT_VISION_STRANGER_FRIEND` | 陌生人 + 无 Alert 且 Joy/Excite/Calm 已触发 | 否 | 同上 |
+| `EVT_VISION_STRANGER` | 当前源关联目标满足 `unknown/confirmed_unknown/tracking` 并经不同有效源观测达到陌生人在场 ENTER；整个活动周期重复发布 | 是 | `observation_status`、`source_observation_id`、`human_candidates[]`、`event_instances.EVT_VISION_STRANGER.event_id` |
+| `EVT_VISION_STRANGER_ALERT` | 陌生人在场周期活动、当前源关联陌生人脸存在且新鲜情绪中 Anxiety/Fear 已触发 | 是 | 同包在场证据、`faces[]`、`active_target.identity_state`、`/emotion/state` |
+| `EVT_VISION_STRANGER_FRIEND` | 陌生人在场周期活动、当前源关联陌生人脸存在、无 Alert 且 Joy/Excite/Calm 已触发 | 是 | 同上 |
 | `EVT_VISION_MASTER_HAPPY` | GP-014～GP-021 的兼容动作，或确认主人稳定开心表情 | 姿态：是；表情：仅 `owner/confirmed_known/tracking` | 动作来源看 `recognized_actions[]`、`pose_action` 或 `hands[].hand_action`；表情来源看对应 `faces[].facial_expression` |
 | `EVT_VISION_MASTER_SAD` | GP-003～GP-013 的兼容动作，或确认主人稳定难过表情 | 姿态：是；表情：仅 `owner/confirmed_known/tracking` | 同上 |
 | `EVT_VISION_MASTER_NEUTRAL` | GP-022、GP-023、GP-025 折叠出的 `neutral_stand_sit` | 是 | `pose_state`、`recognized_actions[]`、`pose_action` |
@@ -921,8 +921,9 @@ rg '"record":"held_object_evaluation"' /tmp/marsdog_vision_qa/HOLD-01/*.jsonl
 
 ### 5.12 陌生人脸与情绪状态融合
 
-视觉节点识别到陌生人脸时，使用 `/emotion/state` JSON v2 的
-`emotions.<name>.triggered` 细分事件。运行时订阅中应出现
+视觉节点在陌生人在场状态机 ENTER 后持续发布 canonical Stranger；仅在活动周期内存在当前源关联
+陌生人脸时，才使用 `/emotion/state` JSON v2 的 `emotions.<name>.triggered` 追加细分事件。
+运行时订阅中应出现
 `/emotion/state`，QoS 为 RELIABLE、KEEP_LAST depth 10：
 
 ```bash
@@ -931,15 +932,15 @@ ros2 node info /vision_interaction
 
 | 情况 | Vision `events[]` 预期 | 验收重点 |
 |---|---|---|
-| Anxiety 或 Fear 的 `triggered=true` | `EVT_VISION_STRANGER_ALERT` | 两者任一成立即为 Alert |
-| 无 Alert，Joy、Excite 或 Calm 的 `triggered=true` | `EVT_VISION_STRANGER_FRIEND` | Alert 与 Friend 同时成立时 Alert 优先 |
-| `/emotion/state` 未收到、超过 2.5 s、JSON/schema/字段非法 | `EVT_VISION_STRANGER` | 安全回退；非法部分包不覆盖上一份完整快照 |
-| 仅 Curious 的 `triggered=true` | `EVT_VISION_STRANGER` | Curious 不在本次细分映射内 |
+| 活动陌生人在场 + Anxiety 或 Fear 的 `triggered=true` | `EVT_VISION_STRANGER` + `EVT_VISION_STRANGER_ALERT` | 两者任一成立即为 Alert |
+| 活动陌生人在场、无 Alert，Joy、Excite 或 Calm 的 `triggered=true` | `EVT_VISION_STRANGER` + `EVT_VISION_STRANGER_FRIEND` | Alert 与 Friend 同时成立时 Alert 优先 |
+| `/emotion/state` 未收到、超过 2.5 s、JSON/schema/字段非法 | 只发布 `EVT_VISION_STRANGER` | 安全回退；非法部分包不覆盖上一份完整快照 |
+| 仅 Curious 的 `triggered=true` | 只发布 `EVT_VISION_STRANGER` | Curious 不在本次细分映射内 |
 | 已确认固定身份 | `EVT_VISION_MASTER` | 不得误报 Stranger |
 
 验收时应注入完整的 `emotions{}` 快照并修改 `triggered` 布尔值，不能只改
-`dominantEmotion`。细分事件替换通用 Stranger，同一 `events[]` 不得同时包含
-通用和细分名称。情绪系统不得把 Alert/Friend 反向配置为情绪增量输入。
+`dominantEmotion`。Alert/Friend 细分事件与 canonical 陌生人在场事件同包共存；Emotion
+只应用细分映射，不重复应用基础 Stranger 增量，并沿用现有同名事件去重策略。
 
 ### 5.13 视觉事件历史与发布频率
 

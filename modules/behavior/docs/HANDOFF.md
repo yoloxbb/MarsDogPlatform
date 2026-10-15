@@ -204,8 +204,8 @@ Service 不可用时回退 Topic 缓存。视觉消息超过约 0.5 秒、目标
 `priority_level=1, sub_priority=12`（Lv1.2）。视觉 Topic 是 10 Hz 状态快照，适配器按事件的
 “消失 → 再出现”边沿重新触发，候选池另行保证 queued/in-flight 同名唯一。
 
-owner 的 `EVT_VISION_MASTER`、`EVT_VISION_FAMILY_PRESENT` 和
-`EVT_VISION_STRANGER_PRESENT` 在 Behavior 侧都要求活动周期 `event_id`，按各自实例去重，且
+owner 的 `EVT_VISION_MASTER`、`EVT_VISION_FAMILY_PRESENT` 和 canonical 陌生人在场事件
+`EVT_VISION_STRANGER` 在 Behavior 侧都要求活动周期 `event_id`，按各自实例去重，且
 不会因短暂 Topic 中断清除去重记忆。主人 MASTER 使用确认主人状态机：不同有效源观测确认目标
 满 1.0 秒后 ENTER，HOLD 期间维持，连续有效漏检 2.0 秒后 EXIT 并开始 3.0 秒冷却；断流和
 无效推理不计作漏检。已知非主人（包括家人）的即时 MASTER face fact 没有 owner 状态实例，不能

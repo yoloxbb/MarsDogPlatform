@@ -305,8 +305,8 @@ Action SUCCESS(metadata_json.energyValue)
 | 左右抽搐 | 目标 ID 频繁变化、躯干中心不稳、死区过小或方向符号错误 |
 | 相机断流仍显示人物 | 检查代码/配置是否包含 `camera_stale_timeout_sec=0.5`，目标年龄不得被发布定时器刷新 |
 | 静态躺卧触发跌倒 | 应使用时序 GesturePose 引擎；确认不是旧随机 `PoseActionClassifier` |
-| 陌生人只出现通用 Stranger | 检查 Vision 是否订阅 `/emotion/state`、JSON v2 是否完整、`triggered` 是否为 boolean 及状态是否超过 2.5 秒 |
-| Alert/Friend 重复或冲突 | 确认 Alert 优先且细分事件替换通用 Stranger；BT 仍需对 10 Hz 状态流做 queued/in-flight 去重 |
+| 陌生人只出现通用 Stranger | 检查在场状态机是否已 ENTER、是否有关联的当前源陌生人脸，再检查 Vision 是否订阅 `/emotion/state`、JSON v2 是否完整、`triggered` 是否为 boolean 及状态是否超过 2.5 秒 |
+| Alert/Friend 重复或冲突 | 确认 Alert 优先、每包最多一个细分事件且与 canonical Stranger 同包；Emotion 应抑制同包基础增量，BT 只按 canonical 事件 ID 去重 |
 | 充电一直不结束 | Action 未返回 SUCCESS，或 Result 未携带/转换 `energyValue` |
 | 充电被情绪中断 | 运行配置/代码不是带延迟队列和抢占修复的当前版本 |
 | 情绪动作后长期静止 | 检查 `emotion_continuation` 配置和 `/emotion/state.triggered` |
@@ -318,7 +318,7 @@ Action SUCCESS(metadata_json.energyValue)
 - [ ] Voice 的同一会话保持相同 `interaction_id`。
 - [ ] Vision 在当前相机下只输出单个稳定目标，坐标中心定义正确。
 - [ ] Vision 空闲时无物体推理；Action 开启后按 session 发布，停止或租约到期后清空。
-- [ ] Vision 订阅 `/emotion/state`；陌生人在 Anxiety/Fear 下发 Alert，在 Joy/Excite/Calm 下发 Friend，过期/非法时回退通用 Stranger。
+- [ ] Vision 订阅 `/emotion/state`；陌生人在场 ENTER 后发布带稳定 ID 的 canonical Stranger；当前源关联脸在 Anxiety/Fear 下同包附加 Alert，在 Joy/Excite/Calm 下无 Alert 时附加 Friend；过期/非法时只保留在场事件。
 - [ ] BT 在 Action 不可抢占时保留候选，而不是丢弃。
 - [ ] Action 只接受行为表中的精确 `behavior_name`。
 - [ ] 会话结束 1 秒内 `/cmd_vel` 归零。

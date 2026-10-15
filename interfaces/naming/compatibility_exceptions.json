@@ -54,7 +54,7 @@
     "audio_direct|EVT_VOICE_COMMAND_WAIT_FOR_OWNER_RETURN|default|wait_return",
     "visual_direct|EVT_VISION_FAMILY_PRESENT|default|familiar_person_greet",
     "visual_direct|EVT_VISION_MASTER|default|owner_greet",
-    "visual_direct|EVT_VISION_STRANGER_PRESENT|default|stranger_observe"
+    "visual_direct|EVT_VISION_STRANGER|default|stranger_observe"
   ],
   "legacy_spellings": [
     "behavior|barkShortAlert",

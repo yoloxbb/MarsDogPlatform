@@ -145,7 +145,7 @@ def test_visual_contract_preserves_optional_owner_event_metadata() -> None:
             visual_event_types.EVT_VISION_FAMILY_PRESENT: {
                 "event_id": "epoch:family-presence:3",
             },
-            visual_event_types.EVT_VISION_STRANGER_PRESENT: {
+            visual_event_types.EVT_VISION_STRANGER: {
                 "event_id": "epoch:stranger-presence:3",
             },
             "UNKNOWN_OPTIONAL_EVENT": {"event_id": "other-cycle"},
@@ -162,7 +162,7 @@ def test_visual_contract_preserves_optional_owner_event_metadata() -> None:
         visual_event_types.EVT_VISION_FAMILY_PRESENT: {
             "event_id": "epoch:family-presence:3",
         },
-        visual_event_types.EVT_VISION_STRANGER_PRESENT: {
+        visual_event_types.EVT_VISION_STRANGER: {
             "event_id": "epoch:stranger-presence:3",
         },
         "UNKNOWN_OPTIONAL_EVENT": {"event_id": "other-cycle"},

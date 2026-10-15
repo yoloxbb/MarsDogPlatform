@@ -205,7 +205,7 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
     )
     presence_states = (
         ("EVT_VISION_FAMILY_PRESENT", family),
-        ("EVT_VISION_STRANGER_PRESENT", stranger),
+        ("EVT_VISION_STRANGER", stranger),
     )
 
     def observation(sequence, *, status="valid", present=True):
@@ -254,7 +254,8 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
         )
     assert packet is not None
     assert "EVT_VISION_FAMILY_PRESENT" in packet["events"]
-    assert "EVT_VISION_STRANGER_PRESENT" in packet["events"]
+    assert "EVT_VISION_STRANGER" in packet["events"]
+    assert "EVT_VISION_STRANGER_PRESENT" not in packet["events"]
     assert packet["event_instances"]["EVT_VISION_MASTER"] == {
         "event_id": "owner-cycle"
     }
@@ -264,7 +265,7 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
     family_event_id = packet["event_instances"]["EVT_VISION_FAMILY_PRESENT"][
         "event_id"
     ]
-    stranger_event_id = packet["event_instances"]["EVT_VISION_STRANGER_PRESENT"][
+    stranger_event_id = packet["event_instances"]["EVT_VISION_STRANGER"][
         "event_id"
     ]
     assert family_event_id != stranger_event_id
@@ -278,7 +279,7 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
     assert packet["event_instances"]["EVT_VISION_FAMILY_PRESENT"][
         "event_id"
     ] == family_event_id
-    assert packet["event_instances"]["EVT_VISION_STRANGER_PRESENT"][
+    assert packet["event_instances"]["EVT_VISION_STRANGER"][
         "event_id"
     ] == stranger_event_id
 
@@ -289,9 +290,9 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
             now=10.44 + index * 0.11,
         )
     assert "EVT_VISION_FAMILY_PRESENT" not in packet["events"]
-    assert "EVT_VISION_STRANGER_PRESENT" not in packet["events"]
+    assert "EVT_VISION_STRANGER" not in packet["events"]
     assert "EVT_VISION_FAMILY_PRESENT" not in packet["event_instances"]
-    assert "EVT_VISION_STRANGER_PRESENT" not in packet["event_instances"]
+    assert "EVT_VISION_STRANGER" not in packet["event_instances"]
     assert packet["event_instances"]["EVT_VISION_MASTER"][
         "event_id"
     ] == "owner-cycle"
@@ -1570,7 +1571,6 @@ def test_all_pose_events_allow_confirmed_stranger_identity() -> None:
         },
     }
     assert VisionInteractionNode._derive_events(unrecognized) == [
-        "EVT_VISION_STRANGER",
         "EVT_VISION_FALL",
         "EVT_VISION_STOP_GESTURE",
     ]

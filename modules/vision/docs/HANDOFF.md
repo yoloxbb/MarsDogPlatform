@@ -67,12 +67,14 @@ depth_fusion:
 Emotion/Needs 的 MASTER 处理保持不变；Behavior 要求 MASTER 周期 ID 和同包 owner 身份才能
 生成主人候选。
 
-`EVT_VISION_FAMILY_PRESENT` 与 `EVT_VISION_STRANGER_PRESENT` 分别维护已登记家人
+`EVT_VISION_FAMILY_PRESENT` 与 canonical 陌生人在场事件 `EVT_VISION_STRANGER` 分别维护已登记家人
 `family_member_1..4/confirmed_known/tracking` 和确认陌生人
 `unknown/confirmed_unknown/tracking` 的类别级活动周期。两者采用不同有效源观测推进的
 1.0 秒 ENTER、2.0 秒有效负观测 EXIT、EXIT 后 3.0 秒冷却和稳定 event ID；失效源观测只打断
-待决计时，不充当离开证据。旧 `EVT_VISION_STRANGER` 与其 Emotion 消费者保持原义。Vision
-只发布事件，不调用行为或动作接口。
+待决计时，不充当离开证据。进入陌生人在场活动周期后，`events[]` 始终包含带稳定实例 ID 的
+`EVT_VISION_STRANGER`；同一周期内可附加一个当前源关联人脸的 `EVT_VISION_STRANGER_ALERT` 或
+`EVT_VISION_STRANGER_FRIEND`。Behavior 只路由 canonical 在场事件；Emotion 有细分事件时只应用该
+细分映射，否则应用通用 Stranger 映射。Vision 只发布事件，不调用行为或动作接口。
 
 主人弯腰/蹲下使用独立状态事件 `EVT_VISION_OWNER_BEND_SQUAT`：复用已稳定公开的
 `bend_over` / `squat_down`，要求同一当前 `owner/confirmed_known/tracking` source target，
@@ -126,12 +128,12 @@ bbox/body_center 为有限归一化数值
 尺寸、frame、时间同步、有效样本或 0.5 秒新鲜度任一不合格均 fail closed：
 `range_valid=false,distance_m=null`，不使用人体框高度回退估距。
 
-陌生人脸存在时，视觉读取 `/emotion/state` JSON v2 中的
+活动陌生人在场周期内存在当前源关联人脸时，视觉读取 `/emotion/state` JSON v2 中的
 `emotions.<name>.triggered`：Anxiety/Fear 映射 `EVT_VISION_STRANGER_ALERT`，
 否则 Joy/Excite/Calm 映射 `EVT_VISION_STRANGER_FRIEND`。情绪快照默认
-2.5 秒过期；未收到、非法、过期或仅 Curious 触发时回退
-`EVT_VISION_STRANGER`。Alert 优先且细分事件替换通用事件。Vision 仍不订阅
-`/internal_need/state`。
+2.5 秒过期；未收到、非法、过期或仅 Curious 触发时不附加细分事件，Emotion 对同包
+`EVT_VISION_STRANGER` 应用通用映射。Alert 优先；细分事件与 canonical 在场事件同包共存。
+Vision 仍不订阅 `/internal_need/state`。
 
 ## 5. VisionTask
 
@@ -278,9 +280,9 @@ uv run pytest
 - 静态躺卧不触发跌倒；直立到躺卧序列只产生一次跌倒边沿。
 - JSON 始终包含完整顶层字段，即使数组为空。
 - Topic QoS 保持 BEST_EFFORT depth 5，与 BT/Action 匹配。
-- `vision_interaction` 必须以 RELIABLE depth 10 订阅 `/emotion/state`；分别注入
-  Anxiety/Fear、Joy/Excite/Calm 后，陌生人应分别发布 Alert/Friend，过期或
-  非法状态应回退通用 Stranger。
+- `vision_interaction` 必须以 RELIABLE depth 10 订阅 `/emotion/state`；陌生人先经过在场 ENTER
+  门槛，活动周期中 canonical Stranger 始终带稳定实例 ID；当前源关联陌生人脸分别注入
+  Anxiety/Fear、Joy/Excite/Calm 后，应同包附加 Alert/Friend。过期或非法状态只保留在场事件。
 - 物体 Topic 的 `schema_version=2`，Action 只消费 `source=stream` 且匹配
   `stream.session_id` 的结果，同时校验 `header.stamp`、`status`，并在停止、
   错误或超时后立即停止使用旧框。

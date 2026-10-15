@@ -492,7 +492,9 @@ center_x, center_y	float	中心点
 /perception/visual_event JSON 中的 events 字段为 string[]，包含当前帧触发的视觉事件标签。
 event_type	说明	触发逻辑
 EVT_VISION_MASTER	识别到主人脸	SFace 匹配注册库
-EVT_VISION_STRANGER	识别到陌生人脸	人脸存在但未匹配注册库
+EVT_VISION_STRANGER	确认陌生人在场	unknown/confirmed_unknown/tracking 的不同新鲜有效源观测稳定达到 1 秒后进入；活动周期持续发布
+EVT_VISION_STRANGER_ALERT	陌生人警觉分类	活动在场周期内当前源关联的人脸具有 Anxiety/Fear 触发分类；与在场事件同包出现
+EVT_VISION_STRANGER_FRIEND	陌生人友好分类	活动在场周期内当前源关联的人脸具有 Joy/Excite/Calm 触发分类且无 Alert；与在场事件同包出现
 EVT_VISION_MASTER_HAPPY	识别到主人开心情绪	主人 + happy 组动作(挥舞/跳跃/点头/鼓掌/点赞)
 EVT_VISION_MASTER_SAD	识别到主人悲伤情绪	主人 + sad 组动作(低头/蜷缩/驼背/掩面)
 EVT_VISION_MASTER_NEUTRAL	识别到主人中性情绪	主人 + neutral 动作(自然站立/端坐)

@@ -246,7 +246,7 @@
 | `EVT_VISION_OWNER_BEND_SQUAT` | `approach_owner` | 1 | 12 |
 | `EVT_VISION_OWNER_RECALL_GESTURE` | `approach_owner` | 1 | 12 |
 | `EVT_VISION_FAMILY_PRESENT` | `familiar_person_greet` | 1 | 12 |
-| `EVT_VISION_STRANGER_PRESENT` | `stranger_observe` | 1 | 12 |
+| `EVT_VISION_STRANGER`（活动在场实例） | `stranger_observe` | 1 | 12 |
 
 主人事件携带 `owner/confirmed_known/tracking` 目标和事件实例 ID，经统一仲裁；TTL 不超过
 目标的剩余 500 ms 新鲜期。主人弯腰/蹲下映射为 `owner_approach_response` →

@@ -354,6 +354,143 @@ def _toy_event_probe(output):
     }
 
 
+def _stranger_presence_probe(output):
+    """Check the canonical stranger cycle and its emotion refinements."""
+    event = "EVT_VISION_STRANGER"
+    alert = "EVT_VISION_STRANGER_ALERT"
+    friend = "EVT_VISION_STRANGER_FRIEND"
+    event_id = "stranger-probe-cycle-1"
+    probe_dir = output / "stranger-presence-probe"
+    probe_dir.mkdir(parents=True, exist_ok=True)
+    target = {
+        "identity": "unknown",
+        "identity_state": "confirmed_unknown",
+        "tracking_state": "tracking",
+        "target_type": "human",
+        "target_id": "stranger-probe-epoch:human:8",
+        "track_id": 8,
+        "face_track_id": 18,
+        "vision_epoch": "stranger-probe-epoch",
+        "last_seen_age_ms": 0.0,
+    }
+    payload = {
+        "schema_version": 1,
+        "vision_epoch": "stranger-probe-epoch",
+        "snapshot_id": "stranger-probe-epoch:visual:1",
+        "sequence": 1,
+        "source_observation_id": "stranger-probe-frame-1",
+        "observation_status": "valid",
+        "header": {"stamp": 1000.0, "frame_id": "camera"},
+        "active_target": dict(target),
+        "human_candidates": [dict(target)],
+        "faces": [{
+            "track_id": 18,
+            "recognized_user": "unknown",
+            "identity_state": "confirmed_unknown",
+        }],
+        "events": [event, alert],
+        "event_instances": {event: {"event_id": event_id}},
+    }
+    producer = run_stage(
+        "vision", {"stranger_presence_probe": payload}, probe_dir, WORKER
+    )
+    produced = producer["observed"]["stranger_presence_probe"]
+    for key in ("events", "event_instances", "observation_status", "source_observation_id"):
+        if produced.get(key) != payload[key]:
+            raise RuntimeError(f"Vision changed stranger presence field {key}")
+
+    wire = json.dumps(produced, ensure_ascii=False)
+    friend_payload = deepcopy(produced)
+    friend_payload.update(
+        snapshot_id="stranger-probe-epoch:visual:2",
+        sequence=2,
+        source_observation_id="stranger-probe-frame-2",
+        events=[event, friend],
+    )
+    repeated_wire = json.dumps(friend_payload, ensure_ascii=False)
+    legacy_fact = deepcopy(produced)
+    legacy_fact["events"] = [event]
+    legacy_fact.pop("event_instances", None)
+    legacy_wire = json.dumps(legacy_fact, ensure_ascii=False)
+    subtype_only = deepcopy(produced)
+    subtype_only["events"] = [alert]
+    subtype_only.pop("event_instances", None)
+    subtype_only_wire = json.dumps(subtype_only, ensure_ascii=False)
+    behavior = run_stage(
+        "behavior",
+        [
+            {"id": "active-cycle", "steps": [
+                {"wire": wire},
+                {"wire": repeated_wire},
+                {"advance": 1.1, "wire": json.dumps({
+                    **friend_payload,
+                    "snapshot_id": "stranger-probe-epoch:visual:3",
+                    "sequence": 3,
+                    "source_observation_id": "stranger-probe-frame-3",
+                }, ensure_ascii=False)},
+            ]},
+            {"id": "legacy-face-fact", "steps": [{"wire": legacy_wire}]},
+            {"id": "subtype-only", "steps": [{"wire": subtype_only_wire}]},
+        ],
+        probe_dir,
+        WORKER,
+    )
+    cycle = behavior["observed"]["active-cycle"]
+    if (
+        any(step["error"] for steps in behavior["observed"].values() for step in steps)
+        or len(cycle[0]["candidates"]) != 1
+        or any(step["candidates"] for step in cycle[1:])
+        or behavior["observed"]["legacy-face-fact"][0]["candidates"]
+        or event in behavior["observed"]["legacy-face-fact"][0]["active_edges"]
+        or behavior["observed"]["subtype-only"][0]["candidates"]
+    ):
+        raise RuntimeError("Stranger presence did not route exactly once by its instance ID")
+    candidate = cycle[0]["candidates"][0]
+    if (
+        candidate.get("trigger_event") != event
+        or candidate.get("behavior_name") != "stranger_observe"
+        or candidate.get("params", {}).get("visual_event_instance_id") != event_id
+    ):
+        raise RuntimeError("Stranger presence did not use the canonical instance-bound route")
+
+    alert_only = deepcopy(produced)
+    alert_only["events"] = [alert]
+    emotion = run_stage(
+        "emotion",
+        [
+            {"id": "alert-with-base", "steps": [{"wire": wire}]},
+            {"id": "alert-only", "steps": [{
+                "wire": json.dumps(alert_only, ensure_ascii=False),
+            }]},
+            {"id": "friend-with-base", "steps": [{"wire": repeated_wire}]},
+            {"id": "friend-only", "steps": [{
+                "wire": json.dumps({**friend_payload, "events": [friend]}, ensure_ascii=False),
+            }]},
+        ],
+        probe_dir,
+        WORKER,
+    )
+    emotions = emotion["observed"]
+    for refined, subtype_only_id in (
+        ("alert-with-base", "alert-only"),
+        ("friend-with-base", "friend-only"),
+    ):
+        if emotions[refined][0]["emotions"] != emotions[subtype_only_id][0]["emotions"]:
+            raise RuntimeError("Co-emitted stranger event double-applied Emotion increments")
+
+    return {
+        "producer_module": producer["provenance"]["module_file"],
+        "behavior_module": behavior["provenance"]["module_file"],
+        "emotion_module": emotion["provenance"]["module_file"],
+        "event_name": event,
+        "refinements": [alert, friend],
+        "instance_bound_behavior_routes_once_across_refinement_changes": True,
+        "legacy_bare_fact_and_refinement_only_do_not_route": True,
+        "emotion_suppresses_generic_delta_when_refinement_is_coemitted": True,
+        "scope": "pure visual-event contract probe; no ROS transport or hardware",
+    }
+
+
 def observe(output):
     fixtures = json.loads((FIXTURES / "cases.json").read_text())
     vision = run_stage("vision", fixtures["producers"], output, WORKER)
@@ -545,6 +682,7 @@ def observe(output):
     owner_posture_provenance = _owner_posture_probe(output, owner_payload)
     owner_recall_provenance = _owner_recall_probe(output, owner_payload)
     toy_event_provenance = _toy_event_probe(output)
+    stranger_presence_provenance = _stranger_presence_probe(output)
 
     scenarios = []
     for case in fixtures["scenarios"]:
@@ -588,6 +726,7 @@ def observe(output):
     provenance["owner_posture_probe"] = owner_posture_provenance
     provenance["owner_recall_probe"] = owner_recall_provenance
     provenance["toy_event_probe"] = toy_event_provenance
+    provenance["stranger_presence_probe"] = stranger_presence_provenance
     return ({stage: value["observed"] for stage, value in responses.items()}, provenance)
 
 

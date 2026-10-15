@@ -215,9 +215,9 @@ z 与身体 z。可靠腕点关联和可重复的多指屈伸周期仍是必要�
 | 事件名 | 当前触发条件 | 同包中应读取的证据 |
 |---|---|---|
 | `EVT_VISION_MASTER` | 主目标为 owner 时，须经过下方确认主人状态机；已知非主人身份（包括家人）仍在 `faces[]` 非空时沿用即时事实路径 | owner：`observation_status`、`source_observation_id`、同包 `human_candidates[]` 和活动实例；其他已知身份：`active_target.identity`、`faces[]` |
-| `EVT_VISION_STRANGER_ALERT` | 主目标身份未知，且新鲜 `/emotion/state` 中 `Anxiety` 或 `Fear` 的 `triggered=true` | `faces[]`、`active_target.identity_state`；情绪证据来自 `/emotion/state` |
-| `EVT_VISION_STRANGER_FRIEND` | 主目标身份未知，无 Alert 情绪，且 `Joy`、`Excite` 或 `Calm` 的 `triggered=true` | 同上 |
-| `EVT_VISION_STRANGER` | 主目标身份未知，但情绪状态缺失、过期、非法或没有匹配分类 | `faces[]`、`active_target.identity_state` |
+| `EVT_VISION_STRANGER` | 当前源帧关联的陌生目标满足 `unknown/confirmed_unknown/tracking`，并经不同有效源观测达到配置 ENTER（默认 1.0 秒）；在活动周期中持续发布 | `observation_status`、`source_observation_id`、同包 `human_candidates[]`；活动实例见 `event_instances.EVT_VISION_STRANGER.event_id` |
+| `EVT_VISION_STRANGER_ALERT` | 陌生人在场周期活动、当前源关联人脸存在，且新鲜 `/emotion/state` 中 `Anxiety` 或 `Fear` 的 `triggered=true` | 在场证据同上；人脸见 `faces[]` 和 `active_target.identity_state`；情绪证据来自 `/emotion/state` |
+| `EVT_VISION_STRANGER_FRIEND` | 陌生人在场周期活动、当前源关联人脸存在、无 Alert，且 `Joy`、`Excite` 或 `Calm` 的 `triggered=true` | 同上 |
 | `EVT_VISION_MASTER_HAPPY` | 满足姿态门控的主目标出现表 4.7 的 happy 兼容动作；或当前确认主人 `owner/confirmed_known/tracking` 的匹配人脸 `happy` 表情置信度 `>=0.70` 连续稳定 1.0 秒 | 姿态来源读取 `active_target.identity/identity_state/tracking_state`、`pose_action` 或 `hands[].hand_action`；表情来源读取 `active_target.face_track_id`、对应 `faces[].facial_expression` 和 `facial_expression_valid_for_sec` |
 | `EVT_VISION_MASTER_SAD` | 满足姿态门控的主目标出现表 4.7 的 sad 兼容动作；或当前确认主人 `owner/confirmed_known/tracking` 的匹配人脸 `sad` 表情置信度 `>=0.70` 连续稳定 1.0 秒 | 姿态来源读取 `active_target.identity/identity_state/tracking_state`、`pose_action` 或 `hands[].hand_action`；表情来源读取 `active_target.face_track_id`、对应 `faces[].facial_expression` 和 `facial_expression_valid_for_sec` |
 | `EVT_VISION_MASTER_NEUTRAL` | 满足姿态门控的主目标出现 `neutral_stand_sit` | `active_target.identity/identity_state/tracking_state`、`pose_action`、`pose_state` |
@@ -226,7 +226,6 @@ z 与身体 z。可靠腕点关联和可重复的多指屈伸周期仍是必要�
 | `EVT_VISION_OWNER_BEND_SQUAT` | 同一当前源目标为 `owner/confirmed_known/tracking`，其公共 `pose_action` 为 `bend_over` 或 `squat_down`，不同有效源观测稳定满 1.0 秒 | `observation_status`、`source_observation_id`、同包 owner `human_candidates[]` 的 `target_id/track_id/pose_action`；活动实例见 `event_instances` |
 | `EVT_VISION_OWNER_RECALL_GESTURE` | 当前主人目标同一源观测的稳定精确 `recognized_actions[]` 包含 `beckoning` 或 `waving`；GesturePose 已完成其原有时序确认 | `observation_status`、`source_observation_id`、同包唯一 owner `human_candidates[]`、内部手势目标匹配；活动实例见 `event_instances` |
 | `EVT_VISION_FAMILY_PRESENT` | 当前源帧关联到 `family_member_1..4/confirmed_known/tracking`，不同有效源观测连续达到配置 `enter_duration_sec`（默认 1.0 秒） | `observation_status`、`source_observation_id`、同包 `human_candidates[]`；活动实例见 `event_instances` |
-| `EVT_VISION_STRANGER_PRESENT` | 当前源帧关联到 `unknown/confirmed_unknown/tracking`，不同有效源观测连续达到配置 `enter_duration_sec`（默认 1.0 秒） | 同上 |
 | `EVT_VISION_FOOD` | 满足姿态门控且 `pose_action=holding_dog_food` | `active_target.identity/identity_state/tracking_state`、`active_target.held_object`、`tracked_objects[]` |
 | `EVT_VISION_TOY` | 有效物体任务对至少一个支持标签稳定识别达到 `T_enter=1.0s`；手持与未手持玩具共用状态，正命中不要求请求覆盖全部玩具标签 | `tracked_objects[]` 中同帧的玩具目标、`event_instances.EVT_VISION_TOY.event_id`；手持诊断仍在 `active_target.held_object` |
 
@@ -283,8 +282,9 @@ owner 的即时 face-derived `EVT_VISION_MASTER` 会先被抑制；只有主人�
 `T_retrigger=3.0s`。每类至少一个符合身份门控且有当前源帧身体/人脸关联的目标即可保持类别
 事件；类别内所有目标均不再满足条件，且有效负观测持续达到 T_exit 后才退出。两个状态各有
 独立 event ID。无效推理、结果过期或重复源结果不会被当作离开证据，也不会推进时间。
-这两个新增事件不改变已知非主人即时 `EVT_VISION_MASTER`、`EVT_VISION_STRANGER`、陌生人情绪
-细分或姿态/手势事件语义。
+家人在场事件不改变已知非主人即时 `EVT_VISION_MASTER` 路径。陌生人事件使用单一在场状态机作为
+触发门槛；原有 `/emotion/state` Alert/Friend 分类映射保留，但细分事件在活动周期内与
+`EVT_VISION_STRANGER` 在场事件同包共存。
 
 `EVT_VISION_OWNER_BEND_SQUAT` 是独立的互动姿态状态事件，消费 GesturePose 已公开的
 `bend_over` / `squat_down`，不改识别算法、姿态阈值或通用身份确认规则。事件要求同一当前源
@@ -361,7 +361,7 @@ BehaviorTree 只消费同一有效快照中的活动实例，并再次校验唯�
 - 已知非主人 face fact 在画面中持续存在时，`EVT_VISION_MASTER` 会重复；主人 MASTER 在
   ENTER 后重复到 EXIT。
 - owner MASTER、`EVT_VISION_FAMILY_PRESENT`、
-  `EVT_VISION_STRANGER_PRESENT` 在 ENTER 后作为活动状态重复发布到 EXIT；行为树按各自
+  `EVT_VISION_STRANGER` 在 ENTER 后作为活动状态重复发布到 EXIT；行为树按各自
   `event_instances` 中的稳定 `event_id` 去重，并在视觉 Topic 暂时中断后继续按同一实例去重。
 - `EVT_VISION_OWNER_RECALL_GESTURE` 在稳定 `beckoning`/`waving` 期间保留一个实例，只有有效同目标
   GesturePose 解除观测才移除；Behavior 按该周期 ID 去重，Topic 中断不重新生成候选。
@@ -382,32 +382,36 @@ BehaviorTree 只消费同一有效快照中的活动实例，并再次校验唯�
 
 ### 4.10 陌生人脸与 `/emotion/state` 融合
 
-Vision 订阅 `/emotion/state`（`std_msgs/msg/String` JSON v2，RELIABLE、
-KEEP_LAST depth 10），只读取情绪系统已计算好的
-`emotions.<name>.triggered`，不重复计算 `value/triggerThreshold/triggerOperator`，
-也不读取 `dominantEmotion`。默认以本机单调接收时间判断 2.5 秒新鲜度。
+Vision 仅在陌生人在场周期活动且当前源关联人脸存在时，读取 `/emotion/state`
+（`std_msgs/msg/String` JSON v2，RELIABLE、KEEP_LAST depth 10）中的情绪分类。
+它只读取情绪系统已计算好的 `emotions.<name>.triggered`，不重复计算
+`value/triggerThreshold/triggerOperator`，也不读取 `dominantEmotion`。默认以本机单调接收时间判断
+2.5 秒新鲜度。无论是否有人脸或情绪快照是否有效，活动在场状态都持续发布 canonical
+`EVT_VISION_STRANGER`；情绪快照只决定是否追加一个细分事件。
 
 ```text
-当前存在陌生人脸？
-  否 -> 原有已知人脸/无脸逻辑
-  是 -> emotion/state 是否完整且未超过 2.5 秒？
-          否 -> EVT_VISION_STRANGER
+陌生人在场状态机是否活动？
+  否 -> 不发布陌生人事件
+  是 -> 始终发布 EVT_VISION_STRANGER + 稳定 event_id
+        当前源关联的陌生人脸存在且 emotion/state 完整、新鲜？
+          否 -> 只发布 EVT_VISION_STRANGER
           是 -> Anxiety 或 Fear triggered？
-                  是 -> EVT_VISION_STRANGER_ALERT
+                  是 -> 追加 EVT_VISION_STRANGER_ALERT
                   否 -> Joy、Excite 或 Calm triggered？
-                          是 -> EVT_VISION_STRANGER_FRIEND
-                          否 -> EVT_VISION_STRANGER
+                          是 -> 追加 EVT_VISION_STRANGER_FRIEND
+                          否 -> 只发布 EVT_VISION_STRANGER
 ```
 
-Alert 安全优先；细分事件替换通用 `EVT_VISION_STRANGER`，同一包不双发。
-已知非主人 face fact 仍走即时 `EVT_VISION_MASTER*`；主人的 MASTER 则受前述主人状态机门控，
+Alert 安全优先；最多追加一个细分事件，且它与 `EVT_VISION_STRANGER` 在场事件同包共存。
+细分事件仅在当前源关联陌生人脸存在时出现。Emotion 在同包存在细分事件时只应用其增量，不再
+叠加基础 `EVT_VISION_STRANGER` 增量。已知非主人 face fact 仍走即时 `EVT_VISION_MASTER*`；主人的 MASTER 则受前述主人状态机门控，
 两条路径都不受该融合影响。格式非法、schema
 不兼容、配置情绪字段缺失、`triggered` 非 boolean、状态未收到/过期或仅
-`Curious` 触发时，均回退通用 Stranger。部分非法包不会覆盖上一份完整有效快照。
+`Curious` 触发时，均不追加细分事件；canonical 在场事件保持不变。部分非法包不会覆盖上一份完整有效快照。
 
-Vision 不订阅 `/internal_need/state`。情绪系统不得把
-`EVT_VISION_STRANGER_ALERT/FRIEND` 反向配置为情绪增量输入，避免 10 Hz
-视觉状态流形成 Vision → Emotion → Vision 正反馈。
+Vision 不订阅 `/internal_need/state`。Emotion 保留
+`EVT_VISION_STRANGER_ALERT/FRIEND` 的现有基础映射和同名事件去重策略；同包只应用一个
+陌生人情绪映射。
 
 ## 5. `/perception/vision/gesture_debug`
 
@@ -960,8 +964,8 @@ Pose、Hand、YuNet 或 SFace 加载失败时节点可能继续运行，但对�
 
 - Behavior Tree：只消费正式 `/perception/visual_event`，不要依赖
   `/perception/vision/gesture_debug`；对重复 `events[]` 做候选/in-flight 去重。
-- Behavior Tree：消费 Vision 已细分的 `EVT_VISION_STRANGER_ALERT/FRIEND`
-  及安全回退 `EVT_VISION_STRANGER`，对 10 Hz 状态流做 queued/in-flight/冷却去重。
+- Behavior Tree：只将带活动实例和唯一新鲜陌生人目标的 `EVT_VISION_STRANGER` 路由为
+  `stranger_observe`；ALERT/FRIEND 是 Emotion 细分，不创建 Behavior 候选。
 - Action：视觉跟踪必须校验 `tracking_state`、新鲜度和有限坐标；失效立即停车。
 - 唤醒靠近 Action：只接受同一 `vision_epoch + target_id`、`range_valid=true` 的
   人体目标；任何 epoch/ID/sequence/时间/frame/深度失效必须立即停车。

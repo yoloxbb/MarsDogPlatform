@@ -128,6 +128,41 @@ class EmotionAPITest(unittest.TestCase):
                 self.assertEqual(mapping.get("deltas"), expectedDeltas)
                 self.assertNotIn("Trust", mapping.get("deltas", {}))
 
+    def test_stranger_refinement_replaces_base_delta_in_same_visual_packet(self):
+        """陌生人在场事件与细分事件同包时只应用细分事件增量。"""
+        for refinement in (
+            "EVT_VISION_STRANGER_ALERT",
+            "EVT_VISION_STRANGER_FRIEND",
+        ):
+            with self.subTest(refinement=refinement):
+                combinedSystem = MarsdogEmotionSystem()
+                refinementOnlySystem = MarsdogEmotionSystem()
+
+                appliedEvents = combinedSystem.OnVisualEvent(
+                    {"events": ["EVT_VISION_STRANGER", refinement]}
+                )
+                expectedAppliedEvents = refinementOnlySystem.OnVisualEvent(
+                    {"events": [refinement]}
+                )
+
+                self.assertEqual(appliedEvents, [refinement])
+                self.assertEqual(appliedEvents, expectedAppliedEvents)
+                self.assertEqual(
+                    combinedSystem.GetAllEmotions(),
+                    refinementOnlySystem.GetAllEmotions(),
+                )
+
+    def test_stranger_base_delta_remains_when_no_refinement_is_present(self):
+        """没有 Alert/Friend 细分时 canonical 陌生人事件仍使用原映射。"""
+        system = MarsdogEmotionSystem()
+        expectedSystem = MarsdogEmotionSystem()
+
+        appliedEvents = system.OnVisualEvent({"events": ["EVT_VISION_STRANGER"]})
+        self.assertTrue(expectedSystem.ApplyEmotionEvent("EVT_VISION_STRANGER"))
+
+        self.assertEqual(appliedEvents, ["EVT_VISION_STRANGER"])
+        self.assertEqual(system.GetAllEmotions(), expectedSystem.GetAllEmotions())
+
     def test_apply_emotion_decay(self):
         """自然平复应按秒扣减配置情绪，并保持 Anxiety 和 Calm。"""
         system = MarsdogEmotionSystem()

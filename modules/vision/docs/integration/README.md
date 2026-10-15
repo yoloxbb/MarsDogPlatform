@@ -33,8 +33,8 @@ Action Result ──> Behavior Tree ── /behavior/result_event ──> Intern
 
 - 语音项目只负责听见什么、识别出什么意图以及会话何时结束，不直接控制底盘。
 - 视觉项目只发布视觉事实和稳定目标，不决定执行哪个行为。
-- 视觉订阅 `/emotion/state` 细分陌生人 Alert/Friend 事件，状态无效时回退通用 Stranger；不订阅内部需求状态。
-- 行为树项目消费 Vision 已细分的陌生人事件，并负责事件映射、优先级、延迟
+- 视觉以确认的陌生人在场周期发布 canonical Stranger，并可订阅 `/emotion/state` 附加 Alert/Friend 分类；不订阅内部需求状态。
+- 行为树项目只路由陌生人在场的 canonical Stranger 事件，并负责事件映射、优先级、延迟
   队列、抢占、超时和会话跟踪模式。
 - 动作系统只接受语义 `behavior_name`，解析为 `ACT_*`，并控制 AGV/Nav2/仿真。
 - `/behavior/result_event` 由行为树发布，不由动作系统直接发布；行为树会把 Action Result 转成内部需求系统需要的数据。

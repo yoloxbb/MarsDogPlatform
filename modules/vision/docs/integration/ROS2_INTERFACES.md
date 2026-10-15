@@ -153,11 +153,12 @@ Model Intent 命中 SIT 白名单时，对应具体事件为
 
 `speaker_id`、`is_speaking`、`speaker_confidence` 是旧兼容占位，视觉项目不填充跨模态信息。
 
-陌生人脸在 Vision 中按新鲜 `/emotion/state.emotions.<name>.triggered` 细分：
-Anxiety/Fear 任一触发时发布 `EVT_VISION_STRANGER_ALERT`；否则
-Joy/Excite/Calm 任一触发时发布 `EVT_VISION_STRANGER_FRIEND`。Alert 优先，
-细分事件替换通用事件。状态默认 2.5 秒过期；缺失、过期、非法或仅
-Curious 触发时回退 `EVT_VISION_STRANGER`。Vision 不订阅 `/internal_need/state`。
+陌生人先经过确认在场状态机（默认不同有效源观测稳定 1.0 秒进入）；活动期间始终发布带稳定
+`event_instances.EVT_VISION_STRANGER.event_id` 的 `EVT_VISION_STRANGER`。有当前源关联陌生人脸时，
+再按新鲜 `/emotion/state.emotions.<name>.triggered` 追加一个细分事件：Anxiety/Fear 任一触发时为
+`EVT_VISION_STRANGER_ALERT`；否则 Joy/Excite/Calm 任一触发时为
+`EVT_VISION_STRANGER_FRIEND`。Alert 优先。状态默认 2.5 秒过期；缺失、过期、非法或仅 Curious
+触发时不追加细分事件。Emotion 同包有细分事件时只应用细分增量。Vision 不订阅 `/internal_need/state`。
 
 ### 3.1 `/perception/vision/object_detections`
 

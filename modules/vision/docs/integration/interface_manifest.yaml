@@ -112,11 +112,21 @@ topics:
           event_instance_field: event_instances.EVT_VISION_MASTER.event_id
         non_owner_face_policy: "immediate for known non-owner identities, including family; does not qualify for owner_greet"
       EVT_VISION_STRANGER:
-        condition: stranger_face_present_with_missing_stale_invalid_or_unclassified_emotion_state
+        condition: confirmed_unknown_stranger_presence_cycle_active
+        identity_gate: "unknown / confirmed_unknown / tracking"
+        state_policy:
+          active_set: "added after ENTER, retained during HOLD, removed after 2s of valid negative observations"
+          retrigger_delay_sec: 3.0
+          cooldown_starts: at the valid observation that reaches T_exit
+          invalid_observation: "breaks pending timing evidence; never counts as stranger absence"
+          event_instance_field: event_instances.EVT_VISION_STRANGER.event_id
+        emotion_policy: "always present during active stranger cycle; Emotion applies generic mapping only if no subtype is co-emitted"
       EVT_VISION_STRANGER_ALERT:
-        condition: stranger_face_present_and_fresh_anxiety_or_fear_triggered
+        condition: "active stranger presence and current-source-associated stranger face with fresh Anxiety or Fear triggered"
+        co_emitted_with: EVT_VISION_STRANGER
       EVT_VISION_STRANGER_FRIEND:
-        condition: stranger_face_present_and_no_alert_and_fresh_joy_excite_or_calm_triggered
+        condition: "active stranger presence and current-source-associated stranger face with no Alert and fresh Joy, Excite, or Calm triggered"
+        co_emitted_with: EVT_VISION_STRANGER
       EVT_VISION_MASTER_HAPPY:
         condition: tracked_confirmed_known_or_unknown_confirmed_unknown_with_happy_compatible_action
       EVT_VISION_MASTER_SAD:
@@ -157,15 +167,6 @@ topics:
           cooldown_starts: at the valid observation that reaches T_exit
           invalid_observation: "breaks pending timing evidence; never counts as family absence"
           event_instance_field: event_instances.EVT_VISION_FAMILY_PRESENT.event_id
-      EVT_VISION_STRANGER_PRESENT:
-        condition: confirmed_unknown_stranger_currently_tracked_in_distinct_valid_source_observations_for_1s
-        identity_gate: "unknown / confirmed_unknown / tracking"
-        state_policy:
-          active_set: "added after ENTER, retained during HOLD, removed after 2s of valid negative observations"
-          retrigger_delay_sec: 3.0
-          cooldown_starts: at the valid observation that reaches T_exit
-          invalid_observation: "breaks pending timing evidence; never counts as stranger absence"
-          event_instance_field: event_instances.EVT_VISION_STRANGER_PRESENT.event_id
       EVT_VISION_FOOD:
         condition: tracked_confirmed_known_or_unknown_confirmed_unknown_with_holding_dog_food_pose
         labels: [dog bowl, dog food can, dog treat bag]

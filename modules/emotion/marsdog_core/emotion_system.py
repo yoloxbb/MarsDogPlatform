@@ -93,8 +93,19 @@ class MarsdogEmotionSystem(EmotionAPI, PersonalityAPI):
             and isinstance(toyInstance.get("event_id"), str)
             else None
         )
+        eventNames = self._GetStringList(payload.get("events", []))
+        hasStrangerRefinement = any(
+            eventName
+            in {
+                "EVT_VISION_STRANGER_ALERT",
+                "EVT_VISION_STRANGER_FRIEND",
+            }
+            for eventName in eventNames
+        )
         appliedEvents: list[str] = []
-        for eventName in self._GetStringList(payload.get("events", [])):
+        for eventName in eventNames:
+            if eventName == "EVT_VISION_STRANGER" and hasStrangerRefinement:
+                continue
             eventInstanceId = (
                 toyEventInstanceId if eventName == "EVT_VISION_TOY" else None
             )

@@ -85,7 +85,7 @@ from marsdog_vision_interaction.messages.visual_event_types import (
     EVT_VISION_MASTER,
     EVT_VISION_OWNER_BEND_SQUAT,
     EVT_VISION_OWNER_RECALL_GESTURE,
-    EVT_VISION_STRANGER_PRESENT,
+    EVT_VISION_STRANGER,
     EVT_VISION_TOY,
 )
 from marsdog_vision_interaction.providers.base import BaseProvider
@@ -171,6 +171,35 @@ def _apply_presence_event_states(
     else:
         event.pop("event_instances", None)
     return normalize_visual_event(event)
+
+
+def _append_stranger_refinement(
+    event: dict[str, Any],
+    *,
+    emotion_classification: str,
+    face_is_current: bool,
+) -> None:
+    """Append one classified subtype to an active canonical stranger cycle."""
+    instances = event.get("event_instances")
+    instance = (
+        instances.get(EVT_VISION_STRANGER)
+        if isinstance(instances, dict)
+        else None
+    )
+    events = event.get("events")
+    if (
+        not isinstance(events, list)
+        or not face_is_current
+        or EVT_VISION_STRANGER not in events
+        or not isinstance(instance, dict)
+        or not instance.get("event_id")
+    ):
+        return
+    refinement = visual_event_derivation.stranger_refinement_event(
+        emotion_classification
+    )
+    if refinement and refinement not in events:
+        events.append(refinement)
 
 
 def _suppress_owner_master_face_fact(event: dict[str, Any]) -> bool:
@@ -1359,6 +1388,14 @@ class VisionInteractionNode(Node):
             raw = dict(raw)
             raw["tracked_objects"] = latest_objects
         event = VisionInteractionNode._build_visual_snapshot(self, raw)
+        stranger_face_is_current = (
+            visual_event_derivation.stranger_face_target_is_current(
+                event,
+                source_freshness_sec=float(
+                    getattr(self, "_camera_stale_timeout_sec", 0.5)
+                ),
+            )
+        )
         held_manager = getattr(self, "_held_object_pose", None)
         if held_manager is not None:
             held_status = held_manager.update(
@@ -1403,7 +1440,7 @@ class VisionInteractionNode(Node):
                 getattr(self, "_family_presence_event_state", None),
             ),
             (
-                EVT_VISION_STRANGER_PRESENT,
+                EVT_VISION_STRANGER,
                 getattr(self, "_stranger_presence_event_state", None),
             ),
             (
@@ -1441,6 +1478,11 @@ class VisionInteractionNode(Node):
                 if legacy_master_fact
                 else frozenset()
             ),
+        )
+        _append_stranger_refinement(
+            event,
+            emotion_classification=emotion_classification,
+            face_is_current=stranger_face_is_current,
         )
         # Cache exactly the complete packet that is published.  VisionTask
         # query_targets only ever copies this atomic snapshot; it never
@@ -2349,11 +2391,17 @@ class VisionInteractionNode(Node):
     def _derive_events(
         observation: dict[str, Any],
         emotion_classification: str = "",
+        *,
+        stranger_presence_active: bool = False,
     ) -> list[str]:
         return visual_event_derivation.derive_events(
             observation,
             emotion_classification,
             identity_eligible=VisionInteractionNode._pose_event_identity_eligible,
+            stranger_presence_active=stranger_presence_active,
+            stranger_face_target_is_current=visual_event_derivation.stranger_face_target_is_current(
+                observation
+            ),
         )
 
     def _derive_events_with_facial_expression(

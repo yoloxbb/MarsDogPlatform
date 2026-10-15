@@ -14,7 +14,7 @@
 | `EVT_VISION_OWNER_BEND_SQUAT` | `approach_owner` | 1 | 12 | ≤0.5s |
 | `EVT_VISION_OWNER_RECALL_GESTURE` | `approach_owner` | 1 | 12 | ≤0.5s |
 | `EVT_VISION_FAMILY_PRESENT` | `familiar_person_greet` | 1 | 12 | ≤0.5s |
-| `EVT_VISION_STRANGER_PRESENT` | `stranger_observe` | 1 | 12 | ≤0.5s |
+| `EVT_VISION_STRANGER`（活动在场实例） | `stranger_observe` | 1 | 12 | ≤0.5s |
 | `EVT_VISION_TOY` | `toy_found_play` → `inspectFamiliarPlayItem` | 1 | 12 | ≤0.5s |
 
 `Lv1.2` 是本项目的表述约定，实际 Action Goal 仍只有整数

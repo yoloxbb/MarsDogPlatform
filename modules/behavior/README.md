@@ -214,7 +214,7 @@ ros2 launch marsdog_behavior behavior_tree.launch.py
 | **visual_direct** | `EVT_VISION_OWNER_BEND_SQUAT` | `owner_approach_response` → `approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER` |
 | **visual_direct** | `EVT_VISION_OWNER_RECALL_GESTURE` | `owner_approach_response` → `approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER` |
 | **visual_direct** | `EVT_VISION_FAMILY_PRESENT` | `familiar_person_greet` → `familiar_person_greet` (Action 模板缺失) |
-| **visual_direct** | `EVT_VISION_STRANGER_PRESENT` | `stranger_observe` → `stranger_observe` (Action 模板缺失) |
+| **visual_direct** | `EVT_VISION_STRANGER`（活动在场实例） | `stranger_observe` → `stranger_observe` (Action 模板缺失) |
 | **visual_direct** | `EVT_VISION_TOY` | `toy_found_play` → `inspectFamiliarPlayItem` |
 | **need** | `NEED_HUNGER_TRIGGERED` | `hunger_seek_food` |
 | **emotion** | `EMO_JOY_TRIGGERED` | `expressJoyWithHuman` / `expressJoyInPlaceWithHuman` / `expressJoyAlone` (Lv5) |

@@ -128,6 +128,10 @@
 [情绪事件映射目录](emotion_event_catalog.md#视觉输入)。需求节点只对
 `EVT_VISION_MASTER` 额外标记主人出现。
 
+陌生人在场时，Vision 在同一 `events[]` 中保留 `EVT_VISION_STRANGER`，并可附加一个
+`EVT_VISION_STRANGER_ALERT` 或 `EVT_VISION_STRANGER_FRIEND`。同包存在细分事件时，Emotion 只应用
+该细分映射；没有细分事件时应用 `EVT_VISION_STRANGER` 的通用映射。
+
 ### 2.3 `/perception/tactile_event`
 
 触觉事件使用单个 `event_type`。情绪节点命中
