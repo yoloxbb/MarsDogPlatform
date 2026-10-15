@@ -210,7 +210,7 @@ ros2 launch marsdog_behavior behavior_tree.launch.py
 | **audio_direct** | `EVT_VOICE_COMMAND_TOILET` | `Bladder > 50` 时复用 `barkShortAlert` |
 | **visual_direct** | `EVT_VISION_FALL` | `visual_fall_response` → `respond_person_fall` |
 | **visual_direct** | `EVT_VISION_STOP_GESTURE` | `visual_stop_gesture_response` → `respond_stop_gesture` |
-| **visual_direct** | `EVT_VISION_OWNER_PRESENT` | `owner_greet` → `owner_greet` (Action 模板缺失) |
+| **visual_direct** | `EVT_VISION_MASTER`（带主人状态实例及 owner 身份） | `owner_greet` → `owner_greet` (Action 模板缺失) |
 | **visual_direct** | `EVT_VISION_OWNER_BEND_SQUAT` | `owner_approach_response` → `approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER` |
 | **visual_direct** | `EVT_VISION_OWNER_RECALL_GESTURE` | `owner_approach_response` → `approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER` |
 | **visual_direct** | `EVT_VISION_FAMILY_PRESENT` | `familiar_person_greet` → `familiar_person_greet` (Action 模板缺失) |

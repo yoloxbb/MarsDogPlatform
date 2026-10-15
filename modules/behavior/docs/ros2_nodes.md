@@ -363,9 +363,9 @@ signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢�
   "header": {"stamp": 1786417000.1, "frame_id": "camera_link"},
   "active_target": {"track_id": 7, "pose_action": "fallen_down"},
   "hands": [{"hand_action": "stop_gesture"}],
-  "events": ["EVT_VISION_FALL", "EVT_VISION_STOP_GESTURE", "EVT_VISION_OWNER_PRESENT", "EVT_VISION_OWNER_BEND_SQUAT", "EVT_VISION_OWNER_RECALL_GESTURE", "EVT_VISION_FAMILY_PRESENT", "EVT_VISION_STRANGER_PRESENT"],
+  "events": ["EVT_VISION_FALL", "EVT_VISION_STOP_GESTURE", "EVT_VISION_MASTER", "EVT_VISION_OWNER_BEND_SQUAT", "EVT_VISION_OWNER_RECALL_GESTURE", "EVT_VISION_FAMILY_PRESENT", "EVT_VISION_STRANGER_PRESENT"],
   "observation_status": "valid",
-  "event_instances": {"EVT_VISION_OWNER_PRESENT": {"event_id": "owner-cycle-42"}, "EVT_VISION_OWNER_BEND_SQUAT": {"event_id": "owner-posture-cycle-42"}, "EVT_VISION_OWNER_RECALL_GESTURE": {"event_id": "owner-recall-cycle-42"}, "EVT_VISION_FAMILY_PRESENT": {"event_id": "family-cycle-42"}, "EVT_VISION_STRANGER_PRESENT": {"event_id": "stranger-cycle-42"}},
+  "event_instances": {"EVT_VISION_MASTER": {"event_id": "owner-cycle-42"}, "EVT_VISION_OWNER_BEND_SQUAT": {"event_id": "owner-posture-cycle-42"}, "EVT_VISION_OWNER_RECALL_GESTURE": {"event_id": "owner-recall-cycle-42"}, "EVT_VISION_FAMILY_PRESENT": {"event_id": "family-cycle-42"}, "EVT_VISION_STRANGER_PRESENT": {"event_id": "stranger-cycle-42"}},
   "human_candidates": [{"identity": "owner", "identity_state": "confirmed_known", "tracking_state": "tracking", "target_id": "epoch-1:human:7", "track_id": 7, "vision_epoch": "epoch-1", "pose_action": "bend_over", "last_seen_age_ms": 20.0}]
 }
 ```
@@ -377,7 +377,7 @@ signal 仅表示 `triggered: false → true` 的上升沿。持续升高、恢�
 |---|---|---|---|
 | `EVT_VISION_FALL` | `respond_person_fall` | Lv1, `sub_priority=12` | 8s |
 | `EVT_VISION_STOP_GESTURE` | `respond_stop_gesture` | Lv1, `sub_priority=12` | 8s |
-| `EVT_VISION_OWNER_PRESENT` | `owner_greet` | Lv1, `sub_priority=12`, `semantic_rank=3` | ≤0.5s |
+| `EVT_VISION_MASTER`（必须有活动 owner 实例和主人目标） | `owner_greet` | Lv1, `sub_priority=12`, `semantic_rank=3` | ≤0.5s |
 | `EVT_VISION_OWNER_BEND_SQUAT` | `approach_owner` | Lv1, `sub_priority=12`, `semantic_rank=3`, `safe_point` | ≤0.5s |
 | `EVT_VISION_OWNER_RECALL_GESTURE` | `approach_owner` | Lv1, `sub_priority=12`, `semantic_rank=3`, `safe_point` | ≤0.5s |
 | `EVT_VISION_FAMILY_PRESENT` | `familiar_person_greet` | Lv1, `sub_priority=12`, `semantic_rank=3` | ≤0.5s |

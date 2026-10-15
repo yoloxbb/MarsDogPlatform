@@ -400,6 +400,15 @@ def consume_visual_event(self, msg, *, direct_events):
                 event_types.append(event_type)
 
         current_direct_events = set(event_types) & direct_events
+        if (
+            OWNER_PRESENCE_EVENT in current_direct_events
+            and not _presence_instance_id(self, OWNER_PRESENCE_EVENT)
+        ):
+            # EVT_VISION_MASTER also carries the retained immediate
+            # non-owner face fact. Only the state-qualified owner cycle is a
+            # Behavior direct event; a bare family/known-face MASTER stays
+            # available to Emotion without appearing as an owner edge here.
+            current_direct_events.discard(OWNER_PRESENCE_EVENT)
         previous_direct_events = getattr(
             self, "_active_direct_visual_events", set()
         )

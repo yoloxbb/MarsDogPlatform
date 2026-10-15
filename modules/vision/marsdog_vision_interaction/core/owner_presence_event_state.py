@@ -1,4 +1,4 @@
-"""Compatibility API for the confirmed-owner presence Vision event."""
+"""State machine for the confirmed-owner ``EVT_VISION_MASTER`` cycle."""
 
 from __future__ import annotations
 

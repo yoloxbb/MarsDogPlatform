@@ -7,7 +7,7 @@ from marsdog_vision_interaction.core.owner_presence_event_state import (
     OwnerPresenceEventState,
 )
 from marsdog_vision_interaction.messages.visual_event_types import (
-    EVT_VISION_OWNER_PRESENT,
+    EVT_VISION_MASTER,
 )
 
 
@@ -274,7 +274,7 @@ def test_owner_config_defaults_to_recommended_values() -> None:
     assert config.enter_duration_sec == 1.0
     assert config.exit_duration_sec == 2.0
     assert config.retrigger_delay_sec == 3.0
-    assert EVT_VISION_OWNER_PRESENT == "EVT_VISION_OWNER_PRESENT"
+    assert EVT_VISION_MASTER == "EVT_VISION_MASTER"
 
 
 @pytest.mark.parametrize(

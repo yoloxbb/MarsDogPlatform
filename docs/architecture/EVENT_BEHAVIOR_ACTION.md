@@ -128,14 +128,16 @@ Voice 的 `speech_pipeline.py` 编排 ASR、声纹、KWS、词库与意图输出
 ### 3.2 视觉入口
 
 当前 BT 视觉直驱白名单包含 `EVT_VISION_FALL`、`EVT_VISION_STOP_GESTURE` 和六个状态
-事件：`EVT_VISION_OWNER_PRESENT`、`EVT_VISION_OWNER_BEND_SQUAT`、
+事件：带主人状态实例的 `EVT_VISION_MASTER`、`EVT_VISION_OWNER_BEND_SQUAT`、
 `EVT_VISION_OWNER_RECALL_GESTURE`、`EVT_VISION_FAMILY_PRESENT`、
 `EVT_VISION_STRANGER_PRESENT`、`EVT_VISION_TOY`。FALL/STOP 沿用出现边沿去重。Vision
 状态事件按各自事件契约维持 ENTER/HOLD/EXIT 生命周期；重复同一源观测不推进计时。玩具事件的
 `T_enter=1.0s`、`T_exit=2.0s`、`T_retrigger=3.0s` 及未知观测规则见下文。无效推理、相机断流
 或观测过期不会被当作玩具缺席；恢复后需要新的有效物体观测继续状态判定。
 
-主人事件仅接受 `owner/confirmed_known/tracking`，家人事件接受登记家人
+`EVT_VISION_MASTER` 只在带有活动 owner 状态实例且同包目标为
+`owner/confirmed_known/tracking` 时创建 `owner_greet`；已知非主人即时 MASTER face fact
+（包括家人）不会创建主人候选。家人事件接受登记家人
 `family_member_1..4/confirmed_known/tracking`，陌生人事件接受
 `unknown/confirmed_unknown/tracking`。每个类别分别要求可选 v1 元数据
 `observation_status=valid`、事件实例 ID 和同包唯一的新鲜目标。BT 按事件实例 ID 跨重复
@@ -168,8 +170,8 @@ schema v1 顶层 `observation_status` 保持其现有人体/视觉 Provider 语�
 二维框不提供米制距离，目标没有有效范围时接近阶段按现有策略失败，不宣称完成了玩耍动作。
 候选产品标签 `ACT_TOY_FOUND_PLAY` 不是已登记的 Action unit。
 
-`EVT_VISION_MASTER` 仍表示已登记的非 unknown 身份，继续由 Emotion/需求系统按原语义消费；
-主人直驱事件不会替代该事件，也不会增加重复情绪增量。
+Emotion/Needs 继续按原逻辑处理 `EVT_VISION_MASTER`。已知非主人（包括家人）即时
+face fact 保持原路径，主人则在状态机 ENTER 后、每个活动快照上使用相同事件名。
 
 现有 `EVT_VISION_STRANGER`、人物与物体观测主要进入缓存或 Emotion；不是所有 `events[]`
 都直接变成行为。新的 `EVT_VISION_STRANGER_PRESENT` 是单独的在场状态，不改变旧陌生人事实。

@@ -117,9 +117,11 @@ Social 在 URGENT/OVERFLOW 时仍为 `triggered=true`。Energy 输入值是电�
 - visual `events[]` 直接处理 `EVT_VISION_FALL` 和
   `EVT_VISION_STOP_GESTURE`，分别生成 `respond_person_fall` 和
   `respond_stop_gesture`（Lv1, `sub_priority=12`）。连续 10 Hz 快照中的
-  同一事件只在出现沿创建一次候选。OWNER/FAMILY/STRANGER presence 使用各自活动实例 ID
-  跨 HOLD 和短暂 Topic 中断去重；有效类别目标观测满 1.0 秒 ENTER，有效漏检 2.0 秒 EXIT
-  后冷却 3.0 秒，无效观测不作为离开。候选 `owner_greet`、`familiar_person_greet`、
+  同一事件只在出现沿创建一次候选。主人 `EVT_VISION_MASTER`、FAMILY/STRANGER presence 使用
+  各自活动实例 ID 跨 HOLD 和短暂 Topic 中断去重；主人和类别 presence 以有效源观测满
+  1.0 秒 ENTER、有效漏检 2.0 秒 EXIT 后冷却 3.0 秒，无效观测不作为离开。普通已知非主人
+  MASTER face fact（包括家人）不含 owner 状态实例，不会触发 `owner_greet`。候选
+  `owner_greet`、`familiar_person_greet`、
   `stranger_observe` 进入同一 Lv1 仲裁，但 Action 模板缺失。
 - 六类情绪 signal_event 都异步调用 `check_person`：有人时生成独立的
   `*WithHuman` Behavior，无人时生成独立的 `*Alone` Behavior，共 12 个

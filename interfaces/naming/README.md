@@ -79,7 +79,7 @@ emotion_behavior_map；Action 的 behavior_tree_actions、action_catalog。
 4. 兼容例外必须精确匹配当前问题；新增问题不会自动登记，已解决问题遗留的例外也会失败。
 
 当前保留 **52 条缺少 Action 模板的配置路由**，其中
-`visual_direct|EVT_VISION_OWNER_PRESENT|default|owner_greet`、
+`visual_direct|EVT_VISION_MASTER|default|owner_greet`（仅主人活动实例路由）、
 `visual_direct|EVT_VISION_FAMILY_PRESENT|default|familiar_person_greet` 和
 `visual_direct|EVT_VISION_STRANGER_PRESENT|default|stranger_observe` 是视觉在场候选明确登记的 Action 能力缺口。
 检查结果明确为

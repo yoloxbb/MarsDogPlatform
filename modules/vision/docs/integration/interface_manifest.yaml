@@ -102,7 +102,15 @@ topics:
     repeat_policy: events_may_repeat_while_the_visual_fact_remains_true
     emitted_events:
       EVT_VISION_MASTER:
-        condition: face_present_and_active_identity_known
+        condition: "owner: confirmed_owner_presence_state_enter; known_non_owner: face_present_and_active_identity_known"
+        owner_identity_gate: "owner / confirmed_known / tracking with current source-frame association"
+        owner_state_policy:
+          enter_duration_sec: 1.0
+          exit_duration_sec: 2.0
+          retrigger_delay_sec: 3.0
+          invalid_observation: "breaks pending timing evidence and preserves an active cycle"
+          event_instance_field: event_instances.EVT_VISION_MASTER.event_id
+        non_owner_face_policy: "immediate for known non-owner identities, including family; does not qualify for owner_greet"
       EVT_VISION_STRANGER:
         condition: stranger_face_present_with_missing_stale_invalid_or_unclassified_emotion_state
       EVT_VISION_STRANGER_ALERT:
@@ -119,14 +127,6 @@ topics:
         condition: tracked_confirmed_known_or_unknown_confirmed_unknown_and_upright_to_lying_fall
       EVT_VISION_STOP_GESTURE:
         condition: tracked_confirmed_known_or_unknown_confirmed_unknown_with_stop_gesture
-      EVT_VISION_OWNER_PRESENT:
-        condition: confirmed_owner_currently_tracked_in_distinct_valid_source_observations_for_1s
-        state_policy:
-          active_set: "added after ENTER, retained during HOLD, removed after 2s of valid negative observations"
-          retrigger_delay_sec: 3.0
-          cooldown_starts: at the valid observation that reaches T_exit
-          invalid_observation: "breaks pending timing evidence; never counts as owner absence"
-          event_instance_field: event_instances.EVT_VISION_OWNER_PRESENT.event_id
       EVT_VISION_OWNER_BEND_SQUAT:
         condition: confirmed_owner_currently_tracked_with_public_bend_or_squat_pose_for_distinct_valid_source_observations_for_1s
         identity_gate: "owner / confirmed_known / tracking"

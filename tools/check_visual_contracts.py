@@ -412,8 +412,8 @@ def observe(output):
             != emotion_probe["observed"]["expression-metadata"]):
         raise RuntimeError("facial_expression metadata changed MarsDog Emotion consumer output")
 
-    # Owner presence uses optional v1 metadata so the baseline's original
-    # payload corpus and frozen consumer output stay untouched.
+    # Owner MASTER presence uses optional v1 metadata so the baseline's
+    # original payload corpus and frozen consumer output stay untouched.
     owner_probe_dir = output / "owner-presence-probe"
     owner_probe_dir.mkdir(parents=True, exist_ok=True)
     owner_payload = {
@@ -424,9 +424,9 @@ def observe(output):
         "source_observation_id": "owner-probe-frame-1",
         "observation_status": "valid",
         "header": {"stamp": 1000, "frame_id": "camera"},
-        "events": ["EVT_VISION_MASTER", "EVT_VISION_OWNER_PRESENT"],
+        "events": ["EVT_VISION_MASTER"],
         "event_instances": {
-            "EVT_VISION_OWNER_PRESENT": {"event_id": "owner-probe-cycle-1"}
+            "EVT_VISION_MASTER": {"event_id": "owner-probe-cycle-1"}
         },
         "human_candidates": [{
             "identity": "owner",
@@ -449,6 +449,10 @@ def observe(output):
             raise RuntimeError(
                 f"Vision producer did not preserve optional owner metadata {key}"
             )
+    if "EVT_VISION_OWNER_PRESENT" in owner_produced.get("events", []):
+        raise RuntimeError("Vision emitted the retired owner-presence wire event")
+    if "EVT_VISION_OWNER_PRESENT" in owner_produced.get("event_instances", {}):
+        raise RuntimeError("Vision emitted a retired owner-presence instance key")
     targets = owner_produced.get("human_candidates")
     if not isinstance(targets, list) or len(targets) != 1:
         raise RuntimeError("Vision producer did not preserve the owner candidate probe")
@@ -456,8 +460,62 @@ def observe(output):
         if targets[0].get(key) != owner_payload["human_candidates"][0][key]:
             raise RuntimeError(f"Vision producer changed owner candidate field {key}")
 
+    owner_wire = json.dumps(owner_produced, ensure_ascii=False)
+    repeated_owner = deepcopy(owner_produced)
+    repeated_owner.update(
+        snapshot_id="owner-probe-epoch:2",
+        sequence=2,
+        source_observation_id="owner-probe-frame-2",
+    )
+    family_master = deepcopy(owner_produced)
+    family_master["human_candidates"][0].update({
+        "identity": "family_member_1",
+        "target_id": "owner-probe-epoch:human:8",
+        "track_id": 8,
+    })
+    bare_owner_master = deepcopy(owner_produced)
+    bare_owner_master.pop("event_instances", None)
+    owner_behavior_probe = run_stage(
+        "behavior",
+        [
+            {"id": "owner-master", "steps": [
+                {"wire": owner_wire},
+                {"wire": json.dumps(repeated_owner, ensure_ascii=False)},
+            ]},
+            {"id": "family-master", "steps": [{
+                "wire": json.dumps(family_master, ensure_ascii=False),
+            }]},
+            {"id": "bare-owner-master", "steps": [{
+                "wire": json.dumps(bare_owner_master, ensure_ascii=False),
+            }]},
+        ],
+        owner_probe_dir,
+        WORKER,
+    )
+    owner_behavior_steps = owner_behavior_probe["observed"]["owner-master"]
+    if (
+        any(step["error"] for steps in owner_behavior_probe["observed"].values()
+            for step in steps)
+        or len(owner_behavior_steps[0]["candidates"]) != 1
+        or any(step["candidates"] for step in owner_behavior_steps[1:])
+        or owner_behavior_probe["observed"]["family-master"][0]["candidates"]
+        or owner_behavior_probe["observed"]["bare-owner-master"][0]["candidates"]
+    ):
+        raise RuntimeError(
+            "MASTER must create one instance-bound owner candidate and reject family/bare facts"
+        )
+    owner_candidate = owner_behavior_steps[0]["candidates"][0]
+    if (
+        owner_candidate.get("trigger_event") != "EVT_VISION_MASTER"
+        or owner_candidate.get("behavior_name") != "owner_greet"
+        or owner_candidate.get("intent") != "owner_greet"
+        or owner_candidate.get("params", {}).get("visual_event_instance_id")
+        != "owner-probe-cycle-1"
+    ):
+        raise RuntimeError("Owner MASTER did not preserve the owner-greet mapping")
+
     owner_control = deepcopy(owner_produced)
-    owner_control["events"] = ["EVT_VISION_MASTER"]
+    owner_control.pop("event_instances", None)
     emotion_owner_probe = run_stage(
         "emotion",
         [
@@ -481,7 +539,7 @@ def observe(output):
         != owner_metadata_steps[0]["accepted"][0]
     ):
         raise RuntimeError(
-            "EVT_VISION_OWNER_PRESENT changed EVT_VISION_MASTER Emotion/need output"
+            "Owner MASTER instance metadata changed EVT_VISION_MASTER Emotion/need output"
         )
 
     owner_posture_provenance = _owner_posture_probe(output, owner_payload)
@@ -516,11 +574,15 @@ def observe(output):
     }
     provenance["owner_presence_probe"] = {
         "producer_module": owner_producer_probe["provenance"]["module_file"],
+        "behavior_module": owner_behavior_probe["provenance"]["module_file"],
         "emotion_module": emotion_owner_probe["provenance"]["module_file"],
         "optional_v1_metadata_checked": [
             "observation_status", "source_observation_id", "event_instances",
         ],
         "owner_identity_tracking_fields_checked": True,
+        "owner_master_instance_routes_once": True,
+        "bare_master_and_family_master_do_not_route_to_owner": True,
+        "retired_owner_present_event_absent": True,
         "master_emotion_and_need_unchanged": True,
     }
     provenance["owner_posture_probe"] = owner_posture_provenance

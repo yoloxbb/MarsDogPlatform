@@ -82,8 +82,8 @@ from marsdog_vision_interaction.messages.visual_event import (
 )
 from marsdog_vision_interaction.messages.visual_event_types import (
     EVT_VISION_FAMILY_PRESENT,
+    EVT_VISION_MASTER,
     EVT_VISION_OWNER_BEND_SQUAT,
-    EVT_VISION_OWNER_PRESENT,
     EVT_VISION_OWNER_RECALL_GESTURE,
     EVT_VISION_STRANGER_PRESENT,
     EVT_VISION_TOY,
@@ -130,6 +130,7 @@ def _apply_presence_event_states(
     *,
     now: float,
     event_state_observations: dict[str, dict[str, Any]] | None = None,
+    preserve_if_inactive: frozenset[str] = frozenset(),
 ) -> dict[str, Any]:
     """Merge state-event cycles into v1 without replacing other event data."""
     events = event.get("events")
@@ -149,9 +150,10 @@ def _apply_presence_event_states(
                 event["events"].append(event_name)
             instances[event_name] = {"event_id": snapshot.event_id}
         else:
-            event["events"] = [
-                name for name in event["events"] if name != event_name
-            ]
+            if event_name not in preserve_if_inactive:
+                event["events"] = [
+                    name for name in event["events"] if name != event_name
+                ]
             instances.pop(event_name, None)
     for key in (
         "_source_owner_target_ids",
@@ -169,6 +171,24 @@ def _apply_presence_event_states(
     else:
         event.pop("event_instances", None)
     return normalize_visual_event(event)
+
+
+def _suppress_owner_master_face_fact(event: dict[str, Any]) -> bool:
+    """Gate an owner's immediate face fact and report an independent MASTER.
+
+    Known non-owner identities retain the legacy immediate MASTER event. The
+    owner event is emitted only by ``OwnerPresenceEventState`` below.
+    """
+    active_target = event.get("active_target")
+    events = event.get("events")
+    if (
+        not isinstance(active_target, dict)
+        or active_target.get("identity") != "owner"
+    ):
+        return isinstance(events, (list, tuple)) and EVT_VISION_MASTER in events
+    if isinstance(events, list):
+        event["events"] = [name for name in events if name != EVT_VISION_MASTER]
+    return False
 
 
 def _apply_toy_presence_event_state(
@@ -1364,6 +1384,10 @@ class VisionInteractionNode(Node):
             emotion_classification=emotion_classification,
             now=time.monotonic(),
         )
+        # An immediate non-owner MASTER face fact can coexist with the owner
+        # state cycle. If the owner state is inactive, keep that independent
+        # family/known-identity fact while clearing only its state metadata.
+        legacy_master_fact = _suppress_owner_master_face_fact(event)
         with self._state_lock:
             event = _apply_toy_presence_event_state(
                 event,
@@ -1371,7 +1395,7 @@ class VisionInteractionNode(Node):
             )
         presence_states = (
             (
-                EVT_VISION_OWNER_PRESENT,
+                EVT_VISION_MASTER,
                 getattr(self, "_owner_presence_event_state", None),
             ),
             (
@@ -1412,6 +1436,11 @@ class VisionInteractionNode(Node):
             event_state_observations={
                 EVT_VISION_OWNER_RECALL_GESTURE: recall_observation,
             },
+            preserve_if_inactive=(
+                frozenset({EVT_VISION_MASTER})
+                if legacy_master_fact
+                else frozenset()
+            ),
         )
         # Cache exactly the complete packet that is published.  VisionTask
         # query_targets only ever copies this atomic snapshot; it never

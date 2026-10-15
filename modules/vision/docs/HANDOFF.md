@@ -58,12 +58,14 @@ depth_fusion:
 
 这是下游跟踪稳定的硬契约。修改相机布局时必须同步验证 Viewer、`body_center` 和 Action 控制器。
 
-`EVT_VISION_OWNER_PRESENT` 是单独的活动状态事实：只在当前有效源推理关联到
+主人的 `EVT_VISION_MASTER` 只在当前有效源推理关联到
 `owner/confirmed_known/tracking` 时累计 ENTER；默认稳定进入 1.0 秒、有效负观测 2.0 秒
-退出，EXIT 后冷却 3.0 秒。状态保留在 `events[]` 直到 EXIT。重复快照不推进源观测计时；
-相机断流、推理失败或结果过期发布可选 `observation_status=invalid`，只打断尚未完成的
-计时，不被解释为主人离开。`event_instances` 为活动周期提供稳定 event ID，供行为树跨短
-Topic 中断去重。该事件不改变现有 `EVT_VISION_MASTER` 的 Emotion/需求语义。
+退出，EXIT 后冷却 3.0 秒。活动状态写入 `events[]`，周期 ID 写入
+`event_instances.EVT_VISION_MASTER.event_id`。重复快照不推进源观测计时；相机断流、推理失败
+或结果过期发布可选 `observation_status=invalid`，只打断尚未完成的计时，不被解释为主人离开。
+`EVT_VISION_OWNER_PRESENT` 已退役。已知非主人 face-derived MASTER（包括家人）仍走原即时路径，
+Emotion/Needs 的 MASTER 处理保持不变；Behavior 要求 MASTER 周期 ID 和同包 owner 身份才能
+生成主人候选。
 
 `EVT_VISION_FAMILY_PRESENT` 与 `EVT_VISION_STRANGER_PRESENT` 分别维护已登记家人
 `family_member_1..4/confirmed_known/tracking` 和确认陌生人

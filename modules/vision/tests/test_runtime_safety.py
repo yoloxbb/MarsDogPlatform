@@ -159,7 +159,7 @@ def test_stale_camera_does_not_refresh_cached_target(monkeypatch) -> None:
     assert payload["active_target"]["tracking_state"] == "temporarily_lost"
     assert payload["active_target"]["last_seen_age_ms"] >= 900.0
     assert payload["observation_status"] == "invalid"
-    assert "EVT_VISION_OWNER_PRESENT" not in payload["events"]
+    assert "EVT_VISION_MASTER" not in payload["events"]
     assert any(
         item["module"] == "depth_fusion"
         and item["stage"] == "aligned_depth_range"
@@ -219,9 +219,9 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
             "source_observation_id": f"frame:{sequence}",
             "_source_observation_age_sec": 0.0,
             "observation_status": status,
-            "events": ["EVT_VISION_MASTER", "EVT_VISION_OWNER_PRESENT"],
+            "events": ["EVT_VISION_MASTER"],
             "event_instances": {
-                "EVT_VISION_OWNER_PRESENT": {"event_id": "owner-cycle"},
+                "EVT_VISION_MASTER": {"event_id": "owner-cycle"},
                 "UNRELATED_EVENT": {"event_id": "keep-me"},
             },
             "_source_owner_target_ids": [],
@@ -255,7 +255,7 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
     assert packet is not None
     assert "EVT_VISION_FAMILY_PRESENT" in packet["events"]
     assert "EVT_VISION_STRANGER_PRESENT" in packet["events"]
-    assert packet["event_instances"]["EVT_VISION_OWNER_PRESENT"] == {
+    assert packet["event_instances"]["EVT_VISION_MASTER"] == {
         "event_id": "owner-cycle"
     }
     assert packet["event_instances"]["UNRELATED_EVENT"] == {
@@ -292,9 +292,105 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
     assert "EVT_VISION_STRANGER_PRESENT" not in packet["events"]
     assert "EVT_VISION_FAMILY_PRESENT" not in packet["event_instances"]
     assert "EVT_VISION_STRANGER_PRESENT" not in packet["event_instances"]
-    assert packet["event_instances"]["EVT_VISION_OWNER_PRESENT"][
+    assert packet["event_instances"]["EVT_VISION_MASTER"][
         "event_id"
     ] == "owner-cycle"
+
+
+def test_owner_presence_publishes_master_state_and_keeps_legacy_family_master() -> None:
+    from marsdog_vision_interaction.messages.visual_event_types import (
+        EVT_VISION_MASTER,
+    )
+    from marsdog_vision_interaction.nodes.vision_interaction_node import (
+        _apply_presence_event_states,
+        _suppress_owner_master_face_fact,
+    )
+
+    state = OwnerPresenceEventState(
+        OwnerPresenceEventConfig(
+            enter_duration_sec=0.4,
+            exit_duration_sec=0.4,
+            retrigger_delay_sec=3.0,
+        ),
+        source_freshness_sec=0.5,
+    )
+    states = ((EVT_VISION_MASTER, state),)
+    target_id = "epoch:human:7"
+
+    def observation(
+        sequence,
+        *,
+        identity="owner",
+        status="valid",
+        present=True,
+    ):
+        target = {
+            "vision_epoch": "epoch",
+            "target_id": target_id,
+            "target_type": "human",
+            "track_id": 7,
+            "identity": identity,
+            "identity_state": "confirmed_known",
+            "tracking_state": "tracking",
+            "last_seen_age_ms": 0.0,
+        }
+        return {
+            "schema_version": 1,
+            "vision_epoch": "epoch",
+            "snapshot_id": f"epoch:{sequence}",
+            "sequence": sequence,
+            "source_observation_id": f"frame:{sequence}",
+            "_source_observation_age_sec": 0.0,
+            "observation_status": status,
+            # Face derivation is immediate; the node gates this only for owner.
+            "events": [EVT_VISION_MASTER] if present else [],
+            "active_target": target if present else {},
+            "_source_owner_target_ids": (
+                [target_id] if present and identity == "owner" else []
+            ),
+            "human_candidates": [target] if present else [],
+        }
+
+    def publish(value, now):
+        preserve_legacy_master = _suppress_owner_master_face_fact(value)
+        return _apply_presence_event_states(
+            value,
+            states,
+            now=now,
+            preserve_if_inactive=(
+                frozenset({EVT_VISION_MASTER})
+                if preserve_legacy_master
+                else frozenset()
+            ),
+        )
+
+    first = publish(observation(1), 10.0)
+    second = publish(observation(2), 10.2)
+    assert EVT_VISION_MASTER not in first["events"]
+    assert EVT_VISION_MASTER not in second["events"]
+
+    entered = publish(observation(3), 10.4)
+    event_id = entered["event_instances"][EVT_VISION_MASTER]["event_id"]
+    assert EVT_VISION_MASTER in entered["events"]
+    assert "EVT_VISION_OWNER_PRESENT" not in entered["events"]
+    assert "EVT_VISION_OWNER_PRESENT" not in entered["event_instances"]
+
+    invalid = publish(observation(4, status="invalid"), 10.6)
+    assert invalid["event_instances"][EVT_VISION_MASTER]["event_id"] == event_id
+
+    publish(observation(5, present=False), 10.8)
+    publish(observation(6, present=False), 11.0)
+    publish(observation(7, present=False), 11.2)
+    exited = publish(observation(8, present=False), 11.4)
+    assert EVT_VISION_MASTER not in exited["events"]
+    assert EVT_VISION_MASTER not in exited.get("event_instances", {})
+
+    family = publish(
+        observation(9, identity="family_member_1"),
+        11.6,
+    )
+    assert EVT_VISION_MASTER in family["events"]
+    assert EVT_VISION_MASTER not in family.get("event_instances", {})
 
 
 def test_owner_posture_event_publication_adds_holds_and_removes_active_instance() -> None:
@@ -318,9 +414,9 @@ def test_owner_posture_event_publication_adds_holds_and_removes_active_instance(
             "source_observation_id": f"frame:{sequence}",
             "_source_observation_age_sec": 0.0,
             "observation_status": status,
-            "events": ["EVT_VISION_MASTER", "EVT_VISION_OWNER_PRESENT"],
+            "events": ["EVT_VISION_MASTER"],
             "event_instances": {
-                "EVT_VISION_OWNER_PRESENT": {"event_id": "owner-cycle"},
+                "EVT_VISION_MASTER": {"event_id": "owner-cycle"},
             },
             "_source_owner_target_ids": [target_id],
             "_source_human_target_ids": [target_id],
@@ -348,7 +444,6 @@ def test_owner_posture_event_publication_adds_holds_and_removes_active_instance(
     ]
     assert "EVT_VISION_OWNER_BEND_SQUAT" in packet["events"]
     assert "EVT_VISION_MASTER" in packet["events"]
-    assert "EVT_VISION_OWNER_PRESENT" in packet["events"]
     assert not any(key.startswith("_source_") for key in packet)
 
     duplicate = observation(7)
@@ -375,7 +470,6 @@ def test_owner_posture_event_publication_adds_holds_and_removes_active_instance(
         "event_instances", {}
     )
     assert "EVT_VISION_MASTER" in released["events"]
-    assert "EVT_VISION_OWNER_PRESENT" in released["events"]
 
 
 def test_owner_recall_publication_uses_private_stable_actions_and_v1_instance() -> None:

@@ -2268,9 +2268,9 @@ class TestVisualDirectToBehavior:
             "source_observation_id": "camera-frame-42",
             "observation_status": "valid",
             "header": {"stamp": 1786417000.42, "frame_id": "camera_link"},
-            "events": ["EVT_VISION_OWNER_PRESENT"],
+            "events": ["EVT_VISION_MASTER"],
             "event_instances": {
-                "EVT_VISION_OWNER_PRESENT": {"event_id": "owner-cycle-1"}
+                "EVT_VISION_MASTER": {"event_id": "owner-cycle-1"}
             },
             "human_candidates": [target],
         }
@@ -2279,7 +2279,7 @@ class TestVisualDirectToBehavior:
         payload = self._owner_payload()
 
         candidate = node._intent_mapper.map_visual_event(
-            "EVT_VISION_OWNER_PRESENT", payload
+            "EVT_VISION_MASTER", payload
         )
 
         assert candidate is not None
@@ -2554,38 +2554,38 @@ class TestVisualDirectToBehavior:
         payload = self._owner_payload(**target_updates)
 
         assert node._intent_mapper.map_visual_event(
-            "EVT_VISION_OWNER_PRESENT", payload
+            "EVT_VISION_MASTER", payload
         ) is None
 
     def test_owner_presence_requires_valid_observation_and_event_instance(self, node):
         payload = self._owner_payload()
         payload["observation_status"] = "invalid"
         assert node._intent_mapper.map_visual_event(
-            "EVT_VISION_OWNER_PRESENT", payload
+            "EVT_VISION_MASTER", payload
         ) is None
 
         payload = self._owner_payload()
         payload.pop("event_instances")
         assert node._intent_mapper.map_visual_event(
-            "EVT_VISION_OWNER_PRESENT", payload
+            "EVT_VISION_MASTER", payload
         ) is None
 
         payload = self._owner_payload()
         payload.pop("source_observation_id")
         assert node._intent_mapper.map_visual_event(
-            "EVT_VISION_OWNER_PRESENT", payload
+            "EVT_VISION_MASTER", payload
         ) is None
 
         payload = self._owner_payload()
-        payload["event_instances"]["EVT_VISION_OWNER_PRESENT"]["event_id"] = 1
+        payload["event_instances"]["EVT_VISION_MASTER"]["event_id"] = 1
         assert node._intent_mapper.map_visual_event(
-            "EVT_VISION_OWNER_PRESENT", payload
+            "EVT_VISION_MASTER", payload
         ) is None
 
         payload = self._owner_payload()
         payload["human_candidates"][0]["target_id"] = 7
         assert node._intent_mapper.map_visual_event(
-            "EVT_VISION_OWNER_PRESENT", payload
+            "EVT_VISION_MASTER", payload
         ) is None
 
     def test_owner_presence_snapshot_is_deduplicated_into_one_candidate(self, node):
@@ -2817,7 +2817,7 @@ class TestVisualDirectToBehavior:
     @pytest.mark.parametrize(
         ("event_type", "identity", "identity_state"),
         [
-            ("EVT_VISION_OWNER_PRESENT", "owner", "confirmed_known"),
+            ("EVT_VISION_MASTER", "owner", "confirmed_known"),
             ("EVT_VISION_FAMILY_PRESENT", "family_member_1", "confirmed_known"),
             ("EVT_VISION_STRANGER_PRESENT", "unknown", "confirmed_unknown"),
         ],
@@ -2858,7 +2858,7 @@ class TestVisualDirectToBehavior:
         node.perception._on_visual_ros2(_make_string_msg(refreshed))
         assert node._candidate_allowed_during_interaction(queued) is True
 
-    def test_owner_direct_event_does_not_replace_master_emotion_signal(self, node):
+    def test_bare_master_face_fact_is_not_an_owner_candidate(self, node):
         assert node._intent_mapper.map_visual_event(
             "EVT_VISION_MASTER",
             {"schema_version": 1, "events": ["EVT_VISION_MASTER"]},

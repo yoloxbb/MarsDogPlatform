@@ -606,9 +606,9 @@ def _owner_presence_payload(*, snapshot: int, epoch: str = "vision-1") -> dict:
         "sequence": snapshot,
         "source_observation_id": f"camera-frame-{snapshot}",
         "observation_status": "valid",
-        "events": ["EVT_VISION_OWNER_PRESENT"],
+        "events": ["EVT_VISION_MASTER"],
         "event_instances": {
-            "EVT_VISION_OWNER_PRESENT": {"event_id": "owner-cycle-1"}
+            "EVT_VISION_MASTER": {"event_id": "owner-cycle-1"}
         },
         "human_candidates": [{
             "identity": "owner",
@@ -775,7 +775,7 @@ def test_owner_presence_instance_deduplicates_repeated_snapshots_and_timeout() -
     )
     adapter._on_visual_ros2(_Message(_owner_presence_payload(snapshot=3)))
 
-    assert received == [("EVT_VISION_OWNER_PRESENT", "vision-1:1")]
+    assert received == [("EVT_VISION_MASTER", "vision-1:1")]
 
 
 def test_owner_posture_instance_deduplicates_hold_snapshots_and_timeout() -> None:
@@ -992,7 +992,7 @@ def test_owner_presence_requires_string_event_instance_id() -> None:
         lambda event_type, _: received.append(event_type) or True
     )
     payload = _owner_presence_payload(snapshot=1)
-    payload["event_instances"]["EVT_VISION_OWNER_PRESENT"]["event_id"] = 3
+    payload["event_instances"]["EVT_VISION_MASTER"]["event_id"] = 3
 
     adapter._on_visual_ros2(_Message(payload))
 
@@ -1012,7 +1012,24 @@ def test_owner_presence_callback_retries_until_candidate_is_accepted() -> None:
     adapter._on_visual_ros2(_Message(_owner_presence_payload(snapshot=1)))
     adapter._on_visual_ros2(_Message(_owner_presence_payload(snapshot=2)))
 
-    assert received == ["EVT_VISION_OWNER_PRESENT", "EVT_VISION_OWNER_PRESENT"]
+    assert received == ["EVT_VISION_MASTER", "EVT_VISION_MASTER"]
+
+
+def test_retired_owner_present_wire_event_is_ignored() -> None:
+    adapter = _adapter()
+    received: list[str] = []
+    adapter.set_on_visual_event(
+        lambda event_type, _: received.append(event_type) or True
+    )
+    payload = _owner_presence_payload(snapshot=1)
+    payload["events"] = ["EVT_VISION_OWNER_PRESENT"]
+    payload["event_instances"] = {
+        "EVT_VISION_OWNER_PRESENT": {"event_id": "owner-cycle-1"}
+    }
+
+    adapter._on_visual_ros2(_Message(payload))
+
+    assert received == []
 
 
 @pytest.mark.parametrize(

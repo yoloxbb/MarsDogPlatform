@@ -388,7 +388,7 @@ TOILET、CLEAN、SLEEP 是条件指令：在任何候选入池或会话修改之
     ├── 视觉 Service 不可用时作为上述路由的回退
     ├── EVT_VISION_FALL → respond_person_fall (Lv1, sp=12)
     ├── EVT_VISION_STOP_GESTURE → respond_stop_gesture (Lv1, sp=12)
-    ├── EVT_VISION_OWNER_PRESENT → owner_greet (Lv1, sp=12, semantic_rank=3)
+    ├── EVT_VISION_MASTER + owner event ID/target → owner_greet (Lv1, sp=12, semantic_rank=3)
     ├── EVT_VISION_OWNER_BEND_SQUAT → approach_owner (Lv1, sp=12, semantic_rank=3)
     ├── EVT_VISION_OWNER_RECALL_GESTURE → approach_owner (Lv1, sp=12, semantic_rank=3)
     ├── EVT_VISION_FAMILY_PRESENT → familiar_person_greet (Lv1, sp=12, semantic_rank=3)
@@ -396,10 +396,10 @@ TOILET、CLEAN、SLEEP 是条件指令：在任何候选入池或会话修改之
     └── 其余 events 不直接创建行为候选
 ```
 
-三个 presence 事件都是 `events[]` 中的活动状态：符合各自身份的不同有效源观测满 1.0 秒后
-ENTER，HOLD 期间保持，连续有效漏检 2.0 秒后 EXIT 并开始 3.0 秒冷却。无效推理、断流或
-过期观测不算漏检。BT 按 `event_instances` 中的事件周期 ID 去重，并在仲裁前校验唯一新鲜
-目标和 epoch；短暂 Topic 超时不会清除周期记忆。当前 Action 没有对应的三个模板。
+主人 MASTER、家人和陌生人状态路由按各自的事件周期 ID 去重。主人 MASTER 只有在现有主人状态机
+以不同有效源观测进入后才带有实例 ID；普通已知非主人（包括家人）的即时 MASTER face fact
+不创建主人候选。Behavior 校验同包身份、唯一新鲜目标和 epoch；短暂 Topic 超时不会清除已消费
+的周期记忆。主人/家人/陌生人候选的 Action 模板当前都缺失。
 
 主人弯腰/蹲下事件是独立活动状态：Vision 对同一确认主人目标的公共姿态用不同有效源观测稳定
 1.0 秒后 ENTER，复用 GesturePose 低于 3/10 支持时的姿态释放；没有额外退出计时或冷却。

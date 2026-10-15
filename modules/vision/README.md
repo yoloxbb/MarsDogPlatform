@@ -204,8 +204,9 @@ ros2 service call /perception/vision/task \
 - 情绪状态未收到、超过 2.5 秒、格式非法或仅 `Curious` 触发：
   回退 `EVT_VISION_STRANGER`。
 
-Alert 优先于 Friend，细分事件替换通用 Stranger，同包不双发。已知人脸
-仍走 `EVT_VISION_MASTER*`。情绪系统不应再把两个细分事件配置为情绪增量
+Alert 优先于 Friend，细分事件替换通用 Stranger，同包不双发。已知非主人 face fact
+仍走即时 `EVT_VISION_MASTER*`；主人 `EVT_VISION_MASTER` 在确认状态机 ENTER 后进入活动快照。
+情绪系统不应再把两个细分事件配置为情绪增量
 输入，否则可能形成 Vision → Emotion → Vision 的反馈环。
 
 ## 统一视觉调试页面

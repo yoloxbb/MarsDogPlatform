@@ -587,17 +587,18 @@ GP-024 不能只看躯干倾角：清晰躺卧还需近水平的大腿方向；�
 
 | 场景 | GesturePose/兼容结果 | 正式 `events[]` 典型结果 | 判定 |
 |---|---|---|---|
-| 主人已确认并在跟踪 | `recognized_actions=jumping`、`pose_action=jump` | `EVT_VISION_MASTER`，随后 `EVT_VISION_MASTER_HAPPY` | 动作识别、折叠和事件路由均可 PASS |
-| 第一次匹配，仅 `candidate_known` | 同上 | 可有人脸事件，但不得有 `EVT_VISION_MASTER_HAPPY` | 动作识别 PASS；门禁阻止姿态事件 PASS |
+| 主人已确认并在跟踪，主人状态已 ENTER | `recognized_actions=jumping`、`pose_action=jump` | 保持活动 `EVT_VISION_MASTER`，随后 `EVT_VISION_MASTER_HAPPY` | 动作识别、折叠和事件路由均可 PASS |
+| 第一次匹配，仅 `candidate_known` | 同上 | 不得产生主人 `EVT_VISION_MASTER`，也不得有 `EVT_VISION_MASTER_HAPPY` | 动作识别 PASS；主人状态/姿态门禁阻止事件 PASS |
 | 陌生人 `unknown/confirmed_unknown` | 同上 | 根据情绪出现 `EVT_VISION_STRANGER_ALERT/FRIEND` 或无效状态回退 `EVT_VISION_STRANGER`，并可同时出现 `EVT_VISION_MASTER_HAPPY` | 动作识别 PASS；门禁 PASS |
 | 陌生人 `unknown_candidate`/`unverified` | 同上 | 根据情绪出现陌生人事件；不得有 Happy | 动作识别 PASS；门禁 PASS |
 | 没有检测到人脸 | 可保留 GesturePose 诊断 | 通常没有 Master/Stranger，也不得有 Happy | 只判识别层和门禁层 |
 | 已知身份但 `temporarily_lost` | 可保留旧诊断 | 不得发布新的姿态事件 | 门禁 PASS |
 
 其他姿态/手势动作把 Happy 换成上表对应的 Sad/Neutral/Fall/Stop 即可。TOY 是独立的
-物体场景状态；FOOD 仍由已确认手持姿态产生。注意
-`EVT_VISION_MASTER` 只表示当前主目标身份非 `unknown` 且存在人脸观察，不等于身份已
-达到 `confirmed_known`；姿态事件仍必须单独检查 `pose_event_gate=open`。
+物体场景状态；FOOD 仍由已确认手持姿态产生。注意，主人 `EVT_VISION_MASTER` 只有通过 owner
+presence 状态机 ENTER 后才发布；已知非主人（包括家人）的 face fact 仍可按原即时路径发布
+`EVT_VISION_MASTER`。因此事件名本身不能证明 owner 身份，行为消费者还必须验证 MASTER 实例
+元数据和同包确认主人目标。姿态事件仍必须单独检查 `pose_event_gate=open`。
 
 #### 5.6.6 动作专项判定与统计口径
 
@@ -627,7 +628,7 @@ Vision 事件路由正确率 = 门禁打开且期望事件正确次数 / 门禁�
 
 | 正式事件 | 来源 | 是否需要姿态身份门禁 | 同包主要证据 |
 |---|---|---:|---|
-| `EVT_VISION_MASTER` | 当前有 `faces[]`，且主目标 `identity` 非空、非 `unknown` | 否；它本身也不证明 `confirmed_known` | `faces[]`、`active_target.identity/identity_state` |
+| `EVT_VISION_MASTER` | owner：当前源帧确认并跟踪，状态机 ENTER 后发布；已知非主人：有 `faces[]` 且主目标身份非空、非 `unknown` 时即时发布 | owner 状态路径要求 `owner/confirmed_known/tracking`；非主人即时事实本身不证明 `confirmed_known` | owner：状态字段、源观测和 `event_instances.EVT_VISION_MASTER.event_id`；非主人：`faces[]`、`active_target.identity/identity_state` |
 | `EVT_VISION_STRANGER` | 当前有陌生人脸，但情绪状态缺失、过期、非法或无匹配分类 | 否 | `faces[]`、`active_target.identity_state` |
 | `EVT_VISION_STRANGER_ALERT` | 陌生人 + 新鲜情绪中 Anxiety/Fear 已触发 | 否 | `faces[]`、`active_target.identity_state`、`/emotion/state` |
 | `EVT_VISION_STRANGER_FRIEND` | 陌生人 + 无 Alert 且 Joy/Excite/Calm 已触发 | 否 | 同上 |

@@ -139,7 +139,7 @@ def test_visual_contract_preserves_optional_owner_event_metadata() -> None:
         "observation_status": "valid",
         "source_observation_id": "frame:12",
         "event_instances": {
-            visual_event_types.EVT_VISION_OWNER_PRESENT: {
+            visual_event_types.EVT_VISION_MASTER: {
                 "event_id": "epoch:owner-presence:3",
             },
             visual_event_types.EVT_VISION_FAMILY_PRESENT: {
@@ -156,7 +156,7 @@ def test_visual_contract_preserves_optional_owner_event_metadata() -> None:
     assert value["observation_status"] == "valid"
     assert value["source_observation_id"] == "frame:12"
     assert value["event_instances"] == {
-        visual_event_types.EVT_VISION_OWNER_PRESENT: {
+        visual_event_types.EVT_VISION_MASTER: {
             "event_id": "epoch:owner-presence:3",
         },
         visual_event_types.EVT_VISION_FAMILY_PRESENT: {

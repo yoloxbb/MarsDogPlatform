@@ -680,7 +680,7 @@ visual_direct:
     ttl_sec: 8.0
     interrupt_policy: immediate
 
-  EVT_VISION_OWNER_PRESENT:
+  EVT_VISION_MASTER:
     category: external_interaction
     intent: owner_greet
     semantic_rank: 3  # social presence is not a safety event
