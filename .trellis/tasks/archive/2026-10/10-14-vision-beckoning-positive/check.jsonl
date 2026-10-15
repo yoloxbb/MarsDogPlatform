@@ -1,3 +1,0 @@
-{"file":".trellis/spec/backend/vision-gesture-pose.md","reason":"Verify the rule changes update the gesture contract without breaking action taxonomy, smoothing, or conflict-precedence guarantees."}
-{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Use backend quality expectations while reviewing test coverage and implementation scope."}
-{"file":".trellis/tasks/10-14-vision-beckoning-positive/research/rknn_beckoning_diagnostics.md","reason":"Check the positive against recorded RKNN failures and keep pure-test and model-replay evidence distinct."}

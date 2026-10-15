@@ -1,8 +1,0 @@
-{"file":".trellis/spec/backend/vision-owner-presence-event.md","reason":"Review valid-source timing, active state preservation, event IDs, target/epoch binding, and candidate freshness."}
-{"file":".trellis/spec/backend/vision-human-presence-events.md","reason":"Check HOLD deduplication, interruption recovery, and pre-dispatch target validation while preserving existing category events."}
-{"file":".trellis/spec/backend/vision-gesture-pose.md","reason":"Verify the release rule is inherited from the existing GesturePose smoother and no recognition threshold or algorithm changes."}
-{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Apply repository backend quality and pure-test constraints to Vision and Behavior changes."}
-{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Review data provenance and event meaning at all producer/consumer/Action boundaries."}
-{"file":"interfaces/application/visual-event-v1/README.md","reason":"Verify schema v1 compatibility, activity snapshots, event instance IDs, and Emotion isolation."}
-{"file":"interfaces/naming/README.md","reason":"Verify the candidate-to-approach_owner-to-ACT_INTERACT_APPROACH_OWNER_CLOSER mapping and no false ACT_OWNER_APPROACH_RESPONSE registration."}
-{"file":".trellis/tasks/10-13-owner-bend-squat-visual-event/research/evidence.md","reason":"Validate code-backed action limitations and exact scope of the selected existing approach response."}

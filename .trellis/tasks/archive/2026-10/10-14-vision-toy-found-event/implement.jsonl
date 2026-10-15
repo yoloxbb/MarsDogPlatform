@@ -1,3 +1,0 @@
-{"file": ".trellis/spec/backend/vision-human-presence-events.md", "reason": "Reuse aggregate state-event validity, timing, event-instance and consumer dedup invariants; toy state remains scene-level and has no human gate."}
-{"file": ".trellis/spec/backend/vision-owner-posture-event.md", "reason": "Use as the current Vision source freshness, epoch ordering, v1 event instance and Behavior pre-dispatch revalidation reference; do not reuse its owner qualification."}
-{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Feature crosses Vision, Behavior, Emotion, Action capability and the v1 visual event contract; preserve a single source ID across boundaries."}

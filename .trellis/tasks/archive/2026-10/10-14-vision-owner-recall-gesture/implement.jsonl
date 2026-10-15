@@ -1,8 +1,0 @@
-{"file": ".trellis/spec/backend/vision-owner-presence-event.md", "reason": "Reuse the source-valid v1 state-event boundaries, owner qualification, invalid-observation retention, and Behavior candidate freshness contract."}
-{"file": ".trellis/spec/backend/vision-human-presence-events.md", "reason": "Reuse current-target uniqueness, instance retry/deduplication, and dispatch-time revalidation patterns without changing other identity classes."}
-{"file": ".trellis/spec/backend/vision-gesture-pose.md", "reason": "Consume temporally stabilized exact gesture names only; preserve existing beckoning/waving/arms_raised semantics and smoother."}
-{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Trace gesture provenance, v1 state snapshots, Behavior arbitration, and target-bound Action execution across the producer-consumer boundary."}
-{"file": "interfaces/application/visual-event-v1/README.md", "reason": "Preserve the frozen v1 required fields and document additive event-instance state and reliable release semantics."}
-{"file": "interfaces/naming/README.md", "reason": "Register an independent EVT_VISION event and keep event, intent, Behavior, product candidate, and Action-unit identifiers distinct."}
-{"file": ".trellis/tasks/10-14-vision-owner-recall-gesture/research/evidence.md", "reason": "Use repository-backed findings for exact stable gesture categories, event transport/state, Behavior revalidation, and the registered approach-only capability."}
-{"file": ".trellis/tasks/archive/2026-10/10-14-vision-beckoning-positive/research/rknn_beckoning_diagnostics.md", "reason": "Retain the recent real-inference beckoning fixture evidence and the detector accepted/rejected gesture boundaries."}

@@ -1,8 +1,0 @@
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Review pure-logic boundaries, module test expectations, and compatibility-sensitive event changes."}
-{"file": ".trellis/spec/backend/vision-owner-presence-event.md", "reason": "Verify source freshness, event identity, invalid-input retention, and owner candidate boundaries."}
-{"file": ".trellis/spec/backend/vision-human-presence-events.md", "reason": "Verify unique target resolution, duplicate-event handling, interruption recovery, and pre-dispatch checks."}
-{"file": ".trellis/spec/backend/vision-gesture-pose.md", "reason": "Ensure no model, algorithm, or threshold changes and only stable exact actions trigger or release."}
-{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Audit the event across Vision, the v1 contract, Behavior arbitration, and the existing Action target boundary."}
-{"file": "interfaces/application/visual-event-v1/README.md", "reason": "Check v1 compatibility, instance lifecycle, event clearing, and Emotion isolation."}
-{"file": "interfaces/naming/README.md", "reason": "Check independent event registration and the actual product-label to Behavior and Action mapping."}
-{"file": ".trellis/tasks/10-14-vision-owner-recall-gesture/research/evidence.md", "reason": "Cross-check implementation and claims against recorded code evidence and capability limits."}

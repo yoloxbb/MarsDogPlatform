@@ -1,7 +1,0 @@
-{"file":".trellis/spec/backend/vision-owner-presence-event.md","reason":"Preserve the existing v1 state-event fields, source-observation validity, cycle identity, consumer deduplication, target freshness, and L2 candidate boundary."}
-{"file":".trellis/spec/backend/vision-human-presence-events.md","reason":"Reuse the proven BehaviorTree state-event consumer and same-snapshot owner target validation without changing family/stranger semantics."}
-{"file":".trellis/spec/backend/vision-gesture-pose.md","reason":"Use bend_over/squat_down public keys and the existing 10-update 6/10 activation and below-3/10 release hysteresis."}
-{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Trace the new posture event through Vision, visual-event v1, BehaviorTree arbitration, and the existing Action target boundary."}
-{"file":"interfaces/application/visual-event-v1/README.md","reason":"Preserve frozen v1 required fields while documenting optional active event state and source provenance."}
-{"file":"interfaces/naming/README.md","reason":"Keep EVT, intent/behavior_name, product candidate, and Action unit identifiers in their distinct namespaces."}
-{"file":".trellis/tasks/10-13-owner-bend-squat-visual-event/research/evidence.md","reason":"Task-specific source evidence for pose timings, current owner gates, L2 priority, actual approach mapping, and unavailable tail/look-up semantics."}
