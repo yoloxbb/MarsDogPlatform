@@ -99,7 +99,12 @@ install(
 
 install(DIRECTORY config launch DESTINATION share/${PROJECT_NAME})
 
-install(FILES scripts/fastdds_env.sh DESTINATION share/${PROJECT_NAME})
+install(
+  FILES
+    scripts/fastdds_env.sh
+    marsdog_vision_interaction/fastdds_overlay.py
+  DESTINATION share/${PROJECT_NAME}
+)
 
 install(PROGRAMS
   scripts/vision_interaction

@@ -2,15 +2,30 @@
 
 ## 1. 联调前提
 
-所有终端先按本机安装方式加载 ROS2 环境，并设置可移植的工作区/仓库变量：
+从 MarsDogPlatform 主仓运行以下步骤。所有终端加载 ROS2 环境，并让相机及 Vision
+使用 `modules/vision` 自己的 Fast DDS profile 与可选修复库：
 
 ```bash
 export ROS_DOMAIN_ID=0
 export ROS2_WS="${ROS2_WS:-$HOME/ros2_ws}"
-export VISION_REPO="${VISION_REPO:-$ROS2_WS/src/MarsDogVisionInteraction}"
-export VOICE_REPO="${VOICE_REPO:-$ROS2_WS/src/MarsDogVoiceInteraction}"
+export MARSDOG_PLATFORM_ROOT="${MARSDOG_PLATFORM_ROOT:-$(git rev-parse --show-toplevel)}"
+export VISION_REPO="$MARSDOG_PLATFORM_ROOT/modules/vision"
+export VOICE_REPO="$MARSDOG_PLATFORM_ROOT/modules/voice"
+source /opt/ros/humble/setup.bash
 source "$VISION_REPO/scripts/fastdds_env.sh"
 ```
+
+首次部署或修复库尚未生成时，在主仓 `modules/vision` 中构建一次。此步骤不需要在
+每次修改 YAML 后重做：
+
+```bash
+cd "$VISION_REPO"
+./scripts/build_fastdds.sh
+source scripts/fastdds_env.sh
+```
+
+构建会校验固定版本 Fast DDS/Asio 归档并安装到用户目录，不会改写 `/opt/ros/humble`。
+若相机或 Vision 被重启，两个终端都重新 source 上面的 `fastdds_env.sh`。
 
 多机部署时，各主机的 `ROS_DOMAIN_ID`、RMW 实现和网络发现策略必须一致。先用 `ros2 node list` 确认主机间可发现，再排查业务代码。
 
@@ -49,6 +64,23 @@ ros2 topic hz /camera/camera/aligned_depth_to_color/image_raw
 ```
 
 预期约 30 Hz、宽 640、高 480。
+
+使用 Logitech C922 时，可用模块内 `camera_driver` 替换 RealSense 启动命令：
+
+```bash
+cd "$VISION_REPO"
+source /opt/ros/humble/setup.bash
+source install/local_setup.bash
+source .venv/bin/activate
+source scripts/fastdds_env.sh
+ros2 run marsdog_vision_interaction camera_driver --ros-args \
+  -p device:=/dev/v4l/by-id/usb-046d_C922_Pro_Stream_Webcam_2710F01F-video-index0 \
+  -p width:=640 \
+  -p height:=480 \
+  -p fps:=30 \
+  -p image_topic:=/camera/camera/color/image_raw \
+  -p camera_info_topic:=/camera/camera/color/camera_info
+```
 
 ### 2.2 视觉节点
 

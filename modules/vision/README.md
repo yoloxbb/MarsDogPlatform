@@ -18,7 +18,8 @@
 
 项目使用 [config/fastdds.xml](config/fastdds.xml) 作为所有 ROS2 参与者的统一传输
 配置。本项目的 `vision.launch.py` 和 `vision_debug.launch.py` 会自动为其子进程加载
-该配置；独立启动 RealSense 或 `camera_driver` 前，先在对应终端执行：
+该配置和已安装的 Fast DDS 修复库；独立启动 RealSense 或 `camera_driver` 前，先在
+对应终端执行：
 
 ```bash
 source scripts/fastdds_env.sh
@@ -28,6 +29,19 @@ source scripts/fastdds_env.sh
 传输的 8MiB 单条消息上限；Humble 自带 Fast DDS 2.6.x 的 UDP 上限为 65500 bytes，
 跨主机 UDP 会使用 RTPS 分片。这里只配置传输层，不打开
 `RMW_FASTRTPS_USE_QOS_FROM_XML`。
+
+Fast DDS 2.6.12 的图像 reader 在 writer 移除时可能遗留未完成分片缓存，重复发生后会
+耗尽接收缓存并使旧订阅持续 stale。首次部署或尚未安装修复库时，在本模块构建一次：
+
+```bash
+source /opt/ros/humble/setup.bash
+./scripts/build_fastdds.sh
+```
+
+构建器固定 Fast DDS 2.6.12 和 Asio 1.18.1，校验源码归档 SHA-256，并把库安装到
+`~/.local/opt/marsdog-fastdds-2.6.12`；不会覆盖系统 ROS。之后本模块的 `fastdds_env.sh`
+和两个 launch 文件都会优先加载该库。完整部署、回退与运行时确认见
+[Fast DDS 修复说明](docs/FAST_DDS_PATCHED_RUNTIME.md)。
 
 `rknn-toolkit-lite2` 只在 Linux AArch64（RK3588）环境安装；其他平台仍可安装、
 运行单元测试和 Mock 联调，但不能执行 RKNN 模型。
@@ -67,8 +81,11 @@ Humble，再构建和 source 此模块的安装目录：
 ```bash
 cd /absolute/path/to/MarsDogPlatform/modules/vision
 source /opt/ros/humble/setup.bash
+# 首次使用/修复库尚未安装时执行一次；已安装时可跳过
+./scripts/build_fastdds.sh
 colcon build --base-paths . --packages-select marsdog_vision_interaction
 source install/local_setup.bash
+source scripts/fastdds_env.sh
 ros2 pkg prefix marsdog_vision_interaction
 ros2 launch marsdog_vision_interaction vision.launch.py
 ```

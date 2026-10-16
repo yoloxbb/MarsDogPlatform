@@ -57,7 +57,7 @@ doctor/smoke；原 WSL prepare/doctor/smoke/生命周期门禁通过。
 | P3 BehaviorTree | 历史/接口/安装/集成完成 | 7 提交；此前 533 tests；有效 context 内退出 |
 | P3 Action | 历史/接口/安装/集成完成；退出竞态修复 | 5 提交；本轮 423 pass / 29 skip；SIGINT/SIGTERM 停止与退出门禁 |
 | P4 Voice | 历史/安装/ROS 完成 | 23 提交；此前 367 tests；mock 命令与可选 catalog ID |
-| P4 Vision | 历史/资源/CPU 环境/ROS 完成 | 32 提交；此前 280 pass / 3 RGA skip；真实模型与相机未验收 |
+| P4 Vision | 历史/资源/CPU 环境/ROS 完成；Fast DDS 2.6.12 reader 缓存修复已移植 | 此前 280 pass / 3 RGA skip；修复移植记录见 P4_VISION_FASTDDS.md；真实模型与相机未验收 |
 | P5 新接口与航点 | 软件门禁完成 | 此前导航 31 tests + 2 subtests；本轮真实 Nav2 7 项取消/失败/恢复契约 |
 | P5 Native ROS | 自研包历史/CPU 构建与功能回归完成 | 8 包历史迁移；此前 140 JUnit cases、13 CTest entries（重叠计数）；本轮补齐 behavior_ext_plugins 编译及 Nav2 加载 |
 | P5 Third-party | 固定/归档/校验及所选 CPU 构建完成 | OpenVINS 4 包、RTAB 核心与 wrapper 16 包；原 OpenVINS CTest 1 项、100 个 ELF 依赖检查通过；上游完整 delta / 部分许可 UNKNOWN |

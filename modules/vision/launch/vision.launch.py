@@ -1,9 +1,11 @@
-from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
+
+from launch import LaunchDescription
+from marsdog_vision_interaction.fastdds_overlay import fastdds_overlay_environment
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -18,6 +20,12 @@ def generate_launch_description() -> LaunchDescription:
     face_api_port = LaunchConfiguration("face_api_port")
     test_run_id = LaunchConfiguration("test_run_id")
     test_case_id = LaunchConfiguration("test_case_id")
+    fastdds_overlay = fastdds_overlay_environment()
+    fastdds_overlay_actions = (
+        [SetEnvironmentVariable(name="LD_LIBRARY_PATH", value=fastdds_overlay["LD_LIBRARY_PATH"])]
+        if "LD_LIBRARY_PATH" in fastdds_overlay
+        else []
+    )
     return LaunchDescription([
         DeclareLaunchArgument(
             "config_path",
@@ -36,6 +44,7 @@ def generate_launch_description() -> LaunchDescription:
         SetEnvironmentVariable(
             name="RMW_FASTRTPS_USE_QOS_FROM_XML", value="0"
         ),
+        *fastdds_overlay_actions,
         DeclareLaunchArgument("log_level", default_value="INFO"),
         DeclareLaunchArgument("log_dir", default_value="log"),
         DeclareLaunchArgument("pose_model_variant", default_value=""),

@@ -1,0 +1,23 @@
+From: MarsDog Vision Interaction maintainers
+Subject: [PATCH] rtps: release incomplete fragment cache when writer is removed
+
+StatelessReader stores an in-progress fragmented CacheChange on its matched
+writer record. It is not part of ReaderHistory until all fragments arrive, so
+writer_unmatched() cannot reclaim it. Release the payload and CacheChange when
+removing the writer to avoid exhausting the reader's cache pool after repeated
+writer disconnects.
+
+--- a/src/cpp/rtps/reader/StatelessReader.cpp
++++ b/src/cpp/rtps/reader/StatelessReader.cpp
+@@ -213,1 +213,11 @@ bool StatelessReader::matched_writer_remove(
++                // An incomplete fragmented sample is owned by this matched
++                // writer record, not by ReaderHistory. Reclaim it before the
++                // record is erased so repeated writer removals cannot exhaust
++                // the reader's CacheChangePool.
++                if (it->fragmented_change != nullptr)
++                {
++                    releaseCache(it->fragmented_change);
++                    it->fragmented_change = nullptr;
++                }
++
+                 remove_persistence_guid(it->guid, it->persistence_guid, removed_by_lease);
