@@ -67,5 +67,7 @@ retained Vision source checkout: the unpatched runtime exhausted its cache on
 the second controlled writer removal; the patched native regression completed
 100 removals; and the camera/viewer run remained fresh for a two-minute sample.
 The results are summarized in the source checkout's
-`test-evidence/20261016-camera-stale/verification.md`. The current main-repo
-port has not been rebuilt or runtime-verified in this change.
+`test-evidence/20261016-camera-stale/verification.md`. The main-repo port has
+since been built, and a mock Vision launch confirmed that it loaded the overlay
+library. The 100-removal native regression has not been rerun against this
+main-repo copy; camera, model, and hardware acceptance remain unverified.
