@@ -1,0 +1,16 @@
+%YAML:1.0
+---
+model_type: PINHOLE
+camera_name: d435i_infra2_kalibr
+image_width: 640
+image_height: 480
+distortion_parameters:
+   k1: -0.00403646058955689
+   k2: -0.005374940054244915
+   p1: 0.0005182253995485249
+   p2: -0.003562530458349602
+projection_parameters:
+   fx: 389.28057790812744
+   fy: 388.8132708887034
+   cx: 318.30370674739504
+   cy: 239.20233183774994

@@ -1,0 +1,75 @@
+%YAML:1.0
+
+#common parameters
+#support: 1 imu 1 cam; 1 imu 2 cam: 2 cam;
+imu: 1
+num_of_cam: 2
+
+imu_topic: "/camera/camera/imu"
+image0_topic: "/camera/camera/infra1/image_rect_raw"
+image1_topic: "/camera/camera/infra2/image_rect_raw"
+output_path: "${ROBOT_OUTPUT_DIR}"
+
+cam0_calib: "left_kalibr.yaml"
+cam1_calib: "right_kalibr.yaml"
+image_width: 640
+image_height: 480
+
+# GPU acceleration
+use_gpu         : 0
+use_gpu_acc_flow: 0
+use_gpu_ceres   : 0
+
+# Extrinsic parameter between IMU and Camera.
+# This file uses Kalibr T_cam_imu inverted into VINS body_T_cam.
+estimate_extrinsic: 0
+
+body_T_cam0: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [ 0.9999502892280405, -0.002146219207677376, -0.009737187266918646, -0.005821763814831027,
+       0.002046813369964702, 0.999945808391915, -0.0102073911685831, -0.006142148555105979,
+       0.009758566892068716, 0.01018695354620464, 0.9999004932240312, 0.01904361600575013,
+       0., 0., 0., 1. ]
+
+body_T_cam1: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [ 0.9999560408280693, -0.001978278424773522, -0.009165305555550894, 0.04414970353833721,
+       0.001888201055763054, 0.9999499376946429, -0.009826332034526732, -0.006058188663568081,
+       0.009184285939884048, 0.009808594137480996, 0.99990971611082, 0.01928728573894319,
+       0., 0., 0., 1. ]
+
+#Multiple thread support
+multiple_thread: 1
+
+#feature traker paprameters
+max_cnt: 150
+min_dist: 30
+freq: 10
+F_threshold: 1.0
+show_track: 1
+flow_back: 1
+
+#optimization parameters
+max_solver_time: 0.04
+max_num_iterations: 8
+keyframe_parallax: 10.0
+
+#imu parameters
+acc_n: 0.1
+gyr_n: 0.01
+acc_w: 0.001
+gyr_w: 0.0001
+g_norm: 9.805
+
+#unsynchronization parameters
+estimate_td: 0
+td: 0.002320674987289529
+
+#loop closure parameters
+load_previous_pose_graph: 0
+pose_graph_save_path: "${ROBOT_OUTPUT_DIR}/pose_graph/"
+save_image: 0
