@@ -187,6 +187,16 @@ def test_family_and_stranger_have_independent_active_cycles() -> None:
     assert family_event.event_id != stranger_event.event_id
 
 
+@pytest.mark.parametrize("event_name", [FAMILY, STRANGER])
+@pytest.mark.parametrize("identity_state", [["confirmed_known"], {"state": "confirmed_unknown"}])
+def test_malformed_identity_state_does_not_raise_or_qualify(event_name, identity_state):
+    state = _state(event_name)
+    for index in range(8):
+        observation = _observation(event_name, index + 1)
+        observation["human_candidates"][0]["identity_state"] = identity_state
+        assert not state.update(observation, now=10.0 + index * 0.2).active
+
+
 @pytest.mark.parametrize("section", ["family_presence_events", "stranger_presence_events"])
 def test_presence_configuration_defaults_and_validation(section: str) -> None:
     config = PresenceEventConfig.from_mapping(None, section_name=section)

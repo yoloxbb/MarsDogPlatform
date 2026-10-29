@@ -83,6 +83,8 @@ from marsdog_vision_interaction.messages.visual_event import (
 from marsdog_vision_interaction.messages.visual_event_types import (
     EVT_VISION_FAMILY_MEMBER,
     EVT_VISION_MASTER,
+    EVT_VISION_MASTER_HAPPY,
+    EVT_VISION_MASTER_SAD,
     EVT_VISION_OWNER_BEND_SQUAT,
     EVT_VISION_OWNER_RECALL_GESTURE,
     EVT_VISION_STRANGER,
@@ -124,6 +126,35 @@ _ANIMAL_LABELS = {"cat", "dog"}
 _TOY_LABELS = TOY_LABELS
 
 
+def _lifecycle_event_config(config: dict[str, Any], section_name: str) -> dict[str, Any]:
+    """Combine a per-event enable switch with the shared Vision timing policy."""
+    section = config.get(section_name, {})
+    if section is None:
+        section = {}
+    if not isinstance(section, dict):
+        raise ValueError(f"{section_name} must be a mapping")
+    enabled = section.get("enabled", True)
+    if not isinstance(enabled, bool):
+        raise ValueError(f"{section_name}.enabled must be boolean")
+    timing_keys = {
+        "enter_duration_sec", "exit_duration_sec", "retrigger_delay_sec"
+    }
+    if timing_keys.intersection(section):
+        raise ValueError(
+            f"{section_name} timing must be configured in vision_event_lifecycle"
+        )
+    shared = PresenceEventConfig.from_mapping(
+        config.get("vision_event_lifecycle"),
+        section_name="vision_event_lifecycle",
+    )
+    return {
+        "enabled": enabled,
+        "enter_duration_sec": shared.enter_duration_sec,
+        "exit_duration_sec": shared.exit_duration_sec,
+        "retrigger_delay_sec": shared.retrigger_delay_sec,
+    }
+
+
 def _apply_presence_event_states(
     event: dict[str, Any],
     presence_states: tuple[tuple[str, Any], ...],
@@ -145,21 +176,62 @@ def _apply_presence_event_states(
             state_observations.get(event_name, event),
             now=now,
         )
-        if snapshot.active:
+        if snapshot.transition == "EXIT":
+            event["events"] = [
+                name for name in event["events"] if name != event_name
+            ]
+            instances[event_name] = {
+                "event_id": snapshot.event_id,
+                "lifecycle_state": "EXIT",
+            }
+        elif snapshot.transition == "TRIGGER":
             if event_name not in event["events"]:
                 event["events"].append(event_name)
-            instances[event_name] = {"event_id": snapshot.event_id}
+            instances[event_name] = {
+                "event_id": snapshot.event_id,
+                "lifecycle_state": "TRIGGER",
+            }
+        elif snapshot.active:
+            if event_name not in event["events"]:
+                event["events"].append(event_name)
+            instances[event_name] = {
+                "event_id": snapshot.event_id,
+                "lifecycle_state": snapshot.transition or "HOLD",
+            }
         else:
             if event_name not in preserve_if_inactive:
                 event["events"] = [
                     name for name in event["events"] if name != event_name
                 ]
             instances.pop(event_name, None)
+        if event_name == EVT_VISION_OWNER_RECALL_GESTURE:
+            if snapshot.transition == "TRIGGER":
+                if event_name not in event["events"]:
+                    event["events"].append(event_name)
+                instances[event_name] = {
+                    "event_id": snapshot.event_id,
+                    "lifecycle_state": "TRIGGER",
+                }
+            else:
+                event["events"] = [
+                    name for name in event["events"] if name != event_name
+                ]
+                instances.pop(event_name, None)
     for key in (
         "_source_owner_target_ids",
         "_source_human_target_ids",
         "_source_family_target_ids",
         "_source_stranger_target_ids",
+        "_source_master_target_ids",
+        "_source_posture_target_ids",
+        "_source_human_event_target_ids",
+        "_source_posture_present",
+        "_source_happy_present",
+        "_source_sad_present",
+        "_source_pose_event_names",
+        "_source_face_event_names",
+        "_source_happy_evidence",
+        "_source_sad_evidence",
         "_source_observation_age_sec",
         "_gesture_diagnostics",
         "_gesture_target_id",
@@ -203,34 +275,100 @@ def _append_stranger_refinement(
 
 
 def _suppress_owner_master_face_fact(event: dict[str, Any]) -> bool:
-    """Gate owner/family face facts and report an independent MASTER.
-
-    The owner event is emitted only by ``OwnerPresenceEventState`` below.
-    Enrolled family identities use their own presence state machine; only
-    other known non-owner identities retain the legacy immediate MASTER fact.
-    """
-    active_target = event.get("active_target")
+    """Remove the legacy immediate MASTER fact; lifecycle state owns it now."""
     events = event.get("events")
-    identity = (
-        active_target.get("identity")
-        if isinstance(active_target, dict)
-        else None
-    )
-    if not isinstance(identity, str) or not identity.strip() or identity == "unknown":
-        if isinstance(events, list):
-            event["events"] = [name for name in events if name != EVT_VISION_MASTER]
-        return False
-    is_owner_or_family = identity == "owner" or identity in {
-        "family_member_1",
-        "family_member_2",
-        "family_member_3",
-        "family_member_4",
-    }
-    if is_owner_or_family and isinstance(events, list):
+    if isinstance(events, list):
         event["events"] = [name for name in events if name != EVT_VISION_MASTER]
-    if is_owner_or_family:
-        return False
-    return isinstance(events, (list, tuple)) and EVT_VISION_MASTER in events
+    return False
+
+
+def _master_source_target_ids(event: dict[str, Any]) -> list[str]:
+    """Return current known non-family identities eligible for aggregate MASTER."""
+    source_ids = event.get("_source_human_target_ids")
+    candidates = event.get("human_candidates")
+    epoch = str(event.get("vision_epoch", "") or "")
+    if not isinstance(source_ids, list) or not isinstance(candidates, list):
+        return []
+    current_ids = {
+        item.strip() for item in source_ids
+        if isinstance(item, str) and item.strip()
+    }
+    family = {
+        "family_member_1", "family_member_2",
+        "family_member_3", "family_member_4",
+    }
+    result: list[str] = []
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        target_id = candidate.get("target_id")
+        track_id = candidate.get("track_id")
+        identity = candidate.get("identity")
+        if (
+            not isinstance(target_id, str)
+            or target_id.strip() not in current_ids
+            or not isinstance(identity, str)
+            or not identity.strip()
+            or identity == "unknown"
+            or identity in family
+            or candidate.get("identity_state") != "confirmed_known"
+            or candidate.get("tracking_state") != "tracking"
+            or str(candidate.get("vision_epoch", "")) != epoch
+            or isinstance(track_id, bool)
+            or not isinstance(track_id, int)
+            or track_id <= 0
+        ):
+            continue
+        result.append(target_id.strip())
+    return result
+
+
+def _pose_event_source_evidence(
+    event: dict[str, Any],
+    event_name: str,
+    pose_event_names: set[str],
+) -> str:
+    """Classify pose/hand evidence without turning source gaps into negatives."""
+    source_ids = event.get("_source_human_target_ids")
+    source_id = str(event.get("source_observation_id", "") or "").strip()
+    source_age = event.get("_source_observation_age_sec")
+    if (
+        event.get("observation_status") != "valid"
+        or not source_id
+        or isinstance(source_age, bool)
+        or not isinstance(source_age, (int, float))
+        or not math.isfinite(float(source_age))
+        or float(source_age) < 0.0
+        or not isinstance(source_ids, list)
+    ):
+        return "unknown"
+
+    active = event.get("active_target")
+    if not isinstance(active, dict) or not active:
+        return "negative" if not source_ids else "unknown"
+    target_id = active.get("target_id")
+    current_ids = {
+        item.strip() for item in source_ids
+        if isinstance(item, str) and item.strip()
+    }
+    if (
+        not isinstance(target_id, str)
+        or not target_id.strip()
+        or target_id.strip() not in current_ids
+        or not visual_event_derivation.pose_event_identity_eligible(active)
+    ):
+        return "unknown"
+    return "positive" if event_name in pose_event_names else "negative"
+
+
+def _merge_event_source_evidence(*states: str | None) -> str:
+    """Union sources: a positive wins; every applicable source must be negative."""
+    applicable = [state for state in states if state is not None]
+    if any(state == "positive" for state in applicable):
+        return "positive"
+    if not applicable or any(state != "negative" for state in applicable):
+        return "unknown"
+    return "negative"
 
 
 def _apply_toy_presence_event_state(
@@ -240,15 +378,23 @@ def _apply_toy_presence_event_state(
     """Serialize the object-result state without advancing it here."""
     if state is None:
         return event
-    snapshot = state.snapshot()
+    snapshot = state.snapshot(consume_transition=True)
     events = event.get("events")
     events = list(events) if isinstance(events, list) else []
     events = [name for name in events if name != EVT_VISION_TOY]
     raw_instances = event.get("event_instances")
     instances = dict(raw_instances) if isinstance(raw_instances, dict) else {}
-    if snapshot.active:
+    if snapshot.transition == "EXIT":
+        instances[EVT_VISION_TOY] = {
+            "event_id": snapshot.event_id,
+            "lifecycle_state": "EXIT",
+        }
+    elif snapshot.active:
         events.append(EVT_VISION_TOY)
-        instances[EVT_VISION_TOY] = {"event_id": snapshot.event_id}
+        instances[EVT_VISION_TOY] = {
+            "event_id": snapshot.event_id,
+            "lifecycle_state": snapshot.transition or "HOLD",
+        }
     else:
         instances.pop(EVT_VISION_TOY, None)
     event["events"] = events
@@ -541,16 +687,48 @@ class VisionInteractionNode(Node):
             0.1, float(topics.get("camera_stale_timeout_sec", 0.5))
         )
         owner_presence_events_config = OwnerPresenceEventConfig.from_mapping(
-            self._config.get("owner_presence_events")
+            _lifecycle_event_config(self._config, "owner_presence_events")
         )
         self._owner_presence_event_state = OwnerPresenceEventState(
             owner_presence_events_config,
+            source_target_ids_key="_source_master_target_ids",
+            identities={"*"},
             source_freshness_sec=self._camera_stale_timeout_sec,
         )
         self._owner_posture_event_state = OwnerPostureEventState(
             OwnerPostureEventConfig.from_mapping(
-                self._config.get("owner_posture_events")
+                _lifecycle_event_config(self._config, "owner_posture_events")
             ),
+            source_freshness_sec=self._camera_stale_timeout_sec,
+        )
+        self._master_happy_event_state = PresenceEventState(
+            PresenceEventConfig.from_mapping(
+                _lifecycle_event_config(self._config, "master_happy_events"),
+                section_name="master_happy_events",
+            ),
+            event_tag="master-happy",
+            source_target_ids_key="_source_human_event_target_ids",
+            identities={
+                "owner", "family_member_1", "family_member_2",
+                "family_member_3", "family_member_4", "unknown",
+            },
+            identity_state={"confirmed_known", "confirmed_unknown"},
+            evidence_state_key="_source_happy_evidence",
+            source_freshness_sec=self._camera_stale_timeout_sec,
+        )
+        self._master_sad_event_state = PresenceEventState(
+            PresenceEventConfig.from_mapping(
+                _lifecycle_event_config(self._config, "master_sad_events"),
+                section_name="master_sad_events",
+            ),
+            event_tag="master-sad",
+            source_target_ids_key="_source_human_event_target_ids",
+            identities={
+                "owner", "family_member_1", "family_member_2",
+                "family_member_3", "family_member_4", "unknown",
+            },
+            identity_state={"confirmed_known", "confirmed_unknown"},
+            evidence_state_key="_source_sad_evidence",
             source_freshness_sec=self._camera_stale_timeout_sec,
         )
         self._owner_recall_gesture_event_state = OwnerRecallGestureEventState(
@@ -561,7 +739,7 @@ class VisionInteractionNode(Node):
         )
         self._family_presence_event_state = PresenceEventState(
             PresenceEventConfig.from_mapping(
-                self._config.get("family_presence_events"),
+                _lifecycle_event_config(self._config, "family_presence_events"),
                 section_name="family_presence_events",
             ),
             event_tag="family-presence",
@@ -575,7 +753,7 @@ class VisionInteractionNode(Node):
         )
         self._stranger_presence_event_state = PresenceEventState(
             PresenceEventConfig.from_mapping(
-                self._config.get("stranger_presence_events"),
+                _lifecycle_event_config(self._config, "stranger_presence_events"),
                 section_name="stranger_presence_events",
             ),
             event_tag="stranger-presence",
@@ -697,7 +875,7 @@ class VisionInteractionNode(Node):
         )
         self._toy_presence_event_state = ToyPresenceEventState(
             ToyPresenceEventConfig.from_mapping(
-                self._config.get("toy_presence_events")
+                _lifecycle_event_config(self._config, "toy_presence_events")
             ),
             source_freshness_sec=self._object_target_current_timeout_sec,
             result_max_age_sec=self._object_cache_timeout_sec,
@@ -1434,10 +1612,86 @@ class VisionInteractionNode(Node):
             emotion_classification=emotion_classification,
             now=time.monotonic(),
         )
-        # A legacy known non-owner MASTER face fact can coexist with the owner
-        # state cycle. Family identities are excluded above and use their own
-        # state event; preserve only unrelated known-identity facts here.
-        legacy_master_fact = _suppress_owner_master_face_fact(event)
+        source_events = set(event["events"])
+        pose_source_events = set(
+            event.get("_source_pose_event_names", [])
+        )
+        _suppress_owner_master_face_fact(event)
+        source_master_observation = dict(event)
+        source_master_observation["_source_master_target_ids"] = (
+            _master_source_target_ids(event)
+        )
+        active_target = event.get("active_target")
+        source_human_ids = event.get("_source_human_target_ids")
+        source_human_ids = (
+            {value.strip() for value in source_human_ids
+             if isinstance(value, str) and value.strip()}
+            if isinstance(source_human_ids, list)
+            else set()
+        )
+        active_target_id = (
+            active_target.get("target_id", "")
+            if isinstance(active_target, dict)
+            else ""
+        )
+        posture_target_ids = event.get("_source_owner_target_ids")
+        posture_target_ids = (
+            {value.strip() for value in posture_target_ids
+             if isinstance(value, str) and value.strip()}
+            if isinstance(posture_target_ids, list)
+            else set()
+        )
+        posture_observation = dict(event)
+        posture_observation["_source_posture_present"] = bool(
+            EVT_VISION_OWNER_BEND_SQUAT in source_events
+            and isinstance(active_target, dict)
+            and active_target.get("identity") == "owner"
+            and active_target.get("identity_state") == "confirmed_known"
+            and active_target.get("tracking_state") == "tracking"
+            and active_target_id in posture_target_ids
+        )
+        pose_event_target_ids = (
+            [active_target_id]
+            if (
+                isinstance(active_target, dict)
+                and active_target_id in source_human_ids
+                and visual_event_derivation.pose_event_identity_eligible(
+                    active_target
+                )
+            )
+            else []
+        )
+        happy_observation = dict(event)
+        happy_observation["_source_human_event_target_ids"] = list(
+            pose_event_target_ids
+        )
+        expression_state = getattr(
+            self, "_facial_expression_event_state", None
+        )
+        happy_observation["_source_happy_evidence"] = (
+            _merge_event_source_evidence(
+                _pose_event_source_evidence(
+                    event, EVT_VISION_MASTER_HAPPY, pose_source_events
+                ),
+                expression_state.evidence_for_event(
+                    event, EVT_VISION_MASTER_HAPPY
+                ) if expression_state is not None else None,
+            )
+        )
+        sad_observation = dict(event)
+        sad_observation["_source_human_event_target_ids"] = list(
+            pose_event_target_ids
+        )
+        sad_observation["_source_sad_evidence"] = (
+            _merge_event_source_evidence(
+                _pose_event_source_evidence(
+                    event, EVT_VISION_MASTER_SAD, pose_source_events
+                ),
+                expression_state.evidence_for_event(
+                    event, EVT_VISION_MASTER_SAD
+                ) if expression_state is not None else None,
+            )
+        )
         with self._state_lock:
             event = _apply_toy_presence_event_state(
                 event,
@@ -1459,6 +1713,14 @@ class VisionInteractionNode(Node):
             (
                 EVT_VISION_OWNER_BEND_SQUAT,
                 getattr(self, "_owner_posture_event_state", None),
+            ),
+            (
+                EVT_VISION_MASTER_HAPPY,
+                getattr(self, "_master_happy_event_state", None),
+            ),
+            (
+                EVT_VISION_MASTER_SAD,
+                getattr(self, "_master_sad_event_state", None),
             ),
             (
                 EVT_VISION_OWNER_RECALL_GESTURE,
@@ -1484,13 +1746,12 @@ class VisionInteractionNode(Node):
             presence_states,
             now=presence_now,
             event_state_observations={
+                EVT_VISION_MASTER: source_master_observation,
+                EVT_VISION_OWNER_BEND_SQUAT: posture_observation,
+                EVT_VISION_MASTER_HAPPY: happy_observation,
+                EVT_VISION_MASTER_SAD: sad_observation,
                 EVT_VISION_OWNER_RECALL_GESTURE: recall_observation,
             },
-            preserve_if_inactive=(
-                frozenset({EVT_VISION_MASTER})
-                if legacy_master_fact
-                else frozenset()
-            ),
         )
         _append_stranger_refinement(
             event,
@@ -2425,16 +2686,21 @@ class VisionInteractionNode(Node):
         now: float | None = None,
     ) -> list[str]:
         """Merge temporal expression support into existing pose/hand events."""
-        events = self._derive_events(observation, emotion_classification)
+        pose_events = self._derive_events(observation, emotion_classification)
+        events = list(pose_events)
         expression_state = getattr(
             self, "_facial_expression_event_state", None
         )
         if expression_state is None:
+            observation["_source_pose_event_names"] = list(pose_events)
+            observation["_source_face_event_names"] = []
             return events
         expression_events = expression_state.update(
             observation,
             now=time.monotonic() if now is None else now,
         )
+        observation["_source_pose_event_names"] = list(pose_events)
+        observation["_source_face_event_names"] = list(expression_events)
         for event_name in expression_events:
             if event_name not in events:
                 events.append(event_name)

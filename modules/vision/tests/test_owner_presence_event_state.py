@@ -143,7 +143,7 @@ def test_valid_short_miss_holds_then_two_seconds_of_misses_exits() -> None:
     assert result is not None
     assert result.transition == "EXIT"
     assert result.active is False
-    assert result.event_id == ""
+    assert result.event_id == event_id
 
 
 def test_retrigger_waits_three_seconds_after_exit_then_requires_full_entry() -> None:

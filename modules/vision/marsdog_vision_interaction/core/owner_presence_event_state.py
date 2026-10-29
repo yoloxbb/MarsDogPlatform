@@ -51,6 +51,8 @@ class OwnerPresenceEventState:
         self,
         config: OwnerPresenceEventConfig,
         *,
+        source_target_ids_key: str = "_source_owner_target_ids",
+        identities: set[str] | None = None,
         source_freshness_sec: float = 0.5,
     ) -> None:
         self.config = config
@@ -62,8 +64,8 @@ class OwnerPresenceEventState:
                 retrigger_delay_sec=config.retrigger_delay_sec,
             ),
             event_tag="owner-presence",
-            source_target_ids_key="_source_owner_target_ids",
-            identities={"owner"},
+            source_target_ids_key=source_target_ids_key,
+            identities=identities or {"owner"},
             identity_state="confirmed_known",
             source_freshness_sec=source_freshness_sec,
         )

@@ -204,12 +204,12 @@ Service 不可用时回退 Topic 缓存。视觉消息超过约 0.5 秒、目标
 `priority_level=1, sub_priority=12`（Lv1.2）。视觉 Topic 是 10 Hz 状态快照，适配器按事件的
 “消失 → 再出现”边沿重新触发，候选池另行保证 queued/in-flight 同名唯一。
 
-owner 的 `EVT_VISION_MASTER`、`EVT_VISION_FAMILY_MEMBER` 和 canonical 陌生人在场事件
+`EVT_VISION_MASTER`、`EVT_VISION_FAMILY_MEMBER` 和 canonical 陌生人在场事件
 `EVT_VISION_STRANGER` 在 Behavior 侧都要求活动周期 `event_id`，按各自实例去重，且
-不会因短暂 Topic 中断清除去重记忆。主人 MASTER 使用确认主人状态机：不同有效源观测确认目标
-满 1.0 秒后 ENTER，HOLD 期间维持，连续有效漏检 2.0 秒后 EXIT 并开始 3.0 秒冷却；断流和
-无效推理不计作漏检。其它已知非主人 MASTER face fact 没有 owner 状态实例，不能创建
-`owner_greet`；家人只通过 `EVT_VISION_FAMILY_MEMBER` 路由。Behavior 只在同包、同 epoch 的唯一匹配目标已确认、仍在跟踪且新鲜时创建
+不会因短暂 Topic 中断清除去重记忆。7 个持续视觉事件共享 `T_enter=1.0s`、`T_exit=2.0s`、
+`T_retrigger=3.0s`，实例的可选 `lifecycle_state` 明确给出 ENTER/HOLD/EXIT；Behavior 只在 ENTER
+创建直接候选。MASTER 由主人及符合资格的已知非家人身份共享一个周期，但 `owner_greet` 仍要求
+同包确认主人身份。家人只通过 `EVT_VISION_FAMILY_MEMBER` 路由。Behavior 只在同包、同 epoch 的唯一匹配目标已确认、仍在跟踪且新鲜时创建
 Lv1 `owner_greet`、`familiar_person_greet` 或 `stranger_observe` 候选。当前 Action 没有这些行为
 模板，所以候选会在 Action 解析阶段被拒绝，不代表对应动作已执行。
 
@@ -226,8 +226,8 @@ Lv1 `owner_greet`、`familiar_person_greet` 或 `stranger_observe` 候选。当�
 
 `EVT_VISION_OWNER_RECALL_GESTURE` 是与弯腰/蹲下分离的主人召唤动作事件，接受 GesturePose 已稳定确认
 的精确 `beckoning` 或 `waving` 类别；产品语义将两者都视作召唤，检测器不能区分挥手问候意图，
-静态 `arms_raised` 不触发。事件沿用稳定 event ID 与活动状态快照；同目标有效观测确认两个类别都解除，
-且建立实例的类别/来源同侧有效可判定后才重新武装。BECKONING 手部漏检/几何无效/同侧连续性中断，
+静态 `arms_raised` 不触发。事件对外只发布一个带 `lifecycle_state=TRIGGER` 的快照；同目标有效观测确认两个类别都解除，
+且建立实例的类别/来源同侧有效可判定后才重新武装，不增加状态冷却。BECKONING 手部漏检/几何无效/同侧连续性中断，
 WAVING 腕/肩来源缺失，或无效/过期数据、缓存中断、目标切换和 epoch 变化都不能伪装成解除。候选绑定新鲜、唯一、
 同 epoch 的 confirmed owner，进入同一 L2 仲裁并在派发前重验；不直控动作、不改变 Emotion。映射复用
 `owner_approach_response` → `approach_owner` → `ACT_INTERACT_APPROACH_OWNER_CLOSER`，仅覆盖靠近；

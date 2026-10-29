@@ -87,7 +87,8 @@
 
 情绪节点只读取 `events` 数组，逐个应用情绪事件映射。
 需求节点在 `events` 中出现 `EVT_VISION_MASTER` 或 `EVT_VISION_FAMILY_MEMBER` 时保留
-`ownerPresent=true` 副作用；MASTER 表示主人，FAMILY_MEMBER 表示已确认家人。
+`ownerPresent=true` 副作用；MASTER 聚合主人和已知非家人身份，FAMILY_MEMBER 表示已确认家人。
+新状态事件在可选 `lifecycle_state` 中标记 ENTER/HOLD/EXIT；退出标记只在最后一个活动 presence 周期结束时调用一次现有离场逻辑。
 
 不会从 `faces / humans / hands / tracked_objects / active_target` 自动推断情绪事件。
 

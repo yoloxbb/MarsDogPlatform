@@ -103,7 +103,7 @@ def test_beckoning_and_waving_trigger_once_and_share_an_episode() -> None:
     state = _state()
     first = state.update(_observation("frame:1", ("beckoning",)), now=1.0)
     assert first.active
-    assert first.transition == "ENTER"
+    assert first.transition == "TRIGGER"
     assert first.event_id
 
     repeated = state.update(
@@ -123,7 +123,7 @@ def test_each_accepted_stable_action_triggers(action: str) -> None:
         _observation("frame:1", (action,)), now=1.0
     )
     assert snapshot.active
-    assert snapshot.transition == "ENTER"
+    assert snapshot.transition == "TRIGGER"
 
 
 def test_static_raised_arm_and_unrelated_action_do_not_trigger() -> None:

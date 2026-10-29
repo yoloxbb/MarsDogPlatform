@@ -291,6 +291,15 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
         )
     assert "EVT_VISION_FAMILY_MEMBER" not in packet["events"]
     assert "EVT_VISION_STRANGER" not in packet["events"]
+    assert packet["event_instances"]["EVT_VISION_FAMILY_MEMBER"] == {
+        "event_id": family_event_id, "lifecycle_state": "EXIT",
+    }
+    assert packet["event_instances"]["EVT_VISION_STRANGER"] == {
+        "event_id": stranger_event_id, "lifecycle_state": "EXIT",
+    }
+    packet = _apply_presence_event_states(
+        observation(8, present=False), presence_states, now=10.77,
+    )
     assert "EVT_VISION_FAMILY_MEMBER" not in packet["event_instances"]
     assert "EVT_VISION_STRANGER" not in packet["event_instances"]
     assert packet["event_instances"]["EVT_VISION_MASTER"][
@@ -298,7 +307,7 @@ def test_presence_event_publication_preserves_instances_and_strips_private_evide
     ] == "owner-cycle"
 
 
-def test_owner_presence_publishes_master_state_and_suppresses_family_master_fact() -> None:
+def test_master_aggregates_owner_and_known_nonfamily_on_one_lifecycle() -> None:
     from marsdog_vision_interaction.messages.visual_event_types import (
         EVT_VISION_MASTER,
     )
@@ -313,6 +322,8 @@ def test_owner_presence_publishes_master_state_and_suppresses_family_master_fact
             exit_duration_sec=0.4,
             retrigger_delay_sec=3.0,
         ),
+        source_target_ids_key="_source_master_target_ids",
+        identities={"*"},
         source_freshness_sec=0.5,
     )
     states = ((EVT_VISION_MASTER, state),)
@@ -343,48 +354,48 @@ def test_owner_presence_publishes_master_state_and_suppresses_family_master_fact
             "source_observation_id": f"frame:{sequence}",
             "_source_observation_age_sec": 0.0,
             "observation_status": status,
-            # Owner and family face facts are filtered before state publication.
+            # The legacy face fact is removed; aggregate MASTER eligibility
+            # comes from current known non-family targets.
             "events": [EVT_VISION_MASTER] if present else [],
             "active_target": target if present else {},
-            "_source_owner_target_ids": (
-                [target_id] if present and identity == "owner" else []
-            ),
+            "_source_human_target_ids": [target_id] if present else [],
             "human_candidates": [target] if present else [],
         }
 
     def publish(value, now):
-        preserve_legacy_master = _suppress_owner_master_face_fact(value)
+        _suppress_owner_master_face_fact(value)
+        value["_source_master_target_ids"] = vision_node_module._master_source_target_ids(value)
         return _apply_presence_event_states(
             value,
             states,
             now=now,
-            preserve_if_inactive=(
-                frozenset({EVT_VISION_MASTER})
-                if preserve_legacy_master
-                else frozenset()
-            ),
         )
 
-    first = publish(observation(1), 10.0)
-    second = publish(observation(2), 10.2)
+    first = publish(observation(1, identity="alice"), 10.0)
+    second = publish(observation(2, identity="alice"), 10.2)
     assert EVT_VISION_MASTER not in first["events"]
     assert EVT_VISION_MASTER not in second["events"]
 
-    entered = publish(observation(3), 10.4)
+    entered = publish(observation(3, identity="alice"), 10.4)
     event_id = entered["event_instances"][EVT_VISION_MASTER]["event_id"]
     assert EVT_VISION_MASTER in entered["events"]
     assert "EVT_VISION_OWNER_PRESENT" not in entered["events"]
     assert "EVT_VISION_OWNER_PRESENT" not in entered["event_instances"]
 
-    invalid = publish(observation(4, status="invalid"), 10.6)
+    owner_joins = publish(observation(4, identity="owner"), 10.6)
+    assert owner_joins["event_instances"][EVT_VISION_MASTER]["event_id"] == event_id
+
+    invalid = publish(observation(5, status="invalid"), 10.8)
     assert invalid["event_instances"][EVT_VISION_MASTER]["event_id"] == event_id
 
-    publish(observation(5, present=False), 10.8)
     publish(observation(6, present=False), 11.0)
     publish(observation(7, present=False), 11.2)
     exited = publish(observation(8, present=False), 11.4)
     assert EVT_VISION_MASTER not in exited["events"]
-    assert EVT_VISION_MASTER not in exited.get("event_instances", {})
+    assert exited["event_instances"][EVT_VISION_MASTER] == {
+        "event_id": event_id,
+        "lifecycle_state": "EXIT",
+    }
 
     family = publish(
         observation(9, identity="family_member_1"),
@@ -418,7 +429,11 @@ def test_owner_posture_event_publication_adds_holds_and_removes_active_instance(
     )
 
     event_state = OwnerPostureEventState(
-        OwnerPostureEventConfig.from_mapping({"enter_duration_sec": 1.0}),
+        OwnerPostureEventConfig.from_mapping({
+            "enter_duration_sec": 1.0,
+            "exit_duration_sec": 0.4,
+            "retrigger_delay_sec": 3.0,
+        }),
         source_freshness_sec=0.5,
     )
     states = (("EVT_VISION_OWNER_BEND_SQUAT", event_state),)
@@ -481,13 +496,18 @@ def test_owner_posture_event_publication_adds_holds_and_removes_active_instance(
         "event_id"
     ] == posture_id
 
-    released = _apply_presence_event_states(
+    released_once = _apply_presence_event_states(
         observation(9, pose=""), states, now=12.4
     )
-    assert "EVT_VISION_OWNER_BEND_SQUAT" not in released["events"]
-    assert "EVT_VISION_OWNER_BEND_SQUAT" not in released.get(
-        "event_instances", {}
+    assert "EVT_VISION_OWNER_BEND_SQUAT" in released_once["events"]
+    released = _apply_presence_event_states(
+        observation(10, pose=""), states, now=12.81
     )
+    assert "EVT_VISION_OWNER_BEND_SQUAT" not in released["events"]
+    assert released["event_instances"]["EVT_VISION_OWNER_BEND_SQUAT"] == {
+        "event_id": posture_id,
+        "lifecycle_state": "EXIT",
+    }
     assert "EVT_VISION_MASTER" in released["events"]
 
 
@@ -552,7 +572,10 @@ def test_owner_recall_publication_uses_private_stable_actions_and_v1_instance() 
     )
     event_id = packet["event_instances"][event_name]["event_id"]
     assert event_name in packet["events"]
-    assert packet["event_instances"][event_name] == {"event_id": event_id}
+    assert packet["event_instances"][event_name] == {
+        "event_id": event_id,
+        "lifecycle_state": "TRIGGER",
+    }
     assert "EVT_VISION_MASTER" in packet["events"]
     assert not any(key.startswith("_") for key in packet)
 
@@ -563,7 +586,7 @@ def test_owner_recall_publication_uses_private_stable_actions_and_v1_instance() 
         now=10.1,
         event_state_observations={event_name: invalid},
     )
-    assert packet["event_instances"][event_name]["event_id"] == event_id
+    assert event_name not in packet.get("event_instances", {})
 
     release = observation(3)
     packet = _apply_presence_event_states(

@@ -171,6 +171,30 @@ def test_visual_contract_preserves_optional_owner_event_metadata() -> None:
     assert "source_observation_id" not in normalize_visual_event({})
 
 
+def test_visual_contract_preserves_lifecycle_state_without_a_valid_event_id() -> None:
+    value = normalize_visual_event({
+        "events": [visual_event_types.EVT_VISION_MASTER],
+        "event_instances": {
+            visual_event_types.EVT_VISION_MASTER: {
+                "event_id": None,
+                "lifecycle_state": ["ENTER"],
+            },
+            visual_event_types.EVT_VISION_TOY: {
+                "event_id": "toy-cycle-1",
+                "lifecycle_state": "HOLD",
+            },
+        },
+    })
+
+    assert value["event_instances"][visual_event_types.EVT_VISION_MASTER] == {
+        "lifecycle_state": ["ENTER"],
+    }
+    assert value["event_instances"][visual_event_types.EVT_VISION_TOY] == {
+        "event_id": "toy-cycle-1",
+        "lifecycle_state": "HOLD",
+    }
+
+
 def test_family_face_fact_waits_for_the_family_presence_cycle() -> None:
     observation = {
         "faces": [{"track_id": 9, "recognized_user": "family_member_1"}],

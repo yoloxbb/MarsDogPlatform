@@ -8,9 +8,15 @@ happy/sad events; their policy is unchanged.
 The separate root-level `facial_expression_events` policy can use a current
 confirmed owner's matching face to support existing `EVT_VISION_MASTER_HAPPY`
 and `EVT_VISION_MASTER_SAD` events. The real configuration requires raw
-confidence >= 0.70 and distinct fresh source frames for 1.0 second; invalid
-evidence releases expression support after 0.5 second. An absent policy block
-leaves this event source disabled. Pose/hand support remains independent. See
+confidence >= 0.70 and preserves source freshness and owner/face-track gates.
+Public HAPPY/SAD events merge this evidence with pose/hand evidence and use
+`vision_event_lifecycle`: 1.0 second ENTER, 2.0 second valid-negative EXIT, and
+3.0 second retrigger delay. Missing/stale/low-confidence face results are
+unknown, so they cannot end an active event. A current qualified non-owner
+target makes the owner-only face source inapplicable. The retained
+`stable_duration_sec`/`release_duration_sec` expression-source settings do not
+control the public lifecycle. An absent policy block leaves this event source
+disabled. See
 [ROS2_CONTRACT.md section 4.8](ROS2_CONTRACT.md#48-当前会实际产生的-events)
 for the owner gate and event combination rules.
 

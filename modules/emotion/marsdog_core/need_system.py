@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import random
 import time
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Callable
 
@@ -76,11 +77,61 @@ class MarsdogNeedSystem(
         """处理新版 `/perception/visual_event` 中会影响需求值的事件。"""
         payload = dict(metadata or {})
         emittedEvents = self._GetStringList(payload.get("events", []))
-        if (
-            "EVT_VISION_MASTER" in emittedEvents
-            or "EVT_VISION_FAMILY_MEMBER" in emittedEvents
-        ):
+        presence_events = (
+            "EVT_VISION_MASTER",
+            "EVT_VISION_FAMILY_MEMBER",
+        )
+        instances = payload.get("event_instances")
+        if not isinstance(instances, dict):
+            instances = {}
+        active_presence = False
+        for eventName in presence_events:
+            if eventName not in emittedEvents:
+                continue
+            instance = instances.get(eventName)
+            # Legacy packets have no lifecycle field and retain their original
+            # event-name semantics. Once a field is present, only an explicit
+            # active state may assert presence; malformed states fail closed.
+            if not isinstance(instance, dict) or "lifecycle_state" not in instance:
+                active_presence = True
+                break
+            if instance.get("lifecycle_state") in ("ENTER", "HOLD"):
+                active_presence = True
+                break
+        processed_exits = getattr(
+            self, "_processed_visual_presence_exit_ids", None
+        )
+        if not isinstance(processed_exits, dict):
+            processed_exits = {}
+            self._processed_visual_presence_exit_ids = processed_exits
+        new_exit = False
+        for eventName in presence_events:
+            instance = instances.get(eventName)
+            if (
+                not isinstance(instance, dict)
+                or instance.get("lifecycle_state") != "EXIT"
+            ):
+                continue
+            eventId = instance.get("event_id")
+            if not isinstance(eventId, str) or not eventId.strip():
+                continue
+            eventId = eventId.strip()
+            seen_ids = processed_exits.get(eventName)
+            if not isinstance(seen_ids, OrderedDict):
+                seen_ids = OrderedDict()
+                processed_exits[eventName] = seen_ids
+            if eventId not in seen_ids:
+                new_exit = True
+                seen_ids[eventId] = None
+                if len(seen_ids) > 512:
+                    seen_ids.popitem(last=False)
+            else:
+                seen_ids.move_to_end(eventId)
+        if active_presence:
             self.OnOwnerPresenceChanged(True)
+        elif new_exit:
+            # Only the final active presence exit becomes a departure edge.
+            self.OnOwnerPresenceChanged(False)
         return emittedEvents
 
     def OnAudioEvent(self, metadata: dict[str, Any] | None = None) -> list[str]:

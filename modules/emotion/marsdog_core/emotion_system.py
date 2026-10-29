@@ -94,6 +94,22 @@ class MarsdogEmotionSystem(EmotionAPI, PersonalityAPI):
             else None
         )
         eventNames = self._GetStringList(payload.get("events", []))
+        if not isinstance(eventInstances, dict):
+            eventInstances = {}
+        allowedLifecycleStates = ("ENTER", "HOLD", "EXIT", "TRIGGER")
+        eventNames = [
+            eventName
+            for eventName in eventNames
+            if not (
+                isinstance(eventInstances.get(eventName), dict)
+                and "lifecycle_state" in eventInstances[eventName]
+                and (
+                    eventInstances[eventName].get("lifecycle_state")
+                    not in allowedLifecycleStates
+                    or eventInstances[eventName].get("lifecycle_state") == "EXIT"
+                )
+            )
+        ]
         hasStrangerRefinement = any(
             eventName
             in {

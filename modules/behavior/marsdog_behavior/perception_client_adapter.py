@@ -36,6 +36,7 @@ from .visual_presence_contract import (
     VISUAL_OBJECT_EVENT_NAMES,
     VISUAL_OBJECT_TARGET_MAX_AGE_MS,
     supported_toy_target_age_ms,
+    VISUAL_LIFECYCLE_STATES,
 )
 
 import json
@@ -433,22 +434,50 @@ class PerceptionClientAdapter:
                 and not visual_event_consumer.owner_posture_snapshot_is_current(self)
             ):
                 return False
+            cache_age = now - self._visual_cache_updated_at
+            current_event_id = self._cached_visual_event_instances.get(
+                event_type, ""
+            )
+            event_is_active = (
+                event_type in self._cached_visual_events
+                and current_event_id == expected_event_id
+            )
+            recall_trigger = getattr(
+                self, "_recent_owner_recall_trigger", None
+            )
+            recall_trigger_is_current = (
+                event_type == OWNER_RECALL_GESTURE_EVENT
+                and visual_event_consumer.owner_recall_trigger_is_retained(
+                    self, expected_event_id, expected_epoch, now
+                )
+            )
             if (
                 event_type == OWNER_RECALL_GESTURE_EVENT
                 and not visual_event_consumer.owner_recall_snapshot_is_current(self)
             ):
                 return False
-            cache_age = now - self._visual_cache_updated_at
+            lifecycle_states = getattr(
+                self, "_cached_visual_event_lifecycle_states", {}
+            )
+            lifecycle_explicit = (
+                isinstance(lifecycle_states, dict)
+                and event_type in lifecycle_states
+            )
+            if lifecycle_explicit:
+                lifecycle_status = lifecycle_states[event_type]
+                if (
+                    not isinstance(lifecycle_status, str)
+                    or lifecycle_status not in VISUAL_LIFECYCLE_STATES
+                    or lifecycle_status == "EXIT"
+                ):
+                    return False
             if (
                 self._visual_cache_updated_at <= 0.0
                 or cache_age < 0.0
                 or cache_age > self.VISUAL_CACHE_TIMEOUT_SEC
                 or self._cached_observation_status != "valid"
-                or event_type not in self._cached_visual_events
                 or self._cached_vision_epoch != expected_epoch
-                or self._cached_visual_event_instances.get(
-                    event_type, ""
-                ) != expected_event_id
+                or not (event_is_active or recall_trigger_is_current)
                 or not self._cached_visual_snapshot_id
                 or not self._cached_source_observation_id
             ):
@@ -496,6 +525,13 @@ class PerceptionClientAdapter:
             if (
                 current["target_id"].strip() != expected_target_id
                 or current.get("track_id") != expected_track_id
+                or (
+                    recall_trigger_is_current
+                    and (
+                        recall_trigger.get("target_id") != expected_target_id
+                        or recall_trigger.get("track_id") != expected_track_id
+                    )
+                )
             ):
                 return False
 
@@ -557,6 +593,17 @@ class PerceptionClientAdapter:
 
         now = time.monotonic()
         with self._lock:
+            lifecycle_states = getattr(
+                self, "_cached_visual_event_lifecycle_states", {}
+            )
+            if isinstance(lifecycle_states, dict) and event_type in lifecycle_states:
+                lifecycle_status = lifecycle_states[event_type]
+                if (
+                    not isinstance(lifecycle_status, str)
+                    or lifecycle_status not in VISUAL_LIFECYCLE_STATES
+                    or lifecycle_status == "EXIT"
+                ):
+                    return False
             if (
                 not visual_event_consumer.visual_object_snapshot_is_current(self)
                 or self._visual_cache_updated_at <= 0.0

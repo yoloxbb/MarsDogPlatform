@@ -68,44 +68,44 @@ stranger_emotion:
 facial_expression_events:
   enabled: true
   minimum_confidence: 0.70
+  # Retained expression-source debounce settings; public HAPPY/SAD timing
+  # comes exclusively from vision_event_lifecycle below.
   stable_duration_sec: 1.0
   release_duration_sec: 0.5
 
-# Emit a separate active-state fact for a confirmed, currently tracked owner.
-# Timing uses distinct successful source inferences, not 10 Hz snapshot count.
-owner_presence_events:
-  enabled: true
+# All continuous visual states share one lifecycle timer policy. Algorithm
+# confidence and source-stability thresholds remain event-specific.
+vision_event_lifecycle:
   enter_duration_sec: 1.0
   exit_duration_sec: 2.0
   retrigger_delay_sec: 3.0
 
-# Emit one active-state event for a confirmed owner's stable bend or squat.
-# Pose release follows GesturePose's existing public-label hysteresis.
+# MASTER is one aggregate cycle for the owner and other known non-family IDs.
+owner_presence_events:
+  enabled: true
+
+# Event enablement only; lifecycle timing comes from vision_event_lifecycle.
 owner_posture_events:
   enabled: true
-  enter_duration_sec: 1.0
+
+master_happy_events:
+  enabled: true
+
+master_sad_events:
+  enabled: true
 
 # Emit independent state facts for confirmed enrolled family and strangers.
 # Timing advances on distinct successful source inferences, not 10 Hz snapshots.
 family_presence_events:
   enabled: true
-  enter_duration_sec: 1.0
-  exit_duration_sec: 2.0
-  retrigger_delay_sec: 3.0
 
 stranger_presence_events:
   enabled: true
-  enter_duration_sec: 1.0
-  exit_duration_sec: 2.0
-  retrigger_delay_sec: 3.0
 
 # A scene-level toy fact fed only by object results from existing detection
 # tasks. It does not activate or change the cadence of any detector stream.
 toy_presence_events:
   enabled: true
-  enter_duration_sec: 1.0
-  exit_duration_sec: 2.0
-  retrigger_delay_sec: 3.0
 
 # Aligned RealSense depth is the only source allowed to populate a target
 # range. Missing/stale depth, invalid CameraInfo, a timestamp mismatch or an

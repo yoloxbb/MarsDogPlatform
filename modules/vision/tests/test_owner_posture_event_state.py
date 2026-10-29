@@ -58,6 +58,8 @@ def _state() -> OwnerPostureEventState:
         OwnerPostureEventConfig.from_mapping({
             "enabled": True,
             "enter_duration_sec": 1.0,
+            "exit_duration_sec": 2.0,
+            "retrigger_delay_sec": 3.0,
         }),
         source_freshness_sec=0.5,
     )
@@ -170,17 +172,21 @@ def test_only_same_target_public_pose_release_rearms_and_next_cycle_gets_new_id(
     assert held.active
     assert held.event_id == first_id
 
-    released = state.update(
-        _observation(21, pose=""), now=enter_time + 0.4
-    )
+    released = None
+    for index in range(11):
+        released = state.update(
+            _observation(21 + index, pose=""),
+            now=enter_time + 0.4 + index * 0.2,
+        )
+    assert released is not None
     assert released.transition == "EXIT"
     assert not released.active
-    assert released.event_id == ""
+    assert released.event_id == first_id
 
     second_enter_time, second_id = _enter(
-        state, start=enter_time + 0.6, first_sequence=30
+        state, start=enter_time + 5.4, first_sequence=40
     )
-    assert second_enter_time == pytest.approx(enter_time + 1.6)
+    assert second_enter_time == pytest.approx(enter_time + 6.4)
     assert second_id != first_id
 
 
@@ -241,6 +247,7 @@ def test_retained_only_row_does_not_release_and_identity_loss_latches_until_pose
     exited = state.update(current_identity_loss, now=enter_time + 0.4)
     assert exited.transition == "EXIT"
     assert not exited.active
+    assert exited.event_id == event_id
 
     recovered_same_pose = state.update(
         _observation(22), now=enter_time + 0.6
@@ -253,9 +260,9 @@ def test_retained_only_row_does_not_release_and_identity_loss_latches_until_pose
     )
     assert not cleared_pose.active
     reentered_at, new_id = _enter(
-        state, start=enter_time + 1.0, first_sequence=30
+        state, start=enter_time + 3.4, first_sequence=30
     )
-    assert reentered_at == pytest.approx(enter_time + 2.0)
+    assert reentered_at == pytest.approx(enter_time + 4.4)
     assert new_id != event_id
 
 
@@ -295,10 +302,11 @@ def test_target_and_epoch_changes_discard_old_cycle_context() -> None:
         _observation(20, target_track=8), now=enter_time + 0.2
     )
     assert not switched.active
-    assert switched.event_id == ""
+    assert switched.transition == "EXIT"
+    assert switched.event_id == old_id
     second = _enter(
         state,
-        start=enter_time + 0.4,
+        start=enter_time + 3.2,
         first_sequence=30,
         target_track=8,
     )
@@ -313,10 +321,11 @@ def test_target_and_epoch_changes_discard_old_cycle_context() -> None:
         now=second[0] + 0.2,
     )
     assert not epoch_change.active
-    assert epoch_change.event_id == ""
+    assert epoch_change.transition == "EXIT"
+    assert epoch_change.event_id == second[1]
     third = _enter(
         state,
-        start=second[0] + 0.4,
+        start=second[0] + 3.2,
         first_sequence=2,
         epoch="epoch-b",
         target_track=8,
@@ -340,11 +349,12 @@ def test_invalid_new_epoch_does_not_clear_active_cycle() -> None:
         now=enter_time + 0.4,
     )
     assert not first_valid_new_epoch.active
-    assert first_valid_new_epoch.event_id == ""
+    assert first_valid_new_epoch.transition == "EXIT"
+    assert first_valid_new_epoch.event_id == event_id
 
     _, new_id = _enter(
         state,
-        start=enter_time + 0.4,
+        start=enter_time + 3.4,
         first_sequence=3,
         epoch="epoch-b",
     )
@@ -392,6 +402,8 @@ def test_malformed_pose_cannot_enter_or_release_active_cycle(pose) -> None:
         {"enter_duration_sec": 0},
         {"enter_duration_sec": float("nan")},
         {"enter_duration_sec": True},
+        {"exit_duration_sec": 0},
+        {"retrigger_delay_sec": float("nan")},
         {"enabled": "yes"},
     ],
 )

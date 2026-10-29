@@ -23,9 +23,12 @@
 `hands` 到 `params_json`。FALL/STOP 以原样、区分大小写的 `behavior_name` 发送给
 `/execute_behavior`。
 
-`EVT_VISION_MASTER` 的其它已知非主人即时 face fact 不创建 `owner_greet`；家人只经
-`EVT_VISION_FAMILY_MEMBER` 路由。只有 Vision 主人状态机发布的 MASTER 周期实例，以及同包确认主人身份，
-才进入主人路由。
+携带 `event_instances.<event>.lifecycle_state` 的 7 个持续视觉事件统一只在 `ENTER` 创建直接行为候选；
+`HOLD` 不重复执行，`EXIT` 只用于结束状态。主人召唤手势是单次 `TRIGGER`。旧 v1 实例没有该字段时
+继续走既有兼容行为；字段存在但不是已知状态时拒绝直接触发。
+
+`EVT_VISION_MASTER` 由主人及符合资格的已知非家人身份共享一个生命周期周期和 event ID；只有同包确认
+主人身份才进入 `owner_greet` 路由。家人只经 `EVT_VISION_FAMILY_MEMBER` 路由。
 在场候选与主人姿态/召唤候选都携带同一视觉快照中的唯一匹配目标、epoch、快照和源观测标识；TTL 不超过该
 目标剩余的 500 ms 新鲜期。它们是 `external_interaction` Lv1 候选，使用
 `semantic_rank=3` 和 `safe_point` 进入统一仲裁。

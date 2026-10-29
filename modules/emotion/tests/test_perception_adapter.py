@@ -44,6 +44,52 @@ class PerceptionAdapterTest(unittest.TestCase):
         self.assertEqual(events, ["EVT_VISION_FAMILY_MEMBER"])
         self.assertTrue(system.state.ownerPresent)
 
+    def test_need_presence_uses_lifecycle_state_when_explicit(self):
+        cases = (
+            ("ENTER", True),
+            ("HOLD", True),
+            ("EXIT", False),
+            ({"invalid": "state"}, False),
+        )
+        for index, (lifecycle_state, expected_active) in enumerate(cases):
+            with self.subTest(lifecycle_state=lifecycle_state):
+                system = MarsdogNeedSystem()
+                calls = []
+                system.OnOwnerPresenceChanged = calls.append
+                ApplyVisualEventMessage(
+                    system,
+                    {
+                        "events": ["EVT_VISION_MASTER"],
+                        "event_instances": {
+                            "EVT_VISION_MASTER": {
+                                "event_id": f"master-cycle-{index}",
+                                "lifecycle_state": lifecycle_state,
+                            },
+                        },
+                    },
+                )
+
+                self.assertEqual(True in calls, expected_active)
+
+    def test_need_presence_keeps_legacy_event_name_semantics(self):
+        for instances in (
+            {},
+            {"EVT_VISION_MASTER": {"event_id": "legacy-cycle"}},
+        ):
+            with self.subTest(instances=instances):
+                system = MarsdogNeedSystem()
+                calls = []
+                system.OnOwnerPresenceChanged = calls.append
+                ApplyVisualEventMessage(
+                    system,
+                    {
+                        "events": ["EVT_VISION_MASTER"],
+                        "event_instances": instances,
+                    },
+                )
+
+                self.assertEqual(calls, [True])
+
     def test_audio_event_updates_need_owner_presence(self):
         """主人声纹或叫名字事件应更新需求系统主人在场状态。"""
         system = MarsdogNeedSystem()
@@ -105,6 +151,71 @@ class PerceptionAdapterTest(unittest.TestCase):
         self.assertEqual(system.GetEmotionValue("Joy") - before["Joy"], 25)
         self.assertEqual(system.GetEmotionValue("Excite") - before["Excite"], 15)
         self.assertEqual(system.GetEmotionValue("Calm") - before["Calm"], 10)
+
+    def test_visual_exit_and_invalid_lifecycle_do_not_apply_emotion_deltas(self):
+        for lifecycle_state in ("EXIT", {"unexpected": "value"}):
+            system = MarsdogEmotionSystem()
+            before = system.GetAllEmotions()
+            payload = {
+                "events": ["EVT_VISION_MASTER"],
+                "event_instances": {
+                    "EVT_VISION_MASTER": {
+                        "event_id": "master-cycle-1",
+                        "lifecycle_state": lifecycle_state,
+                    },
+                },
+            }
+
+            self.assertEqual(ApplyVisualEventMessage(system, payload), [])
+            self.assertEqual(system.GetAllEmotions(), before)
+
+    def test_need_presence_finishes_once_on_final_lifecycle_exit(self):
+        system = MarsdogNeedSystem()
+        calls = []
+        original = system.OnOwnerPresenceChanged
+
+        def record_presence(present):
+            calls.append(present)
+            original(present)
+
+        system.OnOwnerPresenceChanged = record_presence
+        master_exit = {
+            "events": ["EVT_VISION_FAMILY_MEMBER"],
+            "event_instances": {
+                "EVT_VISION_MASTER": {
+                    "event_id": "master-cycle-1",
+                    "lifecycle_state": "EXIT",
+                },
+            },
+        }
+        ApplyVisualEventMessage(system, master_exit)
+        self.assertEqual(calls, [True])
+
+        family_exit = {
+            "events": [],
+            "event_instances": {
+                "EVT_VISION_FAMILY_MEMBER": {
+                    "event_id": "family-cycle-1",
+                    "lifecycle_state": "EXIT",
+                },
+            },
+        }
+        ApplyVisualEventMessage(system, family_exit)
+        self.assertEqual(calls, [True, False])
+
+        family_exit_again = {
+            "events": [],
+            "event_instances": {
+                "EVT_VISION_FAMILY_MEMBER": {
+                    "event_id": "family-cycle-2",
+                    "lifecycle_state": "EXIT",
+                },
+            },
+        }
+        ApplyVisualEventMessage(system, family_exit_again)
+        self.assertEqual(calls, [True, False, False])
+        ApplyVisualEventMessage(system, family_exit)
+        self.assertEqual(calls, [True, False, False])
 
     def test_toy_event_instance_is_applied_once_across_long_hold(self):
         """同一个玩具周期即使 HOLD 超过通用窗口也只应用一次。"""

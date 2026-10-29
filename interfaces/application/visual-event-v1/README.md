@@ -15,11 +15,29 @@ modules/vision/marsdog_vision_interaction/messages/visual_event.py。
 | last_seen_age_ms / tracking_state | 观测新鲜度与跟踪状态；身份不充当 target_id |
 | range_valid / distance_m / pose_3d | 原有距离有效性、深度和坐标；未知不能伪装为 0 距离 |
 
+### 统一视觉事件生命周期（v1 可选扩展）
+
+以下 7 个事件共享同一状态生命周期：`EVT_VISION_MASTER`、`EVT_VISION_FAMILY_MEMBER`、
+`EVT_VISION_STRANGER`、`EVT_VISION_OWNER_BEND_SQUAT`、`EVT_VISION_MASTER_HAPPY`、
+`EVT_VISION_MASTER_SAD` 和 `EVT_VISION_TOY`。每个事件实例可选携带
+`event_instances.<event>.lifecycle_state`，取值为 `ENTER`、`HOLD` 或 `EXIT`。`ENTER` 表示
+目标稳定出现，`HOLD` 表示状态持续，`EXIT` 表示达到退出条件；EXIT 快照不再把事件放在
+`events[]`，但保留该周期 ID 和 EXIT 状态一次。周期内 ID 稳定，下次 ENTER 使用新 ID。
+
+默认共享时序为 `T_enter=1.0s`、`T_exit=2.0s`、`T_retrigger=3.0s`。重复同一源观测不推进计时；
+无效、过期或来源不完整的观测不是负检测。各算法原有置信度阈值、身份门控和证据有效性继续生效，
+不引入统一置信度阈值。Behavior 对带生命周期字段的事件只在 ENTER 创建直接行为候选，HOLD 不重复
+触发，EXIT 不触发；不带该字段的旧 v1 消息继续按既有兼容路径处理。明确携带未知状态值的实例按无效
+输入处理，不回退到旧事件名触发。
+
+`EVT_VISION_OWNER_RECALL_GESTURE` 是一个动作型例外：`lifecycle_state=TRIGGER` 只发布一个快照，
+同一有效主人目标的现有有效清除证据才会重新武装，不增加状态冷却。它不发布 HOLD/EXIT。
+
 ### 主人 MASTER 状态（v1 可选扩展）
 
-对主人，`EVT_VISION_MASTER` 表示经过确认并跟踪的主人在场状态。该身份必须通过原有
-owner presence 状态机；原有 face-derived `EVT_VISION_MASTER` 即时路径只保留给其它已知非主人身份，
-已登记家人改走独立的稳定在场事件。`EVT_VISION_OWNER_PRESENT` 已退役，不再发布或消费。此语义调整留在
+`EVT_VISION_MASTER` 将主人和已有资格的已知非家人身份放在一个共享事件周期中；所有来源都经过上述
+共同生命周期，且非家人身份保留原事件资格。`owner_greet` 仍要求当前确认主人目标。
+已登记家人只走独立的 `EVT_VISION_FAMILY_MEMBER` 事件。`EVT_VISION_OWNER_PRESENT` 已退役，不再发布或消费。此语义调整留在
 `schema_version=1`，事件 envelope、required fields 和 ROS 接口不变。
 
 owner MASTER 使用可选字段 `observation_status`、`source_observation_id` 和
@@ -29,19 +47,16 @@ owner MASTER 使用可选字段 `observation_status`、`source_observation_id` �
 | --- | --- |
 | `observation_status` | `valid` 表示本快照来自新鲜有效推理；`invalid` 表示断流、推理失败或源观测过期。未知值按 invalid 处理 |
 | `source_observation_id` | 单个源观测的唯一标识；重复发布同一源观测的 10 Hz 快照不推进稳定计时 |
-| `event_instances.EVT_VISION_MASTER.event_id` | 一个主人在场周期的稳定 ID；ENTER 后 HOLD 保持，EXIT 后移除；下个 ENTER 使用新 ID |
+| `event_instances.EVT_VISION_MASTER.event_id` | 一个聚合 MASTER 周期的稳定 ID；ENTER 后 HOLD 保持，EXIT 快照携带结束 ID；下个 ENTER 使用新 ID |
 
-Vision 只在 `owner / confirmed_known / tracking` 的有效新观测上推进主人状态机。主人在不同
-有效源观测中连续确认满 `T_enter=1.0s` 后 ENTER，`EVT_VISION_MASTER` 加入 `events[]`；
-HOLD 期间事件和 MASTER event ID 保持；有效观测中连续未识别满 `T_exit=2.0s` 后 EXIT 并移除。
-EXIT 时启动 `T_retrigger=3.0s` 冷却，期间不允许重新 ENTER。无效观测不充当负检测；恢复后
-需要有效的新源观测继续判断。三个时序参数沿用 Vision 的现有可配置默认值。
+MASTER 聚合主人和已知非家人身份共享的有效源观测；家人不计入此事件。任一符合身份资格的目标
+可以维持同一 MASTER 周期，不会因目标身份变化创建并行实例。活动事件在 ENTER/HOLD 期间留在
+`events[]`，经过 2 秒有效连续未识别后发一个带原 ID 的 EXIT 实例并从活动事件集合移除。
+无效观测不充当负检测。
 
-Emotion/Needs 对其它已知非主人 MASTER face fact 保持原有处理；主人则在 MASTER ENTER 后、每条
-HOLD 快照上触发现有处理。Behavior 只有收到 MASTER event ID、有效来源元数据和同快照唯一
+Emotion/Needs 沿用已有映射和去重；Behavior 只有收到 MASTER ENTER、有效来源元数据和同快照唯一
 `owner / confirmed_known / tracking` 新鲜目标时，才创建 `owner_greet` 候选，并按 event ID 去重；
-家人身份、无 event ID 的 legacy MASTER face fact 不能产生主人候选。短暂 Topic 中断不会清除
-周期记忆。
+其它已知非家人身份共享该事件 ID，但不能绕过主人身份门控。短暂 Topic 中断不会清除周期记忆。
 
 固定的 `cases.json` 和 `baseline.json` 保留语义调整前的历史观测字节，不代表新的主人触发
 逻辑；常规契约检查仍逐项比较它们。MASTER owner-state 发布、Behavior owner 限定和 Emotion
@@ -56,14 +71,14 @@ HOLD 快照上触发现有处理。Behavior 只有收到 MASTER event ID、有�
 事件进入要求同一当前目标同时满足 `identity=owner`、`identity_state=confirmed_known`、
 `tracking_state=tracking`，有正数 `track_id`，且目标 `target_id`、`vision_epoch` 与姿态证据匹配。
 家人、陌生人、未确认身份、失效跟踪及仅由 tracker 保留的目标都不能触发主人事件。复用现有身份
-确认规则，不添加通用置信度门槛。`owner_posture_events.enter_duration_sec` 默认 `1.0s`；只有
+确认规则，不添加通用置信度门槛。共享 `vision_event_lifecycle.enter_duration_sec` 默认 `1.0s`；只有
 不同且有效的新 `source_observation_id` 推进稳定时间，10 Hz 重复快照不推进计时。
 
 姿态解除沿用 GesturePose 当前公共输出迟滞：最近 10 次姿态更新中至少 6 次分数 `>=0.50`
-才公开，活动姿态在支持数至少 3/10 时保持，低于 3/10 时清除。有效同目标观测确认
-`pose_action` 已不再是上述两种姿态后，Vision 从 `events[]` 删除该事件并删除其
-`event_instances.EVT_VISION_OWNER_BEND_SQUAT.event_id`，随即重新武装；不添加独立释放定时器或
-`T_retrigger` 冷却。弯腰与蹲下之间转换但公共姿态未释放时，仍为同一活动周期和稳定 event ID。
+才公开，活动姿态在支持数至少 3/10 时保持，低于 3/10 时清除。姿态释放后按共享
+`T_exit=2.0s` 判断退出，EXIT 快照保留周期 ID 并从 `events[]` 移除；之后按共享
+`T_retrigger=3.0s` 冷却并重新完整满足 `T_enter`。弯腰与蹲下之间转换但公共姿态未释放时，
+仍为同一活动周期和稳定 event ID。
 
 断流、推理失败、无效/过期输入不会伪装成姿态解除：未完成 ENTER 连续性重置，已活动周期及 ID
 保持。若同一 target 在当前源帧中失去主人身份/跟踪上下文，对外事件移除并内部保持 disarmed；
@@ -82,7 +97,7 @@ BehaviorTree 将此事件映射为 `owner_approach_response` 意图，并通过�
 目前只确认“靠近主人”执行阶段可复用；尾摆与抬头观察没有匹配且经验证的执行能力，因此不声称
 已执行完整 `ACT_OWNER_APPROACH_RESPONSE`。Vision 不直接下发动作，此事件不进入 Emotion 映射。
 
-### 主人招手/挥手召唤（v1 可选状态事件）
+### 主人招手/挥手召唤（v1 可选 TRIGGER 事件）
 
 `EVT_VISION_OWNER_RECALL_GESTURE` 表示同一当前确认主人目标的一次召唤动作型 `TRIGGER`。
 Vision 复用 GesturePose 已有稳定精确内部类别：`beckoning`（招手示意过来）和 `waving`
@@ -93,11 +108,10 @@ Vision 复用 GesturePose 已有稳定精确内部类别：`beckoning`（招手�
 
 触发要求当前源帧的唯一目标为 `owner/confirmed_known/tracking`，目标仍新鲜有效、track ID 为正，且
 手势诊断绑定的 `target_id/track_id` 与其一致。熟悉人、陌生人、未确认身份、失效/过期目标和歧义主人
-均不能触发。事件使用现有 `events[]` 字符串状态与
-`event_instances.EVT_VISION_OWNER_RECALL_GESTURE.event_id` 可选字段：第一个稳定召唤观测加入事件并
-分配 ID；`beckoning` 与 `waving` 连续转换时维持同一实例。只有不同、新鲜、有效的同一主人观测确认
-两种稳定类别都已解除，且建立该实例的类别/同侧来源当前有效可判定时，才从 `events[]` 和
-`event_instances` 移除并重新武装；静态 `arms_raised` 不阻止解除。私有来源诊断复用 BECKONING 的同侧
+均不能触发。事件在一个有效主人快照上发布一次 `TRIGGER` 和 event ID，随后从 `events[]` 与
+`event_instances` 移除；不发布 HOLD/EXIT，也不增加状态冷却。只有不同、新鲜、有效的同一主人观测
+确认两种稳定类别都已解除，且建立该实例的类别/同侧来源当前有效可判定时，才重新武装；静态
+`arms_raised` 不阻止解除。私有来源诊断复用 BECKONING 的同侧
 有效手部/手指几何及既有 `0.35 s` 连续性，以及 WAVING 的同侧腕/肩关键点有效性；不改变触发类别、
 分数或 GesturePose 阈值。重复源观测、10 Hz 快照重复、无效或过期观测、推理失败、相机/Topic 中断、
 缺少/歧义手部或腕点证据及缺少当前主人目标都不能充当解除证据。目标或 epoch 切换会使旧实例失效，
@@ -114,11 +128,10 @@ BehaviorTree 只在当前有效 v1 快照中按事件 ID 去重，并绑定同�
 
 `EVT_VISION_FAMILY_MEMBER` 和 canonical 陌生人在场事件 `EVT_VISION_STRANGER` 复用上述活动状态、
 `observation_status`、`source_observation_id` 和 `event_instances.<event>.event_id` 规则，
-各自独立计时并维护一个类别级活动周期。家人只由身份属于 `family_member_1..4`、状态为
+各自维护一个类别级活动周期，并使用共享的 1/2/3 秒时序。家人只由身份属于 `family_member_1..4`、状态为
 `confirmed_known` 且正在 `tracking` 的当前源帧目标确认；陌生人只由身份 `unknown`、状态
-`confirmed_unknown` 且正在 `tracking` 的当前源帧目标确认。两者默认 `T_enter=1.0s`、
-`T_exit=2.0s`、`T_retrigger=3.0s`，可分别由
-`family_presence_events`、`stranger_presence_events` 配置。owner 身份仍只走主人事件。
+`confirmed_unknown` 且正在 `tracking` 的当前源帧目标确认。两者都使用共享
+`T_enter=1.0s`、`T_exit=2.0s`、`T_retrigger=3.0s`。owner 身份仍只走主人事件。
 
 家人事件是家人身份唯一的公开 presence 事件：家人脸不再产生即时 `EVT_VISION_MASTER`。
 Emotion 将 `EVT_VISION_FAMILY_MEMBER` 映射为原家人 MASTER 增量（Joy +25、Excite +15、Calm +10）；
@@ -141,10 +154,10 @@ BehaviorTree 将两个 ENTER 周期分别映射到 `familiar_person_greet` 和 `
 `dog tug ring toy`，不把狗粮或其他物品扩展为本事件。
 
 事件只消费原有物体检测任务的结果和该任务已有的置信度门限。不同、有效且新鲜的源物体观测
-推进可配置状态时序：默认 `T_enter=1.0s` 后 ENTER；HOLD 保持同一
-`event_instances.EVT_VISION_TOY.event_id`；成功、有效且标签范围覆盖全部三类玩具的负观测持续
-`T_exit=2.0s` 后 EXIT 并移除事件与 ID；EXIT 后默认 `T_retrigger=3.0s` 冷却，冷却结束仍需
-完整重新满足 `T_enter`。多框、多个玩具和重复 10 Hz 快照都按一个场景状态处理，不按框重复触发。
+推进共享状态时序：默认 `T_enter=1.0s` 后 ENTER；HOLD 保持同一
+`event_instances.EVT_VISION_TOY.event_id`；成功、有效且标签范围覆盖全部三类玩具的负观测持续共享
+`T_exit=2.0s` 后 EXIT 并移除活动事件，EXIT 实例保留原 ID 一次；之后按共享 `T_retrigger=3.0s`
+冷却并完整重新满足 `T_enter`。多框、多个玩具和重复 10 Hz 快照都按一个场景状态处理，不按框重复触发。
 
 只有事件周期会产生一次 Behavior 候选；HOLD 快照不会重复生成候选。Emotion 沿用
 `EVT_VISION_TOY` 原有 Excite +30、Curious +20、Joy +15 映射，并按事件 ID 对每个周期只处理
@@ -168,6 +181,14 @@ Vision 可在当前检测人脸及 `debug_faces` 中附加可选字段
 不表示或更新 MarsDog 的 `/emotion/state`。该字段为 schema v1 的可选扩展，
 不改变既有 required 字段及冻结基线。
 
+`EVT_VISION_MASTER_HAPPY` 和 `EVT_VISION_MASTER_SAD` 也是上述 7 个持续状态事件的一部分，
+分别使用已有 happy/sad 算法证据及来源有效性门控，再按共享 ENTER/HOLD/EXIT 时序发布。
+任一适用来源的有效正证据都可维持事件；只有所有适用来源都持续给出有效负证据才累计退出时间。
+缺失、过期或置信度不足的来源属于未知，会打断待进入/待退出连续计时，但不会结束已有周期。
+当前有效目标是家人或已确认陌生人时，主人专用的面部来源不适用，不阻止姿态来源的正常退出；
+曾支持该事件的主人面部来源在随后缺失时保持未知，不能因旧表情来源释放计时结束而变成负证据。
+各自原 Emotion 映射和事件去重规则不变；短于 `T_enter` 的证据不会产生状态 ENTER。
+
 姿态/手势正式事件仅在目标处于 `tracking` 时发布，并要求身份满足以下其一：
 登记身份 `owner` / `family_member_1..4` 且 `identity_state=confirmed_known`，或
 `identity=unknown` 且 `identity_state=confirmed_unknown`。已确认陌生人的姿态继续使用
@@ -176,7 +197,7 @@ Vision 可在当前检测人脸及 `debug_faces` 中附加可选字段
 
 BT 严格要求整数版本和字符串事件数组，再更新原场景缓存。
 直接事件 EVT_VISION_FALL / EVT_VISION_STOP_GESTURE 沿用出现边沿去重，缓存超时后重新判边；
-STRANGER 不在当前 BT 的直接执行事件集合中。
+STRANGER 通过上述带实例 ID 的在场事件路由进入候选池。
 目标有效性和服务降级仍由原规则决定。消费者回调在缓存锁外调用。
 缺少 human_candidates 时只在 epoch 和有效 track_id 存在时构造兼容目标。
 

@@ -294,7 +294,7 @@ class OwnerRecallGestureEventState:
         return OwnerRecallGestureEventSnapshot(
             True,
             event_id=self._active_event_id,
-            transition="ENTER",
+            transition="TRIGGER",
         )
 
     def _qualified_source_owners(

@@ -624,11 +624,12 @@ Vision 事件路由正确率 = 门禁打开且期望事件正确次数 / 门禁�
 
 #### 5.6.7 当前正式事件库存
 
-当前代码实际可能写入 `/perception/visual_event.events[]` 的事件包括下表12种：
+当前代码实际可能写入 `/perception/visual_event.events[]` 的事件包括下表14种。
+七个状态事件使用共享 1/2/3 秒生命周期；短于 T_enter 的稳定动作不会产生 ENTER。
 
 | 正式事件 | 来源 | 是否需要姿态身份门禁 | 同包主要证据 |
 |---|---|---:|---|
-| `EVT_VISION_MASTER` | owner：当前源帧确认并跟踪，状态机 ENTER 后发布；其它已知非主人：有 `faces[]` 且身份非空、非 `unknown` 时即时发布；已登记家人除外 | owner 状态路径要求 `owner/confirmed_known/tracking`；其它非主人即时事实本身不证明 `confirmed_known` | owner：状态字段、源观测和 `event_instances.EVT_VISION_MASTER.event_id`；其它非主人：`faces[]`、`active_target.identity/identity_state` |
+| `EVT_VISION_MASTER` | 主人与已有资格的已知非家人身份共用一个周期，当前源帧确认并跟踪，ENTER 后发布 | `confirmed_known/tracking`；owner Behavior 仍要求主人 | 状态字段、源观测、`human_candidates[]` 和 `event_instances.EVT_VISION_MASTER` |
 | `EVT_VISION_FAMILY_MEMBER` | 当前源目标为 `family_member_1..4/confirmed_known/tracking` 并经不同有效观测稳定 1 秒后 ENTER；活动周期重复发布 | 是 | `observation_status`、`source_observation_id`、`human_candidates[]`、`event_instances.EVT_VISION_FAMILY_MEMBER.event_id` |
 | `EVT_VISION_STRANGER` | 当前源关联目标满足 `unknown/confirmed_unknown/tracking` 并经不同有效源观测达到陌生人在场 ENTER；整个活动周期重复发布 | 是 | `observation_status`、`source_observation_id`、`human_candidates[]`、`event_instances.EVT_VISION_STRANGER.event_id` |
 | `EVT_VISION_STRANGER_ALERT` | 陌生人在场周期活动、当前源关联陌生人脸存在且新鲜情绪中 Anxiety/Fear 已触发 | 是 | 同包在场证据、`faces[]`、`active_target.identity_state`、`/emotion/state` |
@@ -638,6 +639,8 @@ Vision 事件路由正确率 = 门禁打开且期望事件正确次数 / 门禁�
 | `EVT_VISION_MASTER_NEUTRAL` | GP-022、GP-023、GP-025 折叠出的 `neutral_stand_sit` | 是 | `pose_state`、`recognized_actions[]`、`pose_action` |
 | `EVT_VISION_FALL` | GP-001 跌倒状态机确认 | 是 | `fall_detector`、`pose_action=fallen_down` |
 | `EVT_VISION_STOP_GESTURE` | GP-002 Stop 时序确认 | 是 | 手部特征、`hands[].hand_action=stop_gesture` |
+| `EVT_VISION_OWNER_BEND_SQUAT` | 当前确认主人公共 bend/squat 满足共享 ENTER；公共姿态有效清除满 T_exit 后退出 | 仅主人 | 同包 owner `target_id/track_id/pose_action`、源观测及事件实例 |
+| `EVT_VISION_OWNER_RECALL_GESTURE` | 当前确认主人的稳定 `beckoning/waving` 周期只发布一次 TRIGGER；有效同目标清除才重新武装 | 仅主人 | 同包唯一主人目标、源观测及 TRIGGER 实例 |
 | `EVT_VISION_TOY` | 现有物体任务检测到支持玩具标签并稳定可见 1 秒；手持和未手持共用同一场景状态 | 否 | `tracked_objects[]`、`event_instances.EVT_VISION_TOY.event_id`；手持诊断另看 `active_target.held_object` |
 | `EVT_VISION_FOOD` | MM-002 手持狗粮确认 | 是 | `active_target.held_object`、`pose_action=holding_dog_food` |
 
@@ -726,15 +729,19 @@ rg '"case_id":"GP-017-r01"' \
 
 真实配置中的 `facial_expression_events` 开启后，Vision 将当前确认主人对应人脸的表情
 作为 Happy/Sad 的另一种事件来源。原有姿态/手势来源不变，两个来源合并到已有事件名；
-同一事件名已由任一来源支持时只发布一次。
+同名事件共用一个周期 ID，公共时序由 `vision_event_lifecycle` 统一控制：默认
+`T_enter=1.0s`、`T_exit=2.0s`、`T_retrigger=3.0s`。表情来源保留现有置信度和新鲜度门控；
+`facial_expression_events.stable_duration_sec/release_duration_sec` 不控制公共事件周期。
 
 | 条件 | 预期 |
 |---|---|
 | `active_target` 为 `owner/confirmed_known/tracking`，对应 `face_track_id` 的表情为 `happy`，置信度 `>=0.70` 且连续新鲜证据满 1.0 秒 | `events[]` 加入 `EVT_VISION_MASTER_HAPPY` |
 | 同上，表情为 `sad` | `events[]` 加入 `EVT_VISION_MASTER_SAD` |
-| 置信度 `<0.70`、类别改变、结果缺失/过期或主人目标失效持续 0.5 秒 | 移除表情对相应事件的支持 |
+| 置信度 `<0.70`、结果缺失/过期或主人目标失效 | 来源未知，中断待进入/退出计时；已有周期保持 HOLD |
+| 所有适用来源连续提供有效负证据满 `T_exit` | 事件从 `events[]` 移除，实例以原 ID 发布一次 EXIT；冷却后重新完整满足 ENTER |
 | 表情失效，但姿态或手势仍映射到同一事件 | 事件继续保留 |
 | 家人、陌生人、候选身份、非当前人脸或未匹配的其他人脸输出 happy/sad | 不新增表情事件 |
+| 当前源关联的确认家人/陌生人姿态已解除 | 主人专用面部来源不适用；姿态有效负证据可推进共享 EXIT |
 | 同一来源帧被 10 Hz 事件快照重复发布 | 不增加稳定时长；以新来源帧形成持续证据 |
 
 查看同一视觉包中的 `active_target.face_track_id`、对应 `faces[].track_id`、

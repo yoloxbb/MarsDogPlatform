@@ -35,6 +35,7 @@ from .visual_presence_contract import (
     VISUAL_OBJECT_EVENT_NAMES,
     VISUAL_OBJECT_TARGET_MAX_AGE_MS,
     resolve_toy_event_target,
+    visual_event_lifecycle_state,
 )
 
 _log = get_logger("intent_mapper")
@@ -681,6 +682,18 @@ class IntentMapper:
         ):
             _log.warning(
                 "Rejecting %s: expected matching schema-v1 visual event",
+                event_type,
+            )
+            return None
+
+        lifecycle_present, lifecycle_valid, lifecycle_state = (
+            visual_event_lifecycle_state(data, event_type)
+        )
+        if lifecycle_present and (
+            not lifecycle_valid or lifecycle_state not in {"ENTER", "TRIGGER"}
+        ):
+            _log.debug(
+                "Rejecting %s: lifecycle state does not authorize a direct action",
                 event_type,
             )
             return None

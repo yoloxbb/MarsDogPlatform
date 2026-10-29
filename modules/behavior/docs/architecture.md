@@ -118,9 +118,9 @@ Social 在 URGENT/OVERFLOW 时仍为 `triggered=true`。Energy 输入值是电�
   `EVT_VISION_STOP_GESTURE`，分别生成 `respond_person_fall` 和
   `respond_stop_gesture`（Lv1, `sub_priority=12`）。连续 10 Hz 快照中的
   同一事件只在出现沿创建一次候选。主人 `EVT_VISION_MASTER`、FAMILY/STRANGER presence 使用
-  各自活动实例 ID 跨 HOLD 和短暂 Topic 中断去重；主人和类别 presence 以有效源观测满
-  1.0 秒 ENTER、有效漏检 2.0 秒 EXIT 后冷却 3.0 秒，无效观测不作为离开。普通已知非主人
-  MASTER face fact 不含 owner 状态实例，不会触发 `owner_greet`；家人不再发布即时 MASTER。
+  各自活动实例 ID 跨 HOLD 和短暂 Topic 中断去重。七个持续状态共用 1.0 秒 ENTER、2.0 秒 EXIT、
+  3.0 秒重触发间隔，带生命周期字段的事件只在 ENTER 触发直接候选。MASTER 由主人和符合资格的已知
+  非家人身份共享周期，`owner_greet` 仍只接受确认主人；家人经 FAMILY_MEMBER 路由。
   候选
   `owner_greet`、`familiar_person_greet`、
   `stranger_observe` 进入同一 Lv1 仲裁，但 Action 模板缺失。

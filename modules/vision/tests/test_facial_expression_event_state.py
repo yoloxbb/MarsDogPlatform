@@ -133,6 +133,25 @@ def test_confidence_threshold_is_inclusive_at_point_seven() -> None:
     assert _stable_expression(state) == [HAPPY_EVENT]
 
 
+def test_face_source_evidence_distinguishes_valid_negative_from_unknown() -> None:
+    state = _state()
+    assert state.evidence_for_event(
+        _observation(stamp=100.0, expression="happy"), HAPPY_EVENT
+    ) == "positive"
+    assert state.evidence_for_event(
+        _observation(stamp=100.0, expression="happy"), SAD_EVENT
+    ) == "negative"
+    assert state.evidence_for_event(
+        _observation(stamp=100.0, expression="neutral"), HAPPY_EVENT
+    ) == "negative"
+    assert state.evidence_for_event(
+        _observation(stamp=100.0, expression=None, valid_for=None), HAPPY_EVENT
+    ) == "unknown"
+    assert state.evidence_for_event(
+        _observation(stamp=100.0, confidence=0.69), HAPPY_EVENT
+    ) == "unknown"
+
+
 def test_category_change_starts_new_candidate_and_releases_old_support() -> None:
     state = _state()
     assert _stable_expression(state) == [HAPPY_EVENT]

@@ -104,6 +104,8 @@ class ToyPresenceEventState:
         self._active_event_id = ""
         self._cooldown_until = 0.0
         self._cycle = 0
+        self._pending_transition = ""
+        self._pending_event_id = ""
 
     def update(
         self,
@@ -170,11 +172,16 @@ class ToyPresenceEventState:
             if self._exit_started_at is None:
                 self._exit_started_at = source_at
             if source_at - self._exit_started_at >= self.config.exit_duration_sec:
+                event_id = self._active_event_id
                 self._active_event_id = ""
                 self._entry_started_at = None
                 self._exit_started_at = None
                 self._cooldown_until = source_at + self.config.retrigger_delay_sec
-                return ToyPresenceEventSnapshot(False, transition="EXIT")
+                self._pending_transition = "EXIT"
+                self._pending_event_id = event_id
+                return ToyPresenceEventSnapshot(
+                    False, event_id=event_id, transition="EXIT"
+                )
             return self.snapshot()
 
         if source_at < self._cooldown_until:
@@ -192,18 +199,35 @@ class ToyPresenceEventState:
         self._cycle += 1
         self._active_event_id = f"{epoch}:toy-presence:{self._cycle}"
         self._entry_started_at = None
+        self._pending_transition = "ENTER"
+        self._pending_event_id = self._active_event_id
         return ToyPresenceEventSnapshot(
             True,
             event_id=self._active_event_id,
             transition="ENTER",
         )
 
-    def snapshot(self) -> ToyPresenceEventSnapshot:
+    def snapshot(
+        self, *, consume_transition: bool = False
+    ) -> ToyPresenceEventSnapshot:
+        # Observation callbacks report only their own transition. The visual
+        # publisher explicitly consumes the pending edge once; ordinary reads
+        # remain a view of the current active state.
+        transition = self._pending_transition if consume_transition else ""
+        event_id = self._pending_event_id if consume_transition else ""
+        if consume_transition:
+            self._pending_transition = ""
+            self._pending_event_id = ""
         if self._active_event_id:
             return ToyPresenceEventSnapshot(
                 True,
-                event_id=self._active_event_id,
-                transition="HOLD",
+                event_id=event_id or self._active_event_id,
+                transition=transition or "HOLD",
+            )
+        if transition == "EXIT":
+            # EXIT is a one-publication edge with the just-ended cycle ID.
+            return ToyPresenceEventSnapshot(
+                False, event_id=event_id, transition=transition
             )
         return ToyPresenceEventSnapshot(False)
 

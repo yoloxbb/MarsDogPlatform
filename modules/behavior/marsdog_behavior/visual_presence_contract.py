@@ -163,3 +163,24 @@ VISUAL_PRESENCE_EVENT_NAMES = frozenset(VISUAL_PRESENCE_EVENT_QUALIFIERS)
 VISUAL_POSTURE_EVENT_NAMES = frozenset({OWNER_BEND_SQUAT_EVENT})
 VISUAL_POSTURE_ACTIONS = frozenset({"bend_over", "squat_down"})
 VISUAL_PRESENCE_TARGET_MAX_AGE_MS = 500.0
+
+VISUAL_LIFECYCLE_STATES = frozenset({"ENTER", "HOLD", "EXIT", "TRIGGER"})
+
+
+def visual_event_lifecycle_state(
+    data: dict, event_type: str
+) -> tuple[bool, bool, str | None]:
+    """Return (field present, token valid, token) for one v1 event instance.
+
+    An absent field is a legacy v1 message. An explicit malformed value is
+    kept distinct so callers can fail closed rather than falling back to the
+    legacy event-name edge route.
+    """
+    instances = data.get("event_instances") if isinstance(data, dict) else None
+    instance = instances.get(event_type) if isinstance(instances, dict) else None
+    if not isinstance(instance, dict) or "lifecycle_state" not in instance:
+        return False, True, None
+    value = instance.get("lifecycle_state")
+    if not isinstance(value, str) or value not in VISUAL_LIFECYCLE_STATES:
+        return True, False, None
+    return True, True, value

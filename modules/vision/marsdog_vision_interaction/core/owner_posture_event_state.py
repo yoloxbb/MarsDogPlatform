@@ -24,6 +24,8 @@ def _positive_duration(value: Any, *, name: str) -> float:
 class OwnerPostureEventConfig:
     enabled: bool = True
     enter_duration_sec: float = 1.0
+    exit_duration_sec: float = 2.0
+    retrigger_delay_sec: float = 3.0
 
     @classmethod
     def from_mapping(cls, value: Any) -> "OwnerPostureEventConfig":
@@ -39,6 +41,14 @@ class OwnerPostureEventConfig:
             enter_duration_sec=_positive_duration(
                 value.get("enter_duration_sec", 1.0),
                 name="owner_posture_events.enter_duration_sec",
+            ),
+            exit_duration_sec=_positive_duration(
+                value.get("exit_duration_sec", 2.0),
+                name="owner_posture_events.exit_duration_sec",
+            ),
+            retrigger_delay_sec=_positive_duration(
+                value.get("retrigger_delay_sec", 3.0),
+                name="owner_posture_events.retrigger_delay_sec",
             ),
         )
 
@@ -80,6 +90,8 @@ class OwnerPostureEventState:
         self._entry_started_at: float | None = None
         self._entry_target_id = ""
         self._entry_track_id = 0
+        self._exit_started_at: float | None = None
+        self._cooldown_until = 0.0
         self._active_event_id = ""
         self._active_target_id = ""
         self._active_track_id = 0
@@ -134,11 +146,17 @@ class OwnerPostureEventState:
         if epoch != self._vision_epoch:
             # Only a complete fresh source observation can establish an epoch
             # transition. Invalid/stale packets cannot discard an active cycle.
+            ended_event_id = self._active_event_id
             self._clear_cycle()
             self._reset_disarmed()
             self._vision_epoch = epoch
             self._last_source_key = None
             self._last_distinct_at = None
+            if ended_event_id:
+                self._cooldown_until = now + self.config.retrigger_delay_sec
+                return OwnerPostureEventSnapshot(
+                    False, event_id=ended_event_id, transition="EXIT"
+                )
 
         source_key = (epoch, source_id)
         if source_key == self._last_source_key:
@@ -152,6 +170,7 @@ class OwnerPostureEventState:
             )
         ):
             self._reset_entry()
+            self._exit_started_at = None
         self._last_source_key = source_key
         self._last_distinct_at = now
 
@@ -178,14 +197,30 @@ class OwnerPostureEventState:
             )
             if bound is not None:
                 if bound["pose_action"] in OWNER_BEND_SQUAT_POSES:
+                    self._exit_started_at = None
                     return self._snapshot()
-                self._clear_cycle()
-                return OwnerPostureEventSnapshot(False, transition="EXIT")
+                if self._exit_started_at is None:
+                    self._exit_started_at = now
+                if now - self._exit_started_at >= self.config.exit_duration_sec:
+                    ended_event_id = self._active_event_id
+                    self._clear_cycle()
+                    self._cooldown_until = now + self.config.retrigger_delay_sec
+                    return OwnerPostureEventSnapshot(
+                        False,
+                        event_id=ended_event_id,
+                        transition="EXIT",
+                    )
+                return self._snapshot()
 
             # A current owner target replacing the bound target is a context
             # switch. Drop the previous cycle and require a full entry period.
             if owners:
+                ended_event_id = self._active_event_id
                 self._clear_cycle()
+                self._cooldown_until = now + self.config.retrigger_delay_sec
+                return OwnerPostureEventSnapshot(
+                    False, event_id=ended_event_id, transition="EXIT"
+                )
             else:
                 # A missing current owner association is not pose-release
                 # evidence. Explicit identity/tracking loss on the same target
@@ -196,12 +231,16 @@ class OwnerPostureEventState:
                 if lost_context is not None:
                     lost_target_id = self._active_target_id
                     lost_track_id = self._active_track_id
+                    ended_event_id = self._active_event_id
                     self._clear_cycle()
+                    self._cooldown_until = now + self.config.retrigger_delay_sec
                     if lost_context.get("pose_action", "") in OWNER_BEND_SQUAT_POSES:
                         self._disarmed_target_id = lost_target_id
                         self._disarmed_track_id = lost_track_id
                     return OwnerPostureEventSnapshot(
-                        False, transition="EXIT"
+                        False,
+                        event_id=ended_event_id,
+                        transition="EXIT",
                     )
                 return self._snapshot()
 
@@ -235,6 +274,10 @@ class OwnerPostureEventState:
             else:
                 self._reset_entry()
                 return OwnerPostureEventSnapshot(False)
+
+        if now < self._cooldown_until:
+            self._reset_entry()
+            return OwnerPostureEventSnapshot(False)
 
         posture_owners = [
             item for item in owners
@@ -383,6 +426,7 @@ class OwnerPostureEventState:
         # Invalid evidence cannot prove release. It interrupts only pending
         # entry continuity and the source-gap clock, preserving an active ID.
         self._reset_entry()
+        self._exit_started_at = None
         self._last_distinct_at = None
         return self._snapshot()
 
@@ -390,6 +434,7 @@ class OwnerPostureEventState:
         self._active_event_id = ""
         self._active_target_id = ""
         self._active_track_id = 0
+        self._exit_started_at = None
         self._reset_entry()
 
     def _reset_disarmed(self) -> None:

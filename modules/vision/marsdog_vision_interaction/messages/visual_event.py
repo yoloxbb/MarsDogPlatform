@@ -351,13 +351,27 @@ def normalize_visual_event(data: Any) -> dict[str, Any]:
         event["source_observation_id"] = source_observation_id.strip()
     raw_event_instances = data.get("event_instances")
     if isinstance(raw_event_instances, dict):
-        instances: dict[str, dict[str, str]] = {}
+        instances: dict[str, dict[str, Any]] = {}
         for event_name, value in raw_event_instances.items():
-            if not isinstance(event_name, str) or not isinstance(value, dict):
+            if (
+                not isinstance(event_name, str)
+                or not event_name.strip()
+                or not isinstance(value, dict)
+            ):
                 continue
             event_id = value.get("event_id")
+            instance: dict[str, Any] = {}
             if isinstance(event_id, str) and event_id.strip():
-                instances[event_name] = {"event_id": event_id.strip()}
+                instance["event_id"] = event_id.strip()
+            # Preserve explicit malformed tokens even when the ID is missing
+            # or invalid, so consumers can fail closed instead of confusing
+            # this with a legacy instance that has no lifecycle metadata.
+            if "lifecycle_state" in value:
+                instance["lifecycle_state"] = copy.deepcopy(
+                    value["lifecycle_state"]
+                )
+            if instance:
+                instances[event_name.strip()] = instance
         if instances:
             event["event_instances"] = instances
     return event

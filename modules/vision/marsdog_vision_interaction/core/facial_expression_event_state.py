@@ -8,6 +8,7 @@ from numbers import Real
 from typing import Any
 
 from marsdog_vision_interaction.messages.facial_expression import (
+    EXPRESSIONS,
     normalize_facial_expression,
 )
 
@@ -94,6 +95,7 @@ class FacialExpressionEventState:
         self._candidate_last_key: tuple[str, float, str, int] | None = None
         self._active: str | None = None
         self._release_started_at: float | None = None
+        self._public_positive_events: set[str] = set()
 
     def reset(self) -> None:
         """Clear pending and active evidence, for epoch changes or shutdown."""
@@ -104,6 +106,7 @@ class FacialExpressionEventState:
         self._candidate_last_key = None
         self._active = None
         self._release_started_at = None
+        self._public_positive_events.clear()
 
     def update(self, observation: dict[str, Any], *, now: float) -> list[str]:
         """Return event names currently supported by facial expression."""
@@ -120,20 +123,19 @@ class FacialExpressionEventState:
             self.reset()
             self._vision_epoch = epoch
 
-        active_target = event.get("active_target", {})
-        if not isinstance(active_target, dict):
-            active_target = {}
-        face_track_id = self._positive_track_id(active_target.get("face_track_id"))
-        source_key = self._source_key(event, face_track_id)
+        source_key = self._source_key(
+            event,
+            self._positive_track_id(
+                (event.get("active_target") or {}).get("face_track_id")
+                if isinstance(event.get("active_target"), dict)
+                else None
+            ),
+        )
         new_source = source_key is not None and source_key != self._last_source_key
         if source_key is not None:
             self._last_source_key = source_key
 
-        expression = self._qualified_expression(
-            event,
-            active_target,
-            face_track_id=face_track_id,
-        )
+        expression = self._qualified_expression(event)
         if source_key is None:
             expression = None
 
@@ -170,6 +172,58 @@ class FacialExpressionEventState:
         event_name = _EXPRESSION_EVENTS.get(self._active or "")
         return [event_name] if event_name else []
 
+    def evidence_for_event(
+        self,
+        observation: dict[str, Any],
+        event_name: str,
+    ) -> str | None:
+        """Return positive, valid-negative, unknown, or inapplicable evidence.
+
+        The returned evidence describes this source observation directly. The
+        caller owns the shared public event timing; this method only preserves
+        the existing owner, track, freshness, and algorithm confidence gates.
+        """
+        if not self.config.enabled:
+            return None
+        active_target = observation.get("active_target")
+        if not isinstance(active_target, dict) or not active_target:
+            # Losing a previously supporting face is unknown evidence, even
+            # after the legacy expression-source release timer has elapsed.
+            return (
+                "unknown" if event_name in self._public_positive_events else None
+            )
+        source_ids = observation.get("_source_human_target_ids", [])
+        identity = active_target.get("identity")
+        qualified_non_owner = (
+            isinstance(identity, str)
+            and bool(identity.strip())
+            and identity != "owner"
+            and active_target.get("identity_state")
+            == ("confirmed_unknown" if identity == "unknown" else "confirmed_known")
+            and active_target.get("tracking_state") == "tracking"
+            and active_target.get("vision_epoch") == observation.get("vision_epoch")
+            and observation.get("observation_status") == "valid"
+            and isinstance(source_ids, list)
+            and active_target.get("target_id") in source_ids
+        )
+        if qualified_non_owner:
+            # Pose events accept non-owners; this owner-only face source is
+            # inapplicable to their current context rather than missing data.
+            self._public_positive_events.discard(event_name)
+            return None
+        expression = self._qualified_classification(observation)
+        if expression is None:
+            return "unknown"
+        expected = {
+            HAPPY_EVENT: "happy",
+            SAD_EVENT: "sad",
+        }.get(event_name)
+        if expression == expected:
+            self._public_positive_events.add(event_name)
+            return "positive"
+        self._public_positive_events.discard(event_name)
+        return "negative"
+
     def _observe_candidate(
         self,
         expression: str,
@@ -203,10 +257,22 @@ class FacialExpressionEventState:
     def _qualified_expression(
         self,
         event: dict[str, Any],
-        active_target: dict[str, Any],
-        *,
-        face_track_id: int | None,
     ) -> str | None:
+        expression = self._qualified_classification(event)
+        if expression not in _EXPRESSION_EVENTS:
+            return None
+        return expression
+
+    def _qualified_classification(
+        self,
+        event: dict[str, Any],
+    ) -> str | None:
+        active_target = event.get("active_target", {})
+        if not isinstance(active_target, dict):
+            active_target = {}
+        face_track_id = self._positive_track_id(
+            active_target.get("face_track_id")
+        )
         if (
             str(active_target.get("identity", "")) != "owner"
             or str(active_target.get("identity_state", "")) != "confirmed_known"
@@ -230,6 +296,8 @@ class FacialExpressionEventState:
             return None
         if remaining <= 0.0:
             return None
+        if self._source_key(event, face_track_id) is None:
+            return None
 
         faces = event.get("faces", [])
         if not isinstance(faces, list):
@@ -246,7 +314,7 @@ class FacialExpressionEventState:
         if face is None:
             return None
         normalized = normalize_facial_expression(face.get("facial_expression"))
-        if normalized is None or normalized["expression"] not in _EXPRESSION_EVENTS:
+        if normalized is None or normalized["expression"] not in EXPRESSIONS:
             return None
         if normalized["confidence"] < self.config.minimum_confidence:
             return None

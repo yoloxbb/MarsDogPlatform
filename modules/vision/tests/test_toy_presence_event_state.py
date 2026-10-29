@@ -115,6 +115,23 @@ def test_distinct_stable_toy_observations_enter_once_and_hold_one_scene_id() -> 
     assert held.event_id == entered.event_id
 
 
+def test_toy_lifecycle_transition_metadata_is_one_publication_per_edge() -> None:
+    state = _state(enter_duration_sec=0.2, exit_duration_sec=0.2)
+    _feed(state, 1, 30.0)
+    entered = _feed(state, 2, 30.25)
+    assert entered.transition == "ENTER"
+    assert state.snapshot(consume_transition=True).event_id == entered.event_id
+    assert state.snapshot(consume_transition=True).transition == "HOLD"
+
+    _feed(state, 3, 30.5, present=False, labels=[])
+    exited = _feed(state, 4, 30.75, present=False, labels=[])
+    assert exited.transition == "EXIT"
+    exit_packet = state.snapshot(consume_transition=True)
+    assert exit_packet.transition == "EXIT"
+    assert exit_packet.event_id == entered.event_id
+    assert state.snapshot(consume_transition=True).event_id == ""
+
+
 def test_repeated_source_result_and_repeated_visual_serialization_do_not_count() -> None:
     state = _state()
     first, now = _result(1, 20.0, objects=[_toy()], source_id="same-frame")

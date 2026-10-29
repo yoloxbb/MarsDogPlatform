@@ -15,6 +15,8 @@ from .visual_presence_contract import (
     VISUAL_POSTURE_EVENT_NAMES,
     VISUAL_OBJECT_EVENT_NAMES,
     VISUAL_PRESENCE_EVENT_NAMES,
+    VISUAL_PRESENCE_TARGET_MAX_AGE_MS,
+    visual_event_lifecycle_state,
 )
 
 
@@ -172,7 +174,7 @@ def visual_object_snapshot_is_current(self) -> bool:
 
 
 def owner_recall_snapshot_is_current(self) -> bool:
-    """Reject delayed or retired snapshots for recall candidates."""
+    """Check whether the cached recall context is the latest accepted snapshot."""
     epoch = getattr(self, "_owner_recall_snapshot_epoch", "")
     return bool(
         epoch
@@ -182,6 +184,46 @@ def owner_recall_snapshot_is_current(self) -> bool:
         == getattr(self, "_owner_recall_snapshot_sequence", None)
         and self._cached_visual_snapshot_id
         == getattr(self, "_owner_recall_snapshot_id", "")
+    )
+
+
+def owner_recall_trigger_is_retained(
+    self,
+    event_id: str,
+    epoch: str,
+    now: float,
+) -> bool:
+    """Check a one-packet TRIGGER still belongs to a live candidate cycle."""
+    trigger = getattr(self, "_recent_owner_recall_trigger", None)
+    if not isinstance(trigger, dict):
+        return False
+    retained_ids = {
+        getattr(self, "_pending_owner_recall_gesture_instance_id", ""),
+        getattr(self, "_consumed_owner_recall_gesture_instance_id", ""),
+    }
+    # The generic dictionaries are used by the current presence consumer;
+    # the legacy scalar fields remain for compatibility with older adapters.
+    retained_ids.update(
+        (
+            getattr(self, "_pending_visual_presence_instance_ids", {})
+            .get(OWNER_RECALL_GESTURE_EVENT, ""),
+            getattr(self, "_consumed_visual_presence_instance_ids", {})
+            .get(OWNER_RECALL_GESTURE_EVENT, ""),
+        )
+    )
+    try:
+        age = now - float(trigger.get("received_at", 0.0))
+    except (TypeError, ValueError):
+        return False
+    return bool(
+        event_id
+        and event_id in retained_ids
+        and trigger.get("event_id") == event_id
+        and trigger.get("lifecycle_state") == "TRIGGER"
+        and trigger.get("vision_epoch") == epoch
+        and trigger.get("snapshot_id")
+        and trigger.get("source_observation_id")
+        and 0.0 <= age <= VISUAL_PRESENCE_TARGET_MAX_AGE_MS / 1000.0
     )
 
 
@@ -269,7 +311,17 @@ def consume_visual_event(self, msg, *, direct_events):
         )
         raw_event_instances = data.get("event_instances")
         cached_presence_ids = {}
+        cached_lifecycle_states = {}
         if isinstance(raw_event_instances, dict):
+            for event_name, instance in raw_event_instances.items():
+                if (
+                    isinstance(event_name, str)
+                    and isinstance(instance, dict)
+                    and "lifecycle_state" in instance
+                ):
+                    cached_lifecycle_states[event_name] = instance.get(
+                        "lifecycle_state"
+                    )
             for event_name in (
                 VISUAL_PRESENCE_EVENT_NAMES | VISUAL_OBJECT_EVENT_NAMES
             ):
@@ -282,6 +334,7 @@ def consume_visual_event(self, msg, *, direct_events):
                 if isinstance(raw_event_id, str) and raw_event_id.strip():
                     cached_presence_ids[event_name] = raw_event_id.strip()
         self._cached_visual_event_instances = cached_presence_ids
+        self._cached_visual_event_lifecycle_states = cached_lifecycle_states
         raw_candidates = data.get("human_candidates", [])
         self._cached_human_candidates = [
             dict(item)
@@ -401,6 +454,52 @@ def consume_visual_event(self, msg, *, direct_events):
             if event_type and event_type not in event_types:
                 event_types.append(event_type)
 
+        recent_recall = getattr(self, "_recent_owner_recall_trigger", None)
+        if isinstance(recent_recall, dict) and (
+            received_at - float(recent_recall.get("received_at", 0.0))
+            > self.VISUAL_CACHE_TIMEOUT_SEC
+            or recent_recall.get("vision_epoch") != self._cached_vision_epoch
+        ):
+            self._recent_owner_recall_trigger = None
+        recall_present, recall_valid, recall_state = (
+            visual_event_lifecycle_state(data, OWNER_RECALL_GESTURE_EVENT)
+        )
+        if (
+            OWNER_RECALL_GESTURE_EVENT in event_types
+            and recall_present
+            and recall_valid
+            and recall_state == "TRIGGER"
+            and self._cached_observation_status == "valid"
+        ):
+            recall_id = _presence_instance_id(
+                self, OWNER_RECALL_GESTURE_EVENT
+            )
+            owners = [
+                item for item in self._cached_human_candidates
+                if isinstance(item, dict)
+                and item.get("identity") == "owner"
+                and item.get("identity_state") == "confirmed_known"
+                and item.get("tracking_state") == "tracking"
+                and item.get("vision_epoch") == self._cached_vision_epoch
+                and isinstance(item.get("target_id"), str)
+                and item.get("target_id", "").strip()
+                and isinstance(item.get("track_id"), int)
+                and not isinstance(item.get("track_id"), bool)
+                and item.get("track_id") > 0
+            ]
+            if recall_id and len(owners) == 1:
+                owner = owners[0]
+                self._recent_owner_recall_trigger = {
+                    "event_id": recall_id,
+                    "lifecycle_state": "TRIGGER",
+                    "vision_epoch": self._cached_vision_epoch,
+                    "snapshot_id": self._cached_visual_snapshot_id,
+                    "source_observation_id": self._cached_source_observation_id,
+                    "target_id": owner["target_id"].strip(),
+                    "track_id": owner["track_id"],
+                    "received_at": received_at,
+                }
+
         current_direct_events = set(event_types) & direct_events
         if (
             OWNER_PRESENCE_EVENT in current_direct_events
@@ -430,6 +529,16 @@ def consume_visual_event(self, msg, *, direct_events):
             previous_direct_events = set()
         for event_type in event_types:
             if event_type not in current_direct_events:
+                continue
+            lifecycle_present, lifecycle_valid, lifecycle_state = (
+                visual_event_lifecycle_state(data, event_type)
+            )
+            if lifecycle_present and (
+                not lifecycle_valid
+                or lifecycle_state not in {"ENTER", "TRIGGER"}
+            ):
+                # HOLD/EXIT and malformed explicit values cannot become a
+                # direct Behavior candidate; absent status keeps legacy v1.
                 continue
             if event_type in VISUAL_PRESENCE_EVENT_NAMES | VISUAL_OBJECT_EVENT_NAMES:
                 event_id = _presence_instance_id(self, event_type)

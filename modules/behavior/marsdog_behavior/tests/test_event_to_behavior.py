@@ -2296,6 +2296,32 @@ class TestVisualDirectToBehavior:
         assert candidate.params["source_observation_id"] == "camera-frame-42"
         assert candidate.ttl_sec == pytest.approx(0.49)
 
+    @pytest.mark.parametrize("lifecycle_state", ["HOLD", "EXIT", ["ENTER"]])
+    def test_owner_presence_explicit_non_direct_lifecycle_fails_closed(
+        self, node, lifecycle_state
+    ):
+        payload = self._owner_payload()
+        payload["event_instances"]["EVT_VISION_MASTER"][
+            "lifecycle_state"
+        ] = lifecycle_state
+
+        assert node._intent_mapper.map_visual_event(
+            "EVT_VISION_MASTER", payload
+        ) is None
+
+    def test_owner_presence_enter_lifecycle_authorizes_candidate(self, node):
+        payload = self._owner_payload()
+        payload["event_instances"]["EVT_VISION_MASTER"][
+            "lifecycle_state"
+        ] = "ENTER"
+
+        candidate = node._intent_mapper.map_visual_event(
+            "EVT_VISION_MASTER", payload
+        )
+
+        assert candidate is not None
+        assert candidate.params["visual_event_instance_id"] == "owner-cycle-1"
+
     @staticmethod
     def _owner_posture_payload(**target_updates):
         target = {

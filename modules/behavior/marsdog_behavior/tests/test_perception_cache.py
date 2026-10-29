@@ -562,6 +562,25 @@ def test_toy_candidate_revalidation_checks_cycle_and_current_target():
     )
 
 
+@pytest.mark.parametrize("lifecycle_state", ["EXIT", "invalid", ["HOLD"], {"state": "HOLD"}])
+def test_toy_pending_candidate_rejects_invalid_or_exit_lifecycle(lifecycle_state):
+    adapter = _adapter()
+    event = "EVT_VISION_TOY"
+    payload = _toy_event_payload(snapshot=1)
+    adapter._on_visual_ros2(_Message(payload))
+    candidate = {"params": {
+        "visual_target": dict(payload["tracked_objects"][0]),
+        "visual_event_instance_id": "toy-cycle-1",
+        "vision_epoch": "vision-1",
+        "snapshot_id": payload["snapshot_id"],
+    }}
+    assert adapter.visual_object_candidate_is_current(candidate, event_type=event)
+    latest = _toy_event_payload(snapshot=2)
+    latest["event_instances"][event]["lifecycle_state"] = lifecycle_state
+    adapter._on_visual_ros2(_Message(latest))
+    assert not adapter.visual_object_candidate_is_current(candidate, event_type=event)
+
+
 def test_visual_event_rejects_wrong_schema_and_non_string_events() -> None:
     adapter = _adapter()
     received: list[str] = []
@@ -697,9 +716,16 @@ def _owner_bend_squat_payload(
 
 
 def _owner_recall_payload(
-    *, snapshot: int, epoch: str = "vision-1", status: str = "valid"
+    *,
+    snapshot: int,
+    epoch: str = "vision-1",
+    status: str = "valid",
+    lifecycle_state: str | None = None,
 ) -> dict:
     event_name = "EVT_VISION_OWNER_RECALL_GESTURE"
+    instance = {"event_id": "owner-recall-cycle-1"}
+    if lifecycle_state is not None:
+        instance["lifecycle_state"] = lifecycle_state
     return {
         "schema_version": 1,
         "vision_epoch": epoch,
@@ -709,7 +735,7 @@ def _owner_recall_payload(
         "observation_status": status,
         "events": [event_name],
         "event_instances": {
-            event_name: {"event_id": "owner-recall-cycle-1"}
+            event_name: instance
         },
         "human_candidates": [{
             "identity": "owner",
@@ -875,6 +901,63 @@ def test_owner_recall_rejects_old_epoch_candidate_after_epoch_switch() -> None:
     assert not adapter.visual_presence_candidate_is_current(
         old_candidate, event_type=event
     )
+
+
+def test_owner_recall_trigger_survives_one_packet_until_bounded_candidate_expiry(
+    monkeypatch,
+) -> None:
+    adapter = _adapter()
+    event = "EVT_VISION_OWNER_RECALL_GESTURE"
+    clock = [100.0]
+    monkeypatch.setattr(
+        "marsdog_behavior.visual_event_consumer.time.monotonic",
+        lambda: clock[0],
+    )
+    adapter.set_on_visual_event(lambda _event, _payload: True)
+
+    trigger = _owner_recall_payload(snapshot=1, lifecycle_state="TRIGGER")
+    adapter._on_visual_ros2(_Message(trigger))
+    candidate = {"params": {
+        "visual_target": dict(trigger["human_candidates"][0]),
+        "visual_event_instance_id": "owner-recall-cycle-1",
+        "vision_epoch": "vision-1",
+        "snapshot_id": trigger["snapshot_id"],
+        "source_observation_id": trigger["source_observation_id"],
+    }}
+
+    clock[0] = 100.1
+    latest = _owner_recall_payload(snapshot=2)
+    latest["events"] = []
+    latest["event_instances"] = {}
+    adapter._on_visual_ros2(_Message(latest))
+    assert adapter.visual_presence_candidate_is_current(
+        candidate, event_type=event
+    )
+    assert candidate["params"]["snapshot_id"] == latest["snapshot_id"]
+
+    clock[0] = 100.61
+    assert not adapter.visual_presence_candidate_is_current(
+        candidate, event_type=event
+    )
+
+
+def test_owner_recall_retained_trigger_cannot_bypass_explicit_exit() -> None:
+    adapter = _adapter()
+    event = "EVT_VISION_OWNER_RECALL_GESTURE"
+    adapter.set_on_visual_event(lambda _event, _payload: True)
+    payload = _owner_recall_payload(snapshot=1, lifecycle_state="TRIGGER")
+    adapter._on_visual_ros2(_Message(payload))
+    candidate = {"params": {
+        "visual_target": dict(payload["human_candidates"][0]),
+        "visual_event_instance_id": "owner-recall-cycle-1",
+        "vision_epoch": "vision-1",
+        "snapshot_id": payload["snapshot_id"],
+        "source_observation_id": payload["source_observation_id"],
+    }}
+    latest = _owner_recall_payload(snapshot=2, lifecycle_state="EXIT")
+    latest["events"] = []
+    adapter._on_visual_ros2(_Message(latest))
+    assert not adapter.visual_presence_candidate_is_current(candidate, event_type=event)
 
 
 def test_owner_posture_does_not_dispatch_invalid_or_released_pose() -> None:

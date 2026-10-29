@@ -77,14 +77,22 @@ class PresenceEventState:
         event_tag: str,
         source_target_ids_key: str,
         identities: set[str],
-        identity_state: str,
+        identity_state: str | set[str],
+        positive_evidence_key: str | None = None,
+        evidence_state_key: str | None = None,
         source_freshness_sec: float = 0.5,
     ) -> None:
         self.config = config
         self.event_tag = event_tag
         self.source_target_ids_key = source_target_ids_key
         self.identities = frozenset(identities)
-        self.identity_state = identity_state
+        self.identity_states = frozenset(
+            identity_state
+            if isinstance(identity_state, set)
+            else {identity_state}
+        )
+        self.positive_evidence_key = positive_evidence_key
+        self.evidence_state_key = evidence_state_key
         self.source_freshness_sec = _finite_duration(
             source_freshness_sec,
             name="presence-event source freshness",
@@ -152,7 +160,13 @@ class PresenceEventState:
         self._last_source_key = source_key
         self._last_distinct_at = now
 
-        present = self._has_qualified_target(observation)
+        if self.evidence_state_key is not None:
+            evidence_state = observation.get(self.evidence_state_key)
+            if not isinstance(evidence_state, str) or evidence_state not in {"positive", "negative"}:
+                return self._invalid_observation()
+            present = evidence_state == "positive"
+        else:
+            present = self._has_qualified_target(observation)
         if self._active_event_id:
             if present:
                 self._exit_started_at = None
@@ -160,11 +174,14 @@ class PresenceEventState:
             if self._exit_started_at is None:
                 self._exit_started_at = now
             if now - self._exit_started_at >= self.config.exit_duration_sec:
+                event_id = self._active_event_id
                 self._active_event_id = ""
                 self._exit_started_at = None
                 self._entry_started_at = None
                 self._cooldown_until = now + self.config.retrigger_delay_sec
-                return PresenceEventSnapshot(False, transition="EXIT")
+                return PresenceEventSnapshot(
+                    False, event_id=event_id, transition="EXIT"
+                )
             return self._snapshot()
 
         if now < self._cooldown_until:
@@ -202,6 +219,8 @@ class PresenceEventState:
         return math.isfinite(age) and 0.0 <= age <= self.source_freshness_sec
 
     def _has_qualified_target(self, observation: dict[str, Any]) -> bool:
+        if self.positive_evidence_key is not None:
+            return observation.get(self.positive_evidence_key) is True
         raw_ids = observation.get(self.source_target_ids_key, [])
         source_ids = {
             value.strip()
@@ -223,8 +242,9 @@ class PresenceEventState:
                 not isinstance(target_id, str)
                 or target_id.strip() not in source_ids
                 or not isinstance(candidate.get("identity"), str)
-                or candidate.get("identity") not in self.identities
-                or candidate.get("identity_state") != self.identity_state
+                or not self._identity_is_qualified(candidate.get("identity"))
+                or not isinstance(candidate.get("identity_state"), str)
+                or candidate.get("identity_state") not in self.identity_states
                 or candidate.get("tracking_state") != "tracking"
                 or str(candidate.get("vision_epoch", "")) != epoch
                 or isinstance(track_id, bool)
@@ -234,6 +254,11 @@ class PresenceEventState:
                 continue
             return True
         return False
+
+    def _identity_is_qualified(self, value: Any) -> bool:
+        if "*" in self.identities:
+            return isinstance(value, str) and bool(value.strip()) and value != "unknown"
+        return value in self.identities
 
     def _snapshot(self) -> PresenceEventSnapshot:
         return PresenceEventSnapshot(
